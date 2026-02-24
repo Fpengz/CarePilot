@@ -33,3 +33,14 @@ def test_send_push_success() -> None:
     result = send_push(_event())
     assert result.success is True
     assert result.channel == "push"
+
+
+def test_dispatch_telegram_channel(monkeypatch) -> None:
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "chat")
+    monkeypatch.setenv("TELEGRAM_DEV_MODE", "1")
+    results = dispatch_reminder(_event(), ["telegram"])
+    assert len(results) == 1
+    assert results[0].channel == "telegram"
+    assert results[0].success is True
+    assert "api.telegram.org" in (results[0].destination or "")

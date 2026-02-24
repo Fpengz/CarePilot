@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, cast
 from uuid import uuid4
 from pydantic_ai import Agent
@@ -81,8 +81,10 @@ class HawkerVisionModule:
         model_name: Optional[str] = None,
         local_profile: LocalModelProfile | None = None,
     ):
+        self.provider = provider
         if local_profile is not None:
             self.model = LLMFactory.from_profile(local_profile)
+            self.provider = local_profile.provider
         else:
             self.model = LLMFactory.get_model(provider, model_name)
         
@@ -105,6 +107,14 @@ class HawkerVisionModule:
             output_type=MealState,
             system_prompt=system_prompt
         )
+        logger.info(
+            "hawker_vision_model_destination %s",
+            LLMFactory.describe_model_destination(self.model),
+        )
+
+    def _endpoint(self) -> str:
+        provider_obj = getattr(self.model, "provider", getattr(self.model, "_provider", None))
+        return cast(str, getattr(provider_obj, "base_url", "default"))
 
     def _build_clarification_response(
         self,
@@ -217,7 +227,7 @@ class HawkerVisionModule:
             return f"{prompt} {context}", image_input.source, image_input.filename
         return prompt, None, None
 
-    async def analyze_dish(self, image_input: Any) -> VisionResult:
+    async def analyze_dish(self, image_input: Any, user_id: str | None = None) -> VisionResult:
         """
         Analyzes a dish image (simulated or real).
         
@@ -227,6 +237,7 @@ class HawkerVisionModule:
                          or we pass a description if image processing isn't fully wired.
         """
         started = time.perf_counter()
+        request_id = str(uuid4())
         try:
             # In a real implementation with pydantic-ai and multimodal models:
             # result = await self.agent.run("Analyze this image.", files=[image_input])
@@ -235,10 +246,15 @@ class HawkerVisionModule:
             
             prompt, source, filename = self._build_prompt(image_input)
             logger.info(
-                "hawker_vision_analyze_start source=%s filename=%s model=%s",
+                "hawker_vision_analyze_start request_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s destination=%s",
+                request_id,
+                user_id,
                 source,
                 filename,
+                self.provider,
                 getattr(self.model, "model_name", "unknown"),
+                self._endpoint(),
+                LLMFactory.describe_model_destination(self.model),
             )
 
             if isinstance(image_input, ImageInput) and isinstance(self.model, TestModel):
@@ -251,9 +267,14 @@ class HawkerVisionModule:
                 )
 
             logger.info(
-                "hawker_vision_request source=%s filename=%s",
+                "hawker_vision_request request_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s",
+                request_id,
+                user_id,
                 source,
                 filename,
+                self.provider,
+                getattr(self.model, "model_name", "unknown"),
+                self._endpoint(),
             )
             
             # Execute Agent
@@ -268,6 +289,13 @@ class HawkerVisionModule:
             # 1) Extremely low confidence: deterministic clarification flow
             if meal_state.confidence_score < 0.4:
                 elapsed = (time.perf_counter() - started) * 1000.0
+                logger.info(
+                    "hawker_vision_clarification request_id=%s user_id=%s reason=low_confidence confidence=%.3f latency_ms=%.2f",
+                    request_id,
+                    user_id,
+                    meal_state.confidence_score,
+                    elapsed,
+                )
                 return self._build_clarification_response(
                     reason="Clarification required due to low confidence",
                     confidence_score=meal_state.confidence_score,
@@ -285,6 +313,18 @@ class HawkerVisionModule:
                 needs_review = True
 
             elapsed = (time.perf_counter() - started) * 1000.0
+            logger.info(
+                "hawker_vision_analyze_complete request_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s latency_ms=%.2f manual_review=%s",
+                request_id,
+                user_id,
+                source,
+                filename,
+                self.provider,
+                getattr(self.model, "model_name", "unknown"),
+                self._endpoint(),
+                elapsed,
+                needs_review,
+            )
             return VisionResult(
                 primary_state=meal_state,
                 raw_ai_output=(
@@ -298,6 +338,16 @@ class HawkerVisionModule:
         except Exception as e:
             logger.error(f"Vision Pipeline Failed: {e}")
             elapsed = (time.perf_counter() - started) * 1000.0
+            logger.error(
+                "hawker_vision_analyze_failed request_id=%s user_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f error=%s",
+                request_id,
+                user_id,
+                self.provider,
+                getattr(self.model, "model_name", "unknown"),
+                self._endpoint(),
+                elapsed,
+                e,
+            )
             return self._build_clarification_response(
                 reason=f"Vision pipeline failed: {e}",
                 source=getattr(image_input, "source", None),
@@ -311,7 +361,7 @@ class HawkerVisionModule:
         user_id: str,
     ) -> tuple[VisionResult, MealRecognitionRecord]:
         logger.info("hawker_vision_analyze_and_record_start user_id=%s", user_id)
-        result = await self.analyze_dish(image_input)
+        result = await self.analyze_dish(image_input, user_id=user_id)
         multi_item_count = 1
         if isinstance(image_input, ImageInput):
             raw = image_input.metadata.get("multi_item_count", "1")
@@ -322,7 +372,7 @@ class HawkerVisionModule:
         record = MealRecognitionRecord(
             id=str(uuid4()),
             user_id=user_id,
-            captured_at=datetime.utcnow(),
+            captured_at=datetime.now(timezone.utc),
             source=getattr(image_input, "source", "unknown"),
             meal_state=result.primary_state,
             analysis_version="hawker_vision_v2",

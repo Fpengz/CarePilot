@@ -1,10 +1,8 @@
 import asyncio
-import logging
 from datetime import date, datetime, timezone
 from typing import cast
 from uuid import uuid4
 
-import logfire
 import streamlit as st
 
 from dietary_guardian.agents.hawker_vision import HawkerVisionModule
@@ -42,8 +40,6 @@ from dietary_guardian.models.report import ReportInput
 from dietary_guardian.logging_config import get_logger, setup_logging
 
 setup_logging("dietary-guardian-app")
-logfire.configure(send_to_logfire=False)
-logging.getLogger().addHandler(cast(logging.Handler, logfire.LogfireLoggingHandler()))
 logger = get_logger(__name__)
 
 st.set_page_config(page_title="Dietary Guardian SG", page_icon="🍲", layout="wide")
@@ -87,6 +83,11 @@ role = cast(
     ),
 )
 runtime_mode = st.sidebar.radio("Model runtime", options=["cloud", "local"], index=0)
+notification_channels = st.sidebar.multiselect(
+    "Notification channels",
+    options=["in_app", "push", "telegram", "whatsapp", "wechat"],
+    default=["in_app", "push"],
+)
 
 selected_provider = ModelProvider.GEMINI.value
 selected_model_name = app_config.models.primary_model
@@ -117,11 +118,12 @@ else:
 
 st.sidebar.caption(f"Active runtime: `{selected_provider}` / `{selected_model_name}`")
 logger.info(
-    "app_session_start role=%s runtime_mode=%s provider=%s model=%s",
+    "app_session_start role=%s runtime_mode=%s provider=%s model=%s channels=%s",
     role,
     runtime_mode,
     selected_provider,
     selected_model_name,
+    notification_channels,
 )
 
 mr_tan = UserProfile(
@@ -211,7 +213,7 @@ if st.button("Generate Today Reminders"):
     reminders = generate_daily_reminders(mr_tan, example_regimens, date.today())
     for reminder in reminders:
         repo.save_reminder_event(reminder)
-        dispatch_reminder(reminder, ["in_app", "push"], force_push_fail=False)
+        dispatch_reminder(reminder, notification_channels, force_push_fail=False)
     logger.info("app_reminders_generated user_id=%s count=%s", mr_tan.id, len(reminders))
     st.success(f"Generated {len(reminders)} reminders")
 

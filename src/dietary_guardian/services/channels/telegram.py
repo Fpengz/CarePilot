@@ -1,0 +1,89 @@
+import json
+import os
+from datetime import datetime, timezone
+from urllib import error, request
+
+from dietary_guardian.logging_config import get_logger
+from dietary_guardian.models.medication import ReminderEvent
+from dietary_guardian.services.channels.base import ChannelResult
+
+logger = get_logger(__name__)
+
+
+class TelegramChannel:
+    name = "telegram"
+
+    def __init__(self) -> None:
+        self.bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+        self.chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
+        self.dev_mode = os.getenv("TELEGRAM_DEV_MODE", "1") == "1"
+
+    def _build_endpoint(self) -> str:
+        return f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
+
+    def _build_payload(self, reminder_event: ReminderEvent) -> dict[str, str]:
+        text = (
+            f"Medication reminder: {reminder_event.medication_name} "
+            f"{reminder_event.dosage_text} at {reminder_event.scheduled_at.isoformat()}"
+        )
+        return {"chat_id": self.chat_id, "text": text}
+
+    def send(self, reminder_event: ReminderEvent) -> ChannelResult:
+        if not self.bot_token or not self.chat_id:
+            logger.warning("telegram_send_missing_config event_id=%s", reminder_event.id)
+            return ChannelResult(
+                channel=self.name,
+                success=False,
+                error="missing telegram config",
+                destination="telegram://unconfigured",
+            )
+
+        endpoint = self._build_endpoint()
+        payload = self._build_payload(reminder_event)
+        logger.info(
+            "telegram_send_start event_id=%s destination=%s dev_mode=%s",
+            reminder_event.id,
+            endpoint,
+            self.dev_mode,
+        )
+
+        if self.dev_mode:
+            logger.info("telegram_send_dev_mode_skip_network event_id=%s", reminder_event.id)
+            return ChannelResult(
+                channel=self.name,
+                success=True,
+                delivered_at=datetime.now(timezone.utc),
+                destination=endpoint,
+            )
+
+        body = json.dumps(payload).encode("utf-8")
+        req = request.Request(
+            endpoint,
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with request.urlopen(req, timeout=10) as resp:  # noqa: S310
+                ok = 200 <= resp.status < 300
+                if not ok:
+                    return ChannelResult(
+                        channel=self.name,
+                        success=False,
+                        error=f"telegram http {resp.status}",
+                        destination=endpoint,
+                    )
+                return ChannelResult(
+                    channel=self.name,
+                    success=True,
+                    delivered_at=datetime.now(timezone.utc),
+                    destination=endpoint,
+                )
+        except error.URLError as exc:
+            logger.error("telegram_send_error event_id=%s error=%s", reminder_event.id, exc)
+            return ChannelResult(
+                channel=self.name,
+                success=False,
+                error=str(exc),
+                destination=endpoint,
+            )

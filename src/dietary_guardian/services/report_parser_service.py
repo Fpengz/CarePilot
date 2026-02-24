@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot, ReportInput
@@ -56,7 +56,7 @@ def parse_report_input(report_input: ReportInput) -> list[BiomarkerReading]:
             BiomarkerReading(
                 name=canonical_name,
                 value=value,
-                measured_at=datetime.utcnow(),
+                measured_at=datetime.now(timezone.utc),
                 source_doc_id="uploaded_report",
             )
         )

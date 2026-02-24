@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from uuid import uuid4
 
 from dietary_guardian.logging_config import get_logger
@@ -117,11 +117,11 @@ def mark_meal_confirmation(
     if confirmed:
         event.meal_confirmation = "yes"
         event.status = "acknowledged"
-        event.ack_at = confirmed_at or datetime.utcnow()
+        event.ack_at = confirmed_at or datetime.now(timezone.utc)
     else:
         event.meal_confirmation = "no"
         event.status = "missed"
-        event.ack_at = confirmed_at or datetime.utcnow()
+        event.ack_at = confirmed_at or datetime.now(timezone.utc)
 
     repository.save_reminder_event(event)
     logger.info(

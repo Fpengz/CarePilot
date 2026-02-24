@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -8,7 +8,7 @@ class ReportInput(BaseModel):
     source: Literal["pdf", "pasted_text"]
     content_bytes: bytes | None = None
     text: str | None = None
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class BiomarkerReading(BaseModel):

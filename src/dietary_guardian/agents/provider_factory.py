@@ -35,6 +35,17 @@ class LLMFactory:
         return model
 
     @staticmethod
+    def describe_model_destination(model: ModelType) -> str:
+        model_name = getattr(model, "model_name", getattr(model, "model", "unknown"))
+        provider_obj = getattr(model, "provider", getattr(model, "_provider", None))
+        base_url = None
+        if provider_obj is not None:
+            base_url = getattr(provider_obj, "base_url", None)
+        if base_url:
+            return f"model={model_name} endpoint={base_url}"
+        return f"model={model_name} endpoint=default"
+
+    @staticmethod
     def from_profile(profile: LocalModelProfile) -> ModelType:
         if not profile.enabled:
             logger.warning("provider_profile_disabled profile_id=%s", profile.id)

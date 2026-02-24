@@ -42,8 +42,39 @@ uv run python -m vllm.entrypoints.openai.api_server \
 
 Then in the app sidebar:
 - Set `Model runtime` to `local`
-- Choose profile `ollama_llama3` or `vllm_qwen`
+- Choose profile `ollama_qwen3-vl:4b` or `vllm_qwen`
 - Optionally override model name / base URL for local experiments
+
+### 2b. Telegram Dev Notifications
+```bash
+export TELEGRAM_BOT_TOKEN="your-bot-token"
+export TELEGRAM_CHAT_ID="your-chat-id"
+export TELEGRAM_DEV_MODE="1"  # dev mode skips real network sends
+```
+
+In the app sidebar, include channels under `Notification channels`:
+- `in_app` and `push` are always available.
+- `telegram` sends to Telegram Bot API (or skips network in dev mode).
+- `whatsapp` and `wechat` are modular stubs in this version (`whatsapp://stub`, `wechat://stub`) for adapter integration.
+
+### 2c. Debug Logging
+```bash
+export DIETARY_GUARDIAN_LOG_LEVEL="INFO"
+```
+
+Model request logs include destination trace fields:
+- `provider`
+- `model`
+- `endpoint`
+- `request_id`
+- `user_id` (when available)
+
+Notification logs include:
+- `channel`
+- `destination`
+- `event_id`
+- `attempt`
+- `success`/`failure`
 
 ### 3. CLI Demonstration
 ```bash
@@ -63,20 +94,20 @@ Our system uses a multi-tiered verification strategy to ensure 0% critical safet
 uv run ruff check .
 
 # Strict Type Checking
-uv run ty check .
+uv run ty check . --extra-search-path src --output-format concise
 ```
 
 ### 2. Unit & Integration Tests
 ```bash
 # Run the full test suite
-PYTHONPATH=src uv run pytest
+uv run pytest -q
 ```
 
 ### 3. Clinical Simulation (Hypothesis)
 We use property-based testing to simulate "Virtual Patients" and stress-test the safety engine against 10,000+ randomized meal scenarios.
 ```bash
 # Run property-based safety tests
-PYTHONPATH=src uv run pytest tests/test_virtual_patient.py
+uv run pytest -q tests/test_virtual_patient.py
 ```
 
 ---

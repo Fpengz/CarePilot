@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from dietary_guardian.logging_config import get_logger
@@ -306,7 +306,7 @@ class SQLiteRepository:
                 INSERT INTO recommendation_records(user_id, created_at, payload_json)
                 VALUES (?, ?, ?)
                 """,
-                (user_id, datetime.utcnow().isoformat(), json.dumps(payload)),
+                (user_id, datetime.now(timezone.utc).isoformat(), json.dumps(payload)),
             )
             conn.commit()
         logger.info("save_recommendation user_id=%s payload_keys=%s", user_id, sorted(payload.keys()))

@@ -8,6 +8,8 @@ from pydantic_ai import Agent
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.models.test import TestModel
 
+from dietary_guardian.agents.provider_factory import LLMFactory
+from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.meal import MealEvent
 from dietary_guardian.models.user import UserProfile
 from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
@@ -15,13 +17,16 @@ from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
 load_dotenv()
 logfire.configure(send_to_logfire=False)
 logfire_api = cast(Any, logfire)
+logger = get_logger(__name__)
 
 def get_model():
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
         return TestModel()
     os.environ.setdefault("GOOGLE_API_KEY", api_key)
-    return GoogleModel("gemini-1.5-flash")
+    model = GoogleModel("gemini-1.5-flash")
+    logger.info("dietary_agent_model_destination %s", LLMFactory.describe_model_destination(model))
+    return model
 
 
 class AgentResponse(BaseModel):
@@ -45,6 +50,10 @@ dietary_agent = Agent(
         "Always encourage the 'Kampong Spirit'—remind them they are doing this for their family and neighbors."
     ),
 )
+try:
+    _dietary_destination = LLMFactory.describe_model_destination(dietary_agent.model)  # type: ignore[attr-defined]
+except Exception:
+    _dietary_destination = "model=unknown endpoint=default"
 
 
 async def process_meal_request(user: UserProfile, meal: MealEvent) -> AgentResponse:
@@ -57,6 +66,12 @@ async def process_meal_request(user: UserProfile, meal: MealEvent) -> AgentRespo
 
             # 2. AI Reasoning (if safe)
             logfire_api.info("calling_dietary_agent", meal=meal.name)
+            logger.info(
+                "dietary_agent_request user_id=%s meal=%s destination=%s",
+                user.id,
+                meal.name,
+                _dietary_destination,
+            )
             result = await dietary_agent.run(
                 f"Analyze this meal for {user.name}: {meal.model_dump_json()}", deps=user
             )

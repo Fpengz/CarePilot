@@ -6,9 +6,9 @@ def test_default_local_model_profiles_are_available() -> None:
     config = AppConfig()
     profiles = config.local_models.profiles
 
-    assert "ollama_llama3" in profiles
+    assert "ollama_qwen3-vl:4b" in profiles
     assert "vllm_qwen" in profiles
-    assert profiles["ollama_llama3"].provider == "ollama"
+    assert profiles["ollama_qwen3-vl:4b"].provider == "ollama"
     assert profiles["vllm_qwen"].provider == "vllm"
 
 
