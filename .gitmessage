@@ -1,0 +1,16 @@
+<type>(<scope>): <subject>
+
+Summary
+- <what changed>
+- <why>
+
+Implementation
+- <key files/modules>
+- <notable design decisions>
+
+Validation
+- <commands run>
+- <results>
+
+Notes
+- <follow-ups or caveats>

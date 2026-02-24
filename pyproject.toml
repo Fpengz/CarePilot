@@ -1,0 +1,34 @@
+[project]
+name = "dietary-tools"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "google-genai>=1.64.0",
+    "hypothesis>=6.151.9",
+    "logfire>=4.25.0",
+    "mypy>=1.19.1",
+    "pydantic>=2.12.5",
+    "pydantic-ai>=1.62.0",
+    "pytest-anyio>=0.0.0",
+    "python-dotenv>=1.2.1",
+    "rich>=14.3.3",
+    "ruff>=0.15.2",
+    "streamlit>=1.54.0",
+    "ty>=0.0.18",
+    "watchdog>=6.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[tool.mypy]
+# Ensure mypy resolves local package modules under src/ to avoid duplicate-module mapping
+mypy_path = ["src"]
+namespace_packages = true
+ignore_missing_imports = false
+strict = true
+files = ["dietary_guardian"]
