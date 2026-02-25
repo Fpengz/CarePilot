@@ -87,6 +87,7 @@ def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(monkeypa
     dispatch_reminder_async(event, ["telegram"], repository=repo)
 
     assert captured["scheduled_at"] == event.scheduled_at
+    assert captured["scheduled_at"].tzinfo is None
     assert captured["dosage_text"] == event.dosage_text
     assert captured["medication_name"] == event.medication_name
 

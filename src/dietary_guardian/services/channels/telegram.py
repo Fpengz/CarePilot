@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timezone
 from urllib import error, request
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.logging_config import get_logger
@@ -18,14 +19,24 @@ class TelegramChannel:
         self.bot_token = settings.telegram_bot_token or ""
         self.chat_id = settings.telegram_chat_id or ""
         self.dev_mode = settings.telegram_dev_mode
+        self.app_timezone = settings.app_timezone
 
     def _build_endpoint(self) -> str:
         return f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
 
+    def _format_scheduled_at(self, value: datetime) -> str:
+        try:
+            local_tz = ZoneInfo(self.app_timezone)
+        except ZoneInfoNotFoundError:
+            local_tz = timezone.utc
+        dt = value if value.tzinfo is not None else value.replace(tzinfo=local_tz)
+        local_dt = dt.astimezone(local_tz)
+        return local_dt.isoformat(timespec="seconds")
+
     def _build_payload(self, reminder_event: ReminderEvent) -> dict[str, str]:
         text = (
             f"Medication reminder: {reminder_event.medication_name} "
-            f"{reminder_event.dosage_text} at {reminder_event.scheduled_at.isoformat()}"
+            f"{reminder_event.dosage_text} at {self._format_scheduled_at(reminder_event.scheduled_at)}"
         )
         return {"chat_id": self.chat_id, "text": text}
 

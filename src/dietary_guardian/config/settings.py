@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Literal
 
 from dotenv import load_dotenv
-from pydantic import AnyHttpUrl, model_validator
+from pydantic import AnyHttpUrl, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     ollama_base_url: AnyHttpUrl | str | None = "http://localhost:11434/v1"
 
     dietary_guardian_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    app_timezone: str = "Asia/Singapore"
 
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
@@ -27,6 +28,9 @@ class Settings(BaseSettings):
     use_alert_outbox_v2: bool = True
     alert_worker_max_attempts: int = 3
     alert_worker_concurrency: int = 4
+
+    image_downscale_enabled: bool = False
+    image_max_side_px: int = Field(default=1024, ge=256, le=4096)
 
     model_config = SettingsConfigDict(
         env_file=".env",

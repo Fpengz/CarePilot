@@ -260,9 +260,9 @@ def _alert_to_reminder(message: AlertMessage):
     dosage_text = message.payload.get("dosage_text", message.type)
     scheduled_at_raw = message.payload.get("scheduled_at")
     try:
-        scheduled_at = datetime.fromisoformat(scheduled_at_raw) if scheduled_at_raw else datetime.now(timezone.utc)
+        scheduled_at = datetime.fromisoformat(scheduled_at_raw) if scheduled_at_raw else message.created_at
     except ValueError:
-        scheduled_at = datetime.now(timezone.utc)
+        scheduled_at = message.created_at
     return ReminderEvent(
         id=f"alert-{message.alert_id}",
         user_id=message.payload.get("user_id", "system"),

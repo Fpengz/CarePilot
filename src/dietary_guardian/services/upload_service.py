@@ -1,4 +1,7 @@
+from io import BytesIO
 from typing import Protocol
+
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.meal import ImageInput
@@ -23,9 +26,81 @@ def _estimate_multi_item_count(filename: str | None) -> int:
     return max(1, min(4, len(tokens)))
 
 
+def _maybe_downscale_image(
+    payload: bytes,
+    mime_type: str,
+    *,
+    enabled: bool,
+    max_side_px: int,
+) -> tuple[bytes, dict[str, str]]:
+    metadata: dict[str, str] = {
+        "downscaled": "false",
+        "original_bytes": str(len(payload)),
+    }
+    if not enabled:
+        return payload, metadata
+
+    try:
+        with Image.open(BytesIO(payload)) as img:
+            normalized = ImageOps.exif_transpose(img)
+            width, height = normalized.size
+            metadata["original_width"] = str(width)
+            metadata["original_height"] = str(height)
+            longest = max(width, height)
+            if longest <= max_side_px:
+                metadata["downscale_reason"] = "below_threshold"
+                return payload, metadata
+
+            scale = max_side_px / float(longest)
+            new_size = (max(1, int(width * scale)), max(1, int(height * scale)))
+            resized = normalized.copy()
+            resized.thumbnail(new_size, Image.Resampling.LANCZOS)
+
+            out = BytesIO()
+            save_format = {
+                "image/jpeg": "JPEG",
+                "image/png": "PNG",
+                "image/webp": "WEBP",
+            }.get(mime_type, "JPEG")
+            resized.save(out, format=save_format)
+            resized_bytes = out.getvalue()
+            metadata.update(
+                {
+                    "downscaled": "true",
+                    "resized_width": str(resized.size[0]),
+                    "resized_height": str(resized.size[1]),
+                    "resized_bytes": str(len(resized_bytes)),
+                    "max_side_px": str(max_side_px),
+                }
+            )
+            logger.info(
+                "build_image_input_downscaled mime_type=%s original=%sx%s resized=%sx%s bytes_before=%s bytes_after=%s max_side_px=%s",
+                mime_type,
+                width,
+                height,
+                resized.size[0],
+                resized.size[1],
+                len(payload),
+                len(resized_bytes),
+                max_side_px,
+            )
+            return resized_bytes, metadata
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        logger.warning(
+            "build_image_input_downscale_skipped mime_type=%s reason=%s",
+            mime_type,
+            exc,
+        )
+        metadata["downscale_reason"] = "decode_failed"
+        return payload, metadata
+
+
 def build_image_input(
     uploaded_file: UploadedFileLike | None,
     camera_file: UploadedFileLike | None,
+    *,
+    downscale_enabled: bool = False,
+    max_side_px: int = 1024,
 ) -> tuple[ImageInput | None, str | None]:
     candidate = uploaded_file or camera_file
     if candidate is None:
@@ -40,7 +115,13 @@ def build_image_input(
             "Unsupported image format. Please use JPG, PNG, or WEBP.",
         )
 
-    payload = candidate.getvalue()
+    raw_payload = candidate.getvalue()
+    payload, preprocess_meta = _maybe_downscale_image(
+        raw_payload,
+        mime_type,
+        enabled=downscale_enabled,
+        max_side_px=max_side_px,
+    )
     if not payload:
         logger.warning("build_image_input_empty_payload filename=%s", getattr(candidate, "name", None))
         return None, "Image file is empty. Please retake or re-upload."
@@ -52,7 +133,10 @@ def build_image_input(
         filename=filename,
         mime_type=mime_type,
         content=payload,
-        metadata={"multi_item_count": str(_estimate_multi_item_count(filename))},
+        metadata={
+            "multi_item_count": str(_estimate_multi_item_count(filename)),
+            **preprocess_meta,
+        },
     )
     logger.info(
         "build_image_input_success source=%s filename=%s mime_type=%s bytes=%s multi_item_count=%s",

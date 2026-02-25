@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib import request
 
 from dietary_guardian.config.settings import get_settings
@@ -39,12 +39,43 @@ def test_telegram_dev_mode_skips_network(monkeypatch) -> None:
 
 def test_telegram_missing_config_returns_failure(monkeypatch) -> None:
     get_settings.cache_clear()
-    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
-    monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "")
 
     channel = TelegramChannel()
     result = channel.send(_event())
 
     assert result.success is False
     assert "missing telegram config" in (result.error or "")
+    get_settings.cache_clear()
+
+
+def test_telegram_payload_formats_local_timezone(monkeypatch) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "chat")
+    monkeypatch.setenv("TELEGRAM_DEV_MODE", "1")
+    monkeypatch.setenv("APP_TIMEZONE", "Asia/Singapore")
+
+    channel = TelegramChannel()
+    event = _event().model_copy(update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3, tzinfo=timezone.utc)})
+    payload = channel._build_payload(event)
+
+    assert "+08:00" in payload["text"]
+    assert "+00:00" not in payload["text"]
+    get_settings.cache_clear()
+
+
+def test_telegram_payload_preserves_naive_local_wall_clock(monkeypatch) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "chat")
+    monkeypatch.setenv("TELEGRAM_DEV_MODE", "1")
+    monkeypatch.setenv("APP_TIMEZONE", "Asia/Singapore")
+
+    channel = TelegramChannel()
+    event = _event().model_copy(update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3)})
+    payload = channel._build_payload(event)
+
+    assert "09:48:03+08:00" in payload["text"]
     get_settings.cache_clear()
