@@ -79,3 +79,15 @@ def test_telegram_payload_preserves_naive_local_wall_clock(monkeypatch) -> None:
 
     assert "09:48:03+08:00" in payload["text"]
     get_settings.cache_clear()
+
+
+def test_telegram_channel_reads_timeout_from_settings(monkeypatch) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "chat")
+    monkeypatch.setenv("TELEGRAM_REQUEST_TIMEOUT_SECONDS", "42")
+
+    channel = TelegramChannel()
+
+    assert channel.request_timeout_seconds == 42.0
+    get_settings.cache_clear()

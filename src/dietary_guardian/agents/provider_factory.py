@@ -2,6 +2,7 @@ import os
 from contextlib import suppress
 from enum import StrEnum
 
+from openai import AsyncOpenAI
 from dietary_guardian.logging_config import get_logger
 from pydantic import ValidationError
 from pydantic_ai.models.google import GoogleModel
@@ -10,7 +11,7 @@ from pydantic_ai.models.test import TestModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from dietary_guardian.config.runtime import LocalModelProfile
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.settings import Settings, get_settings
 
 ModelType = GoogleModel | OpenAIChatModel | TestModel
 logger = get_logger(__name__)
@@ -35,6 +36,57 @@ class LLMFactory:
         return model
 
     @staticmethod
+    def _settings_default(field_name: str, fallback: str | float | int) -> str | float | int:
+        with suppress(Exception):
+            default = Settings.model_fields[field_name].default
+            if default is not None:
+                return default
+        return fallback
+
+    @staticmethod
+    def _local_network_config() -> tuple[float, int]:
+        try:
+            settings = get_settings()
+            return (
+                float(settings.local_llm_request_timeout_seconds),
+                int(settings.local_llm_transport_max_retries),
+            )
+        except ValidationError:
+            timeout_default = str(LLMFactory._settings_default("local_llm_request_timeout_seconds", 1200.0))
+            retries_default = str(LLMFactory._settings_default("local_llm_transport_max_retries", 0))
+            timeout_raw = os.getenv("LOCAL_LLM_REQUEST_TIMEOUT_SECONDS", timeout_default)
+            retries_raw = os.getenv("LOCAL_LLM_TRANSPORT_MAX_RETRIES", retries_default)
+            with suppress(ValueError):
+                timeout = float(timeout_raw)
+                retries = int(retries_raw)
+                return timeout, retries
+            return float(timeout_default), int(retries_default)
+
+    @staticmethod
+    def _build_local_provider(base_url: str, api_key: str) -> OpenAIProvider:
+        timeout_seconds, max_retries = LLMFactory._local_network_config()
+        logger.info(
+            "provider_local_network_config base_url=%s timeout_seconds=%.1f transport_max_retries=%s",
+            base_url,
+            timeout_seconds,
+            max_retries,
+        )
+        try:
+            openai_client = AsyncOpenAI(
+                base_url=base_url,
+                api_key=api_key,
+                timeout=timeout_seconds,
+                max_retries=max_retries,
+            )
+            return OpenAIProvider(openai_client=openai_client)
+        except TypeError:
+            logger.warning(
+                "provider_local_network_config_compat_fallback base_url=%s reason=provider_constructor_does_not_accept_openai_client",
+                base_url,
+            )
+            return OpenAIProvider(base_url=base_url, api_key=api_key)
+
+    @staticmethod
     def describe_model_destination(model: ModelType) -> str:
         model_name = getattr(model, "model_name", getattr(model, "model", "unknown"))
         provider_obj = getattr(model, "provider", getattr(model, "_provider", None))
@@ -57,7 +109,7 @@ class LLMFactory:
                 api_key = get_settings().local_llm_api_key
             except ValidationError:
                 api_key = "ollama"
-        provider = OpenAIProvider(base_url=profile.base_url, api_key=api_key)
+        provider = LLMFactory._build_local_provider(profile.base_url, api_key)
         model = OpenAIChatModel(profile.model_name, provider=provider)
         logger.info(
             "provider_from_profile profile_id=%s provider=%s model=%s base_url=%s",
@@ -101,15 +153,20 @@ class LLMFactory:
         if target_provider in (ModelProvider.OLLAMA.value, ModelProvider.VLLM.value):
             if settings is not None:
                 base_url = str(
-                    settings.local_llm_base_url or settings.ollama_base_url or "http://localhost:11434/v1"
+                    settings.local_llm_base_url
+                    or settings.ollama_base_url
+                    or LLMFactory._settings_default("local_llm_base_url", "http://localhost:11434/v1")
                 )
                 api_key = settings.local_llm_api_key
                 target_model = model_name or settings.local_llm_model
             else:
-                base_url = os.getenv("LOCAL_LLM_BASE_URL") or os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434/v1"
-                api_key = os.getenv("LOCAL_LLM_API_KEY", "ollama")
-                target_model = model_name or os.getenv("LOCAL_LLM_MODEL", "llama3")
-            local_provider = OpenAIProvider(base_url=base_url, api_key=api_key)
+                base_url_default = str(LLMFactory._settings_default("local_llm_base_url", "http://localhost:11434/v1"))
+                api_key_default = str(LLMFactory._settings_default("local_llm_api_key", "ollama"))
+                model_default = str(LLMFactory._settings_default("local_llm_model", "llama3"))
+                base_url = os.getenv("LOCAL_LLM_BASE_URL") or os.getenv("OLLAMA_BASE_URL") or base_url_default
+                api_key = os.getenv("LOCAL_LLM_API_KEY", api_key_default)
+                target_model = model_name or os.getenv("LOCAL_LLM_MODEL", model_default)
+            local_provider = LLMFactory._build_local_provider(base_url, api_key)
             model = OpenAIChatModel(target_model, provider=local_provider)
             logger.info(
                 "provider_selected provider=%s model=%s base_url=%s",

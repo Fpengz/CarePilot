@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     local_llm_api_key: str = "ollama"
     local_llm_model: str = "qwen3-vl:4b"
     ollama_base_url: AnyHttpUrl | str | None = "http://localhost:11434/v1"
+    local_llm_request_timeout_seconds: float = Field(default=1200.0, ge=1.0, le=7200.0)
+    local_llm_transport_max_retries: int = Field(default=0, ge=0, le=10)
 
     dietary_guardian_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     app_timezone: str = "Asia/Singapore"
@@ -23,6 +25,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
     telegram_dev_mode: bool = True
+    telegram_request_timeout_seconds: float = Field(default=10.0, ge=1.0, le=300.0)
 
     use_inference_engine_v2: bool = True
     use_alert_outbox_v2: bool = True

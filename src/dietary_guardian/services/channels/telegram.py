@@ -20,6 +20,7 @@ class TelegramChannel:
         self.chat_id = settings.telegram_chat_id or ""
         self.dev_mode = settings.telegram_dev_mode
         self.app_timezone = settings.app_timezone
+        self.request_timeout_seconds = settings.telegram_request_timeout_seconds
 
     def _build_endpoint(self) -> str:
         return f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
@@ -76,7 +77,7 @@ class TelegramChannel:
             method="POST",
         )
         try:
-            with request.urlopen(req, timeout=10) as resp:  # noqa: S310
+            with request.urlopen(req, timeout=self.request_timeout_seconds) as resp:  # noqa: S310
                 ok = 200 <= resp.status < 300
                 if not ok:
                     return ChannelResult(
