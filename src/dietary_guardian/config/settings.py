@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     telegram_chat_id: str | None = None
     telegram_dev_mode: bool = True
 
+    use_inference_engine_v2: bool = True
+    use_alert_outbox_v2: bool = True
+    alert_worker_max_attempts: int = 3
+    alert_worker_concurrency: int = 4
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

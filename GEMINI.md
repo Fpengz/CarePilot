@@ -140,3 +140,45 @@ We do not test on production users first.
 3.  **Singlish Personality:** The agent uses an empathetic "Uncle" persona, switching to a firm clinical tone for safety violations.
 4.  **Local-First Persistence:** Clinical data and block-level scores are managed via local SQLite/Dictionary stores for sub-second performance.
 5.  **Virtual Patient Testing:** A dedicated `Hypothesis` suite simulates thousands of "Mr. Tan" scenarios to ensure safety rules never break.
+
+---
+
+## 8. Architecture-as-Code Views
+
+### Topology View
+```mermaid
+flowchart LR
+    INPUT["Sensory Input (Image and Text)"] --> NORMALIZE["Normalization Layer"]
+    NORMALIZE --> SAFETY["Safety Gate"]
+    SAFETY --> INFER["Inference Engine Contract"]
+    INFER --> CLOUD["Cloud Strategy"]
+    INFER --> LOCAL["Local Strategy"]
+    INFER --> FALLBACK["Fallback Strategy"]
+    SAFETY --> REASON["Reasoning and Recommendation Service"]
+    REASON --> OUTBOX["Durable Alert Outbox"]
+    OUTBOX --> WORKER["Async Delivery Worker"]
+    WORKER --> SINK["Sink Adapters"]
+    SINK --> EXTERNAL["External Messaging Endpoints"]
+    REASON --> STORE["Persistent State"]
+    OUTBOX --> STORE
+```
+
+### Data Lifecycle View
+```mermaid
+flowchart TD
+    A["Input Capture"] --> B["Context Enrichment and Policy Context"]
+    B --> C["InferenceRequest Build"]
+    C --> D["Strategy Routing by Runtime Profile"]
+    D --> E["Structured InferenceResponse"]
+    E --> F{"Safety and Confidence Evaluation"}
+    F -->|Unsafe| G["Safety Override Response"]
+    F -->|Low confidence| H["Deterministic Clarification Flow"]
+    F -->|Safe| I["Recommendation Output"]
+    I --> J["AlertMessage Enqueue"]
+    J --> K["Outbox Lease and Dispatch"]
+    K --> L{"Delivery Success"}
+    L -->|No| M["Backoff Retry; Dead-Letter Terminal State"]
+    L -->|Yes| N["External State Update"]
+    C --> O["Observability: correlation_id, latency, retry counters"]
+    K --> O
+```

@@ -9,6 +9,7 @@ from dietary_guardian.agents.hawker_vision import HawkerVisionModule
 from dietary_guardian.agents.provider_factory import ModelProvider
 from dietary_guardian.config.runtime import AppConfig, LocalModelProfile
 from dietary_guardian.config.settings import get_settings
+from dietary_guardian.models.alerting import AlertSeverity
 from dietary_guardian.models.medication import MedicationRegimen, TimingType
 from dietary_guardian.models.user import (
     MedicalCondition,
@@ -28,7 +29,7 @@ from dietary_guardian.services.medication_service import (
     generate_daily_reminders,
     mark_meal_confirmation,
 )
-from dietary_guardian.services.notification_service import dispatch_reminder
+from dietary_guardian.services.notification_service import dispatch_reminder, trigger_alert
 from dietary_guardian.services.recommendation_service import generate_recommendation
 from dietary_guardian.services.report_parser_service import (
     build_clinical_snapshot,
@@ -215,7 +216,7 @@ if st.button("Generate Today Reminders"):
     reminders = generate_daily_reminders(mr_tan, example_regimens, date.today())
     for reminder in reminders:
         repo.save_reminder_event(reminder)
-        dispatch_reminder(reminder, notification_channels, force_push_fail=False)
+        dispatch_reminder(reminder, notification_channels, force_push_fail=False, repository=repo)
     logger.info("app_reminders_generated user_id=%s count=%s", mr_tan.id, len(reminders))
     st.success(f"Generated {len(reminders)} reminders")
 
@@ -324,6 +325,36 @@ st.json(view_stats)
 
 st.write("### Session Meal Metadata")
 st.json(st.session_state.meal_history_meta)
+
+st.divider()
+st.write("### Testing Panel: Trigger Alert")
+with st.form("trigger_alert_form"):
+    alert_type = st.text_input("Alert type", value="manual_test_alert")
+    alert_severity = cast(
+        AlertSeverity,
+        st.selectbox("Severity", options=["info", "warning", "critical"], index=1),
+    )
+    alert_message = st.text_area("Payload message", value="Manual end-to-end alert verification")
+    alert_destinations = st.multiselect(
+        "Alert destinations",
+        options=["in_app", "push", "telegram", "whatsapp", "wechat"],
+        default=["in_app"],
+    )
+    submit_alert = st.form_submit_button("Trigger Alert")
+
+if submit_alert:
+    alert, deliveries = trigger_alert(
+        alert_type=alert_type,
+        severity=alert_severity,
+        payload={"message": alert_message},
+        destinations=alert_destinations,
+        repository=repo,
+    )
+    st.success(f"Alert queued: {alert.alert_id}")
+    st.caption(f"Correlation ID: {alert.correlation_id}")
+    st.json([item.model_dump() for item in deliveries])
+    st.write("Outbox state timeline")
+    st.json([item.model_dump() for item in repo.list_alert_records(alert.alert_id)])
 
 st.write("### Kampong Spirit Challenge")
 leaderboard = st.session_state.social_service.get_leaderboard("main_challenge")

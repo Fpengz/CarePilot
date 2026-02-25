@@ -144,3 +144,41 @@ uv run pytest -q
 ### Phase 5: Policy-Driven Feature Flags
 - Introduce policy-based toggles for role tools and model routing.
 - Add validated feature flag schemas and rollout guards.
+
+## Architecture-as-Code
+### System Topology
+```mermaid
+flowchart LR
+    UI["Interactive Interfaces (Web and CLI)"] --> DOMAIN["Domain Services"]
+    DOMAIN --> SAFETY["Safety Gate"]
+    SAFETY --> ORCH["Inference Engine"]
+    ORCH --> CLOUD["Cloud Strategy"]
+    ORCH --> LOCAL["Local Strategy"]
+    ORCH --> TEST["Fallback Strategy"]
+    DOMAIN --> OUTBOX["Durable Alert Outbox"]
+    OUTBOX --> WORKER["Asynchronous Outbox Worker"]
+    WORKER --> SINKS["Sink Adapters (In-App, Push, Telegram, WhatsApp, WeChat)"]
+    DOMAIN --> DB["Primary Storage"]
+    OUTBOX --> DB
+    SINKS --> EXT["External Messaging APIs"]
+```
+
+### Data Lifecycle
+```mermaid
+flowchart TD
+    A["Raw Input (Image or Text)"] --> B["Payload Normalization and Context Enrichment"]
+    B --> C["Safety Context Build"]
+    C --> D["Inference Request Construction"]
+    D --> E["Inference Engine Strategy Routing"]
+    E --> F["Structured Inference Response"]
+    F --> G{"Confidence and Safety Checks"}
+    G -->|Low confidence or unsafe| H["Deterministic Clarification or Safety Override"]
+    G -->|Safe| I["Recommendation and State Update"]
+    I --> J["Alert Event Publish to Outbox"]
+    J --> K["Asynchronous Worker Delivery"]
+    K --> L{"Sink Delivery Success?"}
+    L -->|No| M["Retry with Backoff; Dead-Letter on Max Attempts"]
+    L -->|Yes| N["External State Update Complete"]
+    D --> O["Observability: correlation_id, request_id, latency_ms"]
+    K --> O
+```

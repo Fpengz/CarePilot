@@ -3,8 +3,6 @@ from datetime import datetime, timezone
 from typing import Optional, Dict, Any, cast
 from uuid import uuid4
 from pydantic_ai import Agent
-from pydantic_ai.models.test import TestModel
-
 from dietary_guardian.models.meal import (
     ImageInput,
     MealState,
@@ -16,7 +14,10 @@ from dietary_guardian.models.meal import (
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.agents.provider_factory import LLMFactory, ModelProvider
 from dietary_guardian.config.runtime import LocalModelProfile
+from dietary_guardian.config.settings import get_settings
 from dietary_guardian.logging_config import get_logger
+from dietary_guardian.models.inference import InferenceModality, InferenceRequest
+from dietary_guardian.services.inference_engine import InferenceEngine
 
 # Configure logging
 logger = get_logger(__name__)
@@ -74,6 +75,25 @@ HPB_DATABASE: Dict[str, Dict[str, Any]] = {
     }
 }
 
+
+class _LazyMealStateAgent:
+    def __init__(self, model: Any, system_prompt: str) -> None:
+        self._model = model
+        self._system_prompt = system_prompt
+        self._agent: Agent | None = None
+
+    def _get_agent(self) -> Agent:
+        if self._agent is None:
+            self._agent = Agent(
+                self._model,
+                output_type=MealState,
+                system_prompt=self._system_prompt,
+            )
+        return self._agent
+
+    async def run(self, prompt: str):
+        return await self._get_agent().run(prompt)
+
 class HawkerVisionModule:
     def __init__(
         self,
@@ -87,6 +107,12 @@ class HawkerVisionModule:
             self.provider = local_profile.provider
         else:
             self.model = LLMFactory.get_model(provider, model_name)
+        engine_model_name = getattr(self.model, "model_name", None)
+        self.inference_engine = InferenceEngine(
+            provider=self.provider,
+            model_name=engine_model_name,
+            model=self.model,
+        )
         
         # System Prompt aligned with GEMINI.md
         system_prompt = (
@@ -102,11 +128,8 @@ class HawkerVisionModule:
             "5. OUTPUT: Strictly return a JSON object matching the MealState schema."
         )
         
-        self.agent = Agent(
-            self.model,
-            output_type=MealState,
-            system_prompt=system_prompt
-        )
+        self.system_prompt = system_prompt
+        self.agent = _LazyMealStateAgent(self.model, self.system_prompt)
         logger.info(
             "hawker_vision_model_destination %s",
             LLMFactory.describe_model_destination(self.model),
@@ -257,7 +280,10 @@ class HawkerVisionModule:
                 LLMFactory.describe_model_destination(self.model),
             )
 
-            if isinstance(image_input, ImageInput) and isinstance(self.model, TestModel):
+            if (
+                isinstance(image_input, ImageInput)
+                and not self.inference_engine.supports(InferenceModality.IMAGE)
+            ):
                 elapsed = (time.perf_counter() - started) * 1000.0
                 return self._build_clarification_response(
                     reason="Selected runtime cannot process raw image bytes in this mode",
@@ -277,11 +303,27 @@ class HawkerVisionModule:
                 self._endpoint(),
             )
             
-            # Execute Agent
-            result = await self.agent.run(prompt)
-            if not isinstance(result.output, MealState):
-                raise TypeError("Model output is not a MealState payload.")
-            meal_state = cast(MealState, result.output)
+            if get_settings().use_inference_engine_v2:
+                request = InferenceRequest(
+                    request_id=request_id,
+                    user_id=user_id,
+                    modality=InferenceModality.IMAGE if isinstance(image_input, ImageInput) else InferenceModality.TEXT,
+                    payload={"prompt": prompt},
+                    runtime_profile={
+                        "provider": self.provider,
+                        "model": str(getattr(self.model, "model_name", "unknown")),
+                    },
+                    trace_context={"source": source or "unknown", "filename": filename or "unknown"},
+                    output_schema=MealState,
+                    system_prompt=self.system_prompt,
+                )
+                inference = await self.inference_engine.infer(request)
+                meal_state = cast(MealState, inference.structured_output)
+            else:
+                result = await self.agent.run(prompt)
+                if not isinstance(result.output, MealState):
+                    raise TypeError("Model output is not a MealState payload.")
+                meal_state = cast(MealState, result.output)
             
             needs_review = False
 

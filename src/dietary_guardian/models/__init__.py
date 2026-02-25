@@ -1,4 +1,12 @@
 from dietary_guardian.models.analytics import EngagementMetrics
+from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage, OutboxRecord
+from dietary_guardian.models.inference import (
+    InferenceHealth,
+    InferenceModality,
+    InferenceRequest,
+    InferenceResponse,
+    ProviderMetadata,
+)
 from dietary_guardian.models.meal import (
     GlycemicIndexLevel,
     ImageInput,
@@ -56,4 +64,12 @@ __all__ = [
     "UserProfile",
     "UserRole",
     "EngagementMetrics",
+    "AlertMessage",
+    "OutboxRecord",
+    "AlertDeliveryResult",
+    "InferenceModality",
+    "ProviderMetadata",
+    "InferenceRequest",
+    "InferenceResponse",
+    "InferenceHealth",
 ]
