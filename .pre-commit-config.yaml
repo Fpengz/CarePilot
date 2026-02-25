@@ -6,10 +6,8 @@ repos:
         entry: tools/precommit_ruff.sh
         language: system
         pass_filenames: false
-        stages: [commit]
       - id: ty-check
         name: ty-check
         entry: tools/precommit_ty.sh
         language: system
         pass_filenames: false
-        stages: [commit]
