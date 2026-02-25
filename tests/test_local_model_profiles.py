@@ -1,3 +1,5 @@
+from typing import cast
+
 from dietary_guardian.agents.provider_factory import LLMFactory
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.config.runtime import AppConfig, LocalModelProfile
@@ -149,4 +151,42 @@ def test_profile_creation_does_not_require_global_provider_validation(monkeypatc
     assert getattr(model, "model_name", None) == "llama3"
     assert captured["base_url"] == "http://localhost:11434/v1"
     assert captured["api_key"] == "profile-secret"
+    get_settings.cache_clear()
+
+
+def test_local_provider_uses_configured_timeout_and_transport_retries(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeAsyncOpenAI:
+        def __init__(self, **kwargs):  # noqa: ANN003
+            captured["async_openai_kwargs"] = kwargs
+
+    class FakeProvider:
+        def __init__(self, *, openai_client=None, **kwargs):  # noqa: ANN003
+            captured["openai_client"] = openai_client
+            captured["provider_kwargs"] = kwargs
+            self.base_url = "http://localhost:11434/v1"
+
+    class FakeModel:
+        def __init__(self, model_name: str, provider: FakeProvider) -> None:
+            self.model_name = model_name
+            self.provider = provider
+
+    monkeypatch.setattr("dietary_guardian.agents.provider_factory.AsyncOpenAI", FakeAsyncOpenAI)
+    monkeypatch.setattr("dietary_guardian.agents.provider_factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("dietary_guardian.agents.provider_factory.OpenAIChatModel", FakeModel)
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
+    monkeypatch.setenv("LOCAL_LLM_MODEL", "qwen3-vl:4b")
+    monkeypatch.setenv("LOCAL_LLM_API_KEY", "ollama")
+    monkeypatch.setenv("LOCAL_LLM_REQUEST_TIMEOUT_SECONDS", "1200")
+    monkeypatch.setenv("LOCAL_LLM_TRANSPORT_MAX_RETRIES", "0")
+    get_settings.cache_clear()
+
+    model = LLMFactory.get_model(provider="ollama")
+
+    assert getattr(model, "model_name", None) == "qwen3-vl:4b"
+    kwargs = cast(dict[str, object], captured["async_openai_kwargs"])
+    assert kwargs["timeout"] == 1200.0
+    assert kwargs["max_retries"] == 0
     get_settings.cache_clear()
