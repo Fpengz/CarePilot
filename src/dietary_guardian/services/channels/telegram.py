@@ -1,8 +1,8 @@
 import json
-import os
 from datetime import datetime, timezone
 from urllib import error, request
 
+from dietary_guardian.config.settings import get_settings
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.medication import ReminderEvent
 from dietary_guardian.services.channels.base import ChannelResult
@@ -14,9 +14,10 @@ class TelegramChannel:
     name = "telegram"
 
     def __init__(self) -> None:
-        self.bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
-        self.chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
-        self.dev_mode = os.getenv("TELEGRAM_DEV_MODE", "1") == "1"
+        settings = get_settings()
+        self.bot_token = settings.telegram_bot_token or ""
+        self.chat_id = settings.telegram_chat_id or ""
+        self.dev_mode = settings.telegram_dev_mode
 
     def _build_endpoint(self) -> str:
         return f"https://api.telegram.org/bot{self.bot_token}/sendMessage"

@@ -1,152 +1,135 @@
-# 🍲 Dietary Guardian SG
-**Singapore Innovation Challenge 2026: Clinical-Grade Dietary Monitoring**
+# Dietary Guardian SG
 
-"Culture-First, Safety-Always." Optimized for Singapore's aging population (The "Mr. Tan" Persona).
+## Overview
+Dietary Guardian SG is a clinical-oriented dietary and medication support system for older adults managing chronic conditions. The platform combines meal recognition, medication reminder workflows, report parsing, and safety checks in a local-first architecture.
 
----
+## Environment Setup
+### Prerequisites
+- Python 3.12+
+- [uv](https://github.com/astral-sh/uv)
 
-## 🚀 Quick Start (Astral Stack)
-
-Ensure you have [uv](https://github.com/astral-sh/uv) installed.
-
-### 1. Environment Setup
+### Install Dependencies
 ```bash
-# Clone and sync dependencies
 uv sync
-
-# Configure environment variables
-export GOOGLE_API_KEY="your-api-key"
-# Optional: Disable remote logfire for local dev
-export LOGFIRE_TOKEN="" 
-# Optional: local runtime auth (used by Ollama/vLLM profile mode)
-export LOCAL_LLM_API_KEY="ollama"
 ```
 
-### 2. Run the Application
+### Configure Environment Variables
+Copy `.env.example` to `.env` and update values for your environment.
+
 ```bash
-# Start the Streamlit Interface
-PYTHONPATH=src uv run streamlit run src/app.py
+cp .env.example .env
 ```
 
-### 2a. Local Model Testing (Ollama / vLLM)
-```bash
-# Ollama example
-ollama serve
-ollama pull llama3
+Required keys for cloud usage:
+- `GEMINI_API_KEY` (or `GOOGLE_API_KEY`)
+- `LLM_PROVIDER=gemini`
 
-# vLLM example (separate shell)
-uv run python -m vllm.entrypoints.openai.api_server \
-  --model Qwen/Qwen2.5-7B-Instruct \
-  --host 0.0.0.0 --port 8000
+Required keys for local usage:
+- `LLM_PROVIDER=ollama` or `LLM_PROVIDER=vllm`
+- `LOCAL_LLM_BASE_URL` (or `OLLAMA_BASE_URL`)
+
+## Configuration Validation
+### Runtime Settings
+The project uses `pydantic-settings` with `.env` support and runtime validation.
+
+Configuration source of truth:
+- `src/dietary_guardian/config/settings.py`
+- accessor: `get_settings()`
+
+Validation behavior:
+- If `LLM_PROVIDER=gemini`, one of `GEMINI_API_KEY` or `GOOGLE_API_KEY` must be set.
+- If `LLM_PROVIDER` is `ollama` or `vllm`, a local base URL must be set.
+- `OLLAMA_BASE_URL` is normalized into `LOCAL_LLM_BASE_URL` for compatibility.
+
+## Running the Application
+### Streamlit UI
+```bash
+uv run streamlit run src/app.py
 ```
 
-Then in the app sidebar:
-- Set `Model runtime` to `local`
-- Choose profile `ollama_qwen3-vl:4b` or `vllm_qwen`
-- Optionally override model name / base URL for local experiments
-
-### 2b. Telegram Dev Notifications
+### CLI Scenario Runner
 ```bash
-export TELEGRAM_BOT_TOKEN="your-bot-token"
-export TELEGRAM_CHAT_ID="your-chat-id"
-export TELEGRAM_DEV_MODE="1"  # dev mode skips real network sends
+uv run python src/main.py
 ```
 
-In the app sidebar, include channels under `Notification channels`:
-- `in_app` and `push` are always available.
-- `telegram` sends to Telegram Bot API (or skips network in dev mode).
-- `whatsapp` and `wechat` are modular stubs in this version (`whatsapp://stub`, `wechat://stub`) for adapter integration.
+## Runtime Modes and Environment Matrix
+### Gemini Mode
+- `LLM_PROVIDER=gemini`
+- `GEMINI_API_KEY` or `GOOGLE_API_KEY`
+- Optional: `GEMINI_MODEL`
 
-### 2c. Debug Logging
+### Local Ollama Mode
+- `LLM_PROVIDER=ollama`
+- `LOCAL_LLM_BASE_URL` or `OLLAMA_BASE_URL`
+- Optional: `LOCAL_LLM_MODEL`, `LOCAL_LLM_API_KEY`
+
+### Local vLLM Mode
+- `LLM_PROVIDER=vllm`
+- `LOCAL_LLM_BASE_URL`
+- Optional: `LOCAL_LLM_MODEL`, `LOCAL_LLM_API_KEY`
+
+## Notification Channel Configuration
+### Telegram
 ```bash
-export DIETARY_GUARDIAN_LOG_LEVEL="INFO"
+export TELEGRAM_BOT_TOKEN="<token>"
+export TELEGRAM_CHAT_ID="<chat_id>"
+export TELEGRAM_DEV_MODE="1"
 ```
 
-Model request logs include destination trace fields:
-- `provider`
-- `model`
-- `endpoint`
-- `request_id`
-- `user_id` (when available)
+When `TELEGRAM_DEV_MODE=1`, Telegram delivery returns a deterministic success path without issuing a live network request.
 
-Notification logs include:
-- `channel`
-- `destination`
-- `event_id`
-- `attempt`
-- `success`/`failure`
-
-### 3. CLI Demonstration
+## Pre-commit Setup
+### Install Hooks
 ```bash
-# Run the core logic scenarios (High Sodium & Safety Violation)
-PYTHONPATH=src uv run python src/main.py
+uv run pre-commit install
 ```
 
----
+### Hook Behavior
+The local pre-commit configuration runs these checks on every commit:
+- `tools/precommit_ruff.sh` -> `uv run ruff check .`
+- `tools/precommit_ty.sh` -> `uv run ty check . --extra-search-path src --output-format concise`
 
-## 🧪 Testing & Quality Gates
+## Quality Gates
+Run these checks before submitting changes:
 
-Our system uses a multi-tiered verification strategy to ensure 0% critical safety violations.
-
-### 1. Static Analysis (The Astral Standard)
 ```bash
-# Linting and Formatting
 uv run ruff check .
-
-# Strict Type Checking
 uv run ty check . --extra-search-path src --output-format concise
-```
-
-### 2. Unit & Integration Tests
-```bash
-# Run the full test suite
 uv run pytest -q
 ```
 
-### 3. Clinical Simulation (Hypothesis)
-We use property-based testing to simulate "Virtual Patients" and stress-test the safety engine against 10,000+ randomized meal scenarios.
+## Troubleshooting
+### Configuration Validation Errors
+If startup fails with configuration validation:
+1. Confirm `.env` exists.
+2. Confirm provider-specific required keys are set.
+3. Re-run with explicit provider values to isolate missing keys.
+
+### Module Import Errors
+If imports fail in local scripts, run through `uv` and ensure dependencies are synced:
+
 ```bash
-# Run property-based safety tests
-uv run pytest -q tests/test_virtual_patient.py
+uv sync
+uv run pytest -q
 ```
 
----
+## Roadmap
+### Phase 1: Environment Profile Support
+- Add `.env.development` and `.env.production` loading patterns.
+- Integrate a managed secret backend.
 
-## 🏗️ Architecture Summary
+### Phase 2: Configuration Telemetry
+- Emit redacted runtime configuration fingerprints at startup.
+- Add structured diagnostics for provider selection and endpoint routing.
 
-- **Perception (`Hawker Vision`):** Gemini-3-Flash with Tier 3 Fallback to Health Promotion Board (HPB) standards.
-- **Reasoning (`Dietary Agent`):** Pydantic-AI with localized "Uncle Guardian" persona and structured Pydantic outputs.
-- **Safety (`Safety Engine`):** Deterministic interceptor backed by `DrugInteractionDB` (SQLite/Mock) and nutritional threshold monitoring.
-- **Social (`Social Service`):** Block-level gamification for "Kampong Spirit" healthy eating challenges.
-- **Observability (`Logfire`):** Real-time instrumentation for clinical-grade tracing and validation.
+### Phase 3: CI and Local Workflow Parity
+- Run pre-commit hooks in CI with identical commands and flags.
+- Gate merges on lint, type, and test parity.
 
----
+### Phase 4: Runtime Health Endpoint
+- Expose a non-sensitive configuration health status endpoint.
+- Surface provider readiness and key validation state.
 
-## 📊 Current Project Status (v0.1.0)
-
-| Feature | Implementation | Notes |
-| :--- | :--- | :--- |
-| **Safety Logic** | 100% | Deterministic clinical interceptor active. |
-| **Vision AI** | 90% | Gemini-3-Flash integrated + HPB Fallback logic. |
-| **Singlish Persona** | 100% | "Uncle Guardian" agent fully tuned. |
-| **Social Dashboard** | 60% | Block scores and leaderboard implemented in Streamlit. |
-| **Persistence** | 40% | SQLite schema in place; session state used for prototypes. |
-
----
-
-## 🔒 Image Handling Policy
-- Meal photos from upload/camera are processed in-memory for analysis.
-- Raw image bytes are not persisted to database or long-term storage.
-- Only derived metadata and analysis outputs are kept in session state.
-
----
-
-## 🇸🇬 Localization: "Hawker Vision 2.0"
-Identifies nuances like:
-- **Mee Rebus:** Thick gravy + yellow noodles.
-- **Mee Siam:** Thin vermicelli + tangy/thin gravy.
-- **Laksa:** Coconut milk base + "hum" detection.
-
----
-**Senior AI Architect (Google)**
-*Singapore Innovation Challenge 2026 Commit*
+### Phase 5: Policy-Driven Feature Flags
+- Introduce policy-based toggles for role tools and model routing.
+- Add validated feature flag schemas and rollout guards.

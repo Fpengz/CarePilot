@@ -5,6 +5,7 @@ from dietary_guardian.config.runtime import (
     MedicalConfig,
     ModelSettings,
 )
+from dietary_guardian.config.settings import Settings, get_settings
 
 __all__ = [
     "AppConfig",
@@ -12,4 +13,6 @@ __all__ = [
     "ModelSettings",
     "LocalModelProfile",
     "LocalModelSettings",
+    "Settings",
+    "get_settings",
 ]

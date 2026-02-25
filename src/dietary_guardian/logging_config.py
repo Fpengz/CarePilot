@@ -3,11 +3,22 @@ import os
 from typing import Any, cast
 
 import logfire
+from pydantic import ValidationError
+
+from dietary_guardian.config.settings import get_settings
 
 logfire_api = cast(Any, logfire)
 _CONFIGURED = False
 _HANDLER_MARKER = "_dietary_guardian_logfire_handler"
 _ROOT_MARKER = "_dietary_guardian_logging_configured"
+
+
+def _resolve_log_level_name() -> str:
+    try:
+        return get_settings().dietary_guardian_log_level.upper()
+    except ValidationError:
+        # Keep logging available while bootstrap handles full settings validation.
+        return os.getenv("DIETARY_GUARDIAN_LOG_LEVEL", "INFO").upper()
 
 
 def _has_logfire_handler() -> bool:
@@ -46,7 +57,7 @@ def setup_logging(project_name: str = "dietary-guardian"):
     logfire_api.configure(send_to_logfire=False)
 
     # 2. Configure standard logging to work with logfire
-    level_name = os.getenv("DIETARY_GUARDIAN_LOG_LEVEL", "INFO").upper()
+    level_name = _resolve_log_level_name()
     level = getattr(logging, level_name, logging.INFO)
     root.setLevel(level)
     if not _has_logfire_handler():

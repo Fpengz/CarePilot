@@ -8,6 +8,7 @@ import streamlit as st
 from dietary_guardian.agents.hawker_vision import HawkerVisionModule
 from dietary_guardian.agents.provider_factory import ModelProvider
 from dietary_guardian.config.runtime import AppConfig, LocalModelProfile
+from dietary_guardian.config.settings import get_settings
 from dietary_guardian.models.medication import MedicationRegimen, TimingType
 from dietary_guardian.models.user import (
     MedicalCondition,
@@ -71,6 +72,7 @@ if "latest_snapshot" not in st.session_state:
     st.session_state.latest_snapshot = None
 
 app_config = AppConfig()
+settings = get_settings()
 repo: SQLiteRepository = st.session_state.repository
 
 st.sidebar.title("Session Controls")
@@ -89,17 +91,17 @@ notification_channels = st.sidebar.multiselect(
     default=["in_app", "push"],
 )
 
-selected_provider = ModelProvider.GEMINI.value
-selected_model_name = app_config.models.primary_model
+selected_provider = settings.llm_provider if settings.llm_provider in {ModelProvider.GEMINI.value, ModelProvider.TEST.value} else ModelProvider.GEMINI.value
+selected_model_name = settings.gemini_model
 local_profile: LocalModelProfile | None = None
 
 if runtime_mode == "cloud":
     selected_provider = st.sidebar.selectbox(
         "Cloud provider",
         options=[ModelProvider.GEMINI.value, ModelProvider.TEST.value],
-        index=0,
+        index=0 if selected_provider == ModelProvider.GEMINI.value else 1,
     )
-    selected_model_name = st.sidebar.text_input("Cloud model name", value=app_config.models.primary_model)
+    selected_model_name = st.sidebar.text_input("Cloud model name", value=settings.gemini_model)
 else:
     profile_keys = list(app_config.local_models.profiles.keys())
     selected_profile = st.sidebar.selectbox("Local model profile", options=profile_keys)

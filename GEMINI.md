@@ -83,6 +83,14 @@ We leverage the **Astral Unified Toolchain** for a deterministic, high-performan
 
 ## 5. Engineering Standards & Quality Gates
 
+### Configuration and Runtime Contract
+- Single source of truth for environment configuration is `Settings` in `src/dietary_guardian/config/settings.py`.
+- Runtime modules must load configuration through `get_settings()`; feature modules must not read environment variables directly with `os.getenv`.
+- Provider-specific requirements are mandatory at runtime:
+  - `llm_provider=gemini` requires `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
+  - `llm_provider=ollama` or `llm_provider=vllm` requires a local base URL (`LOCAL_LLM_BASE_URL` or `OLLAMA_BASE_URL`).
+- Configuration validation is fail-fast and must be treated as a startup contract, not a recoverable warning path.
+
 ### A. The "Virtual Patient" Test Suite (Clinical Simulation)
 We do not test on production users first.
 - **Simulation:** A CI pipeline runs "Virtual Mr. Tan" through 10,000 randomized meal scenarios using `Hypothesis`.
@@ -98,17 +106,27 @@ We do not test on production users first.
 3.  **User Adherence:** % of "Actionable Advice" accepted by the user.
 4.  **System Latency:** < 2s for voice response (critical for conversational flow).
 
+### Development Workflow Standards
+- Pre-commit hooks are mandatory and must run on every commit.
+- Required hook checks:
+  - `uv run ruff check .`
+  - `uv run ty check . --extra-search-path src --output-format concise`
+- Required verification gates before merge:
+  - `uv run ruff check .`
+  - `uv run ty check . --extra-search-path src --output-format concise`
+  - `uv run pytest -q`
+
 ---
 
 ## 6. Roadmap & Implementation Status
 
 | Phase | Description | Status | Key Features |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | **The Core** | ✅ **Complete** | `uv` setup, `Pydantic` models, `DietaryAgent` (Pydantic-AI) with Singlish persona. |
-| **Phase 2** | **The Eyes** | ✅ **V1 Complete** | `HawkerVisionModule` with `gemini-3-flash` and HPB-backed safety fallback logic. |
-| **Phase 3** | **The Brain** | ✅ **V1 Complete** | `SafetyEngine` with deterministic clinical checks and `DrugInteractionDB`. |
-| **Phase 4** | **The Heart** | 🏗️ **In Progress** | `SocialService` for block-level challenges and "Kampong Spirit" gamification. |
-| **Phase 5** | **The Interface** | 🏗️ **In Progress** | Streamlit-based "Uncle Guardian" dashboard with multi-tab clinical view. |
+| **Phase 1** | **The Core** | **Complete** | `uv` setup, `Pydantic` models, `DietaryAgent` (Pydantic-AI) with Singlish persona. |
+| **Phase 2** | **The Eyes** | **V1 Complete** | `HawkerVisionModule` with `gemini-3-flash` and HPB-backed safety fallback logic. |
+| **Phase 3** | **The Brain** | **V1 Complete** | `SafetyEngine` with deterministic clinical checks and `DrugInteractionDB`. |
+| **Phase 4** | **The Heart** | **In Progress** | `SocialService` for block-level challenges and "Kampong Spirit" gamification. |
+| **Phase 5** | **The Interface** | **In Progress** | Streamlit-based "Uncle Guardian" dashboard with multi-tab clinical view. |
 
 ---
 

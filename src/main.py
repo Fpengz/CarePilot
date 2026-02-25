@@ -1,8 +1,11 @@
 import asyncio
 
+from pydantic import ValidationError
 from rich.console import Console
 from rich.panel import Panel
 
+from dietary_guardian.agents.provider_factory import LLMFactory
+from dietary_guardian.config.settings import Settings, get_settings
 from dietary_guardian.agents.dietary_agent import process_meal_request
 from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
 from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
@@ -10,7 +13,27 @@ from dietary_guardian.models.user import MedicalCondition, Medication, UserProfi
 console = Console()
 
 
-async def main():
+def bootstrap_runtime_settings() -> Settings:
+    try:
+        return get_settings()
+    except ValidationError as exc:
+        console.print("[bold red]Configuration validation failed.[/bold red]")
+        console.print(str(exc))
+        raise SystemExit(2) from exc
+
+
+def _runtime_summary(settings: Settings) -> str:
+    model = LLMFactory.get_model()
+    return (
+        f"Provider: {settings.llm_provider}\n"
+        f"Model: {getattr(model, 'model_name', 'unknown')}\n"
+        f"Destination: {LLMFactory.describe_model_destination(model)}"
+    )
+
+
+async def main(settings: Settings):
+    console.print(Panel(_runtime_summary(settings), title="Runtime Configuration"))
+
     # Setup Mr. Tan
     mr_tan = UserProfile(
         id="user_001",
@@ -76,4 +99,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    runtime_settings = bootstrap_runtime_settings()
+    asyncio.run(main(runtime_settings))

@@ -1,6 +1,7 @@
 from datetime import datetime
 from urllib import request
 
+from dietary_guardian.config.settings import get_settings
 from dietary_guardian.models.medication import ReminderEvent
 from dietary_guardian.services.channels.telegram import TelegramChannel
 
@@ -16,6 +17,7 @@ def _event() -> ReminderEvent:
 
 
 def test_telegram_dev_mode_skips_network(monkeypatch) -> None:
+    get_settings.cache_clear()
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "chat")
     monkeypatch.setenv("TELEGRAM_DEV_MODE", "1")
@@ -32,9 +34,11 @@ def test_telegram_dev_mode_skips_network(monkeypatch) -> None:
     assert result.channel == "telegram"
     assert result.destination is not None
     assert "api.telegram.org" in result.destination
+    get_settings.cache_clear()
 
 
 def test_telegram_missing_config_returns_failure(monkeypatch) -> None:
+    get_settings.cache_clear()
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
 
@@ -43,3 +47,4 @@ def test_telegram_missing_config_returns_failure(monkeypatch) -> None:
 
     assert result.success is False
     assert "missing telegram config" in (result.error or "")
+    get_settings.cache_clear()

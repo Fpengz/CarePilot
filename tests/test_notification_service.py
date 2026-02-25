@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from dietary_guardian.config.settings import get_settings
 from dietary_guardian.models.medication import ReminderEvent
 from dietary_guardian.services.notification_service import dispatch_reminder, send_in_app, send_push
 
@@ -36,6 +37,7 @@ def test_send_push_success() -> None:
 
 
 def test_dispatch_telegram_channel(monkeypatch) -> None:
+    get_settings.cache_clear()
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "chat")
     monkeypatch.setenv("TELEGRAM_DEV_MODE", "1")
@@ -44,3 +46,4 @@ def test_dispatch_telegram_channel(monkeypatch) -> None:
     assert results[0].channel == "telegram"
     assert results[0].success is True
     assert "api.telegram.org" in (results[0].destination or "")
+    get_settings.cache_clear()
