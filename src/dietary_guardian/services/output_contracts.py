@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 from dietary_guardian.models.contracts import (
     AgentExecutionTrace,
     AgentOutputEnvelope,
@@ -14,6 +12,7 @@ from dietary_guardian.models.meal import VisionResult
 def build_meal_analysis_output(
     *,
     request_id: str,
+    correlation_id: str,
     user_id: str | None,
     role: str | None,
     source: str,
@@ -42,7 +41,6 @@ def build_meal_analysis_output(
         severity="warning" if vision_result.needs_manual_review else "info",
         metadata={"model_version": vision_result.model_version},
     )
-    correlation_id = str(uuid4())
     audit = AuditRecord(
         request_id=request_id,
         correlation_id=correlation_id,

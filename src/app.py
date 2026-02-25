@@ -324,7 +324,14 @@ if role == "patient":
                     model_name=selected_model_name,
                     local_profile=local_profile,
                 )
-                result, record = run_async(module.analyze_and_record(image_input, mr_tan.id))
+                result, record = run_async(
+                    module.analyze_and_record(
+                        image_input,
+                        mr_tan.id,
+                        request_id=capture_envelope.request_id,
+                        correlation_id=capture_envelope.correlation_id,
+                    )
+                )
                 repo.save_meal_record(record)
                 logger.info(
                     "app_meal_analyzed user_id=%s record_id=%s dish=%s",

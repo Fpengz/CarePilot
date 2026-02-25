@@ -51,12 +51,62 @@ class _BaseStrategy:
             endpoint = destination.split("endpoint=", maxsplit=1)[-1]
         return ProviderMetadata(provider=self.provider_name, model=str(model_name), endpoint=endpoint)
 
+    def _output_retry_budget(self) -> int:
+        settings = get_settings()
+        if self.provider_name == ModelProvider.GEMINI.value:
+            return settings.cloud_output_validation_retries
+        if self.provider_name in {ModelProvider.OLLAMA.value, ModelProvider.VLLM.value}:
+            return settings.local_output_validation_retries
+        return 0
+
     async def run(self, request: InferenceRequest) -> InferenceResponse:
         started = time.perf_counter()
         output_schema = request.output_schema
-        agent = Agent(self.model, output_type=output_schema, system_prompt=request.system_prompt)
+        output_retries = self._output_retry_budget()
+        agent = Agent(
+            self.model,
+            output_type=output_schema,
+            system_prompt=request.system_prompt,
+            output_retries=output_retries,
+        )
         prompt = request.payload.get("prompt", "")
-        result = await agent.run(prompt)
+        logger.info(
+            "inference_run_start request_id=%s provider=%s model=%s endpoint=%s modality=%s output_retries=%s",
+            request.request_id,
+            self.provider_name,
+            self._provider_metadata().model,
+            self._provider_metadata().endpoint,
+            request.modality,
+            output_retries,
+        )
+        try:
+            result = await agent.run(prompt)
+        except Exception as exc:  # noqa: BLE001
+            latency_ms = (time.perf_counter() - started) * 1000.0
+            msg = str(exc)
+            if "Exceeded maximum retries" in msg and "output validation" in msg.lower():
+                logger.warning(
+                    "inference_output_validation_retry_exhausted request_id=%s provider=%s model=%s endpoint=%s output_retries=%s estimated_model_requests=%s latency_ms=%.2f error=%s",
+                    request.request_id,
+                    self.provider_name,
+                    self._provider_metadata().model,
+                    self._provider_metadata().endpoint,
+                    output_retries,
+                    output_retries + 1,
+                    latency_ms,
+                    msg,
+                )
+            else:
+                logger.exception(
+                    "inference_run_failed request_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f error=%s",
+                    request.request_id,
+                    self.provider_name,
+                    self._provider_metadata().model,
+                    self._provider_metadata().endpoint,
+                    latency_ms,
+                    msg,
+                )
+            raise
         if not isinstance(result.output, output_schema):
             raise TypeError("Inference output does not match requested schema")
         latency_ms = (time.perf_counter() - started) * 1000.0
@@ -107,6 +157,9 @@ class LocalStrategy(_BaseStrategy):
 
 
 class TestStrategy(_BaseStrategy):
+    def _output_retry_budget(self) -> int:
+        return 0
+
     pass
 
 

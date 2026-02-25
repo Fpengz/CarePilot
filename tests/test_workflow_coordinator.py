@@ -95,6 +95,9 @@ def test_meal_workflow_emits_typed_output_and_handoff(tmp_path) -> None:
     assert result.workflow_name == "meal_analysis"
     assert result.output_envelope is not None
     assert result.output_envelope.domain_decision.decision_type == "meal_analysis"
+    assert result.output_envelope.correlation_id == "corr1"
+    assert result.output_envelope.audit_record.correlation_id == "corr1"
+    assert result.output_envelope.trace.correlation_id == "corr1"
     assert result.handoffs
     assert result.handoffs[0].to_agent == "clinical_reasoning_agent"
     events = timeline.list(correlation_id="corr1")

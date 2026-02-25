@@ -57,6 +57,7 @@ class WorkflowCoordinator:
         )
         output = build_meal_analysis_output(
             request_id=capture.request_id,
+            correlation_id=capture.correlation_id,
             user_id=user_profile.id,
             role=user_profile.role,
             source=capture.source,

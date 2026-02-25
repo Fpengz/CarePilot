@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     use_alert_outbox_v2: bool = True
     alert_worker_max_attempts: int = 3
     alert_worker_concurrency: int = 4
+    cloud_output_validation_retries: int = Field(default=1, ge=0, le=5)
+    local_output_validation_retries: int = Field(default=0, ge=0, le=5)
 
     image_downscale_enabled: bool = False
     image_max_side_px: int = Field(default=1024, ge=256, le=4096)

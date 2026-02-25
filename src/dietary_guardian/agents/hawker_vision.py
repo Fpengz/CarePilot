@@ -85,10 +85,17 @@ class _LazyMealStateAgent:
 
     def _get_agent(self) -> Agent:
         if self._agent is None:
+            settings = get_settings()
+            provider_name = getattr(getattr(self._model, "provider", None), "__class__", type(None)).__name__.lower()
+            local_like = "ollama" in provider_name or "openai" in provider_name
+            output_retries = (
+                settings.local_output_validation_retries if local_like else settings.cloud_output_validation_retries
+            )
             self._agent = Agent(
                 self._model,
                 output_type=MealState,
                 system_prompt=self._system_prompt,
+                output_retries=output_retries,
             )
         return self._agent
 
@@ -257,7 +264,13 @@ class HawkerVisionModule:
             return f"{prompt} {context}", image_input.source, image_input.filename
         return prompt, None, None
 
-    async def analyze_dish(self, image_input: Any, user_id: str | None = None) -> VisionResult:
+    async def analyze_dish(
+        self,
+        image_input: Any,
+        user_id: str | None = None,
+        request_id: str | None = None,
+        correlation_id: str | None = None,
+    ) -> VisionResult:
         """
         Analyzes a dish image (simulated or real).
         
@@ -267,7 +280,7 @@ class HawkerVisionModule:
                          or we pass a description if image processing isn't fully wired.
         """
         started = time.perf_counter()
-        request_id = str(uuid4())
+        request_id = request_id or str(uuid4())
         try:
             # In a real implementation with pydantic-ai and multimodal models:
             # result = await self.agent.run("Analyze this image.", files=[image_input])
@@ -300,14 +313,18 @@ class HawkerVisionModule:
                 )
 
             logger.info(
-                "hawker_vision_request request_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s",
+                "hawker_vision_request request_id=%s correlation_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s inference_engine_v2=%s local_output_retries=%s cloud_output_retries=%s",
                 request_id,
+                correlation_id,
                 user_id,
                 source,
                 filename,
                 self.provider,
                 getattr(self.model, "model_name", "unknown"),
                 self._endpoint(),
+                get_settings().use_inference_engine_v2,
+                get_settings().local_output_validation_retries,
+                get_settings().cloud_output_validation_retries,
             )
             
             if get_settings().use_inference_engine_v2:
@@ -415,9 +432,28 @@ class HawkerVisionModule:
         except Exception as e:
             logger.error(f"Vision Pipeline Failed: {e}")
             elapsed = (time.perf_counter() - started) * 1000.0
+            msg = str(e)
+            if "Exceeded maximum retries" in msg and "output validation" in msg.lower():
+                retry_budget = (
+                    get_settings().local_output_validation_retries
+                    if self.provider in {ModelProvider.OLLAMA.value, ModelProvider.VLLM.value}
+                    else get_settings().cloud_output_validation_retries
+                )
+                logger.warning(
+                    "hawker_vision_output_validation_retry_exhausted request_id=%s correlation_id=%s user_id=%s provider=%s model=%s estimated_model_requests=%s output_retries=%s latency_ms=%.2f",
+                    request_id,
+                    correlation_id,
+                    user_id,
+                    self.provider,
+                    getattr(self.model, "model_name", "unknown"),
+                    retry_budget + 1,
+                    retry_budget,
+                    elapsed,
+                )
             logger.error(
-                "hawker_vision_analyze_failed request_id=%s user_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f error=%s",
+                "hawker_vision_analyze_failed request_id=%s correlation_id=%s user_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f error=%s",
                 request_id,
+                correlation_id,
                 user_id,
                 self.provider,
                 getattr(self.model, "model_name", "unknown"),
@@ -436,9 +472,21 @@ class HawkerVisionModule:
         self,
         image_input: Any,
         user_id: str,
+        request_id: str | None = None,
+        correlation_id: str | None = None,
     ) -> tuple[VisionResult, MealRecognitionRecord]:
-        logger.info("hawker_vision_analyze_and_record_start user_id=%s", user_id)
-        result = await self.analyze_dish(image_input, user_id=user_id)
+        logger.info(
+            "hawker_vision_analyze_and_record_start user_id=%s request_id=%s correlation_id=%s",
+            user_id,
+            request_id,
+            correlation_id,
+        )
+        result = await self.analyze_dish(
+            image_input,
+            user_id=user_id,
+            request_id=request_id,
+            correlation_id=correlation_id,
+        )
         multi_item_count = 1
         if isinstance(image_input, ImageInput):
             raw = image_input.metadata.get("multi_item_count", "1")
