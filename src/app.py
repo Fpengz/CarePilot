@@ -29,7 +29,6 @@ from dietary_guardian.services.medication_service import (
     generate_daily_reminders,
     mark_meal_confirmation,
 )
-from dietary_guardian.models.tooling import ToolPolicyContext
 from dietary_guardian.services.notification_service import dispatch_reminder
 from dietary_guardian.services.recommendation_service import generate_recommendation
 from dietary_guardian.services.report_parser_service import (
@@ -39,8 +38,13 @@ from dietary_guardian.services.report_parser_service import (
 from dietary_guardian.services.repository import SQLiteRepository
 from dietary_guardian.services.social_service import SocialService
 from dietary_guardian.services.media_ingestion import build_capture_envelope, should_suppress_duplicate_capture
-from dietary_guardian.services.output_contracts import build_meal_analysis_output
+from dietary_guardian.services.memory_services import (
+    ClinicalSnapshotMemoryService,
+    EventTimelineService,
+    ProfileMemoryService,
+)
 from dietary_guardian.services.platform_tools import TriggerAlertToolOutput, build_platform_tool_registry
+from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 from dietary_guardian.services.upload_service import build_image_input
 from dietary_guardian.models.report import ReportInput
 from dietary_guardian.logging_config import get_logger, setup_logging
@@ -81,12 +85,30 @@ if "last_meal_analysis_envelope" not in st.session_state:
 
 if "tool_registry" not in st.session_state:
     st.session_state.tool_registry = None
+if "profile_memory" not in st.session_state:
+    st.session_state.profile_memory = ProfileMemoryService()
+if "clinical_memory" not in st.session_state:
+    st.session_state.clinical_memory = ClinicalSnapshotMemoryService()
+if "event_timeline" not in st.session_state:
+    st.session_state.event_timeline = EventTimelineService()
+if "workflow_coordinator" not in st.session_state:
+    st.session_state.workflow_coordinator = None
+if "latest_workflow_trace" not in st.session_state:
+    st.session_state.latest_workflow_trace = None
 
 app_config = AppConfig()
 settings = get_settings()
 repo: SQLiteRepository = st.session_state.repository
 if st.session_state.tool_registry is None:
     st.session_state.tool_registry = build_platform_tool_registry(repo)
+if st.session_state.workflow_coordinator is None:
+    st.session_state.workflow_coordinator = WorkflowCoordinator(
+        tool_registry=st.session_state.tool_registry,
+        profile_memory=st.session_state.profile_memory,
+        clinical_memory=st.session_state.clinical_memory,
+        event_timeline=st.session_state.event_timeline,
+    )
+coordinator: WorkflowCoordinator = st.session_state.workflow_coordinator
 
 st.sidebar.title("Session Controls")
 role = cast(
@@ -319,23 +341,27 @@ if role == "patient":
                         "content_sha256": image_input.metadata.get("content_sha256"),
                     }
                 )
-                output_envelope = build_meal_analysis_output(
-                    request_id=capture_envelope.request_id,
-                    user_id=mr_tan.id,
-                    role=role,
-                    source=image_input.source,
+                workflow_result = coordinator.run_meal_analysis_workflow(
+                    capture=capture_envelope,
                     vision_result=result,
+                    user_profile=mr_tan,
                 )
-                st.session_state.last_meal_analysis_envelope = output_envelope.model_dump()
-                logger.info(
-                    "app_meal_analysis_envelope request_id=%s correlation_id=%s schema_version=%s",
-                    output_envelope.request_id,
-                    output_envelope.correlation_id,
-                    output_envelope.schema_version,
-                )
+                output_envelope = workflow_result.output_envelope
+                if output_envelope is not None:
+                    st.session_state.last_meal_analysis_envelope = output_envelope.model_dump(mode="json")
+                    logger.info(
+                        "app_meal_analysis_envelope request_id=%s correlation_id=%s schema_version=%s",
+                        output_envelope.request_id,
+                        output_envelope.correlation_id,
+                        output_envelope.schema_version,
+                    )
+                st.session_state.latest_workflow_trace = workflow_result.model_dump(mode="json")
                 st.json(result.model_dump())
-                with st.expander("Platform Envelope (v1)"):
-                    st.json(output_envelope.model_dump())
+                if output_envelope is not None:
+                    with st.expander("Platform Envelope (v1)"):
+                        st.json(output_envelope.model_dump(mode="json"))
+                with st.expander("Workflow Trace (Coordinator)"):
+                    st.json(workflow_result.model_dump(mode="json"))
 
 st.write("### Health Report Parsing")
 report_text = st.text_area("Paste report text", value="HbA1c 7.1 LDL 4.2")
@@ -355,6 +381,7 @@ if st.button("Parse Report and Build Snapshot"):
         snapshot.risk_flags,
     )
     st.session_state.latest_snapshot = snapshot
+    st.session_state.clinical_memory.put(mr_tan.id, snapshot)
     repo.save_biomarker_readings(mr_tan.id, readings)
     st.json(snapshot.model_dump())
 
@@ -389,6 +416,10 @@ st.json(view_stats)
 st.write("### Session Meal Metadata")
 st.json(st.session_state.meal_history_meta)
 
+if st.session_state.latest_workflow_trace is not None:
+    st.write("### Latest Workflow Trace (Coordinator)")
+    st.json(st.session_state.latest_workflow_trace)
+
 st.divider()
 st.write("### Testing Panel: Trigger Alert")
 with st.form("trigger_alert_form"):
@@ -406,32 +437,32 @@ with st.form("trigger_alert_form"):
     submit_alert = st.form_submit_button("Trigger Alert")
 
 if submit_alert:
-    tool_result = st.session_state.tool_registry.execute(
-        "trigger_alert",
-        {
-            "alert_type": alert_type,
-            "severity": alert_severity,
-            "message": alert_message,
-            "destinations": alert_destinations,
-        },
-        context=ToolPolicyContext(
-            role=role,
-            environment="dev",
-            user_id=mr_tan.id,
-        ),
+    workflow_result = coordinator.run_alert_workflow(
+        user_profile=mr_tan,
+        alert_type=alert_type,
+        severity=alert_severity,
+        message=alert_message,
+        destinations=alert_destinations,
     )
-    if not tool_result.success:
-        st.error(tool_result.error.message if tool_result.error else "Trigger alert failed")
-        if tool_result.error is not None:
-            st.json(tool_result.error.model_dump())
+    st.session_state.latest_workflow_trace = workflow_result.model_dump(mode="json")
+    if not workflow_result.tool_results:
+        st.error("Trigger alert workflow returned no tool result")
     else:
-        payload = cast(TriggerAlertToolOutput | None, tool_result.output)
-        assert payload is not None
-        st.success(f"Alert queued: {payload.alert_id}")
-        st.caption(f"Correlation ID: {payload.correlation_id}")
-        st.json(payload.deliveries)
-        st.write("Outbox state timeline")
-        st.json([item.model_dump() for item in repo.list_alert_records(payload.alert_id)])
+        tool_result = workflow_result.tool_results[0]
+        if not tool_result.success:
+            st.error(tool_result.error.message if tool_result.error else "Trigger alert failed")
+            if tool_result.error is not None:
+                st.json(tool_result.error.model_dump())
+        else:
+            payload = cast(TriggerAlertToolOutput | None, tool_result.output)
+            assert payload is not None
+            st.success(f"Alert queued: {payload.alert_id}")
+            st.caption(f"Correlation ID: {payload.correlation_id}")
+            st.json(payload.deliveries)
+            st.write("Outbox state timeline")
+            st.json([item.model_dump() for item in repo.list_alert_records(payload.alert_id)])
+        with st.expander("Workflow Trace (Coordinator)"):
+            st.json(workflow_result.model_dump(mode="json"))
 
 st.write("### Kampong Spirit Challenge")
 leaderboard = st.session_state.social_service.get_leaderboard("main_challenge")
