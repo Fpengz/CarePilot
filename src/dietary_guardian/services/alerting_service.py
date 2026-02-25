@@ -5,6 +5,7 @@ from typing import Protocol
 
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage, OutboxRecord
+from dietary_guardian.services.message_composer import compose_alert_message, format_alert_text_for_transport
 from dietary_guardian.services.channels import TelegramChannel, WeChatChannel, WhatsAppChannel
 
 logger = get_logger(__name__)
@@ -255,9 +256,9 @@ def _alert_to_reminder(message: AlertMessage):
 
     from dietary_guardian.models.medication import ReminderEvent
 
-    text = message.payload.get("message", "Alert")
-    medication_name = message.payload.get("medication_name", text)
-    dosage_text = message.payload.get("dosage_text", message.type)
+    composed = compose_alert_message(message, channel=message.destinations[0] if message.destinations else "unknown")
+    medication_name = message.payload.get("medication_name", composed.title)
+    dosage_text = message.payload.get("dosage_text", format_alert_text_for_transport(composed))
     scheduled_at_raw = message.payload.get("scheduled_at")
     try:
         scheduled_at = datetime.fromisoformat(scheduled_at_raw) if scheduled_at_raw else message.created_at

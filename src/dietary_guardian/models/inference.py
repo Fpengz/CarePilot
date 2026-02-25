@@ -46,3 +46,11 @@ class InferenceHealth(BaseModel):
     endpoint: str
     supports_modalities: list[InferenceModality]
     healthy: bool = True
+
+
+class ModalityCapabilityProfile(BaseModel):
+    provider: str
+    model: str
+    endpoint: str
+    supports: dict[InferenceModality, bool]
+    expected_latency_ms: dict[InferenceModality, int] = Field(default_factory=dict)

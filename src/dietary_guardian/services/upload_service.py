@@ -5,6 +5,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.meal import ImageInput
+from dietary_guardian.services.media_ingestion import compute_content_sha256
 
 SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 logger = get_logger(__name__)
@@ -135,6 +136,7 @@ def build_image_input(
         content=payload,
         metadata={
             "multi_item_count": str(_estimate_multi_item_count(filename)),
+            "content_sha256": compute_content_sha256(payload),
             **preprocess_meta,
         },
     )

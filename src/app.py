@@ -1,6 +1,6 @@
 import asyncio
 from datetime import date, datetime, timezone
-from typing import cast
+from typing import Any, cast
 from uuid import uuid4
 
 import streamlit as st
@@ -29,7 +29,8 @@ from dietary_guardian.services.medication_service import (
     generate_daily_reminders,
     mark_meal_confirmation,
 )
-from dietary_guardian.services.notification_service import dispatch_reminder, trigger_alert
+from dietary_guardian.models.tooling import ToolPolicyContext
+from dietary_guardian.services.notification_service import dispatch_reminder
 from dietary_guardian.services.recommendation_service import generate_recommendation
 from dietary_guardian.services.report_parser_service import (
     build_clinical_snapshot,
@@ -37,6 +38,9 @@ from dietary_guardian.services.report_parser_service import (
 )
 from dietary_guardian.services.repository import SQLiteRepository
 from dietary_guardian.services.social_service import SocialService
+from dietary_guardian.services.media_ingestion import build_capture_envelope, should_suppress_duplicate_capture
+from dietary_guardian.services.output_contracts import build_meal_analysis_output
+from dietary_guardian.services.platform_tools import TriggerAlertToolOutput, build_platform_tool_registry
 from dietary_guardian.services.upload_service import build_image_input
 from dietary_guardian.models.report import ReportInput
 from dietary_guardian.logging_config import get_logger, setup_logging
@@ -72,9 +76,17 @@ if "meal_history_meta" not in st.session_state:
 if "latest_snapshot" not in st.session_state:
     st.session_state.latest_snapshot = None
 
+if "last_meal_analysis_envelope" not in st.session_state:
+    st.session_state.last_meal_analysis_envelope = None
+
+if "tool_registry" not in st.session_state:
+    st.session_state.tool_registry = None
+
 app_config = AppConfig()
 settings = get_settings()
 repo: SQLiteRepository = st.session_state.repository
+if st.session_state.tool_registry is None:
+    st.session_state.tool_registry = build_platform_tool_registry(repo)
 
 st.sidebar.title("Session Controls")
 role = cast(
@@ -272,28 +284,58 @@ if role == "patient":
             logger.warning("app_image_input_error error=%s", error)
             st.error(error)
         elif image_input is not None:
-            module = HawkerVisionModule(
-                provider=selected_provider,
-                model_name=selected_model_name,
-                local_profile=local_profile,
-            )
-            result, record = run_async(module.analyze_and_record(image_input, mr_tan.id))
-            repo.save_meal_record(record)
-            logger.info(
-                "app_meal_analyzed user_id=%s record_id=%s dish=%s",
-                mr_tan.id,
-                record.id,
-                record.meal_state.dish_name,
-            )
-            st.session_state.meal_history_meta.append(
-                {
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "source": record.source,
-                    "dish_name": record.meal_state.dish_name,
-                    "multi_item_count": record.multi_item_count,
-                }
-            )
-            st.json(result.model_dump())
+            capture_envelope = build_capture_envelope(image_input, user_id=mr_tan.id)
+            if should_suppress_duplicate_capture(
+                cast(dict[str, Any], st.session_state),
+                capture_envelope,
+                window_seconds=30,
+            ):
+                logger.warning(
+                    "app_meal_analyze_duplicate_suppressed user_id=%s content_sha256=%s",
+                    mr_tan.id,
+                    capture_envelope.content_sha256,
+                )
+                st.warning("Duplicate image detected within 30s. Analysis suppressed to avoid repeated requests.")
+            else:
+                module = HawkerVisionModule(
+                    provider=selected_provider,
+                    model_name=selected_model_name,
+                    local_profile=local_profile,
+                )
+                result, record = run_async(module.analyze_and_record(image_input, mr_tan.id))
+                repo.save_meal_record(record)
+                logger.info(
+                    "app_meal_analyzed user_id=%s record_id=%s dish=%s",
+                    mr_tan.id,
+                    record.id,
+                    record.meal_state.dish_name,
+                )
+                st.session_state.meal_history_meta.append(
+                    {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "source": record.source,
+                        "dish_name": record.meal_state.dish_name,
+                        "multi_item_count": record.multi_item_count,
+                        "content_sha256": image_input.metadata.get("content_sha256"),
+                    }
+                )
+                output_envelope = build_meal_analysis_output(
+                    request_id=capture_envelope.request_id,
+                    user_id=mr_tan.id,
+                    role=role,
+                    source=image_input.source,
+                    vision_result=result,
+                )
+                st.session_state.last_meal_analysis_envelope = output_envelope.model_dump()
+                logger.info(
+                    "app_meal_analysis_envelope request_id=%s correlation_id=%s schema_version=%s",
+                    output_envelope.request_id,
+                    output_envelope.correlation_id,
+                    output_envelope.schema_version,
+                )
+                st.json(result.model_dump())
+                with st.expander("Platform Envelope (v1)"):
+                    st.json(output_envelope.model_dump())
 
 st.write("### Health Report Parsing")
 report_text = st.text_area("Paste report text", value="HbA1c 7.1 LDL 4.2")
@@ -364,18 +406,32 @@ with st.form("trigger_alert_form"):
     submit_alert = st.form_submit_button("Trigger Alert")
 
 if submit_alert:
-    alert, deliveries = trigger_alert(
-        alert_type=alert_type,
-        severity=alert_severity,
-        payload={"message": alert_message},
-        destinations=alert_destinations,
-        repository=repo,
+    tool_result = st.session_state.tool_registry.execute(
+        "trigger_alert",
+        {
+            "alert_type": alert_type,
+            "severity": alert_severity,
+            "message": alert_message,
+            "destinations": alert_destinations,
+        },
+        context=ToolPolicyContext(
+            role=role,
+            environment="dev",
+            user_id=mr_tan.id,
+        ),
     )
-    st.success(f"Alert queued: {alert.alert_id}")
-    st.caption(f"Correlation ID: {alert.correlation_id}")
-    st.json([item.model_dump() for item in deliveries])
-    st.write("Outbox state timeline")
-    st.json([item.model_dump() for item in repo.list_alert_records(alert.alert_id)])
+    if not tool_result.success:
+        st.error(tool_result.error.message if tool_result.error else "Trigger alert failed")
+        if tool_result.error is not None:
+            st.json(tool_result.error.model_dump())
+    else:
+        payload = cast(TriggerAlertToolOutput | None, tool_result.output)
+        assert payload is not None
+        st.success(f"Alert queued: {payload.alert_id}")
+        st.caption(f"Correlation ID: {payload.correlation_id}")
+        st.json(payload.deliveries)
+        st.write("Outbox state timeline")
+        st.json([item.model_dump() for item in repo.list_alert_records(payload.alert_id)])
 
 st.write("### Kampong Spirit Challenge")
 leaderboard = st.session_state.social_service.get_leaderboard("main_challenge")

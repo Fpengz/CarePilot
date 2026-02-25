@@ -11,6 +11,7 @@ from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.inference import (
     InferenceHealth,
     InferenceModality,
+    ModalityCapabilityProfile,
     InferenceRequest,
     InferenceResponse,
     ProviderMetadata,
@@ -137,6 +138,26 @@ class InferenceEngine:
 
     def health(self) -> InferenceHealth:
         return self.strategy.health()
+
+    def capability_profile(self) -> ModalityCapabilityProfile:
+        health = self.health()
+        supports = {
+            InferenceModality.TEXT: self.supports(InferenceModality.TEXT),
+            InferenceModality.IMAGE: self.supports(InferenceModality.IMAGE),
+            InferenceModality.MIXED: self.supports(InferenceModality.MIXED),
+        }
+        expected_latency_ms = {
+            InferenceModality.TEXT: 1000 if self.provider == ModelProvider.GEMINI.value else 3000,
+            InferenceModality.IMAGE: 1500 if self.provider == ModelProvider.GEMINI.value else 12000,
+            InferenceModality.MIXED: 2000 if self.provider == ModelProvider.GEMINI.value else 15000,
+        }
+        return ModalityCapabilityProfile(
+            provider=health.provider,
+            model=health.model,
+            endpoint=health.endpoint,
+            supports=supports,
+            expected_latency_ms=expected_latency_ms,
+        )
 
 
 def destination_ref(model: ModelType) -> str:
