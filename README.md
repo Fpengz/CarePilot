@@ -44,7 +44,7 @@ Validation behavior:
 ## Running the Application
 ### Streamlit UI
 ```bash
-uv run streamlit run src/app.py
+./tools/run_dev.sh
 ```
 
 ### CLI Scenario Runner
@@ -98,6 +98,10 @@ git config commit.template .gitmessage
 The local pre-commit configuration runs these checks on every commit:
 - `tools/precommit_ruff.sh` -> `uv run ruff check .`
 - `tools/precommit_ty.sh` -> `uv run ty check . --extra-search-path src --output-format concise`
+
+### Local Developer Scripts
+- `./tools/run_dev.sh` starts Streamlit with the `watchdog` file watcher and save-triggered reload.
+- `./tools/run_test.sh` runs lint, type checks, and tests.
 
 ## Quality Gates
 Run these checks before submitting changes:

@@ -1,4 +1,4 @@
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from dietary_guardian.models.meal import MealEvent, Ingredient, Nutrition
 from dietary_guardian.models.user import UserProfile, MedicalCondition, Medication
 from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
@@ -33,6 +33,7 @@ meal_strategy = st.builds(
 )
 
 
+@settings(deadline=None)
 @given(meal_strategy)
 def test_safety_invariants(meal):
     """

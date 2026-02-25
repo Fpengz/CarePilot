@@ -1,5 +1,5 @@
 import logfire
-from typing import Any, List, Optional, cast
+from typing import Any, cast
 from dietary_guardian.models.meal import MealEvent, MealState
 from dietary_guardian.models.user import UserProfile
 from dietary_guardian.safety.db import DrugInteractionDB
@@ -16,11 +16,11 @@ class SafetyViolation(Exception):
 
 
 class SafetyEngine:
-    def __init__(self, user: UserProfile, db: Optional[DrugInteractionDB] = None):
+    def __init__(self, user: UserProfile, db: DrugInteractionDB | None = None):
         self.user = user
         self.db = db or DrugInteractionDB()
 
-    def validate_meal(self, meal: MealEvent | MealState) -> List[str]:
+    def validate_meal(self, meal: MealEvent | MealState) -> list[str]:
         """
         Validates a meal against user's medical conditions and medications using DrugInteractionDB.
         """
@@ -82,6 +82,6 @@ class SafetyEngine:
 
             return warnings
 
-    def _contains_item(self, ingredients: List[str], item: str) -> bool:
+    def _contains_item(self, ingredients: list[str], item: str) -> bool:
         item = item.lower()
         return any(item in ing.lower() for ing in ingredients)

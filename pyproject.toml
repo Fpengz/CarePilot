@@ -1,30 +1,61 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
 [project]
 name = "dietary-tools"
 version = "0.1.0"
 description = "Dietary Guardian: meal vision, medication reminders, and biomarker-grounded guidance"
 readme = "README.md"
 requires-python = ">=3.12"
+license = { text = "Proprietary" }
+authors = [
+    { name = "Wang Zhoufu" },
+]
+keywords = ["dietary-monitoring", "healthcare", "pydantic-ai", "medical-agents"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+    "License :: Other/Proprietary License",
+    "Intended Audience :: Developers",
+]
 dependencies = [
     "google-genai>=1.64.0",
-    "hypothesis>=6.151.9",
     "logfire>=4.25.0",
-    "mypy>=1.19.1",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.11.0",
     "pydantic-ai>=1.62.0",
-    "pytest-anyio>=0.0.0",
     "python-dotenv>=1.2.1",
     "rich>=14.3.3",
-    "ruff>=0.15.2",
     "streamlit>=1.54.0",
-    "ty>=0.0.18",
     "watchdog>=6.0.0",
 ]
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.151.9",
+    "mypy>=1.19.1",
     "pre-commit>=4.3.0",
     "pytest>=9.0.2",
+    "pytest-anyio>=0.0.0",
+    "ruff>=0.15.2",
+    "ty>=0.0.18",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dietary_guardian"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/dietary_guardian",
+    "src/main.py",
+    "README.md",
+    "GEMINI.md",
+    "pyproject.toml",
 ]
 
 [tool.mypy]
@@ -35,6 +66,16 @@ ignore_missing_imports = false
 strict = true
 files = ["dietary_guardian"]
 
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+addopts = "-q"
+python_files = ["test_*.py"]
+filterwarnings = [
+    "error::DeprecationWarning:dietary_guardian.*",
+]

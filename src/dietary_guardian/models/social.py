@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import List, Dict
 
 
 class BlockScore(BaseModel):
@@ -14,5 +13,5 @@ class CommunityChallenge(BaseModel):
     id: str
     name: str
     description: str
-    participating_blocks: List[str]
-    leaderboard: Dict[str, int]  # block_id -> total_points
+    participating_blocks: list[str]
+    leaderboard: dict[str, int]  # block_id -> total_points

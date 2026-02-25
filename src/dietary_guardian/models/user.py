@@ -1,4 +1,4 @@
-from typing import List, Literal, Set
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +21,7 @@ class MedicalCondition(BaseModel):
 class Medication(BaseModel):
     name: str
     dosage: str
-    contraindications: Set[str] = Field(
+    contraindications: set[str] = Field(
         default_factory=set
     )  # e.g., {"Tyramine", "High Sodium"}
 
@@ -30,8 +30,8 @@ class UserProfile(BaseModel):
     id: str
     name: str
     age: int
-    conditions: List[MedicalCondition]
-    medications: List[Medication]
+    conditions: list[MedicalCondition]
+    medications: list[Medication]
     role: UserRole = "patient"
     meal_schedule: list[MealScheduleWindow] = Field(
         default_factory=lambda: [

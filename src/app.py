@@ -91,6 +91,22 @@ notification_channels = st.sidebar.multiselect(
     options=["in_app", "push", "telegram", "whatsapp", "wechat"],
     default=["in_app", "push"],
 )
+st.sidebar.write("### Image Preprocessing")
+image_downscale_enabled = st.sidebar.checkbox(
+    "Enable image downscaling",
+    value=settings.image_downscale_enabled,
+    help="Downscale large uploads before inference to reduce local model latency.",
+)
+image_max_side_px = int(
+    st.sidebar.number_input(
+        "Max image side (px)",
+        min_value=256,
+        max_value=4096,
+        value=int(settings.image_max_side_px),
+        step=64,
+        disabled=not image_downscale_enabled,
+    )
+)
 
 selected_provider = settings.llm_provider if settings.llm_provider in {ModelProvider.GEMINI.value, ModelProvider.TEST.value} else ModelProvider.GEMINI.value
 selected_model_name = settings.gemini_model
@@ -246,7 +262,12 @@ if role == "patient":
     uploaded_file = st.file_uploader("Upload meal photo", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=False)
     camera_file = st.camera_input("Or take live photo")
     if st.button("Analyze Meal Image", type="primary"):
-        image_input, error = build_image_input(uploaded_file, camera_file)
+        image_input, error = build_image_input(
+            uploaded_file,
+            camera_file,
+            downscale_enabled=image_downscale_enabled,
+            max_side_px=image_max_side_px,
+        )
         if error:
             logger.warning("app_image_input_error error=%s", error)
             st.error(error)

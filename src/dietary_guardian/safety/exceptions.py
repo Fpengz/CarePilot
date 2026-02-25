@@ -1,5 +1,3 @@
-from typing import Optional
-
 from dietary_guardian.models.meal import MealState
 
 
@@ -11,6 +9,6 @@ class HumanInTheLoopException(Exception):
         meal_state: optional partial MealState produced by the agent
     """
 
-    def __init__(self, message: str, meal_state: Optional[MealState] = None):
+    def __init__(self, message: str, meal_state: MealState | None = None):
         super().__init__(message)
         self.meal_state = meal_state

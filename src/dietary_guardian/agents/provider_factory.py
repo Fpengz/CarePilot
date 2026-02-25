@@ -1,6 +1,6 @@
 import os
-from enum import Enum
-from typing import Optional, Union
+from contextlib import suppress
+from enum import StrEnum
 
 from dietary_guardian.logging_config import get_logger
 from pydantic import ValidationError
@@ -12,11 +12,11 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from dietary_guardian.config.runtime import LocalModelProfile
 from dietary_guardian.config.settings import get_settings
 
-ModelType = Union[GoogleModel, OpenAIChatModel, TestModel]
+ModelType = GoogleModel | OpenAIChatModel | TestModel
 logger = get_logger(__name__)
 
 
-class ModelProvider(str, Enum):
+class ModelProvider(StrEnum):
     GEMINI = "gemini"
     OLLAMA = "ollama"
     VLLM = "vllm"
@@ -30,10 +30,8 @@ class LLMFactory:
 
     @staticmethod
     def _attach_model_name(model: ModelType, model_name: str) -> ModelType:
-        try:
+        with suppress(Exception):
             setattr(model, "model_name", model_name)
-        except Exception:
-            pass
         return model
 
     @staticmethod
@@ -71,7 +69,7 @@ class LLMFactory:
         return LLMFactory._attach_model_name(model, profile.model_name)
 
     @staticmethod
-    def get_model(provider: Optional[str] = None, model_name: Optional[str] = None) -> ModelType:
+    def get_model(provider: str | None = None, model_name: str | None = None) -> ModelType:
         settings = None
         if provider is None:
             settings = get_settings()

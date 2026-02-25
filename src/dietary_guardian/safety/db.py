@@ -1,5 +1,4 @@
 import sqlite3
-from typing import List, Tuple
 
 
 class DrugInteractionDB:
@@ -80,7 +79,7 @@ class DrugInteractionDB:
             contra_data,
         )
 
-    def get_contraindications(self, medication_name: str) -> List[Tuple[str, str, str]]:
+    def get_contraindications(self, medication_name: str) -> list[tuple[str, str, str]]:
         """Returns list of (restricted_item, reason, severity)"""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()

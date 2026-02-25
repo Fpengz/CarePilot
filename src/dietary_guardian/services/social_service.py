@@ -1,13 +1,13 @@
 import logfire
-from typing import Any, Dict, List, cast
+from typing import Any, cast
 from dietary_guardian.models.social import BlockScore, CommunityChallenge
 
 logfire_api = cast(Any, logfire)
 
 class SocialService:
     def __init__(self):
-        self.blocks: Dict[str, BlockScore] = {}
-        self.challenges: List[CommunityChallenge] = []
+        self.blocks: dict[str, BlockScore] = {}
+        self.challenges: list[CommunityChallenge] = []
 
     def register_block(self, block_id: str, postal_code_prefix: str):
         if block_id not in self.blocks:
@@ -26,7 +26,7 @@ class SocialService:
             logfire_api.info("healthy_choice_recorded", block_id=block_id, type=choice_type)
 
 
-    def get_leaderboard(self, challenge_id: str) -> List[tuple[str, int]]:
+    def get_leaderboard(self, challenge_id: str) -> list[tuple[str, int]]:
         # For demo purposes, we return a sorted list of blocks by total points
         scores = [
             (b.block_id, b.sugar_reduction_points + b.sodium_reduction_points)

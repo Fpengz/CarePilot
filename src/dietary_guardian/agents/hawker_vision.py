@@ -1,6 +1,6 @@
 import time
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any, cast
+from typing import Any, cast
 from uuid import uuid4
 from pydantic_ai import Agent
 from dietary_guardian.models.meal import (
@@ -21,10 +21,11 @@ from dietary_guardian.services.inference_engine import InferenceEngine
 
 # Configure logging
 logger = get_logger(__name__)
+SLOW_INFERENCE_WARNING_MS = 10_000.0
 
 # --- Mock Database for Fallback (SG-FoodID) ---
 # In production, this would be a SQLite/Vector DB lookup
-HPB_DATABASE: Dict[str, Dict[str, Any]] = {
+HPB_DATABASE: dict[str, dict[str, Any]] = {
     "Mee Rebus": {
         "calories": 571,
         "sodium_mg": 2160,
@@ -98,7 +99,7 @@ class HawkerVisionModule:
     def __init__(
         self,
         provider: str = ModelProvider.GEMINI,
-        model_name: Optional[str] = None,
+        model_name: str | None = None,
         local_profile: LocalModelProfile | None = None,
     ):
         self.provider = provider
@@ -138,6 +139,12 @@ class HawkerVisionModule:
     def _endpoint(self) -> str:
         provider_obj = getattr(self.model, "provider", getattr(self.model, "_provider", None))
         return cast(str, getattr(provider_obj, "base_url", "default"))
+
+    @staticmethod
+    def _format_latency_ms(latency_ms: float) -> str:
+        if latency_ms >= 1000.0:
+            return f"{latency_ms / 1000.0:.2f}s"
+        return f"{latency_ms:.0f}ms"
 
     def _build_clarification_response(
         self,
@@ -338,6 +345,17 @@ class HawkerVisionModule:
                     meal_state.confidence_score,
                     elapsed,
                 )
+                if elapsed >= SLOW_INFERENCE_WARNING_MS:
+                    logger.warning(
+                        "hawker_vision_slow_inference request_id=%s user_id=%s provider=%s model=%s latency_ms=%.2f latency_human=%s threshold_ms=%.0f",
+                        request_id,
+                        user_id,
+                        self.provider,
+                        getattr(self.model, "model_name", "unknown"),
+                        elapsed,
+                        self._format_latency_ms(elapsed),
+                        SLOW_INFERENCE_WARNING_MS,
+                    )
                 return self._build_clarification_response(
                     reason="Clarification required due to low confidence",
                     confidence_score=meal_state.confidence_score,
@@ -356,7 +374,7 @@ class HawkerVisionModule:
 
             elapsed = (time.perf_counter() - started) * 1000.0
             logger.info(
-                "hawker_vision_analyze_complete request_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s latency_ms=%.2f manual_review=%s",
+                "hawker_vision_analyze_complete request_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s latency_ms=%.2f latency_human=%s manual_review=%s",
                 request_id,
                 user_id,
                 source,
@@ -365,12 +383,29 @@ class HawkerVisionModule:
                 getattr(self.model, "model_name", "unknown"),
                 self._endpoint(),
                 elapsed,
+                self._format_latency_ms(elapsed),
                 needs_review,
             )
+            if elapsed >= SLOW_INFERENCE_WARNING_MS:
+                logger.warning(
+                    "hawker_vision_slow_inference request_id=%s user_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f latency_human=%s threshold_ms=%.0f",
+                    request_id,
+                    user_id,
+                    self.provider,
+                    getattr(self.model, "model_name", "unknown"),
+                    self._endpoint(),
+                    elapsed,
+                    self._format_latency_ms(elapsed),
+                    SLOW_INFERENCE_WARNING_MS,
+                )
             return VisionResult(
                 primary_state=meal_state,
                 raw_ai_output=(
-                    "Processed via Gemini-3-Flash" if meal_state.identification_method == "AI_Flash" else "Fallback Applied"
+                    
+                        f"Processed via {self.provider}:{getattr(self.model, 'model_name', 'unknown')}"
+                        if meal_state.identification_method == "AI_Flash"
+                        else "Fallback Applied"
+                    
                 ),
                 needs_manual_review=needs_review,
                 processing_latency_ms=elapsed,
