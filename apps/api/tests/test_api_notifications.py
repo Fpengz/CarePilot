@@ -47,6 +47,11 @@ def test_notifications_list_returns_user_workflow_notifications() -> None:
     assert item["category"] == "meal_analysis"
     assert item["workflow_name"] == "meal_analysis"
     assert item["user_id"]
+    assert item["severity"] in {"info", "warning"}
+    assert item["action_path"] == "/meals"
+    assert isinstance(item["metadata"], dict)
+    assert "manual_review" in item["metadata"]
+    assert "meal_record_id" in item["metadata"]
 
 
 def test_mark_notification_read_updates_unread_count() -> None:

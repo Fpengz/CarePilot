@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from threading import Lock
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal
 
 from apps.api.dietary_api.schemas import (
     NotificationItem,
@@ -58,7 +58,7 @@ def _title_for_event(event: WorkflowTimelineEvent) -> str:
 
 
 def _message_for_event(event: WorkflowTimelineEvent) -> str:
-    payload = cast(dict[str, object], event.payload)
+    payload = event.payload
     workflow_name = str(event.workflow_name or "")
     if workflow_name == "meal_analysis":
         dish = str(payload.get("dish_name") or "meal")
@@ -69,6 +69,44 @@ def _message_for_event(event: WorkflowTimelineEvent) -> str:
         success = bool(payload.get("tool_success"))
         return "Alert delivery workflow completed successfully" if success else "Alert workflow completed with issues"
     return f"{event.event_type.replace('_', ' ').title()} in {workflow_name or 'workflow'}"
+
+
+def _severity_for_event(event: WorkflowTimelineEvent) -> Literal["info", "warning", "critical"]:
+    payload = event.payload
+    workflow_name = str(event.workflow_name or "")
+    if workflow_name == "meal_analysis":
+        return "warning" if bool(payload.get("manual_review")) else "info"
+    if workflow_name == "alert_only":
+        return "warning" if not bool(payload.get("tool_success")) else "info"
+    return "info"
+
+
+def _action_path_for_event(event: WorkflowTimelineEvent) -> str | None:
+    workflow_name = str(event.workflow_name or "")
+    if workflow_name == "meal_analysis":
+        return "/meals"
+    if workflow_name == "alert_only":
+        return "/alerts"
+    if workflow_name == "replay":
+        return "/workflows"
+    return None
+
+
+def _metadata_for_event(event: WorkflowTimelineEvent) -> dict[str, object]:
+    payload = event.payload
+    workflow_name = str(event.workflow_name or "")
+    if workflow_name == "meal_analysis":
+        return {
+            "manual_review": bool(payload.get("manual_review")),
+            "dish_name": str(payload.get("dish_name") or ""),
+            "meal_record_id": payload.get("meal_record_id"),
+        }
+    if workflow_name == "alert_only":
+        return {
+            "tool_success": bool(payload.get("tool_success")),
+            "tool_name": str(payload.get("tool_name") or ""),
+        }
+    return {}
 
 
 def _notification_from_event(*, event: WorkflowTimelineEvent, reads: NotificationReadStateStore, user_id: str) -> NotificationItem:
@@ -86,6 +124,9 @@ def _notification_from_event(*, event: WorkflowTimelineEvent, reads: Notificatio
         request_id=event.request_id,
         user_id=event.user_id,
         read=reads.is_read(user_id=user_id, notification_id=notification_id),
+        severity=_severity_for_event(event),
+        action_path=_action_path_for_event(event),
+        metadata=_metadata_for_event(event),
     )
 
 

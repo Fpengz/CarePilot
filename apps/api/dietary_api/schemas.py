@@ -71,6 +71,9 @@ class NotificationItem(BaseModel):
     request_id: str | None = None
     user_id: str | None = None
     read: bool
+    severity: Literal["info", "warning", "critical"] = "info"
+    action_path: str | None = None
+    metadata: dict[str, object] = Field(default_factory=dict)
 
 
 class NotificationListResponse(BaseModel):

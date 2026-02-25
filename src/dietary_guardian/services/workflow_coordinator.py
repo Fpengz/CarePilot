@@ -45,6 +45,7 @@ class WorkflowCoordinator:
         capture: CaptureEnvelope,
         vision_result: VisionResult,
         user_profile: UserProfile,
+        meal_record_id: str | None = None,
     ) -> WorkflowExecutionResult:
         self.profile_memory.put(user_profile)
         self.event_timeline.append(
@@ -96,6 +97,7 @@ class WorkflowCoordinator:
                 "dish_name": vision_result.primary_state.dish_name,
                 "manual_review": vision_result.needs_manual_review,
                 "handoff_count": len(handoffs),
+                "meal_record_id": meal_record_id,
             },
         )
         return WorkflowExecutionResult(

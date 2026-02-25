@@ -90,6 +90,7 @@ def test_meal_workflow_emits_typed_output_and_handoff(tmp_path) -> None:
         capture=_capture(),
         vision_result=_vision_result(needs_manual_review=True),
         user_profile=user,
+        meal_record_id="meal-rec-123",
     )
 
     assert result.workflow_name == "meal_analysis"
@@ -102,6 +103,8 @@ def test_meal_workflow_emits_typed_output_and_handoff(tmp_path) -> None:
     assert result.handoffs[0].to_agent == "clinical_reasoning_agent"
     events = timeline.list(correlation_id="corr1")
     assert len(events) >= 2
+    completed = [event for event in events if event.event_type == "workflow_completed"][-1]
+    assert completed.payload["meal_record_id"] == "meal-rec-123"
 
 
 def test_alert_workflow_uses_tool_registry_and_records_timeline(tmp_path) -> None:

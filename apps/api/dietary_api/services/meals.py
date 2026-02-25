@@ -56,6 +56,7 @@ async def analyze_meal(
         capture=capture,
         vision_result=vision_result,
         user_profile=user_profile,
+        meal_record_id=meal_record.id,
     )
     return MealAnalyzeResponse(
         vision_result=vision_result.model_dump(mode="json"),
@@ -68,4 +69,3 @@ async def analyze_meal(
 def list_meal_records(*, context: AppContext, user_id: str) -> MealRecordsResponse:
     records = context.repository.list_meal_records(user_id)
     return MealRecordsResponse(records=[item.model_dump(mode="json") for item in records])
-
