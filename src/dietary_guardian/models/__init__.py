@@ -7,6 +7,7 @@ from dietary_guardian.models.inference import (
     InferenceResponse,
     ProviderMetadata,
 )
+from dietary_guardian.models.identity import AccountPrincipal, AccountRole, PermissionScope, ProfileMode
 from dietary_guardian.models.meal import (
     GlycemicIndexLevel,
     ImageInput,
@@ -21,10 +22,10 @@ from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.models.medication import MedicationRegimen, ReminderEvent
 from dietary_guardian.models.recommendation import RecommendationOutput
 from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot, ReportInput
-from dietary_guardian.models.role_tools import (
+from dietary_guardian.models.profile_tools import (
     CaregiverToolState,
-    ClinicianToolState,
-    PatientToolState,
+    ClinicalSummaryToolState,
+    SelfToolState,
 )
 from dietary_guardian.models.social import BlockScore, CommunityChallenge
 from dietary_guardian.models.user import (
@@ -33,7 +34,6 @@ from dietary_guardian.models.user import (
     MedicalCondition,
     Medication,
     UserProfile,
-    UserRole,
 )
 
 __all__ = [
@@ -53,8 +53,8 @@ __all__ = [
     "ClinicalProfileSnapshot",
     "ReportInput",
     "CaregiverToolState",
-    "ClinicianToolState",
-    "PatientToolState",
+    "ClinicalSummaryToolState",
+    "SelfToolState",
     "BlockScore",
     "CommunityChallenge",
     "MealScheduleWindow",
@@ -62,7 +62,10 @@ __all__ = [
     "MedicalCondition",
     "Medication",
     "UserProfile",
-    "UserRole",
+    "AccountRole",
+    "ProfileMode",
+    "PermissionScope",
+    "AccountPrincipal",
     "EngagementMetrics",
     "AlertMessage",
     "OutboxRecord",

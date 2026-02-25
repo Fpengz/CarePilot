@@ -1,13 +1,13 @@
 from typing import Literal
 
 from dietary_guardian.models.meal import MealState, Nutrition
-from dietary_guardian.models.role_tools import CaregiverToolState, ClinicianToolState, PatientToolState
+from dietary_guardian.models.profile_tools import CaregiverToolState, ClinicalSummaryToolState, SelfToolState
 from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
-from dietary_guardian.services.role_tools_service import (
+from dietary_guardian.services.profile_tools_service import (
     build_caregiver_tool_state,
-    build_clinician_tool_state,
-    build_patient_tool_state,
-    get_role_sections,
+    build_clinical_summary_tool_state,
+    build_self_tool_state,
+    get_profile_sections,
 )
 
 
@@ -33,17 +33,16 @@ def _make_state(
     )
 
 
-def test_role_sections_are_gated() -> None:
-    assert get_role_sections("patient") == ["patient"]
-    assert get_role_sections("caregiver") == ["caregiver"]
-    assert get_role_sections("clinician") == ["clinician"]
+def test_profile_sections_are_gated() -> None:
+    assert get_profile_sections("self") == ["self"]
+    assert get_profile_sections("caregiver") == ["caregiver"]
 
 
-def test_patient_tool_state_contains_recent_meals() -> None:
+def test_self_tool_state_contains_recent_meals() -> None:
     meals = [_make_state("Laksa", 1500), _make_state("Yong Tau Foo", 700)]
-    state = build_patient_tool_state(meals)
+    state = build_self_tool_state(meals)
 
-    assert isinstance(state, PatientToolState)
+    assert isinstance(state, SelfToolState)
     assert state.recent_meal_names == ["Laksa", "Yong Tau Foo"]
     assert state.after_meal_reminder_due is True
 
@@ -60,19 +59,19 @@ def test_caregiver_tool_state_detects_high_risk_alerts() -> None:
     assert len(state.alerts) == 2
 
 
-def test_clinician_tool_state_has_export_payload() -> None:
+def test_clinical_summary_tool_state_has_export_payload() -> None:
     profile = UserProfile(
         id="u1",
         name="Mr. Tan",
         age=68,
         conditions=[MedicalCondition(name="Diabetes", severity="High")],
         medications=[Medication(name="Warfarin", dosage="5mg")],
-        role="clinician",
+        profile_mode="caregiver",
     )
     meals = [_make_state("Laksa", 1500)]
     biomarkers = {"LDL": 4.2, "HbA1c": 7.1}
-    state = build_clinician_tool_state(profile, meals, biomarkers)
+    state = build_clinical_summary_tool_state(profile, meals, biomarkers)
 
-    assert isinstance(state, ClinicianToolState)
-    assert state.export_payload["patient_name"] == "Mr. Tan"
+    assert isinstance(state, ClinicalSummaryToolState)
+    assert state.export_payload["subject_name"] == "Mr. Tan"
     assert state.export_payload["biomarkers"]["LDL"] == 4.2

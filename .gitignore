@@ -15,3 +15,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# web build/deps
+apps/web/.next/
+apps/web/node_modules/
+node_modules/
+*.tsbuildinfo

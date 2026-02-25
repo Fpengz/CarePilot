@@ -43,11 +43,10 @@ def build_platform_tool_registry(repository: SQLiteRepository) -> ToolRegistry:
     registry.register(
         ToolSpec(
             name="trigger_alert",
-            purpose="Queue an alert and drain delivery worker for testing and operator workflows",
+            purpose="Queue an alert and drain delivery worker for testing and admin workflows",
             input_schema=TriggerAlertToolInput,
             output_schema=TriggerAlertToolOutput,
-            # The Streamlit dev panel exposes patient/caregiver/clinician roles.
-            allowed_roles=["patient", "caregiver", "clinician"],
+            required_scopes=["alert:trigger"],
             side_effect=ToolSideEffect.EXTERNAL,
             sensitivity=ToolSensitivity.NOTIFICATION,
             retryable=False,

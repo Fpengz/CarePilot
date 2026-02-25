@@ -1,7 +1,26 @@
 # Dietary Guardian SG
 
 ## Overview
-Dietary Guardian SG is a clinical-oriented dietary and medication support system for older adults managing chronic conditions. The platform combines meal recognition, medication reminder workflows, report parsing, and safety checks in a local-first architecture.
+Dietary Guardian SG is a dietary and medication support system for both:
+- people managing chronic conditions, and
+- general wellness users who want help with daily health routines.
+
+The platform combines meal recognition, medication reminder workflows, report parsing, and safety checks in a local-first architecture.
+
+## Identity and Access Model
+The system now separates authorization and user persona:
+- `account_role`: `member` or `admin` (authorization / RBAC)
+- `profile_mode`: `self` or `caregiver` (UX mode / care context)
+
+Privileged APIs (alerts/workflow inspection) are gated by **scopes**, not persona labels.
+
+See `docs/rbac-matrix.md` for the current RBAC matrix and endpoint permissions.
+See `docs/api-auth-contract.md` for auth payload examples and migration notes.
+
+### Demo API Accounts
+- `member@example.com` / `member-pass`
+- `helper@example.com` / `helper-pass`
+- `admin@example.com` / `admin-pass`
 
 ## Environment Setup
 ### Prerequisites
@@ -146,7 +165,7 @@ uv run pytest -q
 - Surface provider readiness and key validation state.
 
 ### Phase 5: Policy-Driven Feature Flags
-- Introduce policy-based toggles for role tools and model routing.
+- Introduce policy-based toggles for profile-mode tools and model routing.
 - Add validated feature flag schemas and rollout guards.
 
 ## Architecture-as-Code

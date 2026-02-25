@@ -25,15 +25,15 @@ def test_tool_registry_metrics_track_success_and_failure() -> None:
             purpose="test ping",
             input_schema=PingInput,
             output_schema=PingOutput,
-            allowed_roles=["patient"],
+            required_scopes=["ping:run"],
             side_effect=ToolSideEffect.READ,
             sensitivity=ToolSensitivity.LOW,
         ),
         ok_handler,
     )
 
-    ok = registry.execute("ping", {"value": "ok"}, ToolPolicyContext(role="patient"))
-    blocked = registry.execute("ping", {"value": "x"}, ToolPolicyContext(role="clinician"))
+    ok = registry.execute("ping", {"value": "ok"}, ToolPolicyContext(account_role="member", scopes=["ping:run"]))
+    blocked = registry.execute("ping", {"value": "x"}, ToolPolicyContext(account_role="member", scopes=[]))
 
     assert ok.success is True
     assert blocked.success is False
@@ -43,4 +43,3 @@ def test_tool_registry_metrics_track_success_and_failure() -> None:
     assert metrics["ping"]["success"] == 1
     assert metrics["ping"]["failure"] == 1
     assert metrics["ping"]["avg_latency_ms"] >= 0
-

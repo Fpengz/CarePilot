@@ -2,7 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-UserRole = Literal["patient", "caregiver", "clinician"]
+from dietary_guardian.models.identity import ProfileMode
+
 MealSlot = Literal["breakfast", "lunch", "dinner", "snack"]
 
 
@@ -32,7 +33,7 @@ class UserProfile(BaseModel):
     age: int
     conditions: list[MedicalCondition]
     medications: list[Medication]
-    role: UserRole = "patient"
+    profile_mode: ProfileMode = "self"
     meal_schedule: list[MealScheduleWindow] = Field(
         default_factory=lambda: [
             MealScheduleWindow(slot="breakfast", start_time="07:00", end_time="09:00"),

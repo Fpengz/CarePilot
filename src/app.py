@@ -10,6 +10,7 @@ from dietary_guardian.agents.provider_factory import ModelProvider
 from dietary_guardian.config.runtime import AppConfig, LocalModelProfile
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.models.alerting import AlertSeverity
+from dietary_guardian.models.identity import AccountRole, ProfileMode
 from dietary_guardian.models.medication import MedicationRegimen, TimingType
 from dietary_guardian.models.user import (
     MedicalCondition,
@@ -17,13 +18,13 @@ from dietary_guardian.models.user import (
     MealScheduleWindow,
     Medication,
     UserProfile,
-    UserRole,
 )
 from dietary_guardian.services.dashboard_service import (
     build_analytics_summary,
-    build_role_medication_view,
-    build_role_report_advice_view,
+    build_profile_mode_medication_view,
+    build_profile_mode_report_advice_view,
 )
+from dietary_guardian.services.authorization import scopes_for_account_role
 from dietary_guardian.services.medication_service import (
     compute_mcr,
     generate_daily_reminders,
@@ -111,14 +112,24 @@ if st.session_state.workflow_coordinator is None:
 coordinator: WorkflowCoordinator = st.session_state.workflow_coordinator
 
 st.sidebar.title("Session Controls")
-role = cast(
-    UserRole,
+account_role = cast(
+    AccountRole,
     st.sidebar.selectbox(
-        "Active role",
-        options=["patient", "caregiver", "clinician"],
+        "Account access",
+        options=["member", "admin"],
         index=0,
     ),
 )
+profile_mode = cast(
+    ProfileMode,
+    st.sidebar.selectbox(
+        "Usage mode",
+        options=["self", "caregiver"],
+        index=0,
+        format_func=lambda value: "For yourself" if value == "self" else "Helping someone else",
+    ),
+)
+active_scopes = scopes_for_account_role(account_role)
 runtime_mode = st.sidebar.radio("Model runtime", options=["cloud", "local"], index=0)
 notification_channels = st.sidebar.multiselect(
     "Notification channels",
@@ -171,8 +182,9 @@ else:
 
 st.sidebar.caption(f"Active runtime: `{selected_provider}` / `{selected_model_name}`")
 logger.info(
-    "app_session_start role=%s runtime_mode=%s provider=%s model=%s channels=%s",
-    role,
+    "app_session_start account_role=%s profile_mode=%s runtime_mode=%s provider=%s model=%s channels=%s",
+    account_role,
+    profile_mode,
     runtime_mode,
     selected_provider,
     selected_model_name,
@@ -188,7 +200,7 @@ mr_tan = UserProfile(
         MedicalCondition(name="Hypertension", severity="Medium"),
     ],
     medications=[Medication(name="Warfarin", dosage="5mg")],
-    role=role,
+    profile_mode=profile_mode,
     meal_schedule=[
         MealScheduleWindow(slot="breakfast", start_time="07:00", end_time="09:00"),
         MealScheduleWindow(slot="lunch", start_time="12:00", end_time="14:00"),
@@ -199,8 +211,8 @@ mr_tan = UserProfile(
 st.title("Dietary Guardian SG")
 st.subheader("Medication + Meal Intelligence")
 
-if role == "clinician":
-    st.write("### Clinician: Medication Regimen Editor")
+if profile_mode == "caregiver":
+    st.write("### Caregiver: Medication Regimen Editor")
     with st.form("regimen_form"):
         med_name = st.text_input("Medication name", value="Metformin")
         dose = st.text_input("Dosage", value="500mg")
@@ -278,7 +290,7 @@ if all_reminders:
             f"- {event.medication_name} {event.dosage_text} at {event.scheduled_at.isoformat()} [{event.status}]"
         )
     pending = [e for e in all_reminders if e.status == "sent"]
-    if pending and role == "patient":
+    if pending and profile_mode == "self":
         options = {f"{e.medication_name} @ {e.scheduled_at.strftime('%H:%M')} ({e.id[:8]})": e.id for e in pending}
         selected = st.selectbox("Confirm meal for reminder", list(options.keys()))
         col_a, col_b = st.columns(2)
@@ -291,7 +303,7 @@ if all_reminders:
             logger.info("app_meal_confirmed_no reminder_id=%s", options[selected])
             st.warning("Reminder marked missed")
 
-if role == "patient":
+if profile_mode == "self":
     st.write("### Meal Capture")
     uploaded_file = st.file_uploader("Upload meal photo", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=False)
     camera_file = st.camera_input("Or take live photo")
@@ -403,7 +415,7 @@ if meal_records and st.session_state.latest_snapshot is not None:
         recommendation.safe,
         len(recommendation.localized_advice),
     )
-    role_view = build_role_report_advice_view(role, recommendation)
+    role_view = build_profile_mode_report_advice_view(profile_mode, recommendation)
     st.write("### Personalized Advice")
     st.write(role_view["message"])
     if recommendation.blocked_reason:
@@ -413,7 +425,7 @@ st.divider()
 st.write("### Analytics Dashboard")
 metrics = compute_mcr(all_reminders)
 summary = build_analytics_summary(metrics, all_reminders)
-view_stats = build_role_medication_view(role, all_reminders)
+view_stats = build_profile_mode_medication_view(profile_mode, all_reminders)
 col1, col2, col3 = st.columns(3)
 col1.metric("MCR", f"{summary['mcr']:.2f}")
 col2.metric("Reminders Sent", int(summary["reminders_sent"]))
@@ -450,6 +462,8 @@ if submit_alert:
         severity=alert_severity,
         message=alert_message,
         destinations=alert_destinations,
+        account_role=account_role,
+        scopes=active_scopes,
     )
     st.session_state.latest_workflow_trace = workflow_result.model_dump(mode="json")
     if not workflow_result.tool_results:

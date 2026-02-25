@@ -1,20 +1,21 @@
 from dietary_guardian.models.meal import MealState
-from dietary_guardian.models.role_tools import (
+from dietary_guardian.models.identity import ProfileMode
+from dietary_guardian.models.profile_tools import (
     CaregiverToolState,
-    ClinicianToolState,
-    PatientToolState,
+    ClinicalSummaryToolState,
+    SelfToolState,
 )
-from dietary_guardian.models.user import UserProfile, UserRole
+from dietary_guardian.models.user import UserProfile
 
 
-def get_role_sections(role: UserRole) -> list[str]:
-    return [role]
+def get_profile_sections(profile_mode: ProfileMode) -> list[str]:
+    return [profile_mode]
 
 
-def build_patient_tool_state(history: list[MealState]) -> PatientToolState:
+def build_self_tool_state(history: list[MealState]) -> SelfToolState:
     recent = history[-5:]
     reminders_due = len(recent) > 0
-    return PatientToolState(
+    return SelfToolState(
         recent_meal_names=[meal.dish_name for meal in recent],
         after_meal_reminder_due=reminders_due,
         meal_confirmation_rate=1.0 if recent else None,
@@ -39,25 +40,25 @@ def build_caregiver_tool_state(history: list[MealState]) -> CaregiverToolState:
     )
 
 
-def build_clinician_tool_state(
+def build_clinical_summary_tool_state(
     user: UserProfile,
     history: list[MealState],
     biomarkers: dict[str, float],
-) -> ClinicianToolState:
+) -> ClinicalSummaryToolState:
     latest_meal = history[-1].dish_name if history else "No meal analyzed"
     biomarker_text = ", ".join(f"{k}={v}" for k, v in biomarkers.items()) or "No biomarkers"
     narrative = (
-        f"Patient {user.name}: latest meal '{latest_meal}'. "
+        f"Subject {user.name}: latest meal '{latest_meal}'. "
         f"Biomarker grounding: {biomarker_text}."
     )
     payload = {
-        "patient_id": user.id,
-        "patient_name": user.name,
+        "subject_id": user.id,
+        "subject_name": user.name,
         "latest_meal": latest_meal,
         "biomarkers": biomarkers,
         "recommendation_basis": "Meal analysis + biomarker grounding",
     }
-    return ClinicianToolState(
+    return ClinicalSummaryToolState(
         biomarker_summary=biomarkers,
         narrative=narrative,
         export_payload=payload,

@@ -41,7 +41,7 @@ class AuditRecord(BaseModel):
     request_id: str
     correlation_id: str
     user_id: str | None = None
-    role: str | None = None
+    profile_mode: str | None = None
     source: str
     confidence: float | None = None
     trace_metadata: dict[str, str] = Field(default_factory=dict)
@@ -53,7 +53,7 @@ class AgentExecutionTrace(BaseModel):
     request_id: str
     correlation_id: str
     user_id: str | None = None
-    role: str | None = None
+    profile_mode: str | None = None
     agent_name: str
     tool_calls: list[str] = Field(default_factory=list)
     trace_metadata: dict[str, str] = Field(default_factory=dict)
@@ -66,7 +66,7 @@ class AgentInputEnvelope(BaseModel):
     request_id: str
     correlation_id: str
     user_id: str | None = None
-    role: str | None = None
+    profile_mode: str | None = None
     source: str
     modality: str
     payload: dict[str, Any] = Field(default_factory=dict)
@@ -94,7 +94,7 @@ class AgentOutputEnvelope(BaseModel):
     request_id: str
     correlation_id: str
     user_id: str | None = None
-    role: str | None = None
+    profile_mode: str | None = None
     domain_decision: DomainDecision
     presentation_messages: list[PresentationMessage] = Field(default_factory=list)
     audit_record: AuditRecord

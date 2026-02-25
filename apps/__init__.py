@@ -1,0 +1,2 @@
+# Monorepo app packages namespace
+

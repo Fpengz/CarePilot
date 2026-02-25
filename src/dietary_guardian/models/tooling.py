@@ -29,7 +29,8 @@ class ToolSensitivity(StrEnum):
 
 
 class ToolPolicyContext(BaseModel):
-    role: str
+    account_role: str
+    scopes: list[str] = Field(default_factory=list)
     environment: str = "dev"
     user_id: str | None = None
     correlation_id: str | None = None
@@ -40,7 +41,7 @@ class ToolSpec(BaseModel):
     purpose: str
     input_schema: type[BaseModel]
     output_schema: type[BaseModel]
-    allowed_roles: list[str] = Field(default_factory=list)
+    required_scopes: list[str] = Field(default_factory=list)
     allowed_environments: list[str] = Field(default_factory=lambda: ["dev", "test", "prod"])
     side_effect: ToolSideEffect
     sensitivity: ToolSensitivity
@@ -64,4 +65,3 @@ class ToolExecutionResult(BaseModel):
     latency_ms: float = 0.0
     trace_metadata: dict[str, str] = Field(default_factory=dict)
     executed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-

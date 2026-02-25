@@ -28,7 +28,7 @@ def _user() -> UserProfile:
         age=68,
         conditions=[MedicalCondition(name="Diabetes", severity="High")],
         medications=[Medication(name="Metformin", dosage="500mg")],
-        role="clinician",
+        profile_mode="caregiver",
     )
 
 
@@ -121,6 +121,8 @@ def test_alert_workflow_uses_tool_registry_and_records_timeline(tmp_path) -> Non
         severity="warning",
         message="hello",
         destinations=["in_app"],
+        account_role="admin",
+        scopes=["alert:trigger"],
     )
 
     assert result.workflow_name == "alert_only"
@@ -145,6 +147,8 @@ def test_alert_workflow_propagates_environment_to_tool_context(tmp_path) -> None
         severity="warning",
         message="hello",
         destinations=["in_app"],
+        account_role="admin",
+        scopes=["alert:trigger"],
         environment="prod",
     )
 
@@ -170,6 +174,8 @@ def test_replay_returns_timeline_without_new_side_effects(tmp_path) -> None:
         severity="warning",
         message="hello",
         destinations=["in_app"],
+        account_role="admin",
+        scopes=["alert:trigger"],
     )
     after_live = registry.snapshot_metrics()["trigger_alert"]["calls"]
 

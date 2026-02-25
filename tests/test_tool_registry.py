@@ -18,7 +18,7 @@ class EchoOutput(BaseModel):
     echoed: str
 
 
-def test_tool_registry_blocks_disallowed_role() -> None:
+def test_tool_registry_blocks_missing_scope() -> None:
     registry = ToolRegistry()
     def handler(payload: BaseModel, _ctx: ToolPolicyContext) -> BaseModel:
         typed = EchoInput.model_validate(payload)
@@ -26,11 +26,11 @@ def test_tool_registry_blocks_disallowed_role() -> None:
 
     registry.register(
         ToolSpec(
-            name="echo_operator",
-            purpose="Echo for operator workflows",
+            name="echo_caregiver",
+            purpose="Echo for caregiver workflows",
             input_schema=EchoInput,
             output_schema=EchoOutput,
-            allowed_roles=["operator"],
+            required_scopes=["debug:echo"],
             side_effect=ToolSideEffect.READ,
             sensitivity=ToolSensitivity.LOW,
         ),
@@ -38,9 +38,9 @@ def test_tool_registry_blocks_disallowed_role() -> None:
     )
 
     result = registry.execute(
-        "echo_operator",
+        "echo_caregiver",
         {"text": "hello"},
-        ToolPolicyContext(role="patient", environment="dev"),
+        ToolPolicyContext(account_role="member", scopes=[], environment="dev"),
     )
 
     assert result.success is False
@@ -60,7 +60,7 @@ def test_tool_registry_executes_and_returns_typed_output() -> None:
             purpose="Echo for patient workflows",
             input_schema=EchoInput,
             output_schema=EchoOutput,
-            allowed_roles=["patient", "clinician"],
+            required_scopes=["echo:read"],
             side_effect=ToolSideEffect.READ,
             sensitivity=ToolSensitivity.LOW,
         ),
@@ -70,7 +70,7 @@ def test_tool_registry_executes_and_returns_typed_output() -> None:
     result = registry.execute(
         "echo_patient",
         {"text": "hello"},
-        ToolPolicyContext(role="patient", environment="dev"),
+        ToolPolicyContext(account_role="member", scopes=["echo:read"], environment="dev"),
     )
 
     assert result.success is True

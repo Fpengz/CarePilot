@@ -59,7 +59,7 @@ class WorkflowCoordinator:
             request_id=capture.request_id,
             correlation_id=capture.correlation_id,
             user_id=user_profile.id,
-            role=user_profile.role,
+            profile_mode=user_profile.profile_mode,
             source=capture.source,
             vision_result=vision_result,
         )
@@ -116,6 +116,8 @@ class WorkflowCoordinator:
         severity: AlertSeverity,
         message: str,
         destinations: list[str],
+        account_role: str = "member",
+        scopes: list[str] | None = None,
         environment: str = "dev",
     ) -> WorkflowExecutionResult:
         request_id = str(uuid4())
@@ -138,7 +140,8 @@ class WorkflowCoordinator:
                 "destinations": destinations,
             },
             ToolPolicyContext(
-                role=user_profile.role,
+                account_role=account_role,
+                scopes=scopes or [],
                 environment=environment,
                 user_id=user_profile.id,
                 correlation_id=correlation_id,

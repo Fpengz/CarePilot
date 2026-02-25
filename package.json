@@ -1,0 +1,15 @@
+{
+  "name": "dietary-tools-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.6.0",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "web:dev": "pnpm --dir apps/web dev",
+    "web:build": "pnpm --dir apps/web build",
+    "web:lint": "pnpm --dir apps/web lint",
+    "web:typecheck": "pnpm --dir apps/web typecheck"
+  }
+}
+

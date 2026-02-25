@@ -21,6 +21,13 @@ class Settings(BaseSettings):
 
     dietary_guardian_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     app_timezone: str = "Asia/Singapore"
+    api_host: str = "127.0.0.1"
+    api_port: int = Field(default=8001, ge=1, le=65535)
+    api_cors_origins: str = "http://localhost:3000"
+    session_secret: str = "dev-insecure-session-secret-change-me"
+    cookie_secure: bool = False
+    auth_password_hash_scheme: str = "pbkdf2_sha256"
+    workflow_trace_persistence_enabled: bool = False
 
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
@@ -58,6 +65,8 @@ class Settings(BaseSettings):
             raise ValueError(
                 "Local provider selected but LOCAL_LLM_BASE_URL/OLLAMA_BASE_URL is not set"
             )
+        if not self.session_secret:
+            raise ValueError("SESSION_SECRET must not be empty")
 
         return self
 

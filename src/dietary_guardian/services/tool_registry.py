@@ -26,11 +26,11 @@ class ToolRegistry:
         self._handlers[spec.name] = handler
         self._metrics.setdefault(spec.name, {"calls": 0.0, "success": 0.0, "failure": 0.0, "latency_total_ms": 0.0})
         logger.info(
-            "tool_registry_register tool=%s side_effect=%s sensitivity=%s roles=%s",
+            "tool_registry_register tool=%s side_effect=%s sensitivity=%s required_scopes=%s",
             spec.name,
             spec.side_effect,
             spec.sensitivity,
-            spec.allowed_roles,
+            spec.required_scopes,
         )
 
     def list_specs(self) -> list[ToolSpec]:
@@ -56,15 +56,15 @@ class ToolRegistry:
             )
             self._record_metrics(tool_name, result)
             return result
-        if spec.allowed_roles and context.role not in spec.allowed_roles:
+        if spec.required_scopes and not set(spec.required_scopes).issubset(set(context.scopes)):
             result = ToolExecutionResult(
                 tool_name=tool_name,
                 success=False,
                 error=ToolExecutionError(
                     classification=ToolErrorClass.POLICY_BLOCKED,
-                    message=f"Role '{context.role}' cannot execute tool '{tool_name}'",
+                    message=f"Missing required scope(s) for tool '{tool_name}'",
                 ),
-                trace_metadata={"role": context.role, "environment": context.environment},
+                trace_metadata={"account_role": context.account_role, "environment": context.environment},
             )
             self._record_metrics(tool_name, result)
             return result
@@ -76,7 +76,7 @@ class ToolRegistry:
                     classification=ToolErrorClass.POLICY_BLOCKED,
                     message=f"Environment '{context.environment}' blocked for tool '{tool_name}'",
                 ),
-                trace_metadata={"role": context.role, "environment": context.environment},
+                trace_metadata={"account_role": context.account_role, "environment": context.environment},
             )
             self._record_metrics(tool_name, result)
             return result
@@ -91,7 +91,7 @@ class ToolRegistry:
                 success=True,
                 output=output,
                 latency_ms=latency_ms,
-                trace_metadata={"role": context.role, "environment": context.environment},
+                trace_metadata={"account_role": context.account_role, "environment": context.environment},
             )
             self._record_metrics(tool_name, result)
             return result
