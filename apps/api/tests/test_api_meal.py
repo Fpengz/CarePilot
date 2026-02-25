@@ -13,6 +13,13 @@ def _jpeg_bytes() -> bytes:
     return buffer.getvalue()
 
 
+def _jpeg_bytes_with_color(color: tuple[int, int, int]) -> bytes:
+    img = Image.new("RGB", (64, 64), color=color)
+    buffer = BytesIO()
+    img.save(buffer, format="JPEG")
+    return buffer.getvalue()
+
+
 def _login(client: TestClient, email: str, password: str) -> None:
     response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
@@ -44,3 +51,38 @@ def test_meal_analyze_returns_record_envelope_and_workflow() -> None:
     assert "output_envelope" in body
     assert "workflow" in body
     assert body["workflow"]["workflow_name"] == "meal_analysis"
+
+
+def test_meal_analyze_rejects_empty_file_payload() -> None:
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    response = client.post(
+        "/api/v1/meal/analyze",
+        files={"file": ("meal.jpg", b"", "image/jpeg")},
+        data={"runtime_mode": "local", "provider": "test"},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "empty upload"
+
+
+def test_meal_records_limit_query_truncates_response() -> None:
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255)]:
+        response = client.post(
+            "/api/v1/meal/analyze",
+            files={"file": ("meal.jpg", _jpeg_bytes_with_color(color), "image/jpeg")},
+            data={"runtime_mode": "local", "provider": "test"},
+        )
+        assert response.status_code == 200
+
+    all_records = client.get("/api/v1/meal/records")
+    limited = client.get("/api/v1/meal/records?limit=2")
+
+    assert all_records.status_code == 200
+    assert limited.status_code == 200
+    assert len(all_records.json()["records"]) >= 3
+    assert len(limited.json()["records"]) == 2

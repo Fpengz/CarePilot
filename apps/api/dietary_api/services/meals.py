@@ -21,6 +21,8 @@ async def analyze_meal(
     provider: str,
 ) -> MealAnalyzeResponse:
     payload = await file.read()
+    if len(payload) == 0:
+        raise HTTPException(status_code=400, detail="empty upload")
     mime_type = file.content_type or ""
     if mime_type not in SUPPORTED_IMAGE_TYPES:
         raise HTTPException(status_code=400, detail="unsupported image format")
@@ -66,6 +68,6 @@ async def analyze_meal(
     )
 
 
-def list_meal_records(*, context: AppContext, user_id: str) -> MealRecordsResponse:
+def list_meal_records(*, context: AppContext, user_id: str, limit: int = 50) -> MealRecordsResponse:
     records = context.repository.list_meal_records(user_id)
-    return MealRecordsResponse(records=[item.model_dump(mode="json") for item in records])
+    return MealRecordsResponse(records=[item.model_dump(mode="json") for item in records[:limit]])

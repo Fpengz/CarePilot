@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
 from ..routes_shared import current_session, get_context, require_scopes
 from ..schemas import MealAnalyzeResponse, MealRecordsResponse
@@ -29,7 +31,8 @@ async def meal_analyze(
 @router.get("/api/v1/meal/records", response_model=MealRecordsResponse)
 def meal_records(
     request: Request,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
     session: dict[str, object] = Depends(current_session),
 ) -> MealRecordsResponse:
     require_scopes(session, {"meal:read"})
-    return list_meal_records(context=get_context(request), user_id=str(session["user_id"]))
+    return list_meal_records(context=get_context(request), user_id=str(session["user_id"]), limit=limit)
