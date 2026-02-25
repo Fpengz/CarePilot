@@ -26,6 +26,8 @@ def test_safe_fail_fallback():
     # Apply fallback logic
     result_state = module._apply_fallback_logic(low_conf_state)
 
+    assert result_state is not low_conf_state
+    assert low_conf_state.identification_method == "AI_Flash"
     assert result_state.identification_method == "HPB_Fallback"
     assert result_state.nutrition.sodium_mg == 2660  # From HPB_DATABASE
     assert "Health Promotion Board" in result_state.suggested_modifications[0]

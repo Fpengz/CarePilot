@@ -219,37 +219,38 @@ class HawkerVisionModule:
         Overwrites AI estimates with standard HPB data for safety if confidence is low.
         """
         logger.warning(f"Low confidence ({state.confidence_score}) detected for {state.dish_name}. Applying HPB Fallback.")
+        fallback_state = state.model_copy(deep=True)
         
         # 1. Flag method
-        state.identification_method = "HPB_Fallback"
+        fallback_state.identification_method = "HPB_Fallback"
         
         # 2. Match dish to DB (fuzzy match could be added here, for now exact match)
         # In a real system, we might use string similarity or a vector search.
         # Here we try to find the best key match.
         matched_key = None
         for key in HPB_DATABASE:
-            if key.lower() in state.dish_name.lower():
+            if key.lower() in fallback_state.dish_name.lower():
                 matched_key = key
                 break
         
         if matched_key:
             db_data = HPB_DATABASE[matched_key]
             # Overwrite nutrition
-            state.nutrition = self._get_fallback_nutrition(matched_key)
+            fallback_state.nutrition = self._get_fallback_nutrition(matched_key)
             # Update Glycemic Index
-            state.glycemic_index_estimate = db_data.get("glycemic_index", GlycemicIndexLevel.UNKNOWN)
+            fallback_state.glycemic_index_estimate = db_data.get("glycemic_index", GlycemicIndexLevel.UNKNOWN)
             # Update Ingredients (merge or replace)
             # For fallback, we replace to ensure accuracy of the 'standard' version
-            state.ingredients = [
+            fallback_state.ingredients = [
                 Ingredient(name=ing) for ing in db_data.get("ingredients", [])
             ]
             # Update Localization
-            state.localization.variant = db_data.get("local_variant")
-            state.suggested_modifications.append("Nutrition data replaced with standard Health Promotion Board values due to low image clarity.")
+            fallback_state.localization.variant = db_data.get("local_variant")
+            fallback_state.suggested_modifications.append("Nutrition data replaced with standard Health Promotion Board values due to low image clarity.")
         else:
-            state.suggested_modifications.append("Dish not found in standard database. Manual review recommended.")
+            fallback_state.suggested_modifications.append("Dish not found in standard database. Manual review recommended.")
             
-        return state
+        return fallback_state
 
     def _build_prompt(self, image_input: Any) -> tuple[str, str | None, str | None]:
         prompt = "Analyze the provided input and generate a MealState."
