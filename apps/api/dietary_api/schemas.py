@@ -58,6 +58,36 @@ class AlertTimelineResponse(BaseModel):
     outbox_timeline: list[dict[str, object]]
 
 
+class NotificationItem(BaseModel):
+    id: str
+    event_id: str
+    event_type: str
+    workflow_name: str | None = None
+    category: str
+    title: str
+    message: str
+    created_at: datetime
+    correlation_id: str
+    request_id: str | None = None
+    user_id: str | None = None
+    read: bool
+
+
+class NotificationListResponse(BaseModel):
+    items: list[NotificationItem]
+    unread_count: int
+
+
+class NotificationMarkReadResponse(BaseModel):
+    notification: NotificationItem
+    unread_count: int
+
+
+class NotificationMarkAllReadResponse(BaseModel):
+    updated_count: int
+    unread_count: int
+
+
 class MealAnalyzeResponse(BaseModel):
     vision_result: dict[str, object]
     meal_record: dict[str, object]

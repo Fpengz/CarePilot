@@ -12,6 +12,7 @@ from dietary_guardian.services.repository import SQLiteRepository
 from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 
 from .auth import InMemoryAuthStore, SessionSigner
+from .services.notifications import NotificationReadStateStore
 
 
 @dataclass
@@ -25,6 +26,7 @@ class AppContext:
     coordinator: WorkflowCoordinator
     auth_store: InMemoryAuthStore
     session_signer: SessionSigner
+    notification_reads: NotificationReadStateStore
 
 
 def build_app_context() -> AppContext:
@@ -42,6 +44,7 @@ def build_app_context() -> AppContext:
     )
     auth_store = InMemoryAuthStore(settings)
     session_signer = SessionSigner(settings.session_secret)
+    notification_reads = NotificationReadStateStore()
     return AppContext(
         settings=settings,
         repository=repository,
@@ -52,5 +55,5 @@ def build_app_context() -> AppContext:
         coordinator=coordinator,
         auth_store=auth_store,
         session_signer=session_signer,
+        notification_reads=notification_reads,
     )
-
