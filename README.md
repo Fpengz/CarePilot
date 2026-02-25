@@ -84,6 +84,16 @@ When `TELEGRAM_DEV_MODE=1`, Telegram delivery returns a deterministic success pa
 uv run pre-commit install
 ```
 
+### Commit Message Standard
+This repository follows Conventional Commits. Use:
+- `<type>(<scope>): <subject>`
+- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+
+Set the local git template once:
+```bash
+git config commit.template .gitmessage
+```
+
 ### Hook Behavior
 The local pre-commit configuration runs these checks on every commit:
 - `tools/precommit_ruff.sh` -> `uv run ruff check .`
@@ -93,6 +103,7 @@ The local pre-commit configuration runs these checks on every commit:
 Run these checks before submitting changes:
 
 ```bash
+./tools/run_test.sh
 uv run ruff check .
 uv run ty check . --extra-search-path src --output-format concise
 uv run pytest -q

@@ -108,6 +108,9 @@ We do not test on production users first.
 
 ### Development Workflow Standards
 - Pre-commit hooks are mandatory and must run on every commit.
+- Conventional Commits are required: `<type>(<scope>): <subject>`.
+- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- Repository commit template is `.gitmessage` (set with `git config commit.template .gitmessage`).
 - Required hook checks:
   - `uv run ruff check .`
   - `uv run ty check . --extra-search-path src --output-format concise`
