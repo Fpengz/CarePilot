@@ -49,6 +49,25 @@ def test_localization_logic():
     assert state.localization.variant is None  # Default
 
 
+def test_safe_fail_fallback_matches_normalized_dish_names() -> None:
+    module = HawkerVisionModule()
+    low_conf_state = MealState(
+        dish_name="Mee-Siam (with gravy)",
+        confidence_score=0.61,
+        identification_method="AI_Flash",
+        ingredients=[],
+        nutrition=Nutrition(
+            calories=0, carbs_g=0, sugar_g=0, protein_g=0, fat_g=0, sodium_mg=0
+        ),
+    )
+
+    result_state = module._apply_fallback_logic(low_conf_state)
+
+    assert result_state.identification_method == "HPB_Fallback"
+    assert result_state.nutrition.sodium_mg == 2660
+    assert not any("Dish not found in standard database" in tip for tip in result_state.suggested_modifications)
+
+
 @pytest.mark.anyio
 async def test_clarification_dialogue_for_very_low_confidence(monkeypatch: pytest.MonkeyPatch) -> None:
     module = HawkerVisionModule(provider="test")

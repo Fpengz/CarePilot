@@ -1,3 +1,4 @@
+import re
 import time
 from datetime import datetime, timezone
 from typing import Any, cast
@@ -228,8 +229,10 @@ class HawkerVisionModule:
         # In a real system, we might use string similarity or a vector search.
         # Here we try to find the best key match.
         matched_key = None
+        normalized_dish_name = self._normalize_dish_lookup_name(fallback_state.dish_name)
         for key in HPB_DATABASE:
-            if key.lower() in fallback_state.dish_name.lower():
+            normalized_key = self._normalize_dish_lookup_name(key)
+            if normalized_key and normalized_key in normalized_dish_name:
                 matched_key = key
                 break
         
@@ -251,6 +254,9 @@ class HawkerVisionModule:
             fallback_state.suggested_modifications.append("Dish not found in standard database. Manual review recommended.")
             
         return fallback_state
+
+    def _normalize_dish_lookup_name(self, name: str) -> str:
+        return re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
 
     def _build_prompt(self, image_input: Any) -> tuple[str, str | None, str | None]:
         prompt = "Analyze the provided input and generate a MealState."
