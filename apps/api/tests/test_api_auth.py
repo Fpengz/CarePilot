@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from apps.api.dietary_api.main import create_app
+from dietary_guardian.config.settings import Settings
 
 
 def test_login_sets_session_cookie_and_returns_user() -> None:
@@ -235,3 +236,53 @@ def test_patch_profile_rejects_empty_update() -> None:
 
     assert patch.status_code == 400
     assert patch.json()["detail"] == "no profile changes requested"
+
+
+def test_login_locks_after_repeated_failures_and_then_allows_after_success() -> None:
+    client = TestClient(create_app())
+    max_attempts = Settings(llm_provider="test").auth_login_max_failed_attempts
+
+    for _ in range(max_attempts):
+        failed = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "wrong-pass"})
+        assert failed.status_code == 401
+
+    locked = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    assert locked.status_code == 429
+
+    app = create_app()
+    app.state.ctx.auth_store._login_failures["member@example.com"] = {
+        "failed_count": max_attempts - 1,
+        "window_started_at": "2000-01-01T00:00:00+00:00",
+        "lockout_until": None,
+    }
+    reset_client = TestClient(app)
+    success = reset_client.post(
+        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+    )
+    assert success.status_code == 200
+    next_failed = reset_client.post(
+        "/api/v1/auth/login", json={"email": "member@example.com", "password": "wrong-pass"}
+    )
+    assert next_failed.status_code == 401
+    assert "too many login attempts" not in next_failed.text.lower()
+
+
+def test_auth_audit_events_admin_only_and_bounded() -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    admin_client = TestClient(app)
+
+    member_client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "wrong-pass"})
+    member_client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    admin_login = admin_client.post("/api/v1/auth/login", json={"email": "admin@example.com", "password": "admin-pass"})
+    assert admin_login.status_code == 200
+
+    member_forbidden = member_client.get("/api/v1/auth/audit-events")
+    assert member_forbidden.status_code == 403
+
+    admin_events = admin_client.get("/api/v1/auth/audit-events", params={"limit": 2})
+    assert admin_events.status_code == 200
+    items = admin_events.json()["items"]
+    assert len(items) == 2
+    assert all(item["event_type"] in {"login_success", "login_failed", "login_locked"} for item in items)
+    assert any(item["event_type"] == "login_success" for item in items)

@@ -14,6 +14,7 @@ ADMIN_EXTRA_SCOPES: set[str] = {
     "alert:timeline:read",
     "workflow:read",
     "workflow:replay",
+    "auth:audit:read",
 }
 
 
@@ -30,4 +31,3 @@ def has_scopes(current_scopes: list[str], required_scopes: set[str]) -> bool:
 
 def default_profile_mode_for_role(account_role: AccountRole) -> ProfileMode:
     return "self"
-

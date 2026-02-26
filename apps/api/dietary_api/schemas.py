@@ -45,6 +45,19 @@ class AuthProfileUpdateRequest(BaseModel):
     profile_mode: ProfileMode | None = None
 
 
+class AuthAuditEvent(BaseModel):
+    event_id: str
+    event_type: str
+    email: EmailStr
+    user_id: str | None = None
+    created_at: datetime
+    metadata: dict[str, object] = Field(default_factory=dict)
+
+
+class AuthAuditEventListResponse(BaseModel):
+    items: list[AuthAuditEvent]
+
+
 class AuthSessionListItem(BaseModel):
     session_id: str
     issued_at: datetime

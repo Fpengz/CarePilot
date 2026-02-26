@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     auth_password_hash_scheme: str = "pbkdf2_sha256"
     auth_session_ttl_seconds: int = Field(default=86400, ge=1, le=60 * 60 * 24 * 30)
+    auth_login_max_failed_attempts: int = Field(default=5, ge=1, le=20)
+    auth_login_failure_window_seconds: int = Field(default=300, ge=1, le=3600)
+    auth_login_lockout_seconds: int = Field(default=300, ge=1, le=86400)
+    auth_audit_events_max_entries: int = Field(default=500, ge=10, le=10000)
     workflow_trace_persistence_enabled: bool = False
 
     telegram_bot_token: str | None = None

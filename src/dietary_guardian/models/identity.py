@@ -16,6 +16,7 @@ PermissionScope = Literal[
     "alert:timeline:read",
     "workflow:read",
     "workflow:replay",
+    "auth:audit:read",
 ]
 
 
@@ -27,4 +28,3 @@ class AccountPrincipal(BaseModel):
     scopes: list[str] = Field(default_factory=list)
     profile_mode: ProfileMode = "self"
     subject_user_id: str | None = None
-

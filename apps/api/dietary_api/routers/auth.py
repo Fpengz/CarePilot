@@ -4,8 +4,10 @@ from typing import Annotated, cast
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from dietary_guardian.models.identity import AccountRole, ProfileMode
 
-from ..routes_shared import SESSION_COOKIE, current_session, get_context
+from ..routes_shared import SESSION_COOKIE, current_session, get_context, require_scopes
 from ..schemas import (
+    AuthAuditEvent,
+    AuthAuditEventListResponse,
     AuthLoginRequest,
     AuthLoginResponse,
     AuthMeResponse,
@@ -45,9 +47,37 @@ def _clear_session_cookie(response: Response, *, secure: bool) -> None:
 @router.post("/api/v1/auth/login", response_model=AuthLoginResponse)
 def auth_login(payload: AuthLoginRequest, response: Response, request: Request) -> AuthLoginResponse:
     context = get_context(request)
-    user = context.auth_store.authenticate(str(payload.email), payload.password)
+    email = str(payload.email)
+    if context.auth_store.is_login_locked(email):
+        context.auth_store.append_auth_audit_event(
+            event_type="login_locked",
+            email=email,
+            metadata={"reason": "lockout_active"},
+        )
+        raise HTTPException(status_code=429, detail="too many login attempts, try again later")
+
+    user = context.auth_store.authenticate(email, payload.password)
     if user is None:
+        now_locked = context.auth_store.record_login_failure(email)
+        context.auth_store.append_auth_audit_event(
+            event_type="login_failed",
+            email=email,
+            metadata={"reason": "invalid_credentials"},
+        )
+        if now_locked:
+            context.auth_store.append_auth_audit_event(
+                event_type="login_locked",
+                email=email,
+                metadata={"reason": "too_many_failures"},
+            )
         raise HTTPException(status_code=401, detail="invalid credentials")
+    context.auth_store.record_login_success(email)
+    context.auth_store.append_auth_audit_event(
+        event_type="login_success",
+        email=email,
+        user_id=user.user_id,
+        metadata={"account_role": user.account_role},
+    )
     session = context.auth_store.create_session(user)
     signed = context.session_signer.sign(session["session_id"])
     response.set_cookie(
@@ -169,3 +199,27 @@ def auth_revoke_session(
     if session_id == str(session["session_id"]):
         _clear_session_cookie(response, secure=context.settings.cookie_secure)
     return AuthSessionRevokeResponse(revoked=True)
+
+
+@router.get("/api/v1/auth/audit-events", response_model=AuthAuditEventListResponse)
+def auth_audit_events(
+    request: Request,
+    limit: int = 50,
+    session: dict[str, object] = Depends(current_session),
+) -> AuthAuditEventListResponse:
+    require_scopes(session, {"auth:audit:read"})
+    context = get_context(request)
+    items = context.auth_store.list_auth_audit_events(limit=limit)
+    return AuthAuditEventListResponse(
+        items=[
+            AuthAuditEvent(
+                event_id=str(item["event_id"]),
+                event_type=str(item["event_type"]),
+                email=str(item["email"]),
+                user_id=(str(item["user_id"]) if item.get("user_id") is not None else None),
+                created_at=datetime.fromisoformat(str(item["created_at"])),
+                metadata=cast(dict[str, object], item.get("metadata", {})),
+            )
+            for item in items
+        ]
+    )

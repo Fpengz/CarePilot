@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 from uuid import uuid4
 
@@ -67,8 +67,14 @@ class InMemoryAuthStore:
     def __init__(self, settings: Settings) -> None:
         self._hasher = PasswordHasher(settings.auth_password_hash_scheme)
         self._session_ttl_seconds = int(settings.auth_session_ttl_seconds)
+        self._login_max_failed_attempts = int(settings.auth_login_max_failed_attempts)
+        self._login_failure_window_seconds = int(settings.auth_login_failure_window_seconds)
+        self._login_lockout_seconds = int(settings.auth_login_lockout_seconds)
+        self._auth_audit_events_max_entries = int(settings.auth_audit_events_max_entries)
         self._users_by_email: dict[str, AuthUserRecord] = {}
         self._sessions: dict[str, dict[str, Any]] = {}
+        self._login_failures: dict[str, dict[str, Any]] = {}
+        self._auth_audit_events: list[dict[str, Any]] = []
         self._seed_defaults()
 
     def _seed_defaults(self) -> None:
@@ -94,6 +100,90 @@ class InMemoryAuthStore:
         if not self._hasher.verify(password, user.password_hash):
             return None
         return user
+
+    def is_login_locked(self, email: str) -> bool:
+        state = self._login_failures.get(email)
+        if not state:
+            return False
+        lockout_until_raw = state.get("lockout_until")
+        if not isinstance(lockout_until_raw, str):
+            return False
+        try:
+            lockout_until = datetime.fromisoformat(lockout_until_raw)
+        except ValueError:
+            self._login_failures.pop(email, None)
+            return False
+        if lockout_until.tzinfo is None:
+            lockout_until = lockout_until.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) >= lockout_until.astimezone(timezone.utc):
+            state["lockout_until"] = None
+            state["failed_count"] = 0
+            state["window_started_at"] = None
+            return False
+        return True
+
+    def record_login_failure(self, email: str) -> bool:
+        now = datetime.now(timezone.utc)
+        state = self._login_failures.get(email)
+        if state is None:
+            state = {"failed_count": 0, "window_started_at": None, "lockout_until": None}
+            self._login_failures[email] = state
+
+        window_started_raw = state.get("window_started_at")
+        reset_window = True
+        if isinstance(window_started_raw, str):
+            try:
+                window_started = datetime.fromisoformat(window_started_raw)
+                if window_started.tzinfo is None:
+                    window_started = window_started.replace(tzinfo=timezone.utc)
+                reset_window = (
+                    now - window_started.astimezone(timezone.utc)
+                ).total_seconds() > self._login_failure_window_seconds
+            except ValueError:
+                reset_window = True
+
+        if reset_window:
+            state["failed_count"] = 0
+            state["window_started_at"] = now.isoformat()
+
+        current_failed_count_raw = state.get("failed_count", 0)
+        current_failed_count = (
+            current_failed_count_raw if isinstance(current_failed_count_raw, int) else 0
+        )
+        state["failed_count"] = current_failed_count + 1
+        state["lockout_until"] = None
+        failed_count = cast(int, state["failed_count"])
+        if failed_count >= self._login_max_failed_attempts:
+            state["lockout_until"] = (now + timedelta(seconds=self._login_lockout_seconds)).isoformat()
+            return True
+        return False
+
+    def record_login_success(self, email: str) -> None:
+        self._login_failures.pop(email, None)
+
+    def append_auth_audit_event(
+        self,
+        *,
+        event_type: str,
+        email: str,
+        user_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        event = {
+            "event_id": str(uuid4()),
+            "event_type": event_type,
+            "email": email,
+            "user_id": user_id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "metadata": dict(metadata or {}),
+        }
+        self._auth_audit_events.insert(0, event)
+        if len(self._auth_audit_events) > self._auth_audit_events_max_entries:
+            del self._auth_audit_events[self._auth_audit_events_max_entries :]
+
+    def list_auth_audit_events(self, *, limit: int = 50) -> list[dict[str, Any]]:
+        bounded = max(1, min(int(limit), 200))
+        return [dict(item) for item in self._auth_audit_events[:bounded]]
 
     def update_user_profile(
         self,
