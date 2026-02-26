@@ -95,6 +95,52 @@ class AuthSessionRevokeOthersResponse(BaseModel):
     revoked_count: int
 
 
+class HouseholdCreateRequest(BaseModel):
+    name: str
+
+
+class HouseholdResponse(BaseModel):
+    household_id: str
+    name: str
+    owner_user_id: str
+    created_at: datetime
+
+
+class HouseholdMemberItem(BaseModel):
+    user_id: str
+    display_name: str
+    role: Literal["owner", "member"]
+    joined_at: datetime
+
+
+class HouseholdMembersResponse(BaseModel):
+    members: list[HouseholdMemberItem]
+
+
+class HouseholdBundleResponse(BaseModel):
+    household: HouseholdResponse | None
+    members: list[HouseholdMemberItem]
+
+
+class HouseholdInviteResponseItem(BaseModel):
+    invite_id: str
+    household_id: str
+    code: str
+    created_by_user_id: str
+    created_at: datetime
+    expires_at: datetime
+    max_uses: int
+    uses: int
+
+
+class HouseholdInviteCreateResponse(BaseModel):
+    invite: HouseholdInviteResponseItem
+
+
+class HouseholdJoinRequest(BaseModel):
+    code: str
+
+
 class AlertTriggerRequest(BaseModel):
     alert_type: str
     severity: Literal["info", "warning", "critical"]

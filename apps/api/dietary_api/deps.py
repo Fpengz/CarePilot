@@ -13,6 +13,7 @@ from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 
 from .auth import SessionSigner
 from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SQLiteAuthStore
+from dietary_guardian.infrastructure.household import SQLiteHouseholdStore
 from .services.notifications import NotificationReadStateStore
 
 
@@ -28,6 +29,7 @@ class AppContext:
     auth_store: Any
     session_signer: SessionSigner
     notification_reads: NotificationReadStateStore
+    household_store: Any
 
 
 def build_app_context() -> AppContext:
@@ -50,6 +52,7 @@ def build_app_context() -> AppContext:
     )
     session_signer = SessionSigner(settings.session_secret)
     notification_reads = NotificationReadStateStore()
+    household_store = SQLiteHouseholdStore(settings.auth_sqlite_db_path)
     return AppContext(
         settings=settings,
         repository=repository,
@@ -61,4 +64,5 @@ def build_app_context() -> AppContext:
         auth_store=auth_store,
         session_signer=session_signer,
         notification_reads=notification_reads,
+        household_store=household_store,
     )

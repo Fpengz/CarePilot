@@ -1,0 +1,129 @@
+from collections.abc import Generator
+
+import pytest
+from fastapi.testclient import TestClient
+
+from apps.api.dietary_api.main import create_app
+from dietary_guardian.config.settings import get_settings
+
+
+def _reset_settings_cache() -> None:
+    get_settings.cache_clear()
+
+
+@pytest.fixture
+def sqlite_household_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
+    monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "app.sqlite3"))
+    _reset_settings_cache()
+    yield
+    _reset_settings_cache()
+
+
+def _login(client: TestClient, email: str, password: str) -> None:
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    assert response.status_code == 200
+
+
+def test_household_create_requires_auth(sqlite_household_env: None) -> None:
+    client = TestClient(create_app())
+
+    response = client.post("/api/v1/households", json={"name": "Family Circle"})
+
+    assert response.status_code == 401
+
+
+def test_household_create_and_get_current(sqlite_household_env: None) -> None:
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    created = client.post("/api/v1/households", json={"name": "Family Circle"})
+    assert created.status_code == 200
+    body = created.json()
+    assert body["household"]["name"] == "Family Circle"
+    assert body["members"][0]["role"] == "owner"
+    household_id = body["household"]["household_id"]
+
+    current = client.get("/api/v1/households/current")
+    assert current.status_code == 200
+    current_body = current.json()
+    assert current_body["household"]["household_id"] == household_id
+    assert current_body["members"][0]["user_id"] == "user_001"
+    assert current_body["members"][0]["display_name"]
+
+
+def test_household_owner_can_invite_and_other_user_can_join(sqlite_household_env: None) -> None:
+    app = create_app()
+    owner_client = TestClient(app)
+    helper_client = TestClient(app)
+
+    _login(owner_client, "member@example.com", "member-pass")
+    create = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
+    assert create.status_code == 200
+    household_id = create.json()["household"]["household_id"]
+
+    invite = owner_client.post(f"/api/v1/households/{household_id}/invites")
+    assert invite.status_code == 200
+    code = invite.json()["invite"]["code"]
+    assert code
+
+    _login(helper_client, "helper@example.com", "helper-pass")
+    join = helper_client.post("/api/v1/households/join", json={"code": code})
+    assert join.status_code == 200
+    assert join.json()["household"]["household_id"] == household_id
+
+    members = owner_client.get(f"/api/v1/households/{household_id}/members")
+    assert members.status_code == 200
+    items = members.json()["members"]
+    assert {item["user_id"] for item in items} == {"user_001", "care_001"}
+    roles = {item["user_id"]: item["role"] for item in items}
+    assert roles["user_001"] == "owner"
+    assert roles["care_001"] == "member"
+
+
+def test_non_owner_cannot_create_household_invite(sqlite_household_env: None) -> None:
+    app = create_app()
+    owner_client = TestClient(app)
+    helper_client = TestClient(app)
+
+    _login(owner_client, "member@example.com", "member-pass")
+    created = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
+    assert created.status_code == 200
+    household_id = created.json()["household"]["household_id"]
+
+    _login(helper_client, "helper@example.com", "helper-pass")
+    helper_join = helper_client.post(
+        "/api/v1/households/join",
+        json={"code": owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]},
+    )
+    assert helper_join.status_code == 200
+
+    forbidden = helper_client.post(f"/api/v1/households/{household_id}/invites")
+    assert forbidden.status_code == 403
+
+
+def test_user_cannot_create_or_join_second_household(sqlite_household_env: None) -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    helper_client = TestClient(app)
+    admin_client = TestClient(app)
+
+    _login(member_client, "member@example.com", "member-pass")
+    _login(helper_client, "helper@example.com", "helper-pass")
+    _login(admin_client, "admin@example.com", "admin-pass")
+
+    first = member_client.post("/api/v1/households", json={"name": "One"})
+    assert first.status_code == 200
+    create_again = member_client.post("/api/v1/households", json={"name": "Two"})
+    assert create_again.status_code == 409
+
+    admin_household = admin_client.post("/api/v1/households", json={"name": "Ops Home"})
+    assert admin_household.status_code == 200
+    admin_household_id = admin_household.json()["household"]["household_id"]
+    invite = admin_client.post(f"/api/v1/households/{admin_household_id}/invites")
+    assert invite.status_code == 200
+
+    join = helper_client.post("/api/v1/households/join", json={"code": invite.json()["invite"]["code"]})
+    assert join.status_code == 200
+    join_again = helper_client.post("/api/v1/households/join", json={"code": invite.json()["invite"]["code"]})
+    assert join_again.status_code == 409

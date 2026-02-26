@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from .alerts import router as alerts_router
 from .auth import router as auth_router
 from .health import router as health_router
+from .households import router as households_router
 from .meals import router as meals_router
 from .notifications import router as notifications_router
 from .recommendations import router as recommendations_router
@@ -14,6 +15,7 @@ from .workflows import router as workflows_router
 def include_routers(app: FastAPI) -> None:
     app.include_router(health_router)
     app.include_router(auth_router)
+    app.include_router(households_router)
     app.include_router(alerts_router)
     app.include_router(workflows_router)
     app.include_router(meals_router)
