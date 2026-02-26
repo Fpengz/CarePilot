@@ -105,6 +105,12 @@ def test_meal_workflow_emits_typed_output_and_handoff(tmp_path) -> None:
     assert len(events) >= 2
     completed = [event for event in events if event.event_type == "workflow_completed"][-1]
     assert completed.payload["meal_record_id"] == "meal-rec-123"
+    assert completed.payload["confidence"] == 0.6
+    assert completed.payload["estimated_calories"] == 500.0
+    assert completed.payload["model_version"] == "qwen3-vl:4b"
+    started = [event for event in events if event.event_type == "workflow_started"][-1]
+    assert started.payload["capture_source"] == "camera"
+    assert started.payload["meal_filename"] == "cam.jpg"
 
 
 def test_alert_workflow_uses_tool_registry_and_records_timeline(tmp_path) -> None:

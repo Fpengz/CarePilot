@@ -54,7 +54,12 @@ class WorkflowCoordinator:
             correlation_id=capture.correlation_id,
             request_id=capture.request_id,
             user_id=user_profile.id,
-            payload={"steps": WORKFLOW_DEFINITIONS[WorkflowName.MEAL_ANALYSIS]},
+            payload={
+                "steps": WORKFLOW_DEFINITIONS[WorkflowName.MEAL_ANALYSIS],
+                "capture_source": capture.source,
+                "meal_filename": capture.filename,
+                "mime_type": capture.mime_type,
+            },
         )
         output = build_meal_analysis_output(
             request_id=capture.request_id,
@@ -98,6 +103,9 @@ class WorkflowCoordinator:
                 "manual_review": vision_result.needs_manual_review,
                 "handoff_count": len(handoffs),
                 "meal_record_id": meal_record_id,
+                "confidence": vision_result.primary_state.confidence_score,
+                "estimated_calories": vision_result.primary_state.nutrition.calories,
+                "model_version": vision_result.model_version,
             },
         )
         return WorkflowExecutionResult(
