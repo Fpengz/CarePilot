@@ -9,6 +9,7 @@ from ..schemas import (
     AuthLoginRequest,
     AuthLoginResponse,
     AuthMeResponse,
+    AuthProfileUpdateRequest,
     AuthSessionListItem,
     AuthSessionListResponse,
     AuthSessionRevokeOthersResponse,
@@ -18,6 +19,17 @@ from ..schemas import (
 )
 
 router = APIRouter(tags=["auth"])
+
+
+def _session_user_from_session(session: dict[str, object]) -> SessionUser:
+    return SessionUser(
+        user_id=str(session["user_id"]),
+        email=str(session["email"]),
+        account_role=cast(AccountRole, session["account_role"]),
+        scopes=cast(list[str], session["scopes"]),
+        profile_mode=cast(ProfileMode, session["profile_mode"]),
+        display_name=str(session["display_name"]),
+    )
 
 
 def _clear_session_cookie(response: Response, *, secure: bool) -> None:
@@ -76,16 +88,34 @@ def auth_logout(
 
 @router.get("/api/v1/auth/me", response_model=AuthMeResponse)
 def auth_me(session: dict[str, object] = Depends(current_session)) -> AuthMeResponse:
-    return AuthMeResponse(
-        user=SessionUser(
-            user_id=str(session["user_id"]),
-            email=str(session["email"]),
-            account_role=cast(AccountRole, session["account_role"]),
-            scopes=cast(list[str], session["scopes"]),
-            profile_mode=cast(ProfileMode, session["profile_mode"]),
-            display_name=str(session["display_name"]),
-        )
+    return AuthMeResponse(user=_session_user_from_session(session))
+
+
+@router.patch("/api/v1/auth/profile", response_model=AuthMeResponse)
+def auth_update_profile(
+    payload: AuthProfileUpdateRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> AuthMeResponse:
+    display_name = payload.display_name
+    if display_name is not None:
+        display_name = display_name.strip()
+        if not display_name:
+            raise HTTPException(status_code=400, detail="display_name must not be blank")
+    if display_name is None and payload.profile_mode is None:
+        raise HTTPException(status_code=400, detail="no profile changes requested")
+    context = get_context(request)
+    updated = context.auth_store.update_user_profile(
+        user_id=str(session["user_id"]),
+        display_name=display_name,
+        profile_mode=payload.profile_mode,
     )
+    if updated is None:
+        raise HTTPException(status_code=401, detail="invalid session")
+    refreshed = context.auth_store.get_session(str(session["session_id"]))
+    if refreshed is None:
+        raise HTTPException(status_code=401, detail="session expired")
+    return AuthMeResponse(user=_session_user_from_session(cast(dict[str, object], refreshed)))
 
 
 @router.get("/api/v1/auth/sessions", response_model=AuthSessionListResponse)

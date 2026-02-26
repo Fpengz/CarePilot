@@ -185,3 +185,53 @@ def test_revoke_others_keeps_current_session_only() -> None:
     assert revoke_others.json() == {"ok": True, "revoked_count": 1}
     assert client_a.get("/api/v1/auth/me").status_code == 200
     assert client_b.get("/api/v1/auth/me").status_code == 401
+
+
+def test_patch_profile_updates_current_session_and_me() -> None:
+    client = TestClient(create_app())
+    login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    assert login.status_code == 200
+
+    patch = client.patch(
+        "/api/v1/auth/profile",
+        json={"display_name": "Alex Wellness", "profile_mode": "caregiver"},
+    )
+
+    assert patch.status_code == 200
+    body = patch.json()
+    assert body["user"]["display_name"] == "Alex Wellness"
+    assert body["user"]["profile_mode"] == "caregiver"
+    me = client.get("/api/v1/auth/me")
+    assert me.status_code == 200
+    assert me.json()["user"]["display_name"] == "Alex Wellness"
+    assert me.json()["user"]["profile_mode"] == "caregiver"
+
+
+def test_patch_profile_persists_for_future_sessions() -> None:
+    app = create_app()
+    client = TestClient(app)
+    relogin_client = TestClient(app)
+    login = client.post("/api/v1/auth/login", json={"email": "helper@example.com", "password": "helper-pass"})
+    assert login.status_code == 200
+
+    patch = client.patch("/api/v1/auth/profile", json={"display_name": "Casey Family"})
+    assert patch.status_code == 200
+    logout = client.post("/api/v1/auth/logout")
+    assert logout.status_code == 200
+
+    relogin = relogin_client.post(
+        "/api/v1/auth/login", json={"email": "helper@example.com", "password": "helper-pass"}
+    )
+    assert relogin.status_code == 200
+    assert relogin.json()["user"]["display_name"] == "Casey Family"
+
+
+def test_patch_profile_rejects_empty_update() -> None:
+    client = TestClient(create_app())
+    login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    assert login.status_code == 200
+
+    patch = client.patch("/api/v1/auth/profile", json={})
+
+    assert patch.status_code == 400
+    assert patch.json()["detail"] == "no profile changes requested"

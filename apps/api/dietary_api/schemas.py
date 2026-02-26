@@ -40,6 +40,11 @@ class AuthMeResponse(BaseModel):
     user: SessionUser
 
 
+class AuthProfileUpdateRequest(BaseModel):
+    display_name: str | None = None
+    profile_mode: ProfileMode | None = None
+
+
 class AuthSessionListItem(BaseModel):
     session_id: str
     issued_at: datetime

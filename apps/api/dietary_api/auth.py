@@ -95,6 +95,33 @@ class InMemoryAuthStore:
             return None
         return user
 
+    def update_user_profile(
+        self,
+        *,
+        user_id: str,
+        display_name: str | None = None,
+        profile_mode: ProfileMode | None = None,
+    ) -> AuthUserRecord | None:
+        user: AuthUserRecord | None = None
+        for candidate in self._users_by_email.values():
+            if candidate.user_id == user_id:
+                user = candidate
+                break
+        if user is None:
+            return None
+        if display_name is not None:
+            user.display_name = display_name
+        if profile_mode is not None:
+            user.profile_mode = profile_mode
+        for session in self._sessions.values():
+            if str(session.get("user_id")) != user_id:
+                continue
+            if display_name is not None:
+                session["display_name"] = display_name
+            if profile_mode is not None:
+                session["profile_mode"] = profile_mode
+        return user
+
     def create_session(self, user: AuthUserRecord) -> dict[str, Any]:
         session_id = str(uuid4())
         session = {
