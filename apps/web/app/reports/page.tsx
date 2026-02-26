@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
 import { JsonViewer } from "@/components/app/json-viewer";
+import { KeyValuePreview } from "@/components/app/key-value-preview";
 import { PageTitle } from "@/components/app/page-title";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,41 +122,12 @@ export default function ReportsPage() {
               )}
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Recommendation Preview</CardTitle>
-              <CardDescription>Structured highlights from the generated recommendation payload.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recommendation ? (
-                <div className="space-y-3">
-                  {recommendationEntries.length > 0 ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {recommendationEntries.map(([key, value]) => (
-                        <div key={key} className="metric-card">
-                          <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">
-                            {key.replaceAll("_", " ")}
-                          </div>
-                          <div className="mt-1 text-sm font-medium break-words">
-                            {typeof value === "string" || typeof value === "number" || typeof value === "boolean"
-                              ? String(value)
-                              : Array.isArray(value)
-                                ? `${value.length} item(s)`
-                                : "Object"}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                  <p className="app-muted text-xs">
-                    Raw payload is still available below for debugging and contract inspection.
-                  </p>
-                </div>
-              ) : (
-                <p className="app-muted text-sm">Generate a recommendation to preview structured fields.</p>
-              )}
-            </CardContent>
-          </Card>
+          <KeyValuePreview
+            title="Recommendation Preview"
+            description="Structured highlights from the generated recommendation payload."
+            entries={recommendationEntries.map(([key, value]) => ({ key: key.replaceAll("_", " "), value }))}
+            emptyLabel="Generate a recommendation to preview structured fields."
+          />
           <JsonViewer title="Parsed Snapshot" data={parseResult} emptyLabel="Parse a report to inspect the structured snapshot." />
           <JsonViewer
             title="Recommendation"

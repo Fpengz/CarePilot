@@ -6,6 +6,7 @@ import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
 import { JsonViewer } from "@/components/app/json-viewer";
 import { PageTitle } from "@/components/app/page-title";
+import { TimelineList } from "@/components/app/timeline-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -123,59 +124,27 @@ export default function AlertsPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Outbox Timeline Events</CardTitle>
-              <CardDescription>Delivery state changes from the alert timeline endpoint.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {outboxTimeline.length > 0 ? (
-                <div className="data-list">
-                  {outboxTimeline.slice(0, 8).map((item, idx) => (
-                    <div key={String(item.event_id ?? item.id ?? idx)} className="data-list-row">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium">{String(item.status ?? item.event_type ?? "event")}</span>
-                        {"destination" in item ? (
-                          <span className="rounded-full border border-[color:var(--border)] px-2 py-1 text-xs">
-                            {String(item.destination)}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="app-muted text-xs">
-                        {String(item.timestamp ?? item.created_at ?? item.occurred_at ?? "No timestamp")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="app-muted text-sm">Fetch a timeline to view delivery state changes.</p>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Trigger Workflow Timeline</CardTitle>
-              <CardDescription>Execution steps from the trigger workflow response.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {triggerWorkflowTimeline.length > 0 ? (
-                <div className="data-list">
-                  {triggerWorkflowTimeline.slice(0, 6).map((item, idx) => (
-                    <div key={String(item.event_id ?? idx)} className="data-list-row">
-                      <div className="text-sm font-medium">
-                        {String(item.event_name ?? item.node_name ?? item.stage ?? item.event_type ?? "workflow_event")}
-                      </div>
-                      <div className="app-muted text-xs">
-                        {String(item.timestamp ?? item.created_at ?? "No timestamp")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="app-muted text-sm">Trigger an alert to preview workflow execution steps.</p>
-              )}
-            </CardContent>
-          </Card>
+          <TimelineList
+            title="Outbox Timeline Events"
+            description="Delivery state changes from the alert timeline endpoint."
+            items={outboxTimeline.slice(0, 8).map((item, idx) => ({
+              id: String(item.event_id ?? item.id ?? idx),
+              title: String(item.status ?? item.event_type ?? "event"),
+              subtitle: String(item.timestamp ?? item.created_at ?? item.occurred_at ?? "No timestamp"),
+              badges: "destination" in item ? [String(item.destination)] : [],
+            }))}
+            emptyLabel="Fetch a timeline to view delivery state changes."
+          />
+          <TimelineList
+            title="Trigger Workflow Timeline"
+            description="Execution steps from the trigger workflow response."
+            items={triggerWorkflowTimeline.slice(0, 6).map((item, idx) => ({
+              id: String(item.event_id ?? idx),
+              title: String(item.event_name ?? item.node_name ?? item.stage ?? item.event_type ?? "workflow_event"),
+              subtitle: String(item.timestamp ?? item.created_at ?? "No timestamp"),
+            }))}
+            emptyLabel="Trigger an alert to preview workflow execution steps."
+          />
           <JsonViewer title="Trigger Response" data={result} emptyLabel="Trigger an alert to inspect outbox and workflow trace data." />
           <JsonViewer title="Timeline Response" data={timelineResult} emptyLabel="Fetch a timeline to inspect delivery state history." />
         </div>
