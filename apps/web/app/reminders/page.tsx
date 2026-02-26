@@ -4,12 +4,10 @@ import { useMemo, useState } from "react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
-import { JsonViewer } from "@/components/app/json-viewer";
 import { PageTitle } from "@/components/app/page-title";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import { confirmReminder, generateReminders, listReminders } from "@/lib/api";
 import type { ReminderEventView, ReminderMetrics } from "@/lib/types";
 
@@ -52,6 +50,10 @@ export default function RemindersPage() {
   const [loadingAction, setLoadingAction] = useState<"generate" | "list" | "yes" | "no" | null>(null);
 
   const selectableReminders = useMemo(() => reminders.filter((item) => item.status === "sent"), [reminders]);
+  const selectedReminder = useMemo(
+    () => selectableReminders.find((item) => item.id === selectedId) ?? null,
+    [selectableReminders, selectedId],
+  );
 
   return (
     <div>
@@ -112,21 +114,65 @@ export default function RemindersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reminder-select">Confirm reminder</Label>
-              <Select
-                id="reminder-select"
-                value={selectedId}
-                onChange={(e) => setSelectedId(e.target.value)}
-                disabled={loadingAction !== null}
-              >
-                <option value="">Select reminder</option>
-                {selectableReminders.map((reminder) => (
-                  <option key={reminder.id} value={reminder.id}>
-                    {reminder.medication_name} {reminder.dosage_text} @{" "}
-                    {reminderTimeFormatter.format(new Date(reminder.scheduled_at))}
-                  </option>
-                ))}
-              </Select>
+              <Label>Confirm reminder</Label>
+              {selectableReminders.length > 0 ? (
+                <div className="data-list">
+                  {selectableReminders.slice(0, 5).map((reminder) => {
+                    const active = selectedId === reminder.id;
+                    return (
+                      <button
+                        key={reminder.id}
+                        type="button"
+                        disabled={loadingAction !== null}
+                        onClick={() => setSelectedId(reminder.id)}
+                        className={[
+                          "w-full rounded-xl border px-3 py-3 text-left transition",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)] focus-visible:ring-offset-2",
+                          "focus-visible:ring-offset-[color:var(--background)]",
+                          active
+                            ? "border-[color:var(--accent)]/40 bg-[color:var(--accent)]/10"
+                            : "border-[color:var(--border)] bg-white/60 hover:bg-white/80 dark:bg-[color:var(--panel-soft)] dark:hover:bg-[color:var(--card)]",
+                        ].join(" ")}
+                        aria-pressed={active}
+                      >
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium">
+                              {reminder.medication_name} {reminder.dosage_text}
+                            </div>
+                            <div className="app-muted mt-1 text-xs">
+                              {new Intl.DateTimeFormat(undefined, {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              }).format(new Date(reminder.scheduled_at))}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full border border-[color:var(--border)] px-2 py-1 text-xs">
+                              {active ? "Selected" : "Tap to select"}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-white/40 p-3 text-sm text-[color:var(--muted-foreground)] dark:bg-[color:var(--panel-soft)]/70">
+                  Generate or refresh reminders first. Only reminders with `sent` status can be confirmed.
+                </div>
+              )}
+              {selectedReminder ? (
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Selected Reminder</div>
+                  <div className="mt-1 text-sm font-medium">
+                    {selectedReminder.medication_name} {selectedReminder.dosage_text}
+                  </div>
+                  <div className="app-muted mt-1 text-xs">
+                    Scheduled {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(selectedReminder.scheduled_at))}
+                  </div>
+                </div>
+              ) : null}
               <p className="app-muted text-xs">Only reminders with `sent` status are available for confirmation.</p>
             </div>
 
@@ -187,7 +233,41 @@ export default function RemindersPage() {
               <MetricsCard metrics={metrics} />
             </CardContent>
           </Card>
-          <JsonViewer title="Reminder Events" data={reminders.length ? reminders : null} emptyLabel="No reminders loaded yet." />
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Reminder Events</CardTitle>
+              <CardDescription>Current events with confirmation state and schedule time.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {reminders.length > 0 ? (
+                <div className="data-list">
+                  {reminders.map((reminder) => (
+                    <div key={reminder.id} className="data-list-row sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium">
+                          {reminder.medication_name} {reminder.dosage_text}
+                        </div>
+                        <div className="app-muted mt-1 text-xs">
+                          {new Intl.DateTimeFormat(undefined, {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(reminder.scheduled_at))}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="rounded-full border border-[color:var(--border)] px-2 py-1">{reminder.status}</span>
+                        <span className="rounded-full border border-[color:var(--border)] px-2 py-1">
+                          meal: {reminder.meal_confirmation}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="app-muted text-sm">No reminders loaded yet.</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { PageTitle } from "@/components/app/page-title";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
@@ -15,16 +17,21 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
-          ["Meal Analysis", "Upload and review meals, records, and trace outputs."],
-          ["Reminders", "Track generated reminders and meal confirmation rate."],
-          ["Reports", "Parse report text and generate grounded recommendations."],
-          ["Operations", "Admin-only alerts and workflow timeline inspection."],
-        ].map(([title, text]) => (
+          ["Meal Analysis", "Upload photos, inspect summaries, and review saved records.", "/meals"],
+          ["Reminders", "Generate events and confirm meals with metrics feedback.", "/reminders"],
+          ["Reports", "Parse report text and produce recommendation outputs.", "/reports"],
+          ["Household", "Create a family-like group and manage invites/members.", "/household"],
+        ].map(([title, text, href]) => (
           <Card key={title} className="grain-overlay">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">{title}</CardTitle>
               <CardDescription>{text}</CardDescription>
             </CardHeader>
+            <CardContent className="pt-0">
+              <Button asChild size="sm" variant="secondary">
+                <Link href={String(href)}>Open</Link>
+              </Button>
+            </CardContent>
           </Card>
         ))}
       </div>
@@ -45,7 +52,7 @@ export default function DashboardPage() {
             <ul className="list-disc space-y-2 pl-5 text-sm leading-6 text-[color:var(--muted-foreground)]">
               <li>Auth payloads use the new principal contract.</li>
               <li>Privileged routes are gated by scopes, not persona labels.</li>
-              <li>Web routes are ready for progressive enhancement without backend churn.</li>
+              <li>Household flows are now available for create/invite/join/member management.</li>
             </ul>
           </CardContent>
         </Card>
@@ -57,10 +64,10 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {[
-              "Authenticated sidebar layout and session-aware navigation states",
-              "Structured timeline/event viewer for workflow traces",
-              "Charts for reminder adherence and meal confirmation trends",
-              "Profile-mode-specific content framing for self vs caregiver flows",
+              "Suggestions unified flow (report parse + recommendation in one action)",
+              "Household-aware data views for meals/reminders/suggestions",
+              "Structured workflow/alert timeline viewers",
+              "Charts for adherence and meal confirmation trends",
             ].map((item) => (
               <div key={item} className="metric-card">
                 {item}

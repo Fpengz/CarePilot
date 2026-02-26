@@ -19,7 +19,7 @@ export function TopBar() {
   const { status, user } = useSession();
 
   return (
-    <header className="app-panel sticky top-4 z-20 mb-4 p-3 md:p-4">
+    <header className="app-panel sticky top-4 z-20 mb-4 p-3 md:mb-5 md:p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-1 flex items-center gap-1 text-xs text-[color:var(--muted-foreground)]">
@@ -27,33 +27,40 @@ export function TopBar() {
             <ChevronRight className="h-3 w-3" aria-hidden />
             <span>{breadcrumb}</span>
           </div>
-          <h2 className="truncate text-xl font-semibold md:text-2xl">{pageTitle}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="truncate text-xl font-semibold md:text-2xl">{pageTitle}</h2>
+            {route?.group === "admin" ? <Badge variant="outline">Admin Area</Badge> : null}
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            aria-disabled="true"
-            title="Search coming soon"
-            className="gap-2"
-          >
-            <Search className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">Search</span>
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            aria-disabled="true"
-            title="Notifications coming soon"
-            className="px-2.5"
-          >
-            <Bell className="h-4 w-4" aria-hidden />
-            <span className="sr-only">Notifications (coming soon)</span>
-          </Button>
-          <ThemeToggle />
+          <div className="flex items-center gap-2 rounded-xl border border-[color:var(--border)] bg-white/55 p-1 dark:bg-[color:var(--panel-soft)]">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-disabled="true"
+              title="Search coming soon"
+              className="gap-2"
+            >
+              <Search className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">Search</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-disabled="true"
+              title="Notifications coming soon"
+              className="px-2.5"
+            >
+              <Bell className="h-4 w-4" aria-hidden />
+              <span className="sr-only">Notifications (coming soon)</span>
+            </Button>
+          </div>
+          <div className="rounded-xl border border-[color:var(--border)] bg-white/55 p-1 dark:bg-[color:var(--panel-soft)]">
+            <ThemeToggle />
+          </div>
           {status === "loading" ? (
             <Badge variant="outline">Session loading</Badge>
           ) : status === "unauthenticated" || !user ? (

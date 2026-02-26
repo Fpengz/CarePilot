@@ -17,6 +17,13 @@ export default function WorkflowsPage() {
   const [listResult, setListResult] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"list" | "fetch" | null>(null);
+  const workflowItems = ((listResult as { items?: Array<Record<string, unknown>> } | null)?.items ?? []) as Array<
+    Record<string, unknown>
+  >;
+  const traceEventCount =
+    ((result as { timeline_events?: Array<Record<string, unknown>> } | null)?.timeline_events?.length ?? null) as
+      | number
+      | null;
 
   return (
     <div>
@@ -88,6 +95,34 @@ export default function WorkflowsPage() {
 
         <div className="stack-grid">
           {error ? <ErrorCard message={error} /> : null}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Trace Overview</CardTitle>
+              <CardDescription>Recent workflow inventory and selected trace status.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Listed Workflows</div>
+                  <div className="mt-1 text-sm font-medium">{workflowItems.length || "None loaded"}</div>
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Selected Trace Events</div>
+                  <div className="mt-1 text-sm font-medium">{traceEventCount ?? "No trace loaded"}</div>
+                </div>
+              </div>
+              {workflowItems.length > 0 ? (
+                <div className="data-list mt-3">
+                  {workflowItems.slice(0, 3).map((item, idx) => (
+                    <div key={String(item.correlation_id ?? idx)} className="data-list-row">
+                      <div className="text-sm font-medium">{String(item.workflow_name ?? "workflow")}</div>
+                      <div className="app-muted text-xs break-all">{String(item.correlation_id ?? "unknown")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
           <JsonViewer title="Workflow List" data={listResult} emptyLabel="List workflows to browse recent traces." />
           <JsonViewer title="Workflow Trace" data={result} emptyLabel="Fetch a workflow by correlation ID to inspect timeline events." />
         </div>

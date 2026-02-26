@@ -5,6 +5,8 @@ import { useState } from "react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
+import { JsonViewer } from "@/components/app/json-viewer";
+import { PageTitle } from "@/components/app/page-title";
 import { useSession } from "@/components/app/session-provider";
 import { signup } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +27,14 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
+    <div>
+      <PageTitle
+        eyebrow="Auth"
+        title="Create Account"
+        description="Email/password signup creates a member account and signs you in immediately."
+        tags={["signup", "member account", "session bootstrap"]}
+      />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
       <Card className="grain-overlay relative overflow-hidden">
         <CardHeader>
           <div className="mb-2 flex items-center gap-2">
@@ -121,15 +130,11 @@ export default function SignupPage() {
       <div className="grid gap-4">
         {error ? <ErrorCard message={error} /> : null}
         {result ? (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Signup Response</CardTitle>
-              <CardDescription>Session is active after successful signup.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <pre className="app-code">{JSON.stringify(result, null, 2)}</pre>
-            </CardContent>
-          </Card>
+          <JsonViewer
+            title="Signup Response"
+            description="Session is active after successful signup."
+            data={result}
+          />
         ) : (
           <Card>
             <CardHeader>
@@ -140,6 +145,7 @@ export default function SignupPage() {
             </CardHeader>
           </Card>
         )}
+      </div>
       </div>
     </div>
   );

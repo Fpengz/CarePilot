@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ShieldCheck, UserRound, Users } from "lucide-react";
+import { PageTitle } from "@/components/app/page-title";
 import { useSession } from "@/components/app/session-provider";
 import { ErrorCard } from "@/components/app/error-card";
+import { JsonViewer } from "@/components/app/json-viewer";
 import { login, me } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +23,14 @@ export default function LoginPage() {
   const [meResult, setMeResult] = useState<object | null>(null);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,540px)_minmax(0,1fr)]">
+    <div>
+      <PageTitle
+        eyebrow="Auth"
+        title="Sign In"
+        description="Use demo accounts to test session cookies, role/scopes, and the account panel flows."
+        tags={["cookie session", "account_role", "profile_mode"]}
+      />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,540px)_minmax(0,1fr)]">
       <Card className="grain-overlay relative overflow-hidden">
         <CardHeader>
           <div className="mb-2 flex items-center gap-2">
@@ -127,26 +136,8 @@ export default function LoginPage() {
         {error ? (
           <ErrorCard message={error} />
         ) : null}
-        {result ? (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Login Response</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="app-code">{JSON.stringify(result, null, 2)}</pre>
-            </CardContent>
-          </Card>
-        ) : null}
-        {meResult ? (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Current Session (`/auth/me`)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="app-code">{JSON.stringify(meResult, null, 2)}</pre>
-            </CardContent>
-          </Card>
-        ) : (
+        {result ? <JsonViewer title="Login Response" data={result} /> : null}
+        {meResult ? <JsonViewer title="Current Session (`/auth/me`)" data={meResult} /> : (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Foundation Applied</CardTitle>
@@ -156,6 +147,7 @@ export default function LoginPage() {
             </CardHeader>
           </Card>
         )}
+      </div>
       </div>
     </div>
   );

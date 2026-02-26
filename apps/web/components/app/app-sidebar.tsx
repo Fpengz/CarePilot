@@ -19,10 +19,12 @@ export function AppSidebar() {
         <div className="mb-4 space-y-2">
           <Link href="/dashboard" className="block">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold">Dietary Guardian</h1>
+              <h1 className="text-xl font-semibold leading-tight">Dietary Guardian</h1>
               <Badge variant="outline">Foundation</Badge>
             </div>
-            <p className="app-muted mt-1 text-sm leading-5">Wellness + care support with account-role and scope-aware access.</p>
+            <p className="app-muted mt-1 text-sm leading-5">
+              Wellness + care support with account-role and scope-aware access.
+            </p>
           </Link>
         </div>
 

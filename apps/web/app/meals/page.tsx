@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { ImagePlus, X } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
@@ -14,11 +15,13 @@ import { analyzeMeal, listMealRecords } from "@/lib/api";
 import type { MealAnalyzeApiResponse } from "@/lib/types";
 
 export default function MealsPage() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<MealAnalyzeApiResponse | null>(null);
   const [recordsResult, setRecordsResult] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"analyze" | "records" | null>(null);
+  const recordItems = (recordsResult as { records?: Array<Record<string, unknown>> } | null)?.records ?? [];
 
   return (
     <div>
@@ -33,20 +36,60 @@ export default function MealsPage() {
         <Card className="grain-overlay">
           <CardHeader>
             <CardTitle>Analyze Meal</CardTitle>
-            <CardDescription>Uploads an image to `/api/v1/meal/analyze` and stores a meal record.</CardDescription>
+            <CardDescription>
+              Uploads an image to `/api/v1/meal/analyze`, stores a meal record, and returns a typed summary for UI rendering.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="meal-file" className="text-sm font-medium">
                 Meal image
               </label>
-              <Input
+              <input
+                ref={fileInputRef}
                 id="meal-file"
-                className="cursor-pointer file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--accent)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-[color:var(--accent-foreground)]"
+                className="sr-only"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
+              <div className="rounded-xl border border-[color:var(--border)] bg-white/55 p-3 dark:bg-[color:var(--panel-soft)]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <ImagePlus className="h-4 w-4 text-[color:var(--accent)]" aria-hidden />
+                      {file ? "Image selected" : "Choose a meal image"}
+                    </div>
+                    <div className="app-muted mt-1 truncate text-xs">
+                      {file ? `${file.name} • ${(file.size / 1024).toFixed(0)} KB` : "JPG, PNG, or WEBP up to your browser limit"}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {file ? "Replace Image" : "Browse Files"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={!file}
+                      onClick={() => {
+                        setFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      className="gap-1.5"
+                    >
+                      <X className="h-4 w-4" aria-hidden />
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              </div>
               <p className="app-muted text-xs">Accepted formats: JPG, PNG, WEBP.</p>
             </div>
 
@@ -151,6 +194,37 @@ export default function MealsPage() {
                 </div>
               ) : (
                 <p className="app-muted text-sm">Analyze a meal image to view the typed summary.</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Saved Meal Records</CardTitle>
+              <CardDescription>Recent persisted meals from the read endpoint.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recordItems.length > 0 ? (
+                <div className="data-list">
+                  {recordItems.slice(0, 5).map((record, index) => (
+                    <div key={String(record.id ?? record.meal_name ?? index)} className="data-list-row sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium">{String(record.meal_name ?? "Meal record")}</div>
+                        <div className="app-muted mt-1 text-xs">
+                          {String(record.captured_at ?? record.created_at ?? "Unknown capture time")}
+                        </div>
+                      </div>
+                      <div className="text-sm font-medium">
+                        {typeof record.calories_estimate === "number"
+                          ? `${Math.round(record.calories_estimate)} kcal`
+                          : typeof record.estimated_calories === "number"
+                            ? `${Math.round(Number(record.estimated_calories))} kcal`
+                            : "—"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="app-muted text-sm">Load meal records to preview saved items.</p>
               )}
             </CardContent>
           </Card>

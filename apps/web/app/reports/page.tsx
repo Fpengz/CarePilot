@@ -18,6 +18,8 @@ export default function ReportsPage() {
   const [recommendationResult, setRecommendationResult] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"parse" | "recommend" | null>(null);
+  const parseSnapshot = (parseResult as { snapshot?: { biomarkers?: Record<string, number>; risk_flags?: string[] } } | null)
+    ?.snapshot;
 
   return (
     <div>
@@ -89,6 +91,34 @@ export default function ReportsPage() {
 
         <div className="stack-grid">
           {error ? <ErrorCard message={error} /> : null}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Snapshot Preview</CardTitle>
+              <CardDescription>Parsed biomarkers and risk flags at a glance.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {parseSnapshot ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="metric-card sm:col-span-2">
+                    <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Risk Flags</div>
+                    <div className="mt-1 text-sm font-medium">
+                      {(parseSnapshot.risk_flags ?? []).length > 0 ? (parseSnapshot.risk_flags ?? []).join(", ") : "None"}
+                    </div>
+                  </div>
+                  {Object.entries(parseSnapshot.biomarkers ?? {})
+                    .slice(0, 4)
+                    .map(([key, value]) => (
+                      <div key={key} className="metric-card">
+                        <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">{key}</div>
+                        <div className="mt-1 text-sm font-medium">{value}</div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="app-muted text-sm">Parse a report to preview structured biomarkers.</p>
+              )}
+            </CardContent>
+          </Card>
           <JsonViewer title="Parsed Snapshot" data={parseResult} emptyLabel="Parse a report to inspect the structured snapshot." />
           <JsonViewer
             title="Recommendation"

@@ -18,6 +18,12 @@ export default function AlertsPage() {
   const [alertId, setAlertId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"trigger" | "timeline" | null>(null);
+  const triggeredAlertId =
+    ((result as { tool_result?: { output?: { alert_id?: string } } } | null)?.tool_result?.output?.alert_id as
+      | string
+      | undefined) ?? null;
+  const timelineCount = ((timelineResult as { outbox_timeline?: unknown[] } | null)?.outbox_timeline?.length ??
+    null) as number | null;
 
   return (
     <div>
@@ -95,6 +101,24 @@ export default function AlertsPage() {
 
         <div className="stack-grid">
           {error ? <ErrorCard message={error} /> : null}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Alert Status</CardTitle>
+              <CardDescription>Quick summary before diving into raw traces.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Latest Alert ID</div>
+                  <div className="mt-1 break-all text-sm font-medium">{triggeredAlertId ?? "Not triggered yet"}</div>
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Timeline Events</div>
+                  <div className="mt-1 text-sm font-medium">{timelineCount ?? "No timeline loaded"}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           <JsonViewer title="Trigger Response" data={result} emptyLabel="Trigger an alert to inspect outbox and workflow trace data." />
           <JsonViewer title="Timeline Response" data={timelineResult} emptyLabel="Fetch a timeline to inspect delivery state history." />
         </div>

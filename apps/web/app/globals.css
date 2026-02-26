@@ -119,8 +119,24 @@
     @apply grid gap-4;
   }
 
+  .stack-grid-tight {
+    @apply grid gap-3;
+  }
+
   .metric-card {
     @apply rounded-xl border border-[color:var(--border)] bg-white/70 p-4 dark:bg-[color:var(--panel-soft)];
+  }
+
+  .data-list {
+    @apply space-y-2;
+  }
+
+  .data-list-row {
+    @apply flex flex-col gap-2 rounded-xl border border-[color:var(--border)] bg-white/60 px-3 py-3 dark:bg-[color:var(--panel-soft)];
+  }
+
+  .section-kicker {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--muted-foreground)];
   }
 
   .grain-overlay {
