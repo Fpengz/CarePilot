@@ -10,6 +10,7 @@ from .recommendations import router as recommendations_router
 from .reminders import router as reminders_router
 from .reports import router as reports_router
 from .workflows import router as workflows_router
+from .suggestions import router as suggestions_router
 
 
 def include_routers(app: FastAPI) -> None:
@@ -22,4 +23,5 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(notifications_router)
     app.include_router(reports_router)
     app.include_router(recommendations_router)
+    app.include_router(suggestions_router)
     app.include_router(reminders_router)

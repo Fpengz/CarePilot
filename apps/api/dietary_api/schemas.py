@@ -255,6 +255,32 @@ class RecommendationGenerateResponse(BaseModel):
     workflow: dict[str, object]
 
 
+class SuggestionGenerateFromReportRequest(BaseModel):
+    source: Literal["pasted_text"] = "pasted_text"
+    text: str
+
+
+class SuggestionItemResponse(BaseModel):
+    suggestion_id: str
+    created_at: datetime
+    disclaimer: str
+    report_parse: dict[str, object]
+    recommendation: dict[str, object]
+    workflow: dict[str, object]
+
+
+class SuggestionGenerateFromReportResponse(BaseModel):
+    suggestion: SuggestionItemResponse
+
+
+class SuggestionListResponse(BaseModel):
+    items: list[SuggestionItemResponse]
+
+
+class SuggestionDetailResponse(BaseModel):
+    suggestion: SuggestionItemResponse
+
+
 class ReminderGenerateResponse(BaseModel):
     reminders: list[dict[str, object]]
     metrics: dict[str, object]

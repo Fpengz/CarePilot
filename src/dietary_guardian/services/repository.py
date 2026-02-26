@@ -1,7 +1,7 @@
 import json
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, cast
 
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.meal import MealState
@@ -92,6 +92,16 @@ class SQLiteRepository:
             )
             cur.execute(
                 """
+                CREATE TABLE IF NOT EXISTS suggestion_records (
+                    suggestion_id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    payload_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS alert_outbox (
                     alert_id TEXT NOT NULL,
                     sink TEXT NOT NULL,
@@ -129,6 +139,7 @@ class SQLiteRepository:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_reminders_user_time ON reminder_events(user_id, scheduled_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_meals_user_time ON meal_records(user_id, captured_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_biomarkers_user_time_name ON biomarker_readings(user_id, measured_at, name)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_suggestions_user_time ON suggestion_records(user_id, created_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_alert_outbox_next_attempt ON alert_outbox(state, next_attempt_at)")
             conn.commit()
         logger.info("repository_schema_ready db_path=%s", self.db_path)
@@ -348,6 +359,57 @@ class SQLiteRepository:
             )
             conn.commit()
         logger.info("save_recommendation user_id=%s payload_keys=%s", user_id, sorted(payload.keys()))
+
+    def save_suggestion_record(self, user_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        suggestion_id = str(payload.get("suggestion_id", ""))
+        created_at = str(payload.get("created_at", ""))
+        if not suggestion_id or not created_at:
+            raise ValueError("suggestion payload requires suggestion_id and created_at")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO suggestion_records(suggestion_id, user_id, created_at, payload_json)
+                VALUES (?, ?, ?, ?)
+                """,
+                (suggestion_id, user_id, created_at, json.dumps(payload)),
+            )
+            conn.commit()
+        logger.info("save_suggestion_record user_id=%s suggestion_id=%s", user_id, suggestion_id)
+        return payload
+
+    def list_suggestion_records(self, user_id: str, limit: int = 20) -> list[dict[str, Any]]:
+        bounded_limit = max(1, min(limit, 100))
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(
+                """
+                SELECT payload_json
+                FROM suggestion_records
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (user_id, bounded_limit),
+            ).fetchall()
+        items = [json.loads(cast(str, row[0])) for row in rows]
+        logger.debug("list_suggestion_records user_id=%s count=%s", user_id, len(items))
+        return items
+
+    def get_suggestion_record(self, user_id: str, suggestion_id: str) -> dict[str, Any] | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT payload_json
+                FROM suggestion_records
+                WHERE user_id = ? AND suggestion_id = ?
+                """,
+                (user_id, suggestion_id),
+            ).fetchone()
+        if row is None:
+            logger.debug("get_suggestion_record_miss user_id=%s suggestion_id=%s", user_id, suggestion_id)
+            return None
+        item = json.loads(cast(str, row[0]))
+        logger.debug("get_suggestion_record_hit user_id=%s suggestion_id=%s", user_id, suggestion_id)
+        return item
 
     def enqueue_alert(self, message: AlertMessage) -> list[OutboxRecord]:
         created: list[OutboxRecord] = []

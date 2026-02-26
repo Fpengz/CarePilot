@@ -1,0 +1,86 @@
+# API Contract: Suggestions (Unified Report -> Recommendation Flow)
+
+## Summary
+The suggestions API provides a single endpoint to parse report text and generate a recommendation payload, then persists the result as a suggestion record.
+
+This is a convenience orchestration endpoint that builds on the existing lower-level APIs:
+- `POST /api/v1/reports/parse`
+- `POST /api/v1/recommendations/generate`
+
+## Endpoints
+
+### `POST /api/v1/suggestions/generate-from-report`
+Generates a suggestion by:
+1. parsing pasted report text
+2. building a clinical snapshot
+3. generating a recommendation using the latest saved meal record
+4. persisting a suggestion snapshot
+
+#### Auth / scopes
+Requires both:
+- `report:write`
+- `recommendation:generate`
+
+#### Request
+```json
+{
+  "source": "pasted_text",
+  "text": "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95"
+}
+```
+
+#### Response (shape)
+```json
+{
+  "suggestion": {
+    "suggestion_id": "uuid",
+    "created_at": "2026-02-26T00:00:00+00:00",
+    "disclaimer": "This information is for general wellness...",
+    "report_parse": {
+      "readings": [{"name": "hba1c", "value": 7.1}],
+      "snapshot": {"biomarkers": {"hba1c": 7.1}, "risk_flags": ["high_hba1c"]}
+    },
+    "recommendation": {
+      "safe": true,
+      "rationale": "...",
+      "localized_advice": ["..."],
+      "blocked_reason": null,
+      "evidence": {"hba1c": 7.1}
+    },
+    "workflow": {
+      "workflow_name": "suggestions_generate_from_report",
+      "request_id": "uuid",
+      "correlation_id": "uuid",
+      "replayed": false,
+      "timeline_events": []
+    }
+  }
+}
+```
+
+#### Error cases
+- `400` `no meal records available` (recommendation generation currently depends on a saved meal)
+- `401` authentication required / invalid session
+- `403` missing required scopes
+
+### `GET /api/v1/suggestions`
+Lists persisted suggestion snapshots for the authenticated user.
+
+#### Auth / scopes
+Requires:
+- `report:read`
+
+#### Query params
+- `limit` (optional, `1..100`, default `20`)
+
+### `GET /api/v1/suggestions/{suggestion_id}`
+Returns one persisted suggestion snapshot for the authenticated user.
+
+#### Auth / scopes
+Requires:
+- `report:read`
+
+## Notes
+- Current v1 implementation stores suggestions per-user only.
+- Household-shared suggestion visibility is planned for a later milestone.
+- The endpoint includes a brief disclaimer to support safety/triage positioning.

@@ -18,6 +18,8 @@ See `docs/rbac-matrix.md` for the current RBAC matrix and endpoint permissions.
 See `docs/api-auth-contract.md` for auth payload examples and migration notes.
 See `docs/architecture-v1.md` for the v1 target architecture (hexagonal + workflow orchestration).
 See `docs/config-reference.md` for backend environment variables and defaults.
+See `docs/nightly-ops.md` for the nightly autonomous build runbook.
+See `SAFETY.md` for medical safety guardrails and escalation rules.
 
 ### Demo API Accounts
 - `member@example.com` / `member-pass`
@@ -162,6 +164,19 @@ The local pre-commit configuration runs these checks on every commit:
 - `./tools/validate.sh backend-milestone` runs the targeted backend milestone checks (sqlite auth + household/auth API coverage).
 - `./tools/validate.sh backend-all` runs repo backend checks (`ruff`, `ty`, `pytest`).
 - `./tools/validate.sh full-stack` runs backend checks plus web typecheck/build.
+- `./scripts/nightly-report.sh` creates (or prints) `reports/nightly_YYYY-MM-DD.md` from the report template.
+
+## Nightly Workflow
+For autonomous nightly progress, follow the repo-specific runbook:
+
+- `docs/nightly-ops.md` (loop, milestone selection, validation, report requirements)
+- `reports/nightly_TEMPLATE.md` (required report sections)
+
+Generate tonight's report file:
+
+```bash
+./scripts/nightly-report.sh
+```
 
 ## Quality Gates
 Run these checks before submitting changes:
