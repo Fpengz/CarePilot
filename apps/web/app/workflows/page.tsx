@@ -24,6 +24,8 @@ export default function WorkflowsPage() {
     ((result as { timeline_events?: Array<Record<string, unknown>> } | null)?.timeline_events?.length ?? null) as
       | number
       | null;
+  const traceEvents = ((result as { timeline_events?: Array<Record<string, unknown>> } | null)?.timeline_events ??
+    []) as Array<Record<string, unknown>>;
 
   return (
     <div>
@@ -121,6 +123,70 @@ export default function WorkflowsPage() {
                   ))}
                 </div>
               ) : null}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Recent Workflows</CardTitle>
+              <CardDescription>Structured list view for the latest workflow traces.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {workflowItems.length > 0 ? (
+                <div className="data-list">
+                  {workflowItems.slice(0, 8).map((item, idx) => (
+                    <button
+                      key={String(item.correlation_id ?? idx)}
+                      type="button"
+                      onClick={() => {
+                        const nextId = String(item.correlation_id ?? "");
+                        if (nextId) setCorrelationId(nextId);
+                      }}
+                      className="data-list-row w-full text-left transition hover:bg-white/80 dark:hover:bg-[color:var(--card)]"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium">{String(item.workflow_name ?? "workflow")}</span>
+                        <span className="rounded-full border border-[color:var(--border)] px-2 py-1 text-xs">
+                          {String(item.status ?? "trace")}
+                        </span>
+                      </div>
+                      <div className="app-muted break-all text-xs">{String(item.correlation_id ?? "unknown")}</div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="app-muted text-sm">List workflows to populate the structured trace browser.</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Timeline Preview</CardTitle>
+              <CardDescription>Step-by-step events from the selected workflow trace.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {traceEvents.length > 0 ? (
+                <div className="data-list">
+                  {traceEvents.slice(0, 12).map((event, idx) => (
+                    <div key={String(event.event_id ?? idx)} className="data-list-row">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium">
+                          {String(event.event_name ?? event.node_name ?? event.stage ?? event.event_type ?? "event")}
+                        </span>
+                        {"severity" in event ? (
+                          <span className="rounded-full border border-[color:var(--border)] px-2 py-1 text-xs">
+                            {String(event.severity)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="app-muted text-xs">
+                        {String(event.timestamp ?? event.created_at ?? "No timestamp")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="app-muted text-sm">Fetch a workflow to preview trace events.</p>
+              )}
             </CardContent>
           </Card>
           <JsonViewer title="Workflow List" data={listResult} emptyLabel="List workflows to browse recent traces." />

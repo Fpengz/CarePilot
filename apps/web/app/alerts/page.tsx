@@ -24,6 +24,10 @@ export default function AlertsPage() {
       | undefined) ?? null;
   const timelineCount = ((timelineResult as { outbox_timeline?: unknown[] } | null)?.outbox_timeline?.length ??
     null) as number | null;
+  const outboxTimeline = ((timelineResult as { outbox_timeline?: Array<Record<string, unknown>> } | null)
+    ?.outbox_timeline ?? []) as Array<Record<string, unknown>>;
+  const triggerWorkflowTimeline = ((result as { workflow?: { timeline_events?: Array<Record<string, unknown>> } } | null)
+    ?.workflow?.timeline_events ?? []) as Array<Record<string, unknown>>;
 
   return (
     <div>
@@ -117,6 +121,59 @@ export default function AlertsPage() {
                   <div className="mt-1 text-sm font-medium">{timelineCount ?? "No timeline loaded"}</div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Outbox Timeline Events</CardTitle>
+              <CardDescription>Delivery state changes from the alert timeline endpoint.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {outboxTimeline.length > 0 ? (
+                <div className="data-list">
+                  {outboxTimeline.slice(0, 8).map((item, idx) => (
+                    <div key={String(item.event_id ?? item.id ?? idx)} className="data-list-row">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium">{String(item.status ?? item.event_type ?? "event")}</span>
+                        {"destination" in item ? (
+                          <span className="rounded-full border border-[color:var(--border)] px-2 py-1 text-xs">
+                            {String(item.destination)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="app-muted text-xs">
+                        {String(item.timestamp ?? item.created_at ?? item.occurred_at ?? "No timestamp")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="app-muted text-sm">Fetch a timeline to view delivery state changes.</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Trigger Workflow Timeline</CardTitle>
+              <CardDescription>Execution steps from the trigger workflow response.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {triggerWorkflowTimeline.length > 0 ? (
+                <div className="data-list">
+                  {triggerWorkflowTimeline.slice(0, 6).map((item, idx) => (
+                    <div key={String(item.event_id ?? idx)} className="data-list-row">
+                      <div className="text-sm font-medium">
+                        {String(item.event_name ?? item.node_name ?? item.stage ?? item.event_type ?? "workflow_event")}
+                      </div>
+                      <div className="app-muted text-xs">
+                        {String(item.timestamp ?? item.created_at ?? "No timestamp")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="app-muted text-sm">Trigger an alert to preview workflow execution steps.</p>
+              )}
             </CardContent>
           </Card>
           <JsonViewer title="Trigger Response" data={result} emptyLabel="Trigger an alert to inspect outbox and workflow trace data." />

@@ -20,6 +20,8 @@ export default function ReportsPage() {
   const [loadingAction, setLoadingAction] = useState<"parse" | "recommend" | null>(null);
   const parseSnapshot = (parseResult as { snapshot?: { biomarkers?: Record<string, number>; risk_flags?: string[] } } | null)
     ?.snapshot;
+  const recommendation = (recommendationResult as { recommendation?: Record<string, unknown> } | null)?.recommendation;
+  const recommendationEntries = Object.entries(recommendation ?? {}).slice(0, 8);
 
   return (
     <div>
@@ -116,6 +118,41 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 <p className="app-muted text-sm">Parse a report to preview structured biomarkers.</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Recommendation Preview</CardTitle>
+              <CardDescription>Structured highlights from the generated recommendation payload.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recommendation ? (
+                <div className="space-y-3">
+                  {recommendationEntries.length > 0 ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {recommendationEntries.map(([key, value]) => (
+                        <div key={key} className="metric-card">
+                          <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">
+                            {key.replaceAll("_", " ")}
+                          </div>
+                          <div className="mt-1 text-sm font-medium break-words">
+                            {typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+                              ? String(value)
+                              : Array.isArray(value)
+                                ? `${value.length} item(s)`
+                                : "Object"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  <p className="app-muted text-xs">
+                    Raw payload is still available below for debugging and contract inspection.
+                  </p>
+                </div>
+              ) : (
+                <p className="app-muted text-sm">Generate a recommendation to preview structured fields.</p>
               )}
             </CardContent>
           </Card>
