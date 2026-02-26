@@ -102,6 +102,10 @@
     @apply rounded-2xl border border-[color:var(--border)] bg-white/70 shadow-[0_10px_30px_rgba(20,24,18,0.06)] backdrop-blur dark:bg-[color:var(--panel)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.32)];
   }
 
+  .app-toolbar-chip {
+    @apply rounded-xl border border-[color:var(--border)] bg-white/55 p-1 dark:bg-[color:var(--panel-soft)];
+  }
+
   .app-muted {
     color: var(--muted-foreground);
   }

@@ -14,7 +14,7 @@ function NavItem({ route, active }: { route: RouteMeta; active: boolean }) {
   const Icon = route.icon;
 
   const baseClass =
-    "flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-medium transition";
+    "flex w-full items-center justify-between rounded-xl border px-3.5 py-3 text-[15px] font-medium transition";
   const enabledClass = cn(
     "border-[color:var(--border)] bg-white/70 text-[color:var(--foreground)] hover:-translate-y-px hover:bg-white dark:bg-[color:var(--panel-soft)] dark:text-[#ece6d8] dark:hover:bg-[color:var(--card)]",
     active &&
@@ -81,7 +81,7 @@ export function SidebarNav({
           <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--accent)] dark:bg-[#b9efe4]" aria-hidden />
         ) : null}
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {routes.map((route) => (
           <NavItem key={route.href} route={route} active={activePathname === route.href} />
         ))}

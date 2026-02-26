@@ -15,12 +15,18 @@ export function AppSidebar() {
 
   return (
     <aside className="hidden lg:block">
-      <div className="app-panel sticky top-6 p-4">
-        <div className="mb-4 space-y-2">
+      <div className="app-panel sticky top-6 p-4 xl:p-5">
+        <div className="mb-5 space-y-2">
           <Link href="/dashboard" className="block">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold leading-tight">Dietary Guardian</h1>
-              <Badge variant="outline">Foundation</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-[1.75rem] font-semibold leading-[1.05] tracking-[-0.03em]">
+                Dietary
+                <br />
+                Guardian
+              </h1>
+              <Badge variant="outline" className="self-start">
+                Foundation
+              </Badge>
             </div>
             <p className="app-muted mt-1 text-sm leading-5">
               Wellness + care support with account-role and scope-aware access.
@@ -28,7 +34,7 @@ export function AppSidebar() {
           </Link>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <SidebarNav routes={mainRoutes} activePathname={pathname} title="Primary" titleId="sidebar-primary-nav" />
           <SidebarNav routes={adminRoutes} activePathname={pathname} title="Admin" titleId="sidebar-admin-nav" />
         </div>

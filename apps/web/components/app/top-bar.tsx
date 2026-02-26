@@ -20,28 +20,28 @@ export function TopBar() {
 
   return (
     <header className="app-panel sticky top-4 z-20 mb-4 p-3 md:mb-5 md:p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="mb-1 flex items-center gap-1 text-xs text-[color:var(--muted-foreground)]">
+      <div className="flex flex-wrap items-start justify-between gap-3 md:gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs text-[color:var(--muted-foreground)]">
             <span>Dietary Guardian</span>
             <ChevronRight className="h-3 w-3" aria-hidden />
             <span>{breadcrumb}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <h2 className="truncate text-xl font-semibold md:text-2xl">{pageTitle}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="truncate text-2xl font-semibold leading-tight md:text-[2rem]">{pageTitle}</h2>
             {route?.group === "admin" ? <Badge variant="outline">Admin Area</Badge> : null}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <div className="flex items-center gap-2 rounded-xl border border-[color:var(--border)] bg-white/55 p-1 dark:bg-[color:var(--panel-soft)]">
+        <div className="flex flex-wrap items-center justify-end gap-2 md:gap-2.5">
+          <div className="app-toolbar-chip hidden items-center gap-1.5 sm:flex">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               aria-disabled="true"
               title="Search coming soon"
-              className="gap-2"
+              className="h-9 gap-2 px-3"
             >
               <Search className="h-4 w-4" aria-hidden />
               <span className="hidden sm:inline">Search</span>
@@ -52,13 +52,13 @@ export function TopBar() {
               size="sm"
               aria-disabled="true"
               title="Notifications coming soon"
-              className="px-2.5"
+              className="h-9 px-2.5"
             >
               <Bell className="h-4 w-4" aria-hidden />
               <span className="sr-only">Notifications (coming soon)</span>
             </Button>
           </div>
-          <div className="rounded-xl border border-[color:var(--border)] bg-white/55 p-1 dark:bg-[color:var(--panel-soft)]">
+          <div className="app-toolbar-chip">
             <ThemeToggle />
           </div>
           {status === "loading" ? (
