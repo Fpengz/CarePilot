@@ -11,6 +11,8 @@ from ..schemas import (
     AuthLoginRequest,
     AuthLoginResponse,
     AuthMeResponse,
+    AuthPasswordUpdateRequest,
+    AuthPasswordUpdateResponse,
     AuthProfileUpdateRequest,
     AuthSessionListItem,
     AuthSessionListResponse,
@@ -146,6 +148,42 @@ def auth_update_profile(
     if refreshed is None:
         raise HTTPException(status_code=401, detail="session expired")
     return AuthMeResponse(user=_session_user_from_session(cast(dict[str, object], refreshed)))
+
+
+@router.patch("/api/v1/auth/password", response_model=AuthPasswordUpdateResponse)
+def auth_update_password(
+    payload: AuthPasswordUpdateRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> AuthPasswordUpdateResponse:
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="new password must be at least 8 characters")
+    if payload.new_password == payload.current_password:
+        raise HTTPException(status_code=400, detail="new password must differ from current password")
+
+    context = get_context(request)
+    ok, revoked_count = context.auth_store.change_user_password(
+        user_id=str(session["user_id"]),
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+        keep_session_id=str(session["session_id"]),
+    )
+    if not ok:
+        context.auth_store.append_auth_audit_event(
+            event_type="password_change_failed",
+            email=str(session["email"]),
+            user_id=str(session["user_id"]),
+            metadata={"reason": "invalid_current_password"},
+        )
+        raise HTTPException(status_code=400, detail="current password is incorrect")
+
+    context.auth_store.append_auth_audit_event(
+        event_type="password_changed",
+        email=str(session["email"]),
+        user_id=str(session["user_id"]),
+        metadata={"revoked_other_sessions": revoked_count},
+    )
+    return AuthPasswordUpdateResponse(revoked_other_sessions=revoked_count)
 
 
 @router.get("/api/v1/auth/sessions", response_model=AuthSessionListResponse)

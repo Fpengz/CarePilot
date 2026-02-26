@@ -45,6 +45,16 @@ class AuthProfileUpdateRequest(BaseModel):
     profile_mode: ProfileMode | None = None
 
 
+class AuthPasswordUpdateRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class AuthPasswordUpdateResponse(BaseModel):
+    ok: bool = True
+    revoked_other_sessions: int
+
+
 class AuthAuditEvent(BaseModel):
     event_id: str
     event_type: str

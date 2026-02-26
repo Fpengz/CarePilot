@@ -212,6 +212,27 @@ class InMemoryAuthStore:
                 session["profile_mode"] = profile_mode
         return user
 
+    def change_user_password(
+        self,
+        *,
+        user_id: str,
+        current_password: str,
+        new_password: str,
+        keep_session_id: str,
+    ) -> tuple[bool, int]:
+        user: AuthUserRecord | None = None
+        for candidate in self._users_by_email.values():
+            if candidate.user_id == user_id:
+                user = candidate
+                break
+        if user is None:
+            return (False, 0)
+        if not self._hasher.verify(current_password, user.password_hash):
+            return (False, 0)
+        user.password_hash = self._hasher.hash(new_password)
+        revoked_count = self.revoke_other_sessions(user_id, keep_session_id=keep_session_id)
+        return (True, revoked_count)
+
     def create_session(self, user: AuthUserRecord) -> dict[str, Any]:
         session_id = str(uuid4())
         session = {

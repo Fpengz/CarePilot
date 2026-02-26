@@ -286,3 +286,68 @@ def test_auth_audit_events_admin_only_and_bounded() -> None:
     assert len(items) == 2
     assert all(item["event_type"] in {"login_success", "login_failed", "login_locked"} for item in items)
     assert any(item["event_type"] == "login_success" for item in items)
+
+
+def test_patch_password_updates_credentials_and_revokes_other_sessions() -> None:
+    app = create_app()
+    client_a = TestClient(app)
+    client_b = TestClient(app)
+    relogin_client = TestClient(app)
+
+    login_a = client_a.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    login_b = client_b.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    assert login_a.status_code == 200
+    assert login_b.status_code == 200
+
+    patch = client_a.patch(
+        "/api/v1/auth/password",
+        json={"current_password": "member-pass", "new_password": "member-pass-2"},
+    )
+
+    assert patch.status_code == 200
+    assert patch.json() == {"ok": True, "revoked_other_sessions": 1}
+    assert client_a.get("/api/v1/auth/me").status_code == 200
+    assert client_b.get("/api/v1/auth/me").status_code == 401
+
+    old_login = relogin_client.post(
+        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+    )
+    new_login = relogin_client.post(
+        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass-2"}
+    )
+    assert old_login.status_code == 401
+    assert new_login.status_code == 200
+
+
+def test_patch_password_rejects_wrong_current_password() -> None:
+    client = TestClient(create_app())
+    login = client.post("/api/v1/auth/login", json={"email": "helper@example.com", "password": "helper-pass"})
+    assert login.status_code == 200
+
+    patch = client.patch(
+        "/api/v1/auth/password",
+        json={"current_password": "wrong-pass", "new_password": "helper-pass-2"},
+    )
+
+    assert patch.status_code == 400
+    assert patch.json()["detail"] == "current password is incorrect"
+
+
+def test_patch_password_rejects_weak_or_reused_password() -> None:
+    client = TestClient(create_app())
+    login = client.post("/api/v1/auth/login", json={"email": "helper@example.com", "password": "helper-pass"})
+    assert login.status_code == 200
+
+    weak = client.patch(
+        "/api/v1/auth/password",
+        json={"current_password": "helper-pass", "new_password": "short"},
+    )
+    reused = client.patch(
+        "/api/v1/auth/password",
+        json={"current_password": "helper-pass", "new_password": "helper-pass"},
+    )
+
+    assert weak.status_code == 400
+    assert weak.json()["detail"] == "new password must be at least 8 characters"
+    assert reused.status_code == 400
+    assert reused.json()["detail"] == "new password must differ from current password"
