@@ -30,6 +30,7 @@ See `docs/api-auth-contract.md` for auth payload examples and migration notes.
 ### Install Dependencies
 ```bash
 uv sync
+pnpm install
 ```
 
 ### Configure Environment Variables
@@ -61,6 +62,31 @@ Validation behavior:
 - `OLLAMA_BASE_URL` is normalized into `LOCAL_LLM_BASE_URL` for compatibility.
 
 ## Running the Application
+### Quickstart (API + Web)
+Use the unified dev script (recommended):
+
+```bash
+./scripts/dev.sh
+```
+
+Optional flags:
+- `./scripts/dev.sh --no-web` (API only)
+- `./scripts/dev.sh --no-api` (Web only)
+
+Endpoints:
+- Web: `http://localhost:3000`
+- API docs: `http://localhost:8001/docs`
+
+### API Only (FastAPI)
+```bash
+uv run python -m apps.api.run
+```
+
+### Web Only (Next.js)
+```bash
+pnpm web:dev
+```
+
 ### Streamlit UI
 ```bash
 ./tools/run_dev.sh
@@ -145,6 +171,12 @@ If imports fail in local scripts, run through `uv` and ensure dependencies are s
 ```bash
 uv sync
 uv run pytest -q
+```
+
+For the FastAPI app, prefer module mode from the repo root:
+
+```bash
+uv run python -m apps.api.run
 ```
 
 ## Roadmap
