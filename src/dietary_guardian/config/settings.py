@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     session_secret: str = "dev-insecure-session-secret-change-me"
     cookie_secure: bool = False
     auth_password_hash_scheme: str = "pbkdf2_sha256"
+    auth_store_backend: Literal["in_memory", "sqlite"] = "in_memory"
+    auth_sqlite_db_path: str = "dietary_guardian_auth.db"
     auth_session_ttl_seconds: int = Field(default=86400, ge=1, le=60 * 60 * 24 * 30)
     auth_login_max_failed_attempts: int = Field(default=5, ge=1, le=20)
     auth_login_failure_window_seconds: int = Field(default=300, ge=1, le=3600)

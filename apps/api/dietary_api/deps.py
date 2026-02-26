@@ -11,7 +11,8 @@ from dietary_guardian.services.platform_tools import build_platform_tool_registr
 from dietary_guardian.services.repository import SQLiteRepository
 from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 
-from .auth import InMemoryAuthStore, SessionSigner
+from .auth import SessionSigner
+from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SQLiteAuthStore
 from .services.notifications import NotificationReadStateStore
 
 
@@ -24,7 +25,7 @@ class AppContext:
     event_timeline: EventTimelineService
     tool_registry: Any
     coordinator: WorkflowCoordinator
-    auth_store: InMemoryAuthStore
+    auth_store: Any
     session_signer: SessionSigner
     notification_reads: NotificationReadStateStore
 
@@ -42,7 +43,11 @@ def build_app_context() -> AppContext:
         clinical_memory=clinical_memory,
         event_timeline=event_timeline,
     )
-    auth_store = InMemoryAuthStore(settings)
+    auth_store = (
+        SQLiteAuthStore(settings=settings, db_path=settings.auth_sqlite_db_path)
+        if settings.auth_store_backend == "sqlite"
+        else InMemoryAuthStore(settings)
+    )
     session_signer = SessionSigner(settings.session_secret)
     notification_reads = NotificationReadStateStore()
     return AppContext(
