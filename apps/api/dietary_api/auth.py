@@ -101,6 +101,29 @@ class InMemoryAuthStore:
             return None
         return user
 
+    def create_user(
+        self,
+        *,
+        email: str,
+        password: str,
+        display_name: str,
+        account_role: AccountRole = "member",
+        profile_mode: ProfileMode = "self",
+    ) -> AuthUserRecord | None:
+        normalized_email = email.strip().lower()
+        if not normalized_email or normalized_email in self._users_by_email:
+            return None
+        user = AuthUserRecord(
+            user_id=f"user_{uuid4().hex[:12]}",
+            email=normalized_email,
+            display_name=display_name,
+            account_role=account_role,
+            profile_mode=profile_mode,
+            password_hash=self._hasher.hash(password),
+        )
+        self._users_by_email[normalized_email] = user
+        return user
+
     def is_login_locked(self, email: str) -> bool:
         state = self._login_failures.get(email)
         if not state:

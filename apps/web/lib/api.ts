@@ -48,6 +48,18 @@ export async function login(email: string, password: string): Promise<AuthLoginR
   });
 }
 
+export async function signup(payload: {
+  email: string;
+  password: string;
+  display_name?: string;
+  profile_mode?: "self" | "caregiver";
+}): Promise<AuthLoginResponse> {
+  return request<AuthLoginResponse>("/api/v1/auth/signup", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function logout(): Promise<void> {
   await request("/api/v1/auth/logout", { method: "POST" });
 }

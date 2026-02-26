@@ -17,6 +17,13 @@ class AuthLoginRequest(BaseModel):
     password: str
 
 
+class AuthSignupRequest(BaseModel):
+    email: EmailStr
+    password: str
+    display_name: str | None = None
+    profile_mode: ProfileMode = "self"
+
+
 class SessionUser(BaseModel):
     user_id: str
     email: EmailStr

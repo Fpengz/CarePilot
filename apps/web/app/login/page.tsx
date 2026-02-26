@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ShieldCheck, UserRound, Users } from "lucide-react";
 import { useSession } from "@/components/app/session-provider";
@@ -88,6 +89,9 @@ export default function LoginPage() {
               }}
             >
               Fetch /auth/me
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/signup">Go to Sign Up</Link>
             </Button>
           </div>
           <div className="grid gap-2 pt-2">

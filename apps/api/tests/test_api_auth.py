@@ -21,6 +21,60 @@ def test_login_sets_session_cookie_and_returns_user() -> None:
     assert "dg_session" in response.cookies
 
 
+def test_signup_creates_member_session_and_returns_principal() -> None:
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/v1/auth/signup",
+        json={
+            "email": "newuser@example.com",
+            "password": "newuser-pass",
+            "display_name": "New User",
+            "profile_mode": "self",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["user"]["email"] == "newuser@example.com"
+    assert body["user"]["account_role"] == "member"
+    assert body["user"]["profile_mode"] == "self"
+    assert "meal:read" in body["user"]["scopes"]
+    assert "dg_session" in response.cookies
+    me = client.get("/api/v1/auth/me")
+    assert me.status_code == 200
+    assert me.json()["user"]["email"] == "newuser@example.com"
+
+
+def test_signup_rejects_duplicate_email() -> None:
+    client = TestClient(create_app())
+
+    first = client.post(
+        "/api/v1/auth/signup",
+        json={"email": "dupe@example.com", "password": "dupe-pass-1", "display_name": "First"},
+    )
+    second = client.post(
+        "/api/v1/auth/signup",
+        json={"email": "dupe@example.com", "password": "dupe-pass-2", "display_name": "Second"},
+    )
+
+    assert first.status_code == 200
+    assert second.status_code == 409
+    assert second.json()["detail"] == "email already registered"
+
+
+def test_signup_rejects_short_password() -> None:
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/v1/auth/signup",
+        json={"email": "shortpw@example.com", "password": "short", "display_name": "Short Pw"},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "password must be at least 8 characters"
+
+
 def test_me_requires_auth() -> None:
     client = TestClient(create_app())
 

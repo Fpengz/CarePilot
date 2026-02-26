@@ -14,6 +14,7 @@ from ..schemas import (
     AuthPasswordUpdateRequest,
     AuthPasswordUpdateResponse,
     AuthProfileUpdateRequest,
+    AuthSignupRequest,
     AuthSessionListItem,
     AuthSessionListResponse,
     AuthSessionRevokeOthersResponse,
@@ -77,6 +78,57 @@ def auth_login(payload: AuthLoginRequest, response: Response, request: Request) 
     context.auth_store.append_auth_audit_event(
         event_type="login_success",
         email=email,
+        user_id=user.user_id,
+        metadata={"account_role": user.account_role},
+    )
+    session = context.auth_store.create_session(user)
+    signed = context.session_signer.sign(session["session_id"])
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=signed,
+        httponly=True,
+        secure=context.settings.cookie_secure,
+        samesite="lax",
+        path="/",
+    )
+    return AuthLoginResponse(
+        user=SessionUser(
+            user_id=user.user_id,
+            email=user.email,
+            account_role=user.account_role,
+            scopes=cast(list[str], session["scopes"]),
+            profile_mode=user.profile_mode,
+            display_name=user.display_name,
+        ),
+        session=SessionInfo(session_id=session["session_id"]),
+    )
+
+
+@router.post("/api/v1/auth/signup", response_model=AuthLoginResponse)
+def auth_signup(payload: AuthSignupRequest, response: Response, request: Request) -> AuthLoginResponse:
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=400, detail="password must be at least 8 characters")
+    display_name = (payload.display_name or "").strip()
+    if not display_name:
+        display_name = str(payload.email).split("@", 1)[0]
+    if not display_name:
+        raise HTTPException(status_code=400, detail="display_name must not be blank")
+
+    context = get_context(request)
+    user = context.auth_store.create_user(
+        email=str(payload.email),
+        password=payload.password,
+        display_name=display_name,
+        account_role="member",
+        profile_mode=payload.profile_mode,
+    )
+    if user is None:
+        raise HTTPException(status_code=409, detail="email already registered")
+
+    context.auth_store.record_login_success(user.email)
+    context.auth_store.append_auth_audit_event(
+        event_type="signup_success",
+        email=user.email,
         user_id=user.user_id,
         metadata={"account_role": user.account_role},
     )
