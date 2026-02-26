@@ -127,3 +127,70 @@ def test_user_cannot_create_or_join_second_household(sqlite_household_env: None)
     assert join.status_code == 200
     join_again = helper_client.post("/api/v1/households/join", json={"code": invite.json()["invite"]["code"]})
     assert join_again.status_code == 409
+
+
+def test_household_owner_can_remove_member(sqlite_household_env: None) -> None:
+    app = create_app()
+    owner_client = TestClient(app)
+    helper_client = TestClient(app)
+
+    _login(owner_client, "member@example.com", "member-pass")
+    _login(helper_client, "helper@example.com", "helper-pass")
+    created = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
+    household_id = created.json()["household"]["household_id"]
+    invite = owner_client.post(f"/api/v1/households/{household_id}/invites")
+    code = invite.json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
+
+    removed = owner_client.post(f"/api/v1/households/{household_id}/members/care_001/remove")
+
+    assert removed.status_code == 200
+    assert removed.json() == {"ok": True, "removed_user_id": "care_001"}
+    members = owner_client.get(f"/api/v1/households/{household_id}/members")
+    assert members.status_code == 200
+    assert [item["user_id"] for item in members.json()["members"]] == ["user_001"]
+    assert helper_client.get("/api/v1/households/current").json()["household"] is None
+
+
+def test_non_owner_cannot_remove_household_member(sqlite_household_env: None) -> None:
+    app = create_app()
+    owner_client = TestClient(app)
+    helper_client = TestClient(app)
+    admin_client = TestClient(app)
+
+    _login(owner_client, "member@example.com", "member-pass")
+    _login(helper_client, "helper@example.com", "helper-pass")
+    _login(admin_client, "admin@example.com", "admin-pass")
+    household_id = owner_client.post("/api/v1/households", json={"name": "Family Circle"}).json()["household"][
+        "household_id"
+    ]
+    code = owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
+
+    forbidden = helper_client.post(f"/api/v1/households/{household_id}/members/user_001/remove")
+    not_member = admin_client.post(f"/api/v1/households/{household_id}/members/care_001/remove")
+
+    assert forbidden.status_code == 403
+    assert not_member.status_code == 404
+
+
+def test_household_member_can_leave_but_owner_cannot_leave_v1(sqlite_household_env: None) -> None:
+    app = create_app()
+    owner_client = TestClient(app)
+    helper_client = TestClient(app)
+
+    _login(owner_client, "member@example.com", "member-pass")
+    _login(helper_client, "helper@example.com", "helper-pass")
+    household_id = owner_client.post("/api/v1/households", json={"name": "Family Circle"}).json()["household"][
+        "household_id"
+    ]
+    code = owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
+
+    leave = helper_client.post(f"/api/v1/households/{household_id}/leave")
+    owner_leave = owner_client.post(f"/api/v1/households/{household_id}/leave")
+
+    assert leave.status_code == 200
+    assert leave.json() == {"ok": True, "left_household_id": household_id}
+    assert helper_client.get("/api/v1/households/current").json()["household"] is None
+    assert owner_leave.status_code == 403

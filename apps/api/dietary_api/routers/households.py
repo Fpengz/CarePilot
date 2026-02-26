@@ -9,11 +9,14 @@ from dietary_guardian.application.household import (
     HouseholdInviteInvalidError,
     HouseholdMembershipConflictError,
     HouseholdNotFoundError,
+    HouseholdOwnerLeaveForbiddenError,
     create_household_for_user,
     create_household_invite_for_owner,
     get_current_household_bundle,
     join_household_by_code,
+    leave_household_for_member,
     list_household_members_for_user,
+    remove_household_member_for_owner,
 )
 
 from ..routes_shared import current_session, get_context
@@ -23,7 +26,9 @@ from ..schemas import (
     HouseholdInviteCreateResponse,
     HouseholdInviteResponseItem,
     HouseholdJoinRequest,
+    HouseholdLeaveResponse,
     HouseholdMemberItem,
+    HouseholdMemberRemoveResponse,
     HouseholdMembersResponse,
     HouseholdResponse,
 )
@@ -156,3 +161,45 @@ def join_household(
     except HouseholdInviteInvalidError as exc:
         raise HTTPException(status_code=400, detail="invalid household invite") from exc
     return _bundle_response(bundle.household, bundle.members)
+
+
+@router.post("/api/v1/households/{household_id}/members/{user_id}/remove", response_model=HouseholdMemberRemoveResponse)
+def remove_household_member(
+    household_id: str,
+    user_id: str,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> HouseholdMemberRemoveResponse:
+    ctx = get_context(request)
+    try:
+        remove_household_member_for_owner(
+            household_store=ctx.household_store,
+            household_id=household_id,
+            actor_user_id=str(session["user_id"]),
+            target_user_id=user_id,
+        )
+    except HouseholdNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="household member not found") from exc
+    except HouseholdForbiddenError as exc:
+        raise HTTPException(status_code=403, detail="forbidden") from exc
+    return HouseholdMemberRemoveResponse(removed_user_id=user_id)
+
+
+@router.post("/api/v1/households/{household_id}/leave", response_model=HouseholdLeaveResponse)
+def leave_household(
+    household_id: str,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> HouseholdLeaveResponse:
+    ctx = get_context(request)
+    try:
+        leave_household_for_member(
+            household_store=ctx.household_store,
+            household_id=household_id,
+            user_id=str(session["user_id"]),
+        )
+    except HouseholdOwnerLeaveForbiddenError as exc:
+        raise HTTPException(status_code=403, detail="household owner cannot leave") from exc
+    except HouseholdNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="household not found") from exc
+    return HouseholdLeaveResponse(left_household_id=household_id)

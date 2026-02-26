@@ -215,3 +215,11 @@ class SQLiteHouseholdStore:
             },
             True,
         )
+
+    def remove_member(self, *, household_id: str, user_id: str) -> bool:
+        with self._conn:
+            cur = self._conn.execute(
+                "DELETE FROM household_members WHERE household_id = ? AND user_id = ?",
+                (household_id, user_id),
+            )
+        return int(cur.rowcount) > 0

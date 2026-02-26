@@ -4,11 +4,14 @@ from .use_cases import (
     HouseholdInviteInvalidError,
     HouseholdMembershipConflictError,
     HouseholdNotFoundError,
+    HouseholdOwnerLeaveForbiddenError,
     create_household_for_user,
     create_household_invite_for_owner,
     get_current_household_bundle,
     join_household_by_code,
+    leave_household_for_member,
     list_household_members_for_user,
+    remove_household_member_for_owner,
 )
 
 __all__ = [
@@ -17,9 +20,12 @@ __all__ = [
     "HouseholdInviteInvalidError",
     "HouseholdMembershipConflictError",
     "HouseholdNotFoundError",
+    "HouseholdOwnerLeaveForbiddenError",
     "create_household_for_user",
     "create_household_invite_for_owner",
     "get_current_household_bundle",
     "join_household_by_code",
+    "leave_household_for_member",
     "list_household_members_for_user",
+    "remove_household_member_for_owner",
 ]

@@ -141,6 +141,16 @@ class HouseholdJoinRequest(BaseModel):
     code: str
 
 
+class HouseholdLeaveResponse(BaseModel):
+    ok: bool = True
+    left_household_id: str
+
+
+class HouseholdMemberRemoveResponse(BaseModel):
+    ok: bool = True
+    removed_user_id: str
+
+
 class AlertTriggerRequest(BaseModel):
     alert_type: str
     severity: Literal["info", "warning", "critical"]

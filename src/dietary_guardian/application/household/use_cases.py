@@ -24,6 +24,10 @@ class HouseholdMembershipConflictError(Exception):
     pass
 
 
+class HouseholdOwnerLeaveForbiddenError(Exception):
+    pass
+
+
 @dataclass
 class HouseholdBundle:
     household: dict[str, Any] | None
@@ -97,3 +101,31 @@ def join_household_by_code(
         raise HouseholdMembershipConflictError
     return HouseholdBundle(household=household, members=household_store.list_members(str(household["household_id"])))
 
+
+def remove_household_member_for_owner(
+    *, household_store: HouseholdStorePort, household_id: str, actor_user_id: str, target_user_id: str
+) -> None:
+    actor_role = household_store.get_member_role(household_id, actor_user_id)
+    if actor_role is None:
+        raise HouseholdNotFoundError
+    if actor_role != "owner":
+        raise HouseholdForbiddenError
+    target_role = household_store.get_member_role(household_id, target_user_id)
+    if target_role is None:
+        raise HouseholdNotFoundError
+    if target_role == "owner":
+        raise HouseholdForbiddenError
+    removed = household_store.remove_member(household_id=household_id, user_id=target_user_id)
+    if not removed:
+        raise HouseholdNotFoundError
+
+
+def leave_household_for_member(*, household_store: HouseholdStorePort, household_id: str, user_id: str) -> None:
+    role = household_store.get_member_role(household_id, user_id)
+    if role is None:
+        raise HouseholdNotFoundError
+    if role == "owner":
+        raise HouseholdOwnerLeaveForbiddenError
+    removed = household_store.remove_member(household_id=household_id, user_id=user_id)
+    if not removed:
+        raise HouseholdNotFoundError
