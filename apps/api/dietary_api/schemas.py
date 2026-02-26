@@ -40,6 +40,26 @@ class AuthMeResponse(BaseModel):
     user: SessionUser
 
 
+class AuthSessionListItem(BaseModel):
+    session_id: str
+    issued_at: datetime
+    is_current: bool
+
+
+class AuthSessionListResponse(BaseModel):
+    sessions: list[AuthSessionListItem]
+
+
+class AuthSessionRevokeResponse(BaseModel):
+    ok: bool = True
+    revoked: bool
+
+
+class AuthSessionRevokeOthersResponse(BaseModel):
+    ok: bool = True
+    revoked_count: int
+
+
 class AlertTriggerRequest(BaseModel):
     alert_type: str
     severity: Literal["info", "warning", "critical"]

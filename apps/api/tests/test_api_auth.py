@@ -103,3 +103,85 @@ def test_me_rejects_corrupted_session_payload_with_401() -> None:
     me = client.get("/api/v1/auth/me")
     assert me.status_code == 401
     assert me.json()["detail"] == "invalid session"
+
+
+def test_list_sessions_returns_current_and_same_user_sessions_only() -> None:
+    app = create_app()
+    member_client_a = TestClient(app)
+    member_client_b = TestClient(app)
+    admin_client = TestClient(app)
+
+    login_a = member_client_a.post(
+        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+    )
+    login_b = member_client_b.post(
+        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+    )
+    admin_login = admin_client.post(
+        "/api/v1/auth/login", json={"email": "admin@example.com", "password": "admin-pass"}
+    )
+    assert login_a.status_code == 200
+    assert login_b.status_code == 200
+    assert admin_login.status_code == 200
+
+    response = member_client_a.get("/api/v1/auth/sessions")
+
+    assert response.status_code == 200
+    sessions = response.json()["sessions"]
+    assert len(sessions) == 2
+    assert sum(1 for item in sessions if item["is_current"]) == 1
+    assert login_a.json()["session"]["session_id"] in {item["session_id"] for item in sessions}
+    assert login_b.json()["session"]["session_id"] in {item["session_id"] for item in sessions}
+    assert admin_login.json()["session"]["session_id"] not in {item["session_id"] for item in sessions}
+
+
+def test_revoke_specific_session_revokes_current_and_clears_cookie() -> None:
+    client = TestClient(create_app())
+    login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    assert login.status_code == 200
+    session_id = login.json()["session"]["session_id"]
+
+    revoke = client.post(f"/api/v1/auth/sessions/{session_id}/revoke")
+
+    assert revoke.status_code == 200
+    assert revoke.json() == {"ok": True, "revoked": True}
+    assert "dg_session=" in revoke.headers.get("set-cookie", "")
+    assert client.get("/api/v1/auth/me").status_code == 401
+
+
+def test_revoke_other_users_session_returns_404() -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    admin_client = TestClient(app)
+
+    member_login = member_client.post(
+        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+    )
+    admin_login = admin_client.post(
+        "/api/v1/auth/login", json={"email": "admin@example.com", "password": "admin-pass"}
+    )
+    assert member_login.status_code == 200
+    assert admin_login.status_code == 200
+    member_session_id = member_login.json()["session"]["session_id"]
+
+    revoke = admin_client.post(f"/api/v1/auth/sessions/{member_session_id}/revoke")
+
+    assert revoke.status_code == 404
+
+
+def test_revoke_others_keeps_current_session_only() -> None:
+    app = create_app()
+    client_a = TestClient(app)
+    client_b = TestClient(app)
+
+    login_a = client_a.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    login_b = client_b.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    assert login_a.status_code == 200
+    assert login_b.status_code == 200
+
+    revoke_others = client_a.post("/api/v1/auth/sessions/revoke-others")
+
+    assert revoke_others.status_code == 200
+    assert revoke_others.json() == {"ok": True, "revoked_count": 1}
+    assert client_a.get("/api/v1/auth/me").status_code == 200
+    assert client_b.get("/api/v1/auth/me").status_code == 401

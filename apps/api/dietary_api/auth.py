@@ -135,6 +135,35 @@ class InMemoryAuthStore:
     def destroy_session(self, session_id: str) -> None:
         self._sessions.pop(session_id, None)
 
+    def list_sessions_for_user(self, user_id: str) -> list[dict[str, Any]]:
+        items: list[dict[str, Any]] = []
+        for session_id, _session in list(self._sessions.items()):
+            resolved = self.get_session(session_id)
+            if resolved is None:
+                continue
+            if str(resolved.get("user_id")) != user_id:
+                continue
+            items.append(resolved)
+        items.sort(key=lambda item: str(item.get("issued_at", "")), reverse=True)
+        return items
+
+    def get_session_owner(self, session_id: str) -> str | None:
+        session = self.get_session(session_id)
+        if session is None:
+            return None
+        user_id = session.get("user_id")
+        return str(user_id) if isinstance(user_id, str) else None
+
+    def revoke_other_sessions(self, user_id: str, *, keep_session_id: str) -> int:
+        revoked = 0
+        for session in self.list_sessions_for_user(user_id):
+            session_id = str(session.get("session_id", ""))
+            if not session_id or session_id == keep_session_id:
+                continue
+            self.destroy_session(session_id)
+            revoked += 1
+        return revoked
+
 
 class SessionSigner:
     def __init__(self, secret: str) -> None:

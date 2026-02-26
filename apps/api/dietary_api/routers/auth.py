@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
@@ -8,11 +9,25 @@ from ..schemas import (
     AuthLoginRequest,
     AuthLoginResponse,
     AuthMeResponse,
+    AuthSessionListItem,
+    AuthSessionListResponse,
+    AuthSessionRevokeOthersResponse,
+    AuthSessionRevokeResponse,
     SessionInfo,
     SessionUser,
 )
 
 router = APIRouter(tags=["auth"])
+
+
+def _clear_session_cookie(response: Response, *, secure: bool) -> None:
+    response.delete_cookie(
+        key=SESSION_COOKIE,
+        path="/",
+        secure=secure,
+        httponly=True,
+        samesite="lax",
+    )
 
 
 @router.post("/api/v1/auth/login", response_model=AuthLoginResponse)
@@ -55,13 +70,7 @@ def auth_logout(
         session_id = context.session_signer.unsign(session_cookie)
         if session_id:
             context.auth_store.destroy_session(session_id)
-    response.delete_cookie(
-        key=SESSION_COOKIE,
-        path="/",
-        secure=context.settings.cookie_secure,
-        httponly=True,
-        samesite="lax",
-    )
+    _clear_session_cookie(response, secure=context.settings.cookie_secure)
     return {"ok": True}
 
 
@@ -77,3 +86,56 @@ def auth_me(session: dict[str, object] = Depends(current_session)) -> AuthMeResp
             display_name=str(session["display_name"]),
         )
     )
+
+
+@router.get("/api/v1/auth/sessions", response_model=AuthSessionListResponse)
+def auth_sessions(
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> AuthSessionListResponse:
+    context = get_context(request)
+    user_id = str(session["user_id"])
+    current_session_id = str(session["session_id"])
+    sessions = context.auth_store.list_sessions_for_user(user_id)
+    return AuthSessionListResponse(
+        sessions=[
+            AuthSessionListItem(
+                session_id=str(item["session_id"]),
+                issued_at=datetime.fromisoformat(str(item["issued_at"])),
+                is_current=str(item["session_id"]) == current_session_id,
+            )
+            for item in sessions
+        ]
+    )
+
+
+@router.post("/api/v1/auth/sessions/revoke-others", response_model=AuthSessionRevokeOthersResponse)
+def auth_revoke_other_sessions(
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> AuthSessionRevokeOthersResponse:
+    context = get_context(request)
+    revoked_count = context.auth_store.revoke_other_sessions(
+        str(session["user_id"]),
+        keep_session_id=str(session["session_id"]),
+    )
+    return AuthSessionRevokeOthersResponse(revoked_count=revoked_count)
+
+
+@router.post("/api/v1/auth/sessions/{session_id}/revoke", response_model=AuthSessionRevokeResponse)
+def auth_revoke_session(
+    session_id: str,
+    request: Request,
+    response: Response,
+    session: dict[str, object] = Depends(current_session),
+) -> AuthSessionRevokeResponse:
+    context = get_context(request)
+    owner_user_id = context.auth_store.get_session_owner(session_id)
+    if owner_user_id is None:
+        return AuthSessionRevokeResponse(revoked=False)
+    if owner_user_id != str(session["user_id"]):
+        raise HTTPException(status_code=404, detail="session not found")
+    context.auth_store.destroy_session(session_id)
+    if session_id == str(session["session_id"]):
+        _clear_session_cookie(response, secure=context.settings.cookie_secure)
+    return AuthSessionRevokeResponse(revoked=True)
