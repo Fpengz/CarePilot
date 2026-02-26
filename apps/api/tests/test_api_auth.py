@@ -1,7 +1,23 @@
+from collections.abc import Generator
+
+import pytest
 from fastapi.testclient import TestClient
 
 from apps.api.dietary_api.main import create_app
-from dietary_guardian.config.settings import Settings
+from dietary_guardian.config.settings import Settings, get_settings
+
+
+def _reset_settings_cache() -> None:
+    get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _force_in_memory_auth_backend(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    # Most auth API tests assert against in-memory internals (`_sessions`, `_login_failures`).
+    monkeypatch.setenv("AUTH_STORE_BACKEND", "in_memory")
+    _reset_settings_cache()
+    yield
+    _reset_settings_cache()
 
 
 def test_login_sets_session_cookie_and_returns_user() -> None:
@@ -405,3 +421,46 @@ def test_patch_password_rejects_weak_or_reused_password() -> None:
     assert weak.json()["detail"] == "new password must be at least 8 characters"
     assert reused.status_code == 400
     assert reused.json()["detail"] == "new password must differ from current password"
+
+
+def test_settings_default_auth_backend_is_sqlite(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTH_STORE_BACKEND", raising=False)
+    settings = Settings(llm_provider="test")
+    assert settings.auth_store_backend == "sqlite"
+
+
+def test_auth_api_supports_sqlite_backend_with_persistence_across_app_instances(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db_path = tmp_path / "auth.sqlite3"
+    monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
+    monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(db_path))
+    _reset_settings_cache()
+
+    app_a = create_app()
+    client_a = TestClient(app_a)
+    signup = client_a.post(
+        "/api/v1/auth/signup",
+        json={
+            "email": "sqlite-user@example.com",
+            "password": "sqlite-pass-1",
+            "display_name": "SQLite User",
+            "profile_mode": "self",
+        },
+    )
+    assert signup.status_code == 200
+
+    me = client_a.get("/api/v1/auth/me")
+    assert me.status_code == 200
+    assert me.json()["user"]["email"] == "sqlite-user@example.com"
+
+    # New app instance, same sqlite file -> account persists.
+    _reset_settings_cache()
+    app_b = create_app()
+    client_b = TestClient(app_b)
+    login = client_b.post(
+        "/api/v1/auth/login",
+        json={"email": "sqlite-user@example.com", "password": "sqlite-pass-1"},
+    )
+    assert login.status_code == 200
+    assert login.json()["user"]["email"] == "sqlite-user@example.com"

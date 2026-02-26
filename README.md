@@ -17,6 +17,7 @@ Privileged APIs (alerts/workflow inspection) are gated by **scopes**, not person
 See `docs/rbac-matrix.md` for the current RBAC matrix and endpoint permissions.
 See `docs/api-auth-contract.md` for auth payload examples and migration notes.
 See `docs/architecture-v1.md` for the v1 target architecture (hexagonal + workflow orchestration).
+See `docs/config-reference.md` for backend environment variables and defaults.
 
 ### Demo API Accounts
 - `member@example.com` / `member-pass`
@@ -48,6 +49,10 @@ Required keys for cloud usage:
 Required keys for local usage:
 - `LLM_PROVIDER=ollama` or `LLM_PROVIDER=vllm`
 - `LOCAL_LLM_BASE_URL` (or `OLLAMA_BASE_URL`)
+
+Auth backend defaults (v1):
+- `AUTH_STORE_BACKEND=sqlite` (default)
+- `AUTH_SQLITE_DB_PATH=dietary_guardian_auth.db`
 
 ## Configuration Validation
 ### Runtime Settings
@@ -82,6 +87,9 @@ Endpoints:
 ```bash
 uv run python -m apps.api.run
 ```
+
+Note: by default, auth/accounts/sessions are persisted in SQLite via `AUTH_SQLITE_DB_PATH`.
+Set `AUTH_STORE_BACKEND=in_memory` for ephemeral demo/test runs.
 
 ### Web Only (Next.js)
 ```bash
