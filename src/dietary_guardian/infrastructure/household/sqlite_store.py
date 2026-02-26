@@ -80,6 +80,20 @@ class SQLiteHouseholdStore:
             "created_at": str(row["created_at"]),
         }
 
+    def get_household_by_id(self, household_id: str) -> dict[str, Any] | None:
+        row = self._conn.execute(
+            "SELECT household_id, name, owner_user_id, created_at FROM households WHERE household_id = ?",
+            (household_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return {
+            "household_id": str(row["household_id"]),
+            "name": str(row["name"]),
+            "owner_user_id": str(row["owner_user_id"]),
+            "created_at": str(row["created_at"]),
+        }
+
     def create_household(self, *, owner_user_id: str, owner_display_name: str, name: str) -> dict[str, Any]:
         now = self._now().isoformat()
         household_id = f"hh_{uuid4().hex[:12]}"
@@ -128,6 +142,16 @@ class SQLiteHouseholdStore:
             (household_id, user_id),
         ).fetchone()
         return None if row is None else str(row["role"])
+
+    def rename_household(self, *, household_id: str, name: str) -> dict[str, Any] | None:
+        with self._conn:
+            cur = self._conn.execute(
+                "UPDATE households SET name = ? WHERE household_id = ?",
+                (name, household_id),
+            )
+        if int(cur.rowcount) == 0:
+            return None
+        return self.get_household_by_id(household_id)
 
     def create_invite(self, *, household_id: str, created_by_user_id: str) -> dict[str, Any]:
         now = self._now()

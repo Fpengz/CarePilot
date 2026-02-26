@@ -260,6 +260,7 @@ class InMemoryAuthStore:
             "display_name": user.display_name,
             "issued_at": datetime.now(timezone.utc).isoformat(),
             "subject_user_id": user.user_id,
+            "active_household_id": None,
         }
         self._sessions[session_id] = session
         return session
@@ -317,3 +318,11 @@ class InMemoryAuthStore:
             revoked += 1
         return revoked
 
+    def set_active_household_for_session(
+        self, session_id: str, *, active_household_id: str | None
+    ) -> dict[str, Any] | None:
+        session = self.get_session(session_id)
+        if session is None:
+            return None
+        session["active_household_id"] = active_household_id
+        return session

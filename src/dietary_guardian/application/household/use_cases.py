@@ -129,3 +129,28 @@ def leave_household_for_member(*, household_store: HouseholdStorePort, household
     removed = household_store.remove_member(household_id=household_id, user_id=user_id)
     if not removed:
         raise HouseholdNotFoundError
+
+
+def rename_household_for_owner(
+    *, household_store: HouseholdStorePort, household_id: str, actor_user_id: str, name: str
+) -> HouseholdBundle:
+    role = household_store.get_member_role(household_id, actor_user_id)
+    if role is None:
+        raise HouseholdNotFoundError
+    if role != "owner":
+        raise HouseholdForbiddenError
+    household = household_store.rename_household(household_id=household_id, name=name)
+    if household is None:
+        raise HouseholdNotFoundError
+    return HouseholdBundle(household=household, members=household_store.list_members(household_id))
+
+
+def validate_active_household_for_user(
+    *, household_store: HouseholdStorePort, household_id: str | None, user_id: str
+) -> str | None:
+    if household_id is None:
+        return None
+    role = household_store.get_member_role(household_id, user_id)
+    if role is None:
+        raise HouseholdNotFoundError
+    return household_id

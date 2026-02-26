@@ -53,7 +53,8 @@ class SQLiteAuthStore:
                 scopes_json TEXT NOT NULL,
                 display_name TEXT NOT NULL,
                 issued_at TEXT NOT NULL,
-                subject_user_id TEXT NOT NULL
+                subject_user_id TEXT NOT NULL,
+                active_household_id TEXT
             )
             """
         )
@@ -80,6 +81,12 @@ class SQLiteAuthStore:
             """
         )
         cur.execute("CREATE INDEX IF NOT EXISTS idx_auth_audit_created_at ON auth_audit_events(created_at DESC)")
+        session_columns = {
+            str(row["name"])
+            for row in cur.execute("PRAGMA table_info(auth_sessions)").fetchall()
+        }
+        if "active_household_id" not in session_columns:
+            cur.execute("ALTER TABLE auth_sessions ADD COLUMN active_household_id TEXT")
         self._conn.commit()
 
     def _seed_defaults(self) -> None:
@@ -380,12 +387,13 @@ class SQLiteAuthStore:
             "display_name": user.display_name,
             "issued_at": datetime.now(timezone.utc).isoformat(),
             "subject_user_id": user.user_id,
+            "active_household_id": None,
         }
         self._conn.execute(
             """
             INSERT OR REPLACE INTO auth_sessions
-            (session_id, user_id, email, account_role, profile_mode, scopes_json, display_name, issued_at, subject_user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (session_id, user_id, email, account_role, profile_mode, scopes_json, display_name, issued_at, subject_user_id, active_household_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 session["session_id"],
@@ -397,6 +405,7 @@ class SQLiteAuthStore:
                 session["display_name"],
                 session["issued_at"],
                 session["subject_user_id"],
+                session["active_household_id"],
             ),
         )
         self._conn.commit()
@@ -413,6 +422,9 @@ class SQLiteAuthStore:
             "display_name": str(row["display_name"]),
             "issued_at": str(row["issued_at"]),
             "subject_user_id": str(row["subject_user_id"]),
+            "active_household_id": (
+                str(row["active_household_id"]) if row["active_household_id"] is not None else None
+            ),
         }
 
     def get_session(self, session_id: str) -> dict[str, Any] | None:
@@ -474,3 +486,13 @@ class SQLiteAuthStore:
         self._conn.executemany("DELETE FROM auth_sessions WHERE session_id = ?", [(sid,) for sid in session_ids])
         self._conn.commit()
         return len(session_ids)
+
+    def set_active_household_for_session(
+        self, session_id: str, *, active_household_id: str | None
+    ) -> dict[str, Any] | None:
+        self._conn.execute(
+            "UPDATE auth_sessions SET active_household_id = ? WHERE session_id = ?",
+            (active_household_id, session_id),
+        )
+        self._conn.commit()
+        return self.get_session(session_id)

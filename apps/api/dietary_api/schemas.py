@@ -99,6 +99,10 @@ class HouseholdCreateRequest(BaseModel):
     name: str
 
 
+class HouseholdUpdateRequest(BaseModel):
+    name: str
+
+
 class HouseholdResponse(BaseModel):
     household_id: str
     name: str
@@ -120,6 +124,7 @@ class HouseholdMembersResponse(BaseModel):
 class HouseholdBundleResponse(BaseModel):
     household: HouseholdResponse | None
     members: list[HouseholdMemberItem]
+    active_household_id: str | None = None
 
 
 class HouseholdInviteResponseItem(BaseModel):
@@ -139,6 +144,15 @@ class HouseholdInviteCreateResponse(BaseModel):
 
 class HouseholdJoinRequest(BaseModel):
     code: str
+
+
+class HouseholdActiveUpdateRequest(BaseModel):
+    household_id: str | None
+
+
+class HouseholdActiveUpdateResponse(BaseModel):
+    ok: bool = True
+    active_household_id: str | None = None
 
 
 class HouseholdLeaveResponse(BaseModel):

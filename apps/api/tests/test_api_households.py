@@ -194,3 +194,65 @@ def test_household_member_can_leave_but_owner_cannot_leave_v1(sqlite_household_e
     assert leave.json() == {"ok": True, "left_household_id": household_id}
     assert helper_client.get("/api/v1/households/current").json()["household"] is None
     assert owner_leave.status_code == 403
+
+
+def test_household_owner_can_rename_household(sqlite_household_env: None) -> None:
+    app = create_app()
+    owner_client = TestClient(app)
+    helper_client = TestClient(app)
+
+    _login(owner_client, "member@example.com", "member-pass")
+    _login(helper_client, "helper@example.com", "helper-pass")
+    created = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
+    household_id = created.json()["household"]["household_id"]
+    code = owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
+
+    renamed = owner_client.patch(f"/api/v1/households/{household_id}", json={"name": "Wellness Crew"})
+    forbidden = helper_client.patch(f"/api/v1/households/{household_id}", json={"name": "Nope"})
+
+    assert renamed.status_code == 200
+    assert renamed.json()["household"]["name"] == "Wellness Crew"
+    assert helper_client.get("/api/v1/households/current").json()["household"]["name"] == "Wellness Crew"
+    assert forbidden.status_code == 403
+
+
+def test_household_active_selection_is_session_scoped(sqlite_household_env: None) -> None:
+    app = create_app()
+    client_a = TestClient(app)
+    client_b = TestClient(app)
+
+    _login(client_a, "member@example.com", "member-pass")
+    _login(client_b, "member@example.com", "member-pass")
+    household_id = client_a.post("/api/v1/households", json={"name": "Family Circle"}).json()["household"][
+        "household_id"
+    ]
+
+    set_active = client_a.patch("/api/v1/households/active", json={"household_id": household_id})
+    current_a = client_a.get("/api/v1/households/current")
+    current_b = client_b.get("/api/v1/households/current")
+    clear_active = client_a.patch("/api/v1/households/active", json={"household_id": None})
+
+    assert set_active.status_code == 200
+    assert set_active.json() == {"ok": True, "active_household_id": household_id}
+    assert current_a.status_code == 200
+    assert current_a.json()["active_household_id"] == household_id
+    assert current_b.status_code == 200
+    assert current_b.json()["active_household_id"] is None
+    assert clear_active.status_code == 200
+    assert clear_active.json() == {"ok": True, "active_household_id": None}
+
+
+def test_household_active_selection_requires_membership(sqlite_household_env: None) -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    admin_client = TestClient(app)
+    _login(member_client, "member@example.com", "member-pass")
+    _login(admin_client, "admin@example.com", "admin-pass")
+    member_household_id = member_client.post("/api/v1/households", json={"name": "Family Circle"}).json()["household"][
+        "household_id"
+    ]
+
+    response = admin_client.patch("/api/v1/households/active", json={"household_id": member_household_id})
+
+    assert response.status_code == 404

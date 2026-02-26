@@ -16,17 +16,22 @@ from dietary_guardian.application.household import (
     join_household_by_code,
     leave_household_for_member,
     list_household_members_for_user,
+    rename_household_for_owner,
     remove_household_member_for_owner,
+    validate_active_household_for_user,
 )
 
 from ..routes_shared import current_session, get_context
 from ..schemas import (
+    HouseholdActiveUpdateRequest,
+    HouseholdActiveUpdateResponse,
     HouseholdBundleResponse,
     HouseholdCreateRequest,
     HouseholdInviteCreateResponse,
     HouseholdInviteResponseItem,
     HouseholdJoinRequest,
     HouseholdLeaveResponse,
+    HouseholdUpdateRequest,
     HouseholdMemberItem,
     HouseholdMemberRemoveResponse,
     HouseholdMembersResponse,
@@ -54,10 +59,16 @@ def _member_response(item: dict[str, object]) -> HouseholdMemberItem:
     )
 
 
-def _bundle_response(bundle_household: dict[str, object] | None, members: list[dict[str, object]]) -> HouseholdBundleResponse:
+def _bundle_response(
+    bundle_household: dict[str, object] | None,
+    members: list[dict[str, object]],
+    *,
+    active_household_id: str | None = None,
+) -> HouseholdBundleResponse:
     return HouseholdBundleResponse(
         household=(_household_response(bundle_household) if bundle_household is not None else None),
         members=[_member_response(item) for item in members],
+        active_household_id=active_household_id,
     )
 
 
@@ -90,7 +101,36 @@ def get_current_household(
 ) -> HouseholdBundleResponse:
     ctx = get_context(request)
     bundle = get_current_household_bundle(household_store=ctx.household_store, user_id=str(session["user_id"]))
-    return _bundle_response(bundle.household, bundle.members)
+    active_household_id = session.get("active_household_id")
+    return _bundle_response(
+        bundle.household,
+        bundle.members,
+        active_household_id=(str(active_household_id) if isinstance(active_household_id, str) else None),
+    )
+
+
+@router.patch("/api/v1/households/active", response_model=HouseholdActiveUpdateResponse)
+def set_active_household(
+    payload: HouseholdActiveUpdateRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> HouseholdActiveUpdateResponse:
+    ctx = get_context(request)
+    try:
+        active_household_id = validate_active_household_for_user(
+            household_store=ctx.household_store,
+            household_id=payload.household_id,
+            user_id=str(session["user_id"]),
+        )
+    except HouseholdNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="household not found") from exc
+    updated = ctx.auth_store.set_active_household_for_session(
+        str(session["session_id"]),
+        active_household_id=active_household_id,
+    )
+    if updated is None:
+        raise HTTPException(status_code=401, detail="invalid session")
+    return HouseholdActiveUpdateResponse(active_household_id=active_household_id)
 
 
 @router.get("/api/v1/households/{household_id}/members", response_model=HouseholdMembersResponse)
@@ -109,6 +149,36 @@ def list_household_members(
     except HouseholdNotFoundError as exc:
         raise HTTPException(status_code=404, detail="household not found") from exc
     return HouseholdMembersResponse(members=[_member_response(item) for item in members])
+
+
+@router.patch("/api/v1/households/{household_id}", response_model=HouseholdBundleResponse)
+def rename_household(
+    household_id: str,
+    payload: HouseholdUpdateRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> HouseholdBundleResponse:
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="household name must not be blank")
+    ctx = get_context(request)
+    try:
+        bundle = rename_household_for_owner(
+            household_store=ctx.household_store,
+            household_id=household_id,
+            actor_user_id=str(session["user_id"]),
+            name=name,
+        )
+    except HouseholdNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="household not found") from exc
+    except HouseholdForbiddenError as exc:
+        raise HTTPException(status_code=403, detail="forbidden") from exc
+    active_household_id = session.get("active_household_id")
+    return _bundle_response(
+        bundle.household,
+        bundle.members,
+        active_household_id=(str(active_household_id) if isinstance(active_household_id, str) else None),
+    )
 
 
 @router.post("/api/v1/households/{household_id}/invites", response_model=HouseholdInviteCreateResponse)
