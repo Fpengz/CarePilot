@@ -11,10 +11,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { analyzeMeal, listMealRecords } from "@/lib/api";
+import type { MealAnalyzeApiResponse } from "@/lib/types";
 
 export default function MealsPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<object | null>(null);
+  const [result, setResult] = useState<MealAnalyzeApiResponse | null>(null);
   const [recordsResult, setRecordsResult] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"analyze" | "records" | null>(null);
@@ -109,6 +110,50 @@ export default function MealsPage() {
 
         <div className="stack-grid">
           {error ? <ErrorCard message={error} /> : null}
+          <Card>
+            <CardHeader>
+              <CardTitle>Analysis Summary</CardTitle>
+              <CardDescription>
+                Stable meal summary contract for UI rendering (keeps raw payloads below for debugging).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {result?.summary ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="metric-card">
+                    <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Meal</div>
+                    <div className="mt-1 text-sm font-medium">{result.summary.meal_name}</div>
+                  </div>
+                  <div className="metric-card">
+                    <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Confidence</div>
+                    <div className="mt-1 text-sm font-medium">{Math.round(result.summary.confidence * 100)}%</div>
+                  </div>
+                  <div className="metric-card">
+                    <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Estimated Calories</div>
+                    <div className="mt-1 text-sm font-medium">{Math.round(result.summary.estimated_calories)} kcal</div>
+                  </div>
+                  <div className="metric-card">
+                    <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Portion</div>
+                    <div className="mt-1 text-sm font-medium">{result.summary.portion_size}</div>
+                  </div>
+                  <div className="metric-card sm:col-span-2">
+                    <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Flags</div>
+                    <div className="mt-1 text-sm font-medium">
+                      {result.summary.flags.length > 0 ? result.summary.flags.join(", ") : "None"}
+                    </div>
+                  </div>
+                  <div className="metric-card sm:col-span-2">
+                    <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Review Status</div>
+                    <div className="mt-1 text-sm font-medium">
+                      {result.summary.needs_manual_review ? "Manual review recommended" : "Auto-reviewed"}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="app-muted text-sm">Analyze a meal image to view the typed summary.</p>
+              )}
+            </CardContent>
+          </Card>
           <JsonViewer title="Analyze Response" description="Workflow trace and persisted meal record payload." data={result} />
           <JsonViewer
             title="Meal Records"

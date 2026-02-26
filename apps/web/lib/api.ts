@@ -134,8 +134,9 @@ export async function analyzeMeal(formData: FormData): Promise<MealAnalyzeApiRes
   return (await response.json()) as MealAnalyzeApiResponse;
 }
 
-export async function listMealRecords(): Promise<MealRecordsApiResponse> {
-  return request<MealRecordsApiResponse>("/api/v1/meal/records");
+export async function listMealRecords(limit?: number): Promise<MealRecordsApiResponse> {
+  const query = typeof limit === "number" ? `?limit=${Math.max(1, Math.floor(limit))}` : "";
+  return request<MealRecordsApiResponse>(`/api/v1/meal/records${query}`);
 }
 
 export async function parseReport(payload: {

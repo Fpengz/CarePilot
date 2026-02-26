@@ -86,6 +86,18 @@ export interface AlertTimelineApiResponse {
 }
 
 export interface MealAnalyzeApiResponse {
+  summary: {
+    meal_record_id: string;
+    meal_name: string;
+    confidence: number;
+    identification_method: string;
+    estimated_calories: number;
+    portion_size: string;
+    needs_manual_review: boolean;
+    flags: string[];
+    portion_notes: string[];
+    captured_at: string;
+  };
   vision_result: Record<string, unknown>;
   meal_record: Record<string, unknown>;
   output_envelope: Record<string, unknown> | null;
