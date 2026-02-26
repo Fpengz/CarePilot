@@ -156,6 +156,9 @@ The local pre-commit configuration runs these checks on every commit:
 ### Local Developer Scripts
 - `./tools/run_dev.sh` starts Streamlit with the `watchdog` file watcher and save-triggered reload.
 - `./tools/run_test.sh` runs lint, type checks, and tests.
+- `./tools/validate.sh backend-milestone` runs the targeted backend milestone checks (sqlite auth + household/auth API coverage).
+- `./tools/validate.sh backend-all` runs repo backend checks (`ruff`, `ty`, `pytest`).
+- `./tools/validate.sh full-stack` runs backend checks plus web typecheck/build.
 
 ## Quality Gates
 Run these checks before submitting changes:
