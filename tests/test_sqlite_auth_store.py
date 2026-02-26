@@ -38,11 +38,11 @@ def test_sqlite_auth_store_expires_sessions(tmp_path) -> None:
     session = store.create_session(user)
     session_id = str(session["session_id"])
 
-    store._conn.execute(  # type: ignore[attr-defined]
+    store._conn.execute(
         "UPDATE auth_sessions SET issued_at = ? WHERE session_id = ?",
         ((datetime.now(timezone.utc) - timedelta(seconds=5)).isoformat(), session_id),
     )
-    store._conn.commit()  # type: ignore[attr-defined]
+    store._conn.commit()
 
     assert store.get_session(session_id) is None
 

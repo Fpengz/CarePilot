@@ -34,7 +34,7 @@ class AppContext:
 
 def build_app_context() -> AppContext:
     settings = get_settings()
-    repository = SQLiteRepository("dietary_guardian_api.db")
+    repository = SQLiteRepository(settings.api_sqlite_db_path)
     profile_memory = ProfileMemoryService()
     clinical_memory = ClinicalSnapshotMemoryService()
     event_timeline = EventTimelineService()
@@ -52,7 +52,7 @@ def build_app_context() -> AppContext:
     )
     session_signer = SessionSigner(settings.session_secret)
     notification_reads = NotificationReadStateStore()
-    household_store = SQLiteHouseholdStore(settings.auth_sqlite_db_path)
+    household_store = SQLiteHouseholdStore(settings.api_sqlite_db_path)
     return AppContext(
         settings=settings,
         repository=repository,

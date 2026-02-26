@@ -7,6 +7,7 @@ import { ErrorCard } from "@/components/app/error-card";
 import { JsonViewer } from "@/components/app/json-viewer";
 import { PageTitle } from "@/components/app/page-title";
 import { TimelineList } from "@/components/app/timeline-list";
+import { useSession } from "@/components/app/session-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { getAlertTimeline, triggerAlert } from "@/lib/api";
 
 export default function AlertsPage() {
+  const { hasScope, status } = useSession();
   const [result, setResult] = useState<object | null>(null);
   const [timelineResult, setTimelineResult] = useState<object | null>(null);
   const [alertId, setAlertId] = useState("");
@@ -29,6 +31,8 @@ export default function AlertsPage() {
     ?.outbox_timeline ?? []) as Array<Record<string, unknown>>;
   const triggerWorkflowTimeline = ((result as { workflow?: { timeline_events?: Array<Record<string, unknown>> } } | null)
     ?.workflow?.timeline_events ?? []) as Array<Record<string, unknown>>;
+  const canTrigger = status === "authenticated" && hasScope("alert:trigger");
+  const canReadTimeline = status === "authenticated" && hasScope("alert:timeline:read");
 
   return (
     <div>
@@ -46,8 +50,15 @@ export default function AlertsPage() {
             <CardDescription>These actions require admin scopes and are expected to fail with 403 for member accounts.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {!canTrigger || !canReadTimeline ? (
+              <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-white/40 p-3 text-sm text-[color:var(--muted-foreground)] dark:bg-[color:var(--panel-soft)]/70">
+                Admin scopes required:
+                {!canTrigger ? " `alert:trigger`" : ""}
+                {!canReadTimeline ? " `alert:timeline:read`" : ""}.
+              </div>
+            ) : null}
             <Button
-              disabled={loadingAction !== null}
+              disabled={loadingAction !== null || !canTrigger}
               onClick={async () => {
                 setError(null);
                 setResult(null);
@@ -84,7 +95,7 @@ export default function AlertsPage() {
               />
               <Button
                 variant="secondary"
-                disabled={!alertId || loadingAction !== null}
+                disabled={!alertId || loadingAction !== null || !canReadTimeline}
                 onClick={async () => {
                   setError(null);
                   setLoadingAction("timeline");

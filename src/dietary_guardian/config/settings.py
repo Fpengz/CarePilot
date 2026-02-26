@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     session_secret: str = "dev-insecure-session-secret-change-me"
     cookie_secure: bool = False
     auth_password_hash_scheme: str = "pbkdf2_sha256"
+    api_sqlite_db_path: str = "dietary_guardian_api.db"
     auth_store_backend: Literal["in_memory", "sqlite"] = "sqlite"
     auth_sqlite_db_path: str = "dietary_guardian_auth.db"
     auth_session_ttl_seconds: int = Field(default=86400, ge=1, le=60 * 60 * 24 * 30)

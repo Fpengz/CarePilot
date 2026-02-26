@@ -15,6 +15,7 @@ def _reset_settings_cache() -> None:
 def sqlite_household_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "app.sqlite3"))
+    monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
     _reset_settings_cache()
     yield
     _reset_settings_cache()

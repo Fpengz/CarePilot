@@ -7,12 +7,14 @@ import { ErrorCard } from "@/components/app/error-card";
 import { JsonViewer } from "@/components/app/json-viewer";
 import { PageTitle } from "@/components/app/page-title";
 import { TimelineList } from "@/components/app/timeline-list";
+import { useSession } from "@/components/app/session-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getWorkflow, listWorkflows } from "@/lib/api";
 
 export default function WorkflowsPage() {
+  const { hasScope, status } = useSession();
   const [correlationId, setCorrelationId] = useState("");
   const [result, setResult] = useState<object | null>(null);
   const [listResult, setListResult] = useState<object | null>(null);
@@ -27,6 +29,8 @@ export default function WorkflowsPage() {
       | null;
   const traceEvents = ((result as { timeline_events?: Array<Record<string, unknown>> } | null)?.timeline_events ??
     []) as Array<Record<string, unknown>>;
+  const canList = status === "authenticated" && hasScope("workflow:read");
+  const canFetch = status === "authenticated" && hasScope("workflow:replay");
 
   return (
     <div>
@@ -44,9 +48,16 @@ export default function WorkflowsPage() {
             <CardDescription>Use the collection route first, then replay a specific correlation timeline.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {!canList || !canFetch ? (
+              <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-white/40 p-3 text-sm text-[color:var(--muted-foreground)] dark:bg-[color:var(--panel-soft)]/70">
+                Admin scopes required:
+                {!canList ? " `workflow:read`" : ""}
+                {!canFetch ? " `workflow:replay`" : ""}.
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               <Button
-                disabled={loadingAction !== null}
+                disabled={loadingAction !== null || !canList}
                 onClick={async () => {
                   setError(null);
                   setLoadingAction("list");
@@ -78,7 +89,7 @@ export default function WorkflowsPage() {
             </div>
             <Button
               variant="secondary"
-              disabled={!correlationId || loadingAction !== null}
+              disabled={!correlationId || loadingAction !== null || !canFetch}
               onClick={async () => {
                 try {
                   setError(null);

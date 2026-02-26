@@ -51,8 +51,9 @@ Required keys for local usage:
 - `LOCAL_LLM_BASE_URL` (or `OLLAMA_BASE_URL`)
 
 Auth backend defaults (v1):
+- `API_SQLITE_DB_PATH=dietary_guardian_api.db` (application data / households / API persistence)
 - `AUTH_STORE_BACKEND=sqlite` (default)
-- `AUTH_SQLITE_DB_PATH=dietary_guardian_auth.db`
+- `AUTH_SQLITE_DB_PATH=dietary_guardian_auth.db` (auth/accounts/sessions/audit)
 
 ## Configuration Validation
 ### Runtime Settings
@@ -88,7 +89,9 @@ Endpoints:
 uv run python -m apps.api.run
 ```
 
-Note: by default, auth/accounts/sessions are persisted in SQLite via `AUTH_SQLITE_DB_PATH`.
+Note: by default, application data and auth data are persisted in SQLite via:
+- `API_SQLITE_DB_PATH`
+- `AUTH_SQLITE_DB_PATH`
 Set `AUTH_STORE_BACKEND=in_memory` for ephemeral demo/test runs.
 
 ### Web Only (Next.js)

@@ -3,6 +3,7 @@
 Source of truth: `src/dietary_guardian/config/settings.py`
 
 ## Auth / Session
+- `API_SQLITE_DB_PATH` (default: `dietary_guardian_api.db`) — application data / household persistence
 - `SESSION_SECRET` (default: `dev-insecure-session-secret-change-me`)
 - `COOKIE_SECURE` (default: `false`)
 - `AUTH_PASSWORD_HASH_SCHEME` (default: `pbkdf2_sha256`)
