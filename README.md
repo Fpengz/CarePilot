@@ -180,25 +180,43 @@ uv run python -m apps.api.run
 ```
 
 ## Roadmap
-### Phase 1: Environment Profile Support
-- Add `.env.development` and `.env.production` loading patterns.
-- Integrate a managed secret backend.
+See `docs/roadmap-v1.md` for the detailed v1 delivery breakdown.
 
-### Phase 2: Configuration Telemetry
-- Emit redacted runtime configuration fingerprints at startup.
-- Add structured diagnostics for provider selection and endpoint routing.
+### V1 Milestone 1: Auth, Signup, and Account Management
+- Self-serve email/password signup (web + API) with immediate session login.
+- Account profile updates, password changes, and session/device management.
+- Persist auth/accounts/sessions in SQLite (single-node production-ish default).
+- Admin auth audit view and backend filters for audit investigation.
 
-### Phase 3: CI and Local Workflow Parity
-- Run pre-commit hooks in CI with identical commands and flags.
-- Gate merges on lint, type, and test parity.
+### V1 Milestone 2: Meal Analysis (Working Daily Flow)
+- Stable typed meal summary contract in `/api/v1/meal/analyze`.
+- Better meal history browsing (pagination/filtering and shared household visibility).
+- Richer workflow timeline/failure metadata for meal analysis debugging.
+- Frontend meal experience polish (summary-first UI, records/history, manual review guidance).
 
-### Phase 4: Runtime Health Endpoint
-- Expose a non-sensitive configuration health status endpoint.
-- Surface provider readiness and key validation state.
+### V1 Milestone 3: Suggestions (Reports -> Recommendations)
+- Unified suggestions flow from report parsing to recommendation generation.
+- Persisted suggestions history and reusable structured output for web UI.
+- Shareable suggestions visibility for household members (read-only in v1).
 
-### Phase 5: Policy-Driven Feature Flags
-- Introduce policy-based toggles for profile-mode tools and model routing.
-- Add validated feature flag schemas and rollout guards.
+### V1 Milestone 4: Household Basics (Apple Family-like Group)
+- Household create/invite/join/leave flows.
+- Household roles (`owner`, `member`) and member management.
+- Shared visibility across meals, reminders, and suggestions.
+- Web household management UI (create, invite code, member list, join flow).
+
+### V1 Milestone 5: UI/UX Refinement and Stabilization
+- Web-first onboarding polish (`signup -> login -> first meal/report`).
+- Replace remaining debug-first panels with structured views.
+- Mobile/desktop accessibility pass (focus, contrast, keyboard interactions).
+- End-to-end smoke checks for core user journeys.
+
+### Post-v1 Platform Roadmap
+- Environment profile support (`.env.development`, `.env.production`) and secret management.
+- Configuration telemetry and runtime diagnostics.
+- CI/local workflow parity for lint/type/test gates.
+- Runtime health endpoints and provider readiness checks.
+- Policy-driven feature flags with validated schemas.
 
 ## Architecture-as-Code
 ### System Topology
