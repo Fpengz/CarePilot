@@ -1,6 +1,6 @@
-from typing import cast
+from typing import Annotated, cast
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from dietary_guardian.models.identity import AccountRole, ProfileMode
 
 from ..routes_shared import SESSION_COOKIE, current_session, get_context
@@ -48,11 +48,20 @@ def auth_login(payload: AuthLoginRequest, response: Response, request: Request) 
 def auth_logout(
     request: Request,
     response: Response,
-    session: dict[str, object] = Depends(current_session),
+    session_cookie: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> dict[str, object]:
     context = get_context(request)
-    context.auth_store.destroy_session(str(session["session_id"]))
-    response.delete_cookie(SESSION_COOKIE, path="/")
+    if session_cookie:
+        session_id = context.session_signer.unsign(session_cookie)
+        if session_id:
+            context.auth_store.destroy_session(session_id)
+    response.delete_cookie(
+        key=SESSION_COOKIE,
+        path="/",
+        secure=context.settings.cookie_secure,
+        httponly=True,
+        samesite="lax",
+    )
     return {"ok": True}
 
 

@@ -66,6 +66,7 @@ class PasswordHasher:
 class InMemoryAuthStore:
     def __init__(self, settings: Settings) -> None:
         self._hasher = PasswordHasher(settings.auth_password_hash_scheme)
+        self._session_ttl_seconds = int(settings.auth_session_ttl_seconds)
         self._users_by_email: dict[str, AuthUserRecord] = {}
         self._sessions: dict[str, dict[str, Any]] = {}
         self._seed_defaults()
@@ -111,7 +112,25 @@ class InMemoryAuthStore:
         return session
 
     def get_session(self, session_id: str) -> dict[str, Any] | None:
-        return self._sessions.get(session_id)
+        session = self._sessions.get(session_id)
+        if session is None:
+            return None
+        issued_at_raw = session.get("issued_at")
+        if not isinstance(issued_at_raw, str):
+            self.destroy_session(session_id)
+            return None
+        try:
+            issued_at = datetime.fromisoformat(issued_at_raw)
+        except ValueError:
+            self.destroy_session(session_id)
+            return None
+        if issued_at.tzinfo is None:
+            issued_at = issued_at.replace(tzinfo=timezone.utc)
+        age_seconds = (datetime.now(timezone.utc) - issued_at.astimezone(timezone.utc)).total_seconds()
+        if age_seconds > self._session_ttl_seconds:
+            self.destroy_session(session_id)
+            return None
+        return session
 
     def destroy_session(self, session_id: str) -> None:
         self._sessions.pop(session_id, None)

@@ -71,3 +71,35 @@ def test_logout_clears_session() -> None:
 
     me = client.get("/api/v1/auth/me")
     assert me.status_code == 401
+
+
+def test_logout_is_idempotent_without_session() -> None:
+    client = TestClient(create_app())
+
+    response = client.post("/api/v1/auth/logout")
+
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+    set_cookie = response.headers.get("set-cookie", "")
+    assert "dg_session=" in set_cookie
+    assert "Max-Age=0" in set_cookie or "max-age=0" in set_cookie
+
+
+def test_me_rejects_corrupted_session_payload_with_401() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    assert login.status_code == 200
+    session_id = login.json()["session"]["session_id"]
+
+    issued_at = app.state.ctx.auth_store._sessions[session_id]["issued_at"]
+    app.state.ctx.auth_store._sessions[session_id] = {
+        "session_id": session_id,
+        "user_id": "user_001",
+        "issued_at": issued_at,
+    }
+
+    me = client.get("/api/v1/auth/me")
+    assert me.status_code == 401
+    assert me.json()["detail"] == "invalid session"

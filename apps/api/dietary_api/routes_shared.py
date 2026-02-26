@@ -15,6 +15,27 @@ def get_context(request: Request) -> AppContext:
     return cast(AppContext, request.app.state.ctx)
 
 
+def _is_valid_session_payload(session: object) -> bool:
+    if not isinstance(session, dict):
+        return False
+    payload = cast(dict[str, object], session)
+    required_str_keys = [
+        "session_id",
+        "user_id",
+        "email",
+        "account_role",
+        "profile_mode",
+        "display_name",
+    ]
+    for key in required_str_keys:
+        if not isinstance(payload.get(key), str):
+            return False
+    scopes = payload.get("scopes")
+    if not isinstance(scopes, list) or not all(isinstance(item, str) for item in scopes):
+        return False
+    return True
+
+
 def require_session(
     request: Request,
     session_cookie: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
@@ -28,6 +49,9 @@ def require_session(
     session = ctx.auth_store.get_session(session_id)
     if session is None:
         raise HTTPException(status_code=401, detail="session expired")
+    if not _is_valid_session_payload(session):
+        ctx.auth_store.destroy_session(session_id)
+        raise HTTPException(status_code=401, detail="invalid session")
     return session
 
 

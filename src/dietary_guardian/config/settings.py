@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     session_secret: str = "dev-insecure-session-secret-change-me"
     cookie_secure: bool = False
     auth_password_hash_scheme: str = "pbkdf2_sha256"
+    auth_session_ttl_seconds: int = Field(default=86400, ge=1, le=60 * 60 * 24 * 30)
     workflow_trace_persistence_enabled: bool = False
 
     telegram_bot_token: str | None = None
