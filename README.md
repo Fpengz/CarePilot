@@ -16,6 +16,7 @@ Privileged APIs (alerts/workflow inspection) are gated by **scopes**, not person
 
 See `docs/rbac-matrix.md` for the current RBAC matrix and endpoint permissions.
 See `docs/api-auth-contract.md` for auth payload examples and migration notes.
+See `docs/architecture-v1.md` for the v1 target architecture (hexagonal + workflow orchestration).
 
 ### Demo API Accounts
 - `member@example.com` / `member-pass`
