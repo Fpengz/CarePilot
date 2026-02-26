@@ -3,7 +3,8 @@ from typing import Any, cast
 from fastapi import HTTPException, Request, UploadFile
 
 from dietary_guardian.agents.hawker_vision import HawkerVisionModule
-from dietary_guardian.models.meal import ImageInput
+from dietary_guardian.models.meal import ImageInput, VisionResult
+from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.services.media_ingestion import build_capture_envelope, should_suppress_duplicate_capture
 from dietary_guardian.services.upload_service import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
 
@@ -61,6 +62,7 @@ async def analyze_meal(
         meal_record_id=meal_record.id,
     )
     return MealAnalyzeResponse(
+        summary=_build_meal_summary(vision_result=vision_result, meal_record=meal_record),
         vision_result=vision_result.model_dump(mode="json"),
         meal_record=meal_record.model_dump(mode="json"),
         output_envelope=workflow.output_envelope.model_dump(mode="json") if workflow.output_envelope else None,
@@ -71,3 +73,26 @@ async def analyze_meal(
 def list_meal_records(*, context: AppContext, user_id: str, limit: int = 50) -> MealRecordsResponse:
     records = context.repository.list_meal_records(user_id)
     return MealRecordsResponse(records=[item.model_dump(mode="json") for item in records[:limit]])
+
+
+def _build_meal_summary(*, vision_result: VisionResult, meal_record: MealRecognitionRecord) -> dict[str, object]:
+    primary = vision_result.primary_state
+    nutrition = primary.nutrition
+    flags: list[str] = []
+    flags.extend(primary.visual_anomalies)
+    if vision_result.needs_manual_review:
+        flags.append("manual_review_required")
+    # Deduplicate while preserving order.
+    deduped_flags = list(dict.fromkeys(str(item) for item in flags if str(item).strip()))
+    return {
+        "meal_record_id": meal_record.id,
+        "meal_name": primary.dish_name,
+        "confidence": round(float(primary.confidence_score), 4),
+        "identification_method": str(primary.identification_method),
+        "estimated_calories": float(nutrition.calories),
+        "portion_size": str(primary.portion_size),
+        "needs_manual_review": bool(vision_result.needs_manual_review),
+        "flags": deduped_flags,
+        "portion_notes": list(primary.suggested_modifications),
+        "captured_at": meal_record.captured_at.isoformat(),
+    }

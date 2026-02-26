@@ -140,6 +140,7 @@ class NotificationMarkAllReadResponse(BaseModel):
 
 
 class MealAnalyzeResponse(BaseModel):
+    summary: dict[str, object]
     vision_result: dict[str, object]
     meal_record: dict[str, object]
     output_envelope: dict[str, object] | None

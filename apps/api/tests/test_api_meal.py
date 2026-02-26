@@ -48,9 +48,17 @@ def test_meal_analyze_returns_record_envelope_and_workflow() -> None:
     body = response.json()
     assert "vision_result" in body
     assert "meal_record" in body
+    assert "summary" in body
     assert "output_envelope" in body
     assert "workflow" in body
     assert body["workflow"]["workflow_name"] == "meal_analysis"
+    assert isinstance(body["summary"]["meal_name"], str)
+    assert isinstance(body["summary"]["confidence"], float)
+    assert body["summary"]["confidence"] >= 0.0
+    assert isinstance(body["summary"]["estimated_calories"], (int, float))
+    assert isinstance(body["summary"]["flags"], list)
+    assert isinstance(body["summary"]["portion_size"], str)
+    assert "needs_manual_review" in body["summary"]
 
 
 def test_meal_analyze_rejects_empty_file_payload() -> None:
@@ -65,6 +73,20 @@ def test_meal_analyze_rejects_empty_file_payload() -> None:
 
     assert response.status_code == 400
     assert response.json()["detail"] == "empty upload"
+
+
+def test_meal_analyze_rejects_missing_content_type() -> None:
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    response = client.post(
+        "/api/v1/meal/analyze",
+        files={"file": ("meal.jpg", _jpeg_bytes(), "")},
+        data={"runtime_mode": "local", "provider": "test"},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "unsupported image format"
 
 
 def test_meal_records_limit_query_truncates_response() -> None:
