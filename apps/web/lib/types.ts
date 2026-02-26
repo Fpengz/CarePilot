@@ -60,6 +60,60 @@ export interface AuthAuditEventListResponse {
   items: AuthAuditEvent[];
 }
 
+export interface Household {
+  household_id: string;
+  name: string;
+  owner_user_id: string;
+  created_at: string;
+}
+
+export interface HouseholdMember {
+  user_id: string;
+  display_name: string;
+  role: "owner" | "member";
+  joined_at: string;
+}
+
+export interface HouseholdBundleApiResponse {
+  household: Household | null;
+  members: HouseholdMember[];
+  active_household_id?: string | null;
+}
+
+export interface HouseholdInvite {
+  invite_id: string;
+  household_id: string;
+  code: string;
+  created_by_user_id: string;
+  created_at: string;
+  expires_at: string;
+  max_uses: number;
+  uses: number;
+}
+
+export interface HouseholdInviteCreateResponse {
+  invite: HouseholdInvite;
+}
+
+export interface HouseholdMembersResponse {
+  members: HouseholdMember[];
+}
+
+export interface HouseholdLeaveResponse {
+  ok: boolean;
+  left_household_id: string;
+}
+
+export interface HouseholdMemberRemoveResponse {
+  ok: boolean;
+  removed_user_id: string;
+}
+
+export interface HouseholdActiveUpdateResponse {
+  ok: boolean;
+  active_household_id: string | null;
+}
+
 export interface WorkflowExecutionResult {
   workflow_name: string;
   request_id: string;

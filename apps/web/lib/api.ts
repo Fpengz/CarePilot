@@ -2,6 +2,12 @@ import type {
   AlertTimelineApiResponse,
   AlertTriggerApiResponse,
   AuthAuditEventListResponse,
+  HouseholdActiveUpdateResponse,
+  HouseholdBundleApiResponse,
+  HouseholdInviteCreateResponse,
+  HouseholdLeaveResponse,
+  HouseholdMemberRemoveResponse,
+  HouseholdMembersResponse,
   AuthLoginResponse,
   AuthPasswordUpdateResponse,
   AuthProfileUpdateResponse,
@@ -106,6 +112,63 @@ export async function revokeOtherAuthSessions(): Promise<AuthSessionRevokeOthers
 
 export async function listAuthAuditEvents(limit = 20): Promise<AuthAuditEventListResponse> {
   return request<AuthAuditEventListResponse>(`/api/v1/auth/audit-events?limit=${limit}`);
+}
+
+export async function getCurrentHousehold(): Promise<HouseholdBundleApiResponse> {
+  return request<HouseholdBundleApiResponse>("/api/v1/households/current");
+}
+
+export async function createHousehold(name: string): Promise<HouseholdBundleApiResponse> {
+  return request<HouseholdBundleApiResponse>("/api/v1/households", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function renameHousehold(householdId: string, name: string): Promise<HouseholdBundleApiResponse> {
+  return request<HouseholdBundleApiResponse>(`/api/v1/households/${householdId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function listHouseholdMembers(householdId: string): Promise<HouseholdMembersResponse> {
+  return request<HouseholdMembersResponse>(`/api/v1/households/${householdId}/members`);
+}
+
+export async function createHouseholdInvite(householdId: string): Promise<HouseholdInviteCreateResponse> {
+  return request<HouseholdInviteCreateResponse>(`/api/v1/households/${householdId}/invites`, {
+    method: "POST",
+  });
+}
+
+export async function joinHousehold(code: string): Promise<HouseholdBundleApiResponse> {
+  return request<HouseholdBundleApiResponse>("/api/v1/households/join", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function removeHouseholdMember(
+  householdId: string,
+  userId: string,
+): Promise<HouseholdMemberRemoveResponse> {
+  return request<HouseholdMemberRemoveResponse>(`/api/v1/households/${householdId}/members/${userId}/remove`, {
+    method: "POST",
+  });
+}
+
+export async function leaveHousehold(householdId: string): Promise<HouseholdLeaveResponse> {
+  return request<HouseholdLeaveResponse>(`/api/v1/households/${householdId}/leave`, {
+    method: "POST",
+  });
+}
+
+export async function setActiveHousehold(householdId: string | null): Promise<HouseholdActiveUpdateResponse> {
+  return request<HouseholdActiveUpdateResponse>("/api/v1/households/active", {
+    method: "PATCH",
+    body: JSON.stringify({ household_id: householdId }),
+  });
 }
 
 export async function triggerAlert(payload: {
