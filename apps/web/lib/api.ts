@@ -2,6 +2,11 @@ import type {
   AlertTimelineApiResponse,
   AlertTriggerApiResponse,
   AuthLoginResponse,
+  AuthPasswordUpdateResponse,
+  AuthProfileUpdateResponse,
+  AuthSessionListResponse,
+  AuthSessionRevokeOthersResponse,
+  AuthSessionRevokeResponse,
   MealAnalyzeApiResponse,
   MealRecordsApiResponse,
   RecommendationGenerateApiResponse,
@@ -48,6 +53,42 @@ export async function logout(): Promise<void> {
 
 export async function me(): Promise<{ user: SessionUser }> {
   return request<{ user: SessionUser }>("/api/v1/auth/me");
+}
+
+export async function updateAuthProfile(payload: {
+  display_name?: string;
+  profile_mode?: "self" | "caregiver";
+}): Promise<AuthProfileUpdateResponse> {
+  return request<AuthProfileUpdateResponse>("/api/v1/auth/profile", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAuthPassword(payload: {
+  current_password: string;
+  new_password: string;
+}): Promise<AuthPasswordUpdateResponse> {
+  return request<AuthPasswordUpdateResponse>("/api/v1/auth/password", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listAuthSessions(): Promise<AuthSessionListResponse> {
+  return request<AuthSessionListResponse>("/api/v1/auth/sessions");
+}
+
+export async function revokeAuthSession(sessionId: string): Promise<AuthSessionRevokeResponse> {
+  return request<AuthSessionRevokeResponse>(`/api/v1/auth/sessions/${sessionId}/revoke`, {
+    method: "POST",
+  });
+}
+
+export async function revokeOtherAuthSessions(): Promise<AuthSessionRevokeOthersResponse> {
+  return request<AuthSessionRevokeOthersResponse>("/api/v1/auth/sessions/revoke-others", {
+    method: "POST",
+  });
 }
 
 export async function triggerAlert(payload: {

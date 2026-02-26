@@ -18,6 +18,35 @@ export interface AuthLoginResponse {
   };
 }
 
+export interface AuthSessionListItem {
+  session_id: string;
+  issued_at: string;
+  is_current: boolean;
+}
+
+export interface AuthSessionListResponse {
+  sessions: AuthSessionListItem[];
+}
+
+export interface AuthSessionRevokeResponse {
+  ok: boolean;
+  revoked: boolean;
+}
+
+export interface AuthSessionRevokeOthersResponse {
+  ok: boolean;
+  revoked_count: number;
+}
+
+export interface AuthProfileUpdateResponse {
+  user: SessionUser;
+}
+
+export interface AuthPasswordUpdateResponse {
+  ok: boolean;
+  revoked_other_sessions: number;
+}
+
 export interface WorkflowExecutionResult {
   workflow_name: string;
   request_id: string;
