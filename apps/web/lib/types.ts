@@ -47,6 +47,19 @@ export interface AuthPasswordUpdateResponse {
   revoked_other_sessions: number;
 }
 
+export interface AuthAuditEvent {
+  event_id: string;
+  event_type: string;
+  email: string;
+  user_id?: string | null;
+  created_at: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface AuthAuditEventListResponse {
+  items: AuthAuditEvent[];
+}
+
 export interface WorkflowExecutionResult {
   workflow_name: string;
   request_id: string;

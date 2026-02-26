@@ -8,6 +8,7 @@ import { ErrorCard } from "@/components/app/error-card";
 import { useSession } from "@/components/app/session-provider";
 import { useDialogA11y } from "@/components/app/use-dialog-a11y";
 import {
+  listAuthAuditEvents,
   listAuthSessions,
   logout,
   revokeAuthSession,
@@ -15,7 +16,7 @@ import {
   updateAuthPassword,
   updateAuthProfile,
 } from "@/lib/api";
-import type { AuthSessionListItem } from "@/lib/types";
+import type { AuthAuditEvent, AuthSessionListItem } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +40,9 @@ export function AccountPanel() {
   const [panelError, setPanelError] = useState<string | null>(null);
   const [panelNotice, setPanelNotice] = useState<string | null>(null);
   const [sessions, setSessions] = useState<AuthSessionListItem[] | null>(null);
+  const [auditEvents, setAuditEvents] = useState<AuthAuditEvent[] | null>(null);
   const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [auditLoading, setAuditLoading] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [revokingOthers, setRevokingOthers] = useState(false);
@@ -84,10 +87,27 @@ export function AccountPanel() {
     }
   }, [user]);
 
+  const loadAuditEvents = useCallback(async () => {
+    if (!user || !user.scopes.includes("auth:audit:read")) return;
+    setAuditLoading(true);
+    setPanelError(null);
+    try {
+      const data = await listAuthAuditEvents(20);
+      setAuditEvents(data.items);
+    } catch (err) {
+      setPanelError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!open || !user) return;
     void loadSessions();
-  }, [open, user, loadSessions]);
+    if (user.scopes.includes("auth:audit:read")) {
+      void loadAuditEvents();
+    }
+  }, [open, user, loadSessions, loadAuditEvents]);
 
   const canManage = status === "authenticated" && Boolean(user);
   const hasProfileChanges =
@@ -452,6 +472,66 @@ export function AccountPanel() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {user?.scopes.includes("auth:audit:read") ? (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Auth Audit</CardTitle>
+                        <CardDescription>
+                          Recent authentication security events (admin access only).
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => void loadAuditEvents()}
+                            disabled={auditLoading}
+                            className="gap-2"
+                          >
+                            <RefreshCw
+                              className={`h-4 w-4 ${auditLoading ? "animate-spin" : ""}`}
+                              aria-hidden
+                            />
+                            Refresh Audit
+                          </Button>
+                        </div>
+                        <Separator />
+                        <div className="space-y-2">
+                          {auditLoading && !auditEvents ? (
+                            <div className="text-sm text-[color:var(--muted-foreground)]">
+                              Loading audit events…
+                            </div>
+                          ) : null}
+                          {auditEvents && auditEvents.length === 0 ? (
+                            <div className="text-sm text-[color:var(--muted-foreground)]">
+                              No audit events yet.
+                            </div>
+                          ) : null}
+                          {auditEvents?.map((event) => (
+                            <div
+                              key={event.event_id}
+                              className="rounded-xl border border-[color:var(--border)] bg-[color:var(--panel-soft)] p-3"
+                            >
+                              <div className="mb-1 flex flex-wrap items-center gap-2">
+                                <Badge variant="outline">{event.event_type}</Badge>
+                                <span className="text-xs text-[color:var(--muted-foreground)]">
+                                  {formatIssuedAt(event.created_at)}
+                                </span>
+                              </div>
+                              <div className="text-sm font-medium">{event.email}</div>
+                              {Object.keys(event.metadata ?? {}).length > 0 ? (
+                                <pre className="mt-2 overflow-x-auto rounded-lg border border-[color:var(--border)] bg-[color:var(--card)] p-2 text-xs text-[color:var(--muted-foreground)]">
+                                  {JSON.stringify(event.metadata, null, 2)}
+                                </pre>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : null}
                 </div>
               )}
             </div>

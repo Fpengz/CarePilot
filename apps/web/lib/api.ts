@@ -1,6 +1,7 @@
 import type {
   AlertTimelineApiResponse,
   AlertTriggerApiResponse,
+  AuthAuditEventListResponse,
   AuthLoginResponse,
   AuthPasswordUpdateResponse,
   AuthProfileUpdateResponse,
@@ -89,6 +90,10 @@ export async function revokeOtherAuthSessions(): Promise<AuthSessionRevokeOthers
   return request<AuthSessionRevokeOthersResponse>("/api/v1/auth/sessions/revoke-others", {
     method: "POST",
   });
+}
+
+export async function listAuthAuditEvents(limit = 20): Promise<AuthAuditEventListResponse> {
+  return request<AuthAuditEventListResponse>(`/api/v1/auth/audit-events?limit=${limit}`);
 }
 
 export async function triggerAlert(payload: {
