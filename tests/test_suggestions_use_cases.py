@@ -180,6 +180,36 @@ def test_list_suggestions_household_scope_merges_members() -> None:
     assert {item["source_user_id"] for item in items} == {"user_001", "care_001"}
 
 
+def test_list_suggestions_household_scope_can_filter_source_user() -> None:
+    repo = FakeRepository(
+        suggestions={
+            "user_001": [{"suggestion_id": "s1", "created_at": "2026-01-01T00:00:00+00:00"}],
+            "care_001": [{"suggestion_id": "s2", "created_at": "2026-01-02T00:00:00+00:00"}],
+        }
+    )
+    households = FakeHouseholdStore(
+        members={
+            "hh_1": [
+                {"user_id": "user_001", "display_name": "Member", "role": "owner"},
+                {"user_id": "care_001", "display_name": "Helper", "role": "member"},
+            ]
+        }
+    )
+    session = _session()
+    session["active_household_id"] = "hh_1"
+
+    items = list_suggestions_for_session(
+        repository=repo,
+        household_store=households,
+        session=session,
+        scope="household",
+        limit=20,
+        source_user_id="care_001",
+    )
+
+    assert [item["suggestion_id"] for item in items] == ["s2"]
+
+
 def test_list_suggestions_household_scope_requires_active_household() -> None:
     with pytest.raises(MissingActiveHouseholdError):
         list_suggestions_for_session(

@@ -210,8 +210,13 @@ def list_suggestions_for_session(
     session: dict[str, Any],
     scope: str,
     limit: int,
+    source_user_id: str | None = None,
 ) -> list[dict[str, Any]]:
     source_user_ids, source_display_names = _source_scope(scope=scope, session=session, household_store=household_store)
+    if source_user_id is not None:
+        if source_user_id not in source_user_ids:
+            raise SuggestionForbiddenError
+        source_user_ids = [source_user_id]
 
     raw_items: list[dict[str, Any]] = []
     for source_user_id in source_user_ids:

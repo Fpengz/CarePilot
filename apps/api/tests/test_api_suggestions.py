@@ -188,3 +188,32 @@ def test_suggestions_events_are_replayable_from_workflow_timeline(sqlite_suggest
     event_types = [event["event_type"] for event in timeline]
     assert "workflow_started" in event_types
     assert "workflow_completed" in event_types
+
+
+def test_suggestions_household_scope_supports_source_user_filter(sqlite_suggestions_env: None) -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    helper_client = TestClient(app)
+
+    _login(member_client, "member@example.com", "member-pass")
+    _login(helper_client, "helper@example.com", "helper-pass")
+
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
+    assert created.status_code == 200
+    household_id = created.json()["household"]["household_id"]
+    invite = member_client.post(f"/api/v1/households/{household_id}/invites")
+    assert invite.status_code == 200
+    join = helper_client.post("/api/v1/households/join", json={"code": invite.json()["invite"]["code"]})
+    assert join.status_code == 200
+
+    _meal_upload(member_client, color=(120, 210, 90))
+    _meal_upload(helper_client, color=(95, 120, 210))
+    assert member_client.post("/api/v1/suggestions/generate-from-report", json={"text": "HbA1c 6.8 LDL 3.2"}).status_code == 200
+    assert helper_client.post("/api/v1/suggestions/generate-from-report", json={"text": "HbA1c 7.5 LDL 4.2"}).status_code == 200
+    assert member_client.patch("/api/v1/households/active", json={"household_id": household_id}).status_code == 200
+
+    filtered = member_client.get("/api/v1/suggestions?scope=household&source_user_id=care_001")
+    assert filtered.status_code == 200
+    items = filtered.json()["items"]
+    assert items
+    assert {item["source_user_id"] for item in items} == {"care_001"}

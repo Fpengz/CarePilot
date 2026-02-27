@@ -62,6 +62,7 @@ def suggestions_list(
     request: Request,
     scope: str = Query(default="self", pattern="^(self|household)$"),
     limit: int = Query(default=20, ge=1, le=100),
+    source_user_id: str | None = Query(default=None),
     session: dict[str, object] = Depends(current_session),
 ) -> SuggestionListResponse:
     require_scopes(session, {"report:read"})
@@ -73,6 +74,7 @@ def suggestions_list(
             session=session,
             scope=scope,
             limit=limit,
+            source_user_id=source_user_id,
         )
     except MissingActiveHouseholdError:
         raise HTTPException(status_code=400, detail="active household required for household scope")

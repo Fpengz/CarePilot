@@ -98,6 +98,8 @@ Requires:
 - `limit` (optional, `1..100`, default `20`)
 - `scope` (optional, `self|household`, default `self`)
   - `household` requires an active household and returns merged household-member suggestions.
+- `source_user_id` (optional)
+  - when used with `scope=household`, filters results to a specific household member user id.
 
 ### `GET /api/v1/suggestions/{suggestion_id}`
 Returns one persisted suggestion snapshot for the authenticated user.
