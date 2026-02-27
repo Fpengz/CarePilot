@@ -36,6 +36,12 @@ Requires both:
     "suggestion_id": "uuid",
     "created_at": "2026-02-26T00:00:00+00:00",
     "disclaimer": "This information is for general wellness...",
+    "safety": {
+      "decision": "allow",
+      "reasons": [],
+      "required_actions": [],
+      "redactions": []
+    },
     "report_parse": {
       "readings": [{"name": "hba1c", "value": 7.1}],
       "snapshot": {"biomarkers": {"hba1c": 7.1}, "risk_flags": ["high_hba1c"]}
@@ -62,6 +68,14 @@ Requires both:
 - `400` `no meal records available` (recommendation generation currently depends on a saved meal)
 - `401` authentication required / invalid session
 - `403` missing required scopes
+
+### Red-flag escalation behavior
+If red-flag symptom text is detected, the endpoint returns `200` with:
+- `suggestion.safety.decision = "escalate"`
+- urgent-care actions in `suggestion.recommendation.localized_advice`
+- `blocked_reason = "red_flag_escalation"`
+
+In this path, meal records are not required.
 
 ### `GET /api/v1/suggestions`
 Lists persisted suggestion snapshots for the authenticated user.

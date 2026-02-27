@@ -38,6 +38,7 @@ The system must escalate (urgent care / emergency guidance) when red-flag sympto
 - Keep safety logic server-side; UI may display warnings but must not be the enforcement point.
 - Add tests for new safety rules and escalation cases.
 - Prefer explicit rule checks over prompt-only behavior.
+- Suggestions API (`POST /api/v1/suggestions/generate-from-report`) now performs red-flag text triage and returns structured `safety` decisions.
 
 ## Related Docs
 - `docs/architecture-v1.md`

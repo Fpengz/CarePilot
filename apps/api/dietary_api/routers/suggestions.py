@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from dietary_guardian.services.recommendation_service import generate_recommendation
 from dietary_guardian.services.report_parser_service import build_clinical_snapshot, parse_report_input
 from dietary_guardian.models.report import ReportInput
+from dietary_guardian.safety.triage import evaluate_text_safety
 
 from ..auth import build_user_profile_from_session
 from ..routes_shared import current_session, get_context, require_scopes
@@ -51,6 +52,32 @@ def suggestions_generate_from_report(
     require_scopes(session, {"report:write", "recommendation:generate"})
     context = get_context(request)
     user_id = str(session["user_id"])
+    safety_decision = evaluate_text_safety(payload.text)
+
+    created_at = datetime.now(timezone.utc)
+    if safety_decision.decision != "allow":
+        suggestion_payload: dict[str, object] = {
+            "suggestion_id": str(uuid4()),
+            "created_at": created_at.isoformat(),
+            "disclaimer": SUGGESTION_DISCLAIMER,
+            "safety": {
+                "decision": safety_decision.decision,
+                "reasons": safety_decision.reasons,
+                "required_actions": safety_decision.required_actions,
+                "redactions": safety_decision.redactions,
+            },
+            "report_parse": {"readings": [], "snapshot": {"biomarkers": {}, "risk_flags": []}},
+            "recommendation": {
+                "safe": False,
+                "rationale": "Red-flag symptoms detected. Seek urgent medical care immediately.",
+                "localized_advice": safety_decision.required_actions,
+                "blocked_reason": "red_flag_escalation",
+                "evidence": {},
+            },
+            "workflow": _build_workflow_stub(),
+        }
+        saved = context.repository.save_suggestion_record(user_id, suggestion_payload)
+        return SuggestionGenerateFromReportResponse(suggestion=_to_suggestion_response(saved))
 
     meal_records = context.repository.list_meal_records(user_id)
     if not meal_records:
@@ -67,11 +94,16 @@ def suggestions_generate_from_report(
     recommendation_json = recommendation.model_dump(mode="json")
     context.repository.save_recommendation(user_id, recommendation_json)
 
-    created_at = datetime.now(timezone.utc)
     suggestion_payload: dict[str, object] = {
         "suggestion_id": str(uuid4()),
         "created_at": created_at.isoformat(),
         "disclaimer": SUGGESTION_DISCLAIMER,
+        "safety": {
+            "decision": safety_decision.decision,
+            "reasons": safety_decision.reasons,
+            "required_actions": safety_decision.required_actions,
+            "redactions": safety_decision.redactions,
+        },
         "report_parse": {
             "readings": [item.model_dump(mode="json") for item in readings],
             "snapshot": snapshot.model_dump(mode="json"),

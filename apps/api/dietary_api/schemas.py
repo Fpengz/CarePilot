@@ -260,10 +260,18 @@ class SuggestionGenerateFromReportRequest(BaseModel):
     text: str
 
 
+class SafetyDecisionResponse(BaseModel):
+    decision: Literal["allow", "modify", "refuse", "escalate", "ask_clarification"]
+    reasons: list[str] = Field(default_factory=list)
+    required_actions: list[str] = Field(default_factory=list)
+    redactions: list[str] = Field(default_factory=list)
+
+
 class SuggestionItemResponse(BaseModel):
     suggestion_id: str
     created_at: datetime
     disclaimer: str
+    safety: SafetyDecisionResponse
     report_parse: dict[str, object]
     recommendation: dict[str, object]
     workflow: dict[str, object]

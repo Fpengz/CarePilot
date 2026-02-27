@@ -56,6 +56,7 @@ def test_suggestions_generate_from_report_persists_and_lists(sqlite_suggestions_
     suggestion = body["suggestion"]
     assert suggestion["suggestion_id"]
     assert suggestion["disclaimer"]
+    assert suggestion["safety"]["decision"] == "allow"
     assert suggestion["report_parse"]["readings"]
     assert suggestion["recommendation"]["localized_advice"]
     assert "workflow" in suggestion
@@ -93,3 +94,20 @@ def test_suggestions_endpoints_require_auth(sqlite_suggestions_env: None) -> Non
 
     assert create.status_code == 401
     assert list_resp.status_code == 401
+
+
+def test_suggestions_red_flag_text_escalates_without_meal(sqlite_suggestions_env: None) -> None:
+    client = TestClient(create_app())
+    _login(client)
+
+    response = client.post(
+        "/api/v1/suggestions/generate-from-report",
+        json={"text": "I have severe chest pain and trouble breathing right now"},
+    )
+
+    assert response.status_code == 200
+    suggestion = response.json()["suggestion"]
+    assert suggestion["safety"]["decision"] == "escalate"
+    assert suggestion["safety"]["reasons"]
+    assert "urgent medical care" in suggestion["recommendation"]["rationale"].lower()
+    assert suggestion["recommendation"]["safe"] is False

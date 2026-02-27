@@ -179,6 +179,12 @@ export interface SuggestionItemApi {
   suggestion_id: string;
   created_at: string;
   disclaimer: string;
+  safety: {
+    decision: "allow" | "modify" | "refuse" | "escalate" | "ask_clarification";
+    reasons: string[];
+    required_actions: string[];
+    redactions: string[];
+  };
   report_parse: {
     readings: Array<Record<string, unknown>>;
     snapshot: {
