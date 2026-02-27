@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
-from ..routes_shared import current_session, get_context, require_scopes
+from ..routes_shared import current_session, get_context, require_action
 from ..schemas import MealAnalyzeResponse, MealRecordsResponse
 from ..services.meals import analyze_meal, list_meal_records
 
@@ -14,11 +14,11 @@ async def meal_analyze(
     request: Request,
     file: UploadFile = File(...),
     runtime_mode: str = Form("local"),
-    provider: str = Form("test"),
+    provider: str | None = Form(default=None),
     session: dict[str, object] = Depends(current_session),
 ) -> MealAnalyzeResponse:
     del runtime_mode
-    require_scopes(session, {"meal:write"})
+    require_action(session, "meal.analyze")
     return await analyze_meal(
         request=request,
         context=get_context(request),
@@ -32,7 +32,13 @@ async def meal_analyze(
 def meal_records(
     request: Request,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    cursor: str | None = Query(default=None),
     session: dict[str, object] = Depends(current_session),
 ) -> MealRecordsResponse:
-    require_scopes(session, {"meal:read"})
-    return list_meal_records(context=get_context(request), user_id=str(session["user_id"]), limit=limit)
+    require_action(session, "meal.records.read")
+    return list_meal_records(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        limit=limit,
+        cursor=cursor,
+    )

@@ -32,6 +32,13 @@ class AppContext:
     household_store: Any
 
 
+def close_app_context(ctx: AppContext) -> None:
+    for component in (ctx.repository, ctx.auth_store, ctx.household_store):
+        close = getattr(component, "close", None)
+        if callable(close):
+            close()
+
+
 def build_app_context() -> AppContext:
     settings = get_settings()
     repository = SQLiteRepository(settings.api_sqlite_db_path)

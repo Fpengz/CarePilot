@@ -154,6 +154,34 @@ class HawkerVisionModule:
             return f"{latency_ms / 1000.0:.2f}s"
         return f"{latency_ms:.0f}ms"
 
+    def _log_response_summary(
+        self,
+        *,
+        request_id: str,
+        correlation_id: str | None,
+        user_id: str | None,
+        source: str | None,
+        filename: str | None,
+        result: VisionResult,
+        reason: str,
+    ) -> None:
+        logger.info(
+            "hawker_vision_response_summary request_id=%s correlation_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s destination=%s confidence=%.3f manual_review=%s latency_ms=%.2f reason=%s",
+            request_id,
+            correlation_id,
+            user_id,
+            source,
+            filename,
+            self.provider,
+            getattr(self.model, "model_name", "unknown"),
+            self._endpoint(),
+            LLMFactory.describe_model_destination(self.model),
+            result.primary_state.confidence_score,
+            result.needs_manual_review,
+            result.processing_latency_ms,
+            reason,
+        )
+
     def _build_clarification_response(
         self,
         reason: str,
@@ -312,12 +340,22 @@ class HawkerVisionModule:
                 and not self.inference_engine.supports(InferenceModality.IMAGE)
             ):
                 elapsed = (time.perf_counter() - started) * 1000.0
-                return self._build_clarification_response(
+                clarification = self._build_clarification_response(
                     reason="Selected runtime cannot process raw image bytes in this mode",
                     source=image_input.source,
                     filename=image_input.filename,
                     latency_ms=elapsed,
                 )
+                self._log_response_summary(
+                    request_id=request_id,
+                    correlation_id=correlation_id,
+                    user_id=user_id,
+                    source=image_input.source,
+                    filename=image_input.filename,
+                    result=clarification,
+                    reason="unsupported_modality",
+                )
+                return clarification
 
             logger.info(
                 "hawker_vision_request request_id=%s correlation_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s inference_engine_v2=%s local_output_retries=%s cloud_output_retries=%s",
@@ -380,13 +418,23 @@ class HawkerVisionModule:
                         self._format_latency_ms(elapsed),
                         SLOW_INFERENCE_WARNING_MS,
                     )
-                return self._build_clarification_response(
+                clarification = self._build_clarification_response(
                     reason="Clarification required due to low confidence",
                     confidence_score=meal_state.confidence_score,
                     source=source,
                     filename=filename,
                     latency_ms=elapsed,
                 )
+                self._log_response_summary(
+                    request_id=request_id,
+                    correlation_id=correlation_id,
+                    user_id=user_id,
+                    source=source,
+                    filename=filename,
+                    result=clarification,
+                    reason="low_confidence_clarification",
+                )
+                return clarification
 
             # 2) Low but not critical: apply safe HPB fallback and mark for review
             if meal_state.confidence_score < 0.75:
@@ -422,7 +470,7 @@ class HawkerVisionModule:
                     self._format_latency_ms(elapsed),
                     SLOW_INFERENCE_WARNING_MS,
                 )
-            return VisionResult(
+            response_result = VisionResult(
                 primary_state=meal_state,
                 raw_ai_output=(
                     
@@ -435,6 +483,16 @@ class HawkerVisionModule:
                 processing_latency_ms=elapsed,
                 model_version=getattr(self.model, "model_name", "unknown")
             )
+            self._log_response_summary(
+                request_id=request_id,
+                correlation_id=correlation_id,
+                user_id=user_id,
+                source=source,
+                filename=filename,
+                result=response_result,
+                reason="inference_complete",
+            )
+            return response_result
 
         except Exception as e:
             logger.error(f"Vision Pipeline Failed: {e}")
@@ -468,12 +526,22 @@ class HawkerVisionModule:
                 elapsed,
                 e,
             )
-            return self._build_clarification_response(
+            clarification = self._build_clarification_response(
                 reason=f"Vision pipeline failed: {e}",
                 source=getattr(image_input, "source", None),
                 filename=getattr(image_input, "filename", None),
                 latency_ms=elapsed,
             )
+            self._log_response_summary(
+                request_id=request_id,
+                correlation_id=correlation_id,
+                user_id=user_id,
+                source=getattr(image_input, "source", None),
+                filename=getattr(image_input, "filename", None),
+                result=clarification,
+                reason="pipeline_exception",
+            )
+            return clarification
 
     async def analyze_and_record(
         self,

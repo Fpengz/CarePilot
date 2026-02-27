@@ -29,11 +29,57 @@ import type {
   WorkflowListApiResponse,
 } from "@/lib/types";
 
-// Default to localhost (not 127.0.0.1) so SameSite=Lax auth cookies remain same-site
-// when the web app is served from http://localhost:3000 in local development.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8001";
+// Default to same-origin proxy so browser auth cookies stay first-party for localhost and LAN hosts.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/backend";
+const FRONTEND_API_LOG_ENABLED = process.env.NEXT_PUBLIC_DEV_LOG_FRONTEND === "1" || process.env.NEXT_PUBLIC_DEV_LOG_FRONTEND === "true";
+const FRONTEND_API_LOG_VERBOSE = process.env.NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE === "1" || process.env.NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE === "true";
+
+function redactSensitive<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => redactSensitive(item)) as T;
+  }
+  if (value && typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    const redacted: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(source)) {
+      const lower = key.toLowerCase();
+      if (
+        lower.includes("password") ||
+        lower.includes("token") ||
+        lower.includes("secret") ||
+        lower.includes("cookie")
+      ) {
+        redacted[key] = "***";
+      } else {
+        redacted[key] = redactSensitive(val);
+      }
+    }
+    return redacted as T;
+  }
+  return value;
+}
+
+function parseJsonMaybe(body: string): unknown {
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    return body;
+  }
+}
+
+function logFrontendApi(event: string, payload: Record<string, unknown>) {
+  if (!FRONTEND_API_LOG_ENABLED || typeof window === "undefined") return;
+  const printer = event.includes("error") ? console.error : console.info;
+  printer(`[frontend-api] ${event}`, redactSensitive(payload));
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = init?.method ?? "GET";
+  const startedAt = performance.now();
+  const bodyPreview =
+    FRONTEND_API_LOG_VERBOSE && typeof init?.body === "string" ? redactSensitive(parseJsonMaybe(init.body)) : undefined;
+  logFrontendApi("request.start", { method, path, body: bodyPreview });
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "include",
     ...init,
@@ -45,9 +91,28 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const text = await response.text();
+    logFrontendApi("request.error", {
+      method,
+      path,
+      status: response.status,
+      duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
+      response: FRONTEND_API_LOG_VERBOSE ? redactSensitive(parseJsonMaybe(text)) : text.slice(0, 200),
+      request_id: response.headers.get("x-request-id"),
+      correlation_id: response.headers.get("x-correlation-id"),
+    });
     throw new Error(`API ${response.status}: ${text}`);
   }
-  return (await response.json()) as T;
+  const json = (await response.json()) as T;
+  logFrontendApi("request.success", {
+    method,
+    path,
+    status: response.status,
+    duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
+    request_id: response.headers.get("x-request-id"),
+    correlation_id: response.headers.get("x-correlation-id"),
+    response: FRONTEND_API_LOG_VERBOSE ? json : undefined,
+  });
+  return json;
 }
 
 export async function login(email: string, password: string): Promise<AuthLoginResponse> {
@@ -199,6 +264,13 @@ export async function getWorkflow(correlationId: string): Promise<WorkflowExecut
 }
 
 export async function analyzeMeal(formData: FormData): Promise<MealAnalyzeApiResponse> {
+  const startedAt = performance.now();
+  logFrontendApi("request.start", {
+    method: "POST",
+    path: "/api/v1/meal/analyze",
+    provider: formData.get("provider"),
+    form_keys: FRONTEND_API_LOG_VERBOSE ? [...formData.keys()] : undefined,
+  });
   const response = await fetch(`${API_BASE_URL}/api/v1/meal/analyze`, {
     method: "POST",
     body: formData,
@@ -207,9 +279,28 @@ export async function analyzeMeal(formData: FormData): Promise<MealAnalyzeApiRes
   });
   if (!response.ok) {
     const text = await response.text();
+    logFrontendApi("request.error", {
+      method: "POST",
+      path: "/api/v1/meal/analyze",
+      status: response.status,
+      duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
+      response: FRONTEND_API_LOG_VERBOSE ? redactSensitive(parseJsonMaybe(text)) : text.slice(0, 200),
+      request_id: response.headers.get("x-request-id"),
+      correlation_id: response.headers.get("x-correlation-id"),
+    });
     throw new Error(`API ${response.status}: ${text}`);
   }
-  return (await response.json()) as MealAnalyzeApiResponse;
+  const json = (await response.json()) as MealAnalyzeApiResponse;
+  logFrontendApi("request.success", {
+    method: "POST",
+    path: "/api/v1/meal/analyze",
+    status: response.status,
+    duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
+    request_id: response.headers.get("x-request-id"),
+    correlation_id: response.headers.get("x-correlation-id"),
+    response: FRONTEND_API_LOG_VERBOSE ? json : undefined,
+  });
+  return json;
 }
 
 export async function listMealRecords(limit?: number): Promise<MealRecordsApiResponse> {

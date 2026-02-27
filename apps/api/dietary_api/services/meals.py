@@ -1,6 +1,6 @@
 from typing import Any, cast
 
-from fastapi import HTTPException, Request, UploadFile
+from fastapi import Request, UploadFile
 
 from dietary_guardian.agents.hawker_vision import HawkerVisionModule
 from dietary_guardian.models.meal import ImageInput, VisionResult
@@ -10,6 +10,7 @@ from dietary_guardian.services.upload_service import SUPPORTED_IMAGE_TYPES, _may
 
 from apps.api.dietary_api.auth import build_user_profile_from_session
 from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import MealAnalyzeResponse, MealRecordsResponse
 
 
@@ -19,14 +20,18 @@ async def analyze_meal(
     context: AppContext,
     session: dict[str, object],
     file: UploadFile,
-    provider: str,
+    provider: str | None,
 ) -> MealAnalyzeResponse:
     payload = await file.read()
     if len(payload) == 0:
-        raise HTTPException(status_code=400, detail="empty upload")
+        raise build_api_error(status_code=400, code="meal.empty_upload", message="empty upload")
     mime_type = file.content_type or ""
     if mime_type not in SUPPORTED_IMAGE_TYPES:
-        raise HTTPException(status_code=400, detail="unsupported image format")
+        raise build_api_error(
+            status_code=400,
+            code="meal.unsupported_image_format",
+            message="unsupported image format",
+        )
 
     image_bytes, preprocess_meta = _maybe_downscale_image(
         payload,
@@ -41,13 +46,23 @@ async def analyze_meal(
         content=image_bytes,
         metadata=preprocess_meta,
     )
-    capture = build_capture_envelope(image_input, user_id=str(session["user_id"]))
+    capture = build_capture_envelope(
+        image_input,
+        user_id=str(session["user_id"]),
+        request_id=getattr(request.state, "request_id", None),
+        correlation_id=getattr(request.state, "correlation_id", None),
+    )
     dedupe_state = cast(dict[str, Any], request.app.state.__dict__.setdefault("_capture_dedupe_state", {}))
     if should_suppress_duplicate_capture(dedupe_state, capture, window_seconds=30):
-        raise HTTPException(status_code=409, detail="duplicate capture suppressed")
+        raise build_api_error(
+            status_code=409,
+            code="meal.duplicate_capture",
+            message="duplicate capture suppressed",
+        )
 
     user_profile = build_user_profile_from_session(session)
-    module = HawkerVisionModule(provider=provider)
+    selected_provider = provider.strip() if isinstance(provider, str) else ""
+    module = HawkerVisionModule(provider=selected_provider or context.settings.llm_provider)
     vision_result, meal_record = await module.analyze_and_record(
         image_input,
         user_profile.id,
@@ -70,9 +85,42 @@ async def analyze_meal(
     )
 
 
-def list_meal_records(*, context: AppContext, user_id: str, limit: int = 50) -> MealRecordsResponse:
+def _parse_cursor(cursor: str | None) -> int:
+    if cursor is None:
+        return 0
+    raw = cursor.strip()
+    if not raw.isdigit():
+        raise build_api_error(
+            status_code=400,
+            code="meal.invalid_cursor",
+            message="invalid cursor",
+            details={"cursor": cursor},
+        )
+    return int(raw)
+
+
+def list_meal_records(
+    *,
+    context: AppContext,
+    user_id: str,
+    limit: int = 50,
+    cursor: str | None = None,
+) -> MealRecordsResponse:
     records = context.repository.list_meal_records(user_id)
-    return MealRecordsResponse(records=[item.model_dump(mode="json") for item in records[:limit]])
+    start = _parse_cursor(cursor)
+    end = start + limit
+    page_items = records[start:end]
+    next_cursor = str(end) if end < len(records) else None
+    return MealRecordsResponse(
+        records=[item.model_dump(mode="json") for item in page_items],
+        page={
+            "limit": limit,
+            "cursor": cursor,
+            "next_cursor": next_cursor,
+            "has_more": next_cursor is not None,
+            "returned": len(page_items),
+        },
+    )
 
 
 def _build_meal_summary(*, vision_result: VisionResult, meal_record: MealRecognitionRecord) -> dict[str, object]:

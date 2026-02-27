@@ -226,6 +226,7 @@ class MealAnalyzeResponse(BaseModel):
 
 class MealRecordsResponse(BaseModel):
     records: list[dict[str, object]]
+    page: dict[str, object] | None = None
 
 
 class WorkflowResponse(BaseModel):
@@ -236,8 +237,18 @@ class WorkflowResponse(BaseModel):
     timeline_events: list[dict[str, object]]
 
 
+class WorkflowListItem(BaseModel):
+    correlation_id: str
+    request_id: str | None = None
+    user_id: str | None = None
+    workflow_name: str | None = None
+    created_at: datetime
+    latest_event_at: datetime
+    event_count: int
+
+
 class WorkflowListResponse(BaseModel):
-    items: list[dict[str, object]]
+    items: list[WorkflowListItem]
 
 
 class ReportParseRequest(BaseModel):

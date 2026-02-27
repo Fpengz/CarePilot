@@ -14,6 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { analyzeMeal, listMealRecords } from "@/lib/api";
 import type { MealAnalyzeApiResponse } from "@/lib/types";
 
+const DEFAULT_MEAL_PROVIDER = process.env.NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER ?? "test";
+
 export default function MealsPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -53,23 +55,28 @@ export default function MealsPage() {
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
-              <div className="rounded-xl border border-[color:var(--border)] bg-white/55 p-3 dark:bg-[color:var(--panel-soft)]">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <ImagePlus className="h-4 w-4 text-[color:var(--accent)]" aria-hidden />
-                      {file ? "Image selected" : "Choose a meal image"}
+              <div className="rounded-2xl border border-dashed border-[color:var(--border)] bg-gradient-to-br from-white/80 to-white/45 p-4 dark:from-[color:var(--panel-soft)] dark:to-[color:var(--panel-soft)]/70">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--accent)]/10 p-2.5 text-[color:var(--accent)] dark:bg-[color:var(--accent)]/15">
+                      <ImagePlus className="h-4 w-4" aria-hidden />
                     </div>
-                    <div className="app-muted mt-1 truncate text-xs">
-                      {file ? `${file.name} • ${(file.size / 1024).toFixed(0)} KB` : "JPG, PNG, or WEBP up to your browser limit"}
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold">{file ? "Image ready for analysis" : "Upload a meal image"}</div>
+                      <div className="app-muted mt-1 text-xs">
+                        {file
+                          ? `${file.name} • ${(file.size / 1024).toFixed(0)} KB`
+                          : "Drop-in style selector for JPG, PNG, and WEBP uploads."}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <Button
                       type="button"
-                      size="sm"
+                      size="default"
                       variant="secondary"
                       onClick={() => fileInputRef.current?.click()}
+                      className="w-full sm:w-auto"
                     >
                       {file ? "Replace Image" : "Browse Files"}
                     </Button>
@@ -82,11 +89,16 @@ export default function MealsPage() {
                         setFile(null);
                         if (fileInputRef.current) fileInputRef.current.value = "";
                       }}
-                      className="gap-1.5"
+                      className="gap-1.5 sm:w-auto"
                     >
                       <X className="h-4 w-4" aria-hidden />
                       Clear
                     </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full border border-[color:var(--border)] bg-white/70 px-2.5 py-1 dark:bg-[color:var(--panel-soft)]">JPG</span>
+                    <span className="rounded-full border border-[color:var(--border)] bg-white/70 px-2.5 py-1 dark:bg-[color:var(--panel-soft)]">PNG</span>
+                    <span className="rounded-full border border-[color:var(--border)] bg-white/70 px-2.5 py-1 dark:bg-[color:var(--panel-soft)]">WEBP</span>
                   </div>
                 </div>
               </div>
@@ -105,7 +117,7 @@ export default function MealsPage() {
                     const form = new FormData();
                     form.append("file", file);
                     form.append("runtime_mode", "local");
-                    form.append("provider", "test");
+                    form.append("provider", DEFAULT_MEAL_PROVIDER);
                     const data = await analyzeMeal(form);
                     setResult(data);
                   } catch (e) {
@@ -146,6 +158,10 @@ export default function MealsPage() {
               <div className="metric-card">
                 <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Read Endpoint</div>
                 <div className="mt-1 text-sm font-medium">GET /api/v1/meal/records</div>
+              </div>
+              <div className="metric-card sm:col-span-2">
+                <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Analyze Provider</div>
+                <div className="mt-1 text-sm font-medium">{DEFAULT_MEAL_PROVIDER}</div>
               </div>
             </div>
           </CardContent>

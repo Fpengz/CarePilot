@@ -6,6 +6,7 @@ from dietary_guardian.models.medication import MedicationRegimen
 from dietary_guardian.services.authorization import has_scopes
 
 from .deps import AppContext
+from .policy import authorize_action, authorize_resource_action
 
 SESSION_COOKIE = "dg_session"
 SessionData = dict[str, Any]
@@ -59,6 +60,14 @@ def require_scopes(session: SessionData, required_scopes: set[str]) -> None:
     scopes = [str(item) for item in cast(list[object], session.get("scopes", []))]
     if not has_scopes(scopes, required_scopes):
         raise HTTPException(status_code=403, detail="forbidden")
+
+
+def require_action(session: SessionData, action: str) -> None:
+    authorize_action(session, action=action)
+
+
+def require_resource_action(session: SessionData, action: str, resource: dict[str, object]) -> None:
+    authorize_resource_action(session, action=action, resource=resource)
 
 
 def current_session(session: SessionData = Depends(require_session)) -> SessionData:

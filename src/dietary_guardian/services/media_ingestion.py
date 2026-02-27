@@ -11,12 +11,18 @@ def compute_content_sha256(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def build_capture_envelope(image_input: ImageInput, *, user_id: str | None = None) -> CaptureEnvelope:
+def build_capture_envelope(
+    image_input: ImageInput,
+    *,
+    user_id: str | None = None,
+    request_id: str | None = None,
+    correlation_id: str | None = None,
+) -> CaptureEnvelope:
     content_sha256 = image_input.metadata.get("content_sha256") or compute_content_sha256(image_input.content)
     return CaptureEnvelope(
         capture_id=str(uuid4()),
-        request_id=str(uuid4()),
-        correlation_id=str(uuid4()),
+        request_id=request_id or str(uuid4()),
+        correlation_id=correlation_id or str(uuid4()),
         user_id=user_id,
         source=image_input.source,
         modality="image",
