@@ -53,7 +53,7 @@ class _BaseStrategy:
 
     def _output_retry_budget(self) -> int:
         settings = get_settings()
-        if self.provider_name == ModelProvider.GEMINI.value:
+        if self.provider_name in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value}:
             return settings.cloud_output_validation_retries
         if self.provider_name in {ModelProvider.OLLAMA.value, ModelProvider.VLLM.value}:
             return settings.local_output_validation_retries
@@ -174,7 +174,7 @@ class InferenceEngine:
         self.provider = provider or settings.llm_provider
         self.model = model or LLMFactory.get_model(provider=self.provider, model_name=model_name)
 
-        if self.provider == ModelProvider.GEMINI.value:
+        if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value}:
             self.strategy: ProviderStrategy = CloudStrategy(provider_name=self.provider, model=self.model)
         elif self.provider in {ModelProvider.OLLAMA.value, ModelProvider.VLLM.value}:
             self.strategy = LocalStrategy(provider_name=self.provider, model=self.model)
@@ -200,9 +200,9 @@ class InferenceEngine:
             InferenceModality.MIXED: self.supports(InferenceModality.MIXED),
         }
         expected_latency_ms = {
-            InferenceModality.TEXT: 1000 if self.provider == ModelProvider.GEMINI.value else 3000,
-            InferenceModality.IMAGE: 1500 if self.provider == ModelProvider.GEMINI.value else 12000,
-            InferenceModality.MIXED: 2000 if self.provider == ModelProvider.GEMINI.value else 15000,
+            InferenceModality.TEXT: 1000 if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value} else 3000,
+            InferenceModality.IMAGE: 1500 if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value} else 12000,
+            InferenceModality.MIXED: 2000 if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value} else 15000,
         }
         return ModalityCapabilityProfile(
             provider=health.provider,

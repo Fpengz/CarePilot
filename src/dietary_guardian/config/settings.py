@@ -7,10 +7,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    llm_provider: Literal["gemini", "ollama", "vllm", "test"] = "test"
+    llm_provider: Literal["gemini", "openai", "ollama", "vllm", "test"] = "test"
     gemini_api_key: str | None = None
     google_api_key: str | None = None
     gemini_model: str = "gemini-1.5-flash"
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
+    openai_base_url: AnyHttpUrl | str | None = None
+    openai_request_timeout_seconds: float = Field(default=120.0, ge=1.0, le=7200.0)
+    openai_transport_max_retries: int = Field(default=2, ge=0, le=10)
 
     local_llm_base_url: AnyHttpUrl | str | None = "http://localhost:11434/v1"
     local_llm_api_key: str = "ollama"
@@ -24,6 +29,9 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = Field(default=8001, ge=1, le=65535)
     api_cors_origins: str = "http://localhost:3000"
+    api_dev_log_verbose: bool = False
+    api_dev_log_headers: bool = False
+    api_dev_log_response_headers: bool = False
     session_secret: str = "dev-insecure-session-secret-change-me"
     cookie_secure: bool = False
     auth_password_hash_scheme: str = "pbkdf2_sha256"
@@ -68,6 +76,9 @@ class Settings(BaseSettings):
             raise ValueError(
                 "Gemini provider selected but GEMINI_API_KEY/GOOGLE_API_KEY is not set"
             )
+
+        if self.llm_provider == "openai" and not self.openai_api_key:
+            raise ValueError("OpenAI provider selected but OPENAI_API_KEY is not set")
 
         if self.llm_provider in {"ollama", "vllm"} and not self.local_llm_base_url:
             raise ValueError(

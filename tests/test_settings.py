@@ -57,3 +57,13 @@ def test_vllm_base_url_alias_normalization() -> None:
         ollama_base_url="http://localhost:11434/v1",
     )
     assert settings.local_llm_base_url == "http://localhost:11434/v1"
+
+
+def test_openai_provider_requires_key() -> None:
+    with pytest.raises(ValidationError):
+        Settings(llm_provider="openai", openai_api_key=None)
+
+
+def test_openai_provider_allows_with_key() -> None:
+    settings = Settings(llm_provider="openai", openai_api_key="test-openai-key")
+    assert settings.llm_provider == "openai"

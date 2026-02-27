@@ -19,6 +19,7 @@ logger = get_logger(__name__)
 
 class ModelProvider(StrEnum):
     GEMINI = "gemini"
+    OPENAI = "openai"
     OLLAMA = "ollama"
     VLLM = "vllm"
     TEST = "test"
@@ -87,6 +88,51 @@ class LLMFactory:
             return OpenAIProvider(base_url=base_url, api_key=api_key)
 
     @staticmethod
+    def _openai_network_config() -> tuple[float, int]:
+        try:
+            settings = get_settings()
+            return (
+                float(settings.openai_request_timeout_seconds),
+                int(settings.openai_transport_max_retries),
+            )
+        except ValidationError:
+            timeout_default = str(LLMFactory._settings_default("openai_request_timeout_seconds", 120.0))
+            retries_default = str(LLMFactory._settings_default("openai_transport_max_retries", 2))
+            timeout_raw = os.getenv("OPENAI_REQUEST_TIMEOUT_SECONDS", timeout_default)
+            retries_raw = os.getenv("OPENAI_TRANSPORT_MAX_RETRIES", retries_default)
+            with suppress(ValueError):
+                timeout = float(timeout_raw)
+                retries = int(retries_raw)
+                return timeout, retries
+            return float(timeout_default), int(retries_default)
+
+    @staticmethod
+    def _build_openai_provider(*, api_key: str, base_url: str | None) -> OpenAIProvider:
+        timeout_seconds, max_retries = LLMFactory._openai_network_config()
+        logger.info(
+            "provider_openai_network_config base_url=%s timeout_seconds=%.1f transport_max_retries=%s",
+            base_url or "default",
+            timeout_seconds,
+            max_retries,
+        )
+        try:
+            openai_client = AsyncOpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout_seconds,
+                max_retries=max_retries,
+            )
+            return OpenAIProvider(openai_client=openai_client)
+        except TypeError:
+            logger.warning(
+                "provider_openai_network_config_compat_fallback base_url=%s reason=provider_constructor_does_not_accept_openai_client",
+                base_url or "default",
+            )
+            if base_url:
+                return OpenAIProvider(base_url=base_url, api_key=api_key)
+            return OpenAIProvider(api_key=api_key)
+
+    @staticmethod
     def describe_model_destination(model: ModelType) -> str:
         model_name = getattr(model, "model_name", getattr(model, "model", "unknown"))
         provider_obj = getattr(model, "provider", getattr(model, "_provider", None))
@@ -148,6 +194,28 @@ class LLMFactory:
             )
             model = GoogleModel(target_model)
             logger.info("provider_selected provider=gemini model=%s", target_model)
+            return LLMFactory._attach_model_name(model, target_model)
+
+        if target_provider == ModelProvider.OPENAI.value:
+            if settings is not None:
+                api_key = settings.openai_api_key
+                base_url = str(settings.openai_base_url) if settings.openai_base_url else None
+                target_model = model_name or settings.openai_model
+            else:
+                api_key = os.getenv("OPENAI_API_KEY")
+                base_url = os.getenv("OPENAI_BASE_URL")
+                model_default = str(LLMFactory._settings_default("openai_model", "gpt-4o-mini"))
+                target_model = model_name or os.getenv("OPENAI_MODEL", model_default)
+            if not api_key:
+                logger.warning("provider_openai_missing_api_key fallback=test")
+                return LLMFactory._attach_model_name(TestModel(), "test-model")
+            openai_provider = LLMFactory._build_openai_provider(api_key=api_key, base_url=base_url)
+            model = OpenAIChatModel(target_model, provider=openai_provider)
+            logger.info(
+                "provider_selected provider=openai model=%s base_url=%s",
+                target_model,
+                base_url or "default",
+            )
             return LLMFactory._attach_model_name(model, target_model)
 
         if target_provider in (ModelProvider.OLLAMA.value, ModelProvider.VLLM.value):

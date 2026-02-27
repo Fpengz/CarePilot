@@ -2,6 +2,10 @@
 
 Source of truth: `src/dietary_guardian/config/settings.py`
 
+Environment loading conventions:
+- Default source of truth is root `.env`.
+- Web commands (`pnpm web:*`) load root `.env` first, then optional `apps/web/.env` overrides.
+
 ## Auth / Session
 - `API_SQLITE_DB_PATH` (default: `dietary_guardian_api.db`) — application data / household persistence
 - `SESSION_SECRET` (default: `dev-insecure-session-secret-change-me`)
@@ -20,10 +24,21 @@ Source of truth: `src/dietary_guardian/config/settings.py`
 - `API_PORT` (default: `8001`)
 - `API_CORS_ORIGINS` (default: `http://localhost:3000`)
 
+## Web Runtime
+- `NEXT_PUBLIC_API_BASE_URL` (default: `/backend`)
+- `BACKEND_API_BASE_URL` (default: `http://127.0.0.1:8001`)
+- `NEXT_ALLOWED_DEV_ORIGINS` (default: `http://localhost:3000,http://127.0.0.1:3000`)
+- `NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER` (default: `test`)
+
 ## LLM Provider
-- `LLM_PROVIDER` (default: `test`) — `gemini`, `ollama`, `vllm`, `test`
+- `LLM_PROVIDER` (default: `test`) — `gemini`, `openai`, `ollama`, `vllm`, `test`
 - `GEMINI_API_KEY` / `GOOGLE_API_KEY`
 - `GEMINI_MODEL`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `OPENAI_BASE_URL`
+- `OPENAI_REQUEST_TIMEOUT_SECONDS`
+- `OPENAI_TRANSPORT_MAX_RETRIES`
 - `LOCAL_LLM_BASE_URL` / `OLLAMA_BASE_URL`
 - `LOCAL_LLM_API_KEY`
 - `LOCAL_LLM_MODEL`

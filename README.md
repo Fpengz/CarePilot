@@ -44,9 +44,18 @@ Copy `.env.example` to `.env` and update values for your environment.
 cp .env.example .env
 ```
 
+Environment precedence:
+- Default source of truth: root `.env`
+- Optional web-only override: `apps/web/.env` (overrides root values for web commands only)
+
 Required keys for cloud usage:
 - `GEMINI_API_KEY` (or `GOOGLE_API_KEY`)
 - `LLM_PROVIDER=gemini`
+
+Or for OpenAI cloud usage:
+- `OPENAI_API_KEY`
+- `LLM_PROVIDER=openai`
+- Optional: `OPENAI_MODEL`, `OPENAI_BASE_URL`
 
 Required keys for local usage:
 - `LLM_PROVIDER=ollama` or `LLM_PROVIDER=vllm`
@@ -67,6 +76,7 @@ Configuration source of truth:
 
 Validation behavior:
 - If `LLM_PROVIDER=gemini`, one of `GEMINI_API_KEY` or `GOOGLE_API_KEY` must be set.
+- If `LLM_PROVIDER=openai`, `OPENAI_API_KEY` must be set.
 - If `LLM_PROVIDER` is `ollama` or `vllm`, a local base URL must be set.
 - `OLLAMA_BASE_URL` is normalized into `LOCAL_LLM_BASE_URL` for compatibility.
 
@@ -101,6 +111,8 @@ Set `AUTH_STORE_BACKEND=in_memory` for ephemeral demo/test runs.
 pnpm web:dev
 ```
 
+`pnpm web:*` commands automatically load root `.env` and then apply optional `apps/web/.env` overrides.
+
 ### Streamlit UI
 ```bash
 ./tools/run_dev.sh
@@ -116,6 +128,11 @@ uv run python src/main.py
 - `LLM_PROVIDER=gemini`
 - `GEMINI_API_KEY` or `GOOGLE_API_KEY`
 - Optional: `GEMINI_MODEL`
+
+### OpenAI Mode
+- `LLM_PROVIDER=openai`
+- `OPENAI_API_KEY`
+- Optional: `OPENAI_MODEL`, `OPENAI_BASE_URL`, `OPENAI_REQUEST_TIMEOUT_SECONDS`, `OPENAI_TRANSPORT_MAX_RETRIES`
 
 ### Local Ollama Mode
 - `LLM_PROVIDER=ollama`

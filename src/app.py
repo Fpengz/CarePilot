@@ -153,17 +153,26 @@ image_max_side_px = int(
     )
 )
 
-selected_provider = settings.llm_provider if settings.llm_provider in {ModelProvider.GEMINI.value, ModelProvider.TEST.value} else ModelProvider.GEMINI.value
-selected_model_name = settings.gemini_model
+selected_provider = (
+    settings.llm_provider
+    if settings.llm_provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, ModelProvider.TEST.value}
+    else ModelProvider.GEMINI.value
+)
+selected_model_name = settings.gemini_model if selected_provider == ModelProvider.GEMINI.value else settings.openai_model
 local_profile: LocalModelProfile | None = None
 
 if runtime_mode == "cloud":
     selected_provider = st.sidebar.selectbox(
         "Cloud provider",
-        options=[ModelProvider.GEMINI.value, ModelProvider.TEST.value],
-        index=0 if selected_provider == ModelProvider.GEMINI.value else 1,
+        options=[ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, ModelProvider.TEST.value],
+        index=(
+            0
+            if selected_provider == ModelProvider.GEMINI.value
+            else (1 if selected_provider == ModelProvider.OPENAI.value else 2)
+        ),
     )
-    selected_model_name = st.sidebar.text_input("Cloud model name", value=settings.gemini_model)
+    default_cloud_model = settings.gemini_model if selected_provider == ModelProvider.GEMINI.value else settings.openai_model
+    selected_model_name = st.sidebar.text_input("Cloud model name", value=default_cloud_model)
 else:
     profile_keys = list(app_config.local_models.profiles.keys())
     selected_profile = st.sidebar.selectbox("Local model profile", options=profile_keys)

@@ -29,7 +29,11 @@ SYSTEM_PROMPT = (
 def get_model():
     settings = get_settings()
     provider = settings.llm_provider
-    model_name = settings.gemini_model if provider == ModelProvider.GEMINI.value else None
+    model_name = (
+        settings.gemini_model
+        if provider == ModelProvider.GEMINI.value
+        else (settings.openai_model if provider == ModelProvider.OPENAI.value else None)
+    )
     model = LLMFactory.get_model(provider=provider, model_name=model_name)
     logger.info("dietary_agent_model_destination %s", LLMFactory.describe_model_destination(model))
     return model
@@ -53,7 +57,11 @@ async def process_meal_request(user: UserProfile, meal: MealEvent) -> AgentRespo
     with logfire_api.span("process_meal_request", user_id=user.id, meal_name=meal.name):
         safety_engine = SafetyEngine(user)
         settings = get_settings()
-        model_name = settings.gemini_model if settings.llm_provider == ModelProvider.GEMINI.value else None
+        model_name = (
+            settings.gemini_model
+            if settings.llm_provider == ModelProvider.GEMINI.value
+            else (settings.openai_model if settings.llm_provider == ModelProvider.OPENAI.value else None)
+        )
         engine = InferenceEngine(provider=settings.llm_provider, model_name=model_name)
         destination = engine.health().endpoint
 
