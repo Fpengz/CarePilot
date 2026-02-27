@@ -28,6 +28,7 @@ export default function SuggestionsPage() {
   const [selected, setSelected] = useState<SuggestionItemApi | null>(null);
   const [items, setItems] = useState<SuggestionItemApi[]>([]);
   const [scope, setScope] = useState<"self" | "household">("self");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"generate" | "load" | "open" | null>(null);
 
@@ -35,6 +36,15 @@ export default function SuggestionsPage() {
   const recommendationEntries = useMemo(
     () => Object.entries(recommendation ?? {}).slice(0, 8).map(([key, value]) => ({ key: key.replaceAll("_", " "), value })),
     [recommendation],
+  );
+  const sourceOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const item of items) map.set(item.source_user_id, item.source_display_name);
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [items]);
+  const visibleItems = useMemo(
+    () => items.filter((item) => (sourceFilter === "all" ? true : item.source_user_id === sourceFilter)),
+    [items, sourceFilter],
   );
 
   return (
@@ -81,6 +91,20 @@ export default function SuggestionsPage() {
               >
                 Household Scope
               </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant={sourceFilter === "all" ? "default" : "secondary"} onClick={() => setSourceFilter("all")}>
+                All Sources
+              </Button>
+              {sourceOptions.map((source) => (
+                <Button
+                  key={source.id}
+                  variant={sourceFilter === source.id ? "default" : "secondary"}
+                  onClick={() => setSourceFilter(source.id)}
+                >
+                  {source.name}
+                </Button>
+              ))}
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -144,7 +168,7 @@ export default function SuggestionsPage() {
             title="Suggestion History"
             description="Recent saved suggestions for the current account."
             emptyLabel="No suggestions yet. Generate one from report text."
-            items={items.map((item) => ({
+            items={visibleItems.map((item) => ({
               id: item.suggestion_id,
               title: item.suggestion_id,
               subtitle: `${item.source_display_name} · ${formatDate(item.created_at)}`,
@@ -165,10 +189,40 @@ export default function SuggestionsPage() {
           />
 
           <KeyValuePreview
+            title="Safety Decision"
+            description="Structured safety gate output for this suggestion."
+            entries={
+              selected
+                ? [
+                    { key: "decision", value: selected.safety.decision },
+                    { key: "reasons", value: selected.safety.reasons.join(", ") || "none" },
+                    { key: "required actions", value: selected.safety.required_actions.join(" | ") || "none" },
+                  ]
+                : []
+            }
+            emptyLabel="Generate or open a suggestion to inspect safety decision fields."
+          />
+
+          <KeyValuePreview
             title="Recommendation Preview"
             description="Top fields from the generated recommendation payload."
             entries={recommendationEntries}
             emptyLabel="Generate or open a suggestion to preview recommendation fields."
+          />
+
+          <TimelineList
+            title="Workflow Timeline"
+            description="Request/correlation-linked timeline events for this suggestion run."
+            emptyLabel="No workflow events yet."
+            items={(selected?.workflow.timeline_events ?? []).map((event, index) => {
+              const obj = event as Record<string, unknown>;
+              return {
+                id: `${String(obj.event_type ?? "event")}-${index}`,
+                title: String(obj.event_type ?? "event"),
+                subtitle: String(obj.created_at ?? ""),
+                badges: [String(obj.request_id ?? ""), String(obj.correlation_id ?? "")].filter(Boolean),
+              };
+            })}
           />
 
           <JsonViewer
