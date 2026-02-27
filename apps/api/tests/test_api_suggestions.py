@@ -63,6 +63,10 @@ def test_suggestions_generate_from_report_persists_and_lists(sqlite_suggestions_
     assert suggestion["recommendation"]["localized_advice"]
     assert suggestion["workflow"]["request_id"] == create.headers["x-request-id"]
     assert suggestion["workflow"]["correlation_id"] == create.headers["x-correlation-id"]
+    assert [event["event_type"] for event in suggestion["workflow"]["timeline_events"]] == [
+        "workflow_started",
+        "workflow_completed",
+    ]
     assert "workflow" in suggestion
 
     listing = client.get("/api/v1/suggestions")
@@ -117,6 +121,10 @@ def test_suggestions_red_flag_text_escalates_without_meal(sqlite_suggestions_env
     assert suggestion["safety"]["reasons"]
     assert "urgent medical care" in suggestion["recommendation"]["rationale"].lower()
     assert suggestion["recommendation"]["safe"] is False
+    assert [event["event_type"] for event in suggestion["workflow"]["timeline_events"]] == [
+        "workflow_started",
+        "workflow_escalated",
+    ]
 
 
 def test_suggestions_list_household_scope_includes_member_records(sqlite_suggestions_env: None) -> None:

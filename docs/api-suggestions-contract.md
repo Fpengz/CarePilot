@@ -60,7 +60,10 @@ Requires both:
       "request_id": "uuid",
       "correlation_id": "uuid",
       "replayed": false,
-      "timeline_events": []
+      "timeline_events": [
+        {"event_type": "workflow_started"},
+        {"event_type": "workflow_completed"}
+      ]
     }
   }
 }
@@ -76,6 +79,7 @@ If red-flag symptom text is detected, the endpoint returns `200` with:
 - `suggestion.safety.decision = "escalate"`
 - urgent-care actions in `suggestion.recommendation.localized_advice`
 - `blocked_reason = "red_flag_escalation"`
+- workflow timeline completion event type `workflow_escalated` (instead of `workflow_completed`)
 
 In this path, meal records are not required.
 

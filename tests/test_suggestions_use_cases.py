@@ -101,6 +101,8 @@ def test_generate_suggestion_escalates_on_red_flag_without_meal() -> None:
     assert result["recommendation"]["safe"] is False
     assert result["workflow"]["request_id"] == "req-1"
     assert result["workflow"]["correlation_id"] == "corr-1"
+    timeline = result["workflow"]["timeline_events"]
+    assert [event["event_type"] for event in timeline] == ["workflow_started", "workflow_escalated"]
 
 
 def test_generate_suggestion_requires_meal_when_no_red_flag() -> None:

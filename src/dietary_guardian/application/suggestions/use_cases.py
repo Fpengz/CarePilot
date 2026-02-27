@@ -38,13 +38,48 @@ class SuggestionNotFoundError(Exception):
     pass
 
 
-def _build_workflow_stub(*, request_id: str, correlation_id: str) -> dict[str, object]:
+def _iso_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _build_workflow_with_timeline(
+    *,
+    request_id: str,
+    correlation_id: str,
+    user_id: str,
+    safety_decision: str,
+    completed: bool,
+) -> dict[str, object]:
+    started_at = _iso_now()
+    completed_at = _iso_now()
+    completion_type = "workflow_escalated" if safety_decision != "allow" else "workflow_completed"
+    events: list[dict[str, object]] = [
+        {
+            "event_type": "workflow_started",
+            "request_id": request_id,
+            "correlation_id": correlation_id,
+            "user_id": user_id,
+            "created_at": started_at,
+            "payload": {"safety_decision": safety_decision},
+        }
+    ]
+    if completed:
+        events.append(
+            {
+                "event_type": completion_type,
+                "request_id": request_id,
+                "correlation_id": correlation_id,
+                "user_id": user_id,
+                "created_at": completed_at,
+                "payload": {"safety_decision": safety_decision},
+            }
+        )
     return {
         "workflow_name": "suggestions_generate_from_report",
         "request_id": request_id,
         "correlation_id": correlation_id,
         "replayed": False,
-        "timeline_events": [],
+        "timeline_events": events,
     }
 
 
@@ -113,7 +148,13 @@ def generate_suggestion_from_report(
                 "blocked_reason": "red_flag_escalation",
                 "evidence": {},
             },
-            "workflow": _build_workflow_stub(request_id=issued_request_id, correlation_id=issued_correlation_id),
+            "workflow": _build_workflow_with_timeline(
+                request_id=issued_request_id,
+                correlation_id=issued_correlation_id,
+                user_id=user_id,
+                safety_decision=str(safety["decision"]),
+                completed=True,
+            ),
         }
         return repository.save_suggestion_record(user_id, payload)
 
@@ -143,7 +184,13 @@ def generate_suggestion_from_report(
             "snapshot": snapshot.model_dump(mode="json"),
         },
         "recommendation": recommendation_json,
-        "workflow": _build_workflow_stub(request_id=issued_request_id, correlation_id=issued_correlation_id),
+        "workflow": _build_workflow_with_timeline(
+            request_id=issued_request_id,
+            correlation_id=issued_correlation_id,
+            user_id=user_id,
+            safety_decision=str(safety["decision"]),
+            completed=True,
+        ),
     }
     return repository.save_suggestion_record(user_id, payload)
 
