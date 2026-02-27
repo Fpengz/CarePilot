@@ -166,6 +166,18 @@
   }
 }
 
+@media (max-width: 640px) {
+  @layer components {
+    .app-shell {
+      @apply px-3 pt-4 pb-28;
+    }
+
+    .app-panel {
+      @apply rounded-xl;
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

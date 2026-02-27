@@ -20,5 +20,6 @@ apps/web/.env
 # web build/deps
 apps/web/.next/
 apps/web/node_modules/
+apps/web/test-results/
 node_modules/
 *.tsbuildinfo

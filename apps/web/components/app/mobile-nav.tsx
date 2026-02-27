@@ -44,8 +44,8 @@ export function MobileNav() {
   return (
     <>
       <div className="lg:hidden">
-        <div className="pointer-events-none fixed inset-x-0 bottom-3 z-30 px-3">
-          <div className="pointer-events-auto app-panel mx-auto max-w-xl p-2">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+          <div className="pointer-events-auto app-panel mx-auto max-w-xl p-2.5 shadow-xl backdrop-blur">
             <nav aria-label="Mobile primary navigation" className="grid grid-cols-5 gap-1">
               {CORE_MOBILE_TABS.map((route) => {
                 const Icon = route.icon;
@@ -56,7 +56,7 @@ export function MobileNav() {
                     href={route.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex min-h-[52px] flex-col items-center justify-center rounded-lg px-1 py-2 text-[11px] font-medium",
+                      "flex min-h-[56px] flex-col items-center justify-center rounded-lg px-1 py-2 text-xs font-medium",
                       active
                         ? "bg-[color:var(--accent)]/14 text-[color:var(--accent)] dark:bg-[color:var(--accent)]/18 dark:text-[#b9efe4]"
                         : "text-[color:var(--muted-foreground)] hover:bg-black/5 dark:hover:bg-white/5",
@@ -75,7 +75,7 @@ export function MobileNav() {
                 aria-controls="mobile-nav-drawer"
                 onClick={() => setOpen(true)}
                 className={cn(
-                  "flex min-h-[52px] flex-col items-center justify-center rounded-lg px-1 py-2 text-[11px] font-medium",
+                  "flex min-h-[56px] flex-col items-center justify-center rounded-lg px-1 py-2 text-xs font-medium",
                   moreActive
                     ? "bg-[color:var(--accent)]/14 text-[color:var(--accent)] dark:bg-[color:var(--accent)]/18 dark:text-[#b9efe4]"
                     : "text-[color:var(--muted-foreground)] hover:bg-black/5 dark:hover:bg-white/5",
@@ -98,12 +98,12 @@ export function MobileNav() {
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="fixed inset-y-0 right-0 z-50 w-[min(92vw,24rem)] border-l border-[color:var(--border)] bg-[color:var(--background)] p-4 shadow-2xl"
+            className="fixed inset-y-0 right-0 z-50 w-[min(92vw,22rem)] border-l border-[color:var(--border)] bg-[color:var(--background)] p-4 pb-[max(env(safe-area-inset-bottom),2rem)] pt-[max(env(safe-area-inset-top),1.25rem)] shadow-2xl"
           >
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold">Navigation</div>
-                <div className="text-xs text-[color:var(--muted-foreground)]">Core routes + admin area</div>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="text-center sm:text-left">
+                <div className="text-base font-semibold leading-tight">Navigation</div>
+                <div className="text-xs text-[color:var(--muted-foreground)]">Primary routes and account context</div>
               </div>
               <Button
                 ref={closeButtonRef}
@@ -118,7 +118,7 @@ export function MobileNav() {
               </Button>
             </div>
 
-            <div className="mb-4 flex flex-wrap gap-2">
+            <div className="mb-4 flex flex-wrap justify-center gap-2 sm:justify-start">
               {status === "authenticated" && user ? (
                 <>
                   <Badge>{user.account_role}</Badge>
@@ -129,7 +129,7 @@ export function MobileNav() {
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto pb-24">
               <SidebarNav routes={mainRoutes} activePathname={pathname} title="Primary" titleId="mobile-sidebar-primary" />
               <SidebarNav routes={adminRoutes} activePathname={pathname} title="Admin" titleId="mobile-sidebar-admin" />
             </div>

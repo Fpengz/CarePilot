@@ -19,21 +19,21 @@ export function TopBar() {
   const { status, user } = useSession();
 
   return (
-    <header className="app-panel sticky top-4 z-20 mb-4 p-3 md:mb-5 md:p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3 md:gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="mb-1.5 flex items-center gap-1.5 text-xs text-[color:var(--muted-foreground)]">
+    <header className="app-panel sticky top-2 z-20 mb-3 p-3 md:top-4 md:mb-5 md:p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0 flex-1 text-center sm:text-left">
+          <div className="mb-1.5 hidden items-center gap-1.5 text-xs text-[color:var(--muted-foreground)] sm:flex">
             <span>Dietary Guardian</span>
             <ChevronRight className="h-3 w-3" aria-hidden />
             <span>{breadcrumb}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="truncate text-2xl font-semibold leading-tight md:text-[2rem]">{pageTitle}</h2>
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+            <h2 className="truncate text-xl font-semibold leading-tight md:text-[2rem]">{pageTitle}</h2>
             {route?.group === "admin" ? <Badge variant="outline">Admin Area</Badge> : null}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 md:gap-2.5">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-end md:gap-2.5">
           <div className="app-toolbar-chip hidden items-center gap-1.5 sm:flex">
             <Button
               type="button"
@@ -65,7 +65,7 @@ export function TopBar() {
             <Badge variant="outline">Session loading</Badge>
           ) : status === "unauthenticated" || !user ? (
             <div className="flex items-center gap-2">
-              <Badge variant="outline">Not signed in</Badge>
+              <Badge variant="outline" className="hidden sm:inline-flex">Not signed in</Badge>
               <Button asChild size="sm">
                 <Link href="/login">Sign in</Link>
               </Button>

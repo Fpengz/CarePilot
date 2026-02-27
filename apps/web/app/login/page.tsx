@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ShieldCheck, UserRound, Users } from "lucide-react";
 import { PageTitle } from "@/components/app/page-title";
 import { useSession } from "@/components/app/session-provider";
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
 export default function LoginPage() {
+  const router = useRouter();
   const { refreshSession } = useSession();
   const [email, setEmail] = useState("admin@example.com");
   const [password, setPassword] = useState("admin-pass");
@@ -77,6 +79,7 @@ export default function LoginPage() {
                   const data = await login(email, password);
                   setResult(data);
                   await refreshSession();
+                  router.replace("/dashboard");
                 } catch (e) {
                   setError(e instanceof Error ? e.message : String(e));
                 }

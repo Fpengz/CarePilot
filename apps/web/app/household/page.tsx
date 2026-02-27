@@ -67,7 +67,7 @@ export default function HouseholdPage() {
   }, [status, loadCurrent]);
 
   const household = bundle?.household ?? null;
-  const members = bundle?.members ?? [];
+  const members = useMemo(() => bundle?.members ?? [], [bundle?.members]);
   const isOwner = Boolean(household && user && household.owner_user_id === user.user_id);
   const activeHouseholdId = bundle?.active_household_id ?? null;
   const canSetActive = Boolean(household);

@@ -5,61 +5,74 @@ import Link from "next/link";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
-import { JsonViewer } from "@/components/app/json-viewer";
 import { KeyValuePreview } from "@/components/app/key-value-preview";
 import { PageTitle } from "@/components/app/page-title";
 import { TimelineList } from "@/components/app/timeline-list";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { generateSuggestionFromReport, getSuggestion, listSuggestions } from "@/lib/api";
-import type { SuggestionItemApi } from "@/lib/types";
 import { useSession } from "@/components/app/session-provider";
+import { generateSuggestionFromReport, getSuggestion, listSuggestions } from "@/lib/api";
+import {
+  buildSuggestionDetail,
+  buildSuggestionSummaries,
+  toSuggestionErrorMessage,
+  type SuggestionsLoadState,
+  type SuggestionScope,
+} from "@/lib/suggestions-view-model";
+import type { SuggestionItemApi } from "@/lib/types";
 
 const DEFAULT_REPORT = "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95";
-
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
-}
 
 export default function SuggestionsPage() {
   const { hasScope, status } = useSession();
   const [reportText, setReportText] = useState(DEFAULT_REPORT);
   const [selected, setSelected] = useState<SuggestionItemApi | null>(null);
   const [items, setItems] = useState<SuggestionItemApi[]>([]);
-  const [scope, setScope] = useState<"self" | "household">("self");
+  const [scope, setScope] = useState<SuggestionScope>("self");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [listState, setListState] = useState<SuggestionsLoadState>("idle");
+  const [detailState, setDetailState] = useState<SuggestionsLoadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"generate" | "load" | "open" | null>(null);
   const canInspectWorkflow = status === "authenticated" && hasScope("workflow:replay");
 
-  const recommendation = selected?.recommendation;
-  const recommendationEntries = useMemo(
-    () => Object.entries(recommendation ?? {}).slice(0, 8).map(([key, value]) => ({ key: key.replaceAll("_", " "), value })),
-    [recommendation],
-  );
+  const summaries = useMemo(() => buildSuggestionSummaries(items), [items]);
+  const detail = useMemo(() => buildSuggestionDetail(selected), [selected]);
+
   const sourceOptions = useMemo(() => {
     const map = new Map<string, string>();
     for (const item of items) map.set(item.source_user_id, item.source_display_name);
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [items]);
+
   const visibleItems = useMemo(
-    () => items.filter((item) => (sourceFilter === "all" ? true : item.source_user_id === sourceFilter)),
-    [items, sourceFilter],
+    () => summaries.filter((item) => (sourceFilter === "all" ? true : item.sourceUserId === sourceFilter)),
+    [summaries, sourceFilter],
   );
 
   const sourceUserIdParam = sourceFilter === "all" ? undefined : sourceFilter;
+
+  async function refreshSuggestions() {
+    setListState("loading");
+    const response = await listSuggestions({
+      limit: 20,
+      scope,
+      sourceUserId: sourceUserIdParam,
+    });
+    setItems(response.items);
+    setListState("ready");
+  }
 
   return (
     <div>
       <PageTitle
         eyebrow="Suggestions"
         title="Report-to-Suggestion Workflow"
-        description="Generate structured suggestions from pasted report text with one action, then review persisted suggestion history."
-        tags={["unified endpoint", "persisted history"]}
+        description="Generate structured suggestions from pasted report text and review saved history with scope-aware filters."
+        tags={["workflow visibility", "typed states"]}
       />
 
       <div className="page-grid">
@@ -82,10 +95,11 @@ export default function SuggestionsPage() {
               />
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Suggestion visibility scope">
               <Button
                 variant={scope === "self" ? "default" : "secondary"}
                 disabled={loadingAction !== null}
+                aria-pressed={scope === "self"}
                 onClick={() => setScope("self")}
               >
                 Self Scope
@@ -93,19 +107,28 @@ export default function SuggestionsPage() {
               <Button
                 variant={scope === "household" ? "default" : "secondary"}
                 disabled={loadingAction !== null}
+                aria-pressed={scope === "household"}
                 onClick={() => setScope("household")}
               >
                 Household Scope
               </Button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant={sourceFilter === "all" ? "default" : "secondary"} onClick={() => setSourceFilter("all")}>
+
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filter suggestions by source user">
+              <Button
+                variant={sourceFilter === "all" ? "default" : "secondary"}
+                disabled={listState === "loading"}
+                aria-pressed={sourceFilter === "all"}
+                onClick={() => setSourceFilter("all")}
+              >
                 All Sources
               </Button>
               {sourceOptions.map((source) => (
                 <Button
                   key={source.id}
                   variant={sourceFilter === source.id ? "default" : "secondary"}
+                  disabled={listState === "loading"}
+                  aria-pressed={sourceFilter === source.id}
                   onClick={() => setSourceFilter(source.id)}
                 >
                   {source.name}
@@ -119,17 +142,16 @@ export default function SuggestionsPage() {
                 onClick={async () => {
                   setError(null);
                   setLoadingAction("generate");
+                  setDetailState("loading");
                   try {
                     const response = await generateSuggestionFromReport({ text: reportText });
                     setSelected(response.suggestion);
-                    const listResponse = await listSuggestions({
-                      limit: 20,
-                      scope,
-                      sourceUserId: sourceUserIdParam,
-                    });
-                    setItems(listResponse.items);
+                    setDetailState("ready");
+                    await refreshSuggestions();
                   } catch (e) {
-                    setError(e instanceof Error ? e.message : String(e));
+                    setError(toSuggestionErrorMessage(e));
+                    setDetailState("error");
+                    setListState("error");
                   } finally {
                     setLoadingAction(null);
                   }
@@ -145,14 +167,10 @@ export default function SuggestionsPage() {
                   setError(null);
                   setLoadingAction("load");
                   try {
-                    const response = await listSuggestions({
-                      limit: 20,
-                      scope,
-                      sourceUserId: sourceUserIdParam,
-                    });
-                    setItems(response.items);
+                    await refreshSuggestions();
                   } catch (e) {
-                    setError(e instanceof Error ? e.message : String(e));
+                    setError(toSuggestionErrorMessage(e));
+                    setListState("error");
                   } finally {
                     setLoadingAction(null);
                   }
@@ -160,6 +178,10 @@ export default function SuggestionsPage() {
               >
                 <AsyncLabel active={loadingAction === "load"} loading="Loading" idle="Load Suggestions" />
               </Button>
+            </div>
+
+            <div aria-live="polite" className="app-muted text-xs">
+              {listState === "loading" ? "Refreshing suggestions list..." : `Showing ${visibleItems.length} suggestion(s).`}
             </div>
 
             {selected ? (
@@ -170,6 +192,10 @@ export default function SuggestionsPage() {
                 <p className="app-muted mt-2 text-xs">
                   Active history scope: <span className="font-medium">{scope}</span>
                 </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {detail?.isPartial ? <Badge variant="outline">Partial Data</Badge> : <Badge>Complete</Badge>}
+                  <Badge variant="outline">{selected.safety.decision}</Badge>
+                </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button variant="secondary" size="sm" className="h-8 px-2 text-xs" asChild>
                     <Link href={`/workflows?correlation_id=${selected.workflow.correlation_id}`}>
@@ -192,21 +218,24 @@ export default function SuggestionsPage() {
 
           <TimelineList
             title="Suggestion History"
-            description="Recent saved suggestions for the current account."
-            emptyLabel="No suggestions yet. Generate one from report text."
+            description="Recent saved suggestions for the current account and selected scope."
+            emptyLabel={listState === "loading" ? "Loading suggestions..." : "No suggestions yet for this scope/filter."}
             items={visibleItems.map((item) => ({
-              id: item.suggestion_id,
-              title: item.suggestion_id,
-              subtitle: `${item.source_display_name} · ${formatDate(item.created_at)}`,
-              badges: [item.safety.decision, String(item.recommendation.safe ? "safe" : "review")],
+              id: item.id,
+              title: item.id,
+              subtitle: `${item.sourceDisplayName} · ${item.createdAtLabel}`,
+              badges: [item.safetyDecision, item.safe ? "safe" : "review"],
               onClick: async () => {
                 setError(null);
                 setLoadingAction("open");
+                setDetailState("loading");
                 try {
-                  const detail = await getSuggestion(item.suggestion_id, { scope });
-                  setSelected(detail.suggestion);
+                  const detailResponse = await getSuggestion(item.id, { scope });
+                  setSelected(detailResponse.suggestion);
+                  setDetailState("ready");
                 } catch (e) {
-                  setError(e instanceof Error ? e.message : String(e));
+                  setError(toSuggestionErrorMessage(e));
+                  setDetailState("error");
                 } finally {
                   setLoadingAction(null);
                 }
@@ -226,20 +255,46 @@ export default function SuggestionsPage() {
                   ]
                 : []
             }
-            emptyLabel="Generate or open a suggestion to inspect safety decision fields."
+            emptyLabel={detailState === "loading" ? "Loading safety details..." : "Open a suggestion to inspect safety details."}
           />
 
           <KeyValuePreview
-            title="Recommendation Preview"
-            description="Top fields from the generated recommendation payload."
-            entries={recommendationEntries}
-            emptyLabel="Generate or open a suggestion to preview recommendation fields."
+            title="Detail Integrity"
+            description="Detects partial payloads and missing fields before clinical review."
+            entries={
+              detail
+                ? [
+                    { key: "status", value: detail.isPartial ? "partial" : "complete" },
+                    { key: "parsed readings", value: detail.hasReadings ? "available" : "missing" },
+                    { key: "workflow events", value: detail.hasWorkflowEvents ? "available" : "missing" },
+                    { key: "recommendation advice", value: detail.hasRecommendationAdvice ? "available" : "missing" },
+                    { key: "risk flags", value: detail.hasRiskFlags ? "present" : "none" },
+                  ]
+                : []
+            }
+            emptyLabel={detailState === "loading" ? "Loading suggestion detail..." : "Open a suggestion to validate detail completeness."}
           />
+
+          {detail?.isPartial ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Partial Data Warnings</CardTitle>
+                <CardDescription>Some suggestion fields are missing and may require regeneration.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {detail.partialReasons.map((reason) => (
+                  <p key={reason} className="app-muted text-sm">
+                    {reason}
+                  </p>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
 
           <TimelineList
             title="Workflow Timeline"
             description="Request/correlation-linked timeline events for this suggestion run."
-            emptyLabel="No workflow events yet."
+            emptyLabel={detailState === "loading" ? "Loading workflow events..." : "No workflow events available."}
             items={(selected?.workflow.timeline_events ?? []).map((event, index) => {
               const obj = event as Record<string, unknown>;
               return {
@@ -251,11 +306,12 @@ export default function SuggestionsPage() {
             })}
           />
 
-          <JsonViewer
-            title="Selected Suggestion"
-            data={selected}
-            emptyLabel="Generate or load suggestions to inspect the full payload."
-          />
+          {selected ? (
+            <details>
+              <summary className="cursor-pointer text-sm font-medium">Raw payload (debug)</summary>
+              <pre className="app-code mt-2 overflow-auto rounded-md p-3 text-xs">{JSON.stringify(selected, null, 2)}</pre>
+            </details>
+          ) : null}
         </div>
       </div>
     </div>

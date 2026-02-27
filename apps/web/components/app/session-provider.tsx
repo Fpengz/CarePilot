@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import { me } from "@/lib/api";
 import type { SessionUser } from "@/lib/types";
@@ -17,12 +18,14 @@ interface SessionContextValue {
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
+const PUBLIC_AUTH_ROUTES = new Set(["/login", "/signup"]);
 
 function isUnauthorizedError(error: unknown): boolean {
   return error instanceof Error && error.message.startsWith("API 401:");
 }
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [user, setUser] = useState<SessionUser | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,9 +51,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const shouldBootstrapSession = !PUBLIC_AUTH_ROUTES.has(pathname);
+
   useEffect(() => {
+    if (!shouldBootstrapSession) {
+      setStatus("unauthenticated");
+      setUser(null);
+      setError(null);
+      return;
+    }
     void refreshSession();
-  }, [refreshSession]);
+  }, [refreshSession, shouldBootstrapSession]);
 
   const value = useMemo<SessionContextValue>(
     () => ({

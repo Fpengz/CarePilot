@@ -29,6 +29,7 @@ export function useDialogA11y({
     if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
+    const returnFocusEl = returnFocusRef?.current ?? null;
     document.body.style.overflow = "hidden";
     initialFocusRef?.current?.focus();
 
@@ -73,7 +74,7 @@ export function useDialogA11y({
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
-      returnFocusRef?.current?.focus();
+      returnFocusEl?.focus();
     };
   }, [open, containerRef, initialFocusRef, returnFocusRef, onClose]);
 }
