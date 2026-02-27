@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .deps import AppContext, build_app_context
+from .middleware import request_context_middleware
 from .routers import include_routers
 
 
@@ -18,6 +19,7 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.middleware("http")(request_context_middleware)
     include_routers(app)
 
     return app

@@ -26,11 +26,13 @@ SUGGESTION_DISCLAIMER = (
 )
 
 
-def _build_workflow_stub() -> dict[str, object]:
+def _build_workflow_stub(request: Request) -> dict[str, object]:
+    request_id = getattr(request.state, "request_id", str(uuid4()))
+    correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
     return {
         "workflow_name": "suggestions_generate_from_report",
-        "request_id": str(uuid4()),
-        "correlation_id": str(uuid4()),
+        "request_id": str(request_id),
+        "correlation_id": str(correlation_id),
         "replayed": False,
         "timeline_events": [],
     }
@@ -76,7 +78,7 @@ def suggestions_generate_from_report(
                 "blocked_reason": "red_flag_escalation",
                 "evidence": {},
             },
-            "workflow": _build_workflow_stub(),
+            "workflow": _build_workflow_stub(request),
         }
         saved = context.repository.save_suggestion_record(user_id, suggestion_payload)
         return SuggestionGenerateFromReportResponse(suggestion=_to_suggestion_response(saved))
@@ -113,7 +115,7 @@ def suggestions_generate_from_report(
             "snapshot": snapshot.model_dump(mode="json"),
         },
         "recommendation": recommendation_json,
-        "workflow": _build_workflow_stub(),
+        "workflow": _build_workflow_stub(request),
     }
     saved = context.repository.save_suggestion_record(user_id, suggestion_payload)
     return SuggestionGenerateFromReportResponse(suggestion=_to_suggestion_response(saved))

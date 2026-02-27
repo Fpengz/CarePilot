@@ -51,6 +51,8 @@ def test_suggestions_generate_from_report_persists_and_lists(sqlite_suggestions_
     )
 
     assert create.status_code == 200
+    assert create.headers["x-request-id"]
+    assert create.headers["x-correlation-id"]
     body = create.json()
     assert "suggestion" in body
     suggestion = body["suggestion"]
@@ -59,6 +61,8 @@ def test_suggestions_generate_from_report_persists_and_lists(sqlite_suggestions_
     assert suggestion["safety"]["decision"] == "allow"
     assert suggestion["report_parse"]["readings"]
     assert suggestion["recommendation"]["localized_advice"]
+    assert suggestion["workflow"]["request_id"] == create.headers["x-request-id"]
+    assert suggestion["workflow"]["correlation_id"] == create.headers["x-correlation-id"]
     assert "workflow" in suggestion
 
     listing = client.get("/api/v1/suggestions")
@@ -106,6 +110,8 @@ def test_suggestions_red_flag_text_escalates_without_meal(sqlite_suggestions_env
     )
 
     assert response.status_code == 200
+    assert response.headers["x-request-id"]
+    assert response.headers["x-correlation-id"]
     suggestion = response.json()["suggestion"]
     assert suggestion["safety"]["decision"] == "escalate"
     assert suggestion["safety"]["reasons"]
