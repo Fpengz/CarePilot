@@ -215,6 +215,26 @@ pnpm web:typecheck
 pnpm --dir apps/web test:e2e
 ```
 
+## Versioning and Release Process
+This repo uses modern VCS-driven versioning for Python and Changesets-driven semver workflows for the monorepo.
+
+Python package versioning:
+- `pyproject.toml` uses Hatch + Hatch VCS (`tool.hatch.version.source = "vcs"`).
+- Package version is derived from Git tags.
+- Create release tags in semver format: `vX.Y.Z` (example: `v1.4.0`).
+
+Monorepo release planning:
+- `pnpm version:plan` to create a changeset entry for a change.
+- `pnpm version:status` to inspect pending version bumps.
+- `pnpm version:bump` to apply version/changelog updates from pending changesets.
+- `pnpm version:release` to publish via Changesets.
+
+Recommended sequence:
+1. Add changeset entries while developing (`pnpm version:plan`).
+2. Before release, run full validation (`pnpm validate:full`).
+3. Apply version updates (`pnpm version:bump`) and commit.
+4. Create and push release tag (`git tag vX.Y.Z && git push origin vX.Y.Z`).
+
 ## Troubleshooting
 ### Configuration Validation Errors
 If startup fails with configuration validation:
@@ -237,43 +257,34 @@ uv run python -m apps.api.run
 ```
 
 ## Roadmap
-See `docs/roadmap-v1.md` for the detailed v1 delivery breakdown.
+See `docs/roadmap-v1.md` for the full canonical roadmap.
 
-### V1 Milestone 1: Auth, Signup, and Account Management
-- Self-serve email/password signup (web + API) with immediate session login.
-- Account profile updates, password changes, and session/device management.
-- Persist auth/accounts/sessions in SQLite (single-node production-ish default).
-- Admin auth audit view and backend filters for audit investigation.
+Roadmap horizon:
+- `Now`: 0–4 weeks
+- `Next`: following 1–2 cycles
+- `Later`: beyond next
 
-### V1 Milestone 2: Meal Analysis (Working Daily Flow)
-- Stable typed meal summary contract in `/api/v1/meal/analyze`.
-- Better meal history browsing (pagination/filtering and shared household visibility).
-- Richer workflow timeline/failure metadata for meal analysis debugging.
-- Frontend meal experience polish (summary-first UI, records/history, manual review guidance).
+Status labels:
+- `**[Complete]**`, `**[In Progress]**`, `**[Planned]**`, `**[Blocked]**`
 
-### V1 Milestone 3: Suggestions (Reports -> Recommendations)
-- Unified suggestions flow from report parsing to recommendation generation.
-- Persisted suggestions history and reusable structured output for web UI.
-- Shareable suggestions visibility for household members (read-only in v1).
+### Now
+- `**[Complete]**` Account/session/household foundations:
+  - Signup/login/profile/password/session management and household owner/member flows are operational.
+- `**[Complete]**` Meal + suggestions core workflow:
+  - Typed meal summaries, meal history pagination, unified suggestions orchestration, and household-shared suggestion reads are implemented.
+- `**[Complete]**` Policy and observability hardening:
+  - Action-based authorization, centralized error semantics, and request/correlation propagation are in place.
+- `**[Complete]**` UI/UX stabilization:
+  - Structured views replaced debug-first surfaces, mobile/a11y polish landed, and smoke e2e tests cover core journeys.
 
-### V1 Milestone 4: Household Basics (Apple Family-like Group)
-- Household create/invite/join/leave flows.
-- Household roles (`owner`, `member`) and member management.
-- Shared visibility across meals, reminders, and suggestions.
-- Web household management UI (create, invite code, member list, join flow).
+### Next
+- `**[Planned]**` Environment profiles + secrets hygiene.
+- `**[Planned]**` CI/local validation parity + coverage maturity.
+- `**[Planned]**` Expanded runtime readiness and diagnostics.
 
-### V1 Milestone 5: UI/UX Refinement and Stabilization
-- Web-first onboarding polish (`signup -> login -> first meal/report`).
-- Replace remaining debug-first panels with structured views.
-- Mobile/desktop accessibility pass (focus, contrast, keyboard interactions).
-- End-to-end smoke checks for core user journeys.
-
-### Post-v1 Platform Roadmap
-- Environment profile support (`.env.development`, `.env.production`) and secret management.
-- Configuration telemetry and runtime diagnostics.
-- CI/local workflow parity for lint/type/test gates.
-- Runtime health endpoints and provider readiness checks.
-- Policy-driven feature flags with validated schemas.
+### Later
+- `**[Planned]**` Policy-driven feature flag platform.
+- `**[Planned]**` Advanced config telemetry and auditability.
 
 ## Architecture-as-Code
 ### System Topology

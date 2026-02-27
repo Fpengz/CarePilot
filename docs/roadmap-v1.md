@@ -1,56 +1,93 @@
-# V1 Product Delivery Roadmap
+# Product Roadmap (Now / Next / Later)
 
 ## Goal
-Ship a working web-first v1 of Dietary Guardian with:
-- signup + login
-- meal analysis + meal records
-- report parsing + suggestions
-- reminders
-- household basics (Apple Family-like group)
-- polished onboarding and core UI/UX
+Operate Dietary Guardian as a production-grade, web-first health assistant platform with:
+- robust account + household management
+- reliable meal/report/recommendation workflows
+- policy-driven access control
+- traceable observability and deployment readiness
 
 ## Delivery Assumptions
-- Single-node deployment
-- SQLite-backed persistence (production-ish v1)
-- Web-first UX (`apps/web`)
+- Single-node deployment baseline
+- SQLite-backed persistence (v1 production-ish default)
+- Web-first UX (`apps/web`) as primary surface
 - Streamlit remains internal/demo tooling
 
-## Milestones
+## Status Legend
+- `**[Complete]**` Delivered and validated through tests/checks.
+- `**[In Progress]**` Active implementation in current cycle.
+- `**[Planned]**` Scoped and prioritized, not started.
+- `**[Blocked]**` Waiting on dependency/decision.
 
-### Milestone 1 — Auth, Signup, Account Management
-- Self-serve signup (`POST /api/v1/auth/signup`) and web signup flow
-- Login/logout/me
-- Profile update, password change, session management
-- Auth audit events + admin audit viewer
-- SQLite-backed auth/accounts/session persistence
+## Now (0–4 Weeks)
 
-### Milestone 2 — Meal Analysis (Daily Use)
-- Stable meal analysis summary payload for UI
-- Meal records history improvements (pagination/filtering)
-- Workflow trace/failure metadata for meal analysis
-- Manual-review guidance in UI
+### `**[Complete]**` Account, Session, and Household Foundations
+- **Outcome:** Users can signup/login, manage profile/password/sessions, and manage household membership with owner/member role rules.
+- **Impact:** Establishes secure identity and collaboration primitives needed for all health workflows.
+- **Done criteria:**
+  - Auth API + web flows are operational (signup/login/logout/me/profile/password/sessions/audit).
+  - Household create/invite/join/leave/remove/member-list flows are operational.
+  - SQLite-backed auth/session persistence is enabled by default.
 
-### Milestone 3 — Suggestions (Reports -> Recommendations)
-- Unified suggestions flow (parse report + generate recommendation)
-- Persisted suggestion history
-- Household-shared suggestion visibility (read-only)
+### `**[Complete]**` Meal and Suggestions Core Workflow
+- **Outcome:** Meal analysis, report parsing, recommendation generation, and suggestion persistence are integrated end-to-end.
+- **Impact:** Users can move from input to actionable health guidance in a single product surface.
+- **Done criteria:**
+  - Typed meal summary contract and meal record pagination are available.
+  - Suggestions orchestration (`generate-from-report`) and persisted history are available.
+  - Household-scoped visibility for suggestions is enforced with access controls.
 
-### Milestone 4 — Household Basics
-- Create household
-- Invite/join by code
-- Owner/member roles
-- Member list and leave/remove flows
-- Shared visibility for meals/reminders/suggestions
+### `**[Complete]**` Policy, Observability, and Error Semantics Hardening
+- **Outcome:** API access and failure semantics are centralized with request/correlation trace propagation across workflows.
+- **Impact:** Reduces authorization drift and improves triage/debug capability in production.
+- **Done criteria:**
+  - Action-based policy checks are enforced in routes.
+  - Standard error envelope + centralized handlers are used consistently.
+  - Request/correlation IDs propagate through API responses, workflow payloads, and logs.
 
-### Milestone 5 — UI/UX Refinement and Stabilization
-- Onboarding polish (`signup -> login -> first task`)
-- Structured views replacing debug JSON-first flows
-- Accessibility/mobile polish
-- End-to-end smoke testing for core journeys
+### `**[Complete]**` UI/UX Stabilization + Smoke Coverage
+- **Outcome:** Core web journeys are polished for mobile/a11y and validated by e2e smoke tests.
+- **Impact:** Improves user trust and lowers regression risk for primary workflows.
+- **Done criteria:**
+  - Dashboard/suggestions/meals views use typed state rendering over debug-first JSON.
+  - Mobile header/sidebar/dialog interactions are accessible and usable.
+  - Playwright smoke tests cover login redirect and mobile navigation behavior.
 
-## Post-v1 Platform Work
-- Env profile support and secrets management
-- Config telemetry and diagnostics
-- CI/local quality parity
-- Health endpoints and readiness checks
-- Policy-driven feature flags
+## Next (Following 1–2 Cycles)
+
+### `**[Planned]**` Environment Profiles and Secret Hygiene
+- **Outcome:** Introduce explicit environment profiles and hardened secret management for deployment tiers.
+- **Impact:** Improves operational safety and reduces configuration drift.
+- **Done criteria:**
+  - Profiled env strategy (`development/staging/production`) is documented and enforced.
+  - Deployment-time secret validation and rotation guidance are in place.
+
+### `**[Planned]**` CI/Validation Parity and Coverage Maturity
+- **Outcome:** Align local and CI gates to enforce consistent quality thresholds.
+- **Impact:** Reduces “works locally, fails in CI” friction and improves release confidence.
+- **Done criteria:**
+  - Shared validation entrypoints are used in both local and CI.
+  - Coverage target and test matrix are tightened with explicit ownership.
+
+### `**[Planned]**` Runtime Readiness and Diagnostic Surfaces
+- **Outcome:** Add richer readiness diagnostics for inference/provider/runtime dependencies.
+- **Impact:** Faster incident detection and clearer operational visibility.
+- **Done criteria:**
+  - Expanded readiness signal beyond liveness.
+  - Provider/runtime health diagnostics documented and exposed.
+
+## Later (Beyond Next)
+
+### `**[Planned]**` Policy-Driven Feature Flag Platform
+- **Outcome:** Introduce typed feature-flag controls integrated with policy/access boundaries.
+- **Impact:** Safe incremental rollouts and controlled experimentation.
+- **Done criteria:**
+  - Feature flags are schema-validated and environment-aware.
+  - Policy layer can gate feature availability by role/scope/context.
+
+### `**[Planned]**` Advanced Config Telemetry
+- **Outcome:** Add structured config telemetry for startup/runtime introspection.
+- **Impact:** Improves debugging and compliance traceability in production.
+- **Done criteria:**
+  - Config provenance and effective runtime values are auditable.
+  - Sensitive fields are redacted by default across telemetry outputs.
