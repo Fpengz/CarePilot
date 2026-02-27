@@ -51,6 +51,8 @@ export default function SuggestionsPage() {
     [items, sourceFilter],
   );
 
+  const sourceUserIdParam = sourceFilter === "all" ? undefined : sourceFilter;
+
   return (
     <div>
       <PageTitle
@@ -120,7 +122,11 @@ export default function SuggestionsPage() {
                   try {
                     const response = await generateSuggestionFromReport({ text: reportText });
                     setSelected(response.suggestion);
-                    const listResponse = await listSuggestions({ limit: 20, scope });
+                    const listResponse = await listSuggestions({
+                      limit: 20,
+                      scope,
+                      sourceUserId: sourceUserIdParam,
+                    });
                     setItems(listResponse.items);
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));
@@ -139,7 +145,11 @@ export default function SuggestionsPage() {
                   setError(null);
                   setLoadingAction("load");
                   try {
-                    const response = await listSuggestions({ limit: 20, scope });
+                    const response = await listSuggestions({
+                      limit: 20,
+                      scope,
+                      sourceUserId: sourceUserIdParam,
+                    });
                     setItems(response.items);
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));

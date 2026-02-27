@@ -247,10 +247,12 @@ export async function generateSuggestionFromReport(payload: {
 export async function listSuggestions(options?: {
   limit?: number;
   scope?: "self" | "household";
+  sourceUserId?: string;
 }): Promise<SuggestionListApiResponse> {
   const params = new URLSearchParams();
   if (typeof options?.limit === "number") params.set("limit", String(Math.max(1, Math.floor(options.limit))));
   if (options?.scope) params.set("scope", options.scope);
+  if (options?.sourceUserId) params.set("source_user_id", options.sourceUserId);
   const query = params.toString();
   return request<SuggestionListApiResponse>(`/api/v1/suggestions${query ? `?${query}` : ""}`);
 }
