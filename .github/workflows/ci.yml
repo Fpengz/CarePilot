@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Type check
+        run: uv run ty check . --extra-search-path src --output-format concise
+
+      - name: Tests with coverage gate
+        run: uv run pytest --cov=src/dietary_guardian --cov=apps/api/dietary_api --cov-report=term-missing --cov-fail-under=35 -q
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Web lint
+        run: pnpm web:lint
+
+      - name: Web typecheck
+        run: pnpm web:typecheck
+
+      - name: Web build
+        run: pnpm web:build
+
+  web-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync backend dependencies
+        run: uv sync --all-extras --dev
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install web dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm --dir apps/web exec playwright install --with-deps chromium
+
+      - name: Run web smoke e2e
+        run: pnpm --dir apps/web test:e2e
