@@ -194,6 +194,28 @@ def test_suggestions_events_are_replayable_from_workflow_timeline(sqlite_suggest
     assert any(event.get("payload", {}).get("suggestion_id") == suggestion_id for event in timeline)
 
 
+def test_suggestions_respect_incoming_request_and_correlation_ids(sqlite_suggestions_env: None) -> None:
+    app = create_app()
+    client = TestClient(app)
+    _login(client, "member@example.com", "member-pass")
+    _meal_upload(client)
+
+    response = client.post(
+        "/api/v1/suggestions/generate-from-report",
+        headers={
+            "X-Request-ID": "req-suggestions-123",
+            "X-Correlation-ID": "corr-suggestions-456",
+        },
+        json={"text": "HbA1c 7.0 LDL 3.9"},
+    )
+    assert response.status_code == 200
+    assert response.headers["x-request-id"] == "req-suggestions-123"
+    assert response.headers["x-correlation-id"] == "corr-suggestions-456"
+    workflow = response.json()["suggestion"]["workflow"]
+    assert workflow["request_id"] == "req-suggestions-123"
+    assert workflow["correlation_id"] == "corr-suggestions-456"
+
+
 def test_suggestions_household_scope_supports_source_user_filter(sqlite_suggestions_env: None) -> None:
     app = create_app()
     member_client = TestClient(app)
