@@ -23,12 +23,17 @@ Environment loading conventions:
 - `API_HOST` (default: `127.0.0.1`)
 - `API_PORT` (default: `8001`)
 - `API_CORS_ORIGINS` (default: `http://localhost:3000`)
+- `API_DEV_LOG_VERBOSE` (default: `false`)
+- `API_DEV_LOG_HEADERS` (default: `false`)
+- `API_DEV_LOG_RESPONSE_HEADERS` (default: `false`)
 
 ## Web Runtime
 - `NEXT_PUBLIC_API_BASE_URL` (default: `/backend`)
 - `BACKEND_API_BASE_URL` (default: `http://127.0.0.1:8001`)
 - `NEXT_ALLOWED_DEV_ORIGINS` (default: `http://localhost:3000,http://127.0.0.1:3000`)
 - `NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER` (default: `test`)
+- `NEXT_PUBLIC_DEV_LOG_FRONTEND` (default: `false`)
+- `NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE` (default: `false`)
 
 ## LLM Provider
 - `LLM_PROVIDER` (default: `test`) — `gemini`, `openai`, `ollama`, `vllm`, `test`

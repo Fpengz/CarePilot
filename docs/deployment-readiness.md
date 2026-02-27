@@ -10,6 +10,7 @@
   - `pnpm web:lint`
   - `pnpm web:typecheck`
   - `pnpm web:build`
+  - `pnpm --dir apps/web test:e2e` (Playwright smoke)
 
 ## Container Hardening
 - Added root `Dockerfile`:
@@ -27,3 +28,8 @@
 - App lifespan hooks added in `apps/api/dietary_api/main.py`
 - Graceful shutdown closes context resources via `close_app_context`.
 - Lifecycle test coverage: `apps/api/tests/test_api_lifecycle.py`
+
+## Dev Networking Contract
+- Next dev origin policy is configured through `NEXT_ALLOWED_DEV_ORIGINS`.
+- Browser traffic should remain same-origin through `/backend/*` proxying to `BACKEND_API_BASE_URL`.
+- API CORS allowlist must include all active dev origins (localhost + LAN when applicable).

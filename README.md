@@ -13,6 +13,7 @@ The system now separates authorization and user persona:
 - `profile_mode`: `self` or `caregiver` (UX mode / care context)
 
 Privileged APIs (alerts/workflow inspection) are gated by **scopes**, not persona labels.
+Policy enforcement is now action-based in API routes (for example `meal.analyze`, `auth.sessions.revoke`) with centralized scope checks.
 
 See `docs/rbac-matrix.md` for the current RBAC matrix and endpoint permissions.
 See `docs/api-auth-contract.md` for auth payload examples and migration notes.
@@ -113,6 +114,12 @@ pnpm web:dev
 
 `pnpm web:*` commands automatically load root `.env` and then apply optional `apps/web/.env` overrides.
 
+### Web + API Proxy Contract (Dev)
+- Browser calls should use `NEXT_PUBLIC_API_BASE_URL=/backend` (same-origin proxy route).
+- Next route handler `apps/web/app/backend/[...path]/route.ts` forwards to `BACKEND_API_BASE_URL`.
+- Set `NEXT_ALLOWED_DEV_ORIGINS` to include LAN hostnames used in development.
+- Set `API_CORS_ORIGINS` to include matching web origins.
+
 ### Streamlit UI
 ```bash
 ./tools/run_dev.sh
@@ -203,6 +210,9 @@ Run these checks before submitting changes:
 uv run ruff check .
 uv run ty check . --extra-search-path src --output-format concise
 uv run pytest -q
+pnpm web:lint
+pnpm web:typecheck
+pnpm --dir apps/web test:e2e
 ```
 
 ## Troubleshooting
