@@ -16,10 +16,12 @@ Generates a suggestion by:
 3. generating a recommendation using the latest saved meal record
 4. persisting a suggestion snapshot
 
-#### Auth / scopes
-Requires both:
-- `report:write`
-- `recommendation:generate`
+#### Auth / policy action
+Requires route action:
+- `suggestions.generate`
+
+Policy mapping (current):
+- `suggestions.generate` -> scopes `report:write` + `recommendation:generate`
 
 #### Request
 ```json
@@ -91,9 +93,12 @@ Suggestions workflow events are appended to the global workflow timeline. Admin 
 ### `GET /api/v1/suggestions`
 Lists persisted suggestion snapshots for the authenticated user.
 
-#### Auth / scopes
-Requires:
-- `report:read`
+#### Auth / policy action
+Requires route action:
+- `suggestions.read`
+
+Policy mapping (current):
+- `suggestions.read` -> scope `report:read`
 
 #### Query params
 - `limit` (optional, `1..100`, default `20`)
@@ -105,14 +110,14 @@ Requires:
 ### `GET /api/v1/suggestions/{suggestion_id}`
 Returns one persisted suggestion snapshot for the authenticated user.
 
-#### Auth / scopes
-Requires:
-- `report:read`
+#### Auth / policy action
+Requires route action:
+- `suggestions.read`
 
 #### Query params
 - `scope` (optional, `self|household`, default `self`)
 
 ## Notes
-- Current v1 implementation stores suggestions per-user only.
-- Household-shared suggestion visibility is planned for a later milestone.
+- Suggestions are persisted per-user and exposed through scoped reads (`self` / `household`).
+- Household-scoped visibility is implemented in v1 with membership/ownership checks.
 - The endpoint includes a brief disclaimer to support safety/triage positioning.
