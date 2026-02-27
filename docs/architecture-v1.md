@@ -32,6 +32,8 @@ This architecture is implemented incrementally. During the migration, legacy mod
   - target: application use-cases + DTO mapping (routers remain thin)
 - `apps/api/dietary_api/auth.py`
   - now a compatibility layer re-exporting auth infrastructure classes
+- `apps/api/dietary_api/routers/suggestions.py`
+  - now delegates orchestration to `src/dietary_guardian/application/suggestions/use_cases.py`
 
 ## v1 Refactor Priorities
 1. Auth/accounts/session persistence (SQLite-backed adapter + use-cases)
@@ -41,4 +43,3 @@ This architecture is implemented incrementally. During the migration, legacy mod
 
 ## Worker Boundary (v1)
 The architecture prepares for a worker app (`apps/workers`) but v1 may continue to run workflows in-process unless a specific flow needs background execution. Outbox and job interfaces should be designed as ports so they can be moved later without changing application logic.
-
