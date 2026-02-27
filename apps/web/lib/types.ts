@@ -178,6 +178,8 @@ export interface RecommendationGenerateApiResponse {
 export interface SuggestionItemApi {
   suggestion_id: string;
   created_at: string;
+  source_user_id: string;
+  source_display_name: string;
   disclaimer: string;
   safety: {
     decision: "allow" | "modify" | "refuse" | "escalate" | "ask_clarification";

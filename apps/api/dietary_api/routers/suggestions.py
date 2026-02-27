@@ -59,6 +59,8 @@ def suggestions_generate_from_report(
         suggestion_payload: dict[str, object] = {
             "suggestion_id": str(uuid4()),
             "created_at": created_at.isoformat(),
+            "source_user_id": user_id,
+            "source_display_name": str(session["display_name"]),
             "disclaimer": SUGGESTION_DISCLAIMER,
             "safety": {
                 "decision": safety_decision.decision,
@@ -97,6 +99,8 @@ def suggestions_generate_from_report(
     suggestion_payload: dict[str, object] = {
         "suggestion_id": str(uuid4()),
         "created_at": created_at.isoformat(),
+        "source_user_id": user_id,
+        "source_display_name": str(session["display_name"]),
         "disclaimer": SUGGESTION_DISCLAIMER,
         "safety": {
             "decision": safety_decision.decision,
@@ -118,16 +122,37 @@ def suggestions_generate_from_report(
 @router.get("/api/v1/suggestions", response_model=SuggestionListResponse)
 def suggestions_list(
     request: Request,
+    scope: str = Query(default="self", pattern="^(self|household)$"),
     limit: int = Query(default=20, ge=1, le=100),
     session: dict[str, object] = Depends(current_session),
 ) -> SuggestionListResponse:
     require_scopes(session, {"report:read"})
     context = get_context(request)
     user_id = str(session["user_id"])
-    items = [
-        _to_suggestion_response(item)
-        for item in context.repository.list_suggestion_records(user_id, limit=limit)
-    ]
+    if scope == "self":
+        source_user_ids = [user_id]
+        source_display_names = {user_id: str(session["display_name"])}
+    else:
+        active_household_id = session.get("active_household_id")
+        if not isinstance(active_household_id, str) or not active_household_id:
+            raise HTTPException(status_code=400, detail="active household required for household scope")
+        if context.household_store.get_member_role(active_household_id, user_id) is None:
+            raise HTTPException(status_code=403, detail="forbidden")
+        members = context.household_store.list_members(active_household_id)
+        source_user_ids = [str(member["user_id"]) for member in members]
+        source_display_names = {
+            str(member["user_id"]): str(member.get("display_name", member["user_id"])) for member in members
+        }
+
+    raw_items: list[dict[str, object]] = []
+    for source_user_id in source_user_ids:
+        for item in context.repository.list_suggestion_records(source_user_id, limit=limit):
+            normalized = dict(item)
+            normalized.setdefault("source_user_id", source_user_id)
+            normalized.setdefault("source_display_name", source_display_names.get(source_user_id, source_user_id))
+            raw_items.append(normalized)
+    raw_items.sort(key=lambda item: str(item.get("created_at", "")), reverse=True)
+    items = [_to_suggestion_response(item) for item in raw_items[:limit]]
     return SuggestionListResponse(items=items)
 
 
@@ -135,12 +160,36 @@ def suggestions_list(
 def suggestions_get(
     suggestion_id: str,
     request: Request,
+    scope: str = Query(default="self", pattern="^(self|household)$"),
     session: dict[str, object] = Depends(current_session),
 ) -> SuggestionDetailResponse:
     require_scopes(session, {"report:read"})
     context = get_context(request)
     user_id = str(session["user_id"])
-    item = context.repository.get_suggestion_record(user_id, suggestion_id)
+    if scope == "self":
+        source_user_ids = [user_id]
+        source_display_names = {user_id: str(session["display_name"])}
+    else:
+        active_household_id = session.get("active_household_id")
+        if not isinstance(active_household_id, str) or not active_household_id:
+            raise HTTPException(status_code=400, detail="active household required for household scope")
+        if context.household_store.get_member_role(active_household_id, user_id) is None:
+            raise HTTPException(status_code=403, detail="forbidden")
+        members = context.household_store.list_members(active_household_id)
+        source_user_ids = [str(member["user_id"]) for member in members]
+        source_display_names = {
+            str(member["user_id"]): str(member.get("display_name", member["user_id"])) for member in members
+        }
+
+    item = None
+    for source_user_id in source_user_ids:
+        found = context.repository.get_suggestion_record(source_user_id, suggestion_id)
+        if found is not None:
+            normalized = dict(found)
+            normalized.setdefault("source_user_id", source_user_id)
+            normalized.setdefault("source_display_name", source_display_names.get(source_user_id, source_user_id))
+            item = normalized
+            break
     if item is None:
         raise HTTPException(status_code=404, detail="suggestion not found")
     return SuggestionDetailResponse(suggestion=_to_suggestion_response(item))

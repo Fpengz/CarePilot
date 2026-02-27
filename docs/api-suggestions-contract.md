@@ -35,6 +35,8 @@ Requires both:
   "suggestion": {
     "suggestion_id": "uuid",
     "created_at": "2026-02-26T00:00:00+00:00",
+    "source_user_id": "user_001",
+    "source_display_name": "Member",
     "disclaimer": "This information is for general wellness...",
     "safety": {
       "decision": "allow",
@@ -86,6 +88,8 @@ Requires:
 
 #### Query params
 - `limit` (optional, `1..100`, default `20`)
+- `scope` (optional, `self|household`, default `self`)
+  - `household` requires an active household and returns merged household-member suggestions.
 
 ### `GET /api/v1/suggestions/{suggestion_id}`
 Returns one persisted suggestion snapshot for the authenticated user.
@@ -93,6 +97,9 @@ Returns one persisted suggestion snapshot for the authenticated user.
 #### Auth / scopes
 Requires:
 - `report:read`
+
+#### Query params
+- `scope` (optional, `self|household`, default `self`)
 
 ## Notes
 - Current v1 implementation stores suggestions per-user only.

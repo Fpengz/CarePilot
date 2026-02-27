@@ -27,6 +27,7 @@ export default function SuggestionsPage() {
   const [reportText, setReportText] = useState(DEFAULT_REPORT);
   const [selected, setSelected] = useState<SuggestionItemApi | null>(null);
   const [items, setItems] = useState<SuggestionItemApi[]>([]);
+  const [scope, setScope] = useState<"self" | "household">("self");
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"generate" | "load" | "open" | null>(null);
 
@@ -67,6 +68,23 @@ export default function SuggestionsPage() {
 
             <div className="flex flex-wrap gap-2">
               <Button
+                variant={scope === "self" ? "default" : "secondary"}
+                disabled={loadingAction !== null}
+                onClick={() => setScope("self")}
+              >
+                Self Scope
+              </Button>
+              <Button
+                variant={scope === "household" ? "default" : "secondary"}
+                disabled={loadingAction !== null}
+                onClick={() => setScope("household")}
+              >
+                Household Scope
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
                 disabled={loadingAction !== null || reportText.trim().length === 0}
                 onClick={async () => {
                   setError(null);
@@ -74,7 +92,7 @@ export default function SuggestionsPage() {
                   try {
                     const response = await generateSuggestionFromReport({ text: reportText });
                     setSelected(response.suggestion);
-                    const listResponse = await listSuggestions(20);
+                    const listResponse = await listSuggestions({ limit: 20, scope });
                     setItems(listResponse.items);
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));
@@ -93,7 +111,7 @@ export default function SuggestionsPage() {
                   setError(null);
                   setLoadingAction("load");
                   try {
-                    const response = await listSuggestions(20);
+                    const response = await listSuggestions({ limit: 20, scope });
                     setItems(response.items);
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));
@@ -111,6 +129,9 @@ export default function SuggestionsPage() {
                 <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Current Suggestion</div>
                 <div className="mt-1 text-sm font-medium">{selected.suggestion_id}</div>
                 <p className="app-muted mt-2 text-xs">{selected.disclaimer}</p>
+                <p className="app-muted mt-2 text-xs">
+                  Active history scope: <span className="font-medium">{scope}</span>
+                </p>
               </div>
             ) : null}
           </CardContent>
@@ -126,13 +147,13 @@ export default function SuggestionsPage() {
             items={items.map((item) => ({
               id: item.suggestion_id,
               title: item.suggestion_id,
-              subtitle: formatDate(item.created_at),
-              badges: [String(item.recommendation.safe ? "safe" : "review")],
+              subtitle: `${item.source_display_name} · ${formatDate(item.created_at)}`,
+              badges: [item.safety.decision, String(item.recommendation.safe ? "safe" : "review")],
               onClick: async () => {
                 setError(null);
                 setLoadingAction("open");
                 try {
-                  const detail = await getSuggestion(item.suggestion_id);
+                  const detail = await getSuggestion(item.suggestion_id, { scope });
                   setSelected(detail.suggestion);
                 } catch (e) {
                   setError(e instanceof Error ? e.message : String(e));

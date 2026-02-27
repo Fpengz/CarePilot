@@ -28,8 +28,8 @@ def _login(client: TestClient, email: str = "member@example.com", password: str 
     assert response.status_code == 200
 
 
-def _meal_upload(client: TestClient) -> None:
-    img = Image.new("RGB", (64, 64), color=(120, 210, 90))
+def _meal_upload(client: TestClient, *, color: tuple[int, int, int] = (120, 210, 90)) -> None:
+    img = Image.new("RGB", (64, 64), color=color)
     buf = BytesIO()
     img.save(buf, format="JPEG")
     response = client.post(
@@ -111,3 +111,42 @@ def test_suggestions_red_flag_text_escalates_without_meal(sqlite_suggestions_env
     assert suggestion["safety"]["reasons"]
     assert "urgent medical care" in suggestion["recommendation"]["rationale"].lower()
     assert suggestion["recommendation"]["safe"] is False
+
+
+def test_suggestions_list_household_scope_includes_member_records(sqlite_suggestions_env: None) -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    helper_client = TestClient(app)
+
+    _login(member_client, "member@example.com", "member-pass")
+    _login(helper_client, "helper@example.com", "helper-pass")
+
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
+    assert created.status_code == 200
+    household_id = created.json()["household"]["household_id"]
+    invite = member_client.post(f"/api/v1/households/{household_id}/invites")
+    assert invite.status_code == 200
+    code = invite.json()["invite"]["code"]
+    joined = helper_client.post("/api/v1/households/join", json={"code": code})
+    assert joined.status_code == 200
+
+    _meal_upload(member_client, color=(120, 210, 90))
+    _meal_upload(helper_client, color=(95, 120, 210))
+    member_create = member_client.post("/api/v1/suggestions/generate-from-report", json={"text": "HbA1c 6.8 LDL 3.2"})
+    helper_create = helper_client.post("/api/v1/suggestions/generate-from-report", json={"text": "HbA1c 7.5 LDL 4.2"})
+    assert member_create.status_code == 200
+    assert helper_create.status_code == 200
+    helper_suggestion_id = helper_create.json()["suggestion"]["suggestion_id"]
+
+    set_active = member_client.patch("/api/v1/households/active", json={"household_id": household_id})
+    assert set_active.status_code == 200
+
+    household_list = member_client.get("/api/v1/suggestions?scope=household")
+    assert household_list.status_code == 200
+    items = household_list.json()["items"]
+    authors = {item["source_user_id"] for item in items}
+    assert {"user_001", "care_001"}.issubset(authors)
+
+    detail = member_client.get(f"/api/v1/suggestions/{helper_suggestion_id}?scope=household")
+    assert detail.status_code == 200
+    assert detail.json()["suggestion"]["source_user_id"] == "care_001"

@@ -270,6 +270,8 @@ class SafetyDecisionResponse(BaseModel):
 class SuggestionItemResponse(BaseModel):
     suggestion_id: str
     created_at: datetime
+    source_user_id: str
+    source_display_name: str
     disclaimer: str
     safety: SafetyDecisionResponse
     report_parse: dict[str, object]

@@ -244,13 +244,27 @@ export async function generateSuggestionFromReport(payload: {
   });
 }
 
-export async function listSuggestions(limit?: number): Promise<SuggestionListApiResponse> {
-  const query = typeof limit === "number" ? `?limit=${Math.max(1, Math.floor(limit))}` : "";
-  return request<SuggestionListApiResponse>(`/api/v1/suggestions${query}`);
+export async function listSuggestions(options?: {
+  limit?: number;
+  scope?: "self" | "household";
+}): Promise<SuggestionListApiResponse> {
+  const params = new URLSearchParams();
+  if (typeof options?.limit === "number") params.set("limit", String(Math.max(1, Math.floor(options.limit))));
+  if (options?.scope) params.set("scope", options.scope);
+  const query = params.toString();
+  return request<SuggestionListApiResponse>(`/api/v1/suggestions${query ? `?${query}` : ""}`);
 }
 
-export async function getSuggestion(suggestionId: string): Promise<SuggestionDetailApiResponse> {
-  return request<SuggestionDetailApiResponse>(`/api/v1/suggestions/${suggestionId}`);
+export async function getSuggestion(
+  suggestionId: string,
+  options?: { scope?: "self" | "household" },
+): Promise<SuggestionDetailApiResponse> {
+  const params = new URLSearchParams();
+  if (options?.scope) params.set("scope", options.scope);
+  const query = params.toString();
+  return request<SuggestionDetailApiResponse>(
+    `/api/v1/suggestions/${suggestionId}${query ? `?${query}` : ""}`,
+  );
 }
 
 export async function generateReminders(): Promise<ReminderGenerateApiResponse> {
