@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 from typing import Any
 
+from dietary_guardian.application.policies.household_access import (
+    HouseholdAccessForbiddenError,
+    HouseholdAccessNotFoundError,
+    ensure_household_member,
+    ensure_household_owner,
+)
+
 from .ports import HouseholdStorePort
 
 
@@ -67,8 +74,9 @@ def create_household_for_user(
 def list_household_members_for_user(
     *, household_store: HouseholdStorePort, household_id: str, user_id: str
 ) -> list[dict[str, Any]]:
-    role = household_store.get_member_role(household_id, user_id)
-    if role is None:
+    try:
+        ensure_household_member(household_store, household_id=household_id, user_id=user_id)
+    except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     return household_store.list_members(household_id)
 
@@ -76,10 +84,11 @@ def list_household_members_for_user(
 def create_household_invite_for_owner(
     *, household_store: HouseholdStorePort, household_id: str, user_id: str
 ) -> dict[str, Any]:
-    role = household_store.get_member_role(household_id, user_id)
-    if role is None:
+    try:
+        ensure_household_owner(household_store, household_id=household_id, user_id=user_id)
+    except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
-    if role != "owner":
+    except HouseholdAccessForbiddenError:
         raise HouseholdForbiddenError
     return household_store.create_invite(household_id=household_id, created_by_user_id=user_id)
 
@@ -105,13 +114,17 @@ def join_household_by_code(
 def remove_household_member_for_owner(
     *, household_store: HouseholdStorePort, household_id: str, actor_user_id: str, target_user_id: str
 ) -> None:
-    actor_role = household_store.get_member_role(household_id, actor_user_id)
-    if actor_role is None:
+    try:
+        ensure_household_owner(household_store, household_id=household_id, user_id=actor_user_id)
+    except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
-    if actor_role != "owner":
+    except HouseholdAccessForbiddenError:
         raise HouseholdForbiddenError
-    target_role = household_store.get_member_role(household_id, target_user_id)
-    if target_role is None:
+    try:
+        target_role = ensure_household_member(
+            household_store, household_id=household_id, user_id=target_user_id
+        )
+    except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     if target_role == "owner":
         raise HouseholdForbiddenError
@@ -121,8 +134,9 @@ def remove_household_member_for_owner(
 
 
 def leave_household_for_member(*, household_store: HouseholdStorePort, household_id: str, user_id: str) -> None:
-    role = household_store.get_member_role(household_id, user_id)
-    if role is None:
+    try:
+        role = ensure_household_member(household_store, household_id=household_id, user_id=user_id)
+    except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     if role == "owner":
         raise HouseholdOwnerLeaveForbiddenError
@@ -134,10 +148,11 @@ def leave_household_for_member(*, household_store: HouseholdStorePort, household
 def rename_household_for_owner(
     *, household_store: HouseholdStorePort, household_id: str, actor_user_id: str, name: str
 ) -> HouseholdBundle:
-    role = household_store.get_member_role(household_id, actor_user_id)
-    if role is None:
+    try:
+        ensure_household_owner(household_store, household_id=household_id, user_id=actor_user_id)
+    except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
-    if role != "owner":
+    except HouseholdAccessForbiddenError:
         raise HouseholdForbiddenError
     household = household_store.rename_household(household_id=household_id, name=name)
     if household is None:
@@ -150,7 +165,8 @@ def validate_active_household_for_user(
 ) -> str | None:
     if household_id is None:
         return None
-    role = household_store.get_member_role(household_id, user_id)
-    if role is None:
+    try:
+        ensure_household_member(household_store, household_id=household_id, user_id=user_id)
+    except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     return household_id

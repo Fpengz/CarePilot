@@ -67,3 +67,15 @@ def test_workflow_trace_lookup_by_correlation_id() -> None:
     assert response.status_code == 200
     assert response.json()["workflow_name"] == "replay"
     assert response.json()["replayed"] is True
+
+
+def test_alert_timeline_not_found_uses_domain_code() -> None:
+    client = TestClient(create_app())
+    _login(client, "admin@example.com", "admin-pass")
+
+    response = client.get("/api/v1/alerts/alert_missing/timeline")
+
+    assert response.status_code == 404
+    body = response.json()
+    assert body["detail"] == "alert not found"
+    assert body["error"]["code"] == "alerts.not_found"

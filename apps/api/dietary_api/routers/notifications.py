@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 
+from ..errors import build_api_error
 from ..routes_shared import current_session, get_context
 from ..schemas import (
     NotificationListResponse,
@@ -31,7 +32,7 @@ def notifications_mark_read(
         notification_id=notification_id,
     )
     if result is None:
-        raise HTTPException(status_code=404, detail="notification not found")
+        raise build_api_error(status_code=404, code="notifications.not_found", message="notification not found")
     return result
 
 

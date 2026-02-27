@@ -360,6 +360,10 @@ class SQLiteRepository:
             conn.commit()
         logger.info("save_recommendation user_id=%s payload_keys=%s", user_id, sorted(payload.keys()))
 
+    def close(self) -> None:
+        # Connections are opened per-operation; this keeps a symmetric app shutdown hook.
+        return None
+
     def save_suggestion_record(self, user_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         suggestion_id = str(payload.get("suggestion_id", ""))
         created_at = str(payload.get("created_at", ""))

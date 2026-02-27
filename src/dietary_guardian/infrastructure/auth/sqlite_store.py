@@ -317,6 +317,9 @@ class SQLiteAuthStore:
             for row in rows
         ]
 
+    def close(self) -> None:
+        self._conn.close()
+
     def update_user_profile(
         self,
         *,

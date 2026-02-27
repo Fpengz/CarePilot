@@ -97,3 +97,15 @@ def test_mark_all_notifications_read_marks_everything_for_user() -> None:
     assert after.status_code == 200
     assert after.json()["unread_count"] == 0
     assert all(item["read"] for item in after.json()["items"])
+
+
+def test_mark_notification_read_missing_item_uses_domain_code() -> None:
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    response = client.post("/api/v1/notifications/notif_missing/read")
+
+    assert response.status_code == 404
+    body = response.json()
+    assert body["detail"] == "notification not found"
+    assert body["error"]["code"] == "notifications.not_found"

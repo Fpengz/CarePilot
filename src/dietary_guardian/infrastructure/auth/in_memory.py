@@ -326,3 +326,6 @@ class InMemoryAuthStore:
             return None
         session["active_household_id"] = active_household_id
         return session
+
+    def close(self) -> None:
+        return None

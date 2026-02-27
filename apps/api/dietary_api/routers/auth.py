@@ -12,7 +12,7 @@ from dietary_guardian.application.auth.use_cases import (
     signup_member_and_create_session,
 )
 
-from ..routes_shared import SESSION_COOKIE, current_session, get_context, require_scopes
+from ..routes_shared import SESSION_COOKIE, current_session, get_context, require_action, require_resource_action
 from ..schemas import (
     AuthAuditEvent,
     AuthAuditEventListResponse,
@@ -266,8 +266,11 @@ def auth_revoke_session(
     owner_user_id = context.auth_store.get_session_owner(session_id)
     if owner_user_id is None:
         return AuthSessionRevokeResponse(revoked=False)
-    if owner_user_id != str(session["user_id"]):
-        raise HTTPException(status_code=404, detail="session not found")
+    require_resource_action(
+        session,
+        "auth.sessions.revoke",
+        {"owner_user_id": owner_user_id},
+    )
     context.auth_store.destroy_session(session_id)
     if session_id == str(session["session_id"]):
         _clear_session_cookie(response, secure=context.settings.cookie_secure)
@@ -280,7 +283,7 @@ def auth_audit_events(
     limit: int = 50,
     session: dict[str, object] = Depends(current_session),
 ) -> AuthAuditEventListResponse:
-    require_scopes(session, {"auth:audit:read"})
+    require_action(session, "auth.audit.read")
     context = get_context(request)
     items = context.auth_store.list_auth_audit_events(limit=limit)
     return AuthAuditEventListResponse(

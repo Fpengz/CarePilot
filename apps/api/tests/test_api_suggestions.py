@@ -93,6 +93,8 @@ def test_suggestions_generate_from_report_requires_meal_record(sqlite_suggestion
 
     assert response.status_code == 400
     assert response.json()["detail"] == "no meal records available"
+    assert response.json()["error"]["code"] == "suggestions.no_meal_records"
+    assert response.json()["error"]["message"] == "no meal records available"
 
 
 def test_suggestions_endpoints_require_auth(sqlite_suggestions_env: None) -> None:
@@ -243,3 +245,97 @@ def test_suggestions_household_scope_supports_source_user_filter(sqlite_suggesti
     items = filtered.json()["items"]
     assert items
     assert {item["source_user_id"] for item in items} == {"care_001"}
+
+
+def test_suggestions_household_scope_filter_denies_non_member_source(sqlite_suggestions_env: None) -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    helper_client = TestClient(app)
+
+    _login(member_client, "member@example.com", "member-pass")
+    _login(helper_client, "helper@example.com", "helper-pass")
+
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
+    assert created.status_code == 200
+    household_id = created.json()["household"]["household_id"]
+    invite = member_client.post(f"/api/v1/households/{household_id}/invites")
+    assert invite.status_code == 200
+    join = helper_client.post("/api/v1/households/join", json={"code": invite.json()["invite"]["code"]})
+    assert join.status_code == 200
+    assert member_client.patch("/api/v1/households/active", json={"household_id": household_id}).status_code == 200
+
+    forbidden = member_client.get("/api/v1/suggestions?scope=household&source_user_id=ops_001")
+    assert forbidden.status_code == 403
+    assert forbidden.json()["detail"] == "forbidden"
+    assert forbidden.json()["error"]["code"] == "suggestions.forbidden"
+
+
+def test_suggestions_household_access_revoked_after_member_removed(sqlite_suggestions_env: None) -> None:
+    app = create_app()
+    owner_client = TestClient(app)
+    helper_client = TestClient(app)
+
+    _login(owner_client, "member@example.com", "member-pass")
+    _login(helper_client, "helper@example.com", "helper-pass")
+    created = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
+    assert created.status_code == 200
+    household_id = created.json()["household"]["household_id"]
+    code = owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
+
+    _meal_upload(owner_client, color=(120, 210, 90))
+    _meal_upload(helper_client, color=(95, 120, 210))
+    owner_create = owner_client.post("/api/v1/suggestions/generate-from-report", json={"text": "HbA1c 6.8 LDL 3.2"})
+    helper_create = helper_client.post("/api/v1/suggestions/generate-from-report", json={"text": "HbA1c 7.5 LDL 4.2"})
+    assert owner_create.status_code == 200
+    assert helper_create.status_code == 200
+    helper_suggestion_id = helper_create.json()["suggestion"]["suggestion_id"]
+
+    assert owner_client.patch("/api/v1/households/active", json={"household_id": household_id}).status_code == 200
+    assert helper_client.patch("/api/v1/households/active", json={"household_id": household_id}).status_code == 200
+
+    removed = owner_client.post(f"/api/v1/households/{household_id}/members/care_001/remove")
+    assert removed.status_code == 200
+
+    helper_after_removal = helper_client.get("/api/v1/suggestions?scope=household")
+    assert helper_after_removal.status_code == 403
+    assert helper_after_removal.json()["error"]["code"] == "suggestions.forbidden"
+
+    owner_detail_removed_member = owner_client.get(f"/api/v1/suggestions/{helper_suggestion_id}?scope=household")
+    assert owner_detail_removed_member.status_code == 404
+    assert owner_detail_removed_member.json()["error"]["code"] == "suggestions.not_found"
+
+
+def test_suggestions_cross_household_detail_attempt_is_hidden(sqlite_suggestions_env: None) -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    admin_client = TestClient(app)
+
+    _login(member_client, "member@example.com", "member-pass")
+    _login(admin_client, "admin@example.com", "admin-pass")
+
+    member_household = member_client.post("/api/v1/households", json={"name": "Member Home"})
+    admin_household = admin_client.post("/api/v1/households", json={"name": "Admin Home"})
+    assert member_household.status_code == 200
+    assert admin_household.status_code == 200
+    assert member_client.patch(
+        "/api/v1/households/active",
+        json={"household_id": member_household.json()["household"]["household_id"]},
+    ).status_code == 200
+    assert admin_client.patch(
+        "/api/v1/households/active",
+        json={"household_id": admin_household.json()["household"]["household_id"]},
+    ).status_code == 200
+
+    _meal_upload(admin_client, color=(10, 150, 200))
+    created = admin_client.post("/api/v1/suggestions/generate-from-report", json={"text": "HbA1c 7.2 LDL 4.0"})
+    assert created.status_code == 200
+    admin_suggestion_id = created.json()["suggestion"]["suggestion_id"]
+
+    forbidden_list = member_client.get("/api/v1/suggestions?scope=household&source_user_id=ops_001")
+    assert forbidden_list.status_code == 403
+    assert forbidden_list.json()["error"]["code"] == "suggestions.forbidden"
+
+    hidden_detail = member_client.get(f"/api/v1/suggestions/{admin_suggestion_id}?scope=household")
+    assert hidden_detail.status_code == 404
+    assert hidden_detail.json()["error"]["code"] == "suggestions.not_found"

@@ -126,18 +126,20 @@ class WorkflowCoordinator:
         severity: AlertSeverity,
         message: str,
         destinations: list[str],
+        request_id: str | None = None,
+        correlation_id: str | None = None,
         account_role: str = "member",
         scopes: list[str] | None = None,
         environment: str = "dev",
     ) -> WorkflowExecutionResult:
-        request_id = str(uuid4())
-        correlation_id = str(uuid4())
+        issued_request_id = request_id or str(uuid4())
+        issued_correlation_id = correlation_id or str(uuid4())
         self.profile_memory.put(user_profile)
         self.event_timeline.append(
             event_type="workflow_started",
             workflow_name=WorkflowName.ALERT_ONLY,
-            correlation_id=correlation_id,
-            request_id=request_id,
+            correlation_id=issued_correlation_id,
+            request_id=issued_request_id,
             user_id=user_profile.id,
             payload={"alert_type": alert_type, "destinations": destinations},
         )
@@ -154,15 +156,15 @@ class WorkflowCoordinator:
                 scopes=scopes or [],
                 environment=environment,
                 user_id=user_profile.id,
-                correlation_id=correlation_id,
+                correlation_id=issued_correlation_id,
             ),
         )
         handoffs = [
             AgentHandoff(
                 from_agent="coordinator",
                 to_agent="notification_agent",
-                request_id=request_id,
-                correlation_id=correlation_id,
+                request_id=issued_request_id,
+                correlation_id=issued_correlation_id,
                 confidence=1.0 if tool_result.success else 0.0,
                 obligations=["deliver_alert_via_channels"],
                 payload={"alert_type": alert_type, "destinations": destinations},
@@ -171,19 +173,19 @@ class WorkflowCoordinator:
         self.event_timeline.append(
             event_type="workflow_completed",
             workflow_name=WorkflowName.ALERT_ONLY,
-            correlation_id=correlation_id,
-            request_id=request_id,
+            correlation_id=issued_correlation_id,
+            request_id=issued_request_id,
             user_id=user_profile.id,
             payload={"tool_success": tool_result.success, "tool_name": tool_result.tool_name},
         )
         return WorkflowExecutionResult(
             workflow_name=WorkflowName.ALERT_ONLY,
-            request_id=request_id,
-            correlation_id=correlation_id,
+            request_id=issued_request_id,
+            correlation_id=issued_correlation_id,
             user_id=user_profile.id,
             handoffs=handoffs,
             tool_results=[tool_result],
-            timeline_events=self.event_timeline.list(correlation_id=correlation_id),
+            timeline_events=self.event_timeline.list(correlation_id=issued_correlation_id),
         )
 
     def replay_workflow(self, correlation_id: str) -> WorkflowExecutionResult:

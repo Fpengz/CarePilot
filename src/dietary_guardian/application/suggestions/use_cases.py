@@ -3,6 +3,11 @@ from typing import Any, TypedDict
 from uuid import uuid4
 
 from dietary_guardian.models.report import ReportInput
+from dietary_guardian.application.policies.household_access import (
+    HouseholdAccessNotFoundError,
+    ensure_household_member,
+    household_source_members,
+)
 from dietary_guardian.safety.triage import evaluate_text_safety
 from dietary_guardian.services.recommendation_service import generate_recommendation
 from dietary_guardian.services.report_parser_service import build_clinical_snapshot, parse_report_input
@@ -89,14 +94,11 @@ def _source_scope(
     active_household_id = session.get("active_household_id")
     if not isinstance(active_household_id, str) or not active_household_id:
         raise MissingActiveHouseholdError
-    if household_store.get_member_role(active_household_id, user_id) is None:
+    try:
+        ensure_household_member(household_store, household_id=active_household_id, user_id=user_id)
+    except HouseholdAccessNotFoundError:
         raise SuggestionForbiddenError
-    members = household_store.list_members(active_household_id)
-    source_user_ids = [str(member["user_id"]) for member in members]
-    source_display_names = {
-        str(member["user_id"]): str(member.get("display_name", member["user_id"])) for member in members
-    }
-    return source_user_ids, source_display_names
+    return household_source_members(household_store, household_id=active_household_id)
 
 
 def generate_suggestion_from_report(

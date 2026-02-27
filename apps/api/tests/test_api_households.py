@@ -34,6 +34,18 @@ def test_household_create_requires_auth(sqlite_household_env: None) -> None:
     assert response.status_code == 401
 
 
+def test_household_create_rejects_blank_name_with_domain_code(sqlite_household_env: None) -> None:
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    response = client.post("/api/v1/households", json={"name": "   "})
+
+    assert response.status_code == 400
+    body = response.json()
+    assert body["detail"] == "household name must not be blank"
+    assert body["error"]["code"] == "households.invalid_name"
+
+
 def test_household_create_and_get_current(sqlite_household_env: None) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
@@ -101,6 +113,7 @@ def test_non_owner_cannot_create_household_invite(sqlite_household_env: None) ->
 
     forbidden = helper_client.post(f"/api/v1/households/{household_id}/invites")
     assert forbidden.status_code == 403
+    assert forbidden.json()["error"]["code"] == "households.forbidden"
 
 
 def test_user_cannot_create_or_join_second_household(sqlite_household_env: None) -> None:
@@ -257,3 +270,16 @@ def test_household_active_selection_requires_membership(sqlite_household_env: No
     response = admin_client.patch("/api/v1/households/active", json={"household_id": member_household_id})
 
     assert response.status_code == 404
+    assert response.json()["error"]["code"] == "households.not_found"
+
+
+def test_household_join_rejects_invalid_invite_code(sqlite_household_env: None) -> None:
+    client = TestClient(create_app())
+    _login(client, "helper@example.com", "helper-pass")
+
+    response = client.post("/api/v1/households/join", json={"code": "hh_invalid_code"})
+
+    assert response.status_code == 400
+    body = response.json()
+    assert body["detail"] == "invalid household invite"
+    assert body["error"]["code"] == "households.invalid_invite"

@@ -81,3 +81,5 @@ def test_workflows_list_endpoint_returns_items_for_admin() -> None:
     body = response.json()
     assert body["items"]
     assert {"workflow_name", "correlation_id"} <= set(body["items"][0].keys())
+    assert isinstance(body["items"][0]["event_count"], int)
+    assert "latest_event_at" in body["items"][0]

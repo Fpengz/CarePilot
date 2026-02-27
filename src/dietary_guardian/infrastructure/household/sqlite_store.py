@@ -247,3 +247,6 @@ class SQLiteHouseholdStore:
                 (household_id, user_id),
             )
         return int(cur.rowcount) > 0
+
+    def close(self) -> None:
+        self._conn.close()

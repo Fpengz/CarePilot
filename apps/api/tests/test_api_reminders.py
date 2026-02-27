@@ -29,3 +29,15 @@ def test_generate_list_and_confirm_reminders_flow() -> None:
     listed_after = client.get("/api/v1/reminders")
     assert listed_after.status_code == 200
     assert listed_after.json()["metrics"]["meal_confirmed_yes"] >= 1
+
+
+def test_confirm_reminder_missing_event_uses_domain_code() -> None:
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    response = client.post("/api/v1/reminders/rem_missing/confirm", json={"confirmed": True})
+
+    assert response.status_code == 404
+    body = response.json()
+    assert body["detail"] == "reminder not found"
+    assert body["error"]["code"] == "reminders.not_found"
