@@ -12,6 +12,7 @@ wheels/
 *.db
 .idea/
 .env
+apps/web/.env
 
 # Virtual environments
 .venv

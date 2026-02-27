@@ -6,10 +6,9 @@
     "apps/web"
   ],
   "scripts": {
-    "web:dev": "pnpm --dir apps/web dev",
-    "web:build": "pnpm --dir apps/web build",
-    "web:lint": "pnpm --dir apps/web lint",
-    "web:typecheck": "pnpm --dir apps/web typecheck"
+    "web:dev": "bash scripts/web-env.sh pnpm --dir apps/web dev",
+    "web:build": "bash scripts/web-env.sh pnpm --dir apps/web build",
+    "web:lint": "bash scripts/web-env.sh pnpm --dir apps/web lint",
+    "web:typecheck": "bash scripts/web-env.sh pnpm --dir apps/web typecheck"
   }
 }
-
