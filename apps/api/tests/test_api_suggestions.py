@@ -67,6 +67,7 @@ def test_suggestions_generate_from_report_persists_and_lists(sqlite_suggestions_
         "workflow_started",
         "workflow_completed",
     ]
+    assert all(event["payload"]["suggestion_id"] == suggestion["suggestion_id"] for event in suggestion["workflow"]["timeline_events"])
     assert "workflow" in suggestion
 
     listing = client.get("/api/v1/suggestions")
@@ -125,6 +126,7 @@ def test_suggestions_red_flag_text_escalates_without_meal(sqlite_suggestions_env
         "workflow_started",
         "workflow_escalated",
     ]
+    assert all(event["payload"]["suggestion_id"] == suggestion["suggestion_id"] for event in suggestion["workflow"]["timeline_events"])
 
 
 def test_suggestions_list_household_scope_includes_member_records(sqlite_suggestions_env: None) -> None:
@@ -180,6 +182,7 @@ def test_suggestions_events_are_replayable_from_workflow_timeline(sqlite_suggest
         json={"text": "HbA1c 7.1 LDL 4.2"},
     )
     assert created.status_code == 200
+    suggestion_id = created.json()["suggestion"]["suggestion_id"]
     correlation_id = created.json()["suggestion"]["workflow"]["correlation_id"]
 
     replay = admin_client.get(f"/api/v1/workflows/{correlation_id}")
@@ -188,6 +191,7 @@ def test_suggestions_events_are_replayable_from_workflow_timeline(sqlite_suggest
     event_types = [event["event_type"] for event in timeline]
     assert "workflow_started" in event_types
     assert "workflow_completed" in event_types
+    assert any(event.get("payload", {}).get("suggestion_id") == suggestion_id for event in timeline)
 
 
 def test_suggestions_household_scope_supports_source_user_filter(sqlite_suggestions_env: None) -> None:

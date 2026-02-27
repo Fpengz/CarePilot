@@ -115,6 +115,7 @@ def generate_suggestion_from_report(
     issued_correlation_id = correlation_id or str(uuid4())
     safety = _safety_block(text)
     created_at = _iso_now()
+    suggestion_id = str(uuid4())
     timeline_events: list[dict[str, object]] = []
 
     if event_timeline is not None:
@@ -124,7 +125,7 @@ def generate_suggestion_from_report(
             request_id=issued_request_id,
             correlation_id=issued_correlation_id,
             user_id=user_id,
-            payload={"safety_decision": str(safety["decision"])},
+            payload={"safety_decision": str(safety["decision"]), "suggestion_id": suggestion_id},
         )
         timeline_events.append(_event_to_json(started))
 
@@ -136,11 +137,11 @@ def generate_suggestion_from_report(
                 request_id=issued_request_id,
                 correlation_id=issued_correlation_id,
                 user_id=user_id,
-                payload={"safety_decision": str(safety["decision"])},
+                payload={"safety_decision": str(safety["decision"]), "suggestion_id": suggestion_id},
             )
             timeline_events.append(_event_to_json(escalated))
         payload: dict[str, Any] = {
-            "suggestion_id": str(uuid4()),
+            "suggestion_id": suggestion_id,
             "created_at": created_at,
             "source_user_id": user_id,
             "source_display_name": str(session["display_name"]),
@@ -182,12 +183,13 @@ def generate_suggestion_from_report(
             payload={
                 "safety_decision": str(safety["decision"]),
                 "reading_count": len(readings),
+                "suggestion_id": suggestion_id,
             },
         )
         timeline_events.append(_event_to_json(completed))
 
     payload = {
-        "suggestion_id": str(uuid4()),
+        "suggestion_id": suggestion_id,
         "created_at": created_at,
         "source_user_id": user_id,
         "source_display_name": str(session["display_name"]),
