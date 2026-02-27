@@ -50,6 +50,7 @@ def suggestions_generate_from_report(
             request_id=getattr(request.state, "request_id", None),
             correlation_id=getattr(request.state, "correlation_id", None),
             build_user_profile=build_user_profile_from_session,
+            event_timeline=context.event_timeline,
         )
     except NoMealRecordsError:
         raise HTTPException(status_code=400, detail="no meal records available")

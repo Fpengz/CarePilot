@@ -164,3 +164,27 @@ def test_suggestions_list_household_scope_includes_member_records(sqlite_suggest
     detail = member_client.get(f"/api/v1/suggestions/{helper_suggestion_id}?scope=household")
     assert detail.status_code == 200
     assert detail.json()["suggestion"]["source_user_id"] == "care_001"
+
+
+def test_suggestions_events_are_replayable_from_workflow_timeline(sqlite_suggestions_env: None) -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    admin_client = TestClient(app)
+
+    _login(member_client, "member@example.com", "member-pass")
+    _login(admin_client, "admin@example.com", "admin-pass")
+    _meal_upload(member_client)
+
+    created = member_client.post(
+        "/api/v1/suggestions/generate-from-report",
+        json={"text": "HbA1c 7.1 LDL 4.2"},
+    )
+    assert created.status_code == 200
+    correlation_id = created.json()["suggestion"]["workflow"]["correlation_id"]
+
+    replay = admin_client.get(f"/api/v1/workflows/{correlation_id}")
+    assert replay.status_code == 200
+    timeline = replay.json()["timeline_events"]
+    event_types = [event["event_type"] for event in timeline]
+    assert "workflow_started" in event_types
+    assert "workflow_completed" in event_types

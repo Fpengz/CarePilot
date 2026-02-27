@@ -83,6 +83,10 @@ If red-flag symptom text is detected, the endpoint returns `200` with:
 
 In this path, meal records are not required.
 
+### Workflow replay integration
+Suggestions workflow events are appended to the global workflow timeline. Admin users can replay a suggestion workflow using:
+- `GET /api/v1/workflows/{correlation_id}`
+
 ### `GET /api/v1/suggestions`
 Lists persisted suggestion snapshots for the authenticated user.
 

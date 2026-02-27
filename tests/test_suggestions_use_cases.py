@@ -48,6 +48,33 @@ class FakeClinicalMemory:
 
 
 @dataclass
+class FakeEventTimeline:
+    events: list[dict[str, Any]] = field(default_factory=list)
+
+    def append(
+        self,
+        *,
+        event_type: str,
+        correlation_id: str,
+        payload: dict[str, object],
+        request_id: str | None = None,
+        user_id: str | None = None,
+        workflow_name: str | None = None,
+    ) -> dict[str, Any]:
+        event = {
+            "event_type": event_type,
+            "correlation_id": correlation_id,
+            "request_id": request_id,
+            "user_id": user_id,
+            "workflow_name": workflow_name,
+            "payload": payload,
+            "created_at": "2026-01-01T00:00:00+00:00",
+        }
+        self.events.append(event)
+        return event
+
+
+@dataclass
 class FakeHouseholdStore:
     members: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
 
@@ -86,6 +113,7 @@ def _build_user_profile(_: dict[str, Any]) -> UserProfile:
 
 def test_generate_suggestion_escalates_on_red_flag_without_meal() -> None:
     repo = FakeRepository()
+    events = FakeEventTimeline()
 
     result = generate_suggestion_from_report(
         repository=repo,
@@ -95,6 +123,7 @@ def test_generate_suggestion_escalates_on_red_flag_without_meal() -> None:
         request_id="req-1",
         correlation_id="corr-1",
         build_user_profile=cast(BuildUserProfileFn, _build_user_profile),  # not used in escalation path
+        event_timeline=events,
     )
 
     assert result["safety"]["decision"] == "escalate"
@@ -117,6 +146,7 @@ def test_generate_suggestion_requires_meal_when_no_red_flag() -> None:
             request_id=None,
             correlation_id=None,
             build_user_profile=cast(BuildUserProfileFn, _build_user_profile),
+            event_timeline=FakeEventTimeline(),
         )
 
 

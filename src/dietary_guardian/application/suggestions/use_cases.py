@@ -7,7 +7,13 @@ from dietary_guardian.safety.triage import evaluate_text_safety
 from dietary_guardian.services.recommendation_service import generate_recommendation
 from dietary_guardian.services.report_parser_service import build_clinical_snapshot, parse_report_input
 
-from .ports import BuildUserProfileFn, ClinicalMemoryPort, HouseholdStorePort, SuggestionRepositoryPort
+from .ports import (
+    BuildUserProfileFn,
+    ClinicalMemoryPort,
+    EventTimelinePort,
+    HouseholdStorePort,
+    SuggestionRepositoryPort,
+)
 
 SUGGESTION_DISCLAIMER = (
     "This information is for general wellness and care support only, not a diagnosis. "
@@ -42,38 +48,15 @@ def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _build_workflow_with_timeline(
-    *,
-    request_id: str,
-    correlation_id: str,
-    user_id: str,
-    safety_decision: str,
-    completed: bool,
-) -> dict[str, object]:
-    started_at = _iso_now()
-    completed_at = _iso_now()
-    completion_type = "workflow_escalated" if safety_decision != "allow" else "workflow_completed"
-    events: list[dict[str, object]] = [
-        {
-            "event_type": "workflow_started",
-            "request_id": request_id,
-            "correlation_id": correlation_id,
-            "user_id": user_id,
-            "created_at": started_at,
-            "payload": {"safety_decision": safety_decision},
-        }
-    ]
-    if completed:
-        events.append(
-            {
-                "event_type": completion_type,
-                "request_id": request_id,
-                "correlation_id": correlation_id,
-                "user_id": user_id,
-                "created_at": completed_at,
-                "payload": {"safety_decision": safety_decision},
-            }
-        )
+def _event_to_json(event: object) -> dict[str, object]:
+    if hasattr(event, "model_dump"):
+        return dict(getattr(event, "model_dump")(mode="json"))
+    if isinstance(event, dict):
+        return {str(k): v for k, v in event.items()}
+    return {"event_type": "unknown"}
+
+
+def _build_workflow_with_timeline(*, request_id: str, correlation_id: str, events: list[dict[str, object]]) -> dict[str, object]:
     return {
         "workflow_name": "suggestions_generate_from_report",
         "request_id": request_id,
@@ -125,14 +108,37 @@ def generate_suggestion_from_report(
     request_id: str | None,
     correlation_id: str | None,
     build_user_profile: BuildUserProfileFn,
+    event_timeline: EventTimelinePort | None = None,
 ) -> dict[str, Any]:
     user_id = str(session["user_id"])
     issued_request_id = request_id or str(uuid4())
     issued_correlation_id = correlation_id or str(uuid4())
     safety = _safety_block(text)
-    created_at = datetime.now(timezone.utc).isoformat()
+    created_at = _iso_now()
+    timeline_events: list[dict[str, object]] = []
+
+    if event_timeline is not None:
+        started = event_timeline.append(
+            event_type="workflow_started",
+            workflow_name="suggestions_generate_from_report",
+            request_id=issued_request_id,
+            correlation_id=issued_correlation_id,
+            user_id=user_id,
+            payload={"safety_decision": str(safety["decision"])},
+        )
+        timeline_events.append(_event_to_json(started))
 
     if safety["decision"] != "allow":
+        if event_timeline is not None:
+            escalated = event_timeline.append(
+                event_type="workflow_escalated",
+                workflow_name="suggestions_generate_from_report",
+                request_id=issued_request_id,
+                correlation_id=issued_correlation_id,
+                user_id=user_id,
+                payload={"safety_decision": str(safety["decision"])},
+            )
+            timeline_events.append(_event_to_json(escalated))
         payload: dict[str, Any] = {
             "suggestion_id": str(uuid4()),
             "created_at": created_at,
@@ -148,13 +154,7 @@ def generate_suggestion_from_report(
                 "blocked_reason": "red_flag_escalation",
                 "evidence": {},
             },
-            "workflow": _build_workflow_with_timeline(
-                request_id=issued_request_id,
-                correlation_id=issued_correlation_id,
-                user_id=user_id,
-                safety_decision=str(safety["decision"]),
-                completed=True,
-            ),
+            "workflow": _build_workflow_with_timeline(request_id=issued_request_id, correlation_id=issued_correlation_id, events=timeline_events),
         }
         return repository.save_suggestion_record(user_id, payload)
 
@@ -172,6 +172,20 @@ def generate_suggestion_from_report(
     recommendation_json = recommendation.model_dump(mode="json")
     repository.save_recommendation(user_id, recommendation_json)
 
+    if event_timeline is not None:
+        completed = event_timeline.append(
+            event_type="workflow_completed",
+            workflow_name="suggestions_generate_from_report",
+            request_id=issued_request_id,
+            correlation_id=issued_correlation_id,
+            user_id=user_id,
+            payload={
+                "safety_decision": str(safety["decision"]),
+                "reading_count": len(readings),
+            },
+        )
+        timeline_events.append(_event_to_json(completed))
+
     payload = {
         "suggestion_id": str(uuid4()),
         "created_at": created_at,
@@ -184,13 +198,7 @@ def generate_suggestion_from_report(
             "snapshot": snapshot.model_dump(mode="json"),
         },
         "recommendation": recommendation_json,
-        "workflow": _build_workflow_with_timeline(
-            request_id=issued_request_id,
-            correlation_id=issued_correlation_id,
-            user_id=user_id,
-            safety_decision=str(safety["decision"]),
-            completed=True,
-        ),
+        "workflow": _build_workflow_with_timeline(request_id=issued_request_id, correlation_id=issued_correlation_id, events=timeline_events),
     }
     return repository.save_suggestion_record(user_id, payload)
 

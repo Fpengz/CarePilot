@@ -19,6 +19,19 @@ class ClinicalMemoryPort(Protocol):
     def put(self, user_id: str, snapshot: ClinicalProfileSnapshot) -> None: ...
 
 
+class EventTimelinePort(Protocol):
+    def append(
+        self,
+        *,
+        event_type: str,
+        correlation_id: str,
+        payload: dict[str, object],
+        request_id: str | None = None,
+        user_id: str | None = None,
+        workflow_name: str | None = None,
+    ) -> Any: ...
+
+
 class HouseholdStorePort(Protocol):
     def get_member_role(self, household_id: str, user_id: str) -> str | None: ...
     def list_members(self, household_id: str) -> list[dict[str, Any]]: ...
