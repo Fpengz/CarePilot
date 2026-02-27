@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
@@ -14,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { generateSuggestionFromReport, getSuggestion, listSuggestions } from "@/lib/api";
 import type { SuggestionItemApi } from "@/lib/types";
+import { useSession } from "@/components/app/session-provider";
 
 const DEFAULT_REPORT = "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95";
 
@@ -24,6 +26,7 @@ function formatDate(value: string): string {
 }
 
 export default function SuggestionsPage() {
+  const { hasScope, status } = useSession();
   const [reportText, setReportText] = useState(DEFAULT_REPORT);
   const [selected, setSelected] = useState<SuggestionItemApi | null>(null);
   const [items, setItems] = useState<SuggestionItemApi[]>([]);
@@ -31,6 +34,7 @@ export default function SuggestionsPage() {
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"generate" | "load" | "open" | null>(null);
+  const canInspectWorkflow = status === "authenticated" && hasScope("workflow:replay");
 
   const recommendation = selected?.recommendation;
   const recommendationEntries = useMemo(
@@ -156,6 +160,18 @@ export default function SuggestionsPage() {
                 <p className="app-muted mt-2 text-xs">
                   Active history scope: <span className="font-medium">{scope}</span>
                 </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button variant="secondary" size="sm" className="h-8 px-2 text-xs" asChild>
+                    <Link href={`/workflows?correlation_id=${selected.workflow.correlation_id}`}>
+                      Open Workflow Trace
+                    </Link>
+                  </Button>
+                  {!canInspectWorkflow ? (
+                    <span className="app-muted text-xs">
+                      Admin scope `workflow:replay` required to load trace details.
+                    </span>
+                  ) : null}
+                </div>
               </div>
             ) : null}
           </CardContent>

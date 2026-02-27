@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
@@ -16,6 +17,7 @@ import { getWorkflow, listWorkflows } from "@/lib/api";
 export default function WorkflowsPage() {
   const { hasScope, status } = useSession();
   const [correlationId, setCorrelationId] = useState("");
+  const [queryCorrelationId, setQueryCorrelationId] = useState("");
   const [result, setResult] = useState<object | null>(null);
   const [listResult, setListResult] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,39 @@ export default function WorkflowsPage() {
   const canList = status === "authenticated" && hasScope("workflow:read");
   const canFetch = status === "authenticated" && hasScope("workflow:replay");
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const corr = params.get("correlation_id") ?? "";
+    if (corr) setQueryCorrelationId(corr);
+  }, []);
+
+  useEffect(() => {
+    if (queryCorrelationId && queryCorrelationId !== correlationId) {
+      setCorrelationId(queryCorrelationId);
+    }
+  }, [queryCorrelationId, correlationId]);
+
+  useEffect(() => {
+    if (!queryCorrelationId || !canFetch) return;
+    let cancelled = false;
+    const run = async () => {
+      setError(null);
+      setLoadingAction("fetch");
+      try {
+        const workflow = await getWorkflow(queryCorrelationId);
+        if (!cancelled) setResult(workflow);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoadingAction(null);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryCorrelationId, canFetch]);
+
   return (
     <div>
       <PageTitle
@@ -45,7 +80,10 @@ export default function WorkflowsPage() {
         <Card className="grain-overlay">
           <CardHeader>
             <CardTitle>Workflow Lookup</CardTitle>
-            <CardDescription>Use the collection route first, then replay a specific correlation timeline.</CardDescription>
+            <CardDescription>
+              Use the collection route first, then replay a specific correlation timeline.
+              {queryCorrelationId ? ` Query prefill: ${queryCorrelationId}` : ""}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {!canList || !canFetch ? (
