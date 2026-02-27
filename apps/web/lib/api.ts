@@ -17,6 +17,9 @@ import type {
   MealAnalyzeApiResponse,
   MealRecordsApiResponse,
   RecommendationGenerateApiResponse,
+  SuggestionDetailApiResponse,
+  SuggestionGenerateApiResponse,
+  SuggestionListApiResponse,
   ReminderConfirmApiResponse,
   ReminderGenerateApiResponse,
   ReminderListApiResponse,
@@ -229,6 +232,25 @@ export async function generateRecommendation(): Promise<RecommendationGenerateAp
     method: "POST",
     body: JSON.stringify({}),
   });
+}
+
+export async function generateSuggestionFromReport(payload: {
+  source?: "pasted_text";
+  text: string;
+}): Promise<SuggestionGenerateApiResponse> {
+  return request<SuggestionGenerateApiResponse>("/api/v1/suggestions/generate-from-report", {
+    method: "POST",
+    body: JSON.stringify({ source: "pasted_text", ...payload }),
+  });
+}
+
+export async function listSuggestions(limit?: number): Promise<SuggestionListApiResponse> {
+  const query = typeof limit === "number" ? `?limit=${Math.max(1, Math.floor(limit))}` : "";
+  return request<SuggestionListApiResponse>(`/api/v1/suggestions${query}`);
+}
+
+export async function getSuggestion(suggestionId: string): Promise<SuggestionDetailApiResponse> {
+  return request<SuggestionDetailApiResponse>(`/api/v1/suggestions/${suggestionId}`);
 }
 
 export async function generateReminders(): Promise<ReminderGenerateApiResponse> {

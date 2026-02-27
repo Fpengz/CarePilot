@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   ["Login", "/login"],
   ["Dashboard", "/dashboard"],
   ["Meals", "/meals"],
-  ["Reports", "/reports"],
+  ["Suggestions", "/suggestions"],
   ["Reminders", "/reminders"],
   ["Alerts", "/alerts"],
   ["Workflows", "/workflows"],

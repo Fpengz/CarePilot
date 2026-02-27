@@ -175,6 +175,33 @@ export interface RecommendationGenerateApiResponse {
   workflow: WorkflowExecutionResult;
 }
 
+export interface SuggestionItemApi {
+  suggestion_id: string;
+  created_at: string;
+  disclaimer: string;
+  report_parse: {
+    readings: Array<Record<string, unknown>>;
+    snapshot: {
+      biomarkers: Record<string, number>;
+      risk_flags: string[];
+    };
+  };
+  recommendation: Record<string, unknown>;
+  workflow: WorkflowExecutionResult;
+}
+
+export interface SuggestionGenerateApiResponse {
+  suggestion: SuggestionItemApi;
+}
+
+export interface SuggestionListApiResponse {
+  items: SuggestionItemApi[];
+}
+
+export interface SuggestionDetailApiResponse {
+  suggestion: SuggestionItemApi;
+}
+
 export interface ReminderEventView {
   id: string;
   medication_name: string;

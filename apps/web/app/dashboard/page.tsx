@@ -19,7 +19,7 @@ export default function DashboardPage() {
         {[
           ["Meal Analysis", "Upload photos, inspect summaries, and review saved records.", "/meals"],
           ["Reminders", "Generate events and confirm meals with metrics feedback.", "/reminders"],
-          ["Reports", "Parse report text and produce recommendation outputs.", "/reports"],
+          ["Suggestions", "Parse report text and generate persisted suggestions.", "/suggestions"],
           ["Household", "Create a family-like group and manage invites/members.", "/household"],
         ].map(([title, text, href]) => (
           <Card key={title} className="grain-overlay">

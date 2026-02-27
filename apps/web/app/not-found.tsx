@@ -22,7 +22,7 @@ export default function NotFoundPage() {
             ["/login", "Login"],
             ["/dashboard", "Dashboard"],
             ["/meals", "Meals"],
-            ["/reports", "Reports"],
+            ["/suggestions", "Suggestions"],
             ["/reminders", "Reminders"],
           ].map(([href, label]) => (
             <Button key={href} asChild variant="secondary">
