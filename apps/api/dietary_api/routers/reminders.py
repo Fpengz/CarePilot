@@ -4,8 +4,22 @@ from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
     ReminderConfirmRequest,
     ReminderConfirmResponse,
+    ReminderNotificationEndpointListResponse,
+    ReminderNotificationEndpointUpdateRequest,
     ReminderGenerateResponse,
+    ReminderNotificationLogListResponse,
     ReminderListResponse,
+    ReminderNotificationPreferenceListResponse,
+    ReminderNotificationPreferenceUpdateRequest,
+    ScheduledReminderNotificationListResponse,
+)
+from ..services.reminder_notifications import (
+    list_notification_endpoints,
+    list_notification_preferences,
+    list_reminder_notification_logs,
+    list_reminder_notification_schedules,
+    replace_notification_endpoints,
+    replace_notification_preferences,
 )
 from ..services.reminders import (
     confirm_reminder_for_session,
@@ -50,4 +64,109 @@ def reminders_confirm(
         user_id=str(session["user_id"]),
         event_id=event_id,
         confirmed=payload.confirmed,
+    )
+
+
+@router.get("/api/v1/reminder-notification-preferences", response_model=ReminderNotificationPreferenceListResponse)
+def reminder_notification_preferences_list(
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> ReminderNotificationPreferenceListResponse:
+    require_action(session, "reminders.read")
+    return list_notification_preferences(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+    )
+
+
+@router.put("/api/v1/reminder-notification-preferences/default", response_model=ReminderNotificationPreferenceListResponse)
+def reminder_notification_preferences_replace_default(
+    payload: ReminderNotificationPreferenceUpdateRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> ReminderNotificationPreferenceListResponse:
+    require_action(session, "reminders.confirm")
+    return replace_notification_preferences(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        scope_type="default",
+        scope_key=None,
+        rules=payload.rules,
+    )
+
+
+@router.put(
+    "/api/v1/reminder-notification-preferences/reminder-types/{reminder_type}",
+    response_model=ReminderNotificationPreferenceListResponse,
+)
+def reminder_notification_preferences_replace_by_type(
+    reminder_type: str,
+    payload: ReminderNotificationPreferenceUpdateRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> ReminderNotificationPreferenceListResponse:
+    require_action(session, "reminders.confirm")
+    return replace_notification_preferences(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        scope_type="reminder_type",
+        scope_key=reminder_type,
+        rules=payload.rules,
+    )
+
+
+@router.get(
+    "/api/v1/reminders/{event_id}/notification-schedules",
+    response_model=ScheduledReminderNotificationListResponse,
+)
+def reminder_notification_schedules_list(
+    event_id: str,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> ScheduledReminderNotificationListResponse:
+    require_action(session, "reminders.read")
+    return list_reminder_notification_schedules(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        reminder_id=event_id,
+    )
+
+
+@router.get("/api/v1/reminder-notification-endpoints", response_model=ReminderNotificationEndpointListResponse)
+def reminder_notification_endpoints_list(
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> ReminderNotificationEndpointListResponse:
+    require_action(session, "reminders.read")
+    return list_notification_endpoints(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+    )
+
+
+@router.put("/api/v1/reminder-notification-endpoints", response_model=ReminderNotificationEndpointListResponse)
+def reminder_notification_endpoints_replace(
+    payload: ReminderNotificationEndpointUpdateRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> ReminderNotificationEndpointListResponse:
+    require_action(session, "reminders.confirm")
+    return replace_notification_endpoints(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        endpoints=payload.endpoints,
+    )
+
+
+@router.get("/api/v1/reminders/{event_id}/notification-logs", response_model=ReminderNotificationLogListResponse)
+def reminder_notification_logs_list(
+    event_id: str,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> ReminderNotificationLogListResponse:
+    require_action(session, "reminders.read")
+    return list_reminder_notification_logs(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        reminder_id=event_id,
     )

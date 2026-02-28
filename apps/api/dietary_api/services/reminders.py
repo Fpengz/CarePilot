@@ -16,6 +16,10 @@ from dietary_guardian.services.medication_service import (
     generate_daily_reminders,
     mark_meal_confirmation,
 )
+from dietary_guardian.services.reminder_notification_service import (
+    cancel_reminder_notifications,
+    materialize_reminder_notifications,
+)
 
 
 def generate_reminders_for_session(*, context: AppContext, session: dict[str, object]) -> ReminderGenerateResponse:
@@ -27,6 +31,11 @@ def generate_reminders_for_session(*, context: AppContext, session: dict[str, ob
     )
     for reminder in reminders:
         context.repository.save_reminder_event(reminder)
+        materialize_reminder_notifications(
+            repository=context.repository,
+            reminder_event=reminder,
+            reminder_type="medication",
+        )
     current_events = context.repository.list_reminder_events(user_profile.id)
     metrics = compute_mcr(current_events)
     return ReminderGenerateResponse(
@@ -60,6 +69,7 @@ def confirm_reminder_for_session(
         datetime.now(timezone.utc),
         context.repository,
     )
+    cancel_reminder_notifications(repository=context.repository, reminder_id=event_id)
     metrics = compute_mcr(context.repository.list_reminder_events(user_id))
     return ReminderConfirmResponse(
         event=updated.model_dump(mode="json"),
