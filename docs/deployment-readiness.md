@@ -10,7 +10,7 @@
   - `pnpm web:lint`
   - `pnpm web:typecheck`
   - `pnpm web:build`
-  - `pnpm --dir apps/web test:e2e` (Playwright smoke)
+  - `pnpm --dir apps/web test:e2e` (Playwright smoke for login, mobile navigation, and adaptive dashboard agent)
 
 ## Container Hardening
 - Added root `Dockerfile`:

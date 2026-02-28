@@ -38,6 +38,11 @@ The system now separates:
 - `POST /api/v1/auth/logout` -> authenticated session
 - `GET /api/v1/auth/me` -> authenticated session
 
+### Health Profile / Personalization
+- `GET /api/v1/profile/health` -> authenticated session
+- `PATCH /api/v1/profile/health` -> authenticated session
+- `GET /api/v1/suggestions/daily` -> authenticated session
+
 ### Meals
 - `POST /api/v1/meal/analyze` -> `meal:write`
 - `GET /api/v1/meal/records` -> `meal:read`
@@ -45,6 +50,14 @@ The system now separates:
 ### Reports / Recommendations
 - `POST /api/v1/reports/parse` -> `report:write`
 - `POST /api/v1/recommendations/generate` -> `recommendation:generate`
+- `GET /api/v1/recommendations/daily-agent` -> `recommendation:generate`
+- `POST /api/v1/recommendations/substitutions` -> `recommendation:generate`
+- `POST /api/v1/recommendations/interactions` -> `recommendation:generate`
+
+### Suggestions
+- `POST /api/v1/suggestions/generate-from-report` -> `report:write` + `recommendation:generate`
+- `GET /api/v1/suggestions` -> `report:read`
+- `GET /api/v1/suggestions/{suggestion_id}` -> `report:read`
 
 ### Reminders
 - `POST /api/v1/reminders/generate` -> `reminder:write`
@@ -60,4 +73,3 @@ The system now separates:
 ## Tool Policy (Internal)
 - `trigger_alert` tool requires `alert:trigger` scope
 - Tool registry policy is scope-based (`required_scopes`), not role-name based
-

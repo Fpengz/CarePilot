@@ -10,10 +10,13 @@
 
 ## Propagation Paths
 - API routes:
+  - Health profile read/update
+  - Deterministic daily suggestions
   - Suggestions generate/list/detail
   - Meal analyze/records
   - Alerts trigger/timeline
   - Recommendations generate
+  - Recommendations daily-agent / substitutions / interactions
 - Application/workflow services:
   - Suggestions workflow payload (`workflow.request_id`, `workflow.correlation_id`)
   - Meal capture/workflow timeline events
@@ -29,6 +32,13 @@
   - `event`, `method`, `path`, `status_code`, `error_code`, `error_message`, `request_id`, `correlation_id`, `failure_metadata`
 - Meal inference summary event:
   - `event` (message prefix `hawker_vision_response_summary`), `request_id`, `correlation_id`, `provider`, `model`, `endpoint`, `destination`, `confidence`, `manual_review`, `reason`
+- Adaptive recommendation agent events:
+  - `agent_recommendation_complete` -> `user_id`, `fallback_mode`, `interactions`, `recommendations`
+  - `interaction_learning_complete` -> `user_id`, `candidate_id`, `event_type`, `interactions`
+- Persistence support events relevant to personalization:
+  - `save_health_profile` -> `user_id`, `goals`
+  - `save_recommendation_interaction` -> `user_id`, `candidate_id`, `event_type`
+  - `save_preference_snapshot` -> `user_id`, `interactions`
 
 ## Dev Log Toggles
 - Backend:
@@ -45,3 +55,7 @@
   - Meal workflow propagation
   - Alert workflow propagation
   - Failure log enrichment
+
+## Current Gaps
+- The adaptive recommendation service currently emits completion-level learning/ranking logs, but not per-candidate ranking traces.
+- Offline learning refresh telemetry does not exist yet because refresh remains an in-process online rerank model in the current release.

@@ -10,6 +10,15 @@ Dietary Guardian v1 uses a **web-first monorepo** with thin apps (`api`, `web`) 
 
 This architecture is implemented incrementally. During the migration, legacy modules under `src/dietary_guardian/services` and `src/dietary_guardian/models` remain as compatibility layers while responsibilities move into the new packages.
 
+The current release also includes an adaptive recommendation compatibility slice under `src/dietary_guardian/services/recommendation_agent_service.py`. It combines:
+- persisted health profiles
+- meal log history
+- biomarker context
+- localized meal catalog rules
+- online interaction learning
+
+This remains a service-layer implementation today, with the target long-term home in application/infrastructure packages once the hexagonal extraction converges.
+
 ## Core Design Rules
 1. **Apps are thin**
    - `apps/api` handles transport/HTTP only
@@ -30,6 +39,8 @@ This architecture is implemented incrementally. During the migration, legacy mod
   - target: `src/dietary_guardian/infrastructure/persistence/*`
 - `apps/api/dietary_api/services/*`
   - target: application use-cases + DTO mapping (routers remain thin)
+- `src/dietary_guardian/services/recommendation_agent_service.py`
+  - target: `src/dietary_guardian/application/recommendations/*` + persistence/catalog adapters
 - `apps/api/dietary_api/auth.py`
   - now a compatibility layer re-exporting auth infrastructure classes
 - `apps/api/dietary_api/routers/suggestions.py`
@@ -40,6 +51,11 @@ This architecture is implemented incrementally. During the migration, legacy mod
 2. Meal analysis workflow and API use-case extraction
 3. Suggestions flow orchestration + persistence
 4. Household basics domain/application/infrastructure/API/web
+5. Adaptive recommendation agent extraction from service-layer compatibility code
 
 ## Worker Boundary (v1)
 The architecture prepares for a worker app (`apps/workers`) but v1 may continue to run workflows in-process unless a specific flow needs background execution. Outbox and job interfaces should be designed as ports so they can be moved later without changing application logic.
+
+For personalization, this matters in the next phase:
+- online interaction learning currently runs in-process during API requests
+- offline preference refresh / catalog reindexing should move behind an explicit worker boundary

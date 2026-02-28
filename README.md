@@ -5,7 +5,7 @@ Dietary Guardian SG is a dietary and medication support system for both:
 - people managing chronic conditions, and
 - general wellness users who want help with daily health routines.
 
-The platform combines meal recognition, medication reminder workflows, report parsing, and safety checks in a local-first architecture.
+The platform combines meal recognition, medication reminder workflows, report parsing, safety checks, and an adaptive meal recommendation agent in a local-first architecture.
 
 ## Identity and Access Model
 The system now separates authorization and user persona:
@@ -17,6 +17,7 @@ Policy enforcement is now action-based in API routes (for example `meal.analyze`
 
 See `docs/rbac-matrix.md` for the current RBAC matrix and endpoint permissions.
 See `docs/api-auth-contract.md` for auth payload examples and migration notes.
+See `docs/api-recommendation-agent-contract.md` for the adaptive meal agent API, substitution flow, and feedback loop contract.
 See `docs/architecture-v1.md` for the v1 target architecture (hexagonal + workflow orchestration).
 See `docs/config-reference.md` for backend environment variables and defaults.
 See `docs/nightly-ops.md` for the nightly autonomous build runbook.
@@ -272,14 +273,16 @@ Status labels:
   - Signup/login/profile/password/session management and household owner/member flows are operational.
 - `**[Complete]**` Meal + suggestions core workflow:
   - Typed meal summaries, meal history pagination, unified suggestions orchestration, and household-shared suggestion reads are implemented.
+- `**[Complete]**` Adaptive meal intelligence:
+  - Persisted health profiles, behavior-aware daily recommendations, healthier substitution planning, and online interaction learning are implemented.
 - `**[Complete]**` Policy and observability hardening:
   - Action-based authorization, centralized error semantics, and request/correlation propagation are in place.
 - `**[Complete]**` UI/UX stabilization:
-  - Structured views replaced debug-first surfaces, mobile/a11y polish landed, and smoke e2e tests cover core journeys.
+  - Structured views replaced debug-first surfaces, mobile/a11y polish landed, and smoke e2e tests cover login, mobile navigation, and the adaptive dashboard agent.
 
 ### Next
+- `**[Planned]**` Offline preference refresh, meal catalog operations, and stronger recommendation diagnostics.
 - `**[Planned]**` Environment profiles + secrets hygiene.
-- `**[Planned]**` CI/local validation parity + coverage maturity.
 - `**[Planned]**` Expanded runtime readiness and diagnostics.
 
 ### Later

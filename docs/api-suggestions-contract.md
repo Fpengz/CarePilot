@@ -7,6 +7,8 @@ This is a convenience orchestration endpoint that builds on the existing lower-l
 - `POST /api/v1/reports/parse`
 - `POST /api/v1/recommendations/generate`
 
+For the adaptive meal feed, healthier substitutions, and interaction-learning endpoints, see `docs/api-recommendation-agent-contract.md`.
+
 ## Endpoints
 
 ### `POST /api/v1/suggestions/generate-from-report`
