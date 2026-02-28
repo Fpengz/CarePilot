@@ -415,13 +415,16 @@ class SQLiteAuthStore:
         return session
 
     def _row_to_session(self, row: sqlite3.Row) -> dict[str, Any]:
+        scopes_raw = json.loads(str(row["scopes_json"]))
+        if not isinstance(scopes_raw, list) or not all(isinstance(item, str) for item in scopes_raw):
+            raise ValueError("invalid scopes_json")
         return {
             "session_id": str(row["session_id"]),
             "user_id": str(row["user_id"]),
             "email": str(row["email"]),
             "account_role": str(row["account_role"]),
             "profile_mode": str(row["profile_mode"]),
-            "scopes": cast(list[str], json.loads(str(row["scopes_json"]))),
+            "scopes": cast(list[str], scopes_raw),
             "display_name": str(row["display_name"]),
             "issued_at": str(row["issued_at"]),
             "subject_user_id": str(row["subject_user_id"]),
@@ -437,7 +440,11 @@ class SQLiteAuthStore:
         ).fetchone()
         if row is None:
             return None
-        session = self._row_to_session(cast(sqlite3.Row, row))
+        try:
+            session = self._row_to_session(cast(sqlite3.Row, row))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            self.destroy_session(session_id)
+            return None
         issued_at_raw = session.get("issued_at")
         if not isinstance(issued_at_raw, str):
             self.destroy_session(session_id)

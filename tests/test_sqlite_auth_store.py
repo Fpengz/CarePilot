@@ -64,3 +64,26 @@ def test_sqlite_auth_store_records_login_lockout_and_audit_events(tmp_path) -> N
     items = store.list_auth_audit_events(limit=5)
     assert items
     assert items[0]["event_type"] == "login_locked"
+
+
+def test_sqlite_auth_store_drops_session_with_invalid_scopes_json(tmp_path) -> None:
+    db_path = tmp_path / "auth.db"
+    settings = Settings(llm_provider="test")
+    store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
+    user = store.authenticate("member@example.com", "member-pass")
+    assert user is not None
+    session = store.create_session(user)
+    session_id = str(session["session_id"])
+
+    store._conn.execute(
+        "UPDATE auth_sessions SET scopes_json = ? WHERE session_id = ?",
+        ("", session_id),
+    )
+    store._conn.commit()
+
+    assert store.get_session(session_id) is None
+    row = store._conn.execute(
+        "SELECT session_id FROM auth_sessions WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+    assert row is None
