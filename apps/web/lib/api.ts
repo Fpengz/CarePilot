@@ -34,6 +34,7 @@ import type {
   WorkflowExecutionResult,
   WorkflowListApiResponse,
 } from "@/lib/types";
+import { getConsolePrinter } from "@/lib/console-safe";
 
 // Default to same-origin proxy so browser auth cookies stay first-party for localhost and LAN hosts.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/backend";
@@ -75,7 +76,7 @@ function parseJsonMaybe(body: string): unknown {
 
 function logFrontendApi(event: string, payload: Record<string, unknown>) {
   if (!FRONTEND_API_LOG_ENABLED || typeof window === "undefined") return;
-  const printer = event.includes("error") ? console.error : console.info;
+  const printer = getConsolePrinter(console, event);
   printer(`[frontend-api] ${event}`, redactSensitive(payload));
 }
 
