@@ -63,6 +63,13 @@ The system now separates:
 - `POST /api/v1/reminders/generate` -> `reminder:write`
 - `GET /api/v1/reminders` -> `reminder:read`
 - `POST /api/v1/reminders/{event_id}/confirm` -> `reminder:write`
+- `GET /api/v1/reminders/{event_id}/notification-schedules` -> `reminder:read`
+- `GET /api/v1/reminders/{event_id}/notification-logs` -> `reminder:read`
+- `GET /api/v1/reminder-notification-preferences` -> `reminder:read`
+- `PUT /api/v1/reminder-notification-preferences/default` -> `reminder:write`
+- `PUT /api/v1/reminder-notification-preferences/reminder-types/{type}` -> `reminder:write`
+- `GET /api/v1/reminder-notification-endpoints` -> `reminder:read`
+- `PUT /api/v1/reminder-notification-endpoints` -> `reminder:write`
 
 ### Alerts / Workflows (privileged)
 - `POST /api/v1/alerts/trigger` -> `alert:trigger`

@@ -59,3 +59,18 @@ Environment loading conventions:
 - `TELEGRAM_CHAT_ID`
 - `TELEGRAM_DEV_MODE` (default: `true`)
 - `TELEGRAM_REQUEST_TIMEOUT_SECONDS` (default: `10`)
+
+## Notifications (Email / SMS / Reminder Scheduler)
+- `EMAIL_DEV_MODE` (default: `true`)
+- `EMAIL_SMTP_HOST`
+- `EMAIL_SMTP_PORT` (default: `587`)
+- `EMAIL_SMTP_USERNAME`
+- `EMAIL_SMTP_PASSWORD`
+- `EMAIL_SMTP_USE_TLS` (default: `true`)
+- `EMAIL_FROM_ADDRESS` (default: `noreply@dietary-guardian.local`)
+- `SMS_DEV_MODE` (default: `true`)
+- `SMS_WEBHOOK_URL`
+- `SMS_API_KEY`
+- `SMS_SENDER_ID` (default: `DietaryGuardian`)
+- `REMINDER_SCHEDULER_INTERVAL_SECONDS` (default: `30`)
+- `REMINDER_SCHEDULER_BATCH_SIZE` (default: `100`)

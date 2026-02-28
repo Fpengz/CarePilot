@@ -162,6 +162,37 @@ export TELEGRAM_DEV_MODE="1"
 
 When `TELEGRAM_DEV_MODE=1`, Telegram delivery returns a deterministic success path without issuing a live network request.
 
+### Email
+```bash
+export EMAIL_DEV_MODE="1"
+export EMAIL_SMTP_HOST="smtp.example.com"
+export EMAIL_SMTP_PORT="587"
+export EMAIL_SMTP_USERNAME="smtp-user"
+export EMAIL_SMTP_PASSWORD="smtp-pass"
+export EMAIL_SMTP_USE_TLS="1"
+export EMAIL_FROM_ADDRESS="noreply@example.com"
+```
+
+When `EMAIL_DEV_MODE=1`, reminder email delivery is simulated but still recorded in reminder notification logs.
+
+### SMS
+```bash
+export SMS_DEV_MODE="1"
+export SMS_WEBHOOK_URL="https://sms-provider.example/send"
+export SMS_API_KEY="<token>"
+export SMS_SENDER_ID="DietaryGuardian"
+```
+
+When `SMS_DEV_MODE=1`, SMS delivery is simulated but still recorded in reminder notification logs.
+
+### Reminder Scheduler
+- `pnpm dev` starts the API, web app, and the reminder scheduler loop.
+- Disable the scheduler in dev with `START_REMINDER_SCHEDULER=0 ./scripts/dev.sh`.
+- Run the scheduler alone with `pnpm dev:scheduler`.
+- Scheduler tuning:
+  - `REMINDER_SCHEDULER_INTERVAL_SECONDS`
+  - `REMINDER_SCHEDULER_BATCH_SIZE`
+
 ## Pre-commit Setup
 ### Install Hooks
 ```bash

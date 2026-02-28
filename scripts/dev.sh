@@ -14,6 +14,7 @@ fi
 
 START_API=1
 START_WEB=1
+START_REMINDER_SCHEDULER="${START_REMINDER_SCHEDULER:-1}"
 
 usage() {
   cat <<'EOF'
@@ -100,6 +101,7 @@ export NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE="${NEXT_PUBLIC_DEV_LOG_FRONTEND_VERB
 
 API_PID=""
 WEB_PID=""
+SCHEDULER_PID=""
 
 cleanup() {
   local exit_code=${1:-0}
@@ -109,6 +111,9 @@ cleanup() {
   fi
   if [[ -n "$WEB_PID" ]] && kill -0 "$WEB_PID" >/dev/null 2>&1; then
     kill "$WEB_PID" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "$SCHEDULER_PID" ]] && kill -0 "$SCHEDULER_PID" >/dev/null 2>&1; then
+    kill "$SCHEDULER_PID" >/dev/null 2>&1 || true
   fi
   wait >/dev/null 2>&1 || true
   exit "$exit_code"
@@ -123,6 +128,12 @@ if [[ "$START_API" -eq 1 ]]; then
   API_PID=$!
 fi
 
+if [[ "$START_API" -eq 1 && "$START_REMINDER_SCHEDULER" == "1" ]]; then
+  echo "[dev] starting Reminder Scheduler: uv run python -m apps.api.run_reminder_scheduler"
+  uv run python -m apps.api.run_reminder_scheduler &
+  SCHEDULER_PID=$!
+fi
+
 if [[ "$START_WEB" -eq 1 ]]; then
   echo "[dev] starting Web: pnpm web:dev"
   pnpm web:dev &
@@ -134,6 +145,9 @@ if [[ -n "$API_PID" ]]; then
 fi
 if [[ -n "$WEB_PID" ]]; then
   echo "[dev] Web PID: $WEB_PID (http://localhost:3000)"
+fi
+if [[ -n "$SCHEDULER_PID" ]]; then
+  echo "[dev] Reminder Scheduler PID: $SCHEDULER_PID"
 fi
 echo "[dev] API_CORS_ORIGINS=$API_CORS_ORIGINS"
 echo "[dev] NEXT_ALLOWED_DEV_ORIGINS=$NEXT_ALLOWED_DEV_ORIGINS"
@@ -147,6 +161,7 @@ else
 fi
 echo "[dev] API_DEV_LOG_VERBOSE=$API_DEV_LOG_VERBOSE API_DEV_LOG_HEADERS=$API_DEV_LOG_HEADERS API_DEV_LOG_RESPONSE_HEADERS=$API_DEV_LOG_RESPONSE_HEADERS"
 echo "[dev] NEXT_PUBLIC_DEV_LOG_FRONTEND=$NEXT_PUBLIC_DEV_LOG_FRONTEND NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE=$NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE"
+echo "[dev] START_REMINDER_SCHEDULER=$START_REMINDER_SCHEDULER"
 echo "[dev] Press Ctrl+C to stop."
 
 while :; do
@@ -158,6 +173,11 @@ while :; do
   if [[ -n "$WEB_PID" ]] && ! kill -0 "$WEB_PID" >/dev/null 2>&1; then
     wait "$WEB_PID"
     echo "[dev] Web exited; stopping remaining services." >&2
+    exit 1
+  fi
+  if [[ -n "$SCHEDULER_PID" ]] && ! kill -0 "$SCHEDULER_PID" >/dev/null 2>&1; then
+    wait "$SCHEDULER_PID"
+    echo "[dev] Reminder Scheduler exited; stopping remaining services." >&2
     exit 1
   fi
   sleep 1
