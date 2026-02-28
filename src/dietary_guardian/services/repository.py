@@ -9,6 +9,9 @@ from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.models.medication import MedicationRegimen, ReminderEvent
 from dietary_guardian.models.report import BiomarkerReading
 from dietary_guardian.models.alerting import AlertMessage, OutboxRecord
+from dietary_guardian.models.health_profile import HealthProfileRecord
+from dietary_guardian.models.recommendation_agent import MealCatalogItem, PreferenceSnapshot, RecommendationInteraction
+from dietary_guardian.services.meal_catalog_service import DEFAULT_MEAL_CATALOG
 
 logger = get_logger(__name__)
 
@@ -102,6 +105,51 @@ class SQLiteRepository:
             )
             cur.execute(
                 """
+                CREATE TABLE IF NOT EXISTS health_profiles (
+                    user_id TEXT PRIMARY KEY,
+                    updated_at TEXT NOT NULL,
+                    payload_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS meal_catalog (
+                    meal_id TEXT PRIMARY KEY,
+                    locale TEXT NOT NULL,
+                    slot TEXT NOT NULL,
+                    active INTEGER NOT NULL,
+                    payload_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS recommendation_interactions (
+                    interaction_id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    recommendation_id TEXT NOT NULL,
+                    candidate_id TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    slot TEXT NOT NULL,
+                    source_meal_id TEXT,
+                    selected_meal_id TEXT,
+                    created_at TEXT NOT NULL,
+                    metadata_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS preference_snapshots (
+                    user_id TEXT PRIMARY KEY,
+                    updated_at TEXT NOT NULL,
+                    payload_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS alert_outbox (
                     alert_id TEXT NOT NULL,
                     sink TEXT NOT NULL,
@@ -140,9 +188,30 @@ class SQLiteRepository:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_meals_user_time ON meal_records(user_id, captured_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_biomarkers_user_time_name ON biomarker_readings(user_id, measured_at, name)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_suggestions_user_time ON suggestion_records(user_id, created_at DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_health_profiles_updated_at ON health_profiles(updated_at DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_meal_catalog_locale_slot ON meal_catalog(locale, slot)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_recommendation_interactions_user_time ON recommendation_interactions(user_id, created_at DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_preference_snapshots_updated_at ON preference_snapshots(updated_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_alert_outbox_next_attempt ON alert_outbox(state, next_attempt_at)")
             conn.commit()
+        self._seed_meal_catalog()
         logger.info("repository_schema_ready db_path=%s", self.db_path)
+
+    def _seed_meal_catalog(self) -> None:
+        with sqlite3.connect(self.db_path) as conn:
+            existing = conn.execute("SELECT COUNT(*) FROM meal_catalog").fetchone()
+            if existing is not None and int(existing[0]) > 0:
+                return
+            for item in DEFAULT_MEAL_CATALOG:
+                payload = item.model_dump(mode="json")
+                conn.execute(
+                    """
+                    INSERT INTO meal_catalog (meal_id, locale, slot, active, payload_json)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (item.meal_id, item.locale, item.slot, int(item.active), json.dumps(payload)),
+                )
+            conn.commit()
 
     def save_medication_regimen(self, regimen: MedicationRegimen) -> None:
         with sqlite3.connect(self.db_path) as conn:
@@ -302,6 +371,28 @@ class SQLiteRepository:
         logger.debug("list_meal_records user_id=%s count=%s", user_id, len(out))
         return out
 
+    def get_meal_record(self, user_id: str, meal_id: str) -> MealRecognitionRecord | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT id, user_id, captured_at, source, meal_state_json, analysis_version, multi_item_count
+                FROM meal_records WHERE user_id = ? AND id = ?
+                """,
+                (user_id, meal_id),
+            ).fetchone()
+        if row is None:
+            logger.debug("get_meal_record_miss user_id=%s meal_id=%s", user_id, meal_id)
+            return None
+        return MealRecognitionRecord(
+            id=row[0],
+            user_id=row[1],
+            captured_at=datetime.fromisoformat(row[2]),
+            source=row[3],
+            meal_state=MealState.model_validate_json(row[4]),
+            analysis_version=row[5],
+            multi_item_count=row[6],
+        )
+
     def save_biomarker_readings(self, user_id: str, readings: list[BiomarkerReading]) -> None:
         with sqlite3.connect(self.db_path) as conn:
             for reading in readings:
@@ -359,6 +450,155 @@ class SQLiteRepository:
             )
             conn.commit()
         logger.info("save_recommendation user_id=%s payload_keys=%s", user_id, sorted(payload.keys()))
+
+    def get_health_profile(self, user_id: str) -> HealthProfileRecord | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT payload_json
+                FROM health_profiles
+                WHERE user_id = ?
+                """,
+                (user_id,),
+            ).fetchone()
+        if row is None:
+            logger.debug("get_health_profile_miss user_id=%s", user_id)
+            return None
+        payload = cast(str, row[0])
+        logger.debug("get_health_profile_hit user_id=%s", user_id)
+        return HealthProfileRecord.model_validate_json(payload)
+
+    def save_health_profile(self, profile: HealthProfileRecord) -> HealthProfileRecord:
+        payload = profile.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO health_profiles (user_id, updated_at, payload_json)
+                VALUES (?, ?, ?)
+                """,
+                (
+                    profile.user_id,
+                    str(payload["updated_at"]),
+                    json.dumps(payload),
+                ),
+            )
+            conn.commit()
+        logger.info("save_health_profile user_id=%s goals=%s", profile.user_id, len(profile.nutrition_goals))
+        return profile
+
+    def list_meal_catalog_items(self, *, locale: str, slot: str | None = None, limit: int = 100) -> list[MealCatalogItem]:
+        bounded = max(1, min(int(limit), 200))
+        query = """
+            SELECT payload_json FROM meal_catalog
+            WHERE locale = ? AND active = 1
+        """
+        params: list[object] = [locale]
+        if slot is not None:
+            query += " AND slot = ?"
+            params.append(slot)
+        query += " ORDER BY meal_id LIMIT ?"
+        params.append(bounded)
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [MealCatalogItem.model_validate_json(cast(str, row[0])) for row in rows]
+
+    def get_meal_catalog_item(self, meal_id: str) -> MealCatalogItem | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT payload_json FROM meal_catalog WHERE meal_id = ?",
+                (meal_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return MealCatalogItem.model_validate_json(cast(str, row[0]))
+
+    def save_recommendation_interaction(self, interaction: RecommendationInteraction) -> RecommendationInteraction:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO recommendation_interactions
+                (interaction_id, user_id, recommendation_id, candidate_id, event_type, slot, source_meal_id, selected_meal_id, created_at, metadata_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    interaction.interaction_id,
+                    interaction.user_id,
+                    interaction.recommendation_id,
+                    interaction.candidate_id,
+                    interaction.event_type,
+                    interaction.slot,
+                    interaction.source_meal_id,
+                    interaction.selected_meal_id,
+                    interaction.created_at.isoformat(),
+                    json.dumps(interaction.metadata),
+                ),
+            )
+            conn.commit()
+        logger.info(
+            "save_recommendation_interaction user_id=%s candidate_id=%s event_type=%s",
+            interaction.user_id,
+            interaction.candidate_id,
+            interaction.event_type,
+        )
+        return interaction
+
+    def list_recommendation_interactions(self, user_id: str, *, limit: int = 200) -> list[RecommendationInteraction]:
+        bounded = max(1, min(int(limit), 1000))
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(
+                """
+                SELECT interaction_id, user_id, recommendation_id, candidate_id, event_type, slot, source_meal_id, selected_meal_id, created_at, metadata_json
+                FROM recommendation_interactions
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (user_id, bounded),
+            ).fetchall()
+        return [
+            RecommendationInteraction(
+                interaction_id=row[0],
+                user_id=row[1],
+                recommendation_id=row[2],
+                candidate_id=row[3],
+                event_type=row[4],
+                slot=row[5],
+                source_meal_id=row[6],
+                selected_meal_id=row[7],
+                created_at=datetime.fromisoformat(row[8]),
+                metadata=cast(dict[str, object], json.loads(cast(str, row[9]))),
+            )
+            for row in rows
+        ]
+
+    def get_preference_snapshot(self, user_id: str) -> PreferenceSnapshot | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT payload_json FROM preference_snapshots WHERE user_id = ?",
+                (user_id,),
+            ).fetchone()
+        if row is None:
+            logger.debug("get_preference_snapshot_miss user_id=%s", user_id)
+            return None
+        return PreferenceSnapshot.model_validate_json(cast(str, row[0]))
+
+    def save_preference_snapshot(self, snapshot: PreferenceSnapshot) -> PreferenceSnapshot:
+        payload = snapshot.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO preference_snapshots (user_id, updated_at, payload_json)
+                VALUES (?, ?, ?)
+                """,
+                (snapshot.user_id, snapshot.updated_at.isoformat(), json.dumps(payload)),
+            )
+            conn.commit()
+        logger.info(
+            "save_preference_snapshot user_id=%s interactions=%s",
+            snapshot.user_id,
+            snapshot.interaction_count,
+        )
+        return snapshot
 
     def close(self) -> None:
         # Connections are opened per-operation; this keeps a symmetric app shutdown hook.

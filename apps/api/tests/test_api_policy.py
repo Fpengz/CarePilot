@@ -22,6 +22,9 @@ def test_policy_table_contains_core_actions() -> None:
     for action in (
         "meal.analyze",
         "meal.records.read",
+        "recommendations.daily_agent.read",
+        "recommendations.substitutions.generate",
+        "recommendations.interactions.write",
         "suggestions.generate",
         "suggestions.read",
         "alerts.trigger",

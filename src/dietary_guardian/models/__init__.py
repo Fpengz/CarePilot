@@ -1,5 +1,7 @@
 from dietary_guardian.models.analytics import EngagementMetrics
 from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage, OutboxRecord
+from dietary_guardian.models.daily_suggestions import DailySuggestionBundle, DailySuggestionItem
+from dietary_guardian.models.health_profile import HealthProfileRecord, ProfileCompleteness
 from dietary_guardian.models.inference import (
     InferenceHealth,
     InferenceModality,
@@ -20,6 +22,20 @@ from dietary_guardian.models.meal import (
 )
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.models.medication import MedicationRegimen, ReminderEvent
+from dietary_guardian.models.recommendation_agent import (
+    AgentProfileState,
+    AgentRecommendationCard,
+    CandidateScores,
+    DailyAgentRecommendation,
+    HealthDelta,
+    MealCatalogItem,
+    PreferenceSnapshot,
+    RecommendationInteraction,
+    SourceMealSummary,
+    SubstitutionAlternative,
+    SubstitutionPlan,
+    TemporalContext,
+)
 from dietary_guardian.models.recommendation import RecommendationOutput
 from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot, ReportInput
 from dietary_guardian.models.profile_tools import (
@@ -70,6 +86,22 @@ __all__ = [
     "AlertMessage",
     "OutboxRecord",
     "AlertDeliveryResult",
+    "DailySuggestionBundle",
+    "DailySuggestionItem",
+    "HealthProfileRecord",
+    "ProfileCompleteness",
+    "AgentProfileState",
+    "AgentRecommendationCard",
+    "CandidateScores",
+    "DailyAgentRecommendation",
+    "HealthDelta",
+    "MealCatalogItem",
+    "PreferenceSnapshot",
+    "RecommendationInteraction",
+    "SourceMealSummary",
+    "SubstitutionAlternative",
+    "SubstitutionPlan",
+    "TemporalContext",
     "InferenceModality",
     "ProviderMetadata",
     "InferenceRequest",

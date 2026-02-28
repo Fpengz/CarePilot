@@ -42,6 +42,48 @@ export interface AuthProfileUpdateResponse {
   user: SessionUser;
 }
 
+export interface HealthProfileCondition {
+  name: string;
+  severity: string;
+}
+
+export interface HealthProfileMedication {
+  name: string;
+  dosage: string;
+  contraindications: string[];
+}
+
+export interface HealthProfileCompleteness {
+  state: "needs_profile" | "partial" | "ready";
+  missing_fields: string[];
+}
+
+export interface HealthProfile {
+  age: number | null;
+  locale: string;
+  height_cm: number | null;
+  weight_kg: number | null;
+  bmi: number | null;
+  daily_sodium_limit_mg: number;
+  daily_sugar_limit_g: number;
+  target_calories_per_day: number | null;
+  macro_focus: string[];
+  conditions: HealthProfileCondition[];
+  medications: HealthProfileMedication[];
+  allergies: string[];
+  nutrition_goals: string[];
+  preferred_cuisines: string[];
+  disliked_ingredients: string[];
+  budget_tier: "budget" | "moderate" | "flexible";
+  fallback_mode: boolean;
+  completeness: HealthProfileCompleteness;
+  updated_at?: string | null;
+}
+
+export interface HealthProfileResponse {
+  profile: HealthProfile;
+}
+
 export interface AuthPasswordUpdateResponse {
   ok: boolean;
   revoked_other_sessions: number;
@@ -175,6 +217,98 @@ export interface RecommendationGenerateApiResponse {
   workflow: WorkflowExecutionResult;
 }
 
+export type RecommendationInteractionEventType =
+  | "viewed"
+  | "accepted"
+  | "dismissed"
+  | "swap_selected"
+  | "meal_logged_after_recommendation"
+  | "ignored";
+
+export interface AgentCandidateScores {
+  preference_fit: number;
+  temporal_fit: number;
+  adherence_likelihood: number;
+  health_gain: number;
+  substitution_deviation_penalty: number;
+  total_score: number;
+}
+
+export interface AgentHealthDelta {
+  calories: number;
+  sugar_g: number;
+  sodium_mg: number;
+}
+
+export interface RecommendationAgentCard {
+  candidate_id: string;
+  slot: "breakfast" | "lunch" | "dinner" | "snack";
+  title: string;
+  venue_type: string;
+  why_it_fits: string[];
+  caution_notes: string[];
+  confidence: number;
+  scores: AgentCandidateScores;
+  health_gain_summary: AgentHealthDelta;
+}
+
+export interface RecommendationAgentSourceMeal {
+  meal_id: string;
+  title: string;
+  slot: "breakfast" | "lunch" | "dinner" | "snack";
+}
+
+export interface RecommendationSubstitutionAlternative {
+  candidate_id: string;
+  title: string;
+  venue_type: string;
+  health_delta: AgentHealthDelta;
+  taste_distance: number;
+  reasoning: string;
+  confidence: number;
+}
+
+export interface RecommendationSubstitutionPlan {
+  source_meal: RecommendationAgentSourceMeal;
+  alternatives: RecommendationSubstitutionAlternative[];
+  blocked_reason: string | null;
+}
+
+export interface RecommendationAgentProfileState {
+  completeness_state: string;
+  bmi: number | null;
+  target_calories_per_day: number | null;
+  macro_focus: string[];
+}
+
+export interface RecommendationAgentTemporalContext {
+  current_slot: "breakfast" | "lunch" | "dinner" | "snack";
+  generated_at: string;
+  meal_history_count: number;
+  interaction_count: number;
+  recent_repeat_titles: string[];
+  slot_history_counts: Record<string, number>;
+}
+
+export interface RecommendationInteractionApiResponse {
+  ok: boolean;
+  interaction: Record<string, unknown>;
+  preference_snapshot: Record<string, unknown>;
+}
+
+export interface RecommendationSubstitutionApiResponse extends RecommendationSubstitutionPlan {}
+
+export interface RecommendationAgentApiResponse {
+  profile_state: RecommendationAgentProfileState;
+  temporal_context: RecommendationAgentTemporalContext;
+  recommendations: Record<string, RecommendationAgentCard>;
+  substitutions: RecommendationSubstitutionPlan | null;
+  fallback_mode: boolean;
+  data_sources: Record<string, unknown>;
+  constraints_applied: string[];
+  workflow: WorkflowExecutionResult;
+}
+
 export interface SuggestionItemApi {
   suggestion_id: string;
   created_at: string;
@@ -200,6 +334,31 @@ export interface SuggestionItemApi {
 
 export interface SuggestionGenerateApiResponse {
   suggestion: SuggestionItemApi;
+}
+
+export interface DailySuggestionCard {
+  slot: "breakfast" | "lunch" | "dinner" | "snack";
+  title: string;
+  venue_type: string;
+  why_it_fits: string[];
+  caution_notes: string[];
+  confidence: number;
+}
+
+export interface DailySuggestionsResponse {
+  profile: HealthProfile;
+  bundle: {
+    locale: string;
+    generated_at: string;
+    data_sources: {
+      meal_history_count: number;
+      has_clinical_snapshot: boolean;
+      biomarker_count: number;
+      [key: string]: unknown;
+    };
+    warnings: string[];
+    suggestions: Record<string, DailySuggestionCard>;
+  };
 }
 
 export interface SuggestionListApiResponse {

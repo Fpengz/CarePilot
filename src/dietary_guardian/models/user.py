@@ -34,6 +34,14 @@ class UserProfile(BaseModel):
     conditions: list[MedicalCondition]
     medications: list[Medication]
     profile_mode: ProfileMode = "self"
+    locale: str = "en-SG"
+    allergies: list[str] = Field(default_factory=list)
+    nutrition_goals: list[str] = Field(default_factory=list)
+    preferred_cuisines: list[str] = Field(default_factory=list)
+    disliked_ingredients: list[str] = Field(default_factory=list)
+    budget_tier: Literal["budget", "moderate", "flexible"] = "moderate"
+    target_calories_per_day: float | None = None
+    macro_focus: list[str] = Field(default_factory=list)
     meal_schedule: list[MealScheduleWindow] = Field(
         default_factory=lambda: [
             MealScheduleWindow(slot="breakfast", start_time="07:00", end_time="09:00"),

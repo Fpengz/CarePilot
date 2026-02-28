@@ -15,12 +15,25 @@ LOCAL_DISH_ALTERNATIVES = {
 }
 
 
-def _local_advice_for_dish(dish_name: str) -> list[str]:
+def _local_advice_for_dish(dish_name: str, user_profile: UserProfile, clinical_snapshot: ClinicalProfileSnapshot) -> list[str]:
     lowered = dish_name.lower()
     for key, advice in LOCAL_DISH_ALTERNATIVES.items():
         if key in lowered:
-            return advice
-    return ["Choose less gravy and ask for reduced sodium at hawker stalls"]
+            base = list(advice)
+            break
+    else:
+        base = ["Choose less gravy and ask for reduced sodium at hawker stalls"]
+
+    goals = {goal.lower() for goal in user_profile.nutrition_goals}
+    if "lower_sugar" in goals or clinical_snapshot.biomarkers.get("hba1c", 0) >= 7.0:
+        base.append("Prefer unsweetened drinks and smaller refined-carb portions to steady glucose response.")
+    if "heart_health" in goals or clinical_snapshot.biomarkers.get("ldl", 0) >= 3.4:
+        base.append("Prioritize clearer soups, steamed proteins, and less fried garnish for heart-health support.")
+    if user_profile.preferred_cuisines:
+        base.append(f"Bias future swaps toward your preferred cuisines: {', '.join(user_profile.preferred_cuisines)}.")
+    if user_profile.disliked_ingredients:
+        base.append(f"Avoiding your stated dislikes: {', '.join(user_profile.disliked_ingredients)}.")
+    return base
 
 
 def _to_meal_event(record: MealRecognitionRecord) -> MealEvent:
@@ -64,11 +77,12 @@ def generate_recommendation(
 
     biomarkers = clinical_snapshot.biomarkers
     biomarker_line = ", ".join(f"{k}={v}" for k, v in biomarkers.items()) or "no biomarkers available"
+    goals_line = ", ".join(user_profile.nutrition_goals) or "general wellness"
     rationale = (
-        f"Based on {meal_record.meal_state.dish_name} and biomarkers ({biomarker_line}), "
+        f"Based on {meal_record.meal_state.dish_name}, goals ({goals_line}), and biomarkers ({biomarker_line}), "
         "here are localized recommendations for Singapore hawker options."
     )
-    advice = _local_advice_for_dish(meal_record.meal_state.dish_name)
+    advice = _local_advice_for_dish(meal_record.meal_state.dish_name, user_profile, clinical_snapshot)
     for warning in safety_warnings:
         advice.append(warning)
 

@@ -11,7 +11,11 @@ from dietary_guardian.application.suggestions import (
     get_suggestion_for_session,
     list_suggestions_for_session,
 )
-from dietary_guardian.application.suggestions.ports import HouseholdStorePort, SuggestionRepositoryPort
+from dietary_guardian.application.suggestions.ports import (
+    BuildUserProfileFn,
+    HouseholdStorePort,
+    SuggestionRepositoryPort,
+)
 
 from apps.api.dietary_api.auth import build_user_profile_from_session
 from apps.api.dietary_api.deps import AppContext
@@ -65,6 +69,9 @@ def generate_from_report(
     request_id: str | None,
     correlation_id: str | None,
 ) -> SuggestionGenerateFromReportResponse:
+    def build_user_profile(session_payload: dict[str, object]):
+        return build_user_profile_from_session(session_payload, context.repository)
+
     try:
         saved = generate_suggestion_from_report(
             repository=cast(SuggestionRepositoryPort, context.repository),
@@ -73,7 +80,7 @@ def generate_from_report(
             text=payload.text,
             request_id=request_id,
             correlation_id=correlation_id,
-            build_user_profile=build_user_profile_from_session,
+            build_user_profile=cast(BuildUserProfileFn, build_user_profile),
             event_timeline=context.event_timeline,
         )
     except Exception as exc:  # pragma: no cover - covered by mapped branches below

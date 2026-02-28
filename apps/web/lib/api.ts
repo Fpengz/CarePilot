@@ -1,6 +1,10 @@
 import type {
   AlertTimelineApiResponse,
   AlertTriggerApiResponse,
+  RecommendationAgentApiResponse,
+  RecommendationInteractionApiResponse,
+  RecommendationInteractionEventType,
+  RecommendationSubstitutionApiResponse,
   AuthAuditEventListResponse,
   HouseholdActiveUpdateResponse,
   HouseholdBundleApiResponse,
@@ -14,6 +18,8 @@ import type {
   AuthSessionListResponse,
   AuthSessionRevokeOthersResponse,
   AuthSessionRevokeResponse,
+  DailySuggestionsResponse,
+  HealthProfileResponse,
   MealAnalyzeApiResponse,
   MealRecordsApiResponse,
   RecommendationGenerateApiResponse,
@@ -148,6 +154,66 @@ export async function updateAuthProfile(payload: {
 }): Promise<AuthProfileUpdateResponse> {
   return request<AuthProfileUpdateResponse>("/api/v1/auth/profile", {
     method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getHealthProfile(): Promise<HealthProfileResponse> {
+  return request<HealthProfileResponse>("/api/v1/profile/health");
+}
+
+export async function updateHealthProfile(payload: {
+  age?: number | null;
+  locale?: string;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  daily_sodium_limit_mg?: number;
+  daily_sugar_limit_g?: number;
+  target_calories_per_day?: number | null;
+  macro_focus?: string[];
+  conditions?: Array<{ name: string; severity: string }>;
+  medications?: Array<{ name: string; dosage: string; contraindications: string[] }>;
+  allergies?: string[];
+  nutrition_goals?: string[];
+  preferred_cuisines?: string[];
+  disliked_ingredients?: string[];
+  budget_tier?: "budget" | "moderate" | "flexible";
+}): Promise<HealthProfileResponse> {
+  return request<HealthProfileResponse>("/api/v1/profile/health", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getDailySuggestions(): Promise<DailySuggestionsResponse> {
+  return request<DailySuggestionsResponse>("/api/v1/suggestions/daily");
+}
+
+export async function getDailyAgentRecommendations(): Promise<RecommendationAgentApiResponse> {
+  return request<RecommendationAgentApiResponse>("/api/v1/recommendations/daily-agent");
+}
+
+export async function getMealSubstitutions(payload: {
+  source_meal_id?: string;
+  limit?: number;
+}): Promise<RecommendationSubstitutionApiResponse> {
+  return request<RecommendationSubstitutionApiResponse>("/api/v1/recommendations/substitutions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function recordRecommendationInteraction(payload: {
+  recommendation_id: string;
+  candidate_id: string;
+  event_type: RecommendationInteractionEventType;
+  slot: "breakfast" | "lunch" | "dinner" | "snack";
+  source_meal_id?: string;
+  selected_meal_id?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<RecommendationInteractionApiResponse> {
+  return request<RecommendationInteractionApiResponse>("/api/v1/recommendations/interactions", {
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }

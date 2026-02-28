@@ -52,6 +52,66 @@ class AuthProfileUpdateRequest(BaseModel):
     profile_mode: ProfileMode | None = None
 
 
+class HealthProfileCondition(BaseModel):
+    name: str
+    severity: str
+
+
+class HealthProfileMedication(BaseModel):
+    name: str
+    dosage: str
+    contraindications: list[str] = Field(default_factory=list)
+
+
+class HealthProfileCompletenessResponse(BaseModel):
+    state: Literal["needs_profile", "partial", "ready"]
+    missing_fields: list[str] = Field(default_factory=list)
+
+
+class HealthProfileResponseItem(BaseModel):
+    age: int | None = None
+    locale: str
+    height_cm: float | None = None
+    weight_kg: float | None = None
+    bmi: float | None = None
+    daily_sodium_limit_mg: float
+    daily_sugar_limit_g: float
+    target_calories_per_day: float | None = None
+    macro_focus: list[str] = Field(default_factory=list)
+    conditions: list[HealthProfileCondition] = Field(default_factory=list)
+    medications: list[HealthProfileMedication] = Field(default_factory=list)
+    allergies: list[str] = Field(default_factory=list)
+    nutrition_goals: list[str] = Field(default_factory=list)
+    preferred_cuisines: list[str] = Field(default_factory=list)
+    disliked_ingredients: list[str] = Field(default_factory=list)
+    budget_tier: Literal["budget", "moderate", "flexible"] = "moderate"
+    fallback_mode: bool = False
+    completeness: HealthProfileCompletenessResponse
+    updated_at: datetime | None = None
+
+
+class HealthProfileUpdateRequest(BaseModel):
+    age: int | None = Field(default=None, ge=0, le=130)
+    locale: str | None = None
+    height_cm: float | None = Field(default=None, gt=0)
+    weight_kg: float | None = Field(default=None, gt=0)
+    daily_sodium_limit_mg: float | None = Field(default=None, gt=0)
+    daily_sugar_limit_g: float | None = Field(default=None, gt=0)
+    target_calories_per_day: float | None = Field(default=None, gt=0)
+    macro_focus: list[str] | None = None
+    conditions: list[HealthProfileCondition] | None = None
+    medications: list[HealthProfileMedication] | None = None
+    allergies: list[str] | None = None
+    nutrition_goals: list[str] | None = None
+    preferred_cuisines: list[str] | None = None
+    disliked_ingredients: list[str] | None = None
+    budget_tier: Literal["budget", "moderate", "flexible"] | None = None
+
+
+class HealthProfileEnvelopeResponse(BaseModel):
+    profile: HealthProfileResponseItem
+
+
 class AuthPasswordUpdateRequest(BaseModel):
     current_password: str
     new_password: str
@@ -292,6 +352,129 @@ class SuggestionItemResponse(BaseModel):
 
 class SuggestionGenerateFromReportResponse(BaseModel):
     suggestion: SuggestionItemResponse
+
+
+class DailySuggestionCardResponse(BaseModel):
+    slot: Literal["breakfast", "lunch", "dinner", "snack"]
+    title: str
+    venue_type: str
+    why_it_fits: list[str] = Field(default_factory=list)
+    caution_notes: list[str] = Field(default_factory=list)
+    confidence: float
+
+
+class DailySuggestionBundleResponse(BaseModel):
+    locale: str
+    generated_at: datetime
+    data_sources: dict[str, object] = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    suggestions: dict[str, DailySuggestionCardResponse]
+
+
+class DailySuggestionsResponse(BaseModel):
+    profile: HealthProfileResponseItem
+    bundle: DailySuggestionBundleResponse
+
+
+class RecommendationInteractionRequest(BaseModel):
+    recommendation_id: str
+    candidate_id: str
+    event_type: Literal["viewed", "accepted", "dismissed", "swap_selected", "meal_logged_after_recommendation", "ignored"]
+    slot: Literal["breakfast", "lunch", "dinner", "snack"]
+    source_meal_id: str | None = None
+    selected_meal_id: str | None = None
+    metadata: dict[str, object] = Field(default_factory=dict)
+
+
+class RecommendationInteractionResponse(BaseModel):
+    ok: bool = True
+    interaction: dict[str, object]
+    preference_snapshot: dict[str, object]
+
+
+class RecommendationSubstitutionRequest(BaseModel):
+    source_meal_id: str | None = None
+    limit: int = Field(default=3, ge=1, le=5)
+
+
+class AgentCandidateScoresResponse(BaseModel):
+    preference_fit: float
+    temporal_fit: float
+    adherence_likelihood: float
+    health_gain: float
+    substitution_deviation_penalty: float
+    total_score: float
+
+
+class AgentHealthDeltaResponse(BaseModel):
+    calories: float
+    sugar_g: float
+    sodium_mg: float
+
+
+class AgentRecommendationCardResponse(BaseModel):
+    candidate_id: str
+    slot: Literal["breakfast", "lunch", "dinner", "snack"]
+    title: str
+    venue_type: str
+    why_it_fits: list[str] = Field(default_factory=list)
+    caution_notes: list[str] = Field(default_factory=list)
+    confidence: float
+    scores: AgentCandidateScoresResponse
+    health_gain_summary: AgentHealthDeltaResponse
+
+
+class AgentSourceMealResponse(BaseModel):
+    meal_id: str
+    title: str
+    slot: Literal["breakfast", "lunch", "dinner", "snack"]
+
+
+class AgentSubstitutionAlternativeResponse(BaseModel):
+    candidate_id: str
+    title: str
+    venue_type: str
+    health_delta: AgentHealthDeltaResponse
+    taste_distance: float
+    reasoning: str
+    confidence: float
+
+
+class AgentSubstitutionPlanResponse(BaseModel):
+    source_meal: AgentSourceMealResponse
+    alternatives: list[AgentSubstitutionAlternativeResponse] = Field(default_factory=list)
+    blocked_reason: str | None = None
+
+
+class RecommendationSubstitutionResponse(AgentSubstitutionPlanResponse):
+    pass
+
+
+class RecommendationAgentProfileStateResponse(BaseModel):
+    completeness_state: str
+    bmi: float | None = None
+    target_calories_per_day: float | None = None
+    macro_focus: list[str] = Field(default_factory=list)
+
+
+class RecommendationAgentTemporalContextResponse(BaseModel):
+    current_slot: Literal["breakfast", "lunch", "dinner", "snack"]
+    generated_at: datetime
+    meal_history_count: int
+    interaction_count: int
+    recent_repeat_titles: list[str] = Field(default_factory=list)
+    slot_history_counts: dict[str, int] = Field(default_factory=dict)
+
+
+class RecommendationAgentResponse(BaseModel):
+    profile_state: RecommendationAgentProfileStateResponse
+    temporal_context: RecommendationAgentTemporalContextResponse
+    recommendations: dict[str, AgentRecommendationCardResponse]
+    substitutions: AgentSubstitutionPlanResponse | None = None
+    fallback_mode: bool
+    data_sources: dict[str, object] = Field(default_factory=dict)
+    constraints_applied: list[str] = Field(default_factory=list)
+    workflow: dict[str, object]
 
 
 class SuggestionListResponse(BaseModel):

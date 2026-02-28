@@ -19,7 +19,7 @@ from dietary_guardian.services.medication_service import (
 
 
 def generate_reminders_for_session(*, context: AppContext, session: dict[str, object]) -> ReminderGenerateResponse:
-    user_profile = build_user_profile_from_session(session)
+    user_profile = build_user_profile_from_session(session, context.repository)
     reminders = generate_daily_reminders(
         user_profile,
         default_demo_regimens(user_profile.id),
