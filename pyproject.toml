@@ -1,16 +1,19 @@
 [build-system]
-requires = ["hatchling>=1.27.0"]
+requires = ["hatchling>=1.27.0", "hatch-vcs>=0.4.0"]
 build-backend = "hatchling.build"
 
 [project]
 name = "dietary-tools"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Dietary Guardian: meal vision, medication reminders, and biomarker-grounded guidance"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Proprietary" }
 authors = [
     { name = "Wang Zhoufu" },
+]
+maintainers = [
+    { name = "Dietary Guardian Engineering Team" },
 ]
 keywords = ["dietary-monitoring", "healthcare", "pydantic-ai", "medical-agents"]
 classifiers = [
@@ -37,6 +40,12 @@ dependencies = [
     "watchdog>=6.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Fpengz/dietary_tool"
+Repository = "https://github.com/Fpengz/dietary_tool"
+Issues = "https://github.com/Fpengz/dietary_tool/issues"
+Documentation = "README.md"
+
 [dependency-groups]
 dev = [
     "hypothesis>=6.151.9",
@@ -54,6 +63,12 @@ default-groups = ["dev"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dietary_guardian"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/dietary_guardian/_version.py"
 
 [tool.hatch.build.targets.sdist]
 include = [

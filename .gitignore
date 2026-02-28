@@ -1,6 +1,7 @@
 # Python-generated files
 __pycache__/
 *.py[oc]
+src/dietary_guardian/_version.py
 build/
 dist/
 wheels/

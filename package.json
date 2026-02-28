@@ -1,14 +1,45 @@
 {
   "name": "dietary-tools-monorepo",
+  "version": "0.1.0",
+  "description": "Dietary Guardian monorepo (FastAPI backend + Next.js web)",
   "private": true,
+  "license": "UNLICENSED",
+  "keywords": [
+    "dietary-guardian",
+    "fastapi",
+    "nextjs",
+    "health-tech",
+    "monorepo"
+  ],
+  "homepage": "https://github.com/Fpengz/dietary_tool",
+  "bugs": {
+    "url": "https://github.com/Fpengz/dietary_tool/issues"
+  },
   "packageManager": "pnpm@10.6.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Fpengz/dietary_tool.git"
+  },
   "workspaces": [
     "apps/web"
   ],
   "scripts": {
+    "dev": "./scripts/dev.sh",
+    "dev:api": "./scripts/dev.sh --no-web",
+    "dev:web": "./scripts/dev.sh --no-api",
     "web:dev": "bash scripts/web-env.sh pnpm --dir apps/web dev",
     "web:build": "bash scripts/web-env.sh pnpm --dir apps/web build",
     "web:lint": "bash scripts/web-env.sh pnpm --dir apps/web lint",
-    "web:typecheck": "bash scripts/web-env.sh pnpm --dir apps/web typecheck"
+    "web:typecheck": "bash scripts/web-env.sh pnpm --dir apps/web typecheck",
+    "web:e2e": "bash scripts/web-env.sh pnpm --dir apps/web test:e2e",
+    "validate:backend": "./tools/validate.sh backend-all",
+    "validate:full": "./tools/validate.sh full-stack",
+    "version:status": "pnpm dlx @changesets/cli status --verbose",
+    "version:plan": "pnpm dlx @changesets/cli add",
+    "version:bump": "pnpm dlx @changesets/cli version",
+    "version:release": "pnpm dlx @changesets/cli publish"
   }
 }
