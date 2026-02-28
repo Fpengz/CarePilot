@@ -396,3 +396,62 @@ export interface ReminderConfirmApiResponse {
   event: ReminderEventView;
   metrics: ReminderMetrics;
 }
+
+export type ReminderNotificationChannel = "in_app" | "email" | "sms" | "push" | "telegram" | "whatsapp" | "wechat";
+
+export interface ReminderNotificationPreferenceRule {
+  id: string;
+  scope_type: "default" | "reminder_type";
+  scope_key?: string | null;
+  channel: ReminderNotificationChannel;
+  offset_minutes: number;
+  enabled: boolean;
+  updated_at: string;
+}
+
+export interface ReminderNotificationPreferenceListResponse {
+  preferences: ReminderNotificationPreferenceRule[];
+}
+
+export interface ReminderNotificationEndpoint {
+  id: string;
+  channel: ReminderNotificationChannel;
+  destination: string;
+  verified: boolean;
+  updated_at: string;
+}
+
+export interface ReminderNotificationEndpointListResponse {
+  endpoints: ReminderNotificationEndpoint[];
+}
+
+export interface ScheduledReminderNotificationItem {
+  id: string;
+  reminder_id: string;
+  channel: ReminderNotificationChannel;
+  trigger_at: string;
+  offset_minutes: number;
+  status: "pending" | "queued" | "processing" | "retry_scheduled" | "delivered" | "dead_letter" | "cancelled";
+  attempt_count: number;
+  delivered_at?: string | null;
+  last_error?: string | null;
+}
+
+export interface ScheduledReminderNotificationListResponse {
+  items: ScheduledReminderNotificationItem[];
+}
+
+export interface ReminderNotificationLogItem {
+  id: string;
+  scheduled_notification_id: string;
+  channel: ReminderNotificationChannel;
+  attempt_number: number;
+  event_type: "scheduled" | "queued" | "dispatch_started" | "delivered" | "retry_scheduled" | "dead_lettered" | "cancelled";
+  error_message?: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface ReminderNotificationLogListResponse {
+  items: ReminderNotificationLogItem[];
+}

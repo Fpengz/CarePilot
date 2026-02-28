@@ -27,8 +27,12 @@ import type {
   SuggestionGenerateApiResponse,
   SuggestionListApiResponse,
   ReminderConfirmApiResponse,
+  ReminderNotificationEndpointListResponse,
+  ReminderNotificationLogListResponse,
+  ReminderNotificationPreferenceListResponse,
   ReminderGenerateApiResponse,
   ReminderListApiResponse,
+  ScheduledReminderNotificationListResponse,
   ReportParseApiResponse,
   SessionUser,
   WorkflowExecutionResult,
@@ -446,4 +450,40 @@ export async function confirmReminder(
     method: "POST",
     body: JSON.stringify({ confirmed }),
   });
+}
+
+export async function listReminderNotificationPreferences(): Promise<ReminderNotificationPreferenceListResponse> {
+  return request<ReminderNotificationPreferenceListResponse>("/api/v1/reminder-notification-preferences");
+}
+
+export async function updateReminderNotificationPreferences(payload: {
+  rules: Array<{ channel: string; offset_minutes: number; enabled: boolean }>;
+}): Promise<ReminderNotificationPreferenceListResponse> {
+  return request<ReminderNotificationPreferenceListResponse>("/api/v1/reminder-notification-preferences/default", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listReminderNotificationEndpoints(): Promise<ReminderNotificationEndpointListResponse> {
+  return request<ReminderNotificationEndpointListResponse>("/api/v1/reminder-notification-endpoints");
+}
+
+export async function updateReminderNotificationEndpoints(payload: {
+  endpoints: Array<{ channel: string; destination: string; verified: boolean }>;
+}): Promise<ReminderNotificationEndpointListResponse> {
+  return request<ReminderNotificationEndpointListResponse>("/api/v1/reminder-notification-endpoints", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listReminderNotificationSchedules(
+  reminderId: string,
+): Promise<ScheduledReminderNotificationListResponse> {
+  return request<ScheduledReminderNotificationListResponse>(`/api/v1/reminders/${reminderId}/notification-schedules`);
+}
+
+export async function listReminderNotificationLogs(reminderId: string): Promise<ReminderNotificationLogListResponse> {
+  return request<ReminderNotificationLogListResponse>(`/api/v1/reminders/${reminderId}/notification-logs`);
 }
