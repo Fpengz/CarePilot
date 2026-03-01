@@ -18,7 +18,8 @@ Policy enforcement is now action-based in API routes (for example `meal.analyze`
 See `docs/rbac-matrix.md` for the current RBAC matrix and endpoint permissions.
 See `docs/api-auth-contract.md` for auth payload examples and migration notes.
 See `docs/api-recommendation-agent-contract.md` for the adaptive meal agent API, substitution flow, and feedback loop contract.
-See `docs/architecture-v1.md` for the v1 target architecture (hexagonal + workflow orchestration).
+See `ARCHITECTURE.md` for the canonical system architecture and extension model.
+See `docs/architecture-v1.md` for the historical v1 architecture snapshot.
 See `docs/config-reference.md` for backend environment variables and defaults.
 See `docs/nightly-ops.md` for the nightly autonomous build runbook.
 See `SAFETY.md` for medical safety guardrails and escalation rules.
@@ -291,34 +292,45 @@ uv run python -m apps.api.run
 ## Roadmap
 See `docs/roadmap-v1.md` for the full canonical roadmap.
 
-Roadmap horizon:
-- `Now`: 0–4 weeks
-- `Next`: following 1–2 cycles
-- `Later`: beyond next
+Roadmap horizons:
+- `Short-Term`: 0–3 months
+- `Mid-Term`: 3–9 months
+- `Long-Term`: 9–18 months
 
-Status labels:
-- `**[Complete]**`, `**[In Progress]**`, `**[Planned]**`, `**[Blocked]**`
+Goal labels used in the roadmap:
+- `Research Goal`
+- `Engineering Goal`
+- `Infrastructure Goal`
 
-### Now
-- `**[Complete]**` Account/session/household foundations:
-  - Signup/login/profile/password/session management and household owner/member flows are operational.
-- `**[Complete]**` Meal + suggestions core workflow:
-  - Typed meal summaries, meal history pagination, unified suggestions orchestration, and household-shared suggestion reads are implemented.
-- `**[Complete]**` Adaptive meal intelligence:
-  - Persisted health profiles, behavior-aware daily recommendations, healthier substitution planning, and online interaction learning are implemented.
-- `**[Complete]**` Policy and observability hardening:
-  - Action-based authorization, centralized error semantics, and request/correlation propagation are in place.
-- `**[Complete]**` UI/UX stabilization:
-  - Structured views replaced debug-first surfaces, mobile/a11y polish landed, and smoke e2e tests cover login, mobile navigation, and the adaptive dashboard agent.
+### Short-Term
+- Core Infrastructure:
+  - PostgreSQL-ready persistence boundaries, Redis-backed async state, and explicit agent/workflow runtime contracts.
+- AI/ML Components:
+  - offline learning refresh, prompt orchestration standardization, RAG v1 foundations, and expanded safety coverage.
+- Product Features:
+  - knowledge retrieval agent, emotional-support research track, and continued hardening of reminders and personalization.
+- Deployment and Scaling:
+  - environment profiles, secret hygiene, readiness diagnostics, and worker/runtime hardening.
 
-### Next
-- `**[Planned]**` Offline preference refresh, meal catalog operations, and stronger recommendation diagnostics.
-- `**[Planned]**` Environment profiles + secrets hygiene.
-- `**[Planned]**` Expanded runtime readiness and diagnostics.
+### Mid-Term
+- Core Infrastructure:
+  - multi-process workers, durable workflow execution, and capability-based agent routing.
+- AI/ML Components:
+  - production RAG, memory hierarchy, and evaluation infrastructure.
+- Product Features:
+  - chronic-condition monitoring workflows and retrieval-backed assistant experiences.
+- Deployment and Scaling:
+  - horizontal scale readiness, cache formalization, and expanded monitoring.
 
-### Later
-- `**[Planned]**` Policy-driven feature flag platform.
-- `**[Planned]**` Advanced config telemetry and auditability.
+### Long-Term
+- Core Infrastructure:
+  - full PostgreSQL + Redis production data plane and durable multi-agent execution engine.
+- AI/ML Components:
+  - ensemble routing, human-in-the-loop evaluation, and retrieval-aware safety scoring.
+- Product Features:
+  - cross-channel conversational assistance, advanced personalization, and condition-specific programs.
+- Deployment and Scaling:
+  - fault-tolerant runtime posture, feature rollout controls, and advanced config telemetry.
 
 ## Architecture-as-Code
 ### System Topology

@@ -1,111 +1,233 @@
-# Product Roadmap (Now / Next / Later)
+# Product Roadmap
 
-## Goal
-Operate Dietary Guardian as a production-grade, web-first health assistant platform with:
-- robust account + household management
-- reliable meal/report/recommendation workflows
-- adaptive meal personalization that improves with user behavior over time
-- policy-driven access control
-- traceable observability and deployment readiness
+## Purpose
+This roadmap aligns the current repository with the target production platform:
+- FastAPI backend
+- Next.js frontend
+- PostgreSQL + Redis production data plane
+- LLM-driven orchestration
+- RAG-based retrieval
+- multi-agent workflow execution
 
-## Delivery Assumptions
-- Single-node deployment baseline
-- SQLite-backed persistence (v1 production-ish default)
-- Web-first UX (`apps/web`) as primary surface
-- Streamlit remains internal/demo tooling
-- Continual learning baseline is online reranking + persisted preference snapshots; offline retraining remains a next-step capability
+It is explicit about current maturity so contributors can distinguish:
+- what is already implemented
+- what is being actively hardened
+- what remains a research or platform investment
 
-## Status Legend
-- `**[Complete]**` Delivered and validated through tests/checks.
-- `**[In Progress]**` Active implementation in current cycle.
-- `**[Planned]**` Scoped and prioritized, not started.
-- `**[Blocked]**` Waiting on dependency/decision.
+## Current Maturity Snapshot
+Current implemented baseline:
+- FastAPI + Next.js monorepo with typed API and web contracts
+- SQLite-backed auth and application persistence
+- action-based authorization and centralized error semantics
+- in-process workflow coordination with structured timeline events
+- adaptive meal recommendation with online interaction learning
+- reminder scheduling and multi-channel delivery with durable logs
+- smoke-tested primary web journeys
 
-## Now (0–4 Weeks)
+Current maturity gaps relative to the target platform:
+- PostgreSQL is not yet the primary system of record
+- Redis is not yet the standard cache / queue / ephemeral state layer
+- RAG ingestion, indexing, retrieval, and citation layers are not yet first-class production modules
+- agent routing is still partly implemented through service-layer orchestration rather than a dedicated registry/runtime
+- offline evaluation, retrieval benchmarking, and research-grade safety evaluation are still early
 
-### `**[Complete]**` Account, Session, and Household Foundations
-- **Outcome:** Users can signup/login, manage profile/password/sessions, and manage household membership with owner/member role rules.
-- **Impact:** Establishes secure identity and collaboration primitives needed for all health workflows.
-- **Done criteria:**
-  - Auth API + web flows are operational (signup/login/logout/me/profile/password/sessions/audit).
-  - Household create/invite/join/leave/remove/member-list flows are operational.
-  - SQLite-backed auth/session persistence is enabled by default.
+## Goal Labels
+- `Research Goal` — experimental or model-quality work
+- `Engineering Goal` — application, workflow, API, and product-delivery work
+- `Infrastructure Goal` — runtime, deployment, scale, resilience, and observability work
 
-### `**[Complete]**` Meal and Suggestions Core Workflow
-- **Outcome:** Meal analysis, report parsing, recommendation generation, and suggestion persistence are integrated end-to-end.
-- **Impact:** Users can move from input to actionable health guidance in a single product surface.
-- **Done criteria:**
-  - Typed meal summary contract and meal record pagination are available.
-  - Suggestions orchestration (`generate-from-report`) and persisted history are available.
-  - Household-scoped visibility for suggestions is enforced with access controls.
+## Status Labels
+- `**[Complete]**` Delivered and validated in the repository
+- `**[In Progress]**` Active implementation or immediate hardening target
+- `**[Planned]**` Approved backlog item
+- `**[Research]**` Requires experimentation before production commitment
 
-### `**[Complete]**` Adaptive Meal Recommendation Agent
-- **Outcome:** The platform can use persisted health profiles, meal history, biomarkers, and user feedback to rank daily meal recommendations and healthier substitutions.
-- **Impact:** Users receive more realistic, localized recommendations that trade off health improvement against adherence and taste similarity instead of getting only static rule-driven guidance.
-- **Done criteria:**
-  - Health profiles persist age, locale, BMI inputs, nutrition limits, calorie targets, macro focus, restrictions, and cuisine preferences.
-  - `GET /api/v1/recommendations/daily-agent`, `POST /api/v1/recommendations/substitutions`, and `POST /api/v1/recommendations/interactions` are available.
-  - Online preference learning updates future ranking after accept/dismiss/swap events, with deterministic fallback preserved for cold-start users.
+## Short-Term (0–3 Months)
 
-### `**[Complete]**` Policy, Observability, and Error Semantics Hardening
-- **Outcome:** API access and failure semantics are centralized with request/correlation trace propagation across workflows.
-- **Impact:** Reduces authorization drift and improves triage/debug capability in production.
-- **Done criteria:**
-  - Action-based policy checks are enforced in routes.
-  - Standard error envelope + centralized handlers are used consistently.
-  - Request/correlation IDs propagate through API responses, workflow payloads, and logs.
+### 1. Core Infrastructure
+- `**[In Progress]**` PostgreSQL-ready persistence boundary
+  - `Engineering Goal`, `Infrastructure Goal`
+  - Replace SQLite-specific assumptions in repositories with interfaces that can support PostgreSQL as the production system of record.
+  - Exit criteria:
+    - application repositories have PostgreSQL-compatible contracts
+    - schema groups are documented for auth, health, meals, reminders, and workflow state
+    - migration strategy from SQLite fixtures to PostgreSQL-backed environments is defined
 
-### `**[Complete]**` UI/UX Stabilization + Smoke Coverage
-- **Outcome:** Core web journeys are polished for mobile/a11y and validated by e2e smoke tests.
-- **Impact:** Improves user trust and lowers regression risk for primary workflows.
-- **Done criteria:**
-  - Dashboard/suggestions/meals views use typed state rendering over debug-first JSON.
-  - Mobile header/sidebar/dialog interactions are accessible and usable.
-  - Playwright smoke tests cover login redirect, mobile navigation behavior, and the adaptive dashboard recommendation surface.
+- `**[Planned]**` Redis-backed async and ephemeral state layer
+  - `Infrastructure Goal`
+  - Introduce Redis for cache, distributed locking, short-lived state, and worker coordination.
+  - Exit criteria:
+    - queue/caching responsibilities are explicitly separated from durable storage
+    - reminder and workflow side effects can run through Redis-backed workers without API coupling
 
-## Next (Following 1–2 Cycles)
+- `**[Planned]**` Explicit agent registry and workflow runtime contract
+  - `Engineering Goal`
+  - Move from service-centric orchestration toward a named registry of agents and durable workflow routing decisions.
+  - Exit criteria:
+    - agents declare capabilities, allowed tools, and output contracts
+    - workflow routing is no longer embedded ad hoc in transport-facing code
 
-### `**[Planned]**` Offline Learning Refresh and Catalog Operations
-- **Outcome:** Add scheduled refresh of user preference state and manage the localized meal catalog as an operational dataset.
-- **Impact:** Improves recommendation quality beyond online reranking while keeping inference behavior explainable and stable.
-- **Done criteria:**
-  - Offline refresh job rebuilds preference snapshots and derived features from historical logs and interactions.
-  - Meal catalog growth, review, and localization updates are documented and testable.
-  - Recommendation diagnostics expose why candidate ranking changed after model/catalog refreshes.
+- `**[Complete]**` Logging, correlation, and error normalization foundation
+  - `Infrastructure Goal`
+  - Structured logging, correlation IDs, centralized errors, and workflow timeline capture are already in place.
 
-### `**[Planned]**` Environment Profiles and Secret Hygiene
-- **Outcome:** Introduce explicit environment profiles and hardened secret management for deployment tiers.
-- **Impact:** Improves operational safety and reduces configuration drift.
-- **Done criteria:**
-  - Profiled env strategy (`development/staging/production`) is documented and enforced.
-  - Deployment-time secret validation and rotation guidance are in place.
+### 2. AI/ML Components
+- `**[In Progress]**` Recommendation-agent hardening and offline refresh hooks
+  - `Research Goal`, `Engineering Goal`
+  - Extend the current online reranking system with offline refresh and richer diagnostics.
+  - Exit criteria:
+    - preference snapshot rebuild job exists
+    - ranking deltas are explainable after refreshes
 
-### `**[Planned]**` CI/Validation Parity and Coverage Maturity
-- **Outcome:** Align local and CI gates to enforce consistent quality thresholds.
-- **Impact:** Reduces “works locally, fails in CI” friction and improves release confidence.
-- **Done criteria:**
-  - Shared validation entrypoints are used in both local and CI.
-  - Coverage target and test matrix are tightened with explicit ownership.
+- `**[Planned]**` Prompt orchestration standardization
+  - `Engineering Goal`
+  - Centralize prompt assembly, model selection, and output validation patterns across agents.
+  - Exit criteria:
+    - prompt construction is no longer scattered across service code
+    - agent contracts define prompt inputs and output schemas explicitly
 
-### `**[Planned]**` Runtime Readiness and Diagnostic Surfaces
-- **Outcome:** Add richer readiness diagnostics for inference/provider/runtime dependencies.
-- **Impact:** Faster incident detection and clearer operational visibility.
-- **Done criteria:**
-  - Expanded readiness signal beyond liveness.
-  - Provider/runtime health diagnostics documented and exposed.
+- `**[Research]**` RAG v1 foundation
+  - `Research Goal`, `Engineering Goal`
+  - Establish ingestion, chunking, embedding, retrieval, and citation packaging boundaries for trusted medical and nutritional sources.
+  - Exit criteria:
+    - source provenance model defined
+    - retrieval service contract defined
+    - offline retrieval evaluation set identified
 
-## Later (Beyond Next)
+- `**[Planned]**` Safety and guardrail coverage expansion
+  - `Research Goal`, `Engineering Goal`
+  - Extend safety beyond current recommendation and reminder semantics into retrieval and broader multi-agent outputs.
 
-### `**[Planned]**` Policy-Driven Feature Flag Platform
-- **Outcome:** Introduce typed feature-flag controls integrated with policy/access boundaries.
-- **Impact:** Safe incremental rollouts and controlled experimentation.
-- **Done criteria:**
-  - Feature flags are schema-validated and environment-aware.
-  - Policy layer can gate feature availability by role/scope/context.
+### 3. Product Features
+- `**[Complete]**` User state tracking and personalization baseline
+  - `Engineering Goal`
+  - Persisted health profiles, household context, meal history, and recommendation interactions are implemented.
 
-### `**[Planned]**` Advanced Config Telemetry
-- **Outcome:** Add structured config telemetry for startup/runtime introspection.
-- **Impact:** Improves debugging and compliance traceability in production.
-- **Done criteria:**
-  - Config provenance and effective runtime values are auditable.
-  - Sensitive fields are redacted by default across telemetry outputs.
+- `**[Planned]**` Knowledge retrieval agent
+  - `Research Goal`, `Engineering Goal`
+  - Add a first-class knowledge retrieval path that can support evidence-backed user guidance.
+
+- `**[Research]**` Emotional support and escalation agent
+  - `Research Goal`
+  - Explore bounded emotional-state classification, safe language generation, and escalation rules.
+
+- `**[Complete]**` Reminder automation and multi-channel scheduling baseline
+  - `Engineering Goal`
+  - Durable preferences, endpoints, schedules, logs, and reminder delivery adapters are implemented.
+
+### 4. Deployment and Scaling
+- `**[Complete]**` API container baseline
+  - `Infrastructure Goal`
+  - A production-style Dockerfile and CI validation pipeline already exist.
+
+- `**[Planned]**` Environment profiles and secret hygiene
+  - `Infrastructure Goal`
+  - Introduce explicit development, staging, and production configuration profiles.
+
+- `**[Planned]**` Readiness and dependency diagnostics
+  - `Infrastructure Goal`
+  - Expose richer runtime readiness for providers, workers, and persistence layers.
+
+## Mid-Term (3–9 Months)
+
+### 1. Core Infrastructure
+- `**[Planned]**` Multi-process worker topology
+  - `Infrastructure Goal`
+  - Introduce dedicated worker processes for notifications, retrieval ingestion, offline learning refresh, and heavy orchestration tasks.
+
+- `**[Planned]**` Event bus and workflow durability improvements
+  - `Engineering Goal`, `Infrastructure Goal`
+  - Move from in-process workflow sequencing toward durable workflow state transitions and replayable event streams.
+
+- `**[Planned]**` Agent capability routing
+  - `Engineering Goal`
+  - Add a capability-driven router so workflows can resolve the correct agent set by task rather than by direct service composition.
+
+### 2. AI/ML Components
+- `**[Planned]**` RAG productionization
+  - `Research Goal`, `Engineering Goal`
+  - Complete retrieval indexing, ranking, citation rendering, and source trust controls.
+
+- `**[Planned]**` Memory hierarchy
+  - `Research Goal`, `Engineering Goal`
+  - Separate short-term session memory, durable user memory, and retrieval-backed knowledge memory.
+
+- `**[Research]**` Evaluation framework and prompt regression platform
+  - `Research Goal`, `Infrastructure Goal`
+  - Add offline datasets, prompt snapshots, task metrics, and benchmark dashboards.
+
+### 3. Product Features
+- `**[Planned]**` Chronic condition monitoring workflows
+  - `Engineering Goal`, `Research Goal`
+  - Add condition-aware alerting, longitudinal trend views, and policy-controlled recommendations.
+
+- `**[Planned]**` Knowledge-grounded assistant experiences
+  - `Engineering Goal`
+  - Surface retrieval-backed answers and explanation cards in the web product.
+
+- `**[Planned]**` Personalization maturity phase 2
+  - `Engineering Goal`, `Research Goal`
+  - Improve adherence-aware coaching, meal substitution quality, and habit-loop modeling.
+
+### 4. Deployment and Scaling
+- `**[Planned]**` Horizontal scale readiness
+  - `Infrastructure Goal`
+  - Add Redis-backed coordination, stateless API assumptions, and load-balancer-safe session behavior.
+
+- `**[Planned]**` Monitoring stack expansion
+  - `Infrastructure Goal`
+  - Add metrics, tracing, alerting thresholds, and operator dashboards for workflow and provider health.
+
+- `**[Planned]**` Cache strategy formalization
+  - `Infrastructure Goal`
+  - Define cache boundaries for retrieval, session-adjacent state, and read-heavy product surfaces.
+
+## Long-Term (9–18 Months)
+
+### 1. Core Infrastructure
+- `**[Planned]**` Full production data plane on PostgreSQL + Redis
+  - `Infrastructure Goal`
+  - Retire SQLite from primary production responsibility and make PostgreSQL + Redis the supported runtime standard.
+
+- `**[Planned]**` Durable multi-agent execution engine
+  - `Engineering Goal`, `Infrastructure Goal`
+  - Support resilient long-running workflows, replay, compensation, and multi-agent concurrency.
+
+### 2. AI/ML Components
+- `**[Research]**` Agent ensemble optimization
+  - `Research Goal`
+  - Experiment with routing strategies, model specialization, and confidence-aware fallback chains.
+
+- `**[Research]**` Human-in-the-loop evaluation and safety review tooling
+  - `Research Goal`, `Infrastructure Goal`
+  - Add review queues, adjudication surfaces, and dataset capture for agent behavior quality.
+
+- `**[Planned]**` Retrieval-aware safety and evidence scoring
+  - `Research Goal`, `Engineering Goal`
+  - Make citation quality and source trust first-class factors in agent outputs.
+
+### 3. Product Features
+- `**[Planned]**` Cross-channel conversational product surface
+  - `Engineering Goal`
+  - Support coherent user journeys across web, Telegram, WhatsApp, and WeChat with shared memory and workflow state.
+
+- `**[Research]**` Emotional support escalation framework
+  - `Research Goal`
+  - Introduce clinically safe escalation patterns, crisis boundaries, and operator controls where product policy allows.
+
+- `**[Planned]**` Advanced personalization and chronic-care programs
+  - `Engineering Goal`, `Research Goal`
+  - Move from isolated recommendations toward longitudinal coaching programs and condition-specific workflows.
+
+### 4. Deployment and Scaling
+- `**[Planned]**` Fault-tolerant multi-region or multi-zone runtime posture
+  - `Infrastructure Goal`
+  - Add stronger recovery guarantees for queues, workers, and durable event processing.
+
+- `**[Planned]**` Policy-driven feature rollout and experimentation
+  - `Infrastructure Goal`, `Engineering Goal`
+  - Add environment-aware feature flags and controlled rollout paths for new agents and tools.
+
+- `**[Planned]**` Advanced configuration telemetry and auditability
+  - `Infrastructure Goal`
+  - Make runtime configuration provenance and effective values observable with redaction by default.
