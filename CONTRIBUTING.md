@@ -172,6 +172,20 @@ A contribution is not complete if it only works locally but is opaque to operate
 - Keep view logic separate from raw API payload formatting where possible.
 - Maintain mobile usability and keyboard accessibility.
 
+Small example:
+
+```ts
+export type DailyInsight = {
+  id: string;
+  title: string;
+  summary: string;
+};
+
+export async function getDailyInsights(): Promise<DailyInsight[]> {
+  return request<DailyInsight[]>("/api/v1/insights/daily");
+}
+```
+
 ## Architecture Rules for Contributors
 Mandatory rules:
 - routers are HTTP mapping only
@@ -180,6 +194,19 @@ Mandatory rules:
 - side effects should be decoupled from request-time business logic
 - persistent state transitions must be observable and testable
 - new AI behaviors must preserve safety boundaries
+
+Small example:
+
+```python
+@router.get("/insights/daily", response_model=list[DailyInsightResponse])
+def list_daily_insights(
+    user: AuthenticatedUser = Depends(require_user),
+    service: InsightService = Depends(get_insight_service),
+) -> list[DailyInsightResponse]:
+    return [DailyInsightResponse.model_validate(item) for item in service.list_for_user(user.user_id)]
+```
+
+The router maps HTTP only. Ranking, retrieval, or other orchestration belongs in `InsightService`.
 
 ## How to Add a New Agent
 1. Define the agent's responsibility.
@@ -202,6 +229,36 @@ Checklist:
 - no direct untyped external API calls from the agent
 - no raw prompt strings hidden in unrelated modules
 
+Small example:
+
+```python
+from pydantic import BaseModel
+
+
+class KnowledgeAgentInput(BaseModel):
+    question: str
+    user_id: str
+
+
+class KnowledgeAgentOutput(BaseModel):
+    answer: str
+    citations: list[str]
+
+
+class KnowledgeRetrievalAgent:
+    def __init__(self, retrieval_service: RetrievalService) -> None:
+        self._retrieval_service = retrieval_service
+
+    def run(self, payload: KnowledgeAgentInput) -> KnowledgeAgentOutput:
+        context = self._retrieval_service.search(payload.question)
+        return KnowledgeAgentOutput(
+            answer=f"Grounded answer for: {payload.question}",
+            citations=[item.source_id for item in context],
+        )
+```
+
+Registration should happen in orchestration or registry code, not inside route handlers.
+
 ## How to Add a Tool
 1. Define the tool input schema.
 2. Define the tool output schema.
@@ -215,6 +272,31 @@ A tool must:
 - return structured errors
 - be observable
 - respect idempotency where possible
+
+Small example:
+
+```python
+from pydantic import BaseModel
+
+
+class LookupIngredientInput(BaseModel):
+    ingredient: str
+
+
+class LookupIngredientOutput(BaseModel):
+    sodium_mg: int
+    sugar_g: float
+
+
+def lookup_ingredient_tool(payload: LookupIngredientInput) -> LookupIngredientOutput:
+    record = ingredient_catalog_lookup(payload.ingredient)
+    return LookupIngredientOutput(
+        sodium_mg=record.sodium_mg,
+        sugar_g=record.sugar_g,
+    )
+```
+
+The registry entry should declare scopes, sensitivity, and side effects alongside the callable.
 
 ## How to Integrate New Data Sources
 Examples:
@@ -236,6 +318,30 @@ Security requirements:
 - never hardcode secrets
 - never expose raw provider responses directly to the UI without validation
 - review PII and compliance implications before adding persistent ingestion
+
+Small example:
+
+```python
+class PubMedRecord(BaseModel):
+    source_id: str
+    title: str
+    abstract: str
+    url: str
+
+
+def normalize_pubmed_record(raw: dict[str, object]) -> PubMedRecord:
+    return PubMedRecord(
+        source_id=str(raw["uid"]),
+        title=str(raw["title"]),
+        abstract=str(raw.get("abstract", "")),
+        url=f"https://pubmed.ncbi.nlm.nih.gov/{raw['uid']}/",
+    )
+```
+
+After normalization:
+- persist provenance
+- chunk and embed if the source participates in RAG
+- keep retrieval-time citations tied to the original `source_id`
 
 ## Testing Guidelines
 ### Required Coverage
@@ -265,6 +371,18 @@ For agentic changes, add stable regression coverage around:
 - safety decisions and fallback behavior
 
 If prompts change behavior materially, document why the change is acceptable.
+
+Small example:
+
+```python
+def test_knowledge_agent_returns_citations() -> None:
+    retrieval = FakeRetrievalService([FakeDocument(source_id="pubmed:123")])
+    agent = KnowledgeRetrievalAgent(retrieval)
+
+    result = agent.run(KnowledgeAgentInput(question="What is LDL?", user_id="user-1"))
+
+    assert result.citations == ["pubmed:123"]
+```
 
 ## Security and Safety
 ### Input Validation
