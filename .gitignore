@@ -11,9 +11,15 @@ wheels/
 .pytest_cache/
 .ruff_cache/
 *.db
+*.sqlite
+*.sqlite3
+.coverage
+htmlcov/
+coverage/
 .idea/
 .env
 apps/web/.env
+.DS_Store
 
 # Virtual environments
 .venv
@@ -22,5 +28,7 @@ apps/web/.env
 apps/web/.next/
 apps/web/node_modules/
 apps/web/test-results/
+apps/web/playwright-report/
 node_modules/
 *.tsbuildinfo
+.turbo/
