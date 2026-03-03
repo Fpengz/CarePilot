@@ -1,0 +1,423 @@
+[
+  {
+    "drug_id": "HT001",
+    "drug_name_en": "Amlodipine",
+    "drug_name_cn": "氨氯地平",
+    "drug_name_malay": "Amlodipine",
+    "drug_name_tamil": "அம்லோடிபின்",
+    "brand_names": ["Norvasc"],
+    "drug_class": "Calcium Channel Blocker (CCB)",
+    "drug_class_cn": "钙通道阻滞剂",
+    "indication": "Hypertension, Angina",
+    "indication_cn": "高血压、心绞痛",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "5mg once daily",
+      "maintenance": "5-10mg once daily",
+      "max_daily": "10mg/day",
+      "titration": "2周后可从5mg增至10mg"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "不受进食影响，任何时间服用",
+      "relation_to_meal_en": "Can be taken with or without food",
+      "reason": "药物吸收不受食物影响"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的氨氯地平 {dose}。",
+      "fixed_time_en": "Time to take your Amlodipine {dose}.",
+      "missed_dose_cn": "您今天还没有服用氨氯地平。请尽快补服，但如果快到下次服药时间了，跳过这次即可。",
+      "missed_dose_en": "You haven't taken your Amlodipine today. Take it as soon as you remember, unless it's almost time for the next dose."
+    },
+    "side_effects": {
+      "common": ["脚踝水肿", "头痛", "面部潮红", "头晕", "疲劳"],
+      "common_en": ["Ankle swelling", "Headache", "Flushing", "Dizziness", "Fatigue"],
+      "serious": ["严重低血压", "心悸"],
+      "serious_en": ["Severe hypotension", "Palpitations"]
+    },
+    "contraindications": [
+      "严重低血压",
+      "严重主动脉瓣狭窄",
+      "对CCB过敏"
+    ],
+    "food_interactions": [
+      "避免大量葡萄柚/柚子汁（增加药物浓度）"
+    ],
+    "monitoring": {
+      "parameters": ["血压", "心率", "脚踝水肿"],
+      "bp_target": "<130/80 mmHg (一般) / 120-129/70-79 mmHg (2024 ESC)",
+      "frequency": "家庭血压监测每日；门诊每1-3个月"
+    },
+    "special_notes": "新加坡常用一线降压药。长效，每日一次即可。不影响血糖和血脂。老年患者和单纯收缩期高血压尤为适用。",
+    "singapore_subsidy": "CDMP覆盖药物，Healthier SG Chronic Tier可获补贴"
+  },
+  {
+    "drug_id": "HT002",
+    "drug_name_en": "Losartan",
+    "drug_name_cn": "氯沙坦",
+    "drug_name_malay": "Losartan",
+    "drug_name_tamil": "லோசார்ட்டன்",
+    "brand_names": ["Cozaar"],
+    "drug_class": "Angiotensin II Receptor Blocker (ARB)",
+    "drug_class_cn": "血管紧张素II受体阻断剂 (ARB)",
+    "indication": "Hypertension, Diabetic Nephropathy, Heart Failure",
+    "indication_cn": "高血压、糖尿病肾病、心力衰竭",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "50mg once daily",
+      "maintenance": "50-100mg once daily",
+      "max_daily": "100mg/day",
+      "titration": "可在数周后增加至100mg"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "不受进食影响",
+      "relation_to_meal_en": "Can be taken with or without food",
+      "reason": "药物吸收不受食物显著影响"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的氯沙坦 {dose}。",
+      "fixed_time_en": "Time to take your Losartan {dose}.",
+      "missed_dose_cn": "您今天还没有服用氯沙坦。请尽快补服。",
+      "missed_dose_en": "You haven't taken your Losartan today. Take it as soon as you remember."
+    },
+    "side_effects": {
+      "common": ["头晕", "高钾血症", "疲劳"],
+      "common_en": ["Dizziness", "Hyperkalemia", "Fatigue"],
+      "serious": ["血管性水肿（罕见）", "急性肾损伤", "严重高钾血症"],
+      "serious_en": ["Angioedema (rare)", "Acute kidney injury", "Severe hyperkalemia"]
+    },
+    "contraindications": [
+      "妊娠（致畸）",
+      "双侧肾动脉狭窄",
+      "高钾血症",
+      "不可与ACEI联用"
+    ],
+    "food_interactions": [
+      "避免高钾食物过量摄入（香蕉、橙子、椰子水）",
+      "避免使用含钾盐替代品"
+    ],
+    "monitoring": {
+      "parameters": ["血压", "肾功能(肌酐/eGFR)", "血钾"],
+      "bp_target": "<130/80 mmHg",
+      "frequency": "开始用药后1-2周查肾功能和血钾；之后每3-6个月"
+    },
+    "special_notes": "特别适合合并糖尿病肾病的高血压患者（肾脏保护作用）。妊娠期禁用！不引起ACEI常见的干咳。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "HT003",
+    "drug_name_en": "Enalapril",
+    "drug_name_cn": "依那普利",
+    "drug_name_malay": "Enalapril",
+    "drug_name_tamil": "எனாலாப்ரில்",
+    "brand_names": ["Vasotec", "Renitec"],
+    "drug_class": "ACE Inhibitor (ACEI)",
+    "drug_class_cn": "血管紧张素转换酶抑制剂 (ACEI)",
+    "indication": "Hypertension, Heart Failure, Diabetic Nephropathy",
+    "indication_cn": "高血压、心力衰竭、糖尿病肾病",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "5mg once daily",
+      "maintenance": "10-20mg once or twice daily",
+      "max_daily": "40mg/day",
+      "titration": "每1-2周增加"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "不受进食影响",
+      "relation_to_meal_en": "Can be taken with or without food",
+      "reason": "药物吸收不受食物显著影响"
+    },
+    "frequency": "once_or_twice_daily",
+    "frequency_cn": "每日一次或两次",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的依那普利 {dose}。",
+      "fixed_time_en": "Time to take your Enalapril {dose}.",
+      "missed_dose_cn": "您还没有服用依那普利，请尽快补服。",
+      "missed_dose_en": "You haven't taken your Enalapril. Take it as soon as you remember."
+    },
+    "side_effects": {
+      "common": ["干咳（10-20%）", "头晕", "高钾血症", "疲劳"],
+      "common_en": ["Dry cough (10-20%)", "Dizziness", "Hyperkalemia", "Fatigue"],
+      "serious": ["血管性水肿", "急性肾损伤", "严重高钾血症"],
+      "serious_en": ["Angioedema", "Acute kidney injury", "Severe hyperkalemia"]
+    },
+    "contraindications": [
+      "妊娠",
+      "双侧肾动脉狭窄",
+      "血管性水肿病史",
+      "高钾血症",
+      "不可与ARB联用"
+    ],
+    "food_interactions": [
+      "避免高钾食物过量",
+      "避免含钾盐替代品"
+    ],
+    "monitoring": {
+      "parameters": ["血压", "肾功能", "血钾", "咳嗽症状"],
+      "bp_target": "<130/80 mmHg",
+      "frequency": "开始后1-2周查肾功能和血钾；之后每3-6个月"
+    },
+    "special_notes": "干咳是ACEI的类效应，约10-20%患者会出现。若不能耐受咳嗽可换用ARB（如Losartan）。对糖尿病肾病有保护作用。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "HT004",
+    "drug_name_en": "Hydrochlorothiazide (HCTZ)",
+    "drug_name_cn": "氢氯噻嗪",
+    "drug_name_malay": "Hydrochlorothiazide",
+    "drug_name_tamil": "ஹைட்ரோகுளோரோதியாசைடு",
+    "brand_names": ["Dichlotride"],
+    "drug_class": "Thiazide Diuretic",
+    "drug_class_cn": "噻嗪类利尿剂",
+    "indication": "Hypertension, Edema",
+    "indication_cn": "高血压、水肿",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "12.5-25mg once daily",
+      "maintenance": "25-50mg once daily",
+      "max_daily": "50mg/day",
+      "titration": "低剂量起始"
+    },
+    "timing": {
+      "relation_to_meal": "morning",
+      "relation_to_meal_cn": "早晨服用",
+      "relation_to_meal_en": "Take in the morning",
+      "reason": "利尿药会增加排尿，早晨服用避免夜间频繁上厕所"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次（早晨）",
+    "reminder_templates": {
+      "fixed_time_cn": "早上好！请服用今天的氢氯噻嗪 {dose}。建议早晨服用，避免晚间频繁上厕所。",
+      "fixed_time_en": "Good morning! Please take your Hydrochlorothiazide {dose}. Taking it in the morning avoids nighttime bathroom trips.",
+      "missed_dose_cn": "您今天早上忘记服用氢氯噻嗪了。如果现在还是上午，可以补服。下午以后建议跳过，明天早上再服。",
+      "missed_dose_en": "You missed your morning HCTZ. Take it now if it's still morning. If afternoon, skip and take it tomorrow morning."
+    },
+    "side_effects": {
+      "common": ["低钾血症", "多尿", "头晕", "血糖升高", "尿酸升高"],
+      "common_en": ["Hypokalemia", "Polyuria", "Dizziness", "Elevated blood glucose", "Elevated uric acid"],
+      "serious": ["严重电解质紊乱", "痛风发作"],
+      "serious_en": ["Severe electrolyte imbalance", "Gout attack"]
+    },
+    "contraindications": [
+      "无尿",
+      "严重肾功能不全 (eGFR < 30)",
+      "严重低钾或低钠血症",
+      "痛风"
+    ],
+    "food_interactions": [
+      "多吃富钾食物（香蕉、橙子）补充钾",
+      "注意足够水分摄入",
+      "可能需要限制盐摄入以增强降压效果"
+    ],
+    "monitoring": {
+      "parameters": ["血压", "电解质(钾、钠)", "肾功能", "血糖", "尿酸"],
+      "bp_target": "<130/80 mmHg",
+      "frequency": "开始后2-4周查电解质；之后每3-6个月"
+    },
+    "special_notes": "注意：可能升高血糖和尿酸，糖尿病和痛风患者需密切监测。新加坡常与ACEI/ARB联合使用。低剂量(12.5-25mg)降压效果好且副作用小。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "HT005",
+    "drug_name_en": "Atenolol",
+    "drug_name_cn": "阿替洛尔",
+    "drug_name_malay": "Atenolol",
+    "drug_name_tamil": "அட்டெனோலோல்",
+    "brand_names": ["Tenormin"],
+    "drug_class": "Beta Blocker",
+    "drug_class_cn": "β受体阻滞剂",
+    "indication": "Hypertension, Angina, Arrhythmia",
+    "indication_cn": "高血压、心绞痛、心律失常",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "25-50mg once daily",
+      "maintenance": "50-100mg once daily",
+      "max_daily": "100mg/day",
+      "titration": "每1-2周调整"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "不受进食影响",
+      "relation_to_meal_en": "Can be taken with or without food",
+      "reason": "药物吸收不受食物显著影响"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的阿替洛尔 {dose}。",
+      "fixed_time_en": "Time to take your Atenolol {dose}.",
+      "missed_dose_cn": "您今天还没有服用阿替洛尔。如果距离下次服药还早，请补服。注意：不要突然停药。",
+      "missed_dose_en": "You haven't taken your Atenolol today. Take it if not close to the next dose. Important: Never stop this medication suddenly."
+    },
+    "side_effects": {
+      "common": ["心动过缓", "疲劳", "手脚冰冷", "头晕"],
+      "common_en": ["Bradycardia", "Fatigue", "Cold extremities", "Dizziness"],
+      "serious": ["严重心动过缓", "支气管痉挛", "心力衰竭恶化"],
+      "serious_en": ["Severe bradycardia", "Bronchospasm", "Worsening heart failure"]
+    },
+    "contraindications": [
+      "严重心动过缓 (HR<50)",
+      "未控制的心力衰竭",
+      "哮喘/严重COPD",
+      "二三度房室传导阻滞"
+    ],
+    "food_interactions": [],
+    "monitoring": {
+      "parameters": ["血压", "心率", "血糖（糖尿病患者）"],
+      "bp_target": "<130/80 mmHg",
+      "frequency": "每1-3个月"
+    },
+    "special_notes": "不可突然停药（需逐渐减量）！可能掩盖低血糖症状（心跳加速），糖尿病患者需注意。哮喘患者禁用。新版指南中β受体阻滞剂不再作为高血压一线用药（除非有心衰/房颤等合并症）。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "HT006",
+    "drug_name_en": "Bisoprolol",
+    "drug_name_cn": "比索洛尔",
+    "drug_name_malay": "Bisoprolol",
+    "drug_name_tamil": "பிசோப்ரோலோல்",
+    "brand_names": ["Concor"],
+    "drug_class": "Selective Beta-1 Blocker",
+    "drug_class_cn": "选择性β1受体阻滞剂",
+    "indication": "Hypertension, Heart Failure, Angina",
+    "indication_cn": "高血压、心力衰竭、心绞痛",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "2.5-5mg once daily",
+      "maintenance": "5-10mg once daily",
+      "max_daily": "20mg/day",
+      "titration": "每2周增加2.5-5mg"
+    },
+    "timing": {
+      "relation_to_meal": "any_time_morning_preferred",
+      "relation_to_meal_cn": "不受进食影响，建议早晨服用",
+      "relation_to_meal_en": "Can be taken with or without food, preferably in the morning",
+      "reason": "早晨服用配合血压昼夜节律"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的比索洛尔 {dose}。",
+      "fixed_time_en": "Time to take your Bisoprolol {dose}.",
+      "missed_dose_cn": "您今天还没有服用比索洛尔，请尽快补服。切勿突然停药。",
+      "missed_dose_en": "You haven't taken your Bisoprolol today. Take it soon. Never stop suddenly."
+    },
+    "side_effects": {
+      "common": ["心动过缓", "疲劳", "头晕", "头痛"],
+      "common_en": ["Bradycardia", "Fatigue", "Dizziness", "Headache"],
+      "serious": ["严重心动过缓", "房室传导阻滞"],
+      "serious_en": ["Severe bradycardia", "AV block"]
+    },
+    "contraindications": ["严重心动过缓", "未控制的心衰", "哮喘（相对禁忌）", "二三度房室传导阻滞"],
+    "food_interactions": [],
+    "monitoring": {
+      "parameters": ["血压", "心率"],
+      "bp_target": "<130/80 mmHg",
+      "frequency": "每1-3个月"
+    },
+    "special_notes": "选择性β1阻滞剂，比Atenolol对支气管影响更小（但哮喘患者仍需谨慎）。心衰患者常用。不可突然停药。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "HT007",
+    "drug_name_en": "Nifedipine MR/XL",
+    "drug_name_cn": "硝苯地平缓释片",
+    "drug_name_malay": "Nifedipine",
+    "drug_name_tamil": "நிஃபெடிபின்",
+    "brand_names": ["Adalat", "Procardia XL"],
+    "drug_class": "Calcium Channel Blocker (CCB) - Dihydropyridine",
+    "drug_class_cn": "钙通道阻滞剂 (二氢吡啶类)",
+    "indication": "Hypertension, Angina",
+    "indication_cn": "高血压、心绞痛",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "20-30mg once daily (缓释片)",
+      "maintenance": "30-60mg once daily",
+      "max_daily": "90mg/day",
+      "titration": "每1-2周调整"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "不受进食影响",
+      "relation_to_meal_en": "Can be taken with or without food",
+      "reason": "缓释片设计保证稳定释放"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次（缓释片）",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的硝苯地平缓释片 {dose}。请整片吞服，不要掰开或咀嚼。",
+      "fixed_time_en": "Time to take your Nifedipine {dose}. Swallow whole, do not crush or chew.",
+      "missed_dose_cn": "您今天还没有服用硝苯地平缓释片，请尽快补服。整片吞服。",
+      "missed_dose_en": "You missed your Nifedipine. Take it soon. Swallow the tablet whole."
+    },
+    "side_effects": {
+      "common": ["头痛", "面部潮红", "脚踝水肿", "心悸", "头晕"],
+      "common_en": ["Headache", "Flushing", "Ankle edema", "Palpitations", "Dizziness"],
+      "serious": ["严重低血压", "反射性心动过速"],
+      "serious_en": ["Severe hypotension", "Reflex tachycardia"]
+    },
+    "contraindications": ["严重低血压", "心源性休克", "严重主动脉瓣狭窄"],
+    "food_interactions": ["避免大量葡萄柚/柚子（增加药物浓度）"],
+    "monitoring": {
+      "parameters": ["血压", "心率", "水肿"],
+      "bp_target": "<130/80 mmHg",
+      "frequency": "每1-3个月"
+    },
+    "special_notes": "缓释片不可掰开、压碎或咀嚼。排出的药片外壳可能在大便中看到（正常现象）。老年患者脚踝水肿发生率较高。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "HT008",
+    "drug_name_en": "Valsartan",
+    "drug_name_cn": "缬沙坦",
+    "drug_name_malay": "Valsartan",
+    "drug_name_tamil": "வல்சார்ட்டன்",
+    "brand_names": ["Diovan"],
+    "drug_class": "ARB",
+    "drug_class_cn": "血管紧张素II受体阻断剂 (ARB)",
+    "indication": "Hypertension, Heart Failure, Post-MI",
+    "indication_cn": "高血压、心力衰竭、心肌梗死后",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "80mg once daily",
+      "maintenance": "80-160mg once daily",
+      "max_daily": "320mg/day",
+      "titration": "每2-4周调整"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "不受进食影响",
+      "relation_to_meal_en": "Can be taken with or without food",
+      "reason": "药物吸收不受食物显著影响"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的缬沙坦 {dose}。",
+      "fixed_time_en": "Time to take your Valsartan {dose}.",
+      "missed_dose_cn": "您今天还没有服用缬沙坦，请尽快补服。",
+      "missed_dose_en": "You haven't taken your Valsartan today. Take it as soon as possible."
+    },
+    "side_effects": {
+      "common": ["头晕", "高钾血症", "疲劳", "腹泻"],
+      "common_en": ["Dizziness", "Hyperkalemia", "Fatigue", "Diarrhea"],
+      "serious": ["血管性水肿（罕见）", "急性肾损伤"],
+      "serious_en": ["Angioedema (rare)", "Acute kidney injury"]
+    },
+    "contraindications": ["妊娠", "双侧肾动脉狭窄", "高钾血症"],
+    "food_interactions": ["避免高钾食物过量", "避免含钾盐替代品"],
+    "monitoring": {
+      "parameters": ["血压", "肾功能", "血钾"],
+      "bp_target": "<130/80 mmHg",
+      "frequency": "开始后1-2周查肾功能和血钾；之后每3-6个月"
+    },
+    "special_notes": "与Losartan同类ARB药物，不引起干咳。妊娠期禁用。适合合并糖尿病肾病的患者。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  }
+]

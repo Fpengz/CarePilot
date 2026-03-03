@@ -1,0 +1,264 @@
+[
+  {
+    "drug_id": "LP001",
+    "drug_name_en": "Atorvastatin",
+    "drug_name_cn": "阿托伐他汀",
+    "drug_name_malay": "Atorvastatin",
+    "drug_name_tamil": "அட்டோர்வாஸ்டடின்",
+    "brand_names": ["Lipitor"],
+    "drug_class": "Statin (HMG-CoA Reductase Inhibitor)",
+    "drug_class_cn": "他汀类（HMG-CoA还原酶抑制剂）",
+    "indication": "Hyperlipidemia, Cardiovascular Risk Reduction",
+    "indication_cn": "高血脂、心血管风险降低",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "10-20mg once daily",
+      "maintenance": "10-80mg once daily",
+      "max_daily": "80mg/day",
+      "titration": "每4周根据LDL-C水平调整"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "任何时间服用均可（建议晚上）",
+      "relation_to_meal_en": "Can be taken at any time, evening preferred",
+      "reason": "虽然任何时间都有效（长半衰期），但肝脏胆固醇合成在夜间最活跃，晚上服用可能更优"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次（建议晚上）",
+    "reminder_templates": {
+      "fixed_time_cn": "晚上好！请服用今天的阿托伐他汀 {dose}。",
+      "fixed_time_en": "Good evening! Time to take your Lipitor (Atorvastatin) {dose}.",
+      "missed_dose_cn": "您今天还没有服用阿托伐他汀。如果还没有过午夜，请补服。如果已经是第二天了，跳过即可。",
+      "missed_dose_en": "You haven't taken your Atorvastatin today. Take it if before midnight. Otherwise, skip and take tomorrow's dose."
+    },
+    "side_effects": {
+      "common": ["肌肉疼痛/无力", "胃肠不适", "头痛"],
+      "common_en": ["Muscle pain/weakness", "GI discomfort", "Headache"],
+      "serious": ["横纹肌溶解症（罕见但严重）", "肝损伤", "新发糖尿病（风险略增）"],
+      "serious_en": ["Rhabdomyolysis (rare but serious)", "Liver injury", "New-onset diabetes (slightly increased risk)"]
+    },
+    "contraindications": [
+      "活动性肝病",
+      "妊娠和哺乳",
+      "不明原因的持续性转氨酶升高"
+    ],
+    "food_interactions": [
+      "避免大量葡萄柚/柚子汁（增加药物浓度和肌肉副作用风险）",
+      "维持低脂饮食以增强效果"
+    ],
+    "monitoring": {
+      "parameters": ["LDL-C", "总胆固醇", "肝功能(ALT/AST)", "肌肉症状", "CK（如有肌肉症状）"],
+      "ldl_target": "<2.6 mmol/L (一般) / <1.8 mmol/L (高危) / <1.4 mmol/L (极高危)",
+      "frequency": "血脂每4-12周（调整期间）；肝功能用药前和用药后12周；之后每年"
+    },
+    "special_notes": "新加坡最常用的他汀类药物之一。长半衰期，任何时间服用都有效。降LDL-C幅度强（10mg约降36%，80mg约降51%）。出现不明原因的肌肉疼痛/无力要及时就医。",
+    "singapore_subsidy": "CDMP覆盖药物，Healthier SG Chronic Tier可获补贴"
+  },
+  {
+    "drug_id": "LP002",
+    "drug_name_en": "Simvastatin",
+    "drug_name_cn": "辛伐他汀",
+    "drug_name_malay": "Simvastatin",
+    "drug_name_tamil": "சிம்வாஸ்டடின்",
+    "brand_names": ["Zocor"],
+    "drug_class": "Statin",
+    "drug_class_cn": "他汀类",
+    "indication": "Hyperlipidemia, Cardiovascular Risk Reduction",
+    "indication_cn": "高血脂、心血管风险降低",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "10-20mg once daily",
+      "maintenance": "10-40mg once daily",
+      "max_daily": "40mg/day (80mg仅限已稳定使用者)",
+      "titration": "每4周根据LDL-C调整"
+    },
+    "timing": {
+      "relation_to_meal": "evening",
+      "relation_to_meal_cn": "晚上服用",
+      "relation_to_meal_en": "Take in the evening",
+      "reason": "短半衰期，必须晚上服用以配合肝脏夜间胆固醇合成高峰"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次（晚上）",
+    "reminder_templates": {
+      "fixed_time_cn": "晚上好！请服用今天的辛伐他汀 {dose}。记得要在晚上服用效果最好。",
+      "fixed_time_en": "Good evening! Please take your Simvastatin {dose}. It works best when taken in the evening.",
+      "missed_dose_cn": "您今天晚上忘记服用辛伐他汀了。如果睡前想起来了请补服。如果已经是第二天了，跳过即可。",
+      "missed_dose_en": "You missed your Simvastatin tonight. Take it before bed if you remember. If it's the next day, skip and take tonight."
+    },
+    "side_effects": {
+      "common": ["肌肉疼痛", "胃肠不适", "头痛", "失眠"],
+      "common_en": ["Myalgia", "GI discomfort", "Headache", "Insomnia"],
+      "serious": ["横纹肌溶解症", "肝损伤"],
+      "serious_en": ["Rhabdomyolysis", "Liver injury"]
+    },
+    "contraindications": [
+      "活动性肝病",
+      "妊娠和哺乳",
+      "与强效CYP3A4抑制剂联用"
+    ],
+    "food_interactions": [
+      "严格避免葡萄柚/柚子汁（与Simvastatin的相互作用比Atorvastatin更强）",
+      "维持低脂饮食"
+    ],
+    "monitoring": {
+      "parameters": ["LDL-C", "总胆固醇", "肝功能", "肌肉症状"],
+      "ldl_target": "<2.6 mmol/L (一般) / <1.8 mmol/L (高危)",
+      "frequency": "血脂每4-12周；肝功能每年"
+    },
+    "special_notes": "必须在晚上服用（与Atorvastatin不同）！药物相互作用较多，需注意与其他药物的配伍。80mg剂量横纹肌溶解风险高，一般不推荐新患者使用80mg。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "LP003",
+    "drug_name_en": "Rosuvastatin",
+    "drug_name_cn": "瑞舒伐他汀",
+    "drug_name_malay": "Rosuvastatin",
+    "drug_name_tamil": "ரோசுவாஸ்டடின்",
+    "brand_names": ["Crestor"],
+    "drug_class": "Statin",
+    "drug_class_cn": "他汀类",
+    "indication": "Hyperlipidemia, Cardiovascular Risk Reduction",
+    "indication_cn": "高血脂、心血管风险降低",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "5-10mg once daily",
+      "maintenance": "5-20mg once daily",
+      "max_daily": "40mg/day (亚洲人群建议≤20mg)",
+      "titration": "每4周调整"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "任何时间服用均可",
+      "relation_to_meal_en": "Can be taken at any time of day",
+      "reason": "长半衰期（19小时），无需限定晚上服用"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的瑞舒伐他汀 {dose}。",
+      "fixed_time_en": "Time to take your Crestor (Rosuvastatin) {dose}.",
+      "missed_dose_cn": "您今天还没有服用瑞舒伐他汀，请尽快补服。",
+      "missed_dose_en": "You haven't taken your Rosuvastatin today. Take it as soon as you remember."
+    },
+    "side_effects": {
+      "common": ["肌肉疼痛", "头痛", "腹痛", "乏力"],
+      "common_en": ["Myalgia", "Headache", "Abdominal pain", "Asthenia"],
+      "serious": ["横纹肌溶解症（罕见）", "肝损伤"],
+      "serious_en": ["Rhabdomyolysis (rare)", "Liver injury"]
+    },
+    "contraindications": ["活动性肝病", "妊娠和哺乳", "严重肾功能不全(40mg剂量)"],
+    "food_interactions": [
+      "与葡萄柚的相互作用较Simvastatin小",
+      "维持低脂饮食"
+    ],
+    "monitoring": {
+      "parameters": ["LDL-C", "总胆固醇", "肝功能", "肌肉症状"],
+      "ldl_target": "<2.6 mmol/L (一般) / <1.8 mmol/L (高危)",
+      "frequency": "血脂每4-12周；肝功能每年"
+    },
+    "special_notes": "降LDL-C能力最强的他汀类药物之一（5mg约降38%）。亚洲人群对Rosuvastatin的血药浓度可能较高，建议起始剂量5mg。不需要在晚上服用。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "LP004",
+    "drug_name_en": "Ezetimibe",
+    "drug_name_cn": "依折麦布",
+    "drug_name_malay": "Ezetimibe",
+    "drug_name_tamil": "எஸிட்டிமிப்",
+    "brand_names": ["Zetia", "Ezetrol"],
+    "drug_class": "Cholesterol Absorption Inhibitor",
+    "drug_class_cn": "胆固醇吸收抑制剂",
+    "indication": "Hyperlipidemia (常与他汀联用)",
+    "indication_cn": "高血脂（通常与他汀类药物联合使用）",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "10mg once daily",
+      "maintenance": "10mg once daily",
+      "max_daily": "10mg/day",
+      "titration": "无需调整，只有一个剂量"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "不受进食影响",
+      "relation_to_meal_en": "Can be taken with or without food",
+      "reason": "药物吸收不受食物影响"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的依折麦布 {dose}。",
+      "fixed_time_en": "Time to take your Ezetimibe {dose}.",
+      "missed_dose_cn": "您今天还没有服用依折麦布，请尽快补服。",
+      "missed_dose_en": "You haven't taken your Ezetimibe today. Take it as soon as you remember."
+    },
+    "side_effects": {
+      "common": ["腹泻", "腹痛", "疲劳"],
+      "common_en": ["Diarrhea", "Abdominal pain", "Fatigue"],
+      "serious": ["肝损伤（与他汀联用时）", "横纹肌溶解症（与他汀联用时）"],
+      "serious_en": ["Hepatotoxicity (with statin)", "Rhabdomyolysis (with statin)"]
+    },
+    "contraindications": ["活动性肝病（与他汀联用时）"],
+    "food_interactions": [],
+    "monitoring": {
+      "parameters": ["LDL-C", "肝功能（与他汀联用时）"],
+      "ldl_target": "<2.6 mmol/L (一般) / <1.8 mmol/L (高危)",
+      "frequency": "血脂每4-12周；肝功能每年（与他汀联用）"
+    },
+    "special_notes": "通常在他汀不能充分降低LDL-C时加用。可额外降低LDL-C约15-20%。副作用少，耐受性好。ACE指南推荐为他汀类的联合用药选择。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "LP005",
+    "drug_name_en": "Fenofibrate",
+    "drug_name_cn": "非诺贝特",
+    "drug_name_malay": "Fenofibrate",
+    "drug_name_tamil": "ஃபெனோஃபைப்ரேட்",
+    "brand_names": ["Lipanthyl", "Tricor"],
+    "drug_class": "Fibrate",
+    "drug_class_cn": "贝特类",
+    "indication": "Hypertriglyceridemia, Mixed Dyslipidemia",
+    "indication_cn": "高甘油三酯血症、混合型血脂异常",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "145mg once daily (微粒化) / 160mg once daily",
+      "maintenance": "145-160mg once daily",
+      "max_daily": "160mg/day",
+      "titration": "肾功能不全需减量"
+    },
+    "timing": {
+      "relation_to_meal": "with_meal",
+      "relation_to_meal_cn": "随餐服用",
+      "relation_to_meal_en": "Take with meals",
+      "reason": "随餐服用可增加药物吸收"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次（随餐）",
+    "reminder_templates": {
+      "fixed_time_cn": "请在吃饭时一起服用非诺贝特 {dose}。",
+      "fixed_time_en": "Please take your Fenofibrate {dose} with your meal.",
+      "missed_dose_cn": "您今天还没有服用非诺贝特。请在下一餐时补服。",
+      "missed_dose_en": "You haven't taken your Fenofibrate today. Take it with your next meal."
+    },
+    "side_effects": {
+      "common": ["胃肠不适", "肝功能异常", "肌肉疼痛"],
+      "common_en": ["GI discomfort", "Liver function abnormalities", "Myalgia"],
+      "serious": ["横纹肌溶解症（尤其与他汀联用）", "胰腺炎", "胆石症"],
+      "serious_en": ["Rhabdomyolysis (especially with statins)", "Pancreatitis", "Cholelithiasis"]
+    },
+    "contraindications": [
+      "严重肾功能不全",
+      "严重肝功能不全",
+      "胆囊疾病",
+      "与他汀联用需谨慎"
+    ],
+    "food_interactions": ["需要随餐服用以增加吸收"],
+    "monitoring": {
+      "parameters": ["甘油三酯", "LDL-C", "肝功能", "肾功能", "肌肉症状"],
+      "ldl_target": "甘油三酯 <1.7 mmol/L",
+      "frequency": "血脂每4-12周；肝肾功能每3-6个月"
+    },
+    "special_notes": "主要用于降低甘油三酯。与他汀联用时横纹肌溶解风险增加（Fenofibrate比Gemfibrozil安全）。如与他汀联用，选择Fenofibrate而非Gemfibrozil。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  }
+]

@@ -1,0 +1,54 @@
+{
+  "kopitiam_drink_guide": {
+    "description": "新加坡Kopitiam/小贩中心饮品点餐指南 - 帮助系统理解本地饮品术语",
+    "terminology": {
+      "Kopi": {"cn": "咖啡加炼奶和糖", "en": "Coffee with condensed milk and sugar", "calories": 135, "sugar_g": 19},
+      "Kopi O": {"cn": "黑咖啡加糖（无奶）", "en": "Black coffee with sugar (no milk)", "calories": 45, "sugar_g": 12},
+      "Kopi C": {"cn": "咖啡加淡奶和糖", "en": "Coffee with evaporated milk and sugar", "calories": 95, "sugar_g": 14},
+      "Kopi O Kosong": {"cn": "黑咖啡无糖无奶", "en": "Black coffee, no sugar, no milk", "calories": 5, "sugar_g": 0},
+      "Kopi C Kosong": {"cn": "咖啡加淡奶无糖", "en": "Coffee with evaporated milk, no sugar", "calories": 40, "sugar_g": 2},
+      "Kopi Siu Dai": {"cn": "咖啡少糖（炼奶）", "en": "Coffee with condensed milk, less sugar", "calories": 100, "sugar_g": 12},
+      "Kopi C Siu Dai": {"cn": "咖啡淡奶少糖", "en": "Coffee with evaporated milk, less sugar", "calories": 70, "sugar_g": 8},
+      "Kopi Gao": {"cn": "浓咖啡", "en": "Strong/thick coffee", "note": "加倍咖啡粉"},
+      "Kopi Poh": {"cn": "淡咖啡", "en": "Diluted/thin coffee", "note": "适合不想太多咖啡因的人"},
+      "Kopi Peng": {"cn": "冰咖啡", "en": "Iced coffee", "note": "加冰，通常糖分更高"},
+      "Teh": {"cn": "奶茶加炼奶和糖", "en": "Tea with condensed milk and sugar", "calories": 130, "sugar_g": 20},
+      "Teh O": {"cn": "红茶加糖（无奶）", "en": "Tea with sugar (no milk)", "calories": 40, "sugar_g": 10},
+      "Teh C": {"cn": "茶加淡奶和糖", "en": "Tea with evaporated milk and sugar", "calories": 90, "sugar_g": 14},
+      "Teh O Kosong": {"cn": "红茶无糖无奶", "en": "Plain tea, no sugar, no milk", "calories": 2, "sugar_g": 0},
+      "Teh C Siu Dai": {"cn": "茶淡奶少糖", "en": "Tea with evaporated milk, less sugar", "calories": 65, "sugar_g": 8},
+      "Teh Tarik": {"cn": "拉茶", "en": "Pulled tea with condensed milk", "calories": 130, "sugar_g": 20},
+      "Milo": {"cn": "美禄", "en": "Milo chocolate drink with milk", "calories": 200, "sugar_g": 25},
+      "Milo Dinosaur": {"cn": "恐龙美禄", "en": "Iced Milo with extra Milo powder on top", "calories": 300, "sugar_g": 40},
+      "Bandung": {"cn": "玫瑰露水", "en": "Rose syrup with condensed milk", "calories": 150, "sugar_g": 30},
+      "Barley Water": {"cn": "薏米水", "en": "Barley water (usually sweetened)", "calories": 80, "sugar_g": 18},
+      "Chrysanthemum Tea": {"cn": "菊花茶", "en": "Chrysanthemum tea (usually sweetened)", "calories": 70, "sugar_g": 16},
+      "Lime Juice": {"cn": "酸柑水", "en": "Lime juice (usually sweetened)", "calories": 90, "sugar_g": 22},
+      "Sugarcane Juice": {"cn": "甘蔗水", "en": "Fresh sugarcane juice", "calories": 180, "sugar_g": 43},
+      "Soya Bean Milk": {"cn": "豆浆", "en": "Soy bean milk (usually sweetened)", "calories": 100, "sugar_g": 14},
+      "Plain Water": {"cn": "白开水", "en": "Plain water", "calories": 0, "sugar_g": 0}
+    },
+    "diabetes_recommendations": {
+      "best_choices": ["Kopi O Kosong", "Teh O Kosong", "Plain Water", "中国茶(Chinese Tea)"],
+      "acceptable": ["Kopi C Siu Dai", "Teh C Siu Dai", "豆浆少糖(Soya Bean less sugar)"],
+      "limit": ["Kopi C", "Teh C", "Barley Water less sugar"],
+      "avoid": ["Kopi", "Teh", "Teh Tarik", "Milo", "Milo Dinosaur", "Bandung", "Sugarcane Juice", "Ice Kachang"]
+    }
+  },
+  "local_food_ordering_tips": {
+    "description": "新加坡小贩中心点餐的本地化Tips，帮助AI给出更贴切的建议",
+    "useful_phrases": {
+      "less_rice": {"cn": "少饭", "en": "Less rice", "malay": "Kurang nasi"},
+      "brown_rice": {"cn": "糙米饭", "en": "Brown rice", "note": "部分摊位有提供"},
+      "less_oil": {"cn": "少油", "en": "Less oil", "malay": "Kurang minyak"},
+      "less_salt": {"cn": "少盐", "en": "Less salt", "malay": "Kurang garam"},
+      "less_sugar": {"cn": "少糖 / Siu Dai", "en": "Less sugar / Siu Dai"},
+      "no_sugar": {"cn": "无糖 / Kosong", "en": "No sugar / Kosong"},
+      "less_sauce": {"cn": "少酱", "en": "Less sauce/gravy"},
+      "no_skin": {"cn": "去皮", "en": "No skin (chicken)"},
+      "more_vegetables": {"cn": "多加菜", "en": "Extra vegetables", "malay": "Tambah sayur"},
+      "soup_noodles": {"cn": "汤面（不要干捞）", "en": "Soup noodles (not dry)"},
+      "tabao": {"cn": "打包/外带", "en": "Takeaway / Tabao"}
+    }
+  }
+}
