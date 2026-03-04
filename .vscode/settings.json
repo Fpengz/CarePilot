@@ -1,0 +1,13 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.defaultPackageManager": "ms-python.python:pip",
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "healthcare",
+            "database": "${workspaceFolder:Healthcare-Agent}/healthcare_agent/data/sql_data/health_data.db"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}
