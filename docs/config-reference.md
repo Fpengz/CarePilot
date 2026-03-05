@@ -8,11 +8,26 @@ Environment loading conventions:
 
 ## Auth / Session
 - `API_SQLITE_DB_PATH` (default: `dietary_guardian_api.db`) — application data / household persistence
+- `APP_ENV` (default: `dev`) — runtime profile (`dev`, `staging`, `prod`)
 - `SESSION_SECRET` (default: `dev-insecure-session-secret-change-me`)
 - `COOKIE_SECURE` (default: `false`)
 - `AUTH_PASSWORD_HASH_SCHEME` (default: `pbkdf2_sha256`)
 - `AUTH_STORE_BACKEND` (default: `sqlite`) — `sqlite` or `in_memory`
 - `AUTH_SQLITE_DB_PATH` (default: `dietary_guardian_auth.db`)
+- `APP_DATA_BACKEND` (default: `sqlite`) — `sqlite` or `postgres`
+- `HOUSEHOLD_STORE_BACKEND` (default: `sqlite`) — `sqlite` or `postgres`
+- `POSTGRES_DSN` (required when any backend is `postgres`)
+- `POSTGRES_POOL_MIN_SIZE` (default: `1`)
+- `POSTGRES_POOL_MAX_SIZE` (default: `5`)
+- `POSTGRES_STATEMENT_TIMEOUT_MS` (default: `5000`)
+- `EPHEMERAL_STATE_BACKEND` (default: `in_memory`) — `in_memory` or `redis`
+- `REDIS_URL` (required when `EPHEMERAL_STATE_BACKEND=redis`)
+- `REDIS_NAMESPACE` (default: `dietary_guardian`)
+- `REDIS_DEFAULT_TTL_SECONDS` (default: `300`)
+- `REDIS_LOCK_TTL_SECONDS` (default: `30`)
+- `REDIS_WORKER_SIGNAL_CHANNEL` (default: `workers.ready`)
+- `READINESS_FAIL_ON_WARNINGS` (default: profile-derived; `false` in `dev`, `true` in `staging`/`prod`)
+- `REQUIRED_PROVIDER` (optional) — expected provider (`gemini`, `openai`, `ollama`, `vllm`, `test`) for readiness checks
 - `AUTH_SESSION_TTL_SECONDS` (default: `86400`)
 - `AUTH_LOGIN_MAX_FAILED_ATTEMPTS` (default: `5`)
 - `AUTH_LOGIN_FAILURE_WINDOW_SECONDS` (default: `300`)
@@ -74,3 +89,13 @@ Environment loading conventions:
 - `SMS_SENDER_ID` (default: `DietaryGuardian`)
 - `REMINDER_SCHEDULER_INTERVAL_SECONDS` (default: `30`)
 - `REMINDER_SCHEDULER_BATCH_SIZE` (default: `100`)
+
+## Readiness Diagnostics
+- Endpoint: `GET /api/v1/health/ready`
+- Status values:
+  - `ready`: required checks passed and no warnings
+  - `degraded`: required checks passed with warnings
+  - `not_ready`: required check failure (or warning treated as failure when strict mode is enabled)
+- Script gate:
+  - `./scripts/check-readiness.sh [base_url]`
+  - Set `READINESS_FAIL_ON_WARNINGS=1` to fail the script on `degraded`.

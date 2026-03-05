@@ -84,6 +84,8 @@ def build_user_profile_from_health_profile(
         macro_focus=list(health_profile.macro_focus),
         daily_sodium_limit_mg=health_profile.daily_sodium_limit_mg,
         daily_sugar_limit_g=health_profile.daily_sugar_limit_g,
+        daily_protein_target_g=health_profile.daily_protein_target_g,
+        daily_fiber_target_g=health_profile.daily_fiber_target_g,
     )
 
 

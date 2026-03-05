@@ -31,6 +31,28 @@ jobs:
       - name: Tests with coverage gate
         run: uv run pytest --cov=src/dietary_guardian --cov=apps/api/dietary_api --cov-report=term-missing --cov-fail-under=35 -q
 
+      - name: Readiness gate (prod profile)
+        run: |
+          APP_ENV=prod \
+          LLM_PROVIDER=test \
+          APP_DATA_BACKEND=sqlite \
+          AUTH_STORE_BACKEND=in_memory \
+          HOUSEHOLD_STORE_BACKEND=sqlite \
+          EPHEMERAL_STATE_BACKEND=in_memory \
+          uv run python -m apps.api.run >/tmp/api_readiness_ci.log 2>&1 &
+          API_PID=$!
+          cleanup() {
+            kill "$API_PID" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          for _ in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:8001/api/v1/health/live >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          READINESS_FAIL_ON_WARNINGS=1 ./scripts/check-readiness.sh http://127.0.0.1:8001
+
   web:
     runs-on: ubuntu-latest
     steps:

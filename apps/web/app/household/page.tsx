@@ -10,18 +10,28 @@ import {
   createHousehold,
   createHouseholdInvite,
   getCurrentHousehold,
+  getHouseholdCareMemberDailySummary,
+  getHouseholdCareMemberProfile,
   joinHousehold,
   leaveHousehold,
+  listHouseholdCareMemberReminders,
   removeHouseholdMember,
   renameHousehold,
   setActiveHousehold,
 } from "@/lib/api";
-import type { HouseholdBundleApiResponse, HouseholdInvite } from "@/lib/types";
+import type {
+  HouseholdBundleApiResponse,
+  HouseholdCareMealSummaryResponse,
+  HouseholdCareProfileResponse,
+  HouseholdCareReminderListResponse,
+  HouseholdInvite,
+} from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
 type ActionKey =
@@ -45,6 +55,10 @@ export default function HouseholdPage() {
   const [renameValue, setRenameValue] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [selectedMemberUserId, setSelectedMemberUserId] = useState<string | null>(null);
+  const [careProfile, setCareProfile] = useState<HouseholdCareProfileResponse | null>(null);
+  const [careSummary, setCareSummary] = useState<HouseholdCareMealSummaryResponse | null>(null);
+  const [careReminders, setCareReminders] = useState<HouseholdCareReminderListResponse | null>(null);
 
   const loadCurrent = useCallback(async () => {
     setBusy("load");
@@ -73,6 +87,56 @@ export default function HouseholdPage() {
   const canSetActive = Boolean(household);
 
   const ownerMember = useMemo(() => members.find((member) => member.role === "owner") ?? null, [members]);
+
+  useEffect(() => {
+    if (user?.profile_mode !== "caregiver" || !household) {
+      setSelectedMemberUserId(null);
+      setCareProfile(null);
+      setCareSummary(null);
+      setCareReminders(null);
+      return;
+    }
+    if (members.length === 0) {
+      setSelectedMemberUserId(null);
+      return;
+    }
+    const currentMemberStillExists = selectedMemberUserId
+      ? members.some((member) => member.user_id === selectedMemberUserId)
+      : false;
+    if (currentMemberStillExists) return;
+    const preferred = members.find((member) => member.user_id !== user.user_id) ?? members[0];
+    setSelectedMemberUserId(preferred.user_id);
+  }, [household, members, selectedMemberUserId, user]);
+
+  useEffect(() => {
+    if (user?.profile_mode !== "caregiver" || !household || !selectedMemberUserId) return;
+    let cancelled = false;
+    const householdId = household.household_id;
+    const memberUserId = selectedMemberUserId;
+    async function loadCareView() {
+      try {
+        const [profile, summary, reminders] = await Promise.all([
+          getHouseholdCareMemberProfile(householdId, memberUserId),
+          getHouseholdCareMemberDailySummary(
+            householdId,
+            memberUserId,
+            new Date().toISOString().slice(0, 10),
+          ),
+          listHouseholdCareMemberReminders(householdId, memberUserId),
+        ]);
+        if (cancelled) return;
+        setCareProfile(profile);
+        setCareSummary(summary);
+        setCareReminders(reminders);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      }
+    }
+    void loadCareView();
+    return () => {
+      cancelled = true;
+    };
+  }, [household, selectedMemberUserId, user]);
 
   async function withAction(action: ActionKey, fn: () => Promise<void>) {
     setBusy(action);
@@ -380,6 +444,111 @@ export default function HouseholdPage() {
                   You are not in a household yet. Create one or join with an invite code.
                 </p>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Caregiving View</CardTitle>
+              <CardDescription>Read-only monitoring for the selected household member.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {user?.profile_mode !== "caregiver" ? (
+                <p className="app-muted text-sm">
+                  Switch your account mode to caregiver in Settings to unlock read-only household monitoring.
+                </p>
+              ) : null}
+
+              {user?.profile_mode === "caregiver" && !household ? (
+                <p className="app-muted text-sm">
+                  Create or join a household first. The caregiving panel uses the active household membership only.
+                </p>
+              ) : null}
+
+              {user?.profile_mode === "caregiver" && household ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="care-member-select">Selected member</Label>
+                    <Select
+                      id="care-member-select"
+                      value={selectedMemberUserId ?? ""}
+                      onChange={(event) => setSelectedMemberUserId(event.target.value)}
+                    >
+                      {members.map((member) => (
+                        <option key={member.user_id} value={member.user_id}>
+                          {member.display_name}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="app-muted text-xs">
+                      {selectedMemberUserId === user.user_id
+                        ? "Viewing your own profile."
+                        : "Viewing another household member in read-only mode."}
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="metric-card">
+                      <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Profile state</div>
+                      <div className="mt-1 text-sm font-medium">
+                        {careProfile?.profile.completeness.state ?? "Loading"}
+                      </div>
+                    </div>
+                    <div className="metric-card">
+                      <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Meals logged today</div>
+                      <div className="mt-1 text-sm font-medium">{careSummary?.summary.meal_count ?? 0}</div>
+                    </div>
+                    <div className="metric-card">
+                      <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Remaining protein</div>
+                      <div className="mt-1 text-sm font-medium">
+                        {Math.round(careSummary?.summary.remaining.protein_g ?? 0)} g
+                      </div>
+                    </div>
+                    <div className="metric-card">
+                      <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Pending reminders</div>
+                      <div className="mt-1 text-sm font-medium">{careReminders?.reminders.length ?? 0}</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Recent insight summary</div>
+                    {careSummary?.summary.insights.length ? (
+                      careSummary.summary.insights.slice(0, 2).map((insight) => (
+                        <div
+                          key={insight.code}
+                          className="rounded-xl border border-[color:var(--border)] bg-white/60 px-3 py-3 dark:bg-[color:var(--panel-soft)]"
+                        >
+                          <div className="text-sm font-medium">{insight.title}</div>
+                          <div className="app-muted mt-1 text-sm">{insight.summary}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="app-muted text-sm">No pattern-level insights yet for the selected member.</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Reminder preview</div>
+                    {careReminders?.reminders.length ? (
+                      careReminders.reminders.slice(0, 3).map((reminder) => (
+                        <div
+                          key={reminder.id}
+                          className="rounded-xl border border-[color:var(--border)] bg-white/60 px-3 py-3 dark:bg-[color:var(--panel-soft)]"
+                        >
+                          <div className="text-sm font-medium">{reminder.title}</div>
+                          <div className="app-muted mt-1 text-xs">
+                            {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
+                              new Date(reminder.scheduled_at),
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="app-muted text-sm">No reminders found for the selected member.</p>
+                    )}
+                  </div>
+                </>
+              ) : null}
             </CardContent>
           </Card>
         </div>

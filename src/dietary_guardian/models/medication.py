@@ -8,6 +8,7 @@ from dietary_guardian.models.user import MealSlot
 TimingType = Literal["pre_meal", "post_meal", "fixed_time"]
 ReminderStatus = Literal["sent", "acknowledged", "missed"]
 MealConfirmation = Literal["yes", "no", "unknown"]
+ReminderType = Literal["medication", "mobility"]
 
 
 class MedicationRegimen(BaseModel):
@@ -26,10 +27,13 @@ class MedicationRegimen(BaseModel):
 class ReminderEvent(BaseModel):
     id: str
     user_id: str
-    medication_name: str
+    reminder_type: ReminderType = "medication"
+    title: str = "Medication Reminder"
+    body: str | None = None
+    medication_name: str = ""
     scheduled_at: datetime
     slot: MealSlot | None = None
-    dosage_text: str
+    dosage_text: str = ""
     status: ReminderStatus = "sent"
     meal_confirmation: MealConfirmation = "unknown"
     sent_at: datetime | None = None

@@ -31,6 +31,7 @@
     "dev:api": "./scripts/dev.sh --no-web",
     "dev:web": "./scripts/dev.sh --no-api",
     "dev:scheduler": "uv run python -m apps.api.run_reminder_scheduler",
+    "dev:worker": "uv run python -m apps.workers.run",
     "web:dev": "bash scripts/web-env.sh pnpm --dir apps/web dev",
     "web:build": "bash scripts/web-env.sh pnpm --dir apps/web build",
     "web:lint": "bash scripts/web-env.sh pnpm --dir apps/web lint",

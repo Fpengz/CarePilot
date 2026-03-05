@@ -7,9 +7,11 @@ from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.meal import MealState
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.models.medication import MedicationRegimen, ReminderEvent
+from dietary_guardian.models.mobility import MobilityReminderSettings
 from dietary_guardian.models.report import BiomarkerReading
 from dietary_guardian.models.alerting import AlertMessage, OutboxRecord
 from dietary_guardian.models.health_profile import HealthProfileRecord
+from dietary_guardian.models.health_profile_onboarding import HealthProfileOnboardingState
 from dietary_guardian.models.recommendation_agent import MealCatalogItem, PreferenceSnapshot, RecommendationInteraction
 from dietary_guardian.models.reminder_notifications import (
     ReminderNotificationEndpoint,
@@ -51,6 +53,9 @@ class SQLiteRepository:
                 CREATE TABLE IF NOT EXISTS reminder_events (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
+                    reminder_type TEXT NOT NULL DEFAULT 'medication',
+                    title TEXT NOT NULL DEFAULT 'Medication Reminder',
+                    body TEXT,
                     medication_name TEXT NOT NULL,
                     scheduled_at TEXT NOT NULL,
                     slot TEXT,
@@ -112,6 +117,15 @@ class SQLiteRepository:
             cur.execute(
                 """
                 CREATE TABLE IF NOT EXISTS health_profiles (
+                    user_id TEXT PRIMARY KEY,
+                    updated_at TEXT NOT NULL,
+                    payload_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS health_profile_onboarding_states (
                     user_id TEXT PRIMARY KEY,
                     updated_at TEXT NOT NULL,
                     payload_json TEXT NOT NULL
@@ -244,6 +258,15 @@ class SQLiteRepository:
                 )
                 """
             )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS mobility_reminder_settings (
+                    user_id TEXT PRIMARY KEY,
+                    updated_at TEXT NOT NULL,
+                    payload_json TEXT NOT NULL
+                )
+                """
+            )
             # Backward-compatible migration for databases created before payload fields existed.
             existing_columns = {
                 row[1] for row in cur.execute("PRAGMA table_info(alert_outbox)").fetchall()
@@ -259,11 +282,23 @@ class SQLiteRepository:
             if "created_at" not in existing_columns:
                 now_iso = datetime.now(timezone.utc).isoformat()
                 cur.execute(f"ALTER TABLE alert_outbox ADD COLUMN created_at TEXT NOT NULL DEFAULT '{now_iso}'")
+            reminder_event_columns = {
+                row[1] for row in cur.execute("PRAGMA table_info(reminder_events)").fetchall()
+            }
+            if "reminder_type" not in reminder_event_columns:
+                cur.execute("ALTER TABLE reminder_events ADD COLUMN reminder_type TEXT NOT NULL DEFAULT 'medication'")
+            if "title" not in reminder_event_columns:
+                cur.execute("ALTER TABLE reminder_events ADD COLUMN title TEXT NOT NULL DEFAULT 'Medication Reminder'")
+            if "body" not in reminder_event_columns:
+                cur.execute("ALTER TABLE reminder_events ADD COLUMN body TEXT")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_reminders_user_time ON reminder_events(user_id, scheduled_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_meals_user_time ON meal_records(user_id, captured_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_biomarkers_user_time_name ON biomarker_readings(user_id, measured_at, name)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_suggestions_user_time ON suggestion_records(user_id, created_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_health_profiles_updated_at ON health_profiles(updated_at DESC)")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_health_profile_onboarding_updated_at ON health_profile_onboarding_states(updated_at DESC)"
+            )
             cur.execute("CREATE INDEX IF NOT EXISTS idx_meal_catalog_locale_slot ON meal_catalog(locale, slot)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_recommendation_interactions_user_time ON recommendation_interactions(user_id, created_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_preference_snapshots_updated_at ON preference_snapshots(updated_at DESC)")
@@ -322,12 +357,15 @@ class SQLiteRepository:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO reminder_events
-                (id, user_id, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, user_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     event.id,
                     event.user_id,
+                    event.reminder_type,
+                    event.title,
+                    event.body,
                     event.medication_name,
                     event.scheduled_at.isoformat(),
                     event.slot,
@@ -350,7 +388,7 @@ class SQLiteRepository:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
-                SELECT id, user_id, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
+                SELECT id, user_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
                 FROM reminder_events WHERE id = ?
                 """,
                 (event_id,),
@@ -362,21 +400,24 @@ class SQLiteRepository:
         return ReminderEvent(
             id=row[0],
             user_id=row[1],
-            medication_name=row[2],
-            scheduled_at=datetime.fromisoformat(row[3]),
-            slot=row[4],
-            dosage_text=row[5],
-            status=row[6],
-            meal_confirmation=row[7],
-            sent_at=datetime.fromisoformat(row[8]) if row[8] else None,
-            ack_at=datetime.fromisoformat(row[9]) if row[9] else None,
+            reminder_type=row[2],
+            title=row[3],
+            body=row[4],
+            medication_name=row[5],
+            scheduled_at=datetime.fromisoformat(row[6]),
+            slot=row[7],
+            dosage_text=row[8],
+            status=row[9],
+            meal_confirmation=row[10],
+            sent_at=datetime.fromisoformat(row[11]) if row[11] else None,
+            ack_at=datetime.fromisoformat(row[12]) if row[12] else None,
         )
 
     def list_reminder_events(self, user_id: str) -> list[ReminderEvent]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
                 """
-                SELECT id, user_id, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
+                SELECT id, user_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
                 FROM reminder_events WHERE user_id = ? ORDER BY scheduled_at
                 """,
                 (user_id,),
@@ -385,14 +426,17 @@ class SQLiteRepository:
             ReminderEvent(
                 id=r[0],
                 user_id=r[1],
-                medication_name=r[2],
-                scheduled_at=datetime.fromisoformat(r[3]),
-                slot=r[4],
-                dosage_text=r[5],
-                status=r[6],
-                meal_confirmation=r[7],
-                sent_at=datetime.fromisoformat(r[8]) if r[8] else None,
-                ack_at=datetime.fromisoformat(r[9]) if r[9] else None,
+                reminder_type=r[2],
+                title=r[3],
+                body=r[4],
+                medication_name=r[5],
+                scheduled_at=datetime.fromisoformat(r[6]),
+                slot=r[7],
+                dosage_text=r[8],
+                status=r[9],
+                meal_confirmation=r[10],
+                sent_at=datetime.fromisoformat(r[11]) if r[11] else None,
+                ack_at=datetime.fromisoformat(r[12]) if r[12] else None,
             )
             for r in rows
         ]
@@ -1036,6 +1080,75 @@ class SQLiteRepository:
             conn.commit()
         logger.info("save_health_profile user_id=%s goals=%s", profile.user_id, len(profile.nutrition_goals))
         return profile
+
+    def get_health_profile_onboarding_state(self, user_id: str) -> HealthProfileOnboardingState | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT payload_json
+                FROM health_profile_onboarding_states
+                WHERE user_id = ?
+                """,
+                (user_id,),
+            ).fetchone()
+        if row is None:
+            logger.debug("get_health_profile_onboarding_state_miss user_id=%s", user_id)
+            return None
+        logger.debug("get_health_profile_onboarding_state_hit user_id=%s", user_id)
+        return HealthProfileOnboardingState.model_validate_json(cast(str, row[0]))
+
+    def save_health_profile_onboarding_state(
+        self,
+        state: HealthProfileOnboardingState,
+    ) -> HealthProfileOnboardingState:
+        payload = state.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO health_profile_onboarding_states (user_id, updated_at, payload_json)
+                VALUES (?, ?, ?)
+                """,
+                (
+                    state.user_id,
+                    str(payload["updated_at"]),
+                    json.dumps(payload),
+                ),
+            )
+            conn.commit()
+        logger.info(
+            "save_health_profile_onboarding_state user_id=%s current_step=%s complete=%s",
+            state.user_id,
+            state.current_step,
+            state.is_complete,
+        )
+        return state
+
+    def get_mobility_reminder_settings(self, user_id: str) -> MobilityReminderSettings | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT payload_json
+                FROM mobility_reminder_settings
+                WHERE user_id = ?
+                """,
+                (user_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return MobilityReminderSettings.model_validate_json(cast(str, row[0]))
+
+    def save_mobility_reminder_settings(self, settings: MobilityReminderSettings) -> MobilityReminderSettings:
+        payload = settings.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO mobility_reminder_settings (user_id, updated_at, payload_json)
+                VALUES (?, ?, ?)
+                """,
+                (settings.user_id, str(payload["updated_at"]), json.dumps(payload)),
+            )
+            conn.commit()
+        return settings
 
     def list_meal_catalog_items(self, *, locale: str, slot: str | None = None, limit: int = 100) -> list[MealCatalogItem]:
         bounded = max(1, min(int(limit), 200))

@@ -1,0 +1,86 @@
+from collections.abc import Generator
+
+import pytest
+
+from apps.api.dietary_api import deps
+from apps.api.dietary_api.deps import build_app_context, close_app_context
+from dietary_guardian.config.settings import get_settings
+
+
+def _reset_settings_cache() -> None:
+    get_settings.cache_clear()
+
+
+@pytest.fixture
+def runtime_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    monkeypatch.setenv("LLM_PROVIDER", "test")
+    monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
+    monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
+    monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
+    monkeypatch.setenv("HOUSEHOLD_STORE_BACKEND", "sqlite")
+    monkeypatch.setenv("EPHEMERAL_STATE_BACKEND", "in_memory")
+    _reset_settings_cache()
+    yield
+    _reset_settings_cache()
+
+
+def test_build_app_context_selects_postgres_backends_when_requested(
+    runtime_env: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("APP_DATA_BACKEND", "postgres")
+    monkeypatch.setenv("AUTH_STORE_BACKEND", "postgres")
+    monkeypatch.setenv("HOUSEHOLD_STORE_BACKEND", "postgres")
+    monkeypatch.setenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/dietary_guardian")
+    _reset_settings_cache()
+
+    class _FakeStore:
+        def close(self) -> None:
+            return None
+
+    fake_app_store = _FakeStore()
+    fake_auth_store = _FakeStore()
+    fake_household_store = _FakeStore()
+
+    monkeypatch.setattr(deps, "_build_app_store", lambda settings: fake_app_store)
+    monkeypatch.setattr(deps, "_build_auth_store", lambda settings: fake_auth_store)
+    monkeypatch.setattr(deps, "_build_household_store", lambda settings: fake_household_store)
+
+    ctx = build_app_context()
+    try:
+        assert ctx.settings.app_data_backend == "postgres"
+        assert ctx.settings.auth_store_backend == "postgres"
+        assert ctx.settings.household_store_backend == "postgres"
+        assert ctx.app_store is fake_app_store
+        assert ctx.repository is fake_app_store
+        assert ctx.auth_store is fake_auth_store
+        assert ctx.household_store is fake_household_store
+    finally:
+        close_app_context(ctx)
+
+
+def test_build_app_context_supports_redis_ephemeral_backend(
+    runtime_env: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("EPHEMERAL_STATE_BACKEND", "redis")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    _reset_settings_cache()
+
+    ctx = build_app_context()
+    try:
+        assert ctx.settings.ephemeral_state_backend == "redis"
+        assert ctx.coordination_store is not None
+        assert ctx.cache_store is not None
+    finally:
+        close_app_context(ctx)
+
+
+def test_build_app_context_defaults_to_in_memory_ephemeral_backends(runtime_env: None) -> None:
+    ctx = build_app_context()
+    try:
+        assert ctx.settings.ephemeral_state_backend == "in_memory"
+        assert ctx.coordination_store is not None
+        assert ctx.cache_store is not None
+    finally:
+        close_app_context(ctx)

@@ -1,10 +1,16 @@
-from fastapi import APIRouter, Depends, Request
+from datetime import date
+
+from fastapi import APIRouter, Depends, Query, Request
 
 from ..routes_shared import current_session, get_context
 from ..schemas import (
     HouseholdActiveUpdateRequest,
     HouseholdActiveUpdateResponse,
     HouseholdBundleResponse,
+    HouseholdCareMealSummaryResponse,
+    HouseholdCareMembersResponse,
+    HouseholdCareProfileResponse,
+    HouseholdCareReminderListResponse,
     HouseholdCreateRequest,
     HouseholdInviteCreateResponse,
     HouseholdJoinRequest,
@@ -17,13 +23,18 @@ from ..services.households import (
     create_household,
     create_household_invite,
     get_current_household,
+    get_household_care_member_daily_summary,
+    get_household_care_member_profile,
     join_household,
     leave_household,
+    list_household_care_member_reminders,
+    list_household_care_members,
     list_household_members,
     remove_household_member,
     rename_household,
     set_active_household,
 )
+from ..routes_shared import require_action
 
 router = APIRouter(tags=["households"])
 
@@ -79,6 +90,79 @@ def list_household_members_route(
         context=get_context(request),
         household_id=household_id,
         user_id=str(session["user_id"]),
+    )
+
+
+@router.get("/api/v1/households/{household_id}/care/members", response_model=HouseholdCareMembersResponse)
+def list_household_care_members_route(
+    household_id: str,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> HouseholdCareMembersResponse:
+    require_action(session, "households.care.read_members")
+    return list_household_care_members(
+        context=get_context(request),
+        household_id=household_id,
+        viewer_user_id=str(session["user_id"]),
+    )
+
+
+@router.get(
+    "/api/v1/households/{household_id}/care/members/{member_user_id}/profile",
+    response_model=HouseholdCareProfileResponse,
+)
+def get_household_care_member_profile_route(
+    household_id: str,
+    member_user_id: str,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> HouseholdCareProfileResponse:
+    require_action(session, "households.care.read_profile")
+    return get_household_care_member_profile(
+        context=get_context(request),
+        household_id=household_id,
+        viewer_user_id=str(session["user_id"]),
+        subject_user_id=member_user_id,
+    )
+
+
+@router.get(
+    "/api/v1/households/{household_id}/care/members/{member_user_id}/meal-daily-summary",
+    response_model=HouseholdCareMealSummaryResponse,
+)
+def get_household_care_member_daily_summary_route(
+    household_id: str,
+    member_user_id: str,
+    request: Request,
+    summary_date: date = Query(alias="date"),
+    session: dict[str, object] = Depends(current_session),
+) -> HouseholdCareMealSummaryResponse:
+    require_action(session, "households.care.read_meals")
+    return get_household_care_member_daily_summary(
+        context=get_context(request),
+        household_id=household_id,
+        viewer_user_id=str(session["user_id"]),
+        subject_user_id=member_user_id,
+        summary_date=summary_date,
+    )
+
+
+@router.get(
+    "/api/v1/households/{household_id}/care/members/{member_user_id}/reminders",
+    response_model=HouseholdCareReminderListResponse,
+)
+def list_household_care_member_reminders_route(
+    household_id: str,
+    member_user_id: str,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> HouseholdCareReminderListResponse:
+    require_action(session, "households.care.read_reminders")
+    return list_household_care_member_reminders(
+        context=get_context(request),
+        household_id=household_id,
+        viewer_user_id=str(session["user_id"]),
+        subject_user_id=member_user_id,
     )
 
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { KeyRound, Loader2, LogOut, RefreshCw, Shield, User, X } from "lucide-react";
 
@@ -310,11 +311,16 @@ export function AccountPanel() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base">Profile</CardTitle>
-                      <CardDescription>Update display name and current usage mode.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="account-display-name">Display name</Label>
+                    <CardDescription>Update display name and current usage mode.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button asChild variant="secondary" className="w-full sm:w-auto">
+                      <Link href="/settings" onClick={() => setOpen(false)}>
+                        Open Full Settings
+                      </Link>
+                    </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="account-display-name">Display name</Label>
                         <Input
                           id="account-display-name"
                           value={displayNameInput}

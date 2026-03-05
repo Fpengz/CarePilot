@@ -57,6 +57,9 @@ def generate_daily_reminders(
                 ReminderEvent(
                     id=str(uuid4()),
                     user_id=user.id,
+                    reminder_type="medication",
+                    title="Medication Reminder",
+                    body=f"{regimen.medication_name} {regimen.dosage_text}".strip(),
                     medication_name=regimen.medication_name,
                     scheduled_at=_at(target_date, regimen.fixed_time),
                     slot=None,
@@ -85,6 +88,9 @@ def generate_daily_reminders(
                 ReminderEvent(
                     id=str(uuid4()),
                     user_id=user.id,
+                    reminder_type="medication",
+                    title="Medication Reminder",
+                    body=f"{regimen.medication_name} {regimen.dosage_text}".strip(),
                     medication_name=regimen.medication_name,
                     scheduled_at=scheduled,
                     slot=slot,

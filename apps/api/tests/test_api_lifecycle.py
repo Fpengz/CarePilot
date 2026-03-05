@@ -87,3 +87,13 @@ def test_app_does_not_close_caller_managed_context(sqlite_lifecycle_env: None) -
 
     assert closed == {"repository": False, "auth_store": False, "household_store": False}
     close_app_context(caller_ctx)
+
+
+def test_app_context_exposes_runtime_store_aliases(sqlite_lifecycle_env: None) -> None:
+    ctx = build_app_context()
+    try:
+        assert ctx.app_store is ctx.repository
+        assert ctx.cache_store is not None
+        assert ctx.coordination_store is not None
+    finally:
+        close_app_context(ctx)

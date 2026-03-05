@@ -20,12 +20,23 @@ from dietary_guardian.application.household import (
     remove_household_member_for_owner,
     validate_active_household_for_user,
 )
+from dietary_guardian.application.policies.household_access import (
+    HouseholdAccessNotFoundError,
+    ensure_household_member,
+)
+from dietary_guardian.services.health_profile_service import compute_profile_completeness
+from dietary_guardian.services.health_profile_service import get_or_create_health_profile
 
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
     HouseholdActiveUpdateResponse,
     HouseholdBundleResponse,
+    HouseholdCareContextResponse,
+    HouseholdCareMealSummaryResponse,
+    HouseholdCareMembersResponse,
+    HouseholdCareProfileResponse,
+    HouseholdCareReminderListResponse,
     HouseholdInviteCreateResponse,
     HouseholdInviteResponseItem,
     HouseholdMemberItem,
@@ -34,6 +45,9 @@ from apps.api.dietary_api.schemas import (
     HouseholdResponse,
     HouseholdLeaveResponse,
 )
+from apps.api.dietary_api.services.health_profiles import _to_profile_response
+from apps.api.dietary_api.services.meals import get_daily_summary
+from apps.api.dietary_api.services.reminders import list_reminders_for_session
 
 
 def _household_response(item: dict[str, object]) -> HouseholdResponse:
@@ -298,3 +312,139 @@ def leave_household(
         _map_household_error(exc)
         raise
     return HouseholdLeaveResponse(left_household_id=household_id)
+
+
+def _ensure_household_subject_access(
+    *,
+    context: AppContext,
+    household_id: str,
+    viewer_user_id: str,
+    subject_user_id: str | None = None,
+) -> None:
+    try:
+        ensure_household_member(
+            context.household_store,
+            household_id=household_id,
+            user_id=viewer_user_id,
+        )
+        if subject_user_id is not None:
+            ensure_household_member(
+                context.household_store,
+                household_id=household_id,
+                user_id=subject_user_id,
+            )
+    except HouseholdAccessNotFoundError as exc:
+        raise build_api_error(
+            status_code=404,
+            code="households.not_found",
+            message="household member not found",
+        ) from exc
+
+
+def _care_context(*, household_id: str, viewer_user_id: str, subject_user_id: str) -> HouseholdCareContextResponse:
+    return HouseholdCareContextResponse(
+        viewer_user_id=viewer_user_id,
+        subject_user_id=subject_user_id,
+        household_id=household_id,
+    )
+
+
+def list_household_care_members(
+    *,
+    context: AppContext,
+    household_id: str,
+    viewer_user_id: str,
+) -> HouseholdCareMembersResponse:
+    _ensure_household_subject_access(
+        context=context,
+        household_id=household_id,
+        viewer_user_id=viewer_user_id,
+    )
+    members = context.household_store.list_members(household_id)
+    return HouseholdCareMembersResponse(
+        viewer_user_id=viewer_user_id,
+        household_id=household_id,
+        members=[_member_response(item) for item in members],
+    )
+
+
+def get_household_care_member_profile(
+    *,
+    context: AppContext,
+    household_id: str,
+    viewer_user_id: str,
+    subject_user_id: str,
+) -> HouseholdCareProfileResponse:
+    _ensure_household_subject_access(
+        context=context,
+        household_id=household_id,
+        viewer_user_id=viewer_user_id,
+        subject_user_id=subject_user_id,
+    )
+    profile = get_or_create_health_profile(context.repository, subject_user_id)
+    completeness = compute_profile_completeness(profile)
+    return HouseholdCareProfileResponse(
+        context=_care_context(
+            household_id=household_id,
+            viewer_user_id=viewer_user_id,
+            subject_user_id=subject_user_id,
+        ),
+        profile=_to_profile_response(profile=profile, fallback_mode=completeness.state != "ready"),
+    )
+
+
+def get_household_care_member_daily_summary(
+    *,
+    context: AppContext,
+    household_id: str,
+    viewer_user_id: str,
+    subject_user_id: str,
+    summary_date,
+) -> HouseholdCareMealSummaryResponse:
+    _ensure_household_subject_access(
+        context=context,
+        household_id=household_id,
+        viewer_user_id=viewer_user_id,
+        subject_user_id=subject_user_id,
+    )
+    summary = get_daily_summary(
+        context=context,
+        user_id=subject_user_id,
+        summary_date=summary_date,
+    )
+    return HouseholdCareMealSummaryResponse(
+        context=_care_context(
+            household_id=household_id,
+            viewer_user_id=viewer_user_id,
+            subject_user_id=subject_user_id,
+        ),
+        summary=summary,
+    )
+
+
+def list_household_care_member_reminders(
+    *,
+    context: AppContext,
+    household_id: str,
+    viewer_user_id: str,
+    subject_user_id: str,
+) -> HouseholdCareReminderListResponse:
+    _ensure_household_subject_access(
+        context=context,
+        household_id=household_id,
+        viewer_user_id=viewer_user_id,
+        subject_user_id=subject_user_id,
+    )
+    reminder_list = list_reminders_for_session(
+        context=context,
+        user_id=subject_user_id,
+    )
+    return HouseholdCareReminderListResponse(
+        context=_care_context(
+            household_id=household_id,
+            viewer_user_id=viewer_user_id,
+            subject_user_id=subject_user_id,
+        ),
+        reminders=reminder_list.reminders,
+        metrics=reminder_list.metrics,
+    )

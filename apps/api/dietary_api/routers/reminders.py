@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, Request
 
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
+    MobilityReminderSettingsEnvelopeResponse,
+    MobilityReminderSettingsRequest,
     ReminderConfirmRequest,
     ReminderConfirmResponse,
     ReminderNotificationEndpointListResponse,
@@ -24,7 +26,9 @@ from ..services.reminder_notifications import (
 from ..services.reminders import (
     confirm_reminder_for_session,
     generate_reminders_for_session,
+    get_mobility_settings_for_session,
     list_reminders_for_session,
+    update_mobility_settings_for_session,
 )
 
 router = APIRouter(tags=["reminders"])
@@ -64,6 +68,32 @@ def reminders_confirm(
         user_id=str(session["user_id"]),
         event_id=event_id,
         confirmed=payload.confirmed,
+    )
+
+
+@router.get("/api/v1/reminders/mobility-settings", response_model=MobilityReminderSettingsEnvelopeResponse)
+def reminders_mobility_settings_get(
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> MobilityReminderSettingsEnvelopeResponse:
+    require_action(session, "reminders.read")
+    return get_mobility_settings_for_session(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+    )
+
+
+@router.put("/api/v1/reminders/mobility-settings", response_model=MobilityReminderSettingsEnvelopeResponse)
+def reminders_mobility_settings_put(
+    payload: MobilityReminderSettingsRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> MobilityReminderSettingsEnvelopeResponse:
+    require_action(session, "reminders.confirm")
+    return update_mobility_settings_for_session(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        payload=payload,
     )
 
 

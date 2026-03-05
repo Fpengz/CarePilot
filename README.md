@@ -69,6 +69,16 @@ Auth backend defaults (v1):
 - `AUTH_STORE_BACKEND=sqlite` (default)
 - `AUTH_SQLITE_DB_PATH=dietary_guardian_auth.db` (auth/accounts/sessions/audit)
 
+Platform runtime toggles:
+- `APP_ENV=dev|staging|prod`
+- `APP_DATA_BACKEND=sqlite` or `postgres`
+- `HOUSEHOLD_STORE_BACKEND=sqlite` or `postgres`
+- `EPHEMERAL_STATE_BACKEND=in_memory` or `redis`
+- `POSTGRES_DSN` for PostgreSQL-backed runtime paths
+- `REDIS_URL` for Redis-backed cache / coordination paths
+- `READINESS_FAIL_ON_WARNINGS=0|1` (defaults by profile)
+- `REQUIRED_PROVIDER` optional readiness expectation for deployments
+
 ## Configuration Validation
 ### Runtime Settings
 The project uses `pydantic-settings` with `.env` support and runtime validation.
@@ -102,6 +112,48 @@ Endpoints:
 ### API Only (FastAPI)
 ```bash
 uv run python -m apps.api.run
+```
+
+### Local PostgreSQL + Redis Infra
+Bring up the target-aligned local infra services:
+
+```bash
+./scripts/dev-infra.sh
+```
+
+If Docker Compose is unavailable, the script automatically falls back to plain `docker run` containers.
+Docker daemon must be running before invoking infra scripts.
+
+Useful infra commands:
+
+```bash
+./scripts/dev-infra.sh status
+./scripts/dev-infra.sh logs
+./scripts/dev-infra.sh down
+```
+
+Bootstrap PostgreSQL schema (defaults to the local compose DSN):
+
+```bash
+./scripts/migrate-postgres.sh
+```
+
+Run the external worker loop:
+
+```bash
+pnpm dev:worker
+```
+
+Run a full PostgreSQL + Redis smoke (infra + migration + API + worker + reminder delivery):
+
+```bash
+./scripts/smoke-postgres-redis.sh
+```
+
+Run a readiness gate against a running API:
+
+```bash
+./scripts/check-readiness.sh http://127.0.0.1:8001
 ```
 
 Note: by default, application data and auth data are persisted in SQLite via:
@@ -308,7 +360,9 @@ Goal labels used in the roadmap:
 - AI/ML Components:
   - offline learning refresh, prompt orchestration standardization, RAG v1 foundations, and expanded safety coverage.
 - Product Features:
-  - knowledge retrieval agent, emotional-support research track, and continued hardening of reminders and personalization.
+  - completed settings-first health profile management, daily intake tracking, nutrition-pattern guidance, and mobility reminders.
+  - planned guided health-profile Q&A, caregiver/community support phase 2, and knowledge retrieval.
+  - research tracks for environmental monitoring, demographic-context personalization, and emotional-support workflows.
 - Deployment and Scaling:
   - environment profiles, secret hygiene, readiness diagnostics, and worker/runtime hardening.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { analyzeMeal, listMealRecords } from "@/lib/api";
-import type { MealAnalyzeApiResponse } from "@/lib/types";
+import { analyzeMeal, getMealDailySummary, listMealRecords } from "@/lib/api";
+import type { MealAnalyzeApiResponse, MealDailySummaryApiResponse } from "@/lib/types";
 
 const DEFAULT_MEAL_PROVIDER = process.env.NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER ?? "test";
 
@@ -20,18 +20,25 @@ export default function MealsPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<MealAnalyzeApiResponse | null>(null);
+  const [dailySummary, setDailySummary] = useState<MealDailySummaryApiResponse | null>(null);
   const [recordsResult, setRecordsResult] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"analyze" | "records" | null>(null);
   const recordItems = (recordsResult as { records?: Array<Record<string, unknown>> } | null)?.records ?? [];
+
+  useEffect(() => {
+    void getMealDailySummary(new Date().toISOString().slice(0, 10))
+      .then(setDailySummary)
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)));
+  }, []);
 
   return (
     <div>
       <PageTitle
         eyebrow="Meals"
         title="Meal Analysis and Record Review"
-        description="Upload a meal image for analysis and inspect the persisted meal records endpoint introduced in the API refactor."
-        tags={["member scope", "workflow trace"]}
+        description="Log meals, inspect saved records, and track how much room is left in today’s nutrition targets."
+        tags={["daily tracking", "member scope", "workflow trace"]}
       />
 
       <div className="page-grid">
@@ -120,6 +127,8 @@ export default function MealsPage() {
                     form.append("provider", DEFAULT_MEAL_PROVIDER);
                     const data = await analyzeMeal(form);
                     setResult(data);
+                    const summary = await getMealDailySummary(new Date().toISOString().slice(0, 10));
+                    setDailySummary(summary);
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));
                   } finally {
@@ -138,6 +147,8 @@ export default function MealsPage() {
                   try {
                     const data = await listMealRecords();
                     setRecordsResult(data);
+                    const summary = await getMealDailySummary(new Date().toISOString().slice(0, 10));
+                    setDailySummary(summary);
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));
                   } finally {
@@ -169,6 +180,47 @@ export default function MealsPage() {
 
         <div className="stack-grid">
           {error ? <ErrorCard message={error} /> : null}
+          <Card>
+            <CardHeader>
+              <CardTitle>Today’s Nutrition Progress</CardTitle>
+              <CardDescription>Consumed, remaining, and target values update as you log meals throughout the day.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Consumed calories</div>
+                  <div className="mt-1 text-sm font-medium">
+                    {Math.round(dailySummary?.consumed.calories ?? 0)} / {Math.round(dailySummary?.targets.calories ?? 0)} kcal
+                  </div>
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Remaining protein</div>
+                  <div className="mt-1 text-sm font-medium">{Math.round(dailySummary?.remaining.protein_g ?? 0)} g</div>
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Remaining fiber</div>
+                  <div className="mt-1 text-sm font-medium">{Math.round(dailySummary?.remaining.fiber_g ?? 0)} g</div>
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Remaining sodium</div>
+                  <div className="mt-1 text-sm font-medium">{Math.round(dailySummary?.remaining.sodium_mg ?? 0)} mg</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-semibold">Possible gaps or imbalances</div>
+                {dailySummary?.insights.length ? (
+                  dailySummary.insights.slice(0, 3).map((insight) => (
+                    <div key={insight.code} className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]">
+                      <div className="text-sm font-medium">{insight.title}</div>
+                      <p className="app-muted mt-1 text-xs">{insight.summary}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="app-muted text-sm">Log meals across a few days to unlock pattern-level guidance.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <CardTitle>Analysis Summary</CardTitle>

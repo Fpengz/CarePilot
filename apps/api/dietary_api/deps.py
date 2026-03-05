@@ -2,25 +2,28 @@ from dataclasses import dataclass
 from typing import Any
 
 from dietary_guardian.config.settings import Settings, get_settings
+from dietary_guardian.infrastructure.auth import InMemoryAuthStore, PostgresAuthStore, SQLiteAuthStore
+from dietary_guardian.infrastructure.cache import InMemoryCacheStore, RedisCacheStore
+from dietary_guardian.infrastructure.coordination import InMemoryCoordinationStore, RedisCoordinationStore
+from dietary_guardian.infrastructure.household import PostgresHouseholdStore, SQLiteHouseholdStore
+from dietary_guardian.infrastructure.persistence import PostgresAppStore, SQLiteAppStore
 from dietary_guardian.services.memory_services import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,
 )
 from dietary_guardian.services.platform_tools import build_platform_tool_registry
-from dietary_guardian.services.repository import SQLiteRepository
 from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 
 from .auth import SessionSigner
-from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SQLiteAuthStore
-from dietary_guardian.infrastructure.household import SQLiteHouseholdStore
 from .services.notifications import NotificationReadStateStore
 
 
 @dataclass
 class AppContext:
     settings: Settings
-    repository: SQLiteRepository
+    app_store: Any
+    repository: Any
     profile_memory: ProfileMemoryService
     clinical_memory: ClinicalSnapshotMemoryService
     event_timeline: EventTimelineService
@@ -29,40 +32,79 @@ class AppContext:
     auth_store: Any
     session_signer: SessionSigner
     notification_reads: NotificationReadStateStore
+    cache_store: Any
+    coordination_store: Any
     household_store: Any
 
 
 def close_app_context(ctx: AppContext) -> None:
-    for component in (ctx.repository, ctx.auth_store, ctx.household_store):
+    for component in (
+        ctx.repository,
+        ctx.auth_store,
+        ctx.household_store,
+        ctx.cache_store,
+        ctx.coordination_store,
+    ):
         close = getattr(component, "close", None)
         if callable(close):
             close()
 
 
+def _build_app_store(settings: Settings) -> Any:
+    if settings.app_data_backend == "sqlite":
+        return SQLiteAppStore(settings.api_sqlite_db_path)
+    return PostgresAppStore(dsn=str(settings.postgres_dsn))
+
+
+def _build_auth_store(settings: Settings) -> Any:
+    if settings.auth_store_backend == "sqlite":
+        return SQLiteAuthStore(settings=settings, db_path=settings.auth_sqlite_db_path)
+    if settings.auth_store_backend == "in_memory":
+        return InMemoryAuthStore(settings)
+    return PostgresAuthStore(settings=settings, dsn=str(settings.postgres_dsn))
+
+
+def _build_household_store(settings: Settings) -> Any:
+    if settings.household_store_backend == "sqlite":
+        return SQLiteHouseholdStore(settings.api_sqlite_db_path)
+    return PostgresHouseholdStore(dsn=str(settings.postgres_dsn))
+
+
+def _build_cache_store(settings: Settings) -> Any:
+    if settings.ephemeral_state_backend == "redis":
+        return RedisCacheStore(redis_url=str(settings.redis_url), namespace=settings.redis_namespace)
+    return InMemoryCacheStore()
+
+
+def _build_coordination_store(settings: Settings) -> Any:
+    if settings.ephemeral_state_backend == "redis":
+        return RedisCoordinationStore(redis_url=str(settings.redis_url), namespace=settings.redis_namespace)
+    return InMemoryCoordinationStore()
+
+
 def build_app_context() -> AppContext:
     settings = get_settings()
-    repository = SQLiteRepository(settings.api_sqlite_db_path)
+    app_store = _build_app_store(settings)
     profile_memory = ProfileMemoryService()
     clinical_memory = ClinicalSnapshotMemoryService()
     event_timeline = EventTimelineService()
-    tool_registry = build_platform_tool_registry(repository)
+    tool_registry = build_platform_tool_registry(app_store)
     coordinator = WorkflowCoordinator(
         tool_registry=tool_registry,
         profile_memory=profile_memory,
         clinical_memory=clinical_memory,
         event_timeline=event_timeline,
     )
-    auth_store = (
-        SQLiteAuthStore(settings=settings, db_path=settings.auth_sqlite_db_path)
-        if settings.auth_store_backend == "sqlite"
-        else InMemoryAuthStore(settings)
-    )
+    auth_store = _build_auth_store(settings)
     session_signer = SessionSigner(settings.session_secret)
     notification_reads = NotificationReadStateStore()
-    household_store = SQLiteHouseholdStore(settings.api_sqlite_db_path)
+    cache_store = _build_cache_store(settings)
+    coordination_store = _build_coordination_store(settings)
+    household_store = _build_household_store(settings)
     return AppContext(
         settings=settings,
-        repository=repository,
+        app_store=app_store,
+        repository=app_store,
         profile_memory=profile_memory,
         clinical_memory=clinical_memory,
         event_timeline=event_timeline,
@@ -71,5 +113,7 @@ def build_app_context() -> AppContext:
         auth_store=auth_store,
         session_signer=session_signer,
         notification_reads=notification_reads,
+        cache_store=cache_store,
+        coordination_store=coordination_store,
         household_store=household_store,
     )

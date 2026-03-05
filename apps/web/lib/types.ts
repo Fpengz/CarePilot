@@ -66,6 +66,8 @@ export interface HealthProfile {
   bmi: number | null;
   daily_sodium_limit_mg: number;
   daily_sugar_limit_g: number;
+  daily_protein_target_g: number;
+  daily_fiber_target_g: number;
   target_calories_per_day: number | null;
   macro_focus: string[];
   conditions: HealthProfileCondition[];
@@ -82,6 +84,26 @@ export interface HealthProfile {
 
 export interface HealthProfileResponse {
   profile: HealthProfile;
+}
+
+export interface GuidedHealthStep {
+  id: string;
+  title: string;
+  description: string;
+  fields: string[];
+}
+
+export interface HealthProfileOnboardingState {
+  current_step: string;
+  completed_steps: string[];
+  is_complete: boolean;
+  updated_at?: string | null;
+}
+
+export interface HealthProfileOnboardingResponse {
+  onboarding: HealthProfileOnboardingState;
+  profile: HealthProfile;
+  steps: GuidedHealthStep[];
 }
 
 export interface AuthPasswordUpdateResponse {
@@ -120,6 +142,34 @@ export interface HouseholdBundleApiResponse {
   household: Household | null;
   members: HouseholdMember[];
   active_household_id?: string | null;
+}
+
+export interface HouseholdCareContext {
+  viewer_user_id: string;
+  subject_user_id: string;
+  household_id: string;
+}
+
+export interface HouseholdCareMembersResponse {
+  viewer_user_id: string;
+  household_id: string;
+  members: HouseholdMember[];
+}
+
+export interface HouseholdCareProfileResponse {
+  context: HouseholdCareContext;
+  profile: HealthProfile;
+}
+
+export interface HouseholdCareMealSummaryResponse {
+  context: HouseholdCareContext;
+  summary: MealDailySummaryApiResponse;
+}
+
+export interface HouseholdCareReminderListResponse {
+  context: HouseholdCareContext;
+  reminders: ReminderEventView[];
+  metrics: ReminderMetrics;
 }
 
 export interface HouseholdInvite {
@@ -202,6 +252,32 @@ export interface MealAnalyzeApiResponse {
 
 export interface MealRecordsApiResponse {
   records: Array<Record<string, unknown>>;
+}
+
+export interface DailyNutritionTotals {
+  calories: number;
+  sugar_g: number;
+  sodium_mg: number;
+  protein_g: number;
+  fiber_g: number;
+}
+
+export interface DailyNutritionInsight {
+  code: string;
+  title: string;
+  summary: string;
+  actions: string[];
+}
+
+export interface MealDailySummaryApiResponse {
+  date: string;
+  meal_count: number;
+  last_logged_at: string | null;
+  consumed: DailyNutritionTotals;
+  targets: DailyNutritionTotals;
+  remaining: DailyNutritionTotals;
+  insights: DailyNutritionInsight[];
+  recommendation_hints: string[];
 }
 
 export interface ReportParseApiResponse {
@@ -370,6 +446,9 @@ export interface SuggestionDetailApiResponse {
 }
 
 export interface ReminderEventView {
+  reminder_type: "medication" | "mobility";
+  title: string;
+  body: string | null;
   id: string;
   medication_name: string;
   dosage_text: string;
@@ -395,6 +474,17 @@ export interface ReminderGenerateApiResponse extends ReminderListApiResponse {}
 export interface ReminderConfirmApiResponse {
   event: ReminderEventView;
   metrics: ReminderMetrics;
+}
+
+export interface MobilityReminderSettings {
+  enabled: boolean;
+  interval_minutes: number;
+  active_start_time: string;
+  active_end_time: string;
+}
+
+export interface MobilityReminderSettingsEnvelopeResponse {
+  settings: MobilityReminderSettings;
 }
 
 export type ReminderNotificationChannel = "in_app" | "email" | "sms" | "push" | "telegram" | "whatsapp" | "wechat";

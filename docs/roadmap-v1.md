@@ -18,15 +18,24 @@ It is explicit about current maturity so contributors can distinguish:
 Current implemented baseline:
 - FastAPI + Next.js monorepo with typed API and web contracts
 - SQLite-backed auth and application persistence
+- PostgreSQL-backed app, auth, and household store adapters with SQLite fallback
+- Redis-backed cache and coordination adapters with worker signal waiting and lock-based coordination
 - action-based authorization and centralized error semantics
 - in-process workflow coordination with structured timeline events
 - adaptive meal recommendation with online interaction learning
 - reminder scheduling and multi-channel delivery with durable logs
+- dedicated account settings surface with health-profile editing moved out of the dashboard
+- guided health-profile onboarding in Settings with persisted progress
+- daily nutrition summary and remaining-target tracking on the meals surface
+- cautious nutrition-pattern inference from meal history and preferences
+- read-only caregiver monitoring within the active household
+- opt-in periodic mobility reminders built on the reminder scheduling stack
+- local compose/dev scaffolding for PostgreSQL, Redis, and external workers
 - smoke-tested primary web journeys
 
 Current maturity gaps relative to the target platform:
-- PostgreSQL is not yet the primary system of record
-- Redis is not yet the standard cache / queue / ephemeral state layer
+- daemon-backed PostgreSQL and Redis validation still depends on the local/dev infra stack rather than CI-hosted integration coverage
+- production hardening for pooling, observability, and failure injection is still early
 - RAG ingestion, indexing, retrieval, and citation layers are not yet first-class production modules
 - agent routing is still partly implemented through service-layer orchestration rather than a dedicated registry/runtime
 - offline evaluation, retrieval benchmarking, and research-grade safety evaluation are still early
@@ -45,19 +54,21 @@ Current maturity gaps relative to the target platform:
 ## Short-Term (0–3 Months)
 
 ### 1. Core Infrastructure
-- `**[In Progress]**` PostgreSQL-ready persistence boundary
+- `**[Complete]**` PostgreSQL-ready persistence boundary
   - `Engineering Goal`, `Infrastructure Goal`
-  - Replace SQLite-specific assumptions in repositories with interfaces that can support PostgreSQL as the production system of record.
+  - Runtime backend selection, schema bootstrap, and concrete PostgreSQL app/auth/household adapters are now implemented with SQLite fallback retained.
   - Exit criteria:
-    - application repositories have PostgreSQL-compatible contracts
-    - schema groups are documented for auth, health, meals, reminders, and workflow state
-    - migration strategy from SQLite fixtures to PostgreSQL-backed environments is defined
+    - application repositories have working PostgreSQL-backed implementations
+    - auth and household stores run on PostgreSQL
+    - schema groups are bootstrapped for auth, health, meals, reminders, and workflow state
+    - migration/bootstrap path is runnable for PostgreSQL-backed environments
 
-- `**[Planned]**` Redis-backed async and ephemeral state layer
+- `**[Complete]**` Redis-backed async and ephemeral state layer
   - `Infrastructure Goal`
-  - Introduce Redis for cache, distributed locking, short-lived state, and worker coordination.
+  - Redis cache and coordination adapters now back worker wakeups, lock-based scheduler/outbox coordination, and short-lived runtime state, with polling fallback retained.
   - Exit criteria:
     - queue/caching responsibilities are explicitly separated from durable storage
+    - workers can block on Redis signals and fall back to polling safely
     - reminder and workflow side effects can run through Redis-backed workers without API coupling
 
 - `**[Planned]**` Explicit agent registry and workflow runtime contract
@@ -103,6 +114,34 @@ Current maturity gaps relative to the target platform:
   - `Engineering Goal`
   - Persisted health profiles, household context, meal history, and recommendation interactions are implemented.
 
+- `**[Complete]**` Settings-first health profile management and cleaner dashboard
+  - `Engineering Goal`
+  - Account settings now own health-profile editing, while the dashboard has been reduced to a summary-oriented surface.
+
+- `**[Complete]**` Daily intake tracking and cautious nutrition-pattern guidance
+  - `Engineering Goal`, `Research Goal`
+  - The product now computes daily consumed/remaining nutrition targets and emits non-diagnostic meal-pattern insights such as low protein, low fiber, high sodium, high sugar, and repetitive intake.
+
+- `**[Complete]**` Opt-in mobility reminder workflow
+  - `Engineering Goal`
+  - Users can configure periodic mobility reminders, and those reminders reuse the reminder generation, notification preference, and delivery infrastructure.
+
+- `**[Complete]**` Guided health profile Q&A onboarding
+  - `Engineering Goal`
+  - Settings now provide a progressive guided flow with persisted onboarding progress and advanced-edit fallback.
+
+- `**[Complete]**` Community and caregiver support phase 2
+  - `Engineering Goal`
+  - The current household baseline now includes read-only caregiver-safe monitoring for household members, including profile completeness, meal summaries, insights, and reminders.
+
+- `**[Research]**` Environmental monitoring for recommendation context
+  - `Research Goal`, `Engineering Goal`
+  - Evaluate air quality, temperature, and humidity inputs as recommendation context signals before productizing them.
+
+- `**[Research]**` Demographic-context personalization with fairness controls
+  - `Research Goal`, `Engineering Goal`
+  - Explore whether any demographic context can be incorporated safely, fairly, and with explicit privacy/policy controls.
+
 - `**[Planned]**` Knowledge retrieval agent
   - `Research Goal`, `Engineering Goal`
   - Add a first-class knowledge retrieval path that can support evidence-backed user guidance.
@@ -120,13 +159,13 @@ Current maturity gaps relative to the target platform:
   - `Infrastructure Goal`
   - A production-style Dockerfile and CI validation pipeline already exist.
 
-- `**[Planned]**` Environment profiles and secret hygiene
+- `**[Complete]**` Environment profiles and secret hygiene
   - `Infrastructure Goal`
-  - Introduce explicit development, staging, and production configuration profiles.
+  - Explicit environment profiles (`dev`, `staging`, `prod`) and profile-aware readiness strictness are implemented with documented runtime toggles.
 
-- `**[Planned]**` Readiness and dependency diagnostics
+- `**[Complete]**` Readiness and dependency diagnostics
   - `Infrastructure Goal`
-  - Expose richer runtime readiness for providers, workers, and persistence layers.
+  - Health readiness now returns structured diagnostics for providers, persistence, ephemeral backends, and channel configuration with scriptable CI gating.
 
 ## Mid-Term (3–9 Months)
 

@@ -1,6 +1,12 @@
 from __future__ import annotations
 
 from dietary_guardian.logging_config import get_logger
+from dietary_guardian.services.health_profile_onboarding_service import (
+    complete_health_profile_onboarding,
+    get_or_create_health_profile_onboarding_state,
+    list_onboarding_steps,
+    update_health_profile_onboarding,
+)
 from dietary_guardian.services.daily_suggestions_service import build_daily_suggestions
 from dietary_guardian.services.health_profile_service import (
     compute_bmi,
@@ -15,10 +21,14 @@ from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
     DailySuggestionBundleResponse,
     DailySuggestionsResponse,
+    GuidedHealthStepResponse,
     HealthProfileCondition,
     HealthProfileEnvelopeResponse,
     HealthProfileCompletenessResponse,
     HealthProfileMedication,
+    HealthProfileOnboardingEnvelopeResponse,
+    HealthProfileOnboardingPatchRequest,
+    HealthProfileOnboardingStateResponse,
     HealthProfileResponseItem,
     HealthProfileUpdateRequest,
 )
@@ -36,6 +46,8 @@ def _to_profile_response(*, profile, fallback_mode: bool) -> HealthProfileRespon
         bmi=compute_bmi(profile),
         daily_sodium_limit_mg=profile.daily_sodium_limit_mg,
         daily_sugar_limit_g=profile.daily_sugar_limit_g,
+        daily_protein_target_g=profile.daily_protein_target_g,
+        daily_fiber_target_g=profile.daily_fiber_target_g,
         target_calories_per_day=profile.target_calories_per_day,
         macro_focus=profile.macro_focus,
         conditions=[
@@ -88,6 +100,69 @@ def patch_profile(
     return HealthProfileEnvelopeResponse(
         profile=_to_profile_response(profile=profile, fallback_mode=completeness.state != "ready")
     )
+
+
+def _to_onboarding_response(*, state, profile) -> HealthProfileOnboardingEnvelopeResponse:
+    completeness = compute_profile_completeness(profile)
+    return HealthProfileOnboardingEnvelopeResponse(
+        onboarding=HealthProfileOnboardingStateResponse(
+            current_step=state.current_step,
+            completed_steps=list(state.completed_steps),
+            is_complete=state.is_complete,
+            updated_at=state.updated_at,
+        ),
+        profile=_to_profile_response(profile=profile, fallback_mode=completeness.state != "ready"),
+        steps=[
+            GuidedHealthStepResponse(
+                id=step.id,
+                title=step.title,
+                description=step.description,
+                fields=list(step.fields),
+            )
+            for step in list_onboarding_steps()
+        ],
+    )
+
+
+def get_profile_onboarding(*, context: AppContext, session: dict[str, object]) -> HealthProfileOnboardingEnvelopeResponse:
+    user_id = str(session["user_id"])
+    state = get_or_create_health_profile_onboarding_state(context.repository, user_id)
+    profile = get_or_create_health_profile(context.repository, user_id)
+    return _to_onboarding_response(state=state, profile=profile)
+
+
+def patch_profile_onboarding(
+    *,
+    context: AppContext,
+    session: dict[str, object],
+    payload: HealthProfileOnboardingPatchRequest,
+) -> HealthProfileOnboardingEnvelopeResponse:
+    try:
+        state, profile = update_health_profile_onboarding(
+            context.repository,
+            user_id=str(session["user_id"]),
+            step_id=payload.step_id.strip(),
+            profile_updates=payload.profile.model_dump(exclude_unset=True),
+        )
+    except ValueError as exc:
+        raise build_api_error(
+            status_code=400,
+            code="profile.onboarding.invalid_step",
+            message="invalid health profile onboarding step",
+        ) from exc
+    return _to_onboarding_response(state=state, profile=profile)
+
+
+def complete_profile_onboarding(
+    *,
+    context: AppContext,
+    session: dict[str, object],
+) -> HealthProfileOnboardingEnvelopeResponse:
+    state, profile = complete_health_profile_onboarding(
+        context.repository,
+        user_id=str(session["user_id"]),
+    )
+    return _to_onboarding_response(state=state, profile=profile)
 
 
 def get_daily_suggestions(

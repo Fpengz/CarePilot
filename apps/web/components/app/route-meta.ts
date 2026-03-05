@@ -7,6 +7,7 @@ import {
   LogIn,
   UserPlus,
   Salad,
+  Settings2,
   ShieldAlert,
   Workflow,
 } from "lucide-react";
@@ -94,6 +95,16 @@ export const ROUTE_META: RouteMeta[] = [
     group: "main",
     icon: HousePlus,
     showInSidebar: true,
+    mobileTab: false,
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    pageTitle: "Settings",
+    breadcrumbLabel: "Settings",
+    group: "main",
+    icon: Settings2,
+    showInSidebar: false,
     mobileTab: false,
   },
   {

@@ -1,6 +1,24 @@
+from collections.abc import Generator
+
+import pytest
 from fastapi.testclient import TestClient
 
 from apps.api.dietary_api.main import create_app
+from dietary_guardian.config.settings import get_settings
+
+
+def _reset_settings_cache() -> None:
+    get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _isolated_health_env(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    monkeypatch.setenv("LLM_PROVIDER", "test")
+    monkeypatch.setenv("APP_ENV", "dev")
+    monkeypatch.setenv("EPHEMERAL_STATE_BACKEND", "in_memory")
+    _reset_settings_cache()
+    yield
+    _reset_settings_cache()
 
 
 def test_health_endpoints() -> None:
@@ -14,6 +32,45 @@ def test_health_endpoints() -> None:
     assert ready.status_code == 200
     assert config.status_code == 200
     assert "llm_provider" in config.json()
+    ready_body = ready.json()
+    assert ready_body["status"] in {"ready", "degraded", "not_ready"}
+    assert ready_body["app_env"] == "dev"
+    assert isinstance(ready_body["checks"], list)
+    assert isinstance(ready_body["warnings"], list)
+    assert isinstance(ready_body["errors"], list)
+    assert "alerts_outbox_v2" in ready_body
+
+
+def test_health_ready_reports_degraded_when_optional_notification_config_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("EMAIL_DEV_MODE", "0")
+    monkeypatch.delenv("EMAIL_SMTP_HOST", raising=False)
+    _reset_settings_cache()
+    client = TestClient(create_app())
+
+    ready = client.get("/api/v1/health/ready")
+
+    assert ready.status_code == 200
+    body = ready.json()
+    assert body["status"] == "degraded"
+    assert any(check["name"] == "email_configuration" and check["status"] == "warn" for check in body["checks"])
+
+
+def test_health_ready_reports_not_ready_when_required_redis_is_unreachable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("EPHEMERAL_STATE_BACKEND", "redis")
+    monkeypatch.setenv("REDIS_URL", "redis://127.0.0.1:6399/0")
+    _reset_settings_cache()
+    client = TestClient(create_app())
+
+    ready = client.get("/api/v1/health/ready")
+
+    assert ready.status_code == 200
+    body = ready.json()
+    assert body["status"] == "not_ready"
+    assert any(check["name"] == "redis_connectivity" and check["status"] == "fail" for check in body["checks"])
 
 
 def test_request_context_headers_are_emitted_and_passthrough() -> None:

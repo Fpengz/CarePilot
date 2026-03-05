@@ -1,10 +1,11 @@
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import MealAnalyzeResponse, MealRecordsResponse
-from ..services.meals import analyze_meal, list_meal_records
+from ..schemas import MealAnalyzeResponse, MealDailySummaryResponse, MealRecordsResponse
+from ..services.meals import analyze_meal, get_daily_summary, list_meal_records
 
 router = APIRouter(tags=["meals"])
 
@@ -41,4 +42,18 @@ def meal_records(
         user_id=str(session["user_id"]),
         limit=limit,
         cursor=cursor,
+    )
+
+
+@router.get("/api/v1/meal/daily-summary", response_model=MealDailySummaryResponse)
+def meal_daily_summary(
+    request: Request,
+    summary_date: date = Query(alias="date"),
+    session: dict[str, object] = Depends(current_session),
+) -> MealDailySummaryResponse:
+    require_action(session, "meal.records.read")
+    return get_daily_summary(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        summary_date=summary_date,
     )

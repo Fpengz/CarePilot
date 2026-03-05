@@ -11,15 +11,18 @@ import { Label } from "@/components/ui/label";
 import {
   confirmReminder,
   generateReminders,
+  getMobilityReminderSettings,
   listReminderNotificationEndpoints,
   listReminderNotificationLogs,
   listReminderNotificationPreferences,
   listReminderNotificationSchedules,
   listReminders,
+  updateMobilityReminderSettings,
   updateReminderNotificationEndpoints,
   updateReminderNotificationPreferences,
 } from "@/lib/api";
 import type {
+  MobilityReminderSettings,
   ReminderEventView,
   ReminderMetrics,
   ReminderNotificationEndpoint,
@@ -79,20 +82,31 @@ export default function RemindersPage() {
   const [emailOffset, setEmailOffset] = useState(0);
   const [smsEnabled, setSmsEnabled] = useState(false);
   const [smsOffset, setSmsOffset] = useState(0);
+  const [mobilitySettings, setMobilitySettings] = useState<MobilityReminderSettings>({
+    enabled: false,
+    interval_minutes: 120,
+    active_start_time: "08:00",
+    active_end_time: "20:00",
+  });
 
-  const selectableReminders = useMemo(() => reminders.filter((item) => item.status === "sent"), [reminders]);
+  const selectableReminders = useMemo(
+    () => reminders.filter((item) => item.status === "sent" && item.reminder_type === "medication"),
+    [reminders],
+  );
   const selectedReminder = useMemo(
     () => selectableReminders.find((item) => item.id === selectedId) ?? null,
     [selectableReminders, selectedId],
   );
 
   async function loadConfigurations() {
-    const [preferenceData, endpointData] = await Promise.all([
+    const [preferenceData, endpointData, mobilityData] = await Promise.all([
       listReminderNotificationPreferences(),
       listReminderNotificationEndpoints(),
+      getMobilityReminderSettings(),
     ]);
     setPreferences(preferenceData.preferences);
     setEndpoints(endpointData.endpoints);
+    setMobilitySettings(mobilityData.settings);
 
     const inAppRule = preferenceData.preferences.find((item) => item.channel === "in_app");
     const emailRule = preferenceData.preferences.find((item) => item.channel === "email");
@@ -138,9 +152,9 @@ export default function RemindersPage() {
     <div>
       <PageTitle
         eyebrow="Reminders"
-        title="Medication Reminder Operations"
-        description="Generate demo reminders, refresh persisted events, and confirm meal status with a mobile-friendly workflow."
-        tags={["member scopes", "MCR metrics"]}
+        title="Medication and Mobility Reminder Operations"
+        description="Generate daily reminders, tune delivery channels, and opt into periodic mobility nudges without mixing them into meal confirmation."
+        tags={["member scopes", "MCR metrics", "mobility"]}
       />
 
       <div className="page-grid">
@@ -219,8 +233,9 @@ export default function RemindersPage() {
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <div className="min-w-0">
                             <div className="truncate text-sm font-medium">
-                              {reminder.medication_name} {reminder.dosage_text}
+                              {reminder.title}
                             </div>
+                            <div className="app-muted mt-1 text-xs">{reminder.body ?? "Medication reminder"}</div>
                             <div className="app-muted mt-1 text-xs">
                               {new Intl.DateTimeFormat(undefined, {
                                 dateStyle: "medium",
@@ -246,15 +261,14 @@ export default function RemindersPage() {
               {selectedReminder ? (
                 <div className="metric-card">
                   <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Selected Reminder</div>
-                  <div className="mt-1 text-sm font-medium">
-                    {selectedReminder.medication_name} {selectedReminder.dosage_text}
-                  </div>
+                  <div className="mt-1 text-sm font-medium">{selectedReminder.title}</div>
+                  <div className="app-muted mt-1 text-xs">{selectedReminder.body ?? "Medication reminder"}</div>
                   <div className="app-muted mt-1 text-xs">
                     Scheduled {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(selectedReminder.scheduled_at))}
                   </div>
                 </div>
               ) : null}
-              <p className="app-muted text-xs">Only reminders with `sent` status are available for confirmation.</p>
+              <p className="app-muted text-xs">Only sent medication reminders are available for confirmation. Mobility reminders remain informational in this MVP.</p>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -434,8 +448,85 @@ export default function RemindersPage() {
           </Card>
           <Card>
             <CardHeader className="pb-3">
+              <CardTitle className="text-base">Mobility Reminder Settings</CardTitle>
+              <CardDescription>Opt into a regular stand, stretch, or walk reminder during your active hours.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Enabled</div>
+                  <Label className="mt-2 flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={mobilitySettings.enabled}
+                      onChange={(e) =>
+                        setMobilitySettings((current) => ({ ...current, enabled: e.target.checked }))
+                      }
+                    />
+                    Send mobility reminders
+                  </Label>
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Interval minutes</div>
+                  <input
+                    className="mt-2 w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
+                    type="number"
+                    min={60}
+                    max={240}
+                    value={mobilitySettings.interval_minutes}
+                    onChange={(e) =>
+                      setMobilitySettings((current) => ({
+                        ...current,
+                        interval_minutes: Number(e.target.value) || current.interval_minutes,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Active start</div>
+                  <input
+                    className="mt-2 w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
+                    value={mobilitySettings.active_start_time}
+                    onChange={(e) =>
+                      setMobilitySettings((current) => ({ ...current, active_start_time: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Active end</div>
+                  <input
+                    className="mt-2 w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
+                    value={mobilitySettings.active_end_time}
+                    onChange={(e) =>
+                      setMobilitySettings((current) => ({ ...current, active_end_time: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                disabled={loadingAction !== null}
+                onClick={async () => {
+                  setError(null);
+                  setLoadingAction("saveSettings");
+                  try {
+                    const response = await updateMobilityReminderSettings(mobilitySettings);
+                    setMobilitySettings(response.settings);
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : String(e));
+                  } finally {
+                    setLoadingAction(null);
+                  }
+                }}
+              >
+                <AsyncLabel active={loadingAction === "saveSettings"} loading="Saving" idle="Save Mobility Settings" />
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
               <CardTitle className="text-base">Reminder Events</CardTitle>
-              <CardDescription>Current events with confirmation state and schedule time.</CardDescription>
+              <CardDescription>Medication and mobility reminders with type-aware status rendering.</CardDescription>
             </CardHeader>
             <CardContent>
               {reminders.length > 0 ? (
@@ -443,9 +534,8 @@ export default function RemindersPage() {
                   {reminders.map((reminder) => (
                     <div key={reminder.id} className="data-list-row sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
-                        <div className="text-sm font-medium">
-                          {reminder.medication_name} {reminder.dosage_text}
-                        </div>
+                        <div className="text-sm font-medium">{reminder.title}</div>
+                        <div className="app-muted mt-1 text-xs">{reminder.body ?? "Reminder"}</div>
                         <div className="app-muted mt-1 text-xs">
                           {new Intl.DateTimeFormat(undefined, {
                             dateStyle: "medium",
@@ -454,6 +544,7 @@ export default function RemindersPage() {
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="rounded-full border border-[color:var(--border)] px-2 py-1">{reminder.reminder_type}</span>
                         <span className="rounded-full border border-[color:var(--border)] px-2 py-1">{reminder.status}</span>
                         <span className="rounded-full border border-[color:var(--border)] px-2 py-1">
                           meal: {reminder.meal_confirmation}

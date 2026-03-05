@@ -1,6 +1,7 @@
+from collections.abc import Generator
+from datetime import date, datetime, timezone
 from io import BytesIO
 import logging
-from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -11,6 +12,16 @@ from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.models.meal import MealState, Nutrition, VisionResult
 from dietary_guardian.models.meal_record import MealRecognitionRecord
+
+
+@pytest.fixture
+def sqlite_meal_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
+    monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
+    monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
+    _reset_settings_cache()
+    yield
+    _reset_settings_cache()
 
 
 def _jpeg_bytes() -> bytes:
@@ -34,6 +45,41 @@ def _login(client: TestClient, email: str, password: str) -> None:
 
 def _reset_settings_cache() -> None:
     get_settings.cache_clear()
+
+
+def _meal_record(
+    *,
+    user_id: str,
+    dish_name: str,
+    captured_at: datetime,
+    calories: float,
+    sugar_g: float,
+    sodium_mg: float,
+    protein_g: float,
+    fiber_g: float,
+) -> MealRecognitionRecord:
+    state = MealState(
+        dish_name=dish_name,
+        confidence_score=0.98,
+        identification_method="User_Manual",
+        ingredients=[],
+        nutrition=Nutrition(
+            calories=calories,
+            carbs_g=60.0,
+            sugar_g=sugar_g,
+            protein_g=protein_g,
+            fat_g=22.0,
+            sodium_mg=sodium_mg,
+            fiber_g=fiber_g,
+        ),
+    )
+    return MealRecognitionRecord(
+        id=str(uuid4()),
+        user_id=user_id,
+        captured_at=captured_at,
+        source="manual-test",
+        meal_state=state,
+    )
 
 
 def test_meal_analyze_requires_auth() -> None:
@@ -269,3 +315,83 @@ def test_meal_analyze_logs_response_summary(caplog: pytest.LogCaptureFixture) ->
     response_logs = [record.message for record in caplog.records if "hawker_vision_response_summary" in record.message]
     assert response_logs
     assert "destination=" in response_logs[-1]
+
+
+def test_meal_daily_summary_aggregates_targets_remaining_and_pattern_insights(sqlite_meal_env: None) -> None:
+    app = create_app()
+    client = TestClient(app)
+    _login(client, "member@example.com", "member-pass")
+
+    profile_response = client.patch(
+        "/api/v1/profile/health",
+        json={
+            "age": 54,
+            "locale": "en-SG",
+            "daily_sodium_limit_mg": 1800,
+            "daily_sugar_limit_g": 30,
+            "target_calories_per_day": 1800,
+            "daily_protein_target_g": 70,
+            "daily_fiber_target_g": 25,
+            "nutrition_goals": ["lower_sugar", "heart_health"],
+            "preferred_cuisines": ["local"],
+            "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
+        },
+    )
+    assert profile_response.status_code == 200
+
+    repo = app.state.ctx.repository
+    user_id = "user_001"
+    for captured_at in [
+        datetime(2026, 2, 27, 12, 0, tzinfo=timezone.utc),
+        datetime(2026, 3, 1, 12, 0, tzinfo=timezone.utc),
+        datetime(2026, 3, 2, 12, 0, tzinfo=timezone.utc),
+        datetime(2026, 3, 3, 8, 0, tzinfo=timezone.utc),
+        datetime(2026, 3, 3, 13, 0, tzinfo=timezone.utc),
+    ]:
+        repo.save_meal_record(
+            _meal_record(
+                user_id=user_id,
+                dish_name="Sweet Soy Noodles",
+                captured_at=captured_at,
+                calories=700,
+                sugar_g=18,
+                sodium_mg=1100,
+                protein_g=9,
+                fiber_g=2,
+            )
+        )
+
+    response = client.get("/api/v1/meal/daily-summary?date=2026-03-03")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["date"] == "2026-03-03"
+    assert body["meal_count"] == 2
+    assert body["consumed"] == {
+        "calories": 1400.0,
+        "sugar_g": 36.0,
+        "sodium_mg": 2200.0,
+        "protein_g": 18.0,
+        "fiber_g": 4.0,
+    }
+    assert body["targets"] == {
+        "calories": 1800.0,
+        "sugar_g": 30.0,
+        "sodium_mg": 1800.0,
+        "protein_g": 70.0,
+        "fiber_g": 25.0,
+    }
+    assert body["remaining"] == {
+        "calories": 400.0,
+        "sugar_g": 0.0,
+        "sodium_mg": 0.0,
+        "protein_g": 52.0,
+        "fiber_g": 21.0,
+    }
+
+    insight_codes = {item["code"] for item in body["insights"]}
+    assert {"low_protein_pattern", "low_fiber_pattern", "high_sodium_pattern", "repetitive_meal_pattern"} <= insight_codes
+    low_protein = next(item for item in body["insights"] if item["code"] == "low_protein_pattern")
+    assert "possible" in low_protein["summary"].lower()
+    assert "diagnos" not in low_protein["summary"].lower()
+    assert {"higher_protein", "higher_fiber", "lower_sodium"} <= set(body["recommendation_hints"])

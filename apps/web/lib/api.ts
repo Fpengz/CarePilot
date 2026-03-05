@@ -8,6 +8,10 @@ import type {
   AuthAuditEventListResponse,
   HouseholdActiveUpdateResponse,
   HouseholdBundleApiResponse,
+  HouseholdCareMealSummaryResponse,
+  HouseholdCareMembersResponse,
+  HouseholdCareProfileResponse,
+  HouseholdCareReminderListResponse,
   HouseholdInviteCreateResponse,
   HouseholdLeaveResponse,
   HouseholdMemberRemoveResponse,
@@ -20,8 +24,11 @@ import type {
   AuthSessionRevokeResponse,
   DailySuggestionsResponse,
   HealthProfileResponse,
+  HealthProfileOnboardingResponse,
   MealAnalyzeApiResponse,
+  MealDailySummaryApiResponse,
   MealRecordsApiResponse,
+  MobilityReminderSettingsEnvelopeResponse,
   RecommendationGenerateApiResponse,
   SuggestionDetailApiResponse,
   SuggestionGenerateApiResponse,
@@ -167,6 +174,44 @@ export async function getHealthProfile(): Promise<HealthProfileResponse> {
   return request<HealthProfileResponse>("/api/v1/profile/health");
 }
 
+export async function getHealthProfileOnboarding(): Promise<HealthProfileOnboardingResponse> {
+  return request<HealthProfileOnboardingResponse>("/api/v1/profile/health/onboarding");
+}
+
+export async function updateHealthProfileOnboarding(payload: {
+  step_id: string;
+  profile?: {
+    age?: number | null;
+    locale?: string;
+    height_cm?: number | null;
+    weight_kg?: number | null;
+    daily_sodium_limit_mg?: number;
+    daily_sugar_limit_g?: number;
+    daily_protein_target_g?: number;
+    daily_fiber_target_g?: number;
+    target_calories_per_day?: number | null;
+    macro_focus?: string[];
+    conditions?: Array<{ name: string; severity: string }>;
+    medications?: Array<{ name: string; dosage: string; contraindications: string[] }>;
+    allergies?: string[];
+    nutrition_goals?: string[];
+    preferred_cuisines?: string[];
+    disliked_ingredients?: string[];
+    budget_tier?: "budget" | "moderate" | "flexible";
+  };
+}): Promise<HealthProfileOnboardingResponse> {
+  return request<HealthProfileOnboardingResponse>("/api/v1/profile/health/onboarding", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function completeHealthProfileOnboarding(): Promise<HealthProfileOnboardingResponse> {
+  return request<HealthProfileOnboardingResponse>("/api/v1/profile/health/onboarding/complete", {
+    method: "POST",
+  });
+}
+
 export async function updateHealthProfile(payload: {
   age?: number | null;
   locale?: string;
@@ -174,6 +219,8 @@ export async function updateHealthProfile(payload: {
   weight_kg?: number | null;
   daily_sodium_limit_mg?: number;
   daily_sugar_limit_g?: number;
+  daily_protein_target_g?: number;
+  daily_fiber_target_g?: number;
   target_calories_per_day?: number | null;
   macro_focus?: string[];
   conditions?: Array<{ name: string; severity: string }>;
@@ -273,6 +320,38 @@ export async function renameHousehold(householdId: string, name: string): Promis
 
 export async function listHouseholdMembers(householdId: string): Promise<HouseholdMembersResponse> {
   return request<HouseholdMembersResponse>(`/api/v1/households/${householdId}/members`);
+}
+
+export async function listHouseholdCareMembers(householdId: string): Promise<HouseholdCareMembersResponse> {
+  return request<HouseholdCareMembersResponse>(`/api/v1/households/${householdId}/care/members`);
+}
+
+export async function getHouseholdCareMemberProfile(
+  householdId: string,
+  memberUserId: string,
+): Promise<HouseholdCareProfileResponse> {
+  return request<HouseholdCareProfileResponse>(
+    `/api/v1/households/${householdId}/care/members/${memberUserId}/profile`,
+  );
+}
+
+export async function getHouseholdCareMemberDailySummary(
+  householdId: string,
+  memberUserId: string,
+  summaryDate: string,
+): Promise<HouseholdCareMealSummaryResponse> {
+  return request<HouseholdCareMealSummaryResponse>(
+    `/api/v1/households/${householdId}/care/members/${memberUserId}/meal-daily-summary?date=${summaryDate}`,
+  );
+}
+
+export async function listHouseholdCareMemberReminders(
+  householdId: string,
+  memberUserId: string,
+): Promise<HouseholdCareReminderListResponse> {
+  return request<HouseholdCareReminderListResponse>(
+    `/api/v1/households/${householdId}/care/members/${memberUserId}/reminders`,
+  );
 }
 
 export async function createHouseholdInvite(householdId: string): Promise<HouseholdInviteCreateResponse> {
@@ -379,6 +458,11 @@ export async function listMealRecords(limit?: number): Promise<MealRecordsApiRes
   return request<MealRecordsApiResponse>(`/api/v1/meal/records${query}`);
 }
 
+export async function getMealDailySummary(date?: string): Promise<MealDailySummaryApiResponse> {
+  const query = date ? `?date=${encodeURIComponent(date)}` : "";
+  return request<MealDailySummaryApiResponse>(`/api/v1/meal/daily-summary${query}`);
+}
+
 export async function parseReport(payload: {
   source: "pasted_text";
   text: string;
@@ -454,6 +538,22 @@ export async function confirmReminder(
 
 export async function listReminderNotificationPreferences(): Promise<ReminderNotificationPreferenceListResponse> {
   return request<ReminderNotificationPreferenceListResponse>("/api/v1/reminder-notification-preferences");
+}
+
+export async function getMobilityReminderSettings(): Promise<MobilityReminderSettingsEnvelopeResponse> {
+  return request<MobilityReminderSettingsEnvelopeResponse>("/api/v1/reminders/mobility-settings");
+}
+
+export async function updateMobilityReminderSettings(payload: {
+  enabled: boolean;
+  interval_minutes: number;
+  active_start_time: string;
+  active_end_time: string;
+}): Promise<MobilityReminderSettingsEnvelopeResponse> {
+  return request<MobilityReminderSettingsEnvelopeResponse>("/api/v1/reminders/mobility-settings", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function updateReminderNotificationPreferences(payload: {

@@ -76,6 +76,8 @@ class HealthProfileResponseItem(BaseModel):
     bmi: float | None = None
     daily_sodium_limit_mg: float
     daily_sugar_limit_g: float
+    daily_protein_target_g: float
+    daily_fiber_target_g: float
     target_calories_per_day: float | None = None
     macro_focus: list[str] = Field(default_factory=list)
     conditions: list[HealthProfileCondition] = Field(default_factory=list)
@@ -97,6 +99,8 @@ class HealthProfileUpdateRequest(BaseModel):
     weight_kg: float | None = Field(default=None, gt=0)
     daily_sodium_limit_mg: float | None = Field(default=None, gt=0)
     daily_sugar_limit_g: float | None = Field(default=None, gt=0)
+    daily_protein_target_g: float | None = Field(default=None, gt=0)
+    daily_fiber_target_g: float | None = Field(default=None, gt=0)
     target_calories_per_day: float | None = Field(default=None, gt=0)
     macro_focus: list[str] | None = None
     conditions: list[HealthProfileCondition] | None = None
@@ -110,6 +114,31 @@ class HealthProfileUpdateRequest(BaseModel):
 
 class HealthProfileEnvelopeResponse(BaseModel):
     profile: HealthProfileResponseItem
+
+
+class GuidedHealthStepResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    fields: list[str] = Field(default_factory=list)
+
+
+class HealthProfileOnboardingStateResponse(BaseModel):
+    current_step: str
+    completed_steps: list[str] = Field(default_factory=list)
+    is_complete: bool = False
+    updated_at: datetime | None = None
+
+
+class HealthProfileOnboardingPatchRequest(BaseModel):
+    step_id: str
+    profile: HealthProfileUpdateRequest = Field(default_factory=HealthProfileUpdateRequest)
+
+
+class HealthProfileOnboardingEnvelopeResponse(BaseModel):
+    onboarding: HealthProfileOnboardingStateResponse
+    profile: HealthProfileResponseItem
+    steps: list[GuidedHealthStepResponse] = Field(default_factory=list)
 
 
 class AuthPasswordUpdateRequest(BaseModel):
@@ -178,6 +207,18 @@ class HouseholdMemberItem(BaseModel):
 
 
 class HouseholdMembersResponse(BaseModel):
+    members: list[HouseholdMemberItem]
+
+
+class HouseholdCareContextResponse(BaseModel):
+    viewer_user_id: str
+    subject_user_id: str
+    household_id: str
+
+
+class HouseholdCareMembersResponse(BaseModel):
+    viewer_user_id: str
+    household_id: str
     members: list[HouseholdMemberItem]
 
 
@@ -364,6 +405,48 @@ class MealAnalyzeResponse(BaseModel):
 class MealRecordsResponse(BaseModel):
     records: list[dict[str, object]]
     page: dict[str, object] | None = None
+
+
+class DailyNutritionTotalsResponse(BaseModel):
+    calories: float
+    sugar_g: float
+    sodium_mg: float
+    protein_g: float
+    fiber_g: float
+
+
+class DailyNutritionInsightResponse(BaseModel):
+    code: str
+    title: str
+    summary: str
+    actions: list[str] = Field(default_factory=list)
+
+
+class MealDailySummaryResponse(BaseModel):
+    date: str
+    meal_count: int
+    last_logged_at: datetime | None = None
+    consumed: DailyNutritionTotalsResponse
+    targets: DailyNutritionTotalsResponse
+    remaining: DailyNutritionTotalsResponse
+    insights: list[DailyNutritionInsightResponse] = Field(default_factory=list)
+    recommendation_hints: list[str] = Field(default_factory=list)
+
+
+class HouseholdCareProfileResponse(BaseModel):
+    context: HouseholdCareContextResponse
+    profile: HealthProfileResponseItem
+
+
+class HouseholdCareMealSummaryResponse(BaseModel):
+    context: HouseholdCareContextResponse
+    summary: MealDailySummaryResponse
+
+
+class HouseholdCareReminderListResponse(BaseModel):
+    context: HouseholdCareContextResponse
+    reminders: list[dict[str, object]] = Field(default_factory=list)
+    metrics: dict[str, object] = Field(default_factory=dict)
 
 
 class WorkflowResponse(BaseModel):
@@ -579,3 +662,21 @@ class ReminderConfirmRequest(BaseModel):
 class ReminderConfirmResponse(BaseModel):
     event: dict[str, object]
     metrics: dict[str, object]
+
+
+class MobilityReminderSettingsRequest(BaseModel):
+    enabled: bool = False
+    interval_minutes: int = Field(default=120, ge=60, le=240)
+    active_start_time: str = "08:00"
+    active_end_time: str = "20:00"
+
+
+class MobilityReminderSettingsResponse(BaseModel):
+    enabled: bool
+    interval_minutes: int
+    active_start_time: str
+    active_end_time: str
+
+
+class MobilityReminderSettingsEnvelopeResponse(BaseModel):
+    settings: MobilityReminderSettingsResponse

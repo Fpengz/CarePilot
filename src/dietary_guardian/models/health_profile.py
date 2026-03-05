@@ -21,6 +21,8 @@ class HealthProfileRecord(BaseModel):
     weight_kg: float | None = None
     daily_sodium_limit_mg: float = 2000.0
     daily_sugar_limit_g: float = 30.0
+    daily_protein_target_g: float = 60.0
+    daily_fiber_target_g: float = 25.0
     target_calories_per_day: float | None = None
     macro_focus: list[str] = Field(default_factory=list)
     conditions: list[MedicalCondition] = Field(default_factory=list)

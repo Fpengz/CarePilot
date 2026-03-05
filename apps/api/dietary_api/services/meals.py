@@ -1,8 +1,11 @@
+from datetime import date
 from typing import Any, cast
 
 from fastapi import Request, UploadFile
 
 from dietary_guardian.agents.hawker_vision import HawkerVisionModule
+from dietary_guardian.services.daily_nutrition_service import build_daily_nutrition_summary
+from dietary_guardian.services.health_profile_service import get_or_create_health_profile
 from dietary_guardian.models.meal import ImageInput, VisionResult
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.services.media_ingestion import build_capture_envelope, should_suppress_duplicate_capture
@@ -11,7 +14,7 @@ from dietary_guardian.services.upload_service import SUPPORTED_IMAGE_TYPES, _may
 from apps.api.dietary_api.auth import build_user_profile_from_session
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.errors import build_api_error
-from apps.api.dietary_api.schemas import MealAnalyzeResponse, MealRecordsResponse
+from apps.api.dietary_api.schemas import MealAnalyzeResponse, MealDailySummaryResponse, MealRecordsResponse
 
 
 async def analyze_meal(
@@ -121,6 +124,22 @@ def list_meal_records(
             "returned": len(page_items),
         },
     )
+
+
+def get_daily_summary(
+    *,
+    context: AppContext,
+    user_id: str,
+    summary_date: date,
+) -> MealDailySummaryResponse:
+    profile = get_or_create_health_profile(context.repository, user_id)
+    records = context.repository.list_meal_records(user_id)
+    summary = build_daily_nutrition_summary(
+        profile=profile,
+        meal_history=records,
+        summary_date=summary_date,
+    )
+    return MealDailySummaryResponse.model_validate(summary.model_dump(mode="json"))
 
 
 def _build_meal_summary(*, vision_result: VisionResult, meal_record: MealRecognitionRecord) -> dict[str, object]:

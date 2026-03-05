@@ -52,6 +52,8 @@ def test_health_profile_patch_persists_across_requests(sqlite_health_profile_env
             "locale": "en-SG",
             "daily_sodium_limit_mg": 1600,
             "daily_sugar_limit_g": 24,
+            "daily_protein_target_g": 72,
+            "daily_fiber_target_g": 28,
             "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
             "medications": [{"name": "Metformin", "dosage": "500mg", "contraindications": []}],
             "allergies": ["shellfish"],
@@ -67,6 +69,8 @@ def test_health_profile_patch_persists_across_requests(sqlite_health_profile_env
     assert body["locale"] == "en-SG"
     assert body["conditions"][0]["name"] == "Type 2 Diabetes"
     assert body["nutrition_goals"] == ["lower_sugar", "lower_sodium"]
+    assert body["daily_protein_target_g"] == 72
+    assert body["daily_fiber_target_g"] == 28
     assert body["completeness"]["state"] == "ready"
     assert body["completeness"]["missing_fields"] == []
 
@@ -76,6 +80,8 @@ def test_health_profile_patch_persists_across_requests(sqlite_health_profile_env
     assert fetched_body["age"] == 54
     assert fetched_body["allergies"] == ["shellfish"]
     assert fetched_body["budget_tier"] == "moderate"
+    assert fetched_body["daily_protein_target_g"] == 72
+    assert fetched_body["daily_fiber_target_g"] == 28
 
 
 def test_daily_suggestions_use_profile_history_and_snapshot(sqlite_health_profile_env: None) -> None:
@@ -146,3 +152,57 @@ def test_daily_suggestions_flag_incomplete_profile_with_fallback(sqlite_health_p
     assert "conditions" in body["profile"]["completeness"]["missing_fields"]
     assert body["bundle"]["warnings"]
     assert body["bundle"]["suggestions"]["breakfast"]["confidence"] < 0.9
+
+
+def test_health_profile_onboarding_defaults_patch_and_complete(sqlite_health_profile_env: None) -> None:
+    client = TestClient(create_app())
+    _login(client)
+
+    initial = client.get("/api/v1/profile/health/onboarding")
+
+    assert initial.status_code == 200
+    initial_body = initial.json()
+    assert initial_body["onboarding"]["current_step"] == "basic_identity"
+    assert initial_body["onboarding"]["completed_steps"] == []
+    assert initial_body["onboarding"]["is_complete"] is False
+    assert [item["id"] for item in initial_body["steps"]] == [
+        "basic_identity",
+        "health_context",
+        "nutrition_targets",
+        "preferences",
+        "review",
+    ]
+
+    patched = client.patch(
+        "/api/v1/profile/health/onboarding",
+        json={
+            "step_id": "basic_identity",
+            "profile": {
+                "age": 54,
+                "locale": "en-SG",
+                "height_cm": 168,
+                "weight_kg": 72,
+            },
+        },
+    )
+
+    assert patched.status_code == 200
+    patched_body = patched.json()
+    assert patched_body["onboarding"]["current_step"] == "health_context"
+    assert patched_body["onboarding"]["completed_steps"] == ["basic_identity"]
+    assert patched_body["profile"]["age"] == 54
+    assert patched_body["profile"]["height_cm"] == 168.0
+
+    completed = client.post("/api/v1/profile/health/onboarding/complete")
+
+    assert completed.status_code == 200
+    completed_body = completed.json()
+    assert completed_body["onboarding"]["is_complete"] is True
+    assert completed_body["onboarding"]["current_step"] == "review"
+    assert set(completed_body["onboarding"]["completed_steps"]) == {
+        "basic_identity",
+        "health_context",
+        "nutrition_targets",
+        "preferences",
+        "review",
+    }

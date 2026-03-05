@@ -24,15 +24,45 @@ test.describe("mobile navigation", () => {
   });
 });
 
-test("dashboard shows adaptive agent controls", async ({ page }) => {
+test("dashboard stays summary-focused and links out to settings", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("member@example.com");
   await page.getByLabel("Password").fill("member-pass");
   await page.getByRole("button", { name: "Login" }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
-  await expect(page.getByRole("heading", { name: "Adaptive Daily Meal Agent" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today at a Glance" })).toBeVisible();
+  await expect(page.getByLabel("Height (cm)")).toBeHidden();
+  await expect(page.getByLabel("Weight (kg)")).toBeHidden();
+  await expect(page.getByRole("link", { name: "Open Settings" })).toBeVisible();
+});
+
+test("settings page exposes guided health profile setup with advanced edit fallback", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("member@example.com");
+  await page.getByLabel("Password").fill("member-pass");
+  await page.getByRole("button", { name: "Login" }).click();
+
+  await page.goto("/settings");
+  await expect(page.locator("#main-content").getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Guided Health Setup" })).toBeVisible();
+  await expect(page.getByText("Step 1 of 5")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Advanced Edit" })).toBeVisible();
+  await expect(page.getByLabel("Age")).toBeVisible();
+  await page.getByRole("button", { name: "Advanced Edit" }).click();
+  await expect(page.getByRole("heading", { name: "Advanced Health Profile" })).toBeVisible();
   await expect(page.getByLabel("Height (cm)")).toBeVisible();
-  await expect(page.getByLabel("Weight (kg)")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Refresh Agent Feed" })).toBeVisible();
+  await expect(page.getByLabel("Daily protein target (g)")).toBeVisible();
+  await expect(page.getByLabel("Daily fiber target (g)")).toBeVisible();
+});
+
+test("caregiver household page shows a read-only care panel", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("helper@example.com");
+  await page.getByLabel("Password").fill("helper-pass");
+  await page.getByRole("button", { name: "Login" }).click();
+
+  await page.goto("/household");
+  await expect(page.getByRole("heading", { name: "Caregiving View" })).toBeVisible();
+  await expect(page.getByText("Read-only monitoring for the selected household member.")).toBeVisible();
 });
