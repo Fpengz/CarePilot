@@ -64,14 +64,14 @@ Configuration rules:
 Run the full local stack:
 
 ```bash
-./scripts/dev.sh
+uv run python scripts/dg.py dev
 ```
 
 Useful variants:
 
 ```bash
-./scripts/dev.sh --no-web
-./scripts/dev.sh --no-api
+uv run python scripts/dg.py dev --no-web
+uv run python scripts/dg.py dev --no-api
 pnpm dev:scheduler
 ```
 

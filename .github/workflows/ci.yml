@@ -51,7 +51,7 @@ jobs:
             fi
             sleep 1
           done
-          READINESS_FAIL_ON_WARNINGS=1 ./scripts/check-readiness.sh http://127.0.0.1:8001
+          READINESS_FAIL_ON_WARNINGS=1 uv run python scripts/dg.py readiness http://127.0.0.1:8001
 
   web:
     runs-on: ubuntu-latest

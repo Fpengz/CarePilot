@@ -13,10 +13,14 @@ Provide a repeatable nightly engineering loop that improves the repo toward a pr
 ## Validation Presets
 - Backend-focused: `./tools/validate.sh backend-milestone`
 - Full stack: `./tools/validate.sh full-stack`
+- Unified maximum-coverage gate: `uv run python scripts/dg.py test comprehensive`
 
 ## Report Output
 Write nightly report to:
 - `reports/nightly_YYYY-MM-DD.md`
+
+Historical nightly reports are archived under:
+- `docs/archive/nightly-reports/`
 
 Required sections:
 - `# Tonight's Milestone`
@@ -28,12 +32,18 @@ Required sections:
 - `## What's Next (Top 3 Priorities for Tomorrow)`
 
 ## Current Priority Order (Repo-Specific)
-1. Suggestions unified flow + persistence
-2. Safety layer formalization (structured red-flag + escalation enforcement)
-3. Meal v1 completion (pagination/failure metadata/UX)
-4. Household sharing integration in read flows
-5. Observability baseline (trace IDs + structured logs)
-6. Deployment readiness (CI + containers)
+1. Policy enforcement rollout (`TOOL_POLICY_ENFORCEMENT_MODE=shadow` -> `enforce`) with staged validation
+2. Runtime-contract snapshot management UX (web visibility + compare flows)
+3. Redis keyspace v2 production cutover and verification runbook execution
+4. Recommendation-agent hardening and offline refresh hooks
+5. Prompt orchestration standardization across agent flows
+6. RAG v1 foundation and safety expansion
+
+## Command of Record
+- Nightly default validation command: `uv run python scripts/dg.py test comprehensive`
+- If runtime constraints require a lighter run:
+  - Backend-only: `uv run python scripts/dg.py test backend`
+  - Web-only: `uv run python scripts/dg.py test web --skip-e2e`
 
 ## Boundaries (Short Version)
 - `apps/api`: transport only

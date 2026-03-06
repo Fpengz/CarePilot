@@ -19,7 +19,8 @@ See `docs/rbac-matrix.md` for the current RBAC matrix and endpoint permissions.
 See `docs/api-auth-contract.md` for auth payload examples and migration notes.
 See `docs/api-recommendation-agent-contract.md` for the adaptive meal agent API, substitution flow, and feedback loop contract.
 See `ARCHITECTURE.md` for the canonical system architecture and extension model.
-See `docs/architecture-v1.md` for the historical v1 architecture snapshot.
+See `docs/archive/architecture/architecture-v1.md` for the historical v1 architecture snapshot.
+See `docs/feature-audit.md` for the current capability audit.
 See `docs/config-reference.md` for backend environment variables and defaults.
 See `docs/nightly-ops.md` for the nightly autonomous build runbook.
 See `SAFETY.md` for medical safety guardrails and escalation rules.
@@ -76,6 +77,9 @@ Platform runtime toggles:
 - `EPHEMERAL_STATE_BACKEND=in_memory` or `redis`
 - `POSTGRES_DSN` for PostgreSQL-backed runtime paths
 - `REDIS_URL` for Redis-backed cache / coordination paths
+- `REDIS_KEYSPACE_VERSION=v1|v2` for Redis key naming strategy during migration windows
+- `TOOL_POLICY_ENFORCEMENT_MODE=shadow|enforce` for DB-backed tool policy rollout
+- `WORKFLOW_CONTRACT_BOOTSTRAP=1|0` to enable/disable startup runtime-contract snapshot bootstrap
 - `READINESS_FAIL_ON_WARNINGS=0|1` (defaults by profile)
 - `REQUIRED_PROVIDER` optional readiness expectation for deployments
 
@@ -95,19 +99,26 @@ Validation behavior:
 
 ## Running the Application
 ### Quickstart (API + Web)
-Use the unified dev script (recommended):
+Use the unified scripts CLI (recommended):
 
 ```bash
-./scripts/dev.sh
+uv run python scripts/dg.py dev
 ```
 
 Optional flags:
-- `./scripts/dev.sh --no-web` (API only)
-- `./scripts/dev.sh --no-api` (Web only)
+- `uv run python scripts/dg.py dev --no-web` (API only)
+- `uv run python scripts/dg.py dev --no-api` (Web only)
+- `uv run python scripts/dg.py dev --no-scheduler` (API+Web without reminder scheduler)
 
 Endpoints:
 - Web: `http://localhost:3000`
 - API docs: `http://localhost:8001/docs`
+
+Show all script commands and legacy mapping:
+
+```bash
+uv run python scripts/dg.py help
+```
 
 ### API Only (FastAPI)
 ```bash
@@ -118,7 +129,7 @@ uv run python -m apps.api.run
 Bring up the target-aligned local infra services:
 
 ```bash
-./scripts/dev-infra.sh
+uv run python scripts/dg.py infra up
 ```
 
 If Docker Compose is unavailable, the script automatically falls back to plain `docker run` containers.
@@ -127,15 +138,21 @@ Docker daemon must be running before invoking infra scripts.
 Useful infra commands:
 
 ```bash
-./scripts/dev-infra.sh status
-./scripts/dev-infra.sh logs
-./scripts/dev-infra.sh down
+uv run python scripts/dg.py infra status
+uv run python scripts/dg.py infra logs
+uv run python scripts/dg.py infra down
 ```
 
 Bootstrap PostgreSQL schema (defaults to the local compose DSN):
 
 ```bash
-./scripts/migrate-postgres.sh
+uv run python scripts/dg.py migrate postgres
+```
+
+Dry-run Redis keyspace migration (v1 -> v2 naming):
+
+```bash
+uv run python scripts/dg.py migrate redis-keyspace --redis-url redis://127.0.0.1:6379/0
 ```
 
 Run the external worker loop:
@@ -147,13 +164,13 @@ pnpm dev:worker
 Run a full PostgreSQL + Redis smoke (infra + migration + API + worker + reminder delivery):
 
 ```bash
-./scripts/smoke-postgres-redis.sh
+uv run python scripts/dg.py smoke postgres-redis
 ```
 
 Run a readiness gate against a running API:
 
 ```bash
-./scripts/check-readiness.sh http://127.0.0.1:8001
+uv run python scripts/dg.py readiness http://127.0.0.1:8001
 ```
 
 Note: by default, application data and auth data are persisted in SQLite via:
@@ -183,6 +200,26 @@ pnpm web:dev
 ```bash
 uv run python src/main.py
 ```
+
+## Scripts CLI
+Primary scripts interface:
+
+```bash
+uv run python scripts/dg.py <command>
+```
+
+Common commands:
+- `uv run python scripts/dg.py dev`
+- `uv run python scripts/dg.py infra up`
+- `uv run python scripts/dg.py migrate postgres`
+- `uv run python scripts/dg.py migrate redis-keyspace --redis-url <REDIS_URL> [--apply]`
+- `uv run python scripts/dg.py smoke postgres-redis`
+- `uv run python scripts/dg.py readiness http://127.0.0.1:8001`
+- `uv run python scripts/dg.py test backend`
+- `uv run python scripts/dg.py test web`
+- `uv run python scripts/dg.py test comprehensive`
+- `uv run python scripts/dg.py report nightly`
+- `uv run python scripts/dg.py web env -- pnpm --dir apps/web dev`
 
 ## Runtime Modes and Environment Matrix
 ### Gemini Mode
@@ -240,7 +277,8 @@ When `SMS_DEV_MODE=1`, SMS delivery is simulated but still recorded in reminder 
 
 ### Reminder Scheduler
 - `pnpm dev` starts the API, web app, and the reminder scheduler loop.
-- Disable the scheduler in dev with `START_REMINDER_SCHEDULER=0 ./scripts/dev.sh`.
+- Disable the scheduler in dev with `uv run python scripts/dg.py dev --no-scheduler`.
+- Alternative env toggle remains supported: `START_REMINDER_SCHEDULER=0 uv run python scripts/dg.py dev`.
 - Run the scheduler alone with `pnpm dev:scheduler`.
 - Scheduler tuning:
   - `REMINDER_SCHEDULER_INTERVAL_SECONDS`
@@ -273,7 +311,7 @@ The local pre-commit configuration runs these checks on every commit:
 - `./tools/validate.sh backend-milestone` runs the targeted backend milestone checks (sqlite auth + household/auth API coverage).
 - `./tools/validate.sh backend-all` runs repo backend checks (`ruff`, `ty`, `pytest`).
 - `./tools/validate.sh full-stack` runs backend checks plus web typecheck/build.
-- `./scripts/nightly-report.sh` creates (or prints) `reports/nightly_YYYY-MM-DD.md` from the report template.
+- `uv run python scripts/dg.py report nightly` creates (or prints) `reports/nightly_YYYY-MM-DD.md` from the report template.
 
 ## Nightly Workflow
 For autonomous nightly progress, follow the repo-specific runbook:
@@ -284,11 +322,23 @@ For autonomous nightly progress, follow the repo-specific runbook:
 Generate tonight's report file:
 
 ```bash
-./scripts/nightly-report.sh
+uv run python scripts/dg.py report nightly
 ```
 
 ## Quality Gates
-Run these checks before submitting changes:
+Run this unified comprehensive gate before submitting changes:
+
+```bash
+uv run python scripts/dg.py test comprehensive
+```
+
+Optional variants:
+- `uv run python scripts/dg.py test comprehensive --skip-e2e`
+- `uv run python scripts/dg.py test comprehensive --skip-smoke`
+- `uv run python scripts/dg.py test backend`
+- `uv run python scripts/dg.py test web`
+
+Equivalent manual commands:
 
 ```bash
 ./tools/run_test.sh
@@ -344,6 +394,22 @@ uv run python -m apps.api.run
 ## Roadmap
 See `docs/roadmap-v1.md` for the full canonical roadmap.
 
+Feature matrix snapshot (mirror of canonical roadmap):
+
+| Feature | Status |
+|---|---|
+| Health profile gradual guidance (interactive Q&A) | `**[Complete]**` |
+| Nutritional deficiency inference from meal preferences | `**[Complete]**` |
+| Meal intake tracking with real-time updates | `**[Complete]**` |
+| Community-based caregiving support | `**[Complete]**` |
+| Environmental monitoring (air quality / conditions) | `**[Research]**` |
+| Demographic context awareness (fairness/privacy constrained) | `**[Research]**` |
+| Periodic mobility reminders | `**[Complete]**` |
+| Medication tracking + adherence metrics | `**[Complete]**` |
+| Symptom check-ins | `**[Complete]**` |
+| Patient to doctor clinical card generation | `**[Complete]**` |
+| Numerical data change analysis | `**[Complete]**` |
+
 Roadmap horizons:
 - `Short-Term`: 0–3 months
 - `Mid-Term`: 3–9 months
@@ -360,8 +426,9 @@ Goal labels used in the roadmap:
 - AI/ML Components:
   - offline learning refresh, prompt orchestration standardization, RAG v1 foundations, and expanded safety coverage.
 - Product Features:
-  - completed settings-first health profile management, daily intake tracking, nutrition-pattern guidance, and mobility reminders.
-  - planned guided health-profile Q&A, caregiver/community support phase 2, and knowledge retrieval.
+  - completed settings-first health profile management, guided health-profile Q&A, daily intake tracking, nutrition-pattern guidance, and mobility reminders.
+  - completed report parsing with symptom-summary context on `/reports` and `/api/v1/reports/parse`.
+  - completed caregiver/community support phase 2; planned knowledge retrieval agent.
   - research tracks for environmental monitoring, demographic-context personalization, and emotional-support workflows.
 - Deployment and Scaling:
   - environment profiles, secret hygiene, readiness diagnostics, and worker/runtime hardening.
