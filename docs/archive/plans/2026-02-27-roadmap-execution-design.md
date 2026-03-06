@@ -1,3 +1,10 @@
+> [!WARNING]
+> Historical archive only. Content may be outdated.
+> Canonical docs: `README.md`, `docs/roadmap-v1.md`, `docs/feature-audit.md`, `docs/config-reference.md`.
+
+> Historical planning document.
+> Active planning index: `docs/plans/README.md`.
+
 # Roadmap Execution Design (Non-Interactive)
 
 Date: 2026-02-27

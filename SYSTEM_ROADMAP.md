@@ -8,3 +8,4 @@ This file is a stable root entrypoint for tooling/runbooks that expect `SYSTEM_R
 ## Read Next
 - `docs/roadmap-v1.md` — v1 product delivery milestones
 - `README.md#roadmap` — summary roadmap and current priorities
+- `docs/feature-audit.md` — latest capability audit snapshot

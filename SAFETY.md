@@ -41,6 +41,7 @@ The system must escalate (urgent care / emergency guidance) when red-flag sympto
 - Suggestions API (`POST /api/v1/suggestions/generate-from-report`) now performs red-flag text triage and returns structured `safety` decisions.
 
 ## Related Docs
-- `docs/architecture-v1.md`
+- `ARCHITECTURE.md`
+- `docs/archive/architecture/architecture-v1.md` (historical snapshot)
 - `docs/roadmap-v1.md`
 - `README.md`

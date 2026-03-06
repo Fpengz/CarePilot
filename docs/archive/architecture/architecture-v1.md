@@ -1,3 +1,10 @@
+> [!WARNING]
+> Historical archive only. Content may be outdated.
+> Canonical docs: `README.md`, `docs/roadmap-v1.md`, `docs/feature-audit.md`, `docs/config-reference.md`.
+
+> Historical architecture snapshot.
+> Canonical architecture document: `ARCHITECTURE.md`.
+
 # Architecture V1 (Hexagonal + Workflow Orchestration)
 
 ## Summary

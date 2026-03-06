@@ -14,6 +14,8 @@ It is explicit about current maturity so contributors can distinguish:
 - what is being actively hardened
 - what remains a research or platform investment
 
+Latest capability verification is tracked in `docs/feature-audit.md`.
+
 ## Current Maturity Snapshot
 Current implemented baseline:
 - FastAPI + Next.js monorepo with typed API and web contracts
@@ -30,7 +32,9 @@ Current implemented baseline:
 - cautious nutrition-pattern inference from meal history and preferences
 - read-only caregiver monitoring within the active household
 - opt-in periodic mobility reminders built on the reminder scheduling stack
+- report parsing with symptom-summary context and workflow timeline visibility
 - local compose/dev scaffolding for PostgreSQL, Redis, and external workers
+- unified scripts CLI (`uv run python scripts/dg.py`) with comprehensive validation orchestration
 - smoke-tested primary web journeys
 
 Current maturity gaps relative to the target platform:
@@ -39,6 +43,21 @@ Current maturity gaps relative to the target platform:
 - RAG ingestion, indexing, retrieval, and citation layers are not yet first-class production modules
 - agent routing is still partly implemented through service-layer orchestration rather than a dedicated registry/runtime
 - offline evaluation, retrieval benchmarking, and research-grade safety evaluation are still early
+
+## Feature Matrix (Canonical)
+| Feature | Status | Current Surface / Contract |
+|---|---|---|
+| Health profile gradual guidance (interactive Q&A) | `**[Complete]**` | `/settings` guided onboarding + advanced edit (`/api/v1/profile/health/onboarding*`) |
+| Nutritional deficiency inference from meal preferences | `**[Complete]**` | Daily summary insights + pattern flags (`/api/v1/meal/daily-summary`) |
+| Meal intake tracking with real-time updates | `**[Complete]**` | Meal logging, daily remaining targets, weekly rollups (`/api/v1/meal/analyze`, `/api/v1/meal/daily-summary`, `/api/v1/meal/weekly-summary`) |
+| Community-based caregiving support | `**[Complete]**` | Household read-only care monitoring (`/household`, `/api/v1/households/care/*`) |
+| Environmental monitoring (air quality / conditions) | `**[Research]**` | Not productized yet; tracked as research item |
+| Demographic context awareness (fairness/privacy constrained) | `**[Research]**` | Not productized yet; tracked as research item |
+| Periodic mobility reminders | `**[Complete]**` | Mobility settings + reminder generation/delivery (`/settings`, `/reminders`, `/api/v1/reminders/mobility-settings`) |
+| Medication tracking + adherence metrics | `**[Complete]**` | Regimen CRUD + adherence events/metrics (`/medications`, `/api/v1/medications/*`) |
+| Symptom check-ins | `**[Complete]**` | Symptom logging/list/summary plus report-context synthesis (`/symptoms`, `/reports`, `/api/v1/symptoms/*`, `/api/v1/reports/parse`) |
+| Patient to doctor clinical card generation | `**[Complete]**` | Clinical card generation/list/detail (`/clinical-cards`, `/api/v1/clinical-cards/*`) |
+| Numerical data change analysis | `**[Complete]**` | Deterministic trend/delta endpoints (`/metrics`, `/api/v1/metrics/trends`) |
 
 ## Goal Labels
 - `Research Goal` — experimental or model-quality work
@@ -71,12 +90,12 @@ Current maturity gaps relative to the target platform:
     - workers can block on Redis signals and fall back to polling safely
     - reminder and workflow side effects can run through Redis-backed workers without API coupling
 
-- `**[Planned]**` Explicit agent registry and workflow runtime contract
+- `**[Complete]**` Explicit agent registry and workflow runtime contract
   - `Engineering Goal`
-  - Move from service-centric orchestration toward a named registry of agents and durable workflow routing decisions.
+  - Named runtime registry and workflow runtime-contract read surface are implemented for auditable orchestration metadata.
   - Exit criteria:
     - agents declare capabilities, allowed tools, and output contracts
-    - workflow routing is no longer embedded ad hoc in transport-facing code
+    - workflow runtime contracts are exposed via workflow API read endpoints
 
 - `**[Complete]**` Logging, correlation, and error normalization foundation
   - `Infrastructure Goal`
