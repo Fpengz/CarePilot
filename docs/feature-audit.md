@@ -5,7 +5,7 @@ Last updated: 2026-03-06
 #### 1) Executive Summary
 The repository currently shows end-to-end coverage for all five audited features (A–E) with concrete FastAPI routes, service-layer logic, domain models, persistence tables/adapters (including Postgres schema and store implementations), frontend pages/API clients, and targeted tests. Workflow replay and timeline traces are wired, and deterministic trend/delta computation is implemented in explicit compute services rather than LLM-only math. No audited feature is docs-only in the current codebase.
 
-- Role/tool contract modeling now exists in [`models/role_tools.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/models/role_tools.py), but policy remains primarily code-driven instead of data-driven.
+- Role/tool contract modeling exists in [`models/role_tools.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/models/role_tools.py) and DB-backed tool policy APIs are available; rollout still defaults to shadow enforcement mode.
 - Workflow runtime contract exposure now exists at [`GET /api/v1/workflows/runtime-contract`](/Users/zhoufuwang/Projects/dietary_tools/apps/api/dietary_api/routers/workflows.py), backed by [`services/agent_registry.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/services/agent_registry.py).
 - Redis cache/coordination coverage exists, but feature-specific Redis keyspace conventions are still largely generic instead of feature-scoped contracts.
 - CI-level full Postgres+Redis integration proof for all A–E remains less explicit than unit/API suite coverage in-repo.
@@ -82,20 +82,18 @@ The repository currently shows end-to-end coverage for all five audited features
 
 ## Top Gaps
 - Tool-policy enforcement is intentionally `shadow` by default; production rollout to hard-enforcement remains pending.
-- Runtime-contract snapshots are backend/API-only in this phase; no dedicated web management surface exists yet.
-- Redis v2 keyspace migration tooling is implemented, but production cutover/runbook execution remains pending.
+- Redis v2 keyspace migration has a modernized Python CLI path, but production cutover/runbook execution remains pending.
 
 ## Proposed MVP Scope
 - Keep A–E capabilities at maintenance level (no new feature build required for audit scope).
 - Complete production rollout steps for policy enforcement and Redis keyspace migration.
-- Add minimal web UI for snapshot and policy inspection/editing.
+- Validate workflow snapshot/policy governance in operational runbooks and staging checks.
 
 ## One-Page Integration Plan (No Code)
 
 ### Where missing pieces would live
 - Policy enforcement rollout: [`apps/api/dietary_api/policy.py`](/Users/zhoufuwang/Projects/dietary_tools/apps/api/dietary_api/policy.py), [`apps/api/dietary_api/services/workflows.py`](/Users/zhoufuwang/Projects/dietary_tools/apps/api/dietary_api/services/workflows.py), [`src/dietary_guardian/services/policy_service.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/services/policy_service.py).
-- Snapshot management UX: [`apps/web/app/workflows/page.tsx`](/Users/zhoufuwang/Projects/dietary_tools/apps/web/app/workflows/page.tsx) and [`apps/web/lib/api.ts`](/Users/zhoufuwang/Projects/dietary_tools/apps/web/lib/api.ts).
-- Redis production cutover: [`src/dietary_guardian/infrastructure/cache/redis_store.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/infrastructure/cache/redis_store.py), [`src/dietary_guardian/infrastructure/coordination/redis_coordination.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/infrastructure/coordination/redis_coordination.py), [`scripts/migrate-redis-keyspace.py`](/Users/zhoufuwang/Projects/dietary_tools/scripts/migrate-redis-keyspace.py).
+- Redis production cutover: [`src/dietary_guardian/infrastructure/cache/redis_store.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/infrastructure/cache/redis_store.py), [`src/dietary_guardian/infrastructure/coordination/redis_coordination.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/infrastructure/coordination/redis_coordination.py), [`scripts/migrate-redis-keyspace.py`](/Users/zhoufuwang/Projects/dietary_tools/scripts/migrate-redis-keyspace.py), [`scripts/dg.py`](/Users/zhoufuwang/Projects/dietary_tools/scripts/dg.py).
 
 ### Existing services to extend
 - Add rollout controls to transition from shadow policy mode to enforce mode by environment.

@@ -35,6 +35,7 @@ Current implemented baseline:
 - report parsing with symptom-summary context and workflow timeline visibility
 - local compose/dev scaffolding for PostgreSQL, Redis, and external workers
 - unified scripts CLI (`uv run python scripts/dg.py`) with comprehensive validation orchestration
+- workflow governance admin surface for runtime contract snapshots and tool policy inspection/actions (`/workflows`)
 - smoke-tested primary web journeys
 
 Current maturity gaps relative to the target platform:

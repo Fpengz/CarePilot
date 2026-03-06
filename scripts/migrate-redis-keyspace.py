@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse
 from collections.abc import Iterable
+
+import typer
 
 
 def _domain(value: str) -> str:
@@ -56,40 +57,37 @@ def _new_key(namespace: str, old_key: str) -> str | None:
     return None
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Migrate Redis keyspace from v1 to v2 naming")
-    parser.add_argument("--redis-url", required=True)
-    parser.add_argument("--namespace", default="dietary_guardian")
-    parser.add_argument("--apply", action="store_true", help="Apply key rename operations")
-    args = parser.parse_args()
-
+def main(
+    redis_url: str = typer.Option(..., "--redis-url", help="Redis URL to migrate."),
+    namespace: str = typer.Option("dietary_guardian", "--namespace", help="Redis key namespace."),
+    apply: bool = typer.Option(False, "--apply", help="Apply key rename operations."),
+) -> None:
     import redis
 
-    client = redis.Redis.from_url(args.redis_url, decode_responses=True)
+    client = redis.Redis.from_url(redis_url, decode_responses=True)
     patterns = (
-        f"{args.namespace}:lock:*",
-        f"{args.namespace}:signal:*",
-        f"{args.namespace}:cache:*",
+        f"{namespace}:lock:*",
+        f"{namespace}:signal:*",
+        f"{namespace}:cache:*",
     )
     keys = _iter_keys(client, patterns)
     if not keys:
-        print("No matching keys found.")
-        return 0
+        typer.echo("No matching keys found.")
+        raise typer.Exit(code=0)
 
-    print(f"Found {len(keys)} key(s).")
+    typer.echo(f"Found {len(keys)} key(s).")
     for old_key in keys:
-        new_key = _new_key(args.namespace, old_key)
+        new_key = _new_key(namespace, old_key)
         if new_key is None:
             continue
         if new_key == old_key:
             continue
-        print(f"{old_key} -> {new_key}")
-        if args.apply:
+        typer.echo(f"{old_key} -> {new_key}")
+        if apply:
             client.rename(old_key, new_key)
-    if not args.apply:
-        print("Dry run only. Re-run with --apply to perform migration.")
-    return 0
+    if not apply:
+        typer.echo("Dry run only. Re-run with --apply to perform migration.")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    typer.run(main)

@@ -114,7 +114,7 @@ Endpoints:
 - Web: `http://localhost:3000`
 - API docs: `http://localhost:8001/docs`
 
-Show all script commands and legacy mapping:
+Show all script commands:
 
 ```bash
 uv run python scripts/dg.py help
@@ -393,8 +393,10 @@ uv run python -m apps.api.run
 
 ## Roadmap
 See `docs/roadmap-v1.md` for the full canonical roadmap.
+See `docs/feature-audit.md` for the current capability verification and gap summary.
+See `SYSTEM_ROADMAP.md` for roadmap index pointers.
 
-Feature matrix snapshot (mirror of canonical roadmap):
+Feature matrix snapshot:
 
 | Feature | Status |
 |---|---|
@@ -410,48 +412,7 @@ Feature matrix snapshot (mirror of canonical roadmap):
 | Patient to doctor clinical card generation | `**[Complete]**` |
 | Numerical data change analysis | `**[Complete]**` |
 
-Roadmap horizons:
-- `Short-Term`: 0–3 months
-- `Mid-Term`: 3–9 months
-- `Long-Term`: 9–18 months
-
-Goal labels used in the roadmap:
-- `Research Goal`
-- `Engineering Goal`
-- `Infrastructure Goal`
-
-### Short-Term
-- Core Infrastructure:
-  - PostgreSQL-ready persistence boundaries, Redis-backed async state, and explicit agent/workflow runtime contracts.
-- AI/ML Components:
-  - offline learning refresh, prompt orchestration standardization, RAG v1 foundations, and expanded safety coverage.
-- Product Features:
-  - completed settings-first health profile management, guided health-profile Q&A, daily intake tracking, nutrition-pattern guidance, and mobility reminders.
-  - completed report parsing with symptom-summary context on `/reports` and `/api/v1/reports/parse`.
-  - completed caregiver/community support phase 2; planned knowledge retrieval agent.
-  - research tracks for environmental monitoring, demographic-context personalization, and emotional-support workflows.
-- Deployment and Scaling:
-  - environment profiles, secret hygiene, readiness diagnostics, and worker/runtime hardening.
-
-### Mid-Term
-- Core Infrastructure:
-  - multi-process workers, durable workflow execution, and capability-based agent routing.
-- AI/ML Components:
-  - production RAG, memory hierarchy, and evaluation infrastructure.
-- Product Features:
-  - chronic-condition monitoring workflows and retrieval-backed assistant experiences.
-- Deployment and Scaling:
-  - horizontal scale readiness, cache formalization, and expanded monitoring.
-
-### Long-Term
-- Core Infrastructure:
-  - full PostgreSQL + Redis production data plane and durable multi-agent execution engine.
-- AI/ML Components:
-  - ensemble routing, human-in-the-loop evaluation, and retrieval-aware safety scoring.
-- Product Features:
-  - cross-channel conversational assistance, advanced personalization, and condition-specific programs.
-- Deployment and Scaling:
-  - fault-tolerant runtime posture, feature rollout controls, and advanced config telemetry.
+Roadmap horizon detail, goal labels, and milestone breakdown are maintained only in `docs/roadmap-v1.md`.
 
 ## Architecture-as-Code
 ### System Topology
