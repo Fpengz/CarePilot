@@ -4,8 +4,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import MealAnalyzeResponse, MealDailySummaryResponse, MealRecordsResponse
-from ..services.meals import analyze_meal, get_daily_summary, list_meal_records
+from ..schemas import MealAnalyzeResponse, MealDailySummaryResponse, MealRecordsResponse, MealWeeklySummaryResponse
+from ..services.meals import analyze_meal, get_daily_summary, get_weekly_summary, list_meal_records
 
 router = APIRouter(tags=["meals"])
 
@@ -56,4 +56,18 @@ def meal_daily_summary(
         context=get_context(request),
         user_id=str(session["user_id"]),
         summary_date=summary_date,
+    )
+
+
+@router.get("/api/v1/meal/weekly-summary", response_model=MealWeeklySummaryResponse)
+def meal_weekly_summary(
+    request: Request,
+    week_start: date = Query(),
+    session: dict[str, object] = Depends(current_session),
+) -> MealWeeklySummaryResponse:
+    require_action(session, "meal.records.read")
+    return get_weekly_summary(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        week_start=week_start,
     )

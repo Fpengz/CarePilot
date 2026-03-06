@@ -12,6 +12,7 @@ from dietary_guardian.services.memory_services import (
     EventTimelineService,
     ProfileMemoryService,
 )
+from dietary_guardian.services.agent_registry import AgentRegistry, build_default_agent_registry
 from dietary_guardian.services.platform_tools import build_platform_tool_registry
 from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 
@@ -28,6 +29,7 @@ class AppContext:
     clinical_memory: ClinicalSnapshotMemoryService
     event_timeline: EventTimelineService
     tool_registry: Any
+    agent_registry: AgentRegistry
     coordinator: WorkflowCoordinator
     auth_store: Any
     session_signer: SessionSigner
@@ -72,13 +74,21 @@ def _build_household_store(settings: Settings) -> Any:
 
 def _build_cache_store(settings: Settings) -> Any:
     if settings.ephemeral_state_backend == "redis":
-        return RedisCacheStore(redis_url=str(settings.redis_url), namespace=settings.redis_namespace)
+        return RedisCacheStore(
+            redis_url=str(settings.redis_url),
+            namespace=settings.redis_namespace,
+            keyspace_version=settings.redis_keyspace_version,
+        )
     return InMemoryCacheStore()
 
 
 def _build_coordination_store(settings: Settings) -> Any:
     if settings.ephemeral_state_backend == "redis":
-        return RedisCoordinationStore(redis_url=str(settings.redis_url), namespace=settings.redis_namespace)
+        return RedisCoordinationStore(
+            redis_url=str(settings.redis_url),
+            namespace=settings.redis_namespace,
+            keyspace_version=settings.redis_keyspace_version,
+        )
     return InMemoryCoordinationStore()
 
 
@@ -89,6 +99,7 @@ def build_app_context() -> AppContext:
     clinical_memory = ClinicalSnapshotMemoryService()
     event_timeline = EventTimelineService()
     tool_registry = build_platform_tool_registry(app_store)
+    agent_registry = build_default_agent_registry()
     coordinator = WorkflowCoordinator(
         tool_registry=tool_registry,
         profile_memory=profile_memory,
@@ -101,7 +112,7 @@ def build_app_context() -> AppContext:
     cache_store = _build_cache_store(settings)
     coordination_store = _build_coordination_store(settings)
     household_store = _build_household_store(settings)
-    return AppContext(
+    ctx = AppContext(
         settings=settings,
         app_store=app_store,
         repository=app_store,
@@ -109,6 +120,7 @@ def build_app_context() -> AppContext:
         clinical_memory=clinical_memory,
         event_timeline=event_timeline,
         tool_registry=tool_registry,
+        agent_registry=agent_registry,
         coordinator=coordinator,
         auth_store=auth_store,
         session_signer=session_signer,
@@ -117,3 +129,7 @@ def build_app_context() -> AppContext:
         coordination_store=coordination_store,
         household_store=household_store,
     )
+    from .services.workflows import ensure_runtime_contract_snapshot_bootstrap
+
+    ensure_runtime_contract_snapshot_bootstrap(context=ctx)
+    return ctx

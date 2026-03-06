@@ -29,9 +29,14 @@ from dietary_guardian.services.reminder_notification_service import (
 
 def generate_reminders_for_session(*, context: AppContext, session: dict[str, object]) -> ReminderGenerateResponse:
     user_profile = build_user_profile_from_session(session, context.repository)
+    regimens = context.repository.list_medication_regimens(user_profile.id, active_only=True)
+    if not regimens:
+        regimens = default_demo_regimens(user_profile.id)
+        for item in regimens:
+            context.repository.save_medication_regimen(item)
     reminders = generate_daily_reminders(
         user_profile,
-        default_demo_regimens(user_profile.id),
+        regimens,
         date.today(),
     )
     mobility_settings = context.repository.get_mobility_reminder_settings(user_profile.id) or default_mobility_settings(user_profile.id)

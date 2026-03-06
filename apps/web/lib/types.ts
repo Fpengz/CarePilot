@@ -280,11 +280,33 @@ export interface MealDailySummaryApiResponse {
   recommendation_hints: string[];
 }
 
+export interface MealWeeklySummaryDayApiResponse {
+  meal_count: number;
+  calories: number;
+  sugar_g: number;
+  sodium_mg: number;
+}
+
+export interface MealWeeklySummaryApiResponse {
+  week_start: string;
+  week_end: string;
+  meal_count: number;
+  totals: DailyNutritionTotals;
+  daily_breakdown: Record<string, MealWeeklySummaryDayApiResponse>;
+  pattern_flags: string[];
+}
+
 export interface ReportParseApiResponse {
   readings: Array<Record<string, unknown>>;
   snapshot: {
     biomarkers: Record<string, number>;
     risk_flags: string[];
+  };
+  symptom_summary: SymptomSummaryApiResponse;
+  symptom_window: {
+    from: string;
+    to: string;
+    limit: number;
   };
 }
 
@@ -544,4 +566,111 @@ export interface ReminderNotificationLogItem {
 
 export interface ReminderNotificationLogListResponse {
   items: ReminderNotificationLogItem[];
+}
+
+export interface MedicationRegimenApi {
+  id: string;
+  medication_name: string;
+  dosage_text: string;
+  timing_type: "pre_meal" | "post_meal" | "fixed_time";
+  offset_minutes: number;
+  slot_scope: Array<"breakfast" | "lunch" | "dinner" | "snack">;
+  fixed_time?: string | null;
+  max_daily_doses: number;
+  active: boolean;
+}
+
+export interface MedicationRegimenListApiResponse {
+  items: MedicationRegimenApi[];
+}
+
+export interface MedicationRegimenEnvelopeApiResponse {
+  regimen: MedicationRegimenApi;
+}
+
+export interface MedicationAdherenceEventApi {
+  id: string;
+  regimen_id: string;
+  reminder_id?: string | null;
+  status: "taken" | "missed" | "skipped" | "unknown";
+  scheduled_at: string;
+  taken_at?: string | null;
+  source: "manual" | "reminder_confirm" | "imported";
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface MedicationAdherenceMetricsApiResponse {
+  totals: {
+    events: number;
+    taken: number;
+    missed: number;
+    skipped: number;
+    adherence_rate: number;
+  };
+  events: MedicationAdherenceEventApi[];
+}
+
+export interface SymptomCheckInApi {
+  id: string;
+  recorded_at: string;
+  severity: number;
+  symptom_codes: string[];
+  free_text?: string | null;
+  context: Record<string, unknown>;
+  safety: {
+    decision: string;
+    reasons: string[];
+    required_actions: string[];
+    redactions: string[];
+  };
+}
+
+export interface SymptomCheckInListApiResponse {
+  items: SymptomCheckInApi[];
+}
+
+export interface SymptomCheckInEnvelopeApiResponse {
+  item: SymptomCheckInApi;
+}
+
+export interface SymptomSummaryApiResponse {
+  total_count: number;
+  average_severity: number;
+  red_flag_count: number;
+  top_symptoms: Array<{ code: string; count: number }>;
+  latest_recorded_at?: string | null;
+}
+
+export interface ClinicalCardApi {
+  id: string;
+  created_at: string;
+  start_date: string;
+  end_date: string;
+  format: "sectioned" | "soap";
+  sections: Record<string, string>;
+  deltas: Record<string, number>;
+  trends: Record<string, Record<string, unknown>>;
+  provenance: Record<string, unknown>;
+}
+
+export interface ClinicalCardListApiResponse {
+  items: ClinicalCardApi[];
+}
+
+export interface ClinicalCardEnvelopeApiResponse {
+  card: ClinicalCardApi;
+}
+
+export interface MetricTrendApi {
+  metric: string;
+  points: Array<{ timestamp: string; value: number }>;
+  delta: number;
+  percent_change?: number | null;
+  slope_per_point: number;
+  direction: "increase" | "decrease" | "flat";
+}
+
+export interface MetricTrendListApiResponse {
+  items: MetricTrendApi[];
 }

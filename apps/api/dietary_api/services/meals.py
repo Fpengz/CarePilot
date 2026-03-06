@@ -8,13 +8,19 @@ from dietary_guardian.services.daily_nutrition_service import build_daily_nutrit
 from dietary_guardian.services.health_profile_service import get_or_create_health_profile
 from dietary_guardian.models.meal import ImageInput, VisionResult
 from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.services.weekly_nutrition_service import build_weekly_nutrition_summary
 from dietary_guardian.services.media_ingestion import build_capture_envelope, should_suppress_duplicate_capture
 from dietary_guardian.services.upload_service import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
 
 from apps.api.dietary_api.auth import build_user_profile_from_session
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.errors import build_api_error
-from apps.api.dietary_api.schemas import MealAnalyzeResponse, MealDailySummaryResponse, MealRecordsResponse
+from apps.api.dietary_api.schemas import (
+    MealAnalyzeResponse,
+    MealDailySummaryResponse,
+    MealRecordsResponse,
+    MealWeeklySummaryResponse,
+)
 
 
 async def analyze_meal(
@@ -140,6 +146,20 @@ def get_daily_summary(
         summary_date=summary_date,
     )
     return MealDailySummaryResponse.model_validate(summary.model_dump(mode="json"))
+
+
+def get_weekly_summary(
+    *,
+    context: AppContext,
+    user_id: str,
+    week_start: date,
+) -> MealWeeklySummaryResponse:
+    records = context.repository.list_meal_records(user_id)
+    summary = build_weekly_nutrition_summary(
+        meal_history=records,
+        week_start=week_start,
+    )
+    return MealWeeklySummaryResponse.model_validate(summary)
 
 
 def _build_meal_summary(*, vision_result: VisionResult, meal_record: MealRecognitionRecord) -> dict[str, object]:

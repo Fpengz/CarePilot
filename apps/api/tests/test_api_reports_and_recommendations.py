@@ -98,3 +98,54 @@ def test_recommendations_generate_requires_clinical_snapshot(sqlite_reports_env:
     body = response.json()
     assert body["detail"] == "no clinical snapshot available"
     assert body["error"]["code"] == "recommendations.no_clinical_snapshot"
+
+
+def test_reports_parse_includes_symptom_summary_and_workflow_trace(sqlite_reports_env: None) -> None:
+    app = create_app()
+    member_client = TestClient(app)
+    admin_client = TestClient(app)
+    _login(member_client, "member@example.com", "member-pass")
+    _login(admin_client, "admin@example.com", "admin-pass")
+
+    first_checkin = member_client.post(
+        "/api/v1/symptoms/check-ins",
+        json={
+            "severity": 2,
+            "symptom_codes": ["fatigue"],
+            "free_text": "Mild fatigue",
+        },
+    )
+    assert first_checkin.status_code == 200
+    second_checkin = member_client.post(
+        "/api/v1/symptoms/check-ins",
+        json={
+            "severity": 5,
+            "symptom_codes": ["chest_pain"],
+            "free_text": "Chest pain and trouble breathing",
+        },
+    )
+    assert second_checkin.status_code == 200
+
+    response = member_client.post(
+        "/api/v1/reports/parse",
+        json={"source": "pasted_text", "text": "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95"},
+        headers={"X-Request-ID": "req-report-parse-1", "X-Correlation-ID": "corr-report-parse-1"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["symptom_summary"]["total_count"] == 2
+    assert body["symptom_summary"]["red_flag_count"] == 1
+    assert body["symptom_summary"]["average_severity"] == 3.5
+    assert body["symptom_window"]["from"] is not None
+    assert body["symptom_window"]["to"] is not None
+    assert body["symptom_window"]["limit"] == 1000
+
+    replay = admin_client.get("/api/v1/workflows/corr-report-parse-1")
+    assert replay.status_code == 200
+    workflow_body = replay.json()
+    assert workflow_body["workflow_name"] == "replay"
+    event_types = [event["event_type"] for event in workflow_body["timeline_events"]]
+    event_workflows = [event.get("workflow_name") for event in workflow_body["timeline_events"]]
+    assert "workflow_started" in event_types
+    assert "workflow_completed" in event_types
+    assert "report_parse" in event_workflows

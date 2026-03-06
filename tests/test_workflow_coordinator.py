@@ -196,3 +196,33 @@ def test_replay_returns_timeline_without_new_side_effects(tmp_path) -> None:
     assert replay.workflow_name == "replay"
     assert replay.replayed is True
     assert replay.timeline_events
+
+
+def test_report_parse_workflow_emits_summary_timeline(tmp_path) -> None:
+    repo = SQLiteRepository(str(tmp_path / "reports.db"))
+    timeline = EventTimelineService()
+    coordinator = WorkflowCoordinator(
+        tool_registry=build_platform_tool_registry(repo),
+        profile_memory=ProfileMemoryService(),
+        clinical_memory=ClinicalSnapshotMemoryService(),
+        event_timeline=timeline,
+    )
+
+    result = coordinator.run_report_parse_workflow(
+        user_id="u1",
+        request_id="req-report-1",
+        correlation_id="corr-report-1",
+        source="pasted_text",
+        reading_count=4,
+        symptom_checkin_count=2,
+        red_flag_count=1,
+        window={"from": "2026-03-01", "to": "2026-03-07", "limit": 1000},
+    )
+
+    assert result.workflow_name == "report_parse"
+    events = timeline.list(correlation_id="corr-report-1")
+    assert [event.event_type for event in events] == ["workflow_started", "workflow_completed"]
+    assert events[0].workflow_name == "report_parse"
+    assert events[1].payload["reading_count"] == 4
+    assert events[1].payload["symptom_checkin_count"] == 2
+    assert events[1].payload["red_flag_count"] == 1

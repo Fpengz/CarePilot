@@ -15,10 +15,11 @@ def _load_redis_module() -> Any:
 
 
 class RedisCoordinationStore:
-    def __init__(self, *, redis_url: str, namespace: str) -> None:
+    def __init__(self, *, redis_url: str, namespace: str, keyspace_version: str = "v1") -> None:
         redis_module = _load_redis_module()
         self._client = redis_module.Redis.from_url(redis_url, decode_responses=True)
         self._namespace = namespace
+        self._keyspace_version = keyspace_version
         self._release_script = """
         if redis.call('GET', KEYS[1]) == ARGV[1] then
             return redis.call('DEL', KEYS[1])
@@ -26,11 +27,31 @@ class RedisCoordinationStore:
         return 0
         """
 
-    def _key(self, key: str) -> str:
+    def _legacy_key(self, key: str) -> str:
         return f"{self._namespace}:lock:{key}"
 
-    def _channel(self, channel: str) -> str:
+    def _legacy_channel(self, channel: str) -> str:
         return f"{self._namespace}:signal:{channel}"
+
+    def _domain(self, value: str) -> str:
+        lowered = value.lower()
+        if "reminder" in lowered:
+            return "reminder"
+        if "outbox" in lowered or "workflow" in lowered or "worker" in lowered:
+            return "workflow"
+        if "notification" in lowered:
+            return "notification"
+        return "coordination"
+
+    def _key(self, key: str) -> str:
+        if self._keyspace_version == "v2":
+            return f"{self._namespace}:coordination:lock:{self._domain(key)}:{key}"
+        return self._legacy_key(key)
+
+    def _channel(self, channel: str) -> str:
+        if self._keyspace_version == "v2":
+            return f"{self._namespace}:coordination:signal:{self._domain(channel)}:{channel}"
+        return self._legacy_channel(channel)
 
     def acquire_lock(self, key: str, *, owner: str, ttl_seconds: int) -> bool:
         return bool(self._client.set(self._key(key), owner, nx=True, ex=ttl_seconds))
@@ -44,9 +65,12 @@ class RedisCoordinationStore:
 
     def drain_signals(self, channel: str) -> list[dict[str, Any]]:
         queue_key = self._channel(channel)
+        legacy_key = self._legacy_channel(channel)
         items: list[dict[str, Any]] = []
         while True:
             payload = self._client.rpop(queue_key)
+            if payload is None and self._keyspace_version == "v2":
+                payload = self._client.rpop(legacy_key)
             if payload is None:
                 break
             items.append(json.loads(payload))
@@ -54,6 +78,8 @@ class RedisCoordinationStore:
 
     def wait_for_signal(self, channel: str, *, timeout_seconds: float) -> dict[str, Any] | None:
         result = self._client.brpop(self._channel(channel), timeout=max(1, int(timeout_seconds)))
+        if result is None and self._keyspace_version == "v2":
+            result = self._client.brpop(self._legacy_channel(channel), timeout=max(1, int(timeout_seconds)))
         if result is None:
             return None
         _, payload = result

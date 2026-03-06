@@ -21,6 +21,7 @@ logger = get_logger(__name__)
 WORKFLOW_DEFINITIONS: dict[WorkflowName, list[str]] = {
     WorkflowName.MEAL_ANALYSIS: ["perception", "handoff_clinical", "emit_timeline"],
     WorkflowName.ALERT_ONLY: ["tool_trigger_alert", "emit_timeline"],
+    WorkflowName.REPORT_PARSE: ["parse_biomarkers", "summarize_symptoms", "emit_timeline"],
     WorkflowName.REPLAY: ["read_timeline"],
 }
 
@@ -186,6 +187,50 @@ class WorkflowCoordinator:
             handoffs=handoffs,
             tool_results=[tool_result],
             timeline_events=self.event_timeline.list(correlation_id=issued_correlation_id),
+        )
+
+    def run_report_parse_workflow(
+        self,
+        *,
+        user_id: str,
+        request_id: str,
+        correlation_id: str,
+        source: str,
+        reading_count: int,
+        symptom_checkin_count: int,
+        red_flag_count: int,
+        window: dict[str, object],
+    ) -> WorkflowExecutionResult:
+        self.event_timeline.append(
+            event_type="workflow_started",
+            workflow_name=WorkflowName.REPORT_PARSE,
+            correlation_id=correlation_id,
+            request_id=request_id,
+            user_id=user_id,
+            payload={
+                "source": source,
+                "steps": WORKFLOW_DEFINITIONS[WorkflowName.REPORT_PARSE],
+            },
+        )
+        self.event_timeline.append(
+            event_type="workflow_completed",
+            workflow_name=WorkflowName.REPORT_PARSE,
+            correlation_id=correlation_id,
+            request_id=request_id,
+            user_id=user_id,
+            payload={
+                "reading_count": reading_count,
+                "symptom_checkin_count": symptom_checkin_count,
+                "red_flag_count": red_flag_count,
+                "window": window,
+            },
+        )
+        return WorkflowExecutionResult(
+            workflow_name=WorkflowName.REPORT_PARSE,
+            request_id=request_id,
+            correlation_id=correlation_id,
+            user_id=user_id,
+            timeline_events=self.event_timeline.list(correlation_id=correlation_id),
         )
 
     def replay_workflow(self, correlation_id: str) -> WorkflowExecutionResult:

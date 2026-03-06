@@ -208,6 +208,69 @@ APP_SCHEMA_STATEMENTS: tuple[str, ...] = (
         payload_json JSONB NOT NULL
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS medication_adherence_events (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        regimen_id TEXT NOT NULL,
+        reminder_id TEXT,
+        status TEXT NOT NULL,
+        scheduled_at TIMESTAMPTZ NOT NULL,
+        taken_at TIMESTAMPTZ,
+        source TEXT NOT NULL,
+        metadata_json JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS symptom_checkins (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        recorded_at TIMESTAMPTZ NOT NULL,
+        severity INTEGER NOT NULL,
+        symptom_codes_json JSONB NOT NULL,
+        free_text TEXT,
+        context_json JSONB NOT NULL,
+        safety_json JSONB NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS clinical_cards (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        format TEXT NOT NULL,
+        payload_json JSONB NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS tool_role_policies (
+        id TEXT PRIMARY KEY,
+        role TEXT NOT NULL,
+        agent_id TEXT NOT NULL,
+        tool_name TEXT NOT NULL,
+        effect TEXT NOT NULL,
+        conditions_json JSONB NOT NULL,
+        priority INTEGER NOT NULL,
+        enabled BOOLEAN NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS workflow_contract_snapshots (
+        id TEXT PRIMARY KEY,
+        version INTEGER NOT NULL UNIQUE,
+        contract_hash TEXT NOT NULL,
+        source TEXT NOT NULL,
+        workflows_json JSONB NOT NULL,
+        agents_json JSONB NOT NULL,
+        created_by TEXT,
+        created_at TIMESTAMPTZ NOT NULL
+    )
+    """,
     "CREATE INDEX IF NOT EXISTS idx_reminders_user_time ON reminder_events(user_id, scheduled_at)",
     "CREATE INDEX IF NOT EXISTS idx_meals_user_time ON meal_records(user_id, captured_at)",
     "CREATE INDEX IF NOT EXISTS idx_biomarkers_user_time_name ON biomarker_readings(user_id, measured_at, name)",
@@ -223,6 +286,12 @@ APP_SCHEMA_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_scheduled_notifications_reminder_id ON scheduled_notifications(reminder_id)",
     "CREATE INDEX IF NOT EXISTS idx_notification_logs_reminder_created ON notification_logs(reminder_id, created_at)",
     "CREATE INDEX IF NOT EXISTS idx_reminder_notification_endpoints_user_channel ON reminder_notification_endpoints(user_id, channel)",
+    "CREATE INDEX IF NOT EXISTS idx_adherence_user_time ON medication_adherence_events(user_id, scheduled_at)",
+    "CREATE INDEX IF NOT EXISTS idx_symptom_checkins_user_time ON symptom_checkins(user_id, recorded_at)",
+    "CREATE INDEX IF NOT EXISTS idx_clinical_cards_user_created ON clinical_cards(user_id, created_at DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_tool_role_policies_lookup ON tool_role_policies(role, agent_id, tool_name, enabled, priority DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_created ON workflow_contract_snapshots(created_at DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_hash ON workflow_contract_snapshots(contract_hash)",
 )
 
 AUTH_SCHEMA_STATEMENTS: tuple[str, ...] = (

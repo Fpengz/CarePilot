@@ -83,3 +83,25 @@ def test_workflows_list_endpoint_returns_items_for_admin() -> None:
     assert {"workflow_name", "correlation_id"} <= set(body["items"][0].keys())
     assert isinstance(body["items"][0]["event_count"], int)
     assert "latest_event_at" in body["items"][0]
+
+
+def test_workflow_runtime_contract_endpoint_returns_contract_for_admin() -> None:
+    client = TestClient(create_app())
+    _login(client, "admin@example.com", "admin-pass")
+
+    response = client.get("/api/v1/workflows/runtime-contract")
+
+    assert response.status_code == 200
+    body = response.json()
+    workflow_names = {item["workflow_name"] for item in body["workflows"]}
+    assert {"meal_analysis", "alert_only", "report_parse"}.issubset(workflow_names)
+    assert body["agents"]
+
+
+def test_workflow_runtime_contract_endpoint_forbidden_for_member() -> None:
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    response = client.get("/api/v1/workflows/runtime-contract")
+
+    assert response.status_code == 403

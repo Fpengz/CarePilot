@@ -10,6 +10,7 @@ from dietary_guardian.models.tooling import ToolExecutionResult
 class WorkflowName(StrEnum):
     MEAL_ANALYSIS = "meal_analysis"
     ALERT_ONLY = "alert_only"
+    REPORT_PARSE = "report_parse"
     REPLAY = "replay"
 
 
@@ -35,4 +36,3 @@ class WorkflowExecutionResult(BaseModel):
     timeline_events: list[WorkflowTimelineEvent] = Field(default_factory=list)
     replayed: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-

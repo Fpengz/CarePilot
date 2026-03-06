@@ -14,6 +14,7 @@ ADMIN_EXTRA_SCOPES: set[str] = {
     "alert:timeline:read",
     "workflow:read",
     "workflow:replay",
+    "workflow:write",
     "auth:audit:read",
 }
 

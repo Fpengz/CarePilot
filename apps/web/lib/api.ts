@@ -28,8 +28,18 @@ import type {
   MealAnalyzeApiResponse,
   MealDailySummaryApiResponse,
   MealRecordsApiResponse,
+  MealWeeklySummaryApiResponse,
+  MedicationAdherenceMetricsApiResponse,
+  MedicationRegimenEnvelopeApiResponse,
+  MedicationRegimenListApiResponse,
+  MetricTrendListApiResponse,
   MobilityReminderSettingsEnvelopeResponse,
   RecommendationGenerateApiResponse,
+  ClinicalCardEnvelopeApiResponse,
+  ClinicalCardListApiResponse,
+  SymptomCheckInEnvelopeApiResponse,
+  SymptomCheckInListApiResponse,
+  SymptomSummaryApiResponse,
   SuggestionDetailApiResponse,
   SuggestionGenerateApiResponse,
   SuggestionListApiResponse,
@@ -463,6 +473,11 @@ export async function getMealDailySummary(date?: string): Promise<MealDailySumma
   return request<MealDailySummaryApiResponse>(`/api/v1/meal/daily-summary${query}`);
 }
 
+export async function getMealWeeklySummary(weekStart: string): Promise<MealWeeklySummaryApiResponse> {
+  const query = `?week_start=${encodeURIComponent(weekStart)}`;
+  return request<MealWeeklySummaryApiResponse>(`/api/v1/meal/weekly-summary${query}`);
+}
+
 export async function parseReport(payload: {
   source: "pasted_text";
   text: string;
@@ -586,4 +601,137 @@ export async function listReminderNotificationSchedules(
 
 export async function listReminderNotificationLogs(reminderId: string): Promise<ReminderNotificationLogListResponse> {
   return request<ReminderNotificationLogListResponse>(`/api/v1/reminders/${reminderId}/notification-logs`);
+}
+
+export async function listMedicationRegimens(): Promise<MedicationRegimenListApiResponse> {
+  return request<MedicationRegimenListApiResponse>("/api/v1/medications/regimens");
+}
+
+export async function createMedicationRegimen(payload: {
+  medication_name: string;
+  dosage_text: string;
+  timing_type: "pre_meal" | "post_meal" | "fixed_time";
+  offset_minutes?: number;
+  slot_scope?: Array<"breakfast" | "lunch" | "dinner" | "snack">;
+  fixed_time?: string | null;
+  max_daily_doses?: number;
+  active?: boolean;
+}): Promise<MedicationRegimenEnvelopeApiResponse> {
+  return request<MedicationRegimenEnvelopeApiResponse>("/api/v1/medications/regimens", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateMedicationRegimen(
+  regimenId: string,
+  payload: {
+    medication_name?: string;
+    dosage_text?: string;
+    timing_type?: "pre_meal" | "post_meal" | "fixed_time";
+    offset_minutes?: number;
+    slot_scope?: Array<"breakfast" | "lunch" | "dinner" | "snack">;
+    fixed_time?: string | null;
+    max_daily_doses?: number;
+    active?: boolean;
+  },
+): Promise<MedicationRegimenEnvelopeApiResponse> {
+  return request<MedicationRegimenEnvelopeApiResponse>(`/api/v1/medications/regimens/${regimenId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteMedicationRegimen(regimenId: string): Promise<{ ok: boolean; deleted: boolean }> {
+  return request<{ ok: boolean; deleted: boolean }>(`/api/v1/medications/regimens/${regimenId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function createMedicationAdherenceEvent(payload: {
+  regimen_id: string;
+  reminder_id?: string;
+  status: "taken" | "missed" | "skipped" | "unknown";
+  scheduled_at: string;
+  taken_at?: string | null;
+  source?: "manual" | "reminder_confirm" | "imported";
+  metadata?: Record<string, unknown>;
+}): Promise<{ event: Record<string, unknown> }> {
+  return request<{ event: Record<string, unknown> }>("/api/v1/medications/adherence-events", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getMedicationAdherenceMetrics(params?: {
+  from?: string;
+  to?: string;
+}): Promise<MedicationAdherenceMetricsApiResponse> {
+  const query = new URLSearchParams();
+  if (params?.from) query.set("from", params.from);
+  if (params?.to) query.set("to", params.to);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<MedicationAdherenceMetricsApiResponse>(`/api/v1/medications/adherence-metrics${suffix}`);
+}
+
+export async function createSymptomCheckIn(payload: {
+  severity: number;
+  symptom_codes?: string[];
+  free_text?: string;
+  context?: Record<string, unknown>;
+}): Promise<SymptomCheckInEnvelopeApiResponse> {
+  return request<SymptomCheckInEnvelopeApiResponse>("/api/v1/symptoms/check-ins", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listSymptomCheckIns(params?: {
+  from?: string;
+  to?: string;
+  limit?: number;
+}): Promise<SymptomCheckInListApiResponse> {
+  const query = new URLSearchParams();
+  if (params?.from) query.set("from", params.from);
+  if (params?.to) query.set("to", params.to);
+  if (typeof params?.limit === "number") query.set("limit", String(Math.max(1, Math.floor(params.limit))));
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<SymptomCheckInListApiResponse>(`/api/v1/symptoms/check-ins${suffix}`);
+}
+
+export async function getSymptomSummary(params?: {
+  from?: string;
+  to?: string;
+}): Promise<SymptomSummaryApiResponse> {
+  const query = new URLSearchParams();
+  if (params?.from) query.set("from", params.from);
+  if (params?.to) query.set("to", params.to);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<SymptomSummaryApiResponse>(`/api/v1/symptoms/summary${suffix}`);
+}
+
+export async function generateClinicalCard(payload?: {
+  start_date?: string;
+  end_date?: string;
+  format?: "sectioned" | "soap";
+}): Promise<ClinicalCardEnvelopeApiResponse> {
+  return request<ClinicalCardEnvelopeApiResponse>("/api/v1/clinical-cards/generate", {
+    method: "POST",
+    body: JSON.stringify(payload ?? {}),
+  });
+}
+
+export async function listClinicalCards(limit = 20): Promise<ClinicalCardListApiResponse> {
+  return request<ClinicalCardListApiResponse>(`/api/v1/clinical-cards?limit=${Math.max(1, Math.floor(limit))}`);
+}
+
+export async function getClinicalCard(cardId: string): Promise<ClinicalCardEnvelopeApiResponse> {
+  return request<ClinicalCardEnvelopeApiResponse>(`/api/v1/clinical-cards/${cardId}`);
+}
+
+export async function listMetricTrends(metric?: string[]): Promise<MetricTrendListApiResponse> {
+  const query = new URLSearchParams();
+  for (const item of metric ?? []) query.append("metric", item);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<MetricTrendListApiResponse>(`/api/v1/metrics/trends${suffix}`);
 }

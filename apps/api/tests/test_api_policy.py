@@ -31,6 +31,7 @@ def test_policy_table_contains_core_actions() -> None:
         "alerts.timeline.read",
         "workflows.read",
         "workflows.replay",
+        "workflows.write",
         "auth.audit.read",
         "auth.sessions.revoke",
     ):

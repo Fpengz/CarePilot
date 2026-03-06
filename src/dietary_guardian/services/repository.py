@@ -12,6 +12,8 @@ from dietary_guardian.models.report import BiomarkerReading
 from dietary_guardian.models.alerting import AlertMessage, OutboxRecord
 from dietary_guardian.models.health_profile import HealthProfileRecord
 from dietary_guardian.models.health_profile_onboarding import HealthProfileOnboardingState
+from dietary_guardian.models.clinical_card import ClinicalCardRecord
+from dietary_guardian.models.medication_tracking import MedicationAdherenceEvent
 from dietary_guardian.models.recommendation_agent import MealCatalogItem, PreferenceSnapshot, RecommendationInteraction
 from dietary_guardian.models.reminder_notifications import (
     ReminderNotificationEndpoint,
@@ -20,6 +22,10 @@ from dietary_guardian.models.reminder_notifications import (
     ScheduledReminderNotification,
 )
 from dietary_guardian.services.meal_catalog_service import DEFAULT_MEAL_CATALOG
+from dietary_guardian.models.symptom import SymptomCheckIn, SymptomSafety
+from dietary_guardian.models.tool_policy import ToolRolePolicyRecord
+from dietary_guardian.models.user import MealSlot
+from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
 
 logger = get_logger(__name__)
 
@@ -267,6 +273,79 @@ class SQLiteRepository:
                 )
                 """
             )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS medication_adherence_events (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    regimen_id TEXT NOT NULL,
+                    reminder_id TEXT,
+                    status TEXT NOT NULL,
+                    scheduled_at TEXT NOT NULL,
+                    taken_at TEXT,
+                    source TEXT NOT NULL,
+                    metadata_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS symptom_checkins (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    recorded_at TEXT NOT NULL,
+                    severity INTEGER NOT NULL,
+                    symptom_codes_json TEXT NOT NULL,
+                    free_text TEXT,
+                    context_json TEXT NOT NULL,
+                    safety_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS clinical_cards (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    start_date TEXT NOT NULL,
+                    end_date TEXT NOT NULL,
+                    format TEXT NOT NULL,
+                    payload_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS tool_role_policies (
+                    id TEXT PRIMARY KEY,
+                    role TEXT NOT NULL,
+                    agent_id TEXT NOT NULL,
+                    tool_name TEXT NOT NULL,
+                    effect TEXT NOT NULL,
+                    conditions_json TEXT NOT NULL,
+                    priority INTEGER NOT NULL,
+                    enabled INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS workflow_contract_snapshots (
+                    id TEXT PRIMARY KEY,
+                    version INTEGER NOT NULL UNIQUE,
+                    contract_hash TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    workflows_json TEXT NOT NULL,
+                    agents_json TEXT NOT NULL,
+                    created_by TEXT,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
             # Backward-compatible migration for databases created before payload fields existed.
             existing_columns = {
                 row[1] for row in cur.execute("PRAGMA table_info(alert_outbox)").fetchall()
@@ -308,6 +387,12 @@ class SQLiteRepository:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_scheduled_notifications_reminder_id ON scheduled_notifications(reminder_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_notification_logs_reminder_created ON notification_logs(reminder_id, created_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_reminder_notification_endpoints_user_channel ON reminder_notification_endpoints(user_id, channel)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_adherence_user_time ON medication_adherence_events(user_id, scheduled_at)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_symptom_checkins_user_time ON symptom_checkins(user_id, recorded_at)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_clinical_cards_user_created ON clinical_cards(user_id, created_at DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_tool_role_policies_lookup ON tool_role_policies(role, agent_id, tool_name, enabled, priority DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_created ON workflow_contract_snapshots(created_at DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_hash ON workflow_contract_snapshots(contract_hash)")
             conn.commit()
         self._seed_meal_catalog()
         logger.info("repository_schema_ready db_path=%s", self.db_path)
@@ -351,6 +436,67 @@ class SQLiteRepository:
             )
             conn.commit()
         logger.debug("save_medication_regimen id=%s user_id=%s", regimen.id, regimen.user_id)
+
+    def list_medication_regimens(self, user_id: str, *, active_only: bool = False) -> list[MedicationRegimen]:
+        query = (
+            "SELECT id, user_id, medication_name, dosage_text, timing_type, offset_minutes, slot_scope_json, "
+            "fixed_time, max_daily_doses, active FROM medication_regimens WHERE user_id = ?"
+        )
+        params: list[Any] = [user_id]
+        if active_only:
+            query += " AND active = 1"
+        query += " ORDER BY medication_name, id"
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [
+            MedicationRegimen(
+                id=row[0],
+                user_id=row[1],
+                medication_name=row[2],
+                dosage_text=row[3],
+                timing_type=row[4],
+                offset_minutes=int(row[5]),
+                slot_scope=cast(list[MealSlot], json.loads(cast(str, row[6]))),
+                fixed_time=row[7],
+                max_daily_doses=int(row[8]),
+                active=bool(row[9]),
+            )
+            for row in rows
+        ]
+
+    def get_medication_regimen(self, *, user_id: str, regimen_id: str) -> MedicationRegimen | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT id, user_id, medication_name, dosage_text, timing_type, offset_minutes, slot_scope_json, fixed_time, max_daily_doses, active
+                FROM medication_regimens
+                WHERE user_id = ? AND id = ?
+                """,
+                (user_id, regimen_id),
+            ).fetchone()
+        if row is None:
+            return None
+        return MedicationRegimen(
+            id=row[0],
+            user_id=row[1],
+            medication_name=row[2],
+            dosage_text=row[3],
+            timing_type=row[4],
+            offset_minutes=int(row[5]),
+            slot_scope=cast(list[MealSlot], json.loads(cast(str, row[6]))),
+            fixed_time=row[7],
+            max_daily_doses=int(row[8]),
+            active=bool(row[9]),
+        )
+
+    def delete_medication_regimen(self, *, user_id: str, regimen_id: str) -> bool:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute(
+                "DELETE FROM medication_regimens WHERE user_id = ? AND id = ?",
+                (user_id, regimen_id),
+            )
+            conn.commit()
+        return cursor.rowcount == 1
 
     def save_reminder_event(self, event: ReminderEvent) -> None:
         with sqlite3.connect(self.db_path) as conn:
@@ -442,6 +588,68 @@ class SQLiteRepository:
         ]
         logger.debug("list_reminder_events user_id=%s count=%s", user_id, len(events))
         return events
+
+    def save_medication_adherence_event(self, event: MedicationAdherenceEvent) -> MedicationAdherenceEvent:
+        payload = event.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO medication_adherence_events
+                (id, user_id, regimen_id, reminder_id, status, scheduled_at, taken_at, source, metadata_json, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.id,
+                    event.user_id,
+                    event.regimen_id,
+                    event.reminder_id,
+                    event.status,
+                    event.scheduled_at.isoformat(),
+                    event.taken_at.isoformat() if event.taken_at else None,
+                    event.source,
+                    json.dumps(event.metadata),
+                    event.created_at.isoformat(),
+                ),
+            )
+            conn.commit()
+        return MedicationAdherenceEvent.model_validate(payload)
+
+    def list_medication_adherence_events(
+        self,
+        *,
+        user_id: str,
+        start_at: datetime | None = None,
+        end_at: datetime | None = None,
+    ) -> list[MedicationAdherenceEvent]:
+        query = (
+            "SELECT id, user_id, regimen_id, reminder_id, status, scheduled_at, taken_at, source, metadata_json, created_at "
+            "FROM medication_adherence_events WHERE user_id = ?"
+        )
+        params: list[Any] = [user_id]
+        if start_at is not None:
+            query += " AND scheduled_at >= ?"
+            params.append(start_at.isoformat())
+        if end_at is not None:
+            query += " AND scheduled_at <= ?"
+            params.append(end_at.isoformat())
+        query += " ORDER BY scheduled_at"
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [
+            MedicationAdherenceEvent(
+                id=row[0],
+                user_id=row[1],
+                regimen_id=row[2],
+                reminder_id=row[3],
+                status=row[4],
+                scheduled_at=datetime.fromisoformat(row[5]),
+                taken_at=datetime.fromisoformat(row[6]) if row[6] else None,
+                source=row[7],
+                metadata=cast(dict[str, object], json.loads(cast(str, row[8]))),
+                created_at=datetime.fromisoformat(row[9]),
+            )
+            for row in rows
+        ]
 
     def replace_reminder_notification_preferences(
         self,
@@ -1033,6 +1241,295 @@ class SQLiteRepository:
         ]
         logger.debug("list_biomarker_readings user_id=%s count=%s", user_id, len(readings))
         return readings
+
+    def save_symptom_checkin(self, checkin: SymptomCheckIn) -> SymptomCheckIn:
+        payload = checkin.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO symptom_checkins
+                (id, user_id, recorded_at, severity, symptom_codes_json, free_text, context_json, safety_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    checkin.id,
+                    checkin.user_id,
+                    checkin.recorded_at.isoformat(),
+                    checkin.severity,
+                    json.dumps(checkin.symptom_codes),
+                    checkin.free_text,
+                    json.dumps(checkin.context),
+                    json.dumps(checkin.safety.model_dump(mode="json")),
+                ),
+            )
+            conn.commit()
+        return SymptomCheckIn.model_validate(payload)
+
+    def list_symptom_checkins(
+        self,
+        *,
+        user_id: str,
+        start_at: datetime | None = None,
+        end_at: datetime | None = None,
+        limit: int = 200,
+    ) -> list[SymptomCheckIn]:
+        query = (
+            "SELECT id, user_id, recorded_at, severity, symptom_codes_json, free_text, context_json, safety_json "
+            "FROM symptom_checkins WHERE user_id = ?"
+        )
+        params: list[Any] = [user_id]
+        if start_at is not None:
+            query += " AND recorded_at >= ?"
+            params.append(start_at.isoformat())
+        if end_at is not None:
+            query += " AND recorded_at <= ?"
+            params.append(end_at.isoformat())
+        query += " ORDER BY recorded_at DESC LIMIT ?"
+        params.append(max(1, min(limit, 1000)))
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [
+            SymptomCheckIn(
+                id=row[0],
+                user_id=row[1],
+                recorded_at=datetime.fromisoformat(row[2]),
+                severity=int(row[3]),
+                symptom_codes=cast(list[str], json.loads(cast(str, row[4]))),
+                free_text=row[5],
+                context=cast(dict[str, object], json.loads(cast(str, row[6]))),
+                safety=SymptomSafety.model_validate(json.loads(cast(str, row[7]))),
+            )
+            for row in rows
+        ]
+
+    def save_clinical_card(self, card: ClinicalCardRecord) -> ClinicalCardRecord:
+        payload = card.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO clinical_cards
+                (id, user_id, created_at, start_date, end_date, format, payload_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    card.id,
+                    card.user_id,
+                    card.created_at.isoformat(),
+                    card.start_date.isoformat(),
+                    card.end_date.isoformat(),
+                    card.format,
+                    json.dumps(payload),
+                ),
+            )
+            conn.commit()
+        return ClinicalCardRecord.model_validate(payload)
+
+    def list_clinical_cards(self, *, user_id: str, limit: int = 50) -> list[ClinicalCardRecord]:
+        bounded = max(1, min(limit, 200))
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(
+                """
+                SELECT payload_json FROM clinical_cards
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (user_id, bounded),
+            ).fetchall()
+        return [ClinicalCardRecord.model_validate_json(cast(str, row[0])) for row in rows]
+
+    def get_clinical_card(self, *, user_id: str, card_id: str) -> ClinicalCardRecord | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT payload_json FROM clinical_cards WHERE user_id = ? AND id = ?",
+                (user_id, card_id),
+            ).fetchone()
+        if row is None:
+            return None
+        return ClinicalCardRecord.model_validate_json(cast(str, row[0]))
+
+    def save_tool_role_policy(self, record: ToolRolePolicyRecord) -> ToolRolePolicyRecord:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT INTO tool_role_policies
+                (id, role, agent_id, tool_name, effect, conditions_json, priority, enabled, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (id) DO UPDATE SET
+                    role = excluded.role,
+                    agent_id = excluded.agent_id,
+                    tool_name = excluded.tool_name,
+                    effect = excluded.effect,
+                    conditions_json = excluded.conditions_json,
+                    priority = excluded.priority,
+                    enabled = excluded.enabled,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    record.id,
+                    record.role,
+                    record.agent_id,
+                    record.tool_name,
+                    record.effect,
+                    json.dumps(record.conditions),
+                    record.priority,
+                    1 if record.enabled else 0,
+                    record.created_at.isoformat(),
+                    record.updated_at.isoformat(),
+                ),
+            )
+            conn.commit()
+        return record
+
+    def list_tool_role_policies(
+        self,
+        *,
+        role: str | None = None,
+        agent_id: str | None = None,
+        tool_name: str | None = None,
+        enabled_only: bool = False,
+    ) -> list[ToolRolePolicyRecord]:
+        query = (
+            "SELECT id, role, agent_id, tool_name, effect, conditions_json, priority, enabled, created_at, updated_at "
+            "FROM tool_role_policies WHERE 1=1"
+        )
+        params: list[Any] = []
+        if role is not None:
+            query += " AND role = ?"
+            params.append(role)
+        if agent_id is not None:
+            query += " AND agent_id = ?"
+            params.append(agent_id)
+        if tool_name is not None:
+            query += " AND tool_name = ?"
+            params.append(tool_name)
+        if enabled_only:
+            query += " AND enabled = 1"
+        query += " ORDER BY priority DESC, updated_at DESC, id"
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [
+            ToolRolePolicyRecord(
+                id=row[0],
+                role=row[1],
+                agent_id=row[2],
+                tool_name=row[3],
+                effect=row[4],
+                conditions=json.loads(row[5]),
+                priority=int(row[6]),
+                enabled=bool(row[7]),
+                created_at=datetime.fromisoformat(row[8]),
+                updated_at=datetime.fromisoformat(row[9]),
+            )
+            for row in rows
+        ]
+
+    def get_tool_role_policy(self, policy_id: str) -> ToolRolePolicyRecord | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT id, role, agent_id, tool_name, effect, conditions_json, priority, enabled, created_at, updated_at
+                FROM tool_role_policies
+                WHERE id = ?
+                """,
+                (policy_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return ToolRolePolicyRecord(
+            id=row[0],
+            role=row[1],
+            agent_id=row[2],
+            tool_name=row[3],
+            effect=row[4],
+            conditions=json.loads(row[5]),
+            priority=int(row[6]),
+            enabled=bool(row[7]),
+            created_at=datetime.fromisoformat(row[8]),
+            updated_at=datetime.fromisoformat(row[9]),
+        )
+
+    def save_workflow_contract_snapshot(
+        self,
+        snapshot: WorkflowContractSnapshotRecord,
+    ) -> WorkflowContractSnapshotRecord:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT INTO workflow_contract_snapshots
+                (id, version, contract_hash, source, workflows_json, agents_json, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (id) DO UPDATE SET
+                    version = excluded.version,
+                    contract_hash = excluded.contract_hash,
+                    source = excluded.source,
+                    workflows_json = excluded.workflows_json,
+                    agents_json = excluded.agents_json,
+                    created_by = excluded.created_by,
+                    created_at = excluded.created_at
+                """,
+                (
+                    snapshot.id,
+                    snapshot.version,
+                    snapshot.contract_hash,
+                    snapshot.source,
+                    json.dumps([item.model_dump(mode="json") for item in snapshot.workflows]),
+                    json.dumps([item.model_dump(mode="json") for item in snapshot.agents]),
+                    snapshot.created_by,
+                    snapshot.created_at.isoformat(),
+                ),
+            )
+            conn.commit()
+        return snapshot
+
+    def list_workflow_contract_snapshots(self, *, limit: int = 50) -> list[WorkflowContractSnapshotRecord]:
+        bounded_limit = max(1, min(limit, 200))
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(
+                """
+                SELECT id, version, contract_hash, source, workflows_json, agents_json, created_by, created_at
+                FROM workflow_contract_snapshots
+                ORDER BY version DESC
+                LIMIT ?
+                """,
+                (bounded_limit,),
+            ).fetchall()
+        return [
+            WorkflowContractSnapshotRecord(
+                id=row[0],
+                version=int(row[1]),
+                contract_hash=row[2],
+                source=row[3],
+                workflows=json.loads(row[4]),
+                agents=json.loads(row[5]),
+                created_by=row[6],
+                created_at=datetime.fromisoformat(row[7]),
+            )
+            for row in rows
+        ]
+
+    def get_workflow_contract_snapshot(self, *, version: int) -> WorkflowContractSnapshotRecord | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT id, version, contract_hash, source, workflows_json, agents_json, created_by, created_at
+                FROM workflow_contract_snapshots
+                WHERE version = ?
+                """,
+                (version,),
+            ).fetchone()
+        if row is None:
+            return None
+        return WorkflowContractSnapshotRecord(
+            id=row[0],
+            version=int(row[1]),
+            contract_hash=row[2],
+            source=row[3],
+            workflows=json.loads(row[4]),
+            agents=json.loads(row[5]),
+            created_by=row[6],
+            created_at=datetime.fromisoformat(row[7]),
+        )
 
     def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
         with sqlite3.connect(self.db_path) as conn:

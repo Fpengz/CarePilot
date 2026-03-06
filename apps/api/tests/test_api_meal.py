@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from io import BytesIO
 import logging
 from uuid import uuid4

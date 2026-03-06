@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, Field, EmailStr
@@ -433,6 +433,197 @@ class MealDailySummaryResponse(BaseModel):
     recommendation_hints: list[str] = Field(default_factory=list)
 
 
+class MealWeeklySummaryDayResponse(BaseModel):
+    meal_count: int
+    calories: float
+    sugar_g: float
+    sodium_mg: float
+
+
+class MealWeeklySummaryResponse(BaseModel):
+    week_start: str
+    week_end: str
+    meal_count: int
+    totals: DailyNutritionTotalsResponse
+    daily_breakdown: dict[str, MealWeeklySummaryDayResponse] = Field(default_factory=dict)
+    pattern_flags: list[str] = Field(default_factory=list)
+
+
+class MedicationRegimenCreateRequest(BaseModel):
+    medication_name: str
+    dosage_text: str
+    timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
+    offset_minutes: int = 0
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
+    fixed_time: str | None = None
+    max_daily_doses: int = Field(default=1, ge=1, le=8)
+    active: bool = True
+
+
+class MedicationRegimenPatchRequest(BaseModel):
+    medication_name: str | None = None
+    dosage_text: str | None = None
+    timing_type: Literal["pre_meal", "post_meal", "fixed_time"] | None = None
+    offset_minutes: int | None = None
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] | None = None
+    fixed_time: str | None = None
+    max_daily_doses: int | None = Field(default=None, ge=1, le=8)
+    active: bool | None = None
+
+
+class MedicationRegimenResponse(BaseModel):
+    id: str
+    medication_name: str
+    dosage_text: str
+    timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
+    offset_minutes: int
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
+    fixed_time: str | None = None
+    max_daily_doses: int
+    active: bool
+
+
+class MedicationRegimenEnvelopeResponse(BaseModel):
+    regimen: MedicationRegimenResponse
+
+
+class MedicationRegimenListResponse(BaseModel):
+    items: list[MedicationRegimenResponse] = Field(default_factory=list)
+
+
+class MedicationRegimenDeleteResponse(BaseModel):
+    ok: bool = True
+    deleted: bool
+
+
+class MedicationAdherenceEventCreateRequest(BaseModel):
+    regimen_id: str
+    reminder_id: str | None = None
+    status: Literal["taken", "missed", "skipped", "unknown"]
+    scheduled_at: datetime
+    taken_at: datetime | None = None
+    source: Literal["manual", "reminder_confirm", "imported"] = "manual"
+    metadata: dict[str, object] = Field(default_factory=dict)
+
+
+class MedicationAdherenceEventResponse(BaseModel):
+    id: str
+    regimen_id: str
+    reminder_id: str | None = None
+    status: Literal["taken", "missed", "skipped", "unknown"]
+    scheduled_at: datetime
+    taken_at: datetime | None = None
+    source: Literal["manual", "reminder_confirm", "imported"]
+    metadata: dict[str, object] = Field(default_factory=dict)
+    created_at: datetime
+
+
+class MedicationAdherenceEventEnvelopeResponse(BaseModel):
+    event: MedicationAdherenceEventResponse
+
+
+class MedicationAdherenceTotalsResponse(BaseModel):
+    events: int
+    taken: int
+    missed: int
+    skipped: int
+    adherence_rate: float
+
+
+class MedicationAdherenceMetricsResponse(BaseModel):
+    totals: MedicationAdherenceTotalsResponse
+    events: list[MedicationAdherenceEventResponse] = Field(default_factory=list)
+
+
+class SymptomCheckInRequest(BaseModel):
+    severity: int = Field(ge=1, le=5)
+    symptom_codes: list[str] = Field(default_factory=list)
+    free_text: str | None = None
+    context: dict[str, object] = Field(default_factory=dict)
+
+
+class SymptomSafetyResponse(BaseModel):
+    decision: str
+    reasons: list[str] = Field(default_factory=list)
+    required_actions: list[str] = Field(default_factory=list)
+    redactions: list[str] = Field(default_factory=list)
+
+
+class SymptomCheckInResponse(BaseModel):
+    id: str
+    recorded_at: datetime
+    severity: int
+    symptom_codes: list[str] = Field(default_factory=list)
+    free_text: str | None = None
+    context: dict[str, object] = Field(default_factory=dict)
+    safety: SymptomSafetyResponse
+
+
+class SymptomCheckInEnvelopeResponse(BaseModel):
+    item: SymptomCheckInResponse
+
+
+class SymptomCheckInListResponse(BaseModel):
+    items: list[SymptomCheckInResponse] = Field(default_factory=list)
+
+
+class SymptomCountResponse(BaseModel):
+    code: str
+    count: int
+
+
+class SymptomSummaryResponse(BaseModel):
+    total_count: int
+    average_severity: float
+    red_flag_count: int
+    top_symptoms: list[SymptomCountResponse] = Field(default_factory=list)
+    latest_recorded_at: datetime | None = None
+
+
+class ClinicalCardGenerateRequest(BaseModel):
+    start_date: str | None = None
+    end_date: str | None = None
+    format: Literal["sectioned", "soap"] = "sectioned"
+
+
+class ClinicalCardResponse(BaseModel):
+    id: str
+    created_at: datetime
+    start_date: str
+    end_date: str
+    format: Literal["sectioned", "soap"]
+    sections: dict[str, str] = Field(default_factory=dict)
+    deltas: dict[str, float] = Field(default_factory=dict)
+    trends: dict[str, dict[str, object]] = Field(default_factory=dict)
+    provenance: dict[str, object] = Field(default_factory=dict)
+
+
+class ClinicalCardEnvelopeResponse(BaseModel):
+    card: ClinicalCardResponse
+
+
+class ClinicalCardListResponse(BaseModel):
+    items: list[ClinicalCardResponse] = Field(default_factory=list)
+
+
+class MetricTrendPointResponse(BaseModel):
+    timestamp: datetime
+    value: float
+
+
+class MetricTrendResponse(BaseModel):
+    metric: str
+    points: list[MetricTrendPointResponse] = Field(default_factory=list)
+    delta: float
+    percent_change: float | None = None
+    slope_per_point: float
+    direction: Literal["increase", "decrease", "flat"]
+
+
+class MetricTrendListResponse(BaseModel):
+    items: list[MetricTrendResponse] = Field(default_factory=list)
+
+
 class HouseholdCareProfileResponse(BaseModel):
     context: HouseholdCareContextResponse
     profile: HealthProfileResponseItem
@@ -471,14 +662,118 @@ class WorkflowListResponse(BaseModel):
     items: list[WorkflowListItem]
 
 
+class WorkflowRuntimeStepResponse(BaseModel):
+    step_id: str
+    agent_id: str
+    capability: str
+    tool_names: list[str] = Field(default_factory=list)
+
+
+class WorkflowRuntimeContractResponse(BaseModel):
+    workflow_name: str
+    steps: list[WorkflowRuntimeStepResponse] = Field(default_factory=list)
+
+
+class AgentContractResponse(BaseModel):
+    agent_id: str
+    capabilities: list[str] = Field(default_factory=list)
+    allowed_tools: list[str] = Field(default_factory=list)
+    output_contract: str
+
+
+class WorkflowRuntimeRegistryResponse(BaseModel):
+    workflows: list[WorkflowRuntimeContractResponse] = Field(default_factory=list)
+    agents: list[AgentContractResponse] = Field(default_factory=list)
+
+
+class ToolPolicyCreateRequest(BaseModel):
+    role: Literal["member", "admin"]
+    agent_id: str
+    tool_name: str
+    effect: Literal["allow", "deny"]
+    conditions: dict[str, object] = Field(default_factory=dict)
+    priority: int = 0
+    enabled: bool = True
+
+
+class ToolPolicyPatchRequest(BaseModel):
+    effect: Literal["allow", "deny"] | None = None
+    conditions: dict[str, object] | None = None
+    priority: int | None = None
+    enabled: bool | None = None
+
+
+class ToolPolicyItemResponse(BaseModel):
+    id: str
+    role: Literal["member", "admin"]
+    agent_id: str
+    tool_name: str
+    effect: Literal["allow", "deny"]
+    conditions: dict[str, object] = Field(default_factory=dict)
+    priority: int
+    enabled: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class ToolPolicyListResponse(BaseModel):
+    items: list[ToolPolicyItemResponse] = Field(default_factory=list)
+
+
+class ToolPolicyWriteResponse(BaseModel):
+    policy: ToolPolicyItemResponse
+
+
+class ToolPolicyEvaluationResponse(BaseModel):
+    policy_mode: Literal["shadow", "enforce"]
+    code_decision: Literal["allow", "deny"]
+    db_decision: Literal["allow", "deny"] | None = None
+    effective_decision: Literal["allow", "deny"]
+    diverged: bool
+    matched_policy_id: str | None = None
+
+
+class WorkflowSnapshotItemResponse(BaseModel):
+    id: str
+    version: int
+    contract_hash: str
+    source: Literal["startup_bootstrap", "manual_api"]
+    created_by: str | None = None
+    created_at: datetime
+
+
+class WorkflowSnapshotListResponse(BaseModel):
+    items: list[WorkflowSnapshotItemResponse] = Field(default_factory=list)
+
+
+class WorkflowSnapshotWriteResponse(BaseModel):
+    snapshot: WorkflowSnapshotItemResponse
+
+
+class WorkflowSnapshotCompareResponse(BaseModel):
+    base_version: int
+    target_version: int
+    changed: bool
+    base_hash: str
+    target_hash: str
+
+
 class ReportParseRequest(BaseModel):
     source: Literal["pasted_text"] = "pasted_text"
     text: str
 
 
+class SymptomSummaryWindowResponse(BaseModel):
+    from_date: date = Field(serialization_alias="from")
+    to_date: date = Field(serialization_alias="to")
+    limit: int
+
+
 class ReportParseResponse(BaseModel):
     readings: list[dict[str, object]]
     snapshot: dict[str, object]
+    symptom_summary: SymptomSummaryResponse
+    symptom_window: SymptomSummaryWindowResponse
 
 
 class RecommendationGenerateResponse(BaseModel):

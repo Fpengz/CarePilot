@@ -7,11 +7,14 @@ from typing import Any, cast
 from dietary_guardian.infrastructure.persistence.postgres_schema import ensure_postgres_app_schema
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.alerting import AlertMessage, OutboxRecord
+from dietary_guardian.models.agent_runtime import AgentContract, WorkflowRuntimeContract
+from dietary_guardian.models.clinical_card import ClinicalCardRecord
 from dietary_guardian.models.health_profile import HealthProfileRecord
 from dietary_guardian.models.health_profile_onboarding import HealthProfileOnboardingState
 from dietary_guardian.models.meal import MealState
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.models.medication import MedicationRegimen, ReminderEvent
+from dietary_guardian.models.medication_tracking import MedicationAdherenceEvent
 from dietary_guardian.models.mobility import MobilityReminderSettings
 from dietary_guardian.models.recommendation_agent import MealCatalogItem, PreferenceSnapshot, RecommendationInteraction
 from dietary_guardian.models.reminder_notifications import (
@@ -21,6 +24,10 @@ from dietary_guardian.models.reminder_notifications import (
     ScheduledReminderNotification,
 )
 from dietary_guardian.models.report import BiomarkerReading
+from dietary_guardian.models.symptom import SymptomCheckIn, SymptomSafety
+from dietary_guardian.models.tool_policy import ToolRolePolicyRecord
+from dietary_guardian.models.user import MealSlot
+from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
 from dietary_guardian.services.meal_catalog_service import DEFAULT_MEAL_CATALOG
 
 logger = get_logger(__name__)
@@ -116,6 +123,69 @@ class PostgresAppStore:
                 ),
             )
         logger.debug("save_medication_regimen id=%s user_id=%s", regimen.id, regimen.user_id)
+
+    def list_medication_regimens(self, user_id: str, *, active_only: bool = False) -> list[MedicationRegimen]:
+        query = (
+            "SELECT id, user_id, medication_name, dosage_text, timing_type, offset_minutes, slot_scope_json, fixed_time, max_daily_doses, active "
+            "FROM medication_regimens WHERE user_id = %s"
+        )
+        params: list[Any] = [user_id]
+        if active_only:
+            query += " AND active = TRUE"
+        query += " ORDER BY medication_name, id"
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(query, tuple(params))
+            rows = cur.fetchall()
+        return [
+            MedicationRegimen(
+                id=row[0],
+                user_id=row[1],
+                medication_name=row[2],
+                dosage_text=row[3],
+                timing_type=row[4],
+                offset_minutes=int(row[5]),
+                slot_scope=cast(list[MealSlot], _json_payload(row[6])),
+                fixed_time=row[7],
+                max_daily_doses=int(row[8]),
+                active=bool(row[9]),
+            )
+            for row in rows
+        ]
+
+    def get_medication_regimen(self, *, user_id: str, regimen_id: str) -> MedicationRegimen | None:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, user_id, medication_name, dosage_text, timing_type, offset_minutes, slot_scope_json, fixed_time, max_daily_doses, active
+                FROM medication_regimens
+                WHERE user_id = %s AND id = %s
+                """,
+                (user_id, regimen_id),
+            )
+            row = cur.fetchone()
+        if row is None:
+            return None
+        return MedicationRegimen(
+            id=row[0],
+            user_id=row[1],
+            medication_name=row[2],
+            dosage_text=row[3],
+            timing_type=row[4],
+            offset_minutes=int(row[5]),
+            slot_scope=cast(list[MealSlot], _json_payload(row[6])),
+            fixed_time=row[7],
+            max_daily_doses=int(row[8]),
+            active=bool(row[9]),
+        )
+
+    def delete_medication_regimen(self, *, user_id: str, regimen_id: str) -> bool:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM medication_regimens WHERE user_id = %s AND id = %s",
+                (user_id, regimen_id),
+            )
+            deleted = cur.rowcount
+        return deleted == 1
 
     def save_reminder_event(self, event: ReminderEvent) -> None:
         with self._connect() as conn, conn.cursor() as cur:
@@ -219,6 +289,77 @@ class PostgresAppStore:
         ]
         logger.debug("list_reminder_events user_id=%s count=%s", user_id, len(events))
         return events
+
+    def save_medication_adherence_event(self, event: MedicationAdherenceEvent) -> MedicationAdherenceEvent:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO medication_adherence_events
+                (id, user_id, regimen_id, reminder_id, status, scheduled_at, taken_at, source, metadata_json, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    user_id = EXCLUDED.user_id,
+                    regimen_id = EXCLUDED.regimen_id,
+                    reminder_id = EXCLUDED.reminder_id,
+                    status = EXCLUDED.status,
+                    scheduled_at = EXCLUDED.scheduled_at,
+                    taken_at = EXCLUDED.taken_at,
+                    source = EXCLUDED.source,
+                    metadata_json = EXCLUDED.metadata_json,
+                    created_at = EXCLUDED.created_at
+                """,
+                (
+                    event.id,
+                    event.user_id,
+                    event.regimen_id,
+                    event.reminder_id,
+                    event.status,
+                    event.scheduled_at,
+                    event.taken_at,
+                    event.source,
+                    self._jsonb(event.metadata),
+                    event.created_at,
+                ),
+            )
+        return event
+
+    def list_medication_adherence_events(
+        self,
+        *,
+        user_id: str,
+        start_at: datetime | None = None,
+        end_at: datetime | None = None,
+    ) -> list[MedicationAdherenceEvent]:
+        query = (
+            "SELECT id, user_id, regimen_id, reminder_id, status, scheduled_at, taken_at, source, metadata_json, created_at "
+            "FROM medication_adherence_events WHERE user_id = %s"
+        )
+        params: list[Any] = [user_id]
+        if start_at is not None:
+            query += " AND scheduled_at >= %s"
+            params.append(start_at)
+        if end_at is not None:
+            query += " AND scheduled_at <= %s"
+            params.append(end_at)
+        query += " ORDER BY scheduled_at"
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(query, tuple(params))
+            rows = cur.fetchall()
+        return [
+            MedicationAdherenceEvent(
+                id=row[0],
+                user_id=row[1],
+                regimen_id=row[2],
+                reminder_id=row[3],
+                status=row[4],
+                scheduled_at=row[5],
+                taken_at=row[6],
+                source=row[7],
+                metadata=cast(dict[str, object], _json_payload(row[8])),
+                created_at=row[9],
+            )
+            for row in rows
+        ]
 
     def replace_reminder_notification_preferences(
         self,
@@ -803,6 +944,312 @@ class PostgresAppStore:
         ]
         logger.debug("list_biomarker_readings user_id=%s count=%s", user_id, len(readings))
         return readings
+
+    def save_symptom_checkin(self, checkin: SymptomCheckIn) -> SymptomCheckIn:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO symptom_checkins
+                (id, user_id, recorded_at, severity, symptom_codes_json, free_text, context_json, safety_json)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    user_id = EXCLUDED.user_id,
+                    recorded_at = EXCLUDED.recorded_at,
+                    severity = EXCLUDED.severity,
+                    symptom_codes_json = EXCLUDED.symptom_codes_json,
+                    free_text = EXCLUDED.free_text,
+                    context_json = EXCLUDED.context_json,
+                    safety_json = EXCLUDED.safety_json
+                """,
+                (
+                    checkin.id,
+                    checkin.user_id,
+                    checkin.recorded_at,
+                    checkin.severity,
+                    self._jsonb(checkin.symptom_codes),
+                    checkin.free_text,
+                    self._jsonb(checkin.context),
+                    self._jsonb(checkin.safety.model_dump(mode="json")),
+                ),
+            )
+        return checkin
+
+    def list_symptom_checkins(
+        self,
+        *,
+        user_id: str,
+        start_at: datetime | None = None,
+        end_at: datetime | None = None,
+        limit: int = 200,
+    ) -> list[SymptomCheckIn]:
+        query = (
+            "SELECT id, user_id, recorded_at, severity, symptom_codes_json, free_text, context_json, safety_json "
+            "FROM symptom_checkins WHERE user_id = %s"
+        )
+        params: list[Any] = [user_id]
+        if start_at is not None:
+            query += " AND recorded_at >= %s"
+            params.append(start_at)
+        if end_at is not None:
+            query += " AND recorded_at <= %s"
+            params.append(end_at)
+        query += " ORDER BY recorded_at DESC LIMIT %s"
+        params.append(max(1, min(limit, 1000)))
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(query, tuple(params))
+            rows = cur.fetchall()
+        return [
+            SymptomCheckIn(
+                id=row[0],
+                user_id=row[1],
+                recorded_at=row[2],
+                severity=int(row[3]),
+                symptom_codes=cast(list[str], _json_payload(row[4])),
+                free_text=row[5],
+                context=cast(dict[str, object], _json_payload(row[6])),
+                safety=SymptomSafety.model_validate(_json_payload(row[7])),
+            )
+            for row in rows
+        ]
+
+    def save_clinical_card(self, card: ClinicalCardRecord) -> ClinicalCardRecord:
+        payload = card.model_dump(mode="json")
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO clinical_cards
+                (id, user_id, created_at, start_date, end_date, format, payload_json)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    user_id = EXCLUDED.user_id,
+                    created_at = EXCLUDED.created_at,
+                    start_date = EXCLUDED.start_date,
+                    end_date = EXCLUDED.end_date,
+                    format = EXCLUDED.format,
+                    payload_json = EXCLUDED.payload_json
+                """,
+                (
+                    card.id,
+                    card.user_id,
+                    card.created_at,
+                    card.start_date,
+                    card.end_date,
+                    card.format,
+                    self._jsonb(payload),
+                ),
+            )
+        return card
+
+    def list_clinical_cards(self, *, user_id: str, limit: int = 50) -> list[ClinicalCardRecord]:
+        bounded = max(1, min(limit, 200))
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT payload_json
+                FROM clinical_cards
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT %s
+                """,
+                (user_id, bounded),
+            )
+            rows = cur.fetchall()
+        return [ClinicalCardRecord.model_validate(_json_payload(row[0])) for row in rows]
+
+    def get_clinical_card(self, *, user_id: str, card_id: str) -> ClinicalCardRecord | None:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT payload_json FROM clinical_cards WHERE user_id = %s AND id = %s",
+                (user_id, card_id),
+            )
+            row = cur.fetchone()
+        if row is None:
+            return None
+        return ClinicalCardRecord.model_validate(_json_payload(row[0]))
+
+    def save_tool_role_policy(self, record: ToolRolePolicyRecord) -> ToolRolePolicyRecord:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO tool_role_policies
+                (id, role, agent_id, tool_name, effect, conditions_json, priority, enabled, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    role = EXCLUDED.role,
+                    agent_id = EXCLUDED.agent_id,
+                    tool_name = EXCLUDED.tool_name,
+                    effect = EXCLUDED.effect,
+                    conditions_json = EXCLUDED.conditions_json,
+                    priority = EXCLUDED.priority,
+                    enabled = EXCLUDED.enabled,
+                    updated_at = EXCLUDED.updated_at
+                """,
+                (
+                    record.id,
+                    record.role,
+                    record.agent_id,
+                    record.tool_name,
+                    record.effect,
+                    self._jsonb(record.conditions),
+                    record.priority,
+                    record.enabled,
+                    record.created_at,
+                    record.updated_at,
+                ),
+            )
+        return record
+
+    def list_tool_role_policies(
+        self,
+        *,
+        role: str | None = None,
+        agent_id: str | None = None,
+        tool_name: str | None = None,
+        enabled_only: bool = False,
+    ) -> list[ToolRolePolicyRecord]:
+        query = (
+            "SELECT id, role, agent_id, tool_name, effect, conditions_json, priority, enabled, created_at, updated_at "
+            "FROM tool_role_policies WHERE 1=1"
+        )
+        params: list[Any] = []
+        if role is not None:
+            query += " AND role = %s"
+            params.append(role)
+        if agent_id is not None:
+            query += " AND agent_id = %s"
+            params.append(agent_id)
+        if tool_name is not None:
+            query += " AND tool_name = %s"
+            params.append(tool_name)
+        if enabled_only:
+            query += " AND enabled = TRUE"
+        query += " ORDER BY priority DESC, updated_at DESC, id"
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(query, tuple(params))
+            rows = cur.fetchall()
+        return [
+            ToolRolePolicyRecord(
+                id=row[0],
+                role=row[1],
+                agent_id=row[2],
+                tool_name=row[3],
+                effect=row[4],
+                conditions=cast(dict[str, object], _json_payload(row[5])),
+                priority=int(row[6]),
+                enabled=bool(row[7]),
+                created_at=row[8],
+                updated_at=row[9],
+            )
+            for row in rows
+        ]
+
+    def get_tool_role_policy(self, policy_id: str) -> ToolRolePolicyRecord | None:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, role, agent_id, tool_name, effect, conditions_json, priority, enabled, created_at, updated_at
+                FROM tool_role_policies WHERE id = %s
+                """,
+                (policy_id,),
+            )
+            row = cur.fetchone()
+        if row is None:
+            return None
+        return ToolRolePolicyRecord(
+            id=row[0],
+            role=row[1],
+            agent_id=row[2],
+            tool_name=row[3],
+            effect=row[4],
+            conditions=cast(dict[str, object], _json_payload(row[5])),
+            priority=int(row[6]),
+            enabled=bool(row[7]),
+            created_at=row[8],
+            updated_at=row[9],
+        )
+
+    def save_workflow_contract_snapshot(
+        self,
+        snapshot: WorkflowContractSnapshotRecord,
+    ) -> WorkflowContractSnapshotRecord:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO workflow_contract_snapshots
+                (id, version, contract_hash, source, workflows_json, agents_json, created_by, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    version = EXCLUDED.version,
+                    contract_hash = EXCLUDED.contract_hash,
+                    source = EXCLUDED.source,
+                    workflows_json = EXCLUDED.workflows_json,
+                    agents_json = EXCLUDED.agents_json,
+                    created_by = EXCLUDED.created_by,
+                    created_at = EXCLUDED.created_at
+                """,
+                (
+                    snapshot.id,
+                    snapshot.version,
+                    snapshot.contract_hash,
+                    snapshot.source,
+                    self._jsonb([item.model_dump(mode="json") for item in snapshot.workflows]),
+                    self._jsonb([item.model_dump(mode="json") for item in snapshot.agents]),
+                    snapshot.created_by,
+                    snapshot.created_at,
+                ),
+            )
+        return snapshot
+
+    def list_workflow_contract_snapshots(self, *, limit: int = 50) -> list[WorkflowContractSnapshotRecord]:
+        bounded = max(1, min(int(limit), 200))
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, version, contract_hash, source, workflows_json, agents_json, created_by, created_at
+                FROM workflow_contract_snapshots
+                ORDER BY version DESC
+                LIMIT %s
+                """,
+                (bounded,),
+            )
+            rows = cur.fetchall()
+        return [
+            WorkflowContractSnapshotRecord(
+                id=row[0],
+                version=int(row[1]),
+                contract_hash=row[2],
+                source=row[3],
+                workflows=[WorkflowRuntimeContract.model_validate(item) for item in cast(list[dict[str, object]], _json_payload(row[4]))],
+                agents=[AgentContract.model_validate(item) for item in cast(list[dict[str, object]], _json_payload(row[5]))],
+                created_by=row[6],
+                created_at=row[7],
+            )
+            for row in rows
+        ]
+
+    def get_workflow_contract_snapshot(self, *, version: int) -> WorkflowContractSnapshotRecord | None:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, version, contract_hash, source, workflows_json, agents_json, created_by, created_at
+                FROM workflow_contract_snapshots
+                WHERE version = %s
+                """,
+                (version,),
+            )
+            row = cur.fetchone()
+        if row is None:
+            return None
+        return WorkflowContractSnapshotRecord(
+            id=row[0],
+            version=int(row[1]),
+            contract_hash=row[2],
+            source=row[3],
+            workflows=[WorkflowRuntimeContract.model_validate(item) for item in cast(list[dict[str, object]], _json_payload(row[4]))],
+            agents=[AgentContract.model_validate(item) for item in cast(list[dict[str, object]], _json_payload(row[5]))],
+            created_by=row[6],
+            created_at=row[7],
+        )
 
     def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
         with self._connect() as conn, conn.cursor() as cur:

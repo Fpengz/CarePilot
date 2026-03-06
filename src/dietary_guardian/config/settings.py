@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     auth_login_lockout_seconds: int = Field(default=300, ge=1, le=86400)
     auth_audit_events_max_entries: int = Field(default=500, ge=10, le=10000)
     workflow_trace_persistence_enabled: bool = False
+    tool_policy_enforcement_mode: Literal["shadow", "enforce"] = "shadow"
+    workflow_contract_bootstrap: bool = True
+    redis_keyspace_version: Literal["v1", "v2"] = "v1"
 
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None

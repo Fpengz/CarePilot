@@ -18,4 +18,6 @@ def reports_parse(
         context=get_context(request),
         user_id=str(session["user_id"]),
         payload=payload,
+        request_id=getattr(request.state, "request_id", None),
+        correlation_id=getattr(request.state, "correlation_id", None),
     )

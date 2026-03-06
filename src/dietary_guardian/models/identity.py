@@ -16,6 +16,7 @@ PermissionScope = Literal[
     "alert:timeline:read",
     "workflow:read",
     "workflow:replay",
+    "workflow:write",
     "auth:audit:read",
 ]
 

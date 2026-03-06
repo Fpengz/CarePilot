@@ -11,26 +11,56 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { analyzeMeal, getMealDailySummary, listMealRecords } from "@/lib/api";
-import type { MealAnalyzeApiResponse, MealDailySummaryApiResponse } from "@/lib/types";
+import { analyzeMeal, getMealDailySummary, getMealWeeklySummary, listMealRecords } from "@/lib/api";
+import type { MealAnalyzeApiResponse, MealDailySummaryApiResponse, MealWeeklySummaryApiResponse } from "@/lib/types";
 
 const DEFAULT_MEAL_PROVIDER = process.env.NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER ?? "test";
 
+function isoDate(value: Date): string {
+  return value.toISOString().slice(0, 10);
+}
+
+function resolveWeekStart(today: Date): string {
+  const normalized = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const weekday = normalized.getUTCDay();
+  const daysSinceMonday = (weekday + 6) % 7;
+  normalized.setUTCDate(normalized.getUTCDate() - daysSinceMonday);
+  return isoDate(normalized);
+}
+
 export default function MealsPage() {
+  const initialWeekStart = resolveWeekStart(new Date());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<MealAnalyzeApiResponse | null>(null);
   const [dailySummary, setDailySummary] = useState<MealDailySummaryApiResponse | null>(null);
+  const [weeklySummary, setWeeklySummary] = useState<MealWeeklySummaryApiResponse | null>(null);
+  const [weekStart, setWeekStart] = useState(initialWeekStart);
   const [recordsResult, setRecordsResult] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<"analyze" | "records" | null>(null);
+  const [loadingAction, setLoadingAction] = useState<"analyze" | "records" | "weekly" | null>(null);
   const recordItems = (recordsResult as { records?: Array<Record<string, unknown>> } | null)?.records ?? [];
 
   useEffect(() => {
-    void getMealDailySummary(new Date().toISOString().slice(0, 10))
-      .then(setDailySummary)
-      .catch((e) => setError(e instanceof Error ? e.message : String(e)));
-  }, []);
+    let cancelled = false;
+    async function load() {
+      try {
+        const [daily, weekly] = await Promise.all([
+          getMealDailySummary(isoDate(new Date())),
+          getMealWeeklySummary(initialWeekStart),
+        ]);
+        if (cancelled) return;
+        setDailySummary(daily);
+        setWeeklySummary(weekly);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialWeekStart]);
 
   return (
     <div>
@@ -127,7 +157,7 @@ export default function MealsPage() {
                     form.append("provider", DEFAULT_MEAL_PROVIDER);
                     const data = await analyzeMeal(form);
                     setResult(data);
-                    const summary = await getMealDailySummary(new Date().toISOString().slice(0, 10));
+                    const summary = await getMealDailySummary(isoDate(new Date()));
                     setDailySummary(summary);
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));
@@ -147,7 +177,7 @@ export default function MealsPage() {
                   try {
                     const data = await listMealRecords();
                     setRecordsResult(data);
-                    const summary = await getMealDailySummary(new Date().toISOString().slice(0, 10));
+                    const summary = await getMealDailySummary(isoDate(new Date()));
                     setDailySummary(summary);
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));
@@ -157,6 +187,24 @@ export default function MealsPage() {
                 }}
               >
                 <AsyncLabel active={loadingAction === "records"} loading="Loading" idle="Load Meal Records" />
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={loadingAction !== null}
+                onClick={async () => {
+                  setError(null);
+                  setLoadingAction("weekly");
+                  try {
+                    const weekly = await getMealWeeklySummary(weekStart);
+                    setWeeklySummary(weekly);
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : String(e));
+                  } finally {
+                    setLoadingAction(null);
+                  }
+                }}
+              >
+                <AsyncLabel active={loadingAction === "weekly"} loading="Loading" idle="Load Weekly Summary" />
               </Button>
             </div>
 
@@ -173,6 +221,18 @@ export default function MealsPage() {
               <div className="metric-card sm:col-span-2">
                 <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Analyze Provider</div>
                 <div className="mt-1 text-sm font-medium">{DEFAULT_MEAL_PROVIDER}</div>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <label htmlFor="meal-week-start" className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">
+                  Weekly window start
+                </label>
+                <Input
+                  id="meal-week-start"
+                  type="date"
+                  value={weekStart}
+                  onChange={(event) => setWeekStart(event.target.value)}
+                  max={isoDate(new Date())}
+                />
               </div>
             </div>
           </CardContent>
@@ -217,6 +277,70 @@ export default function MealsPage() {
                   ))
                 ) : (
                   <p className="app-muted text-sm">Log meals across a few days to unlock pattern-level guidance.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly Pattern Summary</CardTitle>
+              <CardDescription>
+                Seven-day rollup for meal volume, nutrition totals, and repetitive intake flags.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Window</div>
+                  <div className="mt-1 text-sm font-medium">
+                    {weeklySummary ? `${weeklySummary.week_start} to ${weeklySummary.week_end}` : "No weekly summary loaded"}
+                  </div>
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Meals logged</div>
+                  <div className="mt-1 text-sm font-medium">{weeklySummary?.meal_count ?? 0}</div>
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Total calories</div>
+                  <div className="mt-1 text-sm font-medium">{Math.round(weeklySummary?.totals.calories ?? 0)} kcal</div>
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Total sodium</div>
+                  <div className="mt-1 text-sm font-medium">{Math.round(weeklySummary?.totals.sodium_mg ?? 0)} mg</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-semibold">Detected pattern flags</div>
+                {weeklySummary?.pattern_flags.length ? (
+                  weeklySummary.pattern_flags.map((flag) => (
+                    <div
+                      key={flag}
+                      className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 text-sm dark:bg-[color:var(--panel-soft)]"
+                    >
+                      {flag}
+                    </div>
+                  ))
+                ) : (
+                  <p className="app-muted text-sm">No weekly pattern flags detected for this window.</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-semibold">Daily breakdown</div>
+                {weeklySummary && Object.keys(weeklySummary.daily_breakdown).length > 0 ? (
+                  <div className="data-list">
+                    {Object.entries(weeklySummary.daily_breakdown)
+                      .sort(([left], [right]) => left.localeCompare(right))
+                      .map(([day, values]) => (
+                        <div key={day} className="data-list-row sm:flex-row sm:items-center sm:justify-between">
+                          <div className="text-sm font-medium">{day}</div>
+                          <div className="app-muted text-xs">
+                            {values.meal_count} meal(s) • {Math.round(values.calories)} kcal • {Math.round(values.sodium_mg)} mg sodium
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="app-muted text-sm">No meals found in the selected weekly window.</p>
                 )}
               </div>
             </CardContent>
