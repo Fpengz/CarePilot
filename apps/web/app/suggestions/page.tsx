@@ -296,12 +296,11 @@ export default function SuggestionsPage() {
             description="Request/correlation-linked timeline events for this suggestion run."
             emptyLabel={detailState === "loading" ? "Loading workflow events..." : "No workflow events available."}
             items={(selected?.workflow.timeline_events ?? []).map((event, index) => {
-              const obj = event as Record<string, unknown>;
               return {
-                id: `${String(obj.event_type ?? "event")}-${index}`,
-                title: String(obj.event_type ?? "event"),
-                subtitle: String(obj.created_at ?? ""),
-                badges: [String(obj.request_id ?? ""), String(obj.correlation_id ?? "")].filter(Boolean),
+                id: `${event.event_type || "event"}-${index}`,
+                title: event.event_type || "event",
+                subtitle: event.created_at || "",
+                badges: [event.request_id ?? "", event.correlation_id ?? ""].filter(Boolean),
               };
             })}
           />

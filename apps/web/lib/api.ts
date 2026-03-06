@@ -40,6 +40,10 @@ import type {
   SymptomCheckInEnvelopeApiResponse,
   SymptomCheckInListApiResponse,
   SymptomSummaryApiResponse,
+  ToolPolicyConditionsApi,
+  ToolPolicyEvaluationApiResponse,
+  ToolPolicyListApiResponse,
+  ToolPolicyWriteApiResponse,
   SuggestionDetailApiResponse,
   SuggestionGenerateApiResponse,
   SuggestionListApiResponse,
@@ -54,6 +58,10 @@ import type {
   SessionUser,
   WorkflowExecutionResult,
   WorkflowListApiResponse,
+  WorkflowRuntimeRegistryApiResponse,
+  WorkflowSnapshotCompareApiResponse,
+  WorkflowSnapshotListApiResponse,
+  WorkflowSnapshotWriteApiResponse,
 } from "@/lib/types";
 import { getConsolePrinter } from "@/lib/console-safe";
 
@@ -421,6 +429,80 @@ export async function listWorkflows(): Promise<WorkflowListApiResponse> {
 
 export async function getWorkflow(correlationId: string): Promise<WorkflowExecutionResult> {
   return request<WorkflowExecutionResult>(`/api/v1/workflows/${correlationId}`);
+}
+
+export async function getWorkflowRuntimeContract(): Promise<WorkflowRuntimeRegistryApiResponse> {
+  return request<WorkflowRuntimeRegistryApiResponse>("/api/v1/workflows/runtime-contract");
+}
+
+export async function listWorkflowContractSnapshots(): Promise<WorkflowSnapshotListApiResponse> {
+  return request<WorkflowSnapshotListApiResponse>("/api/v1/workflows/runtime-contract/snapshots");
+}
+
+export async function createWorkflowContractSnapshot(): Promise<WorkflowSnapshotWriteApiResponse> {
+  return request<WorkflowSnapshotWriteApiResponse>("/api/v1/workflows/runtime-contract/snapshots", {
+    method: "POST",
+  });
+}
+
+export async function compareWorkflowContractSnapshots(
+  baseVersion: number,
+  targetVersion: number,
+): Promise<WorkflowSnapshotCompareApiResponse> {
+  const query = new URLSearchParams({
+    base_version: String(baseVersion),
+    target_version: String(targetVersion),
+  }).toString();
+  return request<WorkflowSnapshotCompareApiResponse>(`/api/v1/workflows/runtime-contract/snapshots/compare?${query}`);
+}
+
+export async function listWorkflowToolPolicies(): Promise<ToolPolicyListApiResponse> {
+  return request<ToolPolicyListApiResponse>("/api/v1/workflows/tool-policies");
+}
+
+export async function createWorkflowToolPolicy(payload: {
+  role: "member" | "admin";
+  agent_id: string;
+  tool_name: string;
+  effect: "allow" | "deny";
+  conditions?: ToolPolicyConditionsApi;
+  priority?: number;
+  enabled?: boolean;
+}): Promise<ToolPolicyWriteApiResponse> {
+  return request<ToolPolicyWriteApiResponse>("/api/v1/workflows/tool-policies", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function patchWorkflowToolPolicy(
+  policyId: string,
+  payload: {
+    effect?: "allow" | "deny";
+    conditions?: ToolPolicyConditionsApi;
+    priority?: number;
+    enabled?: boolean;
+  },
+): Promise<ToolPolicyWriteApiResponse> {
+  return request<ToolPolicyWriteApiResponse>(`/api/v1/workflows/tool-policies/${policyId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function evaluateWorkflowToolPolicy(params: {
+  role: "member" | "admin";
+  agent_id: string;
+  tool_name: string;
+  environment?: string;
+}): Promise<ToolPolicyEvaluationApiResponse> {
+  const query = new URLSearchParams({
+    role: params.role,
+    agent_id: params.agent_id,
+    tool_name: params.tool_name,
+    environment: params.environment ?? "dev",
+  }).toString();
+  return request<ToolPolicyEvaluationApiResponse>(`/api/v1/workflows/tool-policies/evaluation?${query}`);
 }
 
 export async function analyzeMeal(formData: FormData): Promise<MealAnalyzeApiResponse> {

@@ -210,14 +210,119 @@ export interface WorkflowExecutionResult {
   workflow_name: string;
   request_id: string;
   correlation_id: string;
-  replayed?: boolean;
-  timeline_events?: Array<Record<string, unknown>>;
-  tool_results?: Array<Record<string, unknown>>;
-  handoffs?: Array<Record<string, unknown>>;
+  replayed: boolean;
+  timeline_events: WorkflowTimelineEventApi[];
+  tool_results: Array<Record<string, unknown>>;
+  handoffs: Array<Record<string, unknown>>;
+}
+
+export interface WorkflowTimelineEventApi {
+  event_id: string;
+  event_type: string;
+  workflow_name: string | null;
+  request_id: string | null;
+  correlation_id: string;
+  user_id: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface WorkflowListItemApi {
+  correlation_id: string;
+  request_id: string | null;
+  user_id: string | null;
+  workflow_name: string | null;
+  created_at: string;
+  latest_event_at: string;
+  event_count: number;
 }
 
 export interface WorkflowListApiResponse {
-  items: Array<Record<string, unknown>>;
+  items: WorkflowListItemApi[];
+}
+
+export interface WorkflowRuntimeStepApi {
+  step_id: string;
+  agent_id: string;
+  capability: string;
+  tool_names: string[];
+}
+
+export interface WorkflowRuntimeContractApi {
+  workflow_name: string;
+  steps: WorkflowRuntimeStepApi[];
+}
+
+export interface AgentContractApi {
+  agent_id: string;
+  capabilities: string[];
+  allowed_tools: string[];
+  output_contract: string;
+}
+
+export interface WorkflowRuntimeRegistryApiResponse {
+  workflows: WorkflowRuntimeContractApi[];
+  agents: AgentContractApi[];
+}
+
+export interface ToolPolicyItemApi {
+  id: string;
+  role: "member" | "admin";
+  agent_id: string;
+  tool_name: string;
+  effect: "allow" | "deny";
+  conditions: ToolPolicyConditionsApi;
+  priority: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ToolPolicyConditionsApi {
+  environment?: string | string[];
+  [key: string]: unknown;
+}
+
+export interface ToolPolicyListApiResponse {
+  items: ToolPolicyItemApi[];
+}
+
+export interface ToolPolicyWriteApiResponse {
+  policy: ToolPolicyItemApi;
+}
+
+export interface ToolPolicyEvaluationApiResponse {
+  policy_mode: "shadow" | "enforce";
+  code_decision: "allow" | "deny";
+  db_decision: "allow" | "deny" | null;
+  effective_decision: "allow" | "deny";
+  diverged: boolean;
+  matched_policy_id: string | null;
+}
+
+export interface WorkflowSnapshotItemApi {
+  id: string;
+  version: number;
+  contract_hash: string;
+  source: "startup_bootstrap" | "manual_api";
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface WorkflowSnapshotListApiResponse {
+  items: WorkflowSnapshotItemApi[];
+}
+
+export interface WorkflowSnapshotWriteApiResponse {
+  snapshot: WorkflowSnapshotItemApi;
+}
+
+export interface WorkflowSnapshotCompareApiResponse {
+  base_version: number;
+  target_version: number;
+  changed: boolean;
+  base_hash: string;
+  target_hash: string;
 }
 
 export interface AlertTriggerApiResponse {

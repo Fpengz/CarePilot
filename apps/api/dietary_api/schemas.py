@@ -640,12 +640,23 @@ class HouseholdCareReminderListResponse(BaseModel):
     metrics: dict[str, object] = Field(default_factory=dict)
 
 
+class WorkflowTimelineEventResponse(BaseModel):
+    event_id: str
+    event_type: str
+    workflow_name: str | None = None
+    request_id: str | None = None
+    correlation_id: str
+    user_id: str | None = None
+    payload: dict[str, object] = Field(default_factory=dict)
+    created_at: datetime
+
+
 class WorkflowResponse(BaseModel):
     workflow_name: str
     request_id: str
     correlation_id: str
     replayed: bool
-    timeline_events: list[dict[str, object]]
+    timeline_events: list[WorkflowTimelineEventResponse] = Field(default_factory=list)
 
 
 class WorkflowListItem(BaseModel):

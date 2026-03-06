@@ -19,24 +19,25 @@ from apps.api.dietary_api.schemas import (
     WorkflowSnapshotItemResponse,
     WorkflowSnapshotListResponse,
     WorkflowSnapshotWriteResponse,
+    WorkflowTimelineEventResponse,
     WorkflowRuntimeContractResponse,
     WorkflowRuntimeRegistryResponse,
     WorkflowRuntimeStepResponse,
 )
 from dietary_guardian.models.tool_policy import ToolRolePolicyRecord
+from dietary_guardian.models.workflow import WorkflowTimelineEvent
 from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
 from dietary_guardian.services.policy_service import apply_tool_policy_patch, create_tool_policy_record, evaluate_tool_policy
 
 
 def get_workflow(*, context: AppContext, correlation_id: str) -> WorkflowResponse:
     workflow = context.coordinator.replay_workflow(correlation_id)
-    data = workflow.model_dump(mode="json")
     return WorkflowResponse(
-        workflow_name=str(data["workflow_name"]),
-        request_id=str(data["request_id"]),
-        correlation_id=str(data["correlation_id"]),
-        replayed=bool(data["replayed"]),
-        timeline_events=[dict(event) for event in data["timeline_events"]],
+        workflow_name=str(workflow.workflow_name),
+        request_id=workflow.request_id,
+        correlation_id=workflow.correlation_id,
+        replayed=workflow.replayed,
+        timeline_events=[_timeline_event_response(event) for event in workflow.timeline_events],
     )
 
 
@@ -260,4 +261,18 @@ def _snapshot_item_response(item: WorkflowContractSnapshotRecord) -> WorkflowSna
         source=item.source,
         created_by=item.created_by,
         created_at=item.created_at,
+    )
+
+
+def _timeline_event_response(event: WorkflowTimelineEvent) -> WorkflowTimelineEventResponse:
+    payload = event.model_dump(mode="json")
+    return WorkflowTimelineEventResponse(
+        event_id=str(payload["event_id"]),
+        event_type=str(payload["event_type"]),
+        workflow_name=str(payload["workflow_name"]) if payload.get("workflow_name") is not None else None,
+        request_id=str(payload["request_id"]) if payload.get("request_id") is not None else None,
+        correlation_id=str(payload["correlation_id"]),
+        user_id=str(payload["user_id"]) if payload.get("user_id") is not None else None,
+        payload=dict(payload.get("payload") or {}),
+        created_at=payload["created_at"],
     )
