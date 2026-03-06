@@ -189,4 +189,4 @@ Records user feedback for continual online reranking.
 ## Related Docs
 - `docs/api-suggestions-contract.md`
 - `docs/rbac-matrix.md`
-- `docs/observability-map.md`
+- `docs/operations-runbook.md`

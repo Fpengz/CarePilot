@@ -360,7 +360,7 @@ uv run pytest -q
 pnpm web:lint
 pnpm web:typecheck
 pnpm --dir apps/web test:e2e
-./tools/validate.sh full-stack
+uv run python scripts/dg.py test comprehensive
 ```
 
 ### Prompt and Agent Regression Testing
@@ -418,6 +418,29 @@ Current ownership model should be treated as:
 - deployment/runtime/CI: platform maintainers
 
 If formal CODEOWNERS is added later, this document should align with it.
+
+## Documentation Maintenance
+Documentation updates are required when behavior or architecture changes.
+
+Primary index:
+- `docs/README.md`
+
+Core docs:
+- `docs/system-overview.md`
+- `docs/codebase-walkthrough.md`
+- `docs/developer-guide.md`
+- `docs/user-manual.md`
+- `docs/operations-runbook.md`
+- `docs/glossary.md`
+
+Canonical references that must stay consistent:
+- `ARCHITECTURE.md`
+- `docs/config-reference.md`
+- `docs/roadmap-v1.md`
+- `docs/feature-audit.md`
+
+Minimum rule:
+- if a PR changes architecture, runtime commands, APIs, workflows, or user-facing flows, update relevant docs in the same PR.
 
 Escalate early when a change affects:
 - authentication or authorization semantics

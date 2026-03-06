@@ -2,6 +2,10 @@
 
 Source of truth: `src/dietary_guardian/config/settings.py`
 
+Related guides:
+- developer setup and extension: `docs/developer-guide.md`
+- runtime operations and incident workflow: `docs/operations-runbook.md`
+
 Environment loading conventions:
 - Default source of truth is root `.env`.
 - Web commands (`pnpm web:*`) load root `.env` first, then optional `apps/web/.env` overrides.

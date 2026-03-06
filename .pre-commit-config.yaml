@@ -3,11 +3,11 @@ repos:
     hooks:
       - id: ruff-check
         name: ruff-check
-        entry: tools/precommit_ruff.sh
+        entry: uv run ruff check .
         language: system
         pass_filenames: false
       - id: ty-check
         name: ty-check
-        entry: tools/precommit_ty.sh
+        entry: uv run ty check . --extra-search-path src --output-format concise
         language: system
         pass_filenames: false

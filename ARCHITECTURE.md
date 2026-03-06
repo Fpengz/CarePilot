@@ -7,6 +7,14 @@ It serves two audiences:
 - engineers onboarding to the current codebase
 - future contributors extending the system toward a production multi-agent architecture built on FastAPI, Next.js, PostgreSQL, Redis, RAG, and specialized workflow-driven agents
 
+Companion documentation:
+- `docs/README.md`
+- `docs/system-overview.md`
+- `docs/codebase-walkthrough.md`
+- `docs/developer-guide.md`
+- `docs/user-manual.md`
+- `docs/operations-runbook.md`
+
 This document is explicit about the difference between:
 - the current repository baseline
 - the target production architecture
@@ -276,6 +284,7 @@ Target direction:
 
 ### `docs/`
 Architecture notes, API contracts, roadmap, runbooks, and operations documentation.
+Use `docs/README.md` as the index for the active modular documentation suite.
 
 ### `scripts/`
 Developer-entry scripts and operational helpers.

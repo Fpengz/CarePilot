@@ -19,10 +19,10 @@ See `docs/rbac-matrix.md` for the current RBAC matrix and endpoint permissions.
 See `docs/api-auth-contract.md` for auth payload examples and migration notes.
 See `docs/api-recommendation-agent-contract.md` for the adaptive meal agent API, substitution flow, and feedback loop contract.
 See `ARCHITECTURE.md` for the canonical system architecture and extension model.
-See `docs/archive/architecture/architecture-v1.md` for the historical v1 architecture snapshot.
 See `docs/feature-audit.md` for the current capability audit.
 See `docs/config-reference.md` for backend environment variables and defaults.
 See `docs/nightly-ops.md` for the nightly autonomous build runbook.
+See `docs/README.md` for the complete documentation suite index.
 See `SAFETY.md` for medical safety guardrails and escalation rules.
 
 ### Demo API Accounts
@@ -193,7 +193,7 @@ pnpm web:dev
 
 ### Streamlit UI
 ```bash
-./tools/run_dev.sh
+uv run streamlit run src/app.py --server.fileWatcherType watchdog --server.runOnSave true
 ```
 
 ### CLI Scenario Runner
@@ -302,15 +302,13 @@ git config commit.template .gitmessage
 
 ### Hook Behavior
 The local pre-commit configuration runs these checks on every commit:
-- `tools/precommit_ruff.sh` -> `uv run ruff check .`
-- `tools/precommit_ty.sh` -> `uv run ty check . --extra-search-path src --output-format concise`
+- `uv run ruff check .`
+- `uv run ty check . --extra-search-path src --output-format concise`
 
 ### Local Developer Scripts
-- `./tools/run_dev.sh` starts Streamlit with the `watchdog` file watcher and save-triggered reload.
-- `./tools/run_test.sh` runs lint, type checks, and tests.
-- `./tools/validate.sh backend-milestone` runs the targeted backend milestone checks (sqlite auth + household/auth API coverage).
-- `./tools/validate.sh backend-all` runs repo backend checks (`ruff`, `ty`, `pytest`).
-- `./tools/validate.sh full-stack` runs backend checks plus web typecheck/build.
+- `uv run python scripts/dg.py dev` starts local development services.
+- `uv run python scripts/dg.py test backend` runs backend checks (`ruff`, `ty`, `pytest`).
+- `uv run python scripts/dg.py test comprehensive` runs backend + web + e2e + smoke validation.
 - `uv run python scripts/dg.py report nightly` creates (or prints) `reports/nightly_YYYY-MM-DD.md` from the report template.
 
 ## Nightly Workflow
@@ -341,7 +339,6 @@ Optional variants:
 Equivalent manual commands:
 
 ```bash
-./tools/run_test.sh
 uv run ruff check .
 uv run ty check . --extra-search-path src --output-format concise
 uv run pytest -q

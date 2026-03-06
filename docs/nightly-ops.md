@@ -11,16 +11,16 @@ Provide a repeatable nightly engineering loop that improves the repo toward a pr
 5. Update docs and write nightly report
 
 ## Validation Presets
-- Backend-focused: `./tools/validate.sh backend-milestone`
-- Full stack: `./tools/validate.sh full-stack`
+- Backend-focused: `uv run python scripts/dg.py test backend`
+- Full stack: `uv run python scripts/dg.py test comprehensive --skip-smoke`
 - Unified maximum-coverage gate: `uv run python scripts/dg.py test comprehensive`
 
 ## Report Output
 Write nightly report to:
 - `reports/nightly_YYYY-MM-DD.md`
 
-Historical nightly reports are archived under:
-- `docs/archive/nightly-reports/`
+Nightly reports are written under:
+- `reports/`
 
 Required sections:
 - `# Tonight's Milestone`
