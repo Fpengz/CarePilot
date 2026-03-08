@@ -32,7 +32,7 @@ def _login(client: TestClient, email: str = "member@example.com", password: str 
 
 
 def _seed_meal(app, *, meal_id: str, captured_at: datetime, calories: float, sugar_g: float, sodium_mg: float) -> None:
-    app.state.ctx.repository.save_meal_record(
+    app.state.ctx.app_store.save_meal_record(
         MealRecognitionRecord(
             id=meal_id,
             user_id="user_001",

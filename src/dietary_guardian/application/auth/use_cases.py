@@ -23,6 +23,9 @@ class InvalidSignupPasswordError(Exception):
     pass
 
 
+MIN_PASSWORD_LENGTH = 12
+
+
 @dataclass
 class AuthSessionResult:
     user: AuthUserRecord
@@ -72,7 +75,7 @@ def signup_member_and_create_session(
     display_name: str,
     profile_mode: ProfileMode,
 ) -> AuthSessionResult:
-    if len(password) < 8:
+    if len(password) < MIN_PASSWORD_LENGTH:
         raise InvalidSignupPasswordError
     user = auth_store.create_user(
         email=email,
@@ -91,4 +94,3 @@ def signup_member_and_create_session(
         metadata={"account_role": user.account_role},
     )
     return AuthSessionResult(user=user, session=auth_store.create_session(user))
-

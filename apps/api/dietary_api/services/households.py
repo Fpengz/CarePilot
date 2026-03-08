@@ -381,7 +381,7 @@ def get_household_care_member_profile(
         viewer_user_id=viewer_user_id,
         subject_user_id=subject_user_id,
     )
-    profile = get_or_create_health_profile(context.repository, subject_user_id)
+    profile = get_or_create_health_profile(context.stores.profiles, subject_user_id)
     completeness = compute_profile_completeness(profile)
     return HouseholdCareProfileResponse(
         context=_care_context(

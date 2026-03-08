@@ -1,15 +1,21 @@
 from datetime import date, datetime, time, timedelta, timezone
+from typing import Protocol
 from uuid import uuid4
 
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.analytics import EngagementMetrics
 from dietary_guardian.models.medication import MedicationRegimen, ReminderEvent
 from dietary_guardian.models.user import MealScheduleWindow, UserProfile
-from dietary_guardian.services.repository import SQLiteRepository
 
 logger = get_logger(__name__)
 
 ASIA_SINGAPORE = "+08:00"
+
+
+class ReminderEventRepository(Protocol):
+    def get_reminder_event(self, event_id: str) -> ReminderEvent | None: ...
+
+    def save_reminder_event(self, event: ReminderEvent) -> None: ...
 
 
 def _parse_hhmm(value: str) -> time:
@@ -112,7 +118,7 @@ def mark_meal_confirmation(
     event_id: str,
     confirmed: bool,
     confirmed_at: datetime | None,
-    repository: SQLiteRepository,
+    repository: ReminderEventRepository,
 ) -> ReminderEvent:
     logger.info("mark_meal_confirmation_start event_id=%s confirmed=%s", event_id, confirmed)
     event = repository.get_reminder_event(event_id)

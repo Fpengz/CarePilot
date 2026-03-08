@@ -1,3 +1,4 @@
+import asyncio
 import time
 from dataclasses import dataclass
 from typing import Protocol, cast
@@ -184,7 +185,8 @@ class InferenceEngine:
     async def infer(self, request: InferenceRequest) -> InferenceResponse:
         if not self.strategy.supports(request.modality):
             raise ValueError(f"Provider {self.provider} does not support modality {request.modality}")
-        return await self.strategy.run(request)
+        timeout_seconds = get_settings().llm_inference_wall_clock_timeout_seconds
+        return await asyncio.wait_for(self.strategy.run(request), timeout=timeout_seconds)
 
     def supports(self, modality: InferenceModality) -> bool:
         return self.strategy.supports(modality)

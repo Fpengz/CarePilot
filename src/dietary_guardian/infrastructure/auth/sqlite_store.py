@@ -26,96 +26,102 @@ class SQLiteAuthStore:
         self._auth_audit_events_max_entries = int(settings.auth_audit_events_max_entries)
         self._lock = RLock()
         self._db_path = db_path
-        self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
-        self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL")
         self._init_db()
         if settings.auth_seed_demo_users:
             self._seed_defaults()
 
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self._db_path)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        return conn
+
     def _init_db(self) -> None:
-        cur = self._conn.cursor()
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS auth_users (
-                user_id TEXT PRIMARY KEY,
-                email TEXT NOT NULL UNIQUE,
-                display_name TEXT NOT NULL,
-                account_role TEXT NOT NULL,
-                profile_mode TEXT NOT NULL,
-                password_hash TEXT NOT NULL,
-                created_at TEXT NOT NULL
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS auth_users (
+                    user_id TEXT PRIMARY KEY,
+                    email TEXT NOT NULL UNIQUE,
+                    display_name TEXT NOT NULL,
+                    account_role TEXT NOT NULL,
+                    profile_mode TEXT NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
             )
-            """
-        )
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS auth_sessions (
-                session_id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                email TEXT NOT NULL,
-                account_role TEXT NOT NULL,
-                profile_mode TEXT NOT NULL,
-                scopes_json TEXT NOT NULL,
-                display_name TEXT NOT NULL,
-                issued_at TEXT NOT NULL,
-                subject_user_id TEXT NOT NULL,
-                active_household_id TEXT
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS auth_sessions (
+                    session_id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    account_role TEXT NOT NULL,
+                    profile_mode TEXT NOT NULL,
+                    scopes_json TEXT NOT NULL,
+                    display_name TEXT NOT NULL,
+                    issued_at TEXT NOT NULL,
+                    subject_user_id TEXT NOT NULL,
+                    active_household_id TEXT
+                )
+                """
             )
-            """
-        )
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS auth_login_failures (
-                email TEXT PRIMARY KEY,
-                failed_count INTEGER NOT NULL,
-                window_started_at TEXT,
-                lockout_until TEXT
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS auth_login_failures (
+                    email TEXT PRIMARY KEY,
+                    failed_count INTEGER NOT NULL,
+                    window_started_at TEXT,
+                    lockout_until TEXT
+                )
+                """
             )
-            """
-        )
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS auth_audit_events (
-                event_id TEXT PRIMARY KEY,
-                event_type TEXT NOT NULL,
-                email TEXT NOT NULL,
-                user_id TEXT,
-                created_at TEXT NOT NULL,
-                metadata_json TEXT NOT NULL
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS auth_audit_events (
+                    event_id TEXT PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    user_id TEXT,
+                    created_at TEXT NOT NULL,
+                    metadata_json TEXT NOT NULL
+                )
+                """
             )
-            """
-        )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_auth_audit_created_at ON auth_audit_events(created_at DESC)")
-        session_columns = {
-            str(row["name"])
-            for row in cur.execute("PRAGMA table_info(auth_sessions)").fetchall()
-        }
-        if "active_household_id" not in session_columns:
-            cur.execute("ALTER TABLE auth_sessions ADD COLUMN active_household_id TEXT")
-        self._conn.commit()
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_auth_audit_created_at ON auth_audit_events(created_at DESC)")
+            session_columns = {
+                str(row["name"])
+                for row in cur.execute("PRAGMA table_info(auth_sessions)").fetchall()
+            }
+            if "active_household_id" not in session_columns:
+                cur.execute("ALTER TABLE auth_sessions ADD COLUMN active_household_id TEXT")
+            conn.commit()
 
     def _seed_defaults(self) -> None:
-        for user_id, email, display_name, account_role, profile_mode, password in self._demo_defaults:
-            existing = self._conn.execute("SELECT 1 FROM auth_users WHERE email = ?", (email,)).fetchone()
-            if existing:
-                continue
-            self._conn.execute(
-                """
-                INSERT INTO auth_users (user_id, email, display_name, account_role, profile_mode, password_hash, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    user_id,
-                    email,
-                    display_name,
-                    account_role,
-                    profile_mode,
-                    self._hasher.hash(password),
-                    datetime.now(timezone.utc).isoformat(),
-                ),
-            )
-        self._conn.commit()
+        with self._lock:
+            with self._connect() as conn:
+                for user_id, email, display_name, account_role, profile_mode, password in self._demo_defaults:
+                    existing = conn.execute("SELECT 1 FROM auth_users WHERE email = ?", (email,)).fetchone()
+                    if existing:
+                        continue
+                    conn.execute(
+                        """
+                        INSERT INTO auth_users (user_id, email, display_name, account_role, profile_mode, password_hash, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            user_id,
+                            email,
+                            display_name,
+                            account_role,
+                            profile_mode,
+                            self._hasher.hash(password),
+                            datetime.now(timezone.utc).isoformat(),
+                        ),
+                    )
+                conn.commit()
 
     def _row_to_user(self, row: sqlite3.Row) -> AuthUserRecord:
         return AuthUserRecord(
@@ -129,10 +135,11 @@ class SQLiteAuthStore:
 
     def authenticate(self, email: str, password: str) -> AuthUserRecord | None:
         with self._lock:
-            row = self._conn.execute(
-                "SELECT user_id, email, display_name, account_role, profile_mode, password_hash FROM auth_users WHERE email = ?",
-                (email,),
-            ).fetchone()
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT user_id, email, display_name, account_role, profile_mode, password_hash FROM auth_users WHERE email = ?",
+                    (email,),
+                ).fetchone()
         if row is None:
             return None
         user = self._row_to_user(cast(sqlite3.Row, row))
@@ -162,32 +169,34 @@ class SQLiteAuthStore:
                 password_hash=self._hasher.hash(password),
             )
             with self._lock:
-                self._conn.execute(
-                    """
-                    INSERT INTO auth_users (user_id, email, display_name, account_role, profile_mode, password_hash, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        user.user_id,
-                        user.email,
-                        user.display_name,
-                        user.account_role,
-                        user.profile_mode,
-                        user.password_hash,
-                        datetime.now(timezone.utc).isoformat(),
-                    ),
-                )
-                self._conn.commit()
+                with self._connect() as conn:
+                    conn.execute(
+                        """
+                        INSERT INTO auth_users (user_id, email, display_name, account_role, profile_mode, password_hash, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            user.user_id,
+                            user.email,
+                            user.display_name,
+                            user.account_role,
+                            user.profile_mode,
+                            user.password_hash,
+                            datetime.now(timezone.utc).isoformat(),
+                        ),
+                    )
+                    conn.commit()
             return user
         except sqlite3.IntegrityError:
             return None
 
     def _read_failure_state(self, email: str) -> dict[str, Any] | None:
         with self._lock:
-            row = self._conn.execute(
-                "SELECT failed_count, window_started_at, lockout_until FROM auth_login_failures WHERE email = ?",
-                (email,),
-            ).fetchone()
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT failed_count, window_started_at, lockout_until FROM auth_login_failures WHERE email = ?",
+                    (email,),
+                ).fetchone()
         if row is None:
             return None
         return {
@@ -207,18 +216,20 @@ class SQLiteAuthStore:
             lockout_until = datetime.fromisoformat(lockout_until_raw)
         except ValueError:
             with self._lock:
-                self._conn.execute("DELETE FROM auth_login_failures WHERE email = ?", (email,))
-                self._conn.commit()
+                with self._connect() as conn:
+                    conn.execute("DELETE FROM auth_login_failures WHERE email = ?", (email,))
+                    conn.commit()
             return False
         if lockout_until.tzinfo is None:
             lockout_until = lockout_until.replace(tzinfo=timezone.utc)
         if datetime.now(timezone.utc) >= lockout_until.astimezone(timezone.utc):
             with self._lock:
-                self._conn.execute(
-                    "UPDATE auth_login_failures SET failed_count = 0, window_started_at = NULL, lockout_until = NULL WHERE email = ?",
-                    (email,),
-                )
-                self._conn.commit()
+                with self._connect() as conn:
+                    conn.execute(
+                        "UPDATE auth_login_failures SET failed_count = 0, window_started_at = NULL, lockout_until = NULL WHERE email = ?",
+                        (email,),
+                    )
+                    conn.commit()
             return False
         return True
 
@@ -244,24 +255,26 @@ class SQLiteAuthStore:
         if failed_count >= self._login_max_failed_attempts:
             lockout_until = (now + timedelta(seconds=self._login_lockout_seconds)).isoformat()
         with self._lock:
-            self._conn.execute(
-                """
-                INSERT INTO auth_login_failures (email, failed_count, window_started_at, lockout_until)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(email) DO UPDATE SET
-                  failed_count=excluded.failed_count,
-                  window_started_at=excluded.window_started_at,
-                  lockout_until=excluded.lockout_until
-                """,
-                (email, failed_count, now.isoformat() if reset_window else state.get("window_started_at"), lockout_until),
-            )
-            self._conn.commit()
+            with self._connect() as conn:
+                conn.execute(
+                    """
+                    INSERT INTO auth_login_failures (email, failed_count, window_started_at, lockout_until)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(email) DO UPDATE SET
+                      failed_count=excluded.failed_count,
+                      window_started_at=excluded.window_started_at,
+                      lockout_until=excluded.lockout_until
+                    """,
+                    (email, failed_count, now.isoformat() if reset_window else state.get("window_started_at"), lockout_until),
+                )
+                conn.commit()
         return lockout_until is not None
 
     def record_login_success(self, email: str) -> None:
         with self._lock:
-            self._conn.execute("DELETE FROM auth_login_failures WHERE email = ?", (email,))
-            self._conn.commit()
+            with self._connect() as conn:
+                conn.execute("DELETE FROM auth_login_failures WHERE email = ?", (email,))
+                conn.commit()
 
     def append_auth_audit_event(
         self,
@@ -272,49 +285,51 @@ class SQLiteAuthStore:
         metadata: dict[str, Any] | None = None,
     ) -> None:
         with self._lock:
-            self._conn.execute(
-                """
-                INSERT INTO auth_audit_events (event_id, event_type, email, user_id, created_at, metadata_json)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    str(uuid4()),
-                    event_type,
-                    email,
-                    user_id,
-                    datetime.now(timezone.utc).isoformat(),
-                    json.dumps(metadata or {}),
-                ),
-            )
-            count_row = self._conn.execute("SELECT COUNT(*) AS c FROM auth_audit_events").fetchone()
-            count = int(count_row["c"]) if count_row is not None else 0
-            if count > self._auth_audit_events_max_entries:
-                excess = count - self._auth_audit_events_max_entries
-                self._conn.execute(
+            with self._connect() as conn:
+                conn.execute(
                     """
-                    DELETE FROM auth_audit_events
-                    WHERE event_id IN (
-                        SELECT event_id FROM auth_audit_events
-                        ORDER BY created_at ASC
-                        LIMIT ?
-                    )
+                    INSERT INTO auth_audit_events (event_id, event_type, email, user_id, created_at, metadata_json)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """,
-                    (excess,),
+                    (
+                        str(uuid4()),
+                        event_type,
+                        email,
+                        user_id,
+                        datetime.now(timezone.utc).isoformat(),
+                        json.dumps(metadata or {}),
+                    ),
                 )
-            self._conn.commit()
+                count_row = conn.execute("SELECT COUNT(*) AS c FROM auth_audit_events").fetchone()
+                count = int(count_row["c"]) if count_row is not None else 0
+                if count > self._auth_audit_events_max_entries:
+                    excess = count - self._auth_audit_events_max_entries
+                    conn.execute(
+                        """
+                        DELETE FROM auth_audit_events
+                        WHERE event_id IN (
+                            SELECT event_id FROM auth_audit_events
+                            ORDER BY created_at ASC
+                            LIMIT ?
+                        )
+                        """,
+                        (excess,),
+                    )
+                conn.commit()
 
     def list_auth_audit_events(self, *, limit: int = 50) -> list[dict[str, Any]]:
         bounded = max(1, min(int(limit), 200))
         with self._lock:
-            rows = self._conn.execute(
-                """
-                SELECT event_id, event_type, email, user_id, created_at, metadata_json
-                FROM auth_audit_events
-                ORDER BY created_at DESC
-                LIMIT ?
-                """,
-                (bounded,),
-            ).fetchall()
+            with self._connect() as conn:
+                rows = conn.execute(
+                    """
+                    SELECT event_id, event_type, email, user_id, created_at, metadata_json
+                    FROM auth_audit_events
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                    """,
+                    (bounded,),
+                ).fetchall()
         return [
             {
                 "event_id": str(row["event_id"]),
@@ -328,8 +343,8 @@ class SQLiteAuthStore:
         ]
 
     def close(self) -> None:
-        with self._lock:
-            self._conn.close()
+        # No persistent sqlite connection is kept; nothing to close.
+        return None
 
     def update_user_profile(
         self,
@@ -339,25 +354,27 @@ class SQLiteAuthStore:
         profile_mode: ProfileMode | None = None,
     ) -> AuthUserRecord | None:
         with self._lock:
-            row = self._conn.execute(
-                "SELECT user_id, email, display_name, account_role, profile_mode, password_hash FROM auth_users WHERE user_id = ?",
-                (user_id,),
-            ).fetchone()
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT user_id, email, display_name, account_role, profile_mode, password_hash FROM auth_users WHERE user_id = ?",
+                    (user_id,),
+                ).fetchone()
         if row is None:
             return None
         current = self._row_to_user(cast(sqlite3.Row, row))
         new_display_name = display_name if display_name is not None else current.display_name
         new_profile_mode = profile_mode if profile_mode is not None else current.profile_mode
         with self._lock:
-            self._conn.execute(
-                "UPDATE auth_users SET display_name = ?, profile_mode = ? WHERE user_id = ?",
-                (new_display_name, new_profile_mode, user_id),
-            )
-            self._conn.execute(
-                "UPDATE auth_sessions SET display_name = ?, profile_mode = ? WHERE user_id = ?",
-                (new_display_name, new_profile_mode, user_id),
-            )
-            self._conn.commit()
+            with self._connect() as conn:
+                conn.execute(
+                    "UPDATE auth_users SET display_name = ?, profile_mode = ? WHERE user_id = ?",
+                    (new_display_name, new_profile_mode, user_id),
+                )
+                conn.execute(
+                    "UPDATE auth_sessions SET display_name = ?, profile_mode = ? WHERE user_id = ?",
+                    (new_display_name, new_profile_mode, user_id),
+                )
+                conn.commit()
         return AuthUserRecord(
             user_id=current.user_id,
             email=current.email,
@@ -376,21 +393,23 @@ class SQLiteAuthStore:
         keep_session_id: str,
     ) -> tuple[bool, int]:
         with self._lock:
-            row = self._conn.execute(
-                "SELECT user_id, email, display_name, account_role, profile_mode, password_hash FROM auth_users WHERE user_id = ?",
-                (user_id,),
-            ).fetchone()
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT user_id, email, display_name, account_role, profile_mode, password_hash FROM auth_users WHERE user_id = ?",
+                    (user_id,),
+                ).fetchone()
         if row is None:
             return (False, 0)
         user = self._row_to_user(cast(sqlite3.Row, row))
         if not self._hasher.verify(current_password, user.password_hash):
             return (False, 0)
         with self._lock:
-            self._conn.execute(
-                "UPDATE auth_users SET password_hash = ? WHERE user_id = ?",
-                (self._hasher.hash(new_password), user_id),
-            )
-            self._conn.commit()
+            with self._connect() as conn:
+                conn.execute(
+                    "UPDATE auth_users SET password_hash = ? WHERE user_id = ?",
+                    (self._hasher.hash(new_password), user_id),
+                )
+                conn.commit()
         revoked_count = self.revoke_other_sessions(user_id, keep_session_id=keep_session_id)
         return (True, revoked_count)
 
@@ -408,26 +427,27 @@ class SQLiteAuthStore:
             "active_household_id": None,
         }
         with self._lock:
-            self._conn.execute(
-                """
-                INSERT OR REPLACE INTO auth_sessions
-                (session_id, user_id, email, account_role, profile_mode, scopes_json, display_name, issued_at, subject_user_id, active_household_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    session["session_id"],
-                    session["user_id"],
-                    session["email"],
-                    session["account_role"],
-                    session["profile_mode"],
-                    json.dumps(session["scopes"]),
-                    session["display_name"],
-                    session["issued_at"],
-                    session["subject_user_id"],
-                    session["active_household_id"],
-                ),
-            )
-            self._conn.commit()
+            with self._connect() as conn:
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO auth_sessions
+                    (session_id, user_id, email, account_role, profile_mode, scopes_json, display_name, issued_at, subject_user_id, active_household_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        session["session_id"],
+                        session["user_id"],
+                        session["email"],
+                        session["account_role"],
+                        session["profile_mode"],
+                        json.dumps(session["scopes"]),
+                        session["display_name"],
+                        session["issued_at"],
+                        session["subject_user_id"],
+                        session["active_household_id"],
+                    ),
+                )
+                conn.commit()
         return session
 
     def _row_to_session(self, row: sqlite3.Row) -> dict[str, Any]:
@@ -451,10 +471,11 @@ class SQLiteAuthStore:
 
     def get_session(self, session_id: str) -> dict[str, Any] | None:
         with self._lock:
-            row = self._conn.execute(
-                "SELECT * FROM auth_sessions WHERE session_id = ?",
-                (session_id,),
-            ).fetchone()
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT * FROM auth_sessions WHERE session_id = ?",
+                    (session_id,),
+                ).fetchone()
         if row is None:
             return None
         try:
@@ -481,15 +502,17 @@ class SQLiteAuthStore:
 
     def destroy_session(self, session_id: str) -> None:
         with self._lock:
-            self._conn.execute("DELETE FROM auth_sessions WHERE session_id = ?", (session_id,))
-            self._conn.commit()
+            with self._connect() as conn:
+                conn.execute("DELETE FROM auth_sessions WHERE session_id = ?", (session_id,))
+                conn.commit()
 
     def list_sessions_for_user(self, user_id: str) -> list[dict[str, Any]]:
         with self._lock:
-            rows = self._conn.execute(
-                "SELECT * FROM auth_sessions WHERE user_id = ? ORDER BY issued_at DESC",
-                (user_id,),
-            ).fetchall()
+            with self._connect() as conn:
+                rows = conn.execute(
+                    "SELECT * FROM auth_sessions WHERE user_id = ? ORDER BY issued_at DESC",
+                    (user_id,),
+                ).fetchall()
         items: list[dict[str, Any]] = []
         for row in rows:
             session = self.get_session(str(row["session_id"]))
@@ -506,25 +529,28 @@ class SQLiteAuthStore:
 
     def revoke_other_sessions(self, user_id: str, *, keep_session_id: str) -> int:
         with self._lock:
-            rows = self._conn.execute(
-                "SELECT session_id FROM auth_sessions WHERE user_id = ? AND session_id != ?",
-                (user_id, keep_session_id),
-            ).fetchall()
+            with self._connect() as conn:
+                rows = conn.execute(
+                    "SELECT session_id FROM auth_sessions WHERE user_id = ? AND session_id != ?",
+                    (user_id, keep_session_id),
+                ).fetchall()
         session_ids = [str(row["session_id"]) for row in rows]
         if not session_ids:
             return 0
         with self._lock:
-            self._conn.executemany("DELETE FROM auth_sessions WHERE session_id = ?", [(sid,) for sid in session_ids])
-            self._conn.commit()
+            with self._connect() as conn:
+                conn.executemany("DELETE FROM auth_sessions WHERE session_id = ?", [(sid,) for sid in session_ids])
+                conn.commit()
         return len(session_ids)
 
     def set_active_household_for_session(
         self, session_id: str, *, active_household_id: str | None
     ) -> dict[str, Any] | None:
         with self._lock:
-            self._conn.execute(
-                "UPDATE auth_sessions SET active_household_id = ? WHERE session_id = ?",
-                (active_household_id, session_id),
-            )
-            self._conn.commit()
+            with self._connect() as conn:
+                conn.execute(
+                    "UPDATE auth_sessions SET active_household_id = ? WHERE session_id = ?",
+                    (active_household_id, session_id),
+                )
+                conn.commit()
         return self.get_session(session_id)

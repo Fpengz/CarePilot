@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import sqlite3
 
 from dietary_guardian.config.settings import Settings
 from dietary_guardian.infrastructure.auth.sqlite_store import SQLiteAuthStore
@@ -38,11 +39,12 @@ def test_sqlite_auth_store_expires_sessions(tmp_path) -> None:
     session = store.create_session(user)
     session_id = str(session["session_id"])
 
-    store._conn.execute(
-        "UPDATE auth_sessions SET issued_at = ? WHERE session_id = ?",
-        ((datetime.now(timezone.utc) - timedelta(seconds=5)).isoformat(), session_id),
-    )
-    store._conn.commit()
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "UPDATE auth_sessions SET issued_at = ? WHERE session_id = ?",
+            ((datetime.now(timezone.utc) - timedelta(seconds=5)).isoformat(), session_id),
+        )
+        conn.commit()
 
     assert store.get_session(session_id) is None
 
@@ -75,17 +77,19 @@ def test_sqlite_auth_store_drops_session_with_invalid_scopes_json(tmp_path) -> N
     session = store.create_session(user)
     session_id = str(session["session_id"])
 
-    store._conn.execute(
-        "UPDATE auth_sessions SET scopes_json = ? WHERE session_id = ?",
-        ("", session_id),
-    )
-    store._conn.commit()
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "UPDATE auth_sessions SET scopes_json = ? WHERE session_id = ?",
+            ("", session_id),
+        )
+        conn.commit()
 
     assert store.get_session(session_id) is None
-    row = store._conn.execute(
-        "SELECT session_id FROM auth_sessions WHERE session_id = ?",
-        (session_id,),
-    ).fetchone()
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT session_id FROM auth_sessions WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
     assert row is None
 
 

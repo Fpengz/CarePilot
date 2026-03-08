@@ -67,11 +67,11 @@ def test_signup_rejects_duplicate_email() -> None:
 
     first = client.post(
         "/api/v1/auth/signup",
-        json={"email": "dupe@example.com", "password": "dupe-pass-1", "display_name": "First"},
+        json={"email": "dupe@example.com", "password": "dupe-pass-01", "display_name": "First"},
     )
     second = client.post(
         "/api/v1/auth/signup",
-        json={"email": "dupe@example.com", "password": "dupe-pass-2", "display_name": "Second"},
+        json={"email": "dupe@example.com", "password": "dupe-pass-02", "display_name": "Second"},
     )
 
     assert first.status_code == 200
@@ -88,7 +88,7 @@ def test_signup_rejects_short_password() -> None:
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "password must be at least 8 characters"
+    assert response.json()["detail"] == "password must be at least 12 characters"
 
 
 def test_me_requires_auth() -> None:
@@ -434,7 +434,7 @@ def test_patch_password_rejects_weak_or_reused_password() -> None:
     )
 
     assert weak.status_code == 400
-    assert weak.json()["detail"] == "new password must be at least 8 characters"
+    assert weak.json()["detail"] == "new password must be at least 12 characters"
     assert reused.status_code == 400
     assert reused.json()["detail"] == "new password must differ from current password"
 

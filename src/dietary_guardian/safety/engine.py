@@ -4,7 +4,11 @@ from dietary_guardian.models.meal import MealEvent, MealState
 from dietary_guardian.models.user import UserProfile
 from dietary_guardian.safety.db import DrugInteractionDB
 from dietary_guardian.safety.exceptions import SafetyViolation
-from dietary_guardian.safety.thresholds import SODIUM_WARNING_FRACTION, SUGAR_WARNING_FRACTION
+from dietary_guardian.safety.thresholds import (
+    HYPOGLYCEMIA_LOW_CARB_THRESHOLD_G,
+    SODIUM_WARNING_FRACTION,
+    SUGAR_WARNING_FRACTION,
+)
 
 logfire_api = cast(Any, logfire)
 
@@ -44,6 +48,23 @@ class SafetyEngine:
                     "nutritional_threshold_exceeded",
                     nutrient="sugar",
                     value=nutrition.sugar_g,
+                )
+                warnings.append(warning)
+
+            # 1b. Hypoglycemia caution for glucose-lowering regimens.
+            has_glucose_lowering_med = any(
+                med.name.strip().lower() in {"insulin", "glibenclamide", "gliclazide"}
+                for med in self.user.medications
+            )
+            if has_glucose_lowering_med and nutrition.carbs_g < HYPOGLYCEMIA_LOW_CARB_THRESHOLD_G:
+                warning = (
+                    f"Hypoglycemia Risk: {nutrition.carbs_g}g carbohydrates may be too low "
+                    "for current glucose-lowering medication."
+                )
+                logfire_api.warn(
+                    "hypoglycemia_risk_warning",
+                    carbs_g=nutrition.carbs_g,
+                    threshold_g=HYPOGLYCEMIA_LOW_CARB_THRESHOLD_G,
                 )
                 warnings.append(warning)
 

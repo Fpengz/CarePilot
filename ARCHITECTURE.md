@@ -205,6 +205,9 @@ scripts/
 tests/
 ```
 
+Repository note:
+- `src/dietary_guardian/domain/` is intentionally omitted in the current baseline. Domain rules currently live in `models/` and `services/` until aggregate boundaries are introduced explicitly.
+
 ### `apps/api/`
 FastAPI transport application.
 

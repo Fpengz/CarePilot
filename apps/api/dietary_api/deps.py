@@ -37,10 +37,6 @@ class AppContext:
     coordination_store: Any
     household_store: Any
 
-    @property
-    def repository(self) -> Any:
-        return self.app_store
-
 
 def close_app_context(ctx: AppContext) -> None:
     for component in (

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timedelta, timezone
+from typing import Any
 from uuid import uuid4
 
 from dietary_guardian.logging_config import get_logger
@@ -13,8 +14,6 @@ from dietary_guardian.models.reminder_notifications import (
     ReminderNotificationPreference,
     ScheduledReminderNotification,
 )
-from dietary_guardian.services.alerting_service import AlertPublisher
-from dietary_guardian.services.repository import SQLiteRepository
 
 logger = get_logger(__name__)
 
@@ -24,7 +23,7 @@ SYSTEM_DEFAULT_OFFSET_MINUTES = 0
 
 def resolve_notification_preferences(
     *,
-    repository: SQLiteRepository,
+    repository: Any,
     user_id: str,
     reminder_type: str,
 ) -> list[ReminderNotificationPreference]:
@@ -67,7 +66,7 @@ def _build_idempotency_key(*, reminder_id: str, channel: str, trigger_at: dateti
 
 def materialize_reminder_notifications(
     *,
-    repository: SQLiteRepository,
+    repository: Any,
     reminder_event: ReminderEvent,
     reminder_type: str,
 ) -> list[ScheduledReminderNotification]:
@@ -135,7 +134,7 @@ def materialize_reminder_notifications(
 
 def dispatch_due_reminder_notifications(
     *,
-    repository: SQLiteRepository,
+    repository: Any,
     now: datetime | None = None,
     limit: int = 100,
 ) -> list[QueuedReminderNotification]:
@@ -144,7 +143,6 @@ def dispatch_due_reminder_notifications(
     if not due_items:
         return []
 
-    publisher = AlertPublisher(repository)
     queued: list[QueuedReminderNotification] = []
     for item in due_items:
         endpoint = repository.get_reminder_notification_endpoint(user_id=item.user_id, channel=item.channel)
@@ -171,7 +169,7 @@ def dispatch_due_reminder_notifications(
             correlation_id=item.id,
             created_at=dispatch_at,
         )
-        publisher.publish(message)
+        repository.enqueue_alert(message)
         repository.append_notification_log(
             ReminderNotificationLogEntry(
                 id=str(uuid4()),
@@ -195,7 +193,7 @@ def dispatch_due_reminder_notifications(
     return queued
 
 
-def cancel_reminder_notifications(*, repository: SQLiteRepository, reminder_id: str) -> int:
+def cancel_reminder_notifications(*, repository: Any, reminder_id: str) -> int:
     count = repository.cancel_scheduled_notifications_for_reminder(reminder_id)
     for item in repository.list_scheduled_notifications(reminder_id=reminder_id):
         if item.status != "cancelled":

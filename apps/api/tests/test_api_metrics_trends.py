@@ -35,7 +35,7 @@ def test_metrics_trends_for_biomarkers(sqlite_metrics_env: None) -> None:
     client = TestClient(app)
     _login(client)
 
-    app.state.ctx.repository.save_biomarker_readings(
+    app.state.ctx.app_store.save_biomarker_readings(
         "user_001",
         [
             BiomarkerReading(name="ldl", value=4.5, measured_at=datetime(2026, 3, 1, tzinfo=timezone.utc)),

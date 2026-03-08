@@ -8,6 +8,7 @@ from dietary_guardian.application.auth.use_cases import (
     InvalidCredentialsError,
     InvalidSignupPasswordError,
     LoginLockedError,
+    MIN_PASSWORD_LENGTH,
     login_and_create_session,
     signup_member_and_create_session,
 )
@@ -116,7 +117,7 @@ def auth_signup(payload: AuthSignupRequest, response: Response, request: Request
             profile_mode=payload.profile_mode,
         )
     except InvalidSignupPasswordError as exc:
-        raise HTTPException(status_code=400, detail="password must be at least 8 characters") from exc
+        raise HTTPException(status_code=400, detail=f"password must be at least {MIN_PASSWORD_LENGTH} characters") from exc
     except DuplicateEmailError as exc:
         raise HTTPException(status_code=409, detail="email already registered") from exc
     user = auth_result.user
@@ -151,7 +152,10 @@ def auth_logout(
 ) -> dict[str, object]:
     context = get_context(request)
     if session_cookie:
-        session_id = context.session_signer.unsign(session_cookie)
+        session_id = context.session_signer.unsign(
+            session_cookie,
+            max_age_seconds=int(context.settings.auth_session_ttl_seconds),
+        )
         if session_id:
             context.auth_store.destroy_session(session_id)
     _clear_session_cookie(
@@ -200,10 +204,13 @@ def auth_update_password(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> AuthPasswordUpdateResponse:
-    if len(payload.new_password) < 8:
-        raise HTTPException(status_code=400, detail="new password must be at least 8 characters")
     if payload.new_password == payload.current_password:
         raise HTTPException(status_code=400, detail="new password must differ from current password")
+    if len(payload.new_password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"new password must be at least {MIN_PASSWORD_LENGTH} characters",
+        )
 
     context = get_context(request)
     ok, revoked_count = context.auth_store.change_user_password(

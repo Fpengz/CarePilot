@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Protocol
 
 from dietary_guardian.models.health_profile import HealthProfileRecord
 from dietary_guardian.models.health_profile_onboarding import (
@@ -8,10 +9,19 @@ from dietary_guardian.models.health_profile_onboarding import (
     HealthProfileOnboardingStepDefinition,
 )
 from dietary_guardian.services.health_profile_service import (
+    HealthProfileRepository,
     get_or_create_health_profile,
     update_health_profile,
 )
-from dietary_guardian.services.repository import SQLiteRepository
+
+
+class HealthProfileOnboardingRepository(HealthProfileRepository, Protocol):
+    def get_health_profile_onboarding_state(self, user_id: str) -> HealthProfileOnboardingState | None: ...
+
+    def save_health_profile_onboarding_state(
+        self,
+        state: HealthProfileOnboardingState,
+    ) -> HealthProfileOnboardingState: ...
 
 ONBOARDING_STEP_DEFINITIONS: tuple[HealthProfileOnboardingStepDefinition, ...] = (
     HealthProfileOnboardingStepDefinition(
@@ -69,7 +79,7 @@ def default_health_profile_onboarding_state(user_id: str) -> HealthProfileOnboar
 
 
 def get_or_create_health_profile_onboarding_state(
-    repository: SQLiteRepository,
+    repository: HealthProfileOnboardingRepository,
     user_id: str,
 ) -> HealthProfileOnboardingState:
     stored = repository.get_health_profile_onboarding_state(user_id)
@@ -79,7 +89,7 @@ def get_or_create_health_profile_onboarding_state(
 
 
 def update_health_profile_onboarding(
-    repository: SQLiteRepository,
+    repository: HealthProfileOnboardingRepository,
     *,
     user_id: str,
     step_id: str,
@@ -106,7 +116,7 @@ def update_health_profile_onboarding(
 
 
 def complete_health_profile_onboarding(
-    repository: SQLiteRepository,
+    repository: HealthProfileOnboardingRepository,
     *,
     user_id: str,
 ) -> tuple[HealthProfileOnboardingState, HealthProfileRecord]:

@@ -52,7 +52,6 @@ def test_build_app_context_selects_postgres_backends_when_requested(
         assert ctx.settings.auth_store_backend == "postgres"
         assert ctx.settings.household_store_backend == "postgres"
         assert ctx.app_store is fake_app_store
-        assert ctx.repository is fake_app_store
         assert ctx.auth_store is fake_auth_store
         assert ctx.household_store is fake_household_store
     finally:

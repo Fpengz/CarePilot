@@ -54,7 +54,7 @@ def _seed_profile(client: TestClient) -> None:
 
 
 def _seed_meal_history(app, *, user_id: str = "user_001") -> None:
-    repo = app.state.ctx.repository
+    repo = app.state.ctx.app_store
     now = datetime.now(timezone.utc)
     seeded = [
         (

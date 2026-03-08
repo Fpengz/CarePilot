@@ -14,7 +14,7 @@ def trigger_alert(
     request_id: str | None = None,
     correlation_id: str | None = None,
 ) -> AlertTriggerResponse:
-    user_profile = build_user_profile_from_session(session, context.repository)
+    user_profile = build_user_profile_from_session(session, context.stores.profiles)
     workflow = context.coordinator.run_alert_workflow(
         user_profile=user_profile,
         alert_type=payload.alert_type,

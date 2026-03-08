@@ -36,7 +36,7 @@ def generate_recommendation_for_session(
         snapshot = build_clinical_snapshot(readings)
         context.clinical_memory.put(user_id, snapshot)
 
-    user_profile = build_user_profile_from_session(session, context.repository)
+    user_profile = build_user_profile_from_session(session, context.stores.profiles)
     recommendation = generate_recommendation(meal_records[-1], snapshot, user_profile)
     recommendation_json = recommendation.model_dump(mode="json")
     context.stores.recommendations.save_recommendation(user_id, recommendation_json)

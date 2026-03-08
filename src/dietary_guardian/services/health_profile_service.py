@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, cast
+from typing import Any, Protocol, cast
 
 from dietary_guardian.models.health_profile import HealthProfileRecord, ProfileCompleteness
 from dietary_guardian.models.identity import AccountRole
 from dietary_guardian.models.user import UserProfile
 from dietary_guardian.services.authorization import default_profile_mode_for_role
-from dietary_guardian.services.repository import SQLiteRepository
 
 DEFAULT_PROFILE_AGE = 68
+
+
+class HealthProfileRepository(Protocol):
+    def get_health_profile(self, user_id: str) -> HealthProfileRecord | None: ...
+
+    def save_health_profile(self, profile: HealthProfileRecord) -> HealthProfileRecord: ...
 
 
 def default_health_profile(user_id: str) -> HealthProfileRecord:
@@ -37,7 +42,7 @@ def compute_profile_completeness(profile: HealthProfileRecord) -> ProfileComplet
     return ProfileCompleteness(state=state, missing_fields=missing)
 
 
-def get_or_create_health_profile(repository: SQLiteRepository, user_id: str) -> HealthProfileRecord:
+def get_or_create_health_profile(repository: HealthProfileRepository, user_id: str) -> HealthProfileRecord:
     stored = repository.get_health_profile(user_id)
     if stored is not None:
         return stored
@@ -45,7 +50,7 @@ def get_or_create_health_profile(repository: SQLiteRepository, user_id: str) -> 
 
 
 def update_health_profile(
-    repository: SQLiteRepository,
+    repository: HealthProfileRepository,
     *,
     user_id: str,
     updates: dict[str, Any],
@@ -89,7 +94,10 @@ def build_user_profile_from_health_profile(
     )
 
 
-def resolve_user_profile(repository: SQLiteRepository, session: dict[str, Any]) -> tuple[HealthProfileRecord, UserProfile]:
+def resolve_user_profile(
+    repository: HealthProfileRepository,
+    session: dict[str, Any],
+) -> tuple[HealthProfileRecord, UserProfile]:
     health_profile = get_or_create_health_profile(repository, str(session["user_id"]))
     return health_profile, build_user_profile_from_health_profile(session=session, health_profile=health_profile)
 

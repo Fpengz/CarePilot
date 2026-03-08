@@ -63,3 +63,78 @@ def test_hpb_db_integration():
     contras = db.get_contraindications("Warfarin")
     assert any(c[0] == "Spinach" for c in contras)
     assert any(c[2] == "Critical" for c in contras)
+
+
+def test_maoi_interaction_escalates_for_tyramine_rich_foods() -> None:
+    user = UserProfile(
+        id="user_002",
+        name="Ms. Lim",
+        age=61,
+        conditions=[MedicalCondition(name="Depression", severity="Medium")],
+        medications=[Medication(name="Phenelzine", dosage="15mg")],
+    )
+    meal = MealEvent(
+        name="Cheese platter",
+        ingredients=[Ingredient(name="Aged Cheese"), Ingredient(name="Crackers")],
+        nutrition=Nutrition(
+            calories=320,
+            carbs_g=20,
+            sugar_g=3,
+            protein_g=16,
+            fat_g=22,
+            sodium_mg=620,
+        ),
+    )
+    with pytest.raises(SafetyViolation):
+        SafetyEngine(user).validate_meal(meal)
+
+
+def test_low_carb_meal_warns_for_insulin_users() -> None:
+    user = UserProfile(
+        id="user_003",
+        name="Mr. Goh",
+        age=66,
+        conditions=[MedicalCondition(name="Type 2 Diabetes", severity="High")],
+        medications=[Medication(name="Insulin", dosage="10 units")],
+    )
+    meal = MealEvent(
+        name="Plain omelette",
+        ingredients=[Ingredient(name="Egg"), Ingredient(name="Oil")],
+        nutrition=Nutrition(
+            calories=210,
+            carbs_g=4,
+            sugar_g=1,
+            protein_g=14,
+            fat_g=15,
+            sodium_mg=240,
+        ),
+    )
+    warnings = SafetyEngine(user).validate_meal(meal)
+    assert any("Hypoglycemia Risk" in item for item in warnings)
+
+
+def test_compound_multi_medication_risk_raises_critical() -> None:
+    user = UserProfile(
+        id="user_004",
+        name="Mr. Ong",
+        age=70,
+        conditions=[MedicalCondition(name="Atrial fibrillation", severity="High")],
+        medications=[
+            Medication(name="Warfarin", dosage="5mg"),
+            Medication(name="Atorvastatin", dosage="20mg"),
+        ],
+    )
+    meal = MealEvent(
+        name="Green smoothie",
+        ingredients=[Ingredient(name="Spinach"), Ingredient(name="Grapefruit")],
+        nutrition=Nutrition(
+            calories=260,
+            carbs_g=28,
+            sugar_g=16,
+            protein_g=5,
+            fat_g=8,
+            sodium_mg=90,
+        ),
+    )
+    with pytest.raises(SafetyViolation):
+        SafetyEngine(user).validate_meal(meal)

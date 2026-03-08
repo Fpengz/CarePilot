@@ -150,6 +150,8 @@ class Settings(BaseSettings):
                 raise ValueError("COOKIE_SECURE must be enabled for staging/prod")
             if self.auth_seed_demo_users:
                 raise ValueError("AUTH_SEED_DEMO_USERS must be disabled for staging/prod")
+        if self.app_env == "prod" and self.app_data_backend == "sqlite":
+            raise ValueError("APP_DATA_BACKEND=postgres is required in prod")
         if self.cookie_samesite == "none" and not self.cookie_secure:
             raise ValueError("COOKIE_SECURE must be enabled when COOKIE_SAMESITE=none")
         if self.app_data_backend == "postgres" and not self.postgres_dsn:

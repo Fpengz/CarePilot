@@ -48,7 +48,7 @@ apps/api/tests/           API contract and behavior tests
   - `clinical_cards.py`
 
 ### Schema Contracts
-- Path: `apps/api/dietary_api/schemas.py`.
+- Path: `apps/api/dietary_api/schemas/` (domain-split schema modules plus shared models).
 - Responsibility: request and response typing for API contracts.
 
 ## Core Domain and Service Modules

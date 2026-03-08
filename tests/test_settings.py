@@ -100,6 +100,8 @@ def test_app_env_defaults_readiness_strictness_by_profile() -> None:
     prod_settings = Settings(
         llm_provider="test",
         app_env="prod",
+        app_data_backend="postgres",
+        postgres_dsn="postgresql://user:pass@localhost:5432/dietary_guardian",
         session_secret="prod-secret",
         cookie_secure=True,
     )
@@ -137,6 +139,8 @@ def test_non_dev_requires_secure_cookie() -> None:
     settings = Settings(
         llm_provider="test",
         app_env="prod",
+        app_data_backend="postgres",
+        postgres_dsn="postgresql://user:pass@localhost:5432/dietary_guardian",
         session_secret="prod-secret",
         cookie_secure=True,
     )
@@ -168,6 +172,8 @@ def test_auth_seed_demo_users_default_and_non_dev_guardrails() -> None:
     prod_settings = Settings(
         llm_provider="test",
         app_env="prod",
+        app_data_backend="postgres",
+        postgres_dsn="postgresql://user:pass@localhost:5432/dietary_guardian",
         session_secret="prod-secret",
         cookie_secure=True,
     )
@@ -187,11 +193,24 @@ def test_prod_normalizes_tool_policy_mode_to_enforce() -> None:
     settings = Settings(
         llm_provider="test",
         app_env="prod",
+        app_data_backend="postgres",
+        postgres_dsn="postgresql://user:pass@localhost:5432/dietary_guardian",
         session_secret="prod-secret",
         cookie_secure=True,
         tool_policy_enforcement_mode="shadow",
     )
     assert settings.tool_policy_enforcement_mode == "enforce"
+
+
+def test_prod_rejects_sqlite_app_backend() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            llm_provider="test",
+            app_env="prod",
+            app_data_backend="sqlite",
+            session_secret="prod-secret",
+            cookie_secure=True,
+        )
 
 
 def test_external_worker_mode_requires_redis_ephemeral_backend() -> None:

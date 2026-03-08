@@ -32,9 +32,6 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     ctx_owned = bool(getattr(app.state, "ctx_owned", False))
     if ctx_owned and getattr(app.state, "ctx", None) is None:
         app.state.ctx = build_app_context()
-    ctx = cast(AppContext | None, getattr(app.state, "ctx", None))
-    if ctx is not None and ctx.settings.app_env == "prod" and ctx.settings.app_data_backend == "sqlite":
-        logger.warning("event=runtime_config_warning warning=prod_uses_sqlite action=prefer_postgres")
     logger.info("event=api_startup status=ready")
     yield
     ctx = cast(AppContext | None, getattr(app.state, "ctx", None))

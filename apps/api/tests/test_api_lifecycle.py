@@ -37,7 +37,7 @@ def test_app_lifecycle_closes_resources_on_shutdown(sqlite_lifecycle_env: None) 
     def close_household_store() -> None:
         closed["household_store"] = True
 
-    ctx.repository.close = close_repository
+    ctx.app_store.close = close_repository
     ctx.auth_store.close = close_auth_store
     ctx.household_store.close = close_household_store
 
@@ -77,7 +77,7 @@ def test_app_does_not_close_caller_managed_context(sqlite_lifecycle_env: None) -
     def close_household_store() -> None:
         closed["household_store"] = True
 
-    setattr(caller_ctx.repository, "close", close_repository)
+    setattr(caller_ctx.app_store, "close", close_repository)
     setattr(caller_ctx.auth_store, "close", close_auth_store)
     setattr(caller_ctx.household_store, "close", close_household_store)
 
@@ -92,7 +92,8 @@ def test_app_does_not_close_caller_managed_context(sqlite_lifecycle_env: None) -
 def test_app_context_exposes_runtime_store_aliases(sqlite_lifecycle_env: None) -> None:
     ctx = build_app_context()
     try:
-        assert ctx.app_store is ctx.repository
+        assert ctx.app_store is not None
+        assert ctx.stores is not None
         assert ctx.cache_store is not None
         assert ctx.coordination_store is not None
     finally:

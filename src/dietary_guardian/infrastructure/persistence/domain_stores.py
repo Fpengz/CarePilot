@@ -156,6 +156,24 @@ class ReminderStore:
             items = [item for item in items if getattr(item, "status", None) == status]
         return items[:limit]
 
+    def save_scheduled_notification(self, notification: Any) -> Any:
+        return self._store.save_scheduled_notification(notification)
+
+    def lease_due_scheduled_notifications(self, *, now: Any, limit: int = 100) -> list[Any]:
+        return self._store.lease_due_scheduled_notifications(now=now, limit=limit)
+
+    def get_reminder_notification_endpoint(self, *, user_id: str, channel: str) -> Any | None:
+        return self._store.get_reminder_notification_endpoint(user_id=user_id, channel=channel)
+
+    def append_notification_log(self, entry: Any) -> Any:
+        return self._store.append_notification_log(entry)
+
+    def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int:
+        return self._store.cancel_scheduled_notifications_for_reminder(reminder_id)
+
+    def enqueue_alert(self, message: Any) -> list[Any]:
+        return self._store.enqueue_alert(message)
+
     def list_reminder_notification_endpoints(self, *, user_id: str) -> list[Any]:
         return self._store.list_reminder_notification_endpoints(user_id=user_id)
 
@@ -246,6 +264,27 @@ class RecommendationStore:
 
     def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
         self._store.save_recommendation(user_id, payload)
+
+    def list_meal_catalog_items(
+        self,
+        *,
+        locale: str,
+        slot: str | None = None,
+        limit: int = 100,
+    ) -> list[Any]:
+        return self._store.list_meal_catalog_items(locale=locale, slot=slot, limit=limit)
+
+    def get_meal_catalog_item(self, meal_id: str) -> Any | None:
+        return self._store.get_meal_catalog_item(meal_id)
+
+    def get_meal_record(self, user_id: str, meal_id: str) -> Any | None:
+        return self._store.get_meal_record(user_id, meal_id)
+
+    def list_meal_records(self, user_id: str) -> list[Any]:
+        return self._store.list_meal_records(user_id)
+
+    def save_biomarker_readings(self, user_id: str, readings: list[Any]) -> None:
+        self._store.save_biomarker_readings(user_id, readings)
 
     def save_recommendation_interaction(self, interaction: Any) -> Any:
         return self._store.save_recommendation_interaction(interaction)

@@ -31,7 +31,7 @@ async def run_worker_loop() -> None:
                 ttl_seconds=settings.redis_lock_ttl_seconds,
             ):
                 try:
-                    reminder_result = await run_reminder_scheduler_once(repository=ctx.repository)
+                    reminder_result = await run_reminder_scheduler_once(repository=ctx.app_store)
                     processed_work = processed_work or bool(reminder_result.queued_count or reminder_result.delivery_attempts)
                 finally:
                     ctx.coordination_store.release_lock("reminder-scheduler", owner=owner)
@@ -43,7 +43,7 @@ async def run_worker_loop() -> None:
             ):
                 try:
                     worker = OutboxWorker(
-                        ctx.repository,
+                        ctx.app_store,
                         lease_owner=owner,
                         max_attempts=settings.alert_worker_max_attempts,
                         concurrency=settings.alert_worker_concurrency,

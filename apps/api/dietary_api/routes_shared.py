@@ -67,7 +67,10 @@ def require_session(
     had_signed_candidate = False
     had_malformed_payload = False
     for token in candidates:
-        session_id = ctx.session_signer.unsign(token)
+        session_id = ctx.session_signer.unsign(
+            token,
+            max_age_seconds=int(ctx.settings.auth_session_ttl_seconds),
+        )
         if not session_id:
             continue
         had_signed_candidate = True

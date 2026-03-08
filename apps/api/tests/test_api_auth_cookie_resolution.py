@@ -46,8 +46,9 @@ def test_require_session_accepts_live_session_when_duplicate_cookie_contains_exp
     headers = {"cookie": f"dg_session={old_cookie}; dg_session={live_cookie}"}
     me = probe_client.get("/api/v1/auth/me", headers=headers)
 
-    assert signer.unsign(old_cookie) is not None
-    assert signer.unsign(live_cookie) is not None
+    ttl = int(app.state.ctx.settings.auth_session_ttl_seconds)
+    assert signer.unsign(old_cookie, max_age_seconds=ttl) is not None
+    assert signer.unsign(live_cookie, max_age_seconds=ttl) is not None
     assert me.status_code == 200
     assert me.json()["user"]["email"] == "member@example.com"
 

@@ -77,7 +77,7 @@ async def analyze_meal(
             message="duplicate capture suppressed",
         )
 
-    user_profile = build_user_profile_from_session(session)
+    user_profile = build_user_profile_from_session(session, context.stores.profiles)
     selected_provider = provider.strip() if isinstance(provider, str) else ""
     module = HawkerVisionModule(provider=selected_provider or context.settings.llm_provider)
     try:
@@ -90,10 +90,10 @@ async def analyze_meal(
             ),
             timeout=context.settings.llm_inference_wall_clock_timeout_seconds,
         )
-    except TimeoutError as exc:
+    except asyncio.TimeoutError as exc:
         raise build_api_error(
             status_code=504,
-            code="llm.inference_timeout",
+            code="llm.timeout",
             message="meal analysis timed out",
             details={"timeout_seconds": context.settings.llm_inference_wall_clock_timeout_seconds},
         ) from exc
@@ -157,7 +157,7 @@ def get_daily_summary(
     user_id: str,
     summary_date: date,
 ) -> MealDailySummaryResponse:
-    profile = get_or_create_health_profile(context.repository, user_id)
+    profile = get_or_create_health_profile(context.stores.profiles, user_id)
     records = context.stores.meals.list_meal_records(user_id)
     summary = build_daily_nutrition_summary(
         profile=profile,

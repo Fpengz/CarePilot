@@ -4,6 +4,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from math import exp
+from typing import Protocol
 from uuid import uuid4
 
 from dietary_guardian.logging_config import get_logger
@@ -30,7 +31,6 @@ from dietary_guardian.models.user import UserProfile
 from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
 from dietary_guardian.services.health_profile_service import compute_bmi, compute_profile_completeness
 from dietary_guardian.services.meal_catalog_service import find_catalog_item_by_title, normalize_text
-from dietary_guardian.services.repository import SQLiteRepository
 
 logger = get_logger(__name__)
 
@@ -40,6 +40,26 @@ INTERACTION_WARMUP_THRESHOLD = 5
 
 class AgentMealNotFoundError(Exception):
     pass
+
+
+class RecommendationAgentRepository(Protocol):
+    def list_meal_catalog_items(
+        self,
+        *,
+        locale: str,
+        slot: str | None = None,
+        limit: int = 100,
+    ) -> list[MealCatalogItem]: ...
+
+    def get_preference_snapshot(self, user_id: str) -> PreferenceSnapshot | None: ...
+
+    def save_preference_snapshot(self, snapshot: PreferenceSnapshot) -> PreferenceSnapshot: ...
+
+    def get_meal_record(self, user_id: str, meal_id: str) -> MealRecognitionRecord | None: ...
+
+    def get_meal_catalog_item(self, meal_id: str) -> MealCatalogItem | None: ...
+
+    def save_recommendation_interaction(self, interaction: RecommendationInteraction) -> RecommendationInteraction: ...
 
 
 def _now() -> datetime:
@@ -225,7 +245,7 @@ def _apply_affinity_update(
 
 def _ensure_snapshot(
     *,
-    repository: SQLiteRepository,
+    repository: RecommendationAgentRepository,
     user_id: str,
     meal_history: list[MealRecognitionRecord],
     catalog: list[MealCatalogItem],
@@ -430,7 +450,7 @@ def build_temporal_context(*, meal_history: list[MealRecognitionRecord], interac
 
 def generate_daily_agent_recommendation(
     *,
-    repository: SQLiteRepository,
+    repository: RecommendationAgentRepository,
     user_id: str,
     health_profile,
     user_profile: UserProfile,
@@ -516,7 +536,7 @@ def generate_daily_agent_recommendation(
 
 def build_substitution_plan(
     *,
-    repository: SQLiteRepository,
+    repository: RecommendationAgentRepository,
     user_id: str,
     health_profile,
     user_profile: UserProfile,
@@ -595,7 +615,7 @@ def build_substitution_plan(
 
 def record_interaction_and_update_preferences(
     *,
-    repository: SQLiteRepository,
+    repository: RecommendationAgentRepository,
     user_id: str,
     candidate_id: str,
     recommendation_id: str,

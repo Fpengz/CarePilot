@@ -83,7 +83,7 @@ def test_dispatch_due_notifications_enqueues_and_delivers_due_schedule() -> None
     assert generated.status_code == 200
     reminder_id = generated.json()["reminders"][0]["id"]
 
-    repo = app.state.ctx.repository
+    repo = app.state.ctx.app_store
     schedules = repo.list_scheduled_notifications(reminder_id=reminder_id)
     assert schedules
     schedule_id = schedules[0].id
@@ -161,7 +161,7 @@ def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> 
     assert generated.status_code == 200
     reminder_id = generated.json()["reminders"][0]["id"]
 
-    repo = app.state.ctx.repository
+    repo = app.state.ctx.app_store
     schedule = repo.list_scheduled_notifications(reminder_id=reminder_id)[0]
     repo.set_scheduled_notification_trigger_at(schedule.id, datetime.now(timezone.utc) - timedelta(minutes=1))
     dispatch_due_reminder_notifications(repository=repo, now=datetime.now(timezone.utc))

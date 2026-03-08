@@ -70,11 +70,11 @@ def generate_from_report(
     correlation_id: str | None,
 ) -> SuggestionGenerateFromReportResponse:
     def build_user_profile(session_payload: dict[str, object]):
-        return build_user_profile_from_session(session_payload, context.repository)
+        return build_user_profile_from_session(session_payload, context.stores.profiles)
 
     try:
         saved = generate_suggestion_from_report(
-            repository=cast(SuggestionRepositoryPort, context.repository),
+            repository=cast(SuggestionRepositoryPort, context.stores.recommendations),
             clinical_memory=context.clinical_memory,
             session=session,
             text=payload.text,
@@ -99,7 +99,7 @@ def list_for_session(
 ) -> SuggestionListResponse:
     try:
         raw_items = list_suggestions_for_session(
-            repository=cast(SuggestionRepositoryPort, context.repository),
+            repository=cast(SuggestionRepositoryPort, context.stores.recommendations),
             household_store=cast(HouseholdStorePort, context.household_store),
             session=session,
             scope=scope,
@@ -121,7 +121,7 @@ def get_for_session(
 ) -> SuggestionDetailResponse:
     try:
         item = get_suggestion_for_session(
-            repository=cast(SuggestionRepositoryPort, context.repository),
+            repository=cast(SuggestionRepositoryPort, context.stores.recommendations),
             household_store=cast(HouseholdStorePort, context.household_store),
             session=session,
             scope=scope,

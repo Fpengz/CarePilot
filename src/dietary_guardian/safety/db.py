@@ -12,6 +12,12 @@ class DrugInteractionDB:
     def _init_db(self):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS safety_metadata (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+            """)
             # Create Medications table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS medications (
@@ -41,6 +47,8 @@ class DrugInteractionDB:
             ("Metformin", "Glucophage"),
             ("Atorvastatin", "Lipitor"),
             ("Amlodipine", "Norvasc"),
+            ("Insulin", "Humulin"),
+            ("Phenelzine", "Nardil"),
         ]
         for name, brand in meds:
             cursor.execute(
@@ -73,6 +81,24 @@ class DrugInteractionDB:
                 "Increases drug concentration in blood",
                 "Medium",
             ),
+            (
+                med_map["Phenelzine"],
+                "Aged Cheese",
+                "Tyramine-rich foods can precipitate hypertensive crisis with MAOIs",
+                "Critical",
+            ),
+            (
+                med_map["Phenelzine"],
+                "Fermented Soy",
+                "Tyramine-rich foods can precipitate hypertensive crisis with MAOIs",
+                "Critical",
+            ),
+            (
+                med_map["Insulin"],
+                "Meal Skipping",
+                "Skipping carbohydrate intake increases hypoglycemia risk with insulin use",
+                "High",
+            ),
         ]
         cursor.executemany(
             """
@@ -80,6 +106,10 @@ class DrugInteractionDB:
             VALUES (?, ?, ?, ?)
         """,
             contra_data,
+        )
+        cursor.execute(
+            "INSERT OR REPLACE INTO safety_metadata (key, value) VALUES (?, ?)",
+            ("seed_version", "2026-03-v2"),
         )
 
     def get_contraindications(self, medication_name: str) -> list[tuple[str, str, str]]:

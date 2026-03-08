@@ -349,7 +349,7 @@ def test_meal_analyze_times_out_on_slow_vision_inference(monkeypatch: pytest.Mon
     assert response.status_code == 504
     body = response.json()
     assert body["detail"] == "meal analysis timed out"
-    assert body["error"]["code"] == "llm.inference_timeout"
+    assert body["error"]["code"] == "llm.timeout"
     _reset_settings_cache()
 
 
@@ -392,7 +392,7 @@ def test_meal_daily_summary_aggregates_targets_remaining_and_pattern_insights(sq
     )
     assert profile_response.status_code == 200
 
-    repo = app.state.ctx.repository
+    repo = app.state.ctx.app_store
     user_id = "user_001"
     for captured_at in [
         datetime(2026, 2, 27, 12, 0, tzinfo=timezone.utc),

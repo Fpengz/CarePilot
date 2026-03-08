@@ -71,7 +71,7 @@ def _to_profile_response(*, profile, fallback_mode: bool) -> HealthProfileRespon
 
 
 def get_profile(*, context: AppContext, session: dict[str, object]) -> HealthProfileEnvelopeResponse:
-    profile = get_or_create_health_profile(context.repository, str(session["user_id"]))
+    profile = get_or_create_health_profile(context.stores.profiles, str(session["user_id"]))
     completeness = compute_profile_completeness(profile)
     return HealthProfileEnvelopeResponse(
         profile=_to_profile_response(profile=profile, fallback_mode=completeness.state != "ready")
@@ -92,7 +92,7 @@ def patch_profile(
             message="no health profile changes requested",
         )
     profile = update_health_profile(
-        context.repository,
+        context.stores.profiles,
         user_id=str(session["user_id"]),
         updates=updates,
     )
@@ -126,8 +126,8 @@ def _to_onboarding_response(*, state, profile) -> HealthProfileOnboardingEnvelop
 
 def get_profile_onboarding(*, context: AppContext, session: dict[str, object]) -> HealthProfileOnboardingEnvelopeResponse:
     user_id = str(session["user_id"])
-    state = get_or_create_health_profile_onboarding_state(context.repository, user_id)
-    profile = get_or_create_health_profile(context.repository, user_id)
+    state = get_or_create_health_profile_onboarding_state(context.stores.profiles, user_id)
+    profile = get_or_create_health_profile(context.stores.profiles, user_id)
     return _to_onboarding_response(state=state, profile=profile)
 
 
@@ -139,7 +139,7 @@ def patch_profile_onboarding(
 ) -> HealthProfileOnboardingEnvelopeResponse:
     try:
         state, profile = update_health_profile_onboarding(
-            context.repository,
+            context.stores.profiles,
             user_id=str(session["user_id"]),
             step_id=payload.step_id.strip(),
             profile_updates=payload.profile.model_dump(exclude_unset=True),
@@ -159,7 +159,7 @@ def complete_profile_onboarding(
     session: dict[str, object],
 ) -> HealthProfileOnboardingEnvelopeResponse:
     state, profile = complete_health_profile_onboarding(
-        context.repository,
+        context.stores.profiles,
         user_id=str(session["user_id"]),
     )
     return _to_onboarding_response(state=state, profile=profile)
@@ -170,7 +170,7 @@ def get_daily_suggestions(
     context: AppContext,
     session: dict[str, object],
 ) -> DailySuggestionsResponse:
-    health_profile, user_profile = resolve_user_profile(context.repository, session)
+    health_profile, user_profile = resolve_user_profile(context.stores.profiles, session)
     completeness = compute_profile_completeness(health_profile)
     fallback_mode = completeness.state != "ready"
     meal_history = context.stores.meals.list_meal_records(str(session["user_id"]))

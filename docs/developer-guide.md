@@ -56,7 +56,7 @@ uv run python scripts/dg.py infra logs
 ## 3) Extend the System
 
 ### Add a New API Feature
-1. Add or update schema contracts in `apps/api/dietary_api/schemas.py`.
+1. Add or update schema contracts in `apps/api/dietary_api/schemas/` (domain module + shared model updates).
 2. Implement service logic in `apps/api/dietary_api/services/<feature>.py`.
 3. Map route handler in `apps/api/dietary_api/routers/<feature>.py`.
 4. Register routes if needed in router composition.

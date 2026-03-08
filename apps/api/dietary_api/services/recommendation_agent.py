@@ -39,11 +39,11 @@ def get_daily_agent_for_session(
     correlation_id: str | None,
 ) -> RecommendationAgentResponse:
     user_id = str(session["user_id"])
-    health_profile, user_profile = resolve_user_profile(context.repository, session)
+    health_profile, user_profile = resolve_user_profile(context.stores.profiles, session)
     meal_history = context.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(context=context, user_id=user_id)
     recommendation = generate_daily_agent_recommendation(
-        repository=context.repository,
+        repository=context.stores.recommendations,
         user_id=user_id,
         health_profile=health_profile,
         user_profile=user_profile,
@@ -68,12 +68,12 @@ def get_substitutions_for_session(
     payload: RecommendationSubstitutionRequest,
 ) -> RecommendationSubstitutionResponse:
     user_id = str(session["user_id"])
-    health_profile, user_profile = resolve_user_profile(context.repository, session)
+    health_profile, user_profile = resolve_user_profile(context.stores.profiles, session)
     meal_history = context.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(context=context, user_id=user_id)
     try:
         plan = build_substitution_plan(
-            repository=context.repository,
+            repository=context.stores.recommendations,
             user_id=user_id,
             health_profile=health_profile,
             user_profile=user_profile,
@@ -108,7 +108,7 @@ def record_interaction_for_session(
     meal_history = context.stores.meals.list_meal_records(user_id)
     try:
         interaction, snapshot = record_interaction_and_update_preferences(
-            repository=context.repository,
+            repository=context.stores.recommendations,
             user_id=user_id,
             candidate_id=payload.candidate_id,
             recommendation_id=payload.recommendation_id,
