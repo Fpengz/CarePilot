@@ -65,6 +65,9 @@ import type {
 } from "@/lib/types";
 import { getConsolePrinter } from "@/lib/console-safe";
 
+// Legacy consolidated client kept for compatibility. Prefer domain clients under `@/lib/api/*`.
+// Planned removal: v0.2.0 (follow-up migration PR).
+
 // Default to same-origin proxy so browser auth cookies stay first-party for localhost and LAN hosts.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/backend";
 const FRONTEND_API_LOG_ENABLED = process.env.NEXT_PUBLIC_DEV_LOG_FRONTEND === "1" || process.env.NEXT_PUBLIC_DEV_LOG_FRONTEND === "true";

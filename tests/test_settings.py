@@ -97,7 +97,12 @@ def test_redis_keyspace_version_is_v2_only() -> None:
 
 def test_app_env_defaults_readiness_strictness_by_profile() -> None:
     dev_settings = Settings(llm_provider="test", app_env="dev")
-    prod_settings = Settings(llm_provider="test", app_env="prod")
+    prod_settings = Settings(
+        llm_provider="test",
+        app_env="prod",
+        session_secret="prod-secret",
+        cookie_secure=True,
+    )
 
     assert dev_settings.readiness_fail_on_warnings is False
     assert prod_settings.readiness_fail_on_warnings is True
@@ -110,3 +115,69 @@ def test_app_env_allows_explicit_readiness_strictness_override() -> None:
         readiness_fail_on_warnings=True,
     )
     assert settings.readiness_fail_on_warnings is True
+
+
+def test_non_dev_rejects_default_session_secret() -> None:
+    with pytest.raises(ValidationError):
+        Settings(llm_provider="test", app_env="staging")
+
+    with pytest.raises(ValidationError):
+        Settings(llm_provider="test", app_env="prod")
+
+
+def test_non_dev_requires_secure_cookie() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            llm_provider="test",
+            app_env="prod",
+            session_secret="prod-secret",
+            cookie_secure=False,
+        )
+
+    settings = Settings(
+        llm_provider="test",
+        app_env="prod",
+        session_secret="prod-secret",
+        cookie_secure=True,
+    )
+    assert settings.cookie_secure is True
+
+
+def test_cookie_samesite_none_requires_secure_cookie() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            llm_provider="test",
+            app_env="dev",
+            cookie_samesite="none",
+            cookie_secure=False,
+        )
+
+    settings = Settings(
+        llm_provider="test",
+        app_env="dev",
+        cookie_samesite="none",
+        cookie_secure=True,
+    )
+    assert settings.cookie_samesite == "none"
+
+
+def test_auth_seed_demo_users_default_and_non_dev_guardrails() -> None:
+    dev_settings = Settings(llm_provider="test", app_env="dev")
+    assert dev_settings.auth_seed_demo_users is True
+
+    prod_settings = Settings(
+        llm_provider="test",
+        app_env="prod",
+        session_secret="prod-secret",
+        cookie_secure=True,
+    )
+    assert prod_settings.auth_seed_demo_users is False
+
+    with pytest.raises(ValidationError):
+        Settings(
+            llm_provider="test",
+            app_env="prod",
+            session_secret="prod-secret",
+            cookie_secure=True,
+            auth_seed_demo_users=True,
+        )

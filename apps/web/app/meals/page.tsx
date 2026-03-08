@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { analyzeMeal, getMealDailySummary, getMealWeeklySummary, listMealRecords } from "@/lib/api";
+import { analyzeMeal, getMealDailySummary, getMealWeeklySummary, listMealRecords } from "@/lib/api/meal-client";
 import type { MealAnalyzeApiResponse, MealDailySummaryApiResponse, MealWeeklySummaryApiResponse } from "@/lib/types";
 
 const DEFAULT_MEAL_PROVIDER = process.env.NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER ?? "test";

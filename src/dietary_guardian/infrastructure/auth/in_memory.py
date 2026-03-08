@@ -72,7 +72,8 @@ class InMemoryAuthStore:
         self._sessions: dict[str, dict[str, Any]] = {}
         self._login_failures: dict[str, dict[str, Any]] = {}
         self._auth_audit_events: list[dict[str, Any]] = []
-        self._seed_defaults()
+        if settings.auth_seed_demo_users:
+            self._seed_defaults()
 
     def _seed_defaults(self) -> None:
         defaults = [

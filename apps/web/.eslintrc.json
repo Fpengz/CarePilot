@@ -1,3 +1,22 @@
 {
-  "extends": ["next/core-web-vitals"]
+  "extends": ["next/core-web-vitals"],
+  "overrides": [
+    {
+      "files": ["**/*.{js,jsx,ts,tsx}"],
+      "excludedFiles": ["lib/api.ts", "lib/api/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@/lib/api",
+                "message": "Use domain clients under @/lib/api/* instead of the legacy consolidated client."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

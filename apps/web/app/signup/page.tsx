@@ -8,7 +8,7 @@ import { ErrorCard } from "@/components/app/error-card";
 import { JsonViewer } from "@/components/app/json-viewer";
 import { PageTitle } from "@/components/app/page-title";
 import { useSession } from "@/components/app/session-provider";
-import { signup } from "@/lib/api";
+import { signup } from "@/lib/api/auth-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

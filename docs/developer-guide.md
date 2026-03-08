@@ -1,7 +1,7 @@
 # Developer Guide
 
 Last updated: 2026-03-06  
-See also: [`docs/config-reference.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/config-reference.md), [`CONTRIBUTING.md`](/Users/zhoufuwang/Projects/dietary_tools/CONTRIBUTING.md)
+See also: [`docs/config-reference.md`](../docs/config-reference.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 
 ## 1) Development Environment Setup
 
@@ -61,7 +61,8 @@ uv run python scripts/dg.py infra logs
 3. Map route handler in `apps/api/dietary_api/routers/<feature>.py`.
 4. Register routes if needed in router composition.
 5. Add API tests in `apps/api/tests/`.
-6. Add/extend frontend API client/types in `apps/web/lib/api.ts` and `apps/web/lib/types.ts`.
+6. Add/extend frontend API client/types in `apps/web/lib/api/*.ts` domain modules and `apps/web/lib/types.ts`.
+   - `apps/web/lib/api.ts` is compatibility-only during the migration window and should not be used for new imports.
 7. Add UI route/component usage under `apps/web/app/*`.
 
 ### Add or Extend an Agent/Workflow

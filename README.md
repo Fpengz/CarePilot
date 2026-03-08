@@ -72,6 +72,10 @@ Auth backend defaults:
 
 Platform runtime toggles:
 - `APP_ENV=dev|staging|prod`
+- `SESSION_SECRET` (must be non-default in `staging`/`prod`)
+- `COOKIE_SECURE=0|1` (must be enabled in `staging`/`prod`)
+- `COOKIE_SAMESITE=lax|strict|none` (`none` requires secure cookies)
+- `AUTH_SEED_DEMO_USERS=0|1` (defaults to `1` in dev, forced off in `staging`/`prod`)
 - `APP_DATA_BACKEND=sqlite` or `postgres`
 - `HOUSEHOLD_STORE_BACKEND=sqlite` or `postgres`
 - `EPHEMERAL_STATE_BACKEND=in_memory` or `redis`
@@ -184,6 +188,11 @@ pnpm web:dev
 ```
 
 `pnpm web:*` commands automatically load root `.env` and then apply optional `apps/web/.env` overrides.
+
+Frontend API client imports:
+- Preferred: domain clients under `@/lib/api/*` (for example `@/lib/api/auth-client`).
+- Compatibility-only: `@/lib/api` legacy consolidated client.
+- Removal target for legacy path: `v0.2.0` (planned follow-up release).
 
 ### Web + API Proxy Contract (Dev)
 - Browser calls should use `NEXT_PUBLIC_API_BASE_URL=/backend` (same-origin proxy route).

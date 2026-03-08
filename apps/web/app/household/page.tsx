@@ -18,7 +18,7 @@ import {
   removeHouseholdMember,
   renameHousehold,
   setActiveHousehold,
-} from "@/lib/api";
+} from "@/lib/api/household-client";
 import type {
   HouseholdBundleApiResponse,
   HouseholdCareMealSummaryResponse,

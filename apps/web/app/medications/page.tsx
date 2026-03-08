@@ -16,7 +16,7 @@ import {
   deleteMedicationRegimen,
   getMedicationAdherenceMetrics,
   listMedicationRegimens,
-} from "@/lib/api";
+} from "@/lib/api/reminder-client";
 import type { MedicationAdherenceMetricsApiResponse, MedicationRegimenApi } from "@/lib/types";
 
 type LoadingAction = "refresh" | "createRegimen" | "deleteRegimen" | "createAdherence" | null;

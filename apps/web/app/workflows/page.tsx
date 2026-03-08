@@ -23,7 +23,7 @@ import {
   listWorkflowToolPolicies,
   listWorkflows,
   patchWorkflowToolPolicy,
-} from "@/lib/api";
+} from "@/lib/api/workflow-client";
 import type {
   ToolPolicyEvaluationApiResponse,
   ToolPolicyListApiResponse,

@@ -7,15 +7,17 @@ import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
 import { PageTitle } from "@/components/app/page-title";
 import { useSession } from "@/components/app/session-provider";
+import { updateAuthProfile } from "@/lib/api/auth-client";
+import {
+  getMobilityReminderSettings,
+  updateMobilityReminderSettings,
+} from "@/lib/api/reminder-client";
 import {
   completeHealthProfileOnboarding,
   getHealthProfileOnboarding,
-  getMobilityReminderSettings,
-  updateAuthProfile,
   updateHealthProfile,
   updateHealthProfileOnboarding,
-  updateMobilityReminderSettings,
-} from "@/lib/api";
+} from "@/lib/api/profile-client";
 import type {
   GuidedHealthStep,
   HealthProfile,

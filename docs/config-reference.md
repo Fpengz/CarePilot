@@ -15,7 +15,9 @@ Environment loading conventions:
 - `APP_ENV` (default: `dev`) — runtime profile (`dev`, `staging`, `prod`)
 - `SESSION_SECRET` (default: `dev-insecure-session-secret-change-me`)
 - `COOKIE_SECURE` (default: `false`)
+- `COOKIE_SAMESITE` (default: `lax`) — `lax`, `strict`, or `none`
 - `AUTH_PASSWORD_HASH_SCHEME` (default: `pbkdf2_sha256`)
+- `AUTH_SEED_DEMO_USERS` (default: profile-derived; `true` in `dev`, `false` in `staging`/`prod`)
 - `AUTH_STORE_BACKEND` (default: `sqlite`) — `sqlite` or `in_memory`
 - `AUTH_SQLITE_DB_PATH` (default: `dietary_guardian_auth.db`)
 - `APP_DATA_BACKEND` (default: `sqlite`) — `sqlite` or `postgres`
@@ -40,6 +42,12 @@ Environment loading conventions:
 - `AUTH_AUDIT_EVENTS_MAX_ENTRIES` (default: `500`)
 - `TOOL_POLICY_ENFORCEMENT_MODE` (default: `shadow`) — `shadow` or `enforce`
 - `WORKFLOW_CONTRACT_BOOTSTRAP` (default: `true`) — create/refresh startup runtime-contract snapshots
+
+Deployment guardrails:
+- `SESSION_SECRET` must be non-default in `staging`/`prod`
+- `COOKIE_SECURE` must be enabled in `staging`/`prod`
+- `COOKIE_SAMESITE=none` requires `COOKIE_SECURE=true`
+- `AUTH_SEED_DEMO_USERS` must be disabled in `staging`/`prod`
 
 ## API
 - `API_HOST` (default: `127.0.0.1`)

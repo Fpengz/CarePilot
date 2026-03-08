@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { parseReport } from "@/lib/api";
+import { parseReport } from "@/lib/api/meal-client";
 import type { ReportParseApiResponse } from "@/lib/types";
 
 const DEFAULT_REPORT_TEXT = "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95";

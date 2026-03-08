@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from dietary_guardian.config.settings import Settings, get_settings
-from dietary_guardian.infrastructure.auth import InMemoryAuthStore, PostgresAuthStore, SQLiteAuthStore
+from dietary_guardian.infrastructure.auth import InMemoryAuthStore, PostgresAuthStore, SQLiteAuthStore, SessionSigner
 from dietary_guardian.infrastructure.cache import InMemoryCacheStore, RedisCacheStore
 from dietary_guardian.infrastructure.coordination import InMemoryCoordinationStore, RedisCoordinationStore
 from dietary_guardian.infrastructure.household import PostgresHouseholdStore, SQLiteHouseholdStore
@@ -16,7 +16,6 @@ from dietary_guardian.services.agent_registry import AgentRegistry, build_defaul
 from dietary_guardian.services.platform_tools import build_platform_tool_registry
 from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 
-from .auth import SessionSigner
 from .services.notifications import NotificationReadStateStore
 
 

@@ -34,7 +34,8 @@ class PostgresAuthStore:
         self._jsonb = self._psycopg.types.json.Jsonb
         with self._connect() as conn:
             ensure_postgres_auth_schema(conn)
-        self._seed_defaults()
+        if settings.auth_seed_demo_users:
+            self._seed_defaults()
 
     def _connect(self) -> Any:
         return self._psycopg.connect(self._dsn, autocommit=True)

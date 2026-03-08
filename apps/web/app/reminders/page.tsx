@@ -20,7 +20,7 @@ import {
   updateMobilityReminderSettings,
   updateReminderNotificationEndpoints,
   updateReminderNotificationPreferences,
-} from "@/lib/api";
+} from "@/lib/api/reminder-client";
 import type {
   MobilityReminderSettings,
   ReminderEventView,

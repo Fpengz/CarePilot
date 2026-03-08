@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getAlertTimeline, triggerAlert } from "@/lib/api";
+import { getAlertTimeline, triggerAlert } from "@/lib/api/workflow-client";
 
 export default function AlertsPage() {
   const { hasScope, status } = useSession();

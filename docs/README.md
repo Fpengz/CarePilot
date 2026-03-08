@@ -6,19 +6,19 @@ Primary audience: contributors, operators, and product stakeholders
 This directory is the primary documentation suite for system understanding, onboarding, and operations.
 
 ## Start Here
-- System architecture and boundaries: [`ARCHITECTURE.md`](/Users/zhoufuwang/Projects/dietary_tools/ARCHITECTURE.md)
-- System overview and subsystem map: [`docs/system-overview.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/system-overview.md)
-- Codebase structure and module walkthrough: [`docs/codebase-walkthrough.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/codebase-walkthrough.md)
-- Developer onboarding and extension guide: [`docs/developer-guide.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/developer-guide.md)
-- User-facing and operator usage guide: [`docs/user-manual.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/user-manual.md)
-- Operational runbook: [`docs/operations-runbook.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/operations-runbook.md)
-- Shared terminology: [`docs/glossary.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/glossary.md)
+- System architecture and boundaries: [`ARCHITECTURE.md`](../ARCHITECTURE.md)
+- System overview and subsystem map: [`docs/system-overview.md`](../docs/system-overview.md)
+- Codebase structure and module walkthrough: [`docs/codebase-walkthrough.md`](../docs/codebase-walkthrough.md)
+- Developer onboarding and extension guide: [`docs/developer-guide.md`](../docs/developer-guide.md)
+- User-facing and operator usage guide: [`docs/user-manual.md`](../docs/user-manual.md)
+- Operational runbook: [`docs/operations-runbook.md`](../docs/operations-runbook.md)
+- Shared terminology: [`docs/glossary.md`](../docs/glossary.md)
 
 ## Existing Canonical References
-- Product roadmap and maturity: [`docs/roadmap-v1.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/roadmap-v1.md)
-- Feature capability audit: [`docs/feature-audit.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/feature-audit.md)
-- Environment and runtime config: [`docs/config-reference.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/config-reference.md)
-- Auth and RBAC contracts: [`docs/api-auth-contract.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/api-auth-contract.md), [`docs/rbac-matrix.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/rbac-matrix.md)
+- Product roadmap and maturity: [`docs/roadmap-v1.md`](../docs/roadmap-v1.md)
+- Feature capability audit: [`docs/feature-audit.md`](../docs/feature-audit.md)
+- Environment and runtime config: [`docs/config-reference.md`](../docs/config-reference.md)
+- Auth and RBAC contracts: [`docs/api-auth-contract.md`](../docs/api-auth-contract.md), [`docs/rbac-matrix.md`](../docs/rbac-matrix.md)
 
 ## Maintenance Notes
 - Update `docs/system-overview.md` when architecture layers or subsystem boundaries change.

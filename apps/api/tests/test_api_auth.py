@@ -1,4 +1,5 @@
 from collections.abc import Generator
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,7 +14,6 @@ def _reset_settings_cache() -> None:
 
 @pytest.fixture(autouse=True)
 def _force_in_memory_auth_backend(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
-    # Most auth API tests assert against in-memory internals (`_sessions`, `_login_failures`).
     monkeypatch.setenv("AUTH_STORE_BACKEND", "in_memory")
     _reset_settings_cache()
     yield
@@ -154,6 +154,21 @@ def test_logout_is_idempotent_without_session() -> None:
     set_cookie = response.headers.get("set-cookie", "")
     assert "dg_session=" in set_cookie
     assert "Max-Age=0" in set_cookie or "max-age=0" in set_cookie
+
+
+def test_login_cookie_uses_configured_samesite(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("COOKIE_SAMESITE", "strict")
+    _reset_settings_cache()
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
+
+    assert response.status_code == 200
+    set_cookie = response.headers.get("set-cookie", "").lower()
+    assert "samesite=strict" in set_cookie
 
 
 def test_me_rejects_corrupted_session_payload_with_401() -> None:
@@ -308,9 +323,16 @@ def test_patch_profile_rejects_empty_update() -> None:
     assert patch.json()["detail"] == "no profile changes requested"
 
 
-def test_login_locks_after_repeated_failures_and_then_allows_after_success() -> None:
+def test_login_locks_after_repeated_failures_and_then_allows_after_lockout_expiry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    max_attempts = 2
+    lockout_seconds = 1
+    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILED_ATTEMPTS", str(max_attempts))
+    monkeypatch.setenv("AUTH_LOGIN_LOCKOUT_SECONDS", str(lockout_seconds))
+    monkeypatch.setenv("AUTH_LOGIN_FAILURE_WINDOW_SECONDS", "1")
+    _reset_settings_cache()
     client = TestClient(create_app())
-    max_attempts = Settings(llm_provider="test").auth_login_max_failed_attempts
 
     for _ in range(max_attempts):
         failed = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "wrong-pass"})
@@ -319,18 +341,12 @@ def test_login_locks_after_repeated_failures_and_then_allows_after_success() -> 
     locked = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
     assert locked.status_code == 429
 
-    app = create_app()
-    app.state.ctx.auth_store._login_failures["member@example.com"] = {
-        "failed_count": max_attempts - 1,
-        "window_started_at": "2000-01-01T00:00:00+00:00",
-        "lockout_until": None,
-    }
-    reset_client = TestClient(app)
-    success = reset_client.post(
+    time.sleep(lockout_seconds + 0.1)
+    success = client.post(
         "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
     )
     assert success.status_code == 200
-    next_failed = reset_client.post(
+    next_failed = client.post(
         "/api/v1/auth/login", json={"email": "member@example.com", "password": "wrong-pass"}
     )
     assert next_failed.status_code == 401

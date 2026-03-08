@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createSymptomCheckIn, getSymptomSummary, listSymptomCheckIns } from "@/lib/api";
+import { createSymptomCheckIn, getSymptomSummary, listSymptomCheckIns } from "@/lib/api/meal-client";
 import type { SymptomCheckInApi, SymptomSummaryApiResponse } from "@/lib/types";
 
 type LoadingAction = "submit" | "refresh" | null;

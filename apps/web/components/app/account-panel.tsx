@@ -16,7 +16,7 @@ import {
   revokeOtherAuthSessions,
   updateAuthPassword,
   updateAuthProfile,
-} from "@/lib/api";
+} from "@/lib/api/auth-client";
 import type { AuthAuditEvent, AuthSessionListItem } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

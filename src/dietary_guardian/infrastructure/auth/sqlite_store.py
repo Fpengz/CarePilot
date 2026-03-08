@@ -25,7 +25,8 @@ class SQLiteAuthStore:
         self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._init_db()
-        self._seed_defaults()
+        if settings.auth_seed_demo_users:
+            self._seed_defaults()
 
     def _init_db(self) -> None:
         cur = self._conn.cursor()

@@ -1,7 +1,7 @@
 # Operations Runbook
 
 Last updated: 2026-03-06  
-See also: [`docs/developer-guide.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/developer-guide.md), [`docs/config-reference.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/config-reference.md), [`docs/nightly-ops.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/nightly-ops.md)
+See also: [`docs/developer-guide.md`](../docs/developer-guide.md), [`docs/config-reference.md`](../docs/config-reference.md), [`docs/nightly-ops.md`](../docs/nightly-ops.md)
 
 ## 1) Startup Profiles
 

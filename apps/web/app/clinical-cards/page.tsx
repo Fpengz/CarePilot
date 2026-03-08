@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { generateClinicalCard, getClinicalCard, listClinicalCards } from "@/lib/api";
+import { generateClinicalCard, getClinicalCard, listClinicalCards } from "@/lib/api/meal-client";
 import type { ClinicalCardApi } from "@/lib/types";
 
 type LoadingAction = "generate" | "list" | "loadCard" | null;

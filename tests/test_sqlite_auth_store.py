@@ -87,3 +87,12 @@ def test_sqlite_auth_store_drops_session_with_invalid_scopes_json(tmp_path) -> N
         (session_id,),
     ).fetchone()
     assert row is None
+
+
+def test_sqlite_auth_store_can_disable_demo_user_seeding(tmp_path) -> None:
+    db_path = tmp_path / "auth.db"
+    settings = Settings(llm_provider="test", auth_seed_demo_users=False)
+
+    store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
+
+    assert store.authenticate("member@example.com", "member-pass") is None

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, cast
+from typing import Annotated, Literal, cast
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from dietary_guardian.models.identity import AccountRole, ProfileMode
@@ -45,13 +45,18 @@ def _session_user_from_session(session: dict[str, object]) -> SessionUser:
     )
 
 
-def _clear_session_cookie(response: Response, *, secure: bool) -> None:
+def _clear_session_cookie(
+    response: Response,
+    *,
+    secure: bool,
+    samesite: Literal["lax", "strict", "none"],
+) -> None:
     response.delete_cookie(
         key=SESSION_COOKIE,
         path="/",
         secure=secure,
         httponly=True,
-        samesite="lax",
+        samesite=samesite,
     )
 
 
@@ -77,7 +82,7 @@ def auth_login(payload: AuthLoginRequest, response: Response, request: Request) 
         value=signed,
         httponly=True,
         secure=context.settings.cookie_secure,
-        samesite="lax",
+        samesite=context.settings.cookie_samesite,
         path="/",
     )
     return AuthLoginResponse(
@@ -122,7 +127,7 @@ def auth_signup(payload: AuthSignupRequest, response: Response, request: Request
         value=signed,
         httponly=True,
         secure=context.settings.cookie_secure,
-        samesite="lax",
+        samesite=context.settings.cookie_samesite,
         path="/",
     )
     return AuthLoginResponse(
@@ -149,7 +154,11 @@ def auth_logout(
         session_id = context.session_signer.unsign(session_cookie)
         if session_id:
             context.auth_store.destroy_session(session_id)
-    _clear_session_cookie(response, secure=context.settings.cookie_secure)
+    _clear_session_cookie(
+        response,
+        secure=context.settings.cookie_secure,
+        samesite=context.settings.cookie_samesite,
+    )
     return {"ok": True}
 
 
@@ -273,7 +282,11 @@ def auth_revoke_session(
     )
     context.auth_store.destroy_session(session_id)
     if session_id == str(session["session_id"]):
-        _clear_session_cookie(response, secure=context.settings.cookie_secure)
+        _clear_session_cookie(
+            response,
+            secure=context.settings.cookie_secure,
+            samesite=context.settings.cookie_samesite,
+        )
     return AuthSessionRevokeResponse(revoked=True)
 
 

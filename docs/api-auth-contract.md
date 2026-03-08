@@ -46,7 +46,17 @@ The old `user.role` field has been removed (hard cutover).
 
 Returns the same `user` shape as login.
 
+## Session Cookie Contract
+- Cookie name: `dg_session`
+- `HttpOnly`: always enabled
+- `Secure`: controlled by `COOKIE_SECURE` (must be enabled in `staging`/`prod`)
+- `SameSite`: controlled by `COOKIE_SAMESITE` (`lax` by default)
+- Session revoke behavior:
+  - `POST /api/v1/auth/logout` clears the cookie and revokes the current session when present
+  - `PATCH /api/v1/auth/password` revokes all other sessions for the current user
+
 ## Demo Accounts
+Demo credentials are for local/test use only.
 - `member@example.com` / `member-pass`
 - `helper@example.com` / `helper-pass`
 - `admin@example.com` / `admin-pass`
@@ -56,4 +66,3 @@ If an older client expects `user.role`, update it to use:
 - `user.account_role` for authorization checks
 - `user.profile_mode` for persona/UX branching
 - `user.scopes` for fine-grained capability checks
-

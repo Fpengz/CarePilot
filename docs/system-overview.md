@@ -1,7 +1,7 @@
 # System Overview
 
 Last updated: 2026-03-06  
-Source of truth for architecture detail: [`ARCHITECTURE.md`](/Users/zhoufuwang/Projects/dietary_tools/ARCHITECTURE.md)
+Source of truth for architecture detail: [`ARCHITECTURE.md`](../ARCHITECTURE.md)
 
 ## Purpose
 Dietary Guardian SG is a health support platform for:
@@ -67,7 +67,7 @@ flowchart LR
 ## Runtime Modes
 - Default local mode: SQLite + optional in-memory ephemeral services.
 - Target-aligned local mode: Postgres + Redis with external worker.
-- Runtime toggles and readiness checks are documented in [`docs/config-reference.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/config-reference.md).
+- Runtime toggles and readiness checks are documented in [`docs/config-reference.md`](../docs/config-reference.md).
 
 ## When to Update This Document
 - Add/remove major subsystems.

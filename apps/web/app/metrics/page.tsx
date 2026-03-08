@@ -9,7 +9,7 @@ import { PageTitle } from "@/components/app/page-title";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { listMetricTrends } from "@/lib/api";
+import { listMetricTrends } from "@/lib/api/meal-client";
 import type { MetricTrendApi } from "@/lib/types";
 
 const METRIC_OPTIONS = ["meal:calories", "adherence:rate", "biomarker:ldl", "biomarker:hba1c"] as const;

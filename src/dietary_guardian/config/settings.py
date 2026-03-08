@@ -7,6 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    _DEFAULT_SESSION_SECRET = "dev-insecure-session-secret-change-me"
+
     app_env: Literal["dev", "staging", "prod"] = "dev"
     app_data_backend: Literal["sqlite", "postgres"] = "sqlite"
     llm_provider: Literal["gemini", "openai", "ollama", "vllm", "test"] = "test"
@@ -34,8 +36,9 @@ class Settings(BaseSettings):
     api_dev_log_verbose: bool = False
     api_dev_log_headers: bool = False
     api_dev_log_response_headers: bool = False
-    session_secret: str = "dev-insecure-session-secret-change-me"
+    session_secret: str = _DEFAULT_SESSION_SECRET
     cookie_secure: bool = False
+    cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     auth_password_hash_scheme: str = "pbkdf2_sha256"
     api_sqlite_db_path: str = "dietary_guardian_api.db"
     auth_store_backend: Literal["in_memory", "sqlite", "postgres"] = "sqlite"
@@ -58,6 +61,7 @@ class Settings(BaseSettings):
     auth_login_failure_window_seconds: int = Field(default=300, ge=1, le=3600)
     auth_login_lockout_seconds: int = Field(default=300, ge=1, le=86400)
     auth_audit_events_max_entries: int = Field(default=500, ge=10, le=10000)
+    auth_seed_demo_users: bool | None = None
     workflow_trace_persistence_enabled: bool = False
     tool_policy_enforcement_mode: Literal["shadow", "enforce"] = "shadow"
     workflow_contract_bootstrap: bool = True
@@ -123,6 +127,17 @@ class Settings(BaseSettings):
             )
         if not self.session_secret:
             raise ValueError("SESSION_SECRET must not be empty")
+        if self.auth_seed_demo_users is None:
+            self.auth_seed_demo_users = self.app_env == "dev"
+        if self.app_env in {"staging", "prod"}:
+            if self.session_secret == self._DEFAULT_SESSION_SECRET:
+                raise ValueError("SESSION_SECRET must be overridden for staging/prod")
+            if not self.cookie_secure:
+                raise ValueError("COOKIE_SECURE must be enabled for staging/prod")
+            if self.auth_seed_demo_users:
+                raise ValueError("AUTH_SEED_DEMO_USERS must be disabled for staging/prod")
+        if self.cookie_samesite == "none" and not self.cookie_secure:
+            raise ValueError("COOKIE_SECURE must be enabled when COOKIE_SAMESITE=none")
         if self.app_data_backend == "postgres" and not self.postgres_dsn:
             raise ValueError("POSTGRES_DSN must be set when APP_DATA_BACKEND=postgres")
         if self.auth_store_backend == "postgres" and not self.postgres_dsn:

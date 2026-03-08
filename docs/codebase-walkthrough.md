@@ -1,7 +1,7 @@
 # Codebase Walkthrough
 
 Last updated: 2026-03-06  
-See also: [`docs/system-overview.md`](/Users/zhoufuwang/Projects/dietary_tools/docs/system-overview.md), [`ARCHITECTURE.md`](/Users/zhoufuwang/Projects/dietary_tools/ARCHITECTURE.md)
+See also: [`docs/system-overview.md`](../docs/system-overview.md), [`ARCHITECTURE.md`](../ARCHITECTURE.md)
 
 ## Repository Structure
 
@@ -105,7 +105,8 @@ apps/api/tests/           API contract and behavior tests
   - workflows governance and trace inspection
 
 ### API Integration
-- `apps/web/lib/api.ts`: typed API functions.
+- `apps/web/lib/api/*.ts`: domain-scoped typed API clients (`auth`, `profile`, `household`, `meal`, `recommendation`, `reminder`, `workflow`).
+- `apps/web/lib/api.ts`: compatibility-only consolidated client (temporary migration shim).
 - `apps/web/lib/types.ts`: client-side API response type contracts.
 
 ### Component Layer

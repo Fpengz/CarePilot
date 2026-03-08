@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
-import { me } from "@/lib/api";
+import { me } from "@/lib/api/auth-client";
 import type { SessionUser } from "@/lib/types";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";

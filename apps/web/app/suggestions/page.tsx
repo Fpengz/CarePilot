@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "@/components/app/session-provider";
-import { generateSuggestionFromReport, getSuggestion, listSuggestions } from "@/lib/api";
+import { generateSuggestionFromReport, getSuggestion, listSuggestions } from "@/lib/api/recommendation-client";
 import {
   buildSuggestionDetail,
   buildSuggestionSummaries,

@@ -8,13 +8,11 @@ import { PageTitle } from "@/components/app/page-title";
 import { useSession } from "@/components/app/session-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  getDailySuggestions,
-  getCurrentHousehold,
-  getHealthProfile,
-  getMealDailySummary,
-  listReminders,
-} from "@/lib/api";
+import { getCurrentHousehold } from "@/lib/api/household-client";
+import { getMealDailySummary } from "@/lib/api/meal-client";
+import { getDailySuggestions } from "@/lib/api/recommendation-client";
+import { listReminders } from "@/lib/api/reminder-client";
+import { getHealthProfile } from "@/lib/api/profile-client";
 import type {
   DailySuggestionCard,
   DailySuggestionsResponse,
