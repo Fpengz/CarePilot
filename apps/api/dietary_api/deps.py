@@ -55,6 +55,12 @@ class RecommendationDeps:
 
 
 @dataclass(frozen=True)
+class RecommendationAgentDeps:
+    stores: AppStores
+    clinical_memory: ClinicalSnapshotMemoryService
+
+
+@dataclass(frozen=True)
 class WorkflowDeps:
     settings: Settings
     stores: AppStores
@@ -67,6 +73,17 @@ class WorkflowDeps:
 class EmotionDeps:
     settings: Settings
     emotion_service: EmotionService
+
+
+@dataclass(frozen=True)
+class AlertDeps:
+    stores: AppStores
+    coordinator: WorkflowCoordinator
+
+
+@dataclass(frozen=True)
+class ClinicalCardDeps:
+    stores: AppStores
 
 
 def close_app_context(ctx: AppContext) -> None:
@@ -196,3 +213,15 @@ def workflow_deps(ctx: AppContext) -> WorkflowDeps:
 
 def emotion_deps(ctx: AppContext) -> EmotionDeps:
     return EmotionDeps(settings=ctx.settings, emotion_service=ctx.emotion_service)
+
+
+def recommendation_agent_deps(ctx: AppContext) -> RecommendationAgentDeps:
+    return RecommendationAgentDeps(stores=ctx.stores, clinical_memory=ctx.clinical_memory)
+
+
+def alert_deps(ctx: AppContext) -> AlertDeps:
+    return AlertDeps(stores=ctx.stores, coordinator=ctx.coordinator)
+
+
+def clinical_card_deps(ctx: AppContext) -> ClinicalCardDeps:
+    return ClinicalCardDeps(stores=ctx.stores)

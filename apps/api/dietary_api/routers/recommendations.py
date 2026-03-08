@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request
-from ..deps import recommendation_deps
+from ..deps import recommendation_agent_deps, recommendation_deps
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas.recommendations import (
     RecommendationAgentResponse,
@@ -40,7 +40,7 @@ def recommendations_daily_agent(
 ) -> RecommendationAgentResponse:
     require_action(session, "recommendations.daily_agent.read")
     return get_daily_agent_for_session(
-        context=get_context(request),
+        deps=recommendation_agent_deps(get_context(request)),
         session=session,
         request_id=getattr(request.state, "request_id", None),
         correlation_id=getattr(request.state, "correlation_id", None),
@@ -55,7 +55,7 @@ def recommendations_substitutions(
 ) -> RecommendationSubstitutionResponse:
     require_action(session, "recommendations.substitutions.generate")
     return get_substitutions_for_session(
-        context=get_context(request),
+        deps=recommendation_agent_deps(get_context(request)),
         session=session,
         payload=payload,
     )
@@ -69,7 +69,7 @@ def recommendations_interactions(
 ) -> RecommendationInteractionResponse:
     require_action(session, "recommendations.interactions.write")
     return record_interaction_for_session(
-        context=get_context(request),
+        deps=recommendation_agent_deps(get_context(request)),
         session=session,
         payload=payload,
     )

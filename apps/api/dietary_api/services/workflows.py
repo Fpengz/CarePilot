@@ -19,6 +19,7 @@ from apps.api.dietary_api.schemas import (
     WorkflowSnapshotItemResponse,
     WorkflowSnapshotListResponse,
     WorkflowSnapshotWriteResponse,
+    WorkflowTimelineEventPayloadResponse,
     WorkflowTimelineEventResponse,
     WorkflowRuntimeContractResponse,
     WorkflowRuntimeRegistryResponse,
@@ -278,6 +279,6 @@ def _timeline_event_response(event: WorkflowTimelineEvent) -> WorkflowTimelineEv
         request_id=str(payload["request_id"]) if payload.get("request_id") is not None else None,
         correlation_id=str(payload["correlation_id"]),
         user_id=str(payload["user_id"]) if payload.get("user_id") is not None else None,
-        payload=dict(payload.get("payload") or {}),
+        payload=WorkflowTimelineEventPayloadResponse.model_validate(dict(payload.get("payload") or {})),
         created_at=payload["created_at"],
     )

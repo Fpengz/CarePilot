@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta, timezone
 from uuid import uuid4
 
-from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.deps import ClinicalCardDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
     ClinicalCardEnvelopeResponse,
@@ -56,15 +56,15 @@ def _to_response(card: ClinicalCardRecord) -> ClinicalCardResponse:
 
 def generate_clinical_card_for_session(
     *,
-    context: AppContext,
+    deps: ClinicalCardDeps,
     user_id: str,
     payload: ClinicalCardGenerateRequest,
 ) -> ClinicalCardEnvelopeResponse:
     start_date, end_date = _resolve_date_window(payload)
-    meal_records = context.stores.meals.list_meal_records(user_id)
-    biomarker_readings = context.stores.biomarkers.list_biomarker_readings(user_id)
-    symptom_items = context.stores.symptoms.list_symptom_checkins(user_id=user_id, limit=500)
-    adherence_items = context.stores.medications.list_medication_adherence_events(user_id=user_id)
+    meal_records = deps.stores.meals.list_meal_records(user_id)
+    biomarker_readings = deps.stores.biomarkers.list_biomarker_readings(user_id)
+    symptom_items = deps.stores.symptoms.list_symptom_checkins(user_id=user_id, limit=500)
+    adherence_items = deps.stores.medications.list_medication_adherence_events(user_id=user_id)
 
     in_window_meals = [item for item in meal_records if start_date <= item.captured_at.date() <= end_date]
     in_window_symptoms = [item for item in symptom_items if start_date <= item.recorded_at.date() <= end_date]
@@ -133,27 +133,27 @@ def generate_clinical_card_for_session(
             "adherence_event_count": len(adherence_items),
         },
     )
-    saved = context.stores.clinical_cards.save_clinical_card(card)
+    saved = deps.stores.clinical_cards.save_clinical_card(card)
     return ClinicalCardEnvelopeResponse(card=_to_response(saved))
 
 
 def list_clinical_cards_for_session(
     *,
-    context: AppContext,
+    deps: ClinicalCardDeps,
     user_id: str,
     limit: int,
 ) -> ClinicalCardListResponse:
-    items = context.stores.clinical_cards.list_clinical_cards(user_id=user_id, limit=limit)
+    items = deps.stores.clinical_cards.list_clinical_cards(user_id=user_id, limit=limit)
     return ClinicalCardListResponse(items=[_to_response(item) for item in items])
 
 
 def get_clinical_card_for_session(
     *,
-    context: AppContext,
+    deps: ClinicalCardDeps,
     user_id: str,
     card_id: str,
 ) -> ClinicalCardEnvelopeResponse:
-    item = context.stores.clinical_cards.get_clinical_card(user_id=user_id, card_id=card_id)
+    item = deps.stores.clinical_cards.get_clinical_card(user_id=user_id, card_id=card_id)
     if item is None:
         raise build_api_error(status_code=404, code="clinical_cards.not_found", message="clinical card not found")
     return ClinicalCardEnvelopeResponse(card=_to_response(item))

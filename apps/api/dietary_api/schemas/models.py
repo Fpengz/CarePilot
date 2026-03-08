@@ -1,15 +1,22 @@
 from datetime import date, datetime, timezone
-from typing import Literal
+from typing import Literal, TypeAlias
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, RootModel
 from dietary_guardian.models.identity import AccountRole, ProfileMode
 from dietary_guardian.models.analytics import EngagementMetrics
+from dietary_guardian.models.alerting import OutboxState
 from dietary_guardian.models.contracts import AgentOutputEnvelope
 from dietary_guardian.models.meal import VisionResult
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.models.medication import ReminderEvent
 from dietary_guardian.models.recommendation import RecommendationOutput
+from dietary_guardian.models.recommendation_agent import InteractionEventType, MealSlot
 from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot
+from dietary_guardian.models.tooling import ToolExecutionResult
+
+JsonScalar: TypeAlias = str | int | float | bool | None
+JsonObjectValue: TypeAlias = JsonScalar | list[JsonScalar]
+JsonValue: TypeAlias = JsonObjectValue | dict[str, JsonObjectValue]
 
 
 class ApiError(BaseModel):
@@ -280,15 +287,25 @@ class AlertTriggerRequest(BaseModel):
     destinations: list[str]
 
 
-class AlertTriggerResponse(BaseModel):
-    tool_result: dict[str, object]
-    outbox_timeline: list[dict[str, object]]
-    workflow: dict[str, object]
+class WorkflowTimelineEventPayloadResponse(RootModel[dict[str, JsonValue]]):
+    pass
 
 
-class AlertTimelineResponse(BaseModel):
+class AlertTimelineItemResponse(BaseModel):
     alert_id: str
-    outbox_timeline: list[dict[str, object]]
+    sink: str
+    type: str
+    severity: Literal["info", "warning", "critical"]
+    payload: dict[str, str] = Field(default_factory=dict)
+    correlation_id: str
+    created_at: datetime
+    state: OutboxState
+    attempt_count: int
+    next_attempt_at: datetime
+    last_error: str | None = None
+    lease_owner: str | None = None
+    lease_until: datetime | None = None
+    idempotency_key: str
 
 
 class NotificationItem(BaseModel):
@@ -614,6 +631,22 @@ class ClinicalCardGenerateRequest(BaseModel):
     format: Literal["sectioned", "soap"] = "sectioned"
 
 
+class ClinicalCardTrendResponse(BaseModel):
+    metric: str
+    delta: float
+    percent_change: float | None = None
+    slope_per_point: float
+    direction: Literal["increase", "decrease", "flat"]
+    point_count: int
+
+
+class ClinicalCardProvenanceResponse(BaseModel):
+    meal_record_count: int = 0
+    symptom_checkin_count: int = 0
+    biomarker_reading_count: int = 0
+    adherence_event_count: int = 0
+
+
 class ClinicalCardResponse(BaseModel):
     id: str
     created_at: datetime
@@ -622,8 +655,8 @@ class ClinicalCardResponse(BaseModel):
     format: Literal["sectioned", "soap"]
     sections: dict[str, str] = Field(default_factory=dict)
     deltas: dict[str, float] = Field(default_factory=dict)
-    trends: dict[str, dict[str, object]] = Field(default_factory=dict)
-    provenance: dict[str, object] = Field(default_factory=dict)
+    trends: dict[str, ClinicalCardTrendResponse] = Field(default_factory=dict)
+    provenance: ClinicalCardProvenanceResponse
 
 
 class ClinicalCardEnvelopeResponse(BaseModel):
@@ -680,7 +713,7 @@ class WorkflowTimelineEventResponse(BaseModel):
     request_id: str | None = None
     correlation_id: str
     user_id: str | None = None
-    payload: dict[str, object] = Field(default_factory=dict)
+    payload: WorkflowTimelineEventPayloadResponse = Field(default_factory=lambda: WorkflowTimelineEventPayloadResponse({}))
     created_at: datetime
 
 
@@ -690,6 +723,17 @@ class WorkflowResponse(BaseModel):
     correlation_id: str
     replayed: bool
     timeline_events: list[WorkflowTimelineEventResponse] = Field(default_factory=list)
+
+
+class AlertTriggerResponse(BaseModel):
+    tool_result: ToolExecutionResult
+    outbox_timeline: list[AlertTimelineItemResponse]
+    workflow: WorkflowResponse
+
+
+class AlertTimelineResponse(BaseModel):
+    alert_id: str
+    outbox_timeline: list[AlertTimelineItemResponse]
 
 
 class WorkflowListItem(BaseModel):
@@ -890,10 +934,38 @@ class RecommendationInteractionRequest(BaseModel):
     metadata: dict[str, object] = Field(default_factory=dict)
 
 
+class RecommendationInteractionItemResponse(BaseModel):
+    interaction_id: str
+    user_id: str
+    recommendation_id: str
+    candidate_id: str
+    event_type: InteractionEventType
+    slot: MealSlot
+    source_meal_id: str | None = None
+    selected_meal_id: str | None = None
+    created_at: datetime
+    metadata: dict[str, JsonValue] = Field(default_factory=dict)
+
+
+class RecommendationPreferenceSnapshotResponse(BaseModel):
+    user_id: str
+    updated_at: datetime
+    interaction_count: int = 0
+    accepted_count: int = 0
+    dismissed_count: int = 0
+    swap_selected_count: int = 0
+    cuisine_affinity: dict[str, float] = Field(default_factory=dict)
+    ingredient_affinity: dict[str, float] = Field(default_factory=dict)
+    health_tag_affinity: dict[str, float] = Field(default_factory=dict)
+    slot_affinity: dict[str, float] = Field(default_factory=dict)
+    substitution_tolerance: float = 0.6
+    adherence_bias: float = 0.0
+
+
 class RecommendationInteractionResponse(BaseModel):
     ok: bool = True
-    interaction: dict[str, object]
-    preference_snapshot: dict[str, object]
+    interaction: RecommendationInteractionItemResponse
+    preference_snapshot: RecommendationPreferenceSnapshotResponse
 
 
 class RecommendationSubstitutionRequest(BaseModel):

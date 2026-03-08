@@ -1,8 +1,17 @@
 from apps.api.dietary_api.schemas.models import (
+    AlertTimelineItemResponse,
+    AlertTimelineResponse,
+    AlertTriggerResponse,
+    ClinicalCardProvenanceResponse,
+    ClinicalCardTrendResponse,
+    ClinicalCardResponse,
     CursorPageResponse,
     MealAnalyzeResponse,
     MealAnalyzeSummaryResponse,
     MealRecordsResponse,
+    RecommendationInteractionItemResponse,
+    RecommendationInteractionResponse,
+    RecommendationPreferenceSnapshotResponse,
     RecommendationGenerateResponse,
     ReminderConfirmResponse,
     ReminderGenerateResponse,
@@ -10,6 +19,8 @@ from apps.api.dietary_api.schemas.models import (
     SuggestionReportParseResponse,
     SuggestionItemResponse,
     WorkflowResponse,
+    WorkflowTimelineEventPayloadResponse,
+    WorkflowTimelineEventResponse,
 )
 from dietary_guardian.models.analytics import EngagementMetrics
 from dietary_guardian.models.contracts import AgentOutputEnvelope
@@ -44,3 +55,20 @@ def test_reminder_contracts_use_typed_models() -> None:
     assert ReminderListResponse.model_fields["metrics"].annotation is EngagementMetrics
     assert ReminderConfirmResponse.model_fields["event"].annotation is ReminderEvent
     assert ReminderConfirmResponse.model_fields["metrics"].annotation is EngagementMetrics
+
+
+def test_alert_workflow_and_interaction_contracts_use_typed_models() -> None:
+    assert AlertTriggerResponse.model_fields["outbox_timeline"].annotation == list[AlertTimelineItemResponse]
+    assert AlertTriggerResponse.model_fields["workflow"].annotation is WorkflowResponse
+    assert AlertTimelineResponse.model_fields["outbox_timeline"].annotation == list[AlertTimelineItemResponse]
+    assert WorkflowTimelineEventResponse.model_fields["payload"].annotation is WorkflowTimelineEventPayloadResponse
+    assert RecommendationInteractionResponse.model_fields["interaction"].annotation is RecommendationInteractionItemResponse
+    assert (
+        RecommendationInteractionResponse.model_fields["preference_snapshot"].annotation
+        is RecommendationPreferenceSnapshotResponse
+    )
+
+
+def test_clinical_card_contracts_use_typed_models() -> None:
+    assert ClinicalCardResponse.model_fields["trends"].annotation == dict[str, ClinicalCardTrendResponse]
+    assert ClinicalCardResponse.model_fields["provenance"].annotation is ClinicalCardProvenanceResponse

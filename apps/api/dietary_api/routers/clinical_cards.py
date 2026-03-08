@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, Request
 
+from ..deps import clinical_card_deps
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas.clinical_cards import (
     ClinicalCardEnvelopeResponse,
@@ -25,7 +26,7 @@ def clinical_cards_generate(
 ) -> ClinicalCardEnvelopeResponse:
     require_action(session, "clinical_cards.generate")
     return generate_clinical_card_for_session(
-        context=get_context(request),
+        deps=clinical_card_deps(get_context(request)),
         user_id=str(session["user_id"]),
         payload=payload,
     )
@@ -39,7 +40,7 @@ def clinical_cards_list(
 ) -> ClinicalCardListResponse:
     require_action(session, "clinical_cards.read")
     return list_clinical_cards_for_session(
-        context=get_context(request),
+        deps=clinical_card_deps(get_context(request)),
         user_id=str(session["user_id"]),
         limit=limit,
     )
@@ -53,7 +54,7 @@ def clinical_cards_get(
 ) -> ClinicalCardEnvelopeResponse:
     require_action(session, "clinical_cards.read")
     return get_clinical_card_for_session(
-        context=get_context(request),
+        deps=clinical_card_deps(get_context(request)),
         user_id=str(session["user_id"]),
         card_id=card_id,
     )
