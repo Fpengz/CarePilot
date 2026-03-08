@@ -31,28 +31,6 @@ jobs:
       - name: Tests with coverage gate
         run: uv run pytest --cov=src/dietary_guardian --cov=apps/api/dietary_api --cov-report=term-missing --cov-fail-under=70 -q
 
-      - name: Readiness gate (prod profile)
-        run: |
-          APP_ENV=prod \
-          LLM_PROVIDER=test \
-          APP_DATA_BACKEND=sqlite \
-          AUTH_STORE_BACKEND=in_memory \
-          HOUSEHOLD_STORE_BACKEND=sqlite \
-          EPHEMERAL_STATE_BACKEND=in_memory \
-          uv run python -m apps.api.run >/tmp/api_readiness_ci.log 2>&1 &
-          API_PID=$!
-          cleanup() {
-            kill "$API_PID" >/dev/null 2>&1 || true
-          }
-          trap cleanup EXIT
-          for _ in $(seq 1 40); do
-            if curl -sf http://127.0.0.1:8001/api/v1/health/live >/dev/null 2>&1; then
-              break
-            fi
-            sleep 1
-          done
-          READINESS_FAIL_ON_WARNINGS=1 uv run python scripts/dg.py readiness http://127.0.0.1:8001
-
   web:
     runs-on: ubuntu-latest
     steps:
@@ -112,3 +90,75 @@ jobs:
 
       - name: Run web smoke e2e
         run: pnpm --dir apps/web test:e2e
+
+  shared-topology:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: dietary_guardian
+          POSTGRES_USER: dietary_guardian
+          POSTGRES_PASSWORD: dietary_guardian
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dietary_guardian -d dietary_guardian"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Sync backend dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Install web dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bootstrap postgres schema
+        env:
+          POSTGRES_DSN: postgresql://dietary_guardian:dietary_guardian@127.0.0.1:5432/dietary_guardian
+        run: uv run python scripts/dg.py migrate postgres
+
+      - name: Build web production bundle
+        run: pnpm web:build
+
+      - name: Shared-topology smoke
+        env:
+          DG_SMOKE_SKIP_INFRA_BOOTSTRAP: "1"
+          LLM_PROVIDER: test
+          APP_DATA_BACKEND: postgres
+          AUTH_STORE_BACKEND: postgres
+          HOUSEHOLD_STORE_BACKEND: postgres
+          EPHEMERAL_STATE_BACKEND: redis
+          POSTGRES_DSN: postgresql://dietary_guardian:dietary_guardian@127.0.0.1:5432/dietary_guardian
+          REDIS_URL: redis://127.0.0.1:6379/0
+          WORKER_MODE: external
+        run: uv run python scripts/dg.py smoke postgres-redis

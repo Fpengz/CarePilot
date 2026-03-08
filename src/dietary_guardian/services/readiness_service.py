@@ -126,6 +126,26 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
             )
         )
 
+    shared_rate_limiting_required = settings.app_env in {"staging", "prod"} and settings.api_rate_limit_enabled
+    if shared_rate_limiting_required and settings.ephemeral_state_backend != "redis":
+        checks.append(
+            _check(
+                "shared_rate_limiting",
+                status="fail",
+                required=True,
+                detail="shared rate limiting requires EPHEMERAL_STATE_BACKEND=redis when API rate limiting is enabled in staging/prod",
+            )
+        )
+    else:
+        checks.append(
+            _check(
+                "shared_rate_limiting",
+                status="pass",
+                required=shared_rate_limiting_required,
+                detail="shared rate limiting configured" if shared_rate_limiting_required else "shared rate limiting not required",
+            )
+        )
+
     if not settings.email_dev_mode and not settings.email_smtp_host:
         checks.append(
             _check(

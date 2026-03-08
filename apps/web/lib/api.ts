@@ -62,6 +62,7 @@ import type {
   WorkflowSnapshotCompareApiResponse,
   WorkflowSnapshotListApiResponse,
   WorkflowSnapshotWriteApiResponse,
+  ApiErrorEnvelope,
 } from "@/lib/types";
 import { getConsolePrinter } from "@/lib/console-safe";
 
@@ -112,6 +113,72 @@ function logFrontendApi(event: string, payload: Record<string, unknown>) {
   printer(`[frontend-api] ${event}`, redactSensitive(payload));
 }
 
+function isApiErrorEnvelope(value: unknown): value is ApiErrorEnvelope {
+  if (!value || typeof value !== "object") return false;
+  const payload = value as Record<string, unknown>;
+  const error = payload.error;
+  return (
+    typeof payload.detail === "string" &&
+    !!error &&
+    typeof error === "object" &&
+    typeof (error as Record<string, unknown>).code === "string" &&
+    typeof (error as Record<string, unknown>).message === "string"
+  );
+}
+
+export class ApiRequestError extends Error {
+  readonly status: number;
+  readonly detail: string;
+  readonly error: ApiErrorEnvelope["error"];
+  readonly envelope: ApiErrorEnvelope;
+  readonly requestId: string | null;
+  readonly correlationId: string | null;
+
+  constructor(args: {
+    status: number;
+    detail: string;
+    envelope: ApiErrorEnvelope;
+    requestId: string | null;
+    correlationId: string | null;
+  }) {
+    super(`API ${args.status}: ${args.detail}`);
+    this.name = "ApiRequestError";
+    this.status = args.status;
+    this.detail = args.detail;
+    this.error = args.envelope.error;
+    this.envelope = args.envelope;
+    this.requestId = args.requestId;
+    this.correlationId = args.correlationId;
+  }
+}
+
+export function isApiRequestError(error: unknown): error is ApiRequestError {
+  return error instanceof ApiRequestError;
+}
+
+function buildApiRequestError(response: Response, rawBody: string): ApiRequestError {
+  const parsed = parseJsonMaybe(rawBody);
+  const envelope = isApiErrorEnvelope(parsed)
+    ? parsed
+    : {
+        detail: typeof parsed === "string" && parsed.trim() ? parsed : response.statusText || "request failed",
+        error: {
+          code: "request.error",
+          message: typeof parsed === "string" && parsed.trim() ? parsed : response.statusText || "request failed",
+          details: {},
+          correlation_id: response.headers.get("x-correlation-id"),
+          status_code: response.status,
+        },
+      };
+  return new ApiRequestError({
+    status: response.status,
+    detail: envelope.detail,
+    envelope,
+    requestId: response.headers.get("x-request-id"),
+    correlationId: response.headers.get("x-correlation-id") ?? envelope.error.correlation_id ?? null,
+  });
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const method = init?.method ?? "GET";
   const startedAt = performance.now();
@@ -130,16 +197,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const text = await response.text();
+    const error = buildApiRequestError(response, text);
     logFrontendApi("request.error", {
       method,
       path,
       status: response.status,
       duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
       response: FRONTEND_API_LOG_VERBOSE ? redactSensitive(parseJsonMaybe(text)) : text.slice(0, 200),
-      request_id: response.headers.get("x-request-id"),
-      correlation_id: response.headers.get("x-correlation-id"),
+      request_id: error.requestId,
+      correlation_id: error.correlationId,
+      error_code: error.error.code,
     });
-    throw new Error(`API ${response.status}: ${text}`);
+    throw error;
   }
   const json = (await response.json()) as T;
   logFrontendApi("request.success", {
@@ -524,16 +593,18 @@ export async function analyzeMeal(formData: FormData): Promise<MealAnalyzeApiRes
   });
   if (!response.ok) {
     const text = await response.text();
+    const error = buildApiRequestError(response, text);
     logFrontendApi("request.error", {
       method: "POST",
       path: "/api/v1/meal/analyze",
       status: response.status,
       duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
       response: FRONTEND_API_LOG_VERBOSE ? redactSensitive(parseJsonMaybe(text)) : text.slice(0, 200),
-      request_id: response.headers.get("x-request-id"),
-      correlation_id: response.headers.get("x-correlation-id"),
+      request_id: error.requestId,
+      correlation_id: error.correlationId,
+      error_code: error.error.code,
     });
-    throw new Error(`API ${response.status}: ${text}`);
+    throw error;
   }
   const json = (await response.json()) as MealAnalyzeApiResponse;
   logFrontendApi("request.success", {

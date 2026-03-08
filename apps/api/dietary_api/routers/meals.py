@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
+from ..deps import meal_deps
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas.meals import MealAnalyzeResponse, MealDailySummaryResponse, MealRecordsResponse, MealWeeklySummaryResponse
 from ..services.meals import analyze_meal, get_daily_summary, get_weekly_summary, list_meal_records
@@ -22,7 +23,7 @@ async def meal_analyze(
     require_action(session, "meal.analyze")
     return await analyze_meal(
         request=request,
-        context=get_context(request),
+        deps=meal_deps(get_context(request)),
         session=session,
         file=file,
         provider=provider,
@@ -38,7 +39,7 @@ def meal_records(
 ) -> MealRecordsResponse:
     require_action(session, "meal.records.read")
     return list_meal_records(
-        context=get_context(request),
+        deps=meal_deps(get_context(request)),
         user_id=str(session["user_id"]),
         limit=limit,
         cursor=cursor,
@@ -53,7 +54,7 @@ def meal_daily_summary(
 ) -> MealDailySummaryResponse:
     require_action(session, "meal.records.read")
     return get_daily_summary(
-        context=get_context(request),
+        deps=meal_deps(get_context(request)),
         user_id=str(session["user_id"]),
         summary_date=summary_date,
     )
@@ -67,7 +68,7 @@ def meal_weekly_summary(
 ) -> MealWeeklySummaryResponse:
     require_action(session, "meal.records.read")
     return get_weekly_summary(
-        context=get_context(request),
+        deps=meal_deps(get_context(request)),
         user_id=str(session["user_id"]),
         week_start=week_start,
     )

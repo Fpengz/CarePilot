@@ -5,6 +5,18 @@ See also: [`docs/developer-guide.md`](../docs/developer-guide.md), [`docs/config
 
 ## 1) Startup Profiles
 
+### Supported Production Topology
+- API: FastAPI runtime (`apps/api`)
+- Web: Next.js app (`apps/web`)
+- Worker: external worker process (`apps/workers`)
+- Stateful backends: PostgreSQL + Redis
+- Required mode knobs:
+  - `APP_DATA_BACKEND=postgres`
+  - `AUTH_STORE_BACKEND=postgres`
+  - `HOUSEHOLD_STORE_BACKEND=postgres`
+  - `EPHEMERAL_STATE_BACKEND=redis`
+  - `WORKER_MODE=external`
+
 ### Lightweight Local (default)
 ```bash
 uv run python scripts/dg.py dev
@@ -19,7 +31,7 @@ uv run python scripts/dg.py migrate postgres
 uv run python scripts/dg.py smoke postgres-redis
 ```
 
-Use for validating persistence/cache/worker coordination paths.
+Use for validating the supported production topology locally.
 
 ## 2) Health and Readiness Checks
 

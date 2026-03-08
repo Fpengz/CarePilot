@@ -46,6 +46,11 @@ uv run python scripts/dg.py migrate postgres
 uv run python scripts/dg.py smoke postgres-redis
 ```
 
+This stack is the supported production-aligned topology:
+- API + Web + Worker
+- PostgreSQL for durable application/auth/household state
+- Redis for cache, coordination, and shared rate limiting
+
 ### Useful Health/Readiness Checks
 ```bash
 uv run python scripts/dg.py readiness http://127.0.0.1:8001

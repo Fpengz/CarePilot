@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Protocol
 from uuid import uuid4
 
 from dietary_guardian.logging_config import get_logger
@@ -7,6 +8,17 @@ from dietary_guardian.models.user import UserProfile
 from dietary_guardian.models.workflow import WorkflowTimelineEvent
 
 logger = get_logger(__name__)
+
+
+class WorkflowTimelineRepository(Protocol):
+    def save_workflow_timeline_event(self, event: WorkflowTimelineEvent) -> WorkflowTimelineEvent: ...
+
+    def list_workflow_timeline_events(
+        self,
+        *,
+        correlation_id: str | None = None,
+        user_id: str | None = None,
+    ) -> list[WorkflowTimelineEvent]: ...
 
 
 class ProfileMemoryService:
@@ -34,8 +46,15 @@ class ClinicalSnapshotMemoryService:
 
 
 class EventTimelineService:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        repository: WorkflowTimelineRepository | None = None,
+        persistence_enabled: bool = False,
+    ) -> None:
         self._events: list[WorkflowTimelineEvent] = []
+        self._repository = repository
+        self._persistence_enabled = persistence_enabled and repository is not None
 
     def append(
         self,
@@ -58,6 +77,8 @@ class EventTimelineService:
             created_at=datetime.now(timezone.utc),
         )
         self._events.append(event)
+        if self._persistence_enabled and self._repository is not None:
+            self._repository.save_workflow_timeline_event(event)
         logger.info(
             "event_timeline_append event_type=%s workflow=%s correlation_id=%s request_id=%s",
             event.event_type,
@@ -68,11 +89,16 @@ class EventTimelineService:
         return event
 
     def list(self, *, correlation_id: str | None = None, user_id: str | None = None) -> list[WorkflowTimelineEvent]:
+        if self._persistence_enabled and self._repository is not None:
+            return self._repository.list_workflow_timeline_events(
+                correlation_id=correlation_id,
+                user_id=user_id,
+            )
+
         events = self._events
         if correlation_id is not None:
             events = [e for e in events if e.correlation_id == correlation_id]
         if user_id is not None:
             events = [e for e in events if e.user_id == user_id]
         return sorted(events, key=lambda e: e.created_at)
-
 

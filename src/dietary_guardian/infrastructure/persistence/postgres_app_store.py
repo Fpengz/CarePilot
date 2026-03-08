@@ -27,6 +27,7 @@ from dietary_guardian.models.report import BiomarkerReading
 from dietary_guardian.models.symptom import SymptomCheckIn, SymptomSafety
 from dietary_guardian.models.tool_policy import ToolRolePolicyRecord
 from dietary_guardian.models.user import MealSlot
+from dietary_guardian.models.workflow import WorkflowTimelineEvent
 from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
 from dietary_guardian.services.meal_catalog_service import DEFAULT_MEAL_CATALOG
 
@@ -1250,6 +1251,70 @@ class PostgresAppStore:
             created_by=row[6],
             created_at=row[7],
         )
+
+    def save_workflow_timeline_event(self, event: WorkflowTimelineEvent) -> WorkflowTimelineEvent:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO workflow_timeline_events
+                (event_id, event_type, workflow_name, request_id, correlation_id, user_id, payload_json, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (event_id) DO UPDATE SET
+                    event_type = EXCLUDED.event_type,
+                    workflow_name = EXCLUDED.workflow_name,
+                    request_id = EXCLUDED.request_id,
+                    correlation_id = EXCLUDED.correlation_id,
+                    user_id = EXCLUDED.user_id,
+                    payload_json = EXCLUDED.payload_json,
+                    created_at = EXCLUDED.created_at
+                """,
+                (
+                    event.event_id,
+                    event.event_type,
+                    event.workflow_name,
+                    event.request_id,
+                    event.correlation_id,
+                    event.user_id,
+                    self._jsonb(event.payload),
+                    event.created_at,
+                ),
+            )
+        return event
+
+    def list_workflow_timeline_events(
+        self,
+        *,
+        correlation_id: str | None = None,
+        user_id: str | None = None,
+    ) -> list[WorkflowTimelineEvent]:
+        query = (
+            "SELECT event_id, event_type, workflow_name, request_id, correlation_id, user_id, payload_json, created_at "
+            "FROM workflow_timeline_events WHERE TRUE"
+        )
+        params: list[Any] = []
+        if correlation_id is not None:
+            query += " AND correlation_id = %s"
+            params.append(correlation_id)
+        if user_id is not None:
+            query += " AND user_id = %s"
+            params.append(user_id)
+        query += " ORDER BY created_at"
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(query, tuple(params))
+            rows = cur.fetchall()
+        return [
+            WorkflowTimelineEvent(
+                event_id=row[0],
+                event_type=row[1],
+                workflow_name=row[2],
+                request_id=row[3],
+                correlation_id=row[4],
+                user_id=row[5],
+                payload=cast(dict[str, object], _json_payload(row[6])),
+                created_at=row[7],
+            )
+            for row in rows
+        ]
 
     def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
         with self._connect() as conn, conn.cursor() as cur:

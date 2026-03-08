@@ -27,7 +27,7 @@ from dietary_guardian.application.policies.household_access import (
 from dietary_guardian.services.health_profile_service import compute_profile_completeness
 from dietary_guardian.services.health_profile_service import get_or_create_health_profile
 
-from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.deps import AppContext, MealDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
     HouseholdActiveUpdateResponse,
@@ -408,7 +408,11 @@ def get_household_care_member_daily_summary(
         subject_user_id=subject_user_id,
     )
     summary = get_daily_summary(
-        context=context,
+        deps=MealDeps(
+            settings=context.settings,
+            stores=context.stores,
+            coordinator=context.coordinator,
+        ),
         user_id=subject_user_id,
         summary_date=summary_date,
     )

@@ -41,6 +41,34 @@ class AppContext:
     emotion_service: EmotionService
 
 
+@dataclass(frozen=True)
+class MealDeps:
+    settings: Settings
+    stores: AppStores
+    coordinator: WorkflowCoordinator
+
+
+@dataclass(frozen=True)
+class RecommendationDeps:
+    stores: AppStores
+    clinical_memory: ClinicalSnapshotMemoryService
+
+
+@dataclass(frozen=True)
+class WorkflowDeps:
+    settings: Settings
+    stores: AppStores
+    event_timeline: EventTimelineService
+    agent_registry: AgentRegistry
+    coordinator: WorkflowCoordinator
+
+
+@dataclass(frozen=True)
+class EmotionDeps:
+    settings: Settings
+    emotion_service: EmotionService
+
+
 def close_app_context(ctx: AppContext) -> None:
     for component in (
         ctx.app_store,
@@ -99,7 +127,10 @@ def build_app_context() -> AppContext:
     app_store = _build_app_store(settings)
     profile_memory = ProfileMemoryService()
     clinical_memory = ClinicalSnapshotMemoryService()
-    event_timeline = EventTimelineService()
+    event_timeline = EventTimelineService(
+        repository=app_store,
+        persistence_enabled=settings.workflow_trace_persistence_enabled,
+    )
     tool_registry = build_platform_tool_registry(app_store)
     agent_registry = build_default_agent_registry()
     coordinator = WorkflowCoordinator(
@@ -143,3 +174,25 @@ def build_app_context() -> AppContext:
 
     ensure_runtime_contract_snapshot_bootstrap(context=ctx)
     return ctx
+
+
+def meal_deps(ctx: AppContext) -> MealDeps:
+    return MealDeps(settings=ctx.settings, stores=ctx.stores, coordinator=ctx.coordinator)
+
+
+def recommendation_deps(ctx: AppContext) -> RecommendationDeps:
+    return RecommendationDeps(stores=ctx.stores, clinical_memory=ctx.clinical_memory)
+
+
+def workflow_deps(ctx: AppContext) -> WorkflowDeps:
+    return WorkflowDeps(
+        settings=ctx.settings,
+        stores=ctx.stores,
+        event_timeline=ctx.event_timeline,
+        agent_registry=ctx.agent_registry,
+        coordinator=ctx.coordinator,
+    )
+
+
+def emotion_deps(ctx: AppContext) -> EmotionDeps:
+    return EmotionDeps(settings=ctx.settings, emotion_service=ctx.emotion_service)

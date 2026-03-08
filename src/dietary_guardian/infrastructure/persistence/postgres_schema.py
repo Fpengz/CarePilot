@@ -271,6 +271,18 @@ APP_SCHEMA_STATEMENTS: tuple[str, ...] = (
         created_at TIMESTAMPTZ NOT NULL
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS workflow_timeline_events (
+        event_id TEXT PRIMARY KEY,
+        event_type TEXT NOT NULL,
+        workflow_name TEXT,
+        request_id TEXT,
+        correlation_id TEXT NOT NULL,
+        user_id TEXT,
+        payload_json JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL
+    )
+    """,
     "CREATE INDEX IF NOT EXISTS idx_reminders_user_time ON reminder_events(user_id, scheduled_at)",
     "CREATE INDEX IF NOT EXISTS idx_meals_user_time ON meal_records(user_id, captured_at)",
     "CREATE INDEX IF NOT EXISTS idx_biomarkers_user_time_name ON biomarker_readings(user_id, measured_at, name)",
@@ -292,6 +304,8 @@ APP_SCHEMA_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_tool_role_policies_lookup ON tool_role_policies(role, agent_id, tool_name, enabled, priority DESC)",
     "CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_created ON workflow_contract_snapshots(created_at DESC)",
     "CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_hash ON workflow_contract_snapshots(contract_hash)",
+    "CREATE INDEX IF NOT EXISTS idx_workflow_timeline_corr_created ON workflow_timeline_events(correlation_id, created_at)",
+    "CREATE INDEX IF NOT EXISTS idx_workflow_timeline_user_created ON workflow_timeline_events(user_id, created_at)",
 )
 
 AUTH_SCHEMA_STATEMENTS: tuple[str, ...] = (

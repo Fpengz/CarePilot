@@ -40,3 +40,23 @@ def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> 
 
     assert report["status"] == "not_ready"
     assert any(item["name"] == "sms_configuration" and item["status"] == "warn" for item in report["checks"])
+
+
+def test_readiness_report_requires_shared_rate_limiting_for_prod() -> None:
+    settings = Settings(
+        llm_provider="test",
+        app_env="prod",
+        app_data_backend="postgres",
+        auth_store_backend="postgres",
+        household_store_backend="postgres",
+        postgres_dsn="postgresql://dietary_guardian:dietary_guardian@127.0.0.1:5432/dietary_guardian",
+        ephemeral_state_backend="in_memory",
+        session_secret="prod-secret",
+        cookie_secure=True,
+        auth_seed_demo_users=False,
+    )
+
+    report = build_readiness_report(settings=settings)
+
+    assert report["status"] == "not_ready"
+    assert any(item["name"] == "shared_rate_limiting" and item["status"] == "fail" for item in report["checks"])

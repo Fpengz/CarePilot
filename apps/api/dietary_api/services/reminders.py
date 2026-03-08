@@ -61,8 +61,8 @@ def generate_reminders_for_session(*, context: AppContext, session: dict[str, ob
     current_events = context.stores.reminders.list_reminder_events(user_profile.id)
     metrics = compute_mcr(current_events)
     return ReminderGenerateResponse(
-        reminders=[item.model_dump(mode="json") for item in reminders],
-        metrics=metrics.model_dump(mode="json"),
+        reminders=reminders,
+        metrics=metrics,
     )
 
 
@@ -70,8 +70,8 @@ def list_reminders_for_session(*, context: AppContext, user_id: str) -> Reminder
     events = context.stores.reminders.list_reminder_events(user_id)
     metrics = compute_mcr(events)
     return ReminderListResponse(
-        reminders=[item.model_dump(mode="json") for item in events],
-        metrics=metrics.model_dump(mode="json"),
+        reminders=events,
+        metrics=metrics,
     )
 
 
@@ -100,8 +100,8 @@ def confirm_reminder_for_session(
     cancel_reminder_notifications(repository=context.stores.reminders, reminder_id=event_id)
     metrics = compute_mcr(context.stores.reminders.list_reminder_events(user_id))
     return ReminderConfirmResponse(
-        event=updated.model_dump(mode="json"),
-        metrics=metrics.model_dump(mode="json"),
+        event=updated,
+        metrics=metrics,
     )
 
 

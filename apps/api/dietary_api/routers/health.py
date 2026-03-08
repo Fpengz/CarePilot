@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from dietary_guardian.services.readiness_service import build_readiness_report
 
-from ..routes_shared import get_context
+from ..routes_shared import current_session, get_context
 
 router = APIRouter(tags=["health"])
 
@@ -28,7 +28,12 @@ def health_ready(request: Request) -> dict[str, object]:
 
 
 @router.get("/api/v1/health/config")
-def health_config(request: Request) -> dict[str, object]:
+def health_config(
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> dict[str, object]:
+    if str(session.get("account_role", "")) != "admin":
+        raise HTTPException(status_code=403, detail="forbidden")
     context = get_context(request)
     return {
         "llm_provider": context.settings.llm_provider,

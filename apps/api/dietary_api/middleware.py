@@ -1,13 +1,11 @@
-from collections import deque
 from dataclasses import dataclass
-from threading import Lock
 from time import perf_counter
-from time import time
 from typing import Any, cast
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 
+from dietary_guardian.infrastructure.cache import build_rate_limiter
 from dietary_guardian.logging_config import get_logger
 from .errors import api_error_payload
 from .observability import get_correlation_id, get_request_id, render_kv_log
@@ -21,25 +19,6 @@ class _RateLimitRule:
     path: str
     limit_attr: str
     code: str
-
-
-class _RateLimiterState:
-    def __init__(self) -> None:
-        self._events: dict[str, deque[float]] = {}
-        self._lock = Lock()
-
-    def allow(self, *, key: str, limit: int, window_seconds: int) -> tuple[bool, int]:
-        now = time()
-        cutoff = now - float(window_seconds)
-        with self._lock:
-            events = self._events.setdefault(key, deque())
-            while events and events[0] <= cutoff:
-                events.popleft()
-            if len(events) >= limit:
-                retry_after = int(max(1, window_seconds - (now - events[0]))) if events else window_seconds
-                return (False, retry_after)
-            events.append(now)
-            return (True, 0)
 
 
 _RATE_LIMIT_RULES: tuple[_RateLimitRule, ...] = (
@@ -73,11 +52,11 @@ def _matching_rate_limit_rule(request: Request) -> _RateLimitRule | None:
     return None
 
 
-def _rate_limiter_state(request: Request) -> _RateLimiterState:
+def _rate_limiter_state(request: Request):
     state = request.app.state.__dict__.get("_rate_limiter_state")
-    if isinstance(state, _RateLimiterState):
+    if state is not None:
         return state
-    created = _RateLimiterState()
+    created = build_rate_limiter(request.app.state.ctx.settings)
     request.app.state.__dict__["_rate_limiter_state"] = created
     return created
 

@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.deps import AppContext, WorkflowDeps
 from apps.api.dietary_api.schemas import (
     AgentContractResponse,
     ToolPolicyCreateRequest,
@@ -30,8 +30,8 @@ from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractS
 from dietary_guardian.services.policy_service import apply_tool_policy_patch, create_tool_policy_record, evaluate_tool_policy
 
 
-def get_workflow(*, context: AppContext, correlation_id: str) -> WorkflowResponse:
-    workflow = context.coordinator.replay_workflow(correlation_id)
+def get_workflow(*, deps: WorkflowDeps, correlation_id: str) -> WorkflowResponse:
+    workflow = deps.coordinator.replay_workflow(correlation_id)
     return WorkflowResponse(
         workflow_name=str(workflow.workflow_name),
         request_id=workflow.request_id,
@@ -41,8 +41,8 @@ def get_workflow(*, context: AppContext, correlation_id: str) -> WorkflowRespons
     )
 
 
-def list_workflows(*, context: AppContext) -> WorkflowListResponse:
-    events = context.event_timeline.list()
+def list_workflows(*, deps: WorkflowDeps) -> WorkflowListResponse:
+    events = deps.event_timeline.list()
     by_correlation: dict[str, WorkflowListItem] = {}
     for event in events:
         item = by_correlation.get(event.correlation_id)
@@ -71,7 +71,7 @@ def list_workflows(*, context: AppContext) -> WorkflowListResponse:
     return WorkflowListResponse(items=items)
 
 
-def get_runtime_contract(*, context: AppContext) -> WorkflowRuntimeRegistryResponse:
+def get_runtime_contract(*, deps: WorkflowDeps) -> WorkflowRuntimeRegistryResponse:
     workflows = [
         WorkflowRuntimeContractResponse(
             workflow_name=str(contract.workflow_name),
@@ -85,7 +85,7 @@ def get_runtime_contract(*, context: AppContext) -> WorkflowRuntimeRegistryRespo
                 for step in contract.steps
             ],
         )
-        for contract in context.agent_registry.list_workflow_contracts()
+        for contract in deps.agent_registry.list_workflow_contracts()
     ]
     agents = [
         AgentContractResponse(
@@ -94,17 +94,17 @@ def get_runtime_contract(*, context: AppContext) -> WorkflowRuntimeRegistryRespo
             allowed_tools=list(agent.allowed_tools),
             output_contract=agent.output_contract,
         )
-        for agent in context.agent_registry.list_agents()
+        for agent in deps.agent_registry.list_agents()
     ]
     return WorkflowRuntimeRegistryResponse(workflows=workflows, agents=agents)
 
 
-def list_tool_policies(*, context: AppContext) -> ToolPolicyListResponse:
-    items = context.stores.workflows.list_tool_role_policies()
+def list_tool_policies(*, deps: WorkflowDeps) -> ToolPolicyListResponse:
+    items = deps.stores.workflows.list_tool_role_policies()
     return ToolPolicyListResponse(items=[_policy_item_response(item) for item in items])
 
 
-def create_tool_policy(*, context: AppContext, payload: ToolPolicyCreateRequest) -> ToolPolicyWriteResponse:
+def create_tool_policy(*, deps: WorkflowDeps, payload: ToolPolicyCreateRequest) -> ToolPolicyWriteResponse:
     record = create_tool_policy_record(
         role=payload.role,
         agent_id=payload.agent_id,
@@ -114,31 +114,31 @@ def create_tool_policy(*, context: AppContext, payload: ToolPolicyCreateRequest)
         priority=payload.priority,
         enabled=payload.enabled,
     )
-    saved = context.stores.workflows.save_tool_role_policy(record)
+    saved = deps.stores.workflows.save_tool_role_policy(record)
     return ToolPolicyWriteResponse(policy=_policy_item_response(saved))
 
 
-def patch_tool_policy(*, context: AppContext, policy_id: str, payload: ToolPolicyPatchRequest) -> ToolPolicyWriteResponse | None:
-    current = context.stores.workflows.get_tool_role_policy(policy_id)
+def patch_tool_policy(*, deps: WorkflowDeps, policy_id: str, payload: ToolPolicyPatchRequest) -> ToolPolicyWriteResponse | None:
+    current = deps.stores.workflows.get_tool_role_policy(policy_id)
     if current is None:
         return None
     patch = payload.model_dump(exclude_none=True)
     updated = apply_tool_policy_patch(current, patch)
-    saved = context.stores.workflows.save_tool_role_policy(updated)
+    saved = deps.stores.workflows.save_tool_role_policy(updated)
     return ToolPolicyWriteResponse(policy=_policy_item_response(saved))
 
 
 def evaluate_tool_policy_for_runtime(
     *,
-    context: AppContext,
+    deps: WorkflowDeps,
     role: str,
     agent_id: str,
     tool_name: str,
     environment: str,
 ) -> ToolPolicyEvaluationResponse:
-    agent = next((item for item in context.agent_registry.list_agents() if item.agent_id == agent_id), None)
+    agent = next((item for item in deps.agent_registry.list_agents() if item.agent_id == agent_id), None)
     code_allows_tool = agent is not None and tool_name in set(agent.allowed_tools)
-    policies = context.stores.workflows.list_tool_role_policies(
+    policies = deps.stores.workflows.list_tool_role_policies(
         role=role,
         agent_id=agent_id,
         tool_name=tool_name,
@@ -151,7 +151,7 @@ def evaluate_tool_policy_for_runtime(
         tool_name=tool_name,
         environment=environment,
         code_allows_tool=code_allows_tool,
-        mode=context.settings.tool_policy_enforcement_mode,
+        mode=deps.settings.tool_policy_enforcement_mode,
     )
     return ToolPolicyEvaluationResponse(
         policy_mode=evaluation["policy_mode"],
@@ -164,13 +164,20 @@ def evaluate_tool_policy_for_runtime(
 
 
 def ensure_runtime_contract_snapshot_bootstrap(*, context: AppContext) -> WorkflowSnapshotWriteResponse | None:
-    if not context.settings.workflow_contract_bootstrap:
+    deps = WorkflowDeps(
+        settings=context.settings,
+        stores=context.stores,
+        event_timeline=context.event_timeline,
+        agent_registry=context.agent_registry,
+        coordinator=context.coordinator,
+    )
+    if not deps.settings.workflow_contract_bootstrap:
         return None
-    if not context.stores.workflows.supports_contract_snapshots():
+    if not deps.stores.workflows.supports_contract_snapshots():
         return None
-    runtime = get_runtime_contract(context=context)
+    runtime = get_runtime_contract(deps=deps)
     contract_hash = _runtime_contract_hash(runtime)
-    existing = context.stores.workflows.list_workflow_contract_snapshots(limit=1)
+    existing = deps.stores.workflows.list_workflow_contract_snapshots(limit=1)
     if existing and existing[0].contract_hash == contract_hash:
         return WorkflowSnapshotWriteResponse(snapshot=_snapshot_item_response(existing[0]))
     version = (existing[0].version + 1) if existing else 1
@@ -179,46 +186,46 @@ def ensure_runtime_contract_snapshot_bootstrap(*, context: AppContext) -> Workfl
         version=version,
         contract_hash=contract_hash,
         source="startup_bootstrap",
-        workflows=context.agent_registry.list_workflow_contracts(),
-        agents=context.agent_registry.list_agents(),
+        workflows=deps.agent_registry.list_workflow_contracts(),
+        agents=deps.agent_registry.list_agents(),
         created_by="system",
         created_at=datetime.now(timezone.utc),
     )
-    saved = context.stores.workflows.save_workflow_contract_snapshot(snapshot)
+    saved = deps.stores.workflows.save_workflow_contract_snapshot(snapshot)
     return WorkflowSnapshotWriteResponse(snapshot=_snapshot_item_response(saved))
 
 
-def list_runtime_contract_snapshots(*, context: AppContext) -> WorkflowSnapshotListResponse:
-    items = context.stores.workflows.list_workflow_contract_snapshots()
+def list_runtime_contract_snapshots(*, deps: WorkflowDeps) -> WorkflowSnapshotListResponse:
+    items = deps.stores.workflows.list_workflow_contract_snapshots()
     return WorkflowSnapshotListResponse(items=[_snapshot_item_response(item) for item in items])
 
 
-def create_runtime_contract_snapshot(*, context: AppContext, created_by: str | None) -> WorkflowSnapshotWriteResponse:
-    runtime = get_runtime_contract(context=context)
-    existing = context.stores.workflows.list_workflow_contract_snapshots(limit=1)
+def create_runtime_contract_snapshot(*, deps: WorkflowDeps, created_by: str | None) -> WorkflowSnapshotWriteResponse:
+    runtime = get_runtime_contract(deps=deps)
+    existing = deps.stores.workflows.list_workflow_contract_snapshots(limit=1)
     version = (existing[0].version + 1) if existing else 1
     snapshot = WorkflowContractSnapshotRecord(
         id=f"wcs-{uuid4().hex}",
         version=version,
         contract_hash=_runtime_contract_hash(runtime),
         source="manual_api",
-        workflows=context.agent_registry.list_workflow_contracts(),
-        agents=context.agent_registry.list_agents(),
+        workflows=deps.agent_registry.list_workflow_contracts(),
+        agents=deps.agent_registry.list_agents(),
         created_by=created_by,
         created_at=datetime.now(timezone.utc),
     )
-    saved = context.stores.workflows.save_workflow_contract_snapshot(snapshot)
+    saved = deps.stores.workflows.save_workflow_contract_snapshot(snapshot)
     return WorkflowSnapshotWriteResponse(snapshot=_snapshot_item_response(saved))
 
 
 def compare_runtime_contract_snapshots(
     *,
-    context: AppContext,
+    deps: WorkflowDeps,
     base_version: int,
     target_version: int,
 ) -> WorkflowSnapshotCompareResponse | None:
-    base = context.stores.workflows.get_workflow_contract_snapshot(version=base_version)
-    target = context.stores.workflows.get_workflow_contract_snapshot(version=target_version)
+    base = deps.stores.workflows.get_workflow_contract_snapshot(version=base_version)
+    target = deps.stores.workflows.get_workflow_contract_snapshot(version=target_version)
     if base is None or target is None:
         return None
     changed = base.contract_hash != target.contract_hash

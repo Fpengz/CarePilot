@@ -353,6 +353,17 @@ def test_login_locks_after_repeated_failures_and_then_allows_after_lockout_expir
     assert "too many login attempts" not in next_failed.text.lower()
 
 
+def test_login_normalizes_email_for_authentication_and_lockout() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    failed = client.post("/api/v1/auth/login", json={"email": " MEMBER@EXAMPLE.COM ", "password": "wrong-pass"})
+    assert failed.status_code == 401
+
+    success = client.post("/api/v1/auth/login", json={"email": " MEMBER@EXAMPLE.COM ", "password": "member-pass"})
+    assert success.status_code == 200
+
+
 def test_auth_audit_events_admin_only_and_bounded() -> None:
     app = create_app()
     member_client = TestClient(app)

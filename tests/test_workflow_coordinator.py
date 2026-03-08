@@ -198,6 +198,49 @@ def test_replay_returns_timeline_without_new_side_effects(tmp_path) -> None:
     assert replay.timeline_events
 
 
+def test_replay_survives_restart_with_durable_timeline(tmp_path) -> None:
+    db_path = tmp_path / "durable-workflow.db"
+    repo = SQLiteRepository(str(db_path))
+    timeline = EventTimelineService(repository=repo, persistence_enabled=True)
+    registry = build_platform_tool_registry(repo)
+    coordinator = WorkflowCoordinator(
+        tool_registry=registry,
+        profile_memory=ProfileMemoryService(),
+        clinical_memory=ClinicalSnapshotMemoryService(),
+        event_timeline=timeline,
+    )
+
+    live = coordinator.run_alert_workflow(
+        user_profile=_user(),
+        alert_type="manual_test_alert",
+        severity="warning",
+        message="hello",
+        destinations=["in_app"],
+        account_role="admin",
+        scopes=["alert:trigger"],
+    )
+
+    restarted_repo = SQLiteRepository(str(db_path))
+    restarted_timeline = EventTimelineService(repository=restarted_repo, persistence_enabled=True)
+    restarted_registry = build_platform_tool_registry(restarted_repo)
+    restarted_coordinator = WorkflowCoordinator(
+        tool_registry=restarted_registry,
+        profile_memory=ProfileMemoryService(),
+        clinical_memory=ClinicalSnapshotMemoryService(),
+        event_timeline=restarted_timeline,
+    )
+
+    replay = restarted_coordinator.replay_workflow(live.correlation_id)
+
+    assert replay.workflow_name == "replay"
+    assert replay.replayed is True
+    assert [event.event_type for event in replay.timeline_events] == [
+        "workflow_started",
+        "workflow_completed",
+    ]
+    assert all(event.correlation_id == live.correlation_id for event in replay.timeline_events)
+
+
 def test_report_parse_workflow_emits_summary_timeline(tmp_path) -> None:
     repo = SQLiteRepository(str(tmp_path / "reports.db"))
     timeline = EventTimelineService()

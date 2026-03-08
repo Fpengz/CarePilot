@@ -25,6 +25,7 @@ from dietary_guardian.services.meal_catalog_service import DEFAULT_MEAL_CATALOG
 from dietary_guardian.models.symptom import SymptomCheckIn, SymptomSafety
 from dietary_guardian.models.tool_policy import ToolRolePolicyRecord
 from dietary_guardian.models.user import MealSlot
+from dietary_guardian.models.workflow import WorkflowTimelineEvent
 from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
 
 logger = get_logger(__name__)
@@ -346,6 +347,20 @@ class SQLiteRepository:
                 )
                 """
             )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS workflow_timeline_events (
+                    event_id TEXT PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    workflow_name TEXT,
+                    request_id TEXT,
+                    correlation_id TEXT NOT NULL,
+                    user_id TEXT,
+                    payload_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
             # Backward-compatible migration for databases created before payload fields existed.
             existing_columns = {
                 row[1] for row in cur.execute("PRAGMA table_info(alert_outbox)").fetchall()
@@ -393,6 +408,8 @@ class SQLiteRepository:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_tool_role_policies_lookup ON tool_role_policies(role, agent_id, tool_name, enabled, priority DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_created ON workflow_contract_snapshots(created_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_hash ON workflow_contract_snapshots(contract_hash)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_timeline_corr_created ON workflow_timeline_events(correlation_id, created_at)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_timeline_user_created ON workflow_timeline_events(user_id, created_at)")
             conn.commit()
         self._seed_meal_catalog()
         logger.info("repository_schema_ready db_path=%s", self.db_path)
@@ -1530,6 +1547,62 @@ class SQLiteRepository:
             created_by=row[6],
             created_at=datetime.fromisoformat(row[7]),
         )
+
+    def save_workflow_timeline_event(self, event: WorkflowTimelineEvent) -> WorkflowTimelineEvent:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO workflow_timeline_events
+                (event_id, event_type, workflow_name, request_id, correlation_id, user_id, payload_json, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.event_id,
+                    event.event_type,
+                    event.workflow_name,
+                    event.request_id,
+                    event.correlation_id,
+                    event.user_id,
+                    json.dumps(event.payload),
+                    event.created_at.isoformat(),
+                ),
+            )
+            conn.commit()
+        return event
+
+    def list_workflow_timeline_events(
+        self,
+        *,
+        correlation_id: str | None = None,
+        user_id: str | None = None,
+    ) -> list[WorkflowTimelineEvent]:
+        query = (
+            "SELECT event_id, event_type, workflow_name, request_id, correlation_id, user_id, payload_json, created_at "
+            "FROM workflow_timeline_events WHERE 1=1"
+        )
+        params: list[Any] = []
+        if correlation_id is not None:
+            query += " AND correlation_id = ?"
+            params.append(correlation_id)
+        if user_id is not None:
+            query += " AND user_id = ?"
+            params.append(user_id)
+        query += " ORDER BY created_at"
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [
+            WorkflowTimelineEvent(
+                event_id=row[0],
+                event_type=row[1],
+                workflow_name=row[2],
+                request_id=row[3],
+                correlation_id=row[4],
+                user_id=row[5],
+                payload=cast(dict[str, object], json.loads(cast(str, row[6]))),
+                created_at=datetime.fromisoformat(row[7]),
+            )
+            for row in rows
+        ]
 
     def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
         with sqlite3.connect(self.db_path) as conn:

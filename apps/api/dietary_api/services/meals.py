@@ -14,31 +14,34 @@ from dietary_guardian.services.media_ingestion import build_capture_envelope, sh
 from dietary_guardian.services.upload_service import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
 
 from apps.api.dietary_api.auth import build_user_profile_from_session
-from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.deps import MealDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
+    CursorPageResponse,
     MealAnalyzeResponse,
+    MealAnalyzeSummaryResponse,
     MealDailySummaryResponse,
     MealRecordsResponse,
     MealWeeklySummaryResponse,
+    WorkflowResponse,
 )
 
 
 async def analyze_meal(
     *,
     request: Request,
-    context: AppContext,
+    deps: MealDeps,
     session: dict[str, object],
     file: UploadFile,
     provider: str | None,
 ) -> MealAnalyzeResponse:
     payload = await file.read()
-    if len(payload) > context.settings.api_meal_upload_max_bytes:
+    if len(payload) > deps.settings.api_meal_upload_max_bytes:
         raise build_api_error(
             status_code=413,
             code="meal.upload_too_large",
             message="upload exceeds maximum allowed size",
-            details={"max_bytes": int(context.settings.api_meal_upload_max_bytes)},
+            details={"max_bytes": int(deps.settings.api_meal_upload_max_bytes)},
         )
     if len(payload) == 0:
         raise build_api_error(status_code=400, code="meal.empty_upload", message="empty upload")
@@ -53,8 +56,8 @@ async def analyze_meal(
     image_bytes, preprocess_meta = _maybe_downscale_image(
         payload,
         mime_type,
-        enabled=context.settings.image_downscale_enabled,
-        max_side_px=context.settings.image_max_side_px,
+        enabled=deps.settings.image_downscale_enabled,
+        max_side_px=deps.settings.image_max_side_px,
     )
     image_input = ImageInput(
         source="upload",
@@ -77,9 +80,9 @@ async def analyze_meal(
             message="duplicate capture suppressed",
         )
 
-    user_profile = build_user_profile_from_session(session, context.stores.profiles)
+    user_profile = build_user_profile_from_session(session, deps.stores.profiles)
     selected_provider = provider.strip() if isinstance(provider, str) else ""
-    module = HawkerVisionModule(provider=selected_provider or context.settings.llm_provider)
+    module = HawkerVisionModule(provider=selected_provider or deps.settings.llm_provider)
     try:
         vision_result, meal_record = await asyncio.wait_for(
             module.analyze_and_record(
@@ -88,17 +91,17 @@ async def analyze_meal(
                 request_id=capture.request_id,
                 correlation_id=capture.correlation_id,
             ),
-            timeout=context.settings.llm_inference_wall_clock_timeout_seconds,
+            timeout=deps.settings.llm_inference_wall_clock_timeout_seconds,
         )
     except asyncio.TimeoutError as exc:
         raise build_api_error(
             status_code=504,
             code="llm.timeout",
             message="meal analysis timed out",
-            details={"timeout_seconds": context.settings.llm_inference_wall_clock_timeout_seconds},
+            details={"timeout_seconds": deps.settings.llm_inference_wall_clock_timeout_seconds},
         ) from exc
-    context.stores.meals.save_meal_record(meal_record)
-    workflow = context.coordinator.run_meal_analysis_workflow(
+    deps.stores.meals.save_meal_record(meal_record)
+    workflow = deps.coordinator.run_meal_analysis_workflow(
         capture=capture,
         vision_result=vision_result,
         user_profile=user_profile,
@@ -106,10 +109,10 @@ async def analyze_meal(
     )
     return MealAnalyzeResponse(
         summary=_build_meal_summary(vision_result=vision_result, meal_record=meal_record),
-        vision_result=vision_result.model_dump(mode="json"),
-        meal_record=meal_record.model_dump(mode="json"),
-        output_envelope=workflow.output_envelope.model_dump(mode="json") if workflow.output_envelope else None,
-        workflow=workflow.model_dump(mode="json"),
+        vision_result=vision_result,
+        meal_record=meal_record,
+        output_envelope=workflow.output_envelope,
+        workflow=WorkflowResponse.model_validate(workflow.model_dump(mode="json")),
     )
 
 
@@ -129,61 +132,61 @@ def _parse_cursor(cursor: str | None) -> int:
 
 def list_meal_records(
     *,
-    context: AppContext,
+    deps: MealDeps,
     user_id: str,
     limit: int = 50,
     cursor: str | None = None,
 ) -> MealRecordsResponse:
-    records = context.stores.meals.list_meal_records(user_id)
+    records = deps.stores.meals.list_meal_records(user_id)
     start = _parse_cursor(cursor)
     end = start + limit
     page_items = records[start:end]
     next_cursor = str(end) if end < len(records) else None
     return MealRecordsResponse(
-        records=[item.model_dump(mode="json") for item in page_items],
-        page={
-            "limit": limit,
-            "cursor": cursor,
-            "next_cursor": next_cursor,
-            "has_more": next_cursor is not None,
-            "returned": len(page_items),
-        },
+        records=page_items,
+        page=CursorPageResponse(
+            limit=limit,
+            cursor=cursor,
+            next_cursor=next_cursor,
+            has_more=next_cursor is not None,
+            returned=len(page_items),
+        ),
     )
 
 
 def get_daily_summary(
     *,
-    context: AppContext,
+    deps: MealDeps,
     user_id: str,
     summary_date: date,
 ) -> MealDailySummaryResponse:
-    profile = get_or_create_health_profile(context.stores.profiles, user_id)
-    records = context.stores.meals.list_meal_records(user_id)
+    profile = get_or_create_health_profile(deps.stores.profiles, user_id)
+    records = deps.stores.meals.list_meal_records(user_id)
     summary = build_daily_nutrition_summary(
         profile=profile,
         meal_history=records,
         summary_date=summary_date,
-        timezone_name=context.settings.app_timezone,
+        timezone_name=deps.settings.app_timezone,
     )
     return MealDailySummaryResponse.model_validate(summary.model_dump(mode="json"))
 
 
 def get_weekly_summary(
     *,
-    context: AppContext,
+    deps: MealDeps,
     user_id: str,
     week_start: date,
 ) -> MealWeeklySummaryResponse:
-    records = context.stores.meals.list_meal_records(user_id)
+    records = deps.stores.meals.list_meal_records(user_id)
     summary = build_weekly_nutrition_summary(
         meal_history=records,
         week_start=week_start,
-        timezone_name=context.settings.app_timezone,
+        timezone_name=deps.settings.app_timezone,
     )
     return MealWeeklySummaryResponse.model_validate(summary)
 
 
-def _build_meal_summary(*, vision_result: VisionResult, meal_record: MealRecognitionRecord) -> dict[str, object]:
+def _build_meal_summary(*, vision_result: VisionResult, meal_record: MealRecognitionRecord) -> MealAnalyzeSummaryResponse:
     primary = vision_result.primary_state
     nutrition = primary.nutrition
     flags: list[str] = []
@@ -192,15 +195,15 @@ def _build_meal_summary(*, vision_result: VisionResult, meal_record: MealRecogni
         flags.append("manual_review_required")
     # Deduplicate while preserving order.
     deduped_flags = list(dict.fromkeys(str(item) for item in flags if str(item).strip()))
-    return {
-        "meal_record_id": meal_record.id,
-        "meal_name": primary.dish_name,
-        "confidence": round(float(primary.confidence_score), 4),
-        "identification_method": str(primary.identification_method),
-        "estimated_calories": float(nutrition.calories),
-        "portion_size": str(primary.portion_size),
-        "needs_manual_review": bool(vision_result.needs_manual_review),
-        "flags": deduped_flags,
-        "portion_notes": list(primary.suggested_modifications),
-        "captured_at": meal_record.captured_at.isoformat(),
-    }
+    return MealAnalyzeSummaryResponse(
+        meal_record_id=meal_record.id,
+        meal_name=primary.dish_name,
+        confidence=round(float(primary.confidence_score), 4),
+        identification_method=str(primary.identification_method),
+        estimated_calories=float(nutrition.calories),
+        portion_size=str(primary.portion_size),
+        needs_manual_review=bool(vision_result.needs_manual_review),
+        flags=deduped_flags,
+        portion_notes=list(primary.suggested_modifications),
+        captured_at=meal_record.captured_at,
+    )

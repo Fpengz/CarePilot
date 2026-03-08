@@ -1,6 +1,19 @@
 export type AccountRole = "member" | "admin";
 export type ProfileMode = "self" | "caregiver";
 
+export interface ApiErrorBody {
+  code: string;
+  message: string;
+  details: Record<string, unknown>;
+  correlation_id?: string | null;
+  status_code?: number;
+}
+
+export interface ApiErrorEnvelope {
+  detail: string;
+  error: ApiErrorBody;
+}
+
 export interface SessionUser {
   user_id: string;
   email: string;

@@ -3,6 +3,13 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, EmailStr
 from dietary_guardian.models.identity import AccountRole, ProfileMode
+from dietary_guardian.models.analytics import EngagementMetrics
+from dietary_guardian.models.contracts import AgentOutputEnvelope
+from dietary_guardian.models.meal import VisionResult
+from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.models.medication import ReminderEvent
+from dietary_guardian.models.recommendation import RecommendationOutput
+from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot
 
 
 class ApiError(BaseModel):
@@ -394,17 +401,38 @@ class ReminderNotificationLogListResponse(BaseModel):
     items: list[ReminderNotificationLogItemResponse]
 
 
+class CursorPageResponse(BaseModel):
+    limit: int
+    cursor: str | None = None
+    next_cursor: str | None = None
+    has_more: bool
+    returned: int
+
+
+class MealAnalyzeSummaryResponse(BaseModel):
+    meal_record_id: str
+    meal_name: str
+    confidence: float
+    identification_method: str
+    estimated_calories: float
+    portion_size: str
+    needs_manual_review: bool
+    flags: list[str] = Field(default_factory=list)
+    portion_notes: list[str] = Field(default_factory=list)
+    captured_at: datetime
+
+
 class MealAnalyzeResponse(BaseModel):
-    summary: dict[str, object]
-    vision_result: dict[str, object]
-    meal_record: dict[str, object]
-    output_envelope: dict[str, object] | None
-    workflow: dict[str, object]
+    summary: MealAnalyzeSummaryResponse
+    vision_result: VisionResult
+    meal_record: MealRecognitionRecord
+    output_envelope: AgentOutputEnvelope | None
+    workflow: "WorkflowResponse"
 
 
 class MealRecordsResponse(BaseModel):
-    records: list[dict[str, object]]
-    page: dict[str, object] | None = None
+    records: list[MealRecognitionRecord]
+    page: CursorPageResponse | None = None
 
 
 class DailyNutritionTotalsResponse(BaseModel):
@@ -636,8 +664,13 @@ class HouseholdCareMealSummaryResponse(BaseModel):
 
 class HouseholdCareReminderListResponse(BaseModel):
     context: HouseholdCareContextResponse
-    reminders: list[dict[str, object]] = Field(default_factory=list)
-    metrics: dict[str, object] = Field(default_factory=dict)
+    reminders: list[ReminderEvent] = Field(default_factory=list)
+    metrics: EngagementMetrics = Field(default_factory=lambda: EngagementMetrics(
+        reminders_sent=0,
+        meal_confirmed_yes=0,
+        meal_confirmed_no=0,
+        meal_confirmation_rate=0.0,
+    ))
 
 
 class WorkflowTimelineEventResponse(BaseModel):
@@ -781,15 +814,15 @@ class SymptomSummaryWindowResponse(BaseModel):
 
 
 class ReportParseResponse(BaseModel):
-    readings: list[dict[str, object]]
-    snapshot: dict[str, object]
+    readings: list[BiomarkerReading]
+    snapshot: ClinicalProfileSnapshot
     symptom_summary: SymptomSummaryResponse
     symptom_window: SymptomSummaryWindowResponse
 
 
 class RecommendationGenerateResponse(BaseModel):
-    recommendation: dict[str, object]
-    workflow: dict[str, object]
+    recommendation: RecommendationOutput
+    workflow: WorkflowResponse
 
 
 class SuggestionGenerateFromReportRequest(BaseModel):
@@ -804,6 +837,11 @@ class SafetyDecisionResponse(BaseModel):
     redactions: list[str] = Field(default_factory=list)
 
 
+class SuggestionReportParseResponse(BaseModel):
+    readings: list[BiomarkerReading]
+    snapshot: ClinicalProfileSnapshot
+
+
 class SuggestionItemResponse(BaseModel):
     suggestion_id: str
     created_at: datetime
@@ -811,9 +849,9 @@ class SuggestionItemResponse(BaseModel):
     source_display_name: str
     disclaimer: str
     safety: SafetyDecisionResponse
-    report_parse: dict[str, object]
-    recommendation: dict[str, object]
-    workflow: dict[str, object]
+    report_parse: SuggestionReportParseResponse
+    recommendation: RecommendationOutput
+    workflow: WorkflowResponse
 
 
 class SuggestionGenerateFromReportResponse(BaseModel):
@@ -952,13 +990,13 @@ class SuggestionDetailResponse(BaseModel):
 
 
 class ReminderGenerateResponse(BaseModel):
-    reminders: list[dict[str, object]]
-    metrics: dict[str, object]
+    reminders: list[ReminderEvent]
+    metrics: EngagementMetrics
 
 
 class ReminderListResponse(BaseModel):
-    reminders: list[dict[str, object]]
-    metrics: dict[str, object]
+    reminders: list[ReminderEvent]
+    metrics: EngagementMetrics
 
 
 class ReminderConfirmRequest(BaseModel):
@@ -966,8 +1004,8 @@ class ReminderConfirmRequest(BaseModel):
 
 
 class ReminderConfirmResponse(BaseModel):
-    event: dict[str, object]
-    metrics: dict[str, object]
+    event: ReminderEvent
+    metrics: EngagementMetrics
 
 
 class MobilityReminderSettingsRequest(BaseModel):
@@ -986,3 +1024,6 @@ class MobilityReminderSettingsResponse(BaseModel):
 
 class MobilityReminderSettingsEnvelopeResponse(BaseModel):
     settings: MobilityReminderSettingsResponse
+
+
+MealAnalyzeResponse.model_rebuild(_types_namespace={"WorkflowResponse": WorkflowResponse})

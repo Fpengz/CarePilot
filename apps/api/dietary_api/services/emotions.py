@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.deps import EmotionDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas.emotions import (
     CompatEmotionResponse,
@@ -40,7 +40,7 @@ def _to_observation(
     )
 
 
-def _map_inference_error(exc: Exception, *, context: AppContext) -> Exception:
+def _map_inference_error(exc: Exception, *, deps: EmotionDeps) -> Exception:
     if isinstance(exc, EmotionServiceDisabledError):
         return build_api_error(
             status_code=503,
@@ -53,7 +53,7 @@ def _map_inference_error(exc: Exception, *, context: AppContext) -> Exception:
             code="emotions.speech_disabled",
             message="speech emotion inference is disabled",
         )
-    if isinstance(exc, context.emotion_service.timeout_error_type):
+    if isinstance(exc, deps.emotion_service.timeout_error_type):
         return build_api_error(
             status_code=504,
             code="emotions.timeout",
@@ -70,15 +70,15 @@ def _map_inference_error(exc: Exception, *, context: AppContext) -> Exception:
 
 def infer_text_for_session(
     *,
-    context: AppContext,
+    deps: EmotionDeps,
     payload: EmotionTextRequest,
     request_id: str | None,
     correlation_id: str | None,
 ) -> EmotionInferenceResponse:
     try:
-        result = context.emotion_service.infer_text(text=payload.text, language=payload.language)
+        result = deps.emotion_service.infer_text(text=payload.text, language=payload.language)
     except Exception as exc:
-        raise _map_inference_error(exc, context=context)
+        raise _map_inference_error(exc, deps=deps)
     return EmotionInferenceResponse(
         observation=_to_observation(result, request_id=request_id, correlation_id=correlation_id),
     )
@@ -86,7 +86,7 @@ def infer_text_for_session(
 
 def infer_speech_for_session(
     *,
-    context: AppContext,
+    deps: EmotionDeps,
     audio_bytes: bytes,
     filename: str | None,
     content_type: str | None,
@@ -96,7 +96,7 @@ def infer_speech_for_session(
     correlation_id: str | None,
 ) -> EmotionInferenceResponse:
     try:
-        result = context.emotion_service.infer_speech(
+        result = deps.emotion_service.infer_speech(
             audio_bytes=audio_bytes,
             filename=filename,
             content_type=content_type,
@@ -104,19 +104,19 @@ def infer_speech_for_session(
             language=language,
         )
     except Exception as exc:
-        raise _map_inference_error(exc, context=context)
+        raise _map_inference_error(exc, deps=deps)
     return EmotionInferenceResponse(
         observation=_to_observation(result, request_id=request_id, correlation_id=correlation_id),
     )
 
 
-def get_emotion_health(*, context: AppContext) -> EmotionHealthResponse:
-    health = context.emotion_service.health()
+def get_emotion_health(*, deps: EmotionDeps) -> EmotionHealthResponse:
+    health = deps.emotion_service.health()
     return EmotionHealthResponse.model_validate(health.model_dump(mode="json"))
 
 
-def _ensure_compat_enabled(*, context: AppContext) -> None:
-    if not context.settings.emotion_compat_routes_enabled:
+def _ensure_compat_enabled(*, deps: EmotionDeps) -> None:
+    if not deps.settings.emotion_compat_routes_enabled:
         raise build_api_error(
             status_code=404,
             code="emotions.compat_route_disabled",
@@ -126,39 +126,38 @@ def _ensure_compat_enabled(*, context: AppContext) -> None:
 
 def infer_compat_text_for_session(
     *,
-    context: AppContext,
+    deps: EmotionDeps,
     payload: CompatEmotionTextRequest,
 ) -> CompatEmotionResponse:
-    _ensure_compat_enabled(context=context)
+    _ensure_compat_enabled(deps=deps)
     try:
-        result = context.emotion_service.infer_text(text=payload.text)
+        result = deps.emotion_service.infer_text(text=payload.text)
     except Exception as exc:
-        raise _map_inference_error(exc, context=context)
+        raise _map_inference_error(exc, deps=deps)
     return CompatEmotionResponse.model_validate(to_compat_response(result))
 
 
 def infer_compat_speech_for_session(
     *,
-    context: AppContext,
+    deps: EmotionDeps,
     audio_bytes: bytes,
     filename: str | None,
     content_type: str | None,
     transcription: str | None,
 ) -> CompatEmotionResponse:
-    _ensure_compat_enabled(context=context)
+    _ensure_compat_enabled(deps=deps)
     try:
-        result = context.emotion_service.infer_speech(
+        result = deps.emotion_service.infer_speech(
             audio_bytes=audio_bytes,
             filename=filename,
             content_type=content_type,
             transcription=transcription,
         )
     except Exception as exc:
-        raise _map_inference_error(exc, context=context)
+        raise _map_inference_error(exc, deps=deps)
     return CompatEmotionResponse.model_validate(to_compat_response(result))
 
 
-def get_compat_emotion_health(*, context: AppContext) -> EmotionHealthResponse:
-    _ensure_compat_enabled(context=context)
-    return get_emotion_health(context=context)
-
+def get_compat_emotion_health(*, deps: EmotionDeps) -> EmotionHealthResponse:
+    _ensure_compat_enabled(deps=deps)
+    return get_emotion_health(deps=deps)

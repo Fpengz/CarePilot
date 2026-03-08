@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request
+from ..deps import recommendation_deps
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas.recommendations import (
     RecommendationAgentResponse,
@@ -25,7 +26,7 @@ def recommendations_generate(
 ) -> RecommendationGenerateResponse:
     require_action(session, "recommendations.generate")
     return generate_recommendation_for_session(
-        context=get_context(request),
+        deps=recommendation_deps(get_context(request)),
         session=session,
         request_id=getattr(request.state, "request_id", None),
         correlation_id=getattr(request.state, "correlation_id", None),

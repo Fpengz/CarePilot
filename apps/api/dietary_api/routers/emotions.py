@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 
+from ..deps import emotion_deps
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas.emotions import (
     CompatEmotionResponse,
@@ -24,7 +25,7 @@ router = APIRouter(tags=["emotions"])
 
 @router.get("/api/v1/emotions/health", response_model=EmotionHealthResponse)
 def emotions_health(request: Request) -> EmotionHealthResponse:
-    return get_emotion_health(context=get_context(request))
+    return get_emotion_health(deps=emotion_deps(get_context(request)))
 
 
 @router.post("/api/v1/emotions/text", response_model=EmotionInferenceResponse)
@@ -35,7 +36,7 @@ def emotions_text(
 ) -> EmotionInferenceResponse:
     require_action(session, "emotions.text.infer")
     return infer_text_for_session(
-        context=get_context(request),
+        deps=emotion_deps(get_context(request)),
         payload=payload,
         request_id=getattr(request.state, "request_id", None),
         correlation_id=getattr(request.state, "correlation_id", None),
@@ -53,7 +54,7 @@ async def emotions_speech(
     require_action(session, "emotions.speech.infer")
     audio_bytes = await file.read()
     return infer_speech_for_session(
-        context=get_context(request),
+        deps=emotion_deps(get_context(request)),
         audio_bytes=audio_bytes,
         filename=file.filename,
         content_type=file.content_type,
@@ -66,7 +67,7 @@ async def emotions_speech(
 
 @router.get("/emotion/health", response_model=EmotionHealthResponse)
 def emotions_compat_health(request: Request) -> EmotionHealthResponse:
-    return get_compat_emotion_health(context=get_context(request))
+    return get_compat_emotion_health(deps=emotion_deps(get_context(request)))
 
 
 @router.post("/emotion/text", response_model=CompatEmotionResponse)
@@ -77,7 +78,7 @@ def emotions_compat_text(
 ) -> CompatEmotionResponse:
     require_action(session, "emotions.text.infer")
     return infer_compat_text_for_session(
-        context=get_context(request),
+        deps=emotion_deps(get_context(request)),
         payload=payload,
     )
 
@@ -92,10 +93,9 @@ async def emotions_compat_speech(
     require_action(session, "emotions.speech.infer")
     audio_bytes = await file.read()
     return infer_compat_speech_for_session(
-        context=get_context(request),
+        deps=emotion_deps(get_context(request)),
         audio_bytes=audio_bytes,
         filename=file.filename,
         content_type=file.content_type,
         transcription=transcription,
     )
-
