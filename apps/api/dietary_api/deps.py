@@ -5,8 +5,10 @@ from dietary_guardian.config.settings import Settings, get_settings
 from dietary_guardian.infrastructure.auth import InMemoryAuthStore, PostgresAuthStore, SQLiteAuthStore, SessionSigner
 from dietary_guardian.infrastructure.cache import InMemoryCacheStore, RedisCacheStore
 from dietary_guardian.infrastructure.coordination import InMemoryCoordinationStore, RedisCoordinationStore
+from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime
 from dietary_guardian.infrastructure.household import PostgresHouseholdStore, SQLiteHouseholdStore
 from dietary_guardian.infrastructure.persistence import AppStores, PostgresAppStore, SQLiteAppStore, build_app_stores
+from dietary_guardian.services.emotion_service import EmotionService
 from dietary_guardian.services.memory_services import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
@@ -36,6 +38,7 @@ class AppContext:
     cache_store: Any
     coordination_store: Any
     household_store: Any
+    emotion_service: EmotionService
 
 
 def close_app_context(ctx: AppContext) -> None:
@@ -111,6 +114,13 @@ def build_app_context() -> AppContext:
     cache_store = _build_cache_store(settings)
     coordination_store = _build_coordination_store(settings)
     household_store = _build_household_store(settings)
+    emotion_runtime = InProcessEmotionRuntime(EmotionRuntimeConfig.from_settings(settings))
+    emotion_service = EmotionService(
+        runtime=emotion_runtime,
+        inference_enabled=settings.emotion_inference_enabled,
+        speech_enabled=settings.emotion_speech_enabled,
+        request_timeout_seconds=settings.emotion_request_timeout_seconds,
+    )
     ctx = AppContext(
         settings=settings,
         app_store=app_store,
@@ -127,6 +137,7 @@ def build_app_context() -> AppContext:
         cache_store=cache_store,
         coordination_store=coordination_store,
         household_store=household_store,
+        emotion_service=emotion_service,
     )
     from .services.workflows import ensure_runtime_contract_snapshot_bootstrap
 

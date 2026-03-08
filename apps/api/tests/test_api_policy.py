@@ -25,6 +25,8 @@ def test_policy_table_contains_core_actions() -> None:
         "recommendations.daily_agent.read",
         "recommendations.substitutions.generate",
         "recommendations.interactions.write",
+        "emotions.text.infer",
+        "emotions.speech.infer",
         "suggestions.generate",
         "suggestions.read",
         "alerts.trigger",
