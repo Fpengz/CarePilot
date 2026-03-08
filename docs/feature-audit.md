@@ -7,7 +7,7 @@ The repository currently shows end-to-end coverage for all five audited features
 
 - Role/tool contract modeling exists in [`models/role_tools.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/models/role_tools.py) and DB-backed tool policy APIs are available; rollout still defaults to shadow enforcement mode.
 - Workflow runtime contract exposure now exists at [`GET /api/v1/workflows/runtime-contract`](/Users/zhoufuwang/Projects/dietary_tools/apps/api/dietary_api/routers/workflows.py), backed by [`services/agent_registry.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/services/agent_registry.py).
-- Redis cache/coordination coverage exists, but feature-specific Redis keyspace conventions are still largely generic instead of feature-scoped contracts.
+- Redis cache/coordination now runs on v2-only keyspace naming with legacy fallback removed from runtime adapters.
 - CI-level full Postgres+Redis integration proof for all A–E remains less explicit than unit/API suite coverage in-repo.
 
 #### 2) Feature Audit Table
@@ -82,23 +82,20 @@ The repository currently shows end-to-end coverage for all five audited features
 
 ## Top Gaps
 - Tool-policy enforcement is intentionally `shadow` by default; production rollout to hard-enforcement remains pending.
-- Redis v2 keyspace migration has a modernized Python CLI path, but production cutover/runbook execution remains pending.
 
 ## Proposed MVP Scope
 - Keep A–E capabilities at maintenance level (no new feature build required for audit scope).
-- Complete production rollout steps for policy enforcement and Redis keyspace migration.
-- Validate workflow snapshot/policy governance in operational runbooks and staging checks.
+- Complete production rollout steps for policy enforcement mode transition (`shadow` -> `enforce`) and validate in staging.
+- Keep Redis keyspace migration utility as operational-only maintenance tooling for legacy environments.
 
 ## One-Page Integration Plan (No Code)
 
 ### Where missing pieces would live
 - Policy enforcement rollout: [`apps/api/dietary_api/policy.py`](/Users/zhoufuwang/Projects/dietary_tools/apps/api/dietary_api/policy.py), [`apps/api/dietary_api/services/workflows.py`](/Users/zhoufuwang/Projects/dietary_tools/apps/api/dietary_api/services/workflows.py), [`src/dietary_guardian/services/policy_service.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/services/policy_service.py).
-- Redis production cutover: [`src/dietary_guardian/infrastructure/cache/redis_store.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/infrastructure/cache/redis_store.py), [`src/dietary_guardian/infrastructure/coordination/redis_coordination.py`](/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/infrastructure/coordination/redis_coordination.py), [`scripts/migrate-redis-keyspace.py`](/Users/zhoufuwang/Projects/dietary_tools/scripts/migrate-redis-keyspace.py), [`scripts/dg.py`](/Users/zhoufuwang/Projects/dietary_tools/scripts/dg.py).
 
 ### Existing services to extend
 - Add rollout controls to transition from shadow policy mode to enforce mode by environment.
 - Extend web-facing API client surfaces for policy/snapshot admin UX.
-- Expand migration verification services for Redis keyspace checks in readiness/ops flows.
 
 ### New tables/fields required
 - For A–E audited features: no mandatory new durable tables required to claim existing capability.

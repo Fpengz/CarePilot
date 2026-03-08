@@ -92,7 +92,7 @@ apps/api/tests/           API contract and behavior tests
 - Path:
   - `src/dietary_guardian/infrastructure/cache/redis_store.py`
   - `src/dietary_guardian/infrastructure/coordination/redis_coordination.py`
-- Supports Redis-backed cache/coordination with compatibility keyspace logic.
+- Supports Redis-backed cache/coordination with v2 keyspace contracts.
 
 ## Frontend Walkthrough
 

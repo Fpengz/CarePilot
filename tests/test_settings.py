@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import pytest
 from pydantic import ValidationError
 
@@ -83,6 +85,14 @@ def test_runtime_backend_settings_accept_postgres_and_redis_fields() -> None:
     assert settings.auth_store_backend == "postgres"
     assert settings.household_store_backend == "postgres"
     assert settings.ephemeral_state_backend == "redis"
+
+
+def test_redis_keyspace_version_is_v2_only() -> None:
+    settings = Settings(llm_provider="test")
+    assert settings.redis_keyspace_version == "v2"
+
+    with pytest.raises(ValidationError):
+        Settings(llm_provider="test", redis_keyspace_version=cast(Any, "v1"))
 
 
 def test_app_env_defaults_readiness_strictness_by_profile() -> None:

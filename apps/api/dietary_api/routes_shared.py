@@ -37,23 +37,54 @@ def _is_valid_session_payload(session: object) -> bool:
     return True
 
 
+def _session_cookie_candidates(request: Request, session_cookie: str | None) -> list[str]:
+    raw_cookie = request.headers.get("cookie") or ""
+    candidates: list[str] = []
+    for part in raw_cookie.split(";"):
+        item = part.strip()
+        if not item or "=" not in item:
+            continue
+        name, value = item.split("=", 1)
+        if name.strip() != SESSION_COOKIE:
+            continue
+        token = value.strip()
+        if token:
+            candidates.append(token)
+    if session_cookie and session_cookie not in candidates:
+        candidates.append(session_cookie)
+    return candidates
+
+
 def require_session(
     request: Request,
     session_cookie: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> SessionData:
     ctx = get_context(request)
-    if not session_cookie:
+    candidates = _session_cookie_candidates(request, session_cookie)
+    if not candidates:
         raise HTTPException(status_code=401, detail="authentication required")
-    session_id = ctx.session_signer.unsign(session_cookie)
-    if not session_id:
+
+    had_signed_candidate = False
+    had_malformed_payload = False
+    for token in candidates:
+        session_id = ctx.session_signer.unsign(token)
+        if not session_id:
+            continue
+        had_signed_candidate = True
+        session = ctx.auth_store.get_session(session_id)
+        if session is None:
+            continue
+        if not _is_valid_session_payload(session):
+            had_malformed_payload = True
+            ctx.auth_store.destroy_session(session_id)
+            continue
+        return session
+
+    if had_malformed_payload:
         raise HTTPException(status_code=401, detail="invalid session")
-    session = ctx.auth_store.get_session(session_id)
-    if session is None:
+    if had_signed_candidate:
         raise HTTPException(status_code=401, detail="session expired")
-    if not _is_valid_session_payload(session):
-        ctx.auth_store.destroy_session(session_id)
-        raise HTTPException(status_code=401, detail="invalid session")
-    return session
+    raise HTTPException(status_code=401, detail="invalid session")
 
 
 def require_scopes(session: SessionData, required_scopes: set[str]) -> None:

@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     workflow_trace_persistence_enabled: bool = False
     tool_policy_enforcement_mode: Literal["shadow", "enforce"] = "shadow"
     workflow_contract_bootstrap: bool = True
-    redis_keyspace_version: Literal["v1", "v2"] = "v1"
+    redis_keyspace_version: Literal["v2"] = "v2"
 
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None

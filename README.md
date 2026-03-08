@@ -65,7 +65,7 @@ Required keys for local usage:
 - `LLM_PROVIDER=ollama` or `LLM_PROVIDER=vllm`
 - `LOCAL_LLM_BASE_URL` (or `OLLAMA_BASE_URL`)
 
-Auth backend defaults (v1):
+Auth backend defaults:
 - `API_SQLITE_DB_PATH=dietary_guardian_api.db` (application data / households / API persistence)
 - `AUTH_STORE_BACKEND=sqlite` (default)
 - `AUTH_SQLITE_DB_PATH=dietary_guardian_auth.db` (auth/accounts/sessions/audit)
@@ -77,7 +77,7 @@ Platform runtime toggles:
 - `EPHEMERAL_STATE_BACKEND=in_memory` or `redis`
 - `POSTGRES_DSN` for PostgreSQL-backed runtime paths
 - `REDIS_URL` for Redis-backed cache / coordination paths
-- `REDIS_KEYSPACE_VERSION=v1|v2` for Redis key naming strategy during migration windows
+- `REDIS_KEYSPACE_VERSION=v2` (hard cutover; legacy v1 keyspace is unsupported)
 - `TOOL_POLICY_ENFORCEMENT_MODE=shadow|enforce` for DB-backed tool policy rollout
 - `WORKFLOW_CONTRACT_BOOTSTRAP=1|0` to enable/disable startup runtime-contract snapshot bootstrap
 - `READINESS_FAIL_ON_WARNINGS=0|1` (defaults by profile)
@@ -149,7 +149,7 @@ Bootstrap PostgreSQL schema (defaults to the local compose DSN):
 uv run python scripts/dg.py migrate postgres
 ```
 
-Dry-run Redis keyspace migration (v1 -> v2 naming):
+One-time legacy Redis keyspace migration dry run (for pre-cutover environments only):
 
 ```bash
 uv run python scripts/dg.py migrate redis-keyspace --redis-url redis://127.0.0.1:6379/0
@@ -212,7 +212,7 @@ Common commands:
 - `uv run python scripts/dg.py dev`
 - `uv run python scripts/dg.py infra up`
 - `uv run python scripts/dg.py migrate postgres`
-- `uv run python scripts/dg.py migrate redis-keyspace --redis-url <REDIS_URL> [--apply]`
+- `uv run python scripts/dg.py migrate redis-keyspace --redis-url <REDIS_URL> [--apply]` (legacy one-time migration utility)
 - `uv run python scripts/dg.py smoke postgres-redis`
 - `uv run python scripts/dg.py readiness http://127.0.0.1:8001`
 - `uv run python scripts/dg.py test backend`

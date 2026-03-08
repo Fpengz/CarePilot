@@ -68,6 +68,7 @@ uv run python scripts/dg.py migrate postgres
 uv run python scripts/dg.py migrate redis-keyspace --redis-url <REDIS_URL>
 uv run python scripts/dg.py migrate redis-keyspace --redis-url <REDIS_URL> --apply
 ```
+Use the Redis keyspace migration command only for one-time import of legacy v1 keys into v2 naming.
 
 ## 5) Incident-Triage Checklist
 1. Confirm Docker/infra health (if using Postgres/Redis profile).

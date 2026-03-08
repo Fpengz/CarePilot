@@ -15,14 +15,12 @@ def _load_redis_module() -> Any:
 
 
 class RedisCacheStore:
-    def __init__(self, *, redis_url: str, namespace: str, keyspace_version: str = "v1") -> None:
+    def __init__(self, *, redis_url: str, namespace: str, keyspace_version: str = "v2") -> None:
         redis_module = _load_redis_module()
         self._client = redis_module.Redis.from_url(redis_url, decode_responses=True)
         self._namespace = namespace
-        self._keyspace_version = keyspace_version
-
-    def _legacy_key(self, key: str) -> str:
-        return f"{self._namespace}:cache:{key}"
+        if keyspace_version != "v2":
+            raise ValueError("Redis cache store requires keyspace_version='v2'")
 
     def _domain(self, key: str) -> str:
         key_lower = key.lower()
@@ -35,14 +33,10 @@ class RedisCacheStore:
         return "general"
 
     def _key(self, key: str) -> str:
-        if self._keyspace_version == "v2":
-            return f"{self._namespace}:cache:{self._domain(key)}:{key}"
-        return self._legacy_key(key)
+        return f"{self._namespace}:cache:{self._domain(key)}:{key}"
 
     def get_json(self, key: str) -> Any | None:
         payload = self._client.get(self._key(key))
-        if payload is None and self._keyspace_version == "v2":
-            payload = self._client.get(self._legacy_key(key))
         return None if payload is None else json.loads(payload)
 
     def set_json(self, key: str, value: Any, *, ttl_seconds: int | None = None) -> None:
