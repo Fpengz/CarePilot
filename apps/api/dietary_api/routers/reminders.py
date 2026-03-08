@@ -1,19 +1,21 @@
 from fastapi import APIRouter, Depends, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
+from ..schemas.notifications import (
+    ReminderNotificationEndpointListResponse,
+    ReminderNotificationEndpointUpdateRequest,
+    ReminderNotificationLogListResponse,
+    ReminderNotificationPreferenceListResponse,
+    ReminderNotificationPreferenceUpdateRequest,
+    ScheduledReminderNotificationListResponse,
+)
+from ..schemas.reminders import (
     MobilityReminderSettingsEnvelopeResponse,
     MobilityReminderSettingsRequest,
     ReminderConfirmRequest,
     ReminderConfirmResponse,
-    ReminderNotificationEndpointListResponse,
-    ReminderNotificationEndpointUpdateRequest,
     ReminderGenerateResponse,
-    ReminderNotificationLogListResponse,
     ReminderListResponse,
-    ReminderNotificationPreferenceListResponse,
-    ReminderNotificationPreferenceUpdateRequest,
-    ScheduledReminderNotificationListResponse,
 )
 from ..services.reminder_notifications import (
     list_notification_endpoints,

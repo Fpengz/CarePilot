@@ -51,7 +51,7 @@ def create_checkin_for_session(
             redactions=list(safety.redactions),
         ),
     )
-    saved = context.repository.save_symptom_checkin(item)
+    saved = context.stores.symptoms.save_symptom_checkin(item)
     return SymptomCheckInEnvelopeResponse(item=_to_response(saved))
 
 
@@ -65,7 +65,7 @@ def list_checkins_for_session(
 ) -> SymptomCheckInListResponse:
     start_at = datetime.combine(from_date, time.min, tzinfo=timezone.utc) if from_date else None
     end_at = datetime.combine(to_date, time.max, tzinfo=timezone.utc) if to_date else None
-    items = context.repository.list_symptom_checkins(
+    items = context.stores.symptoms.list_symptom_checkins(
         user_id=user_id,
         start_at=start_at,
         end_at=end_at,
@@ -83,7 +83,7 @@ def summarize_checkins_for_session(
 ) -> SymptomSummaryResponse:
     start_at = datetime.combine(from_date, time.min, tzinfo=timezone.utc) if from_date else None
     end_at = datetime.combine(to_date, time.max, tzinfo=timezone.utc) if to_date else None
-    items = context.repository.list_symptom_checkins(
+    items = context.stores.symptoms.list_symptom_checkins(
         user_id=user_id,
         start_at=start_at,
         end_at=end_at,

@@ -22,11 +22,19 @@ from .routers import include_routers
 logger = get_logger(__name__)
 
 
+def _csv_values(raw: str, *, fallback: list[str]) -> list[str]:
+    values = [item.strip() for item in raw.split(",") if item.strip()]
+    return values or fallback
+
+
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     ctx_owned = bool(getattr(app.state, "ctx_owned", False))
     if ctx_owned and getattr(app.state, "ctx", None) is None:
         app.state.ctx = build_app_context()
+    ctx = cast(AppContext | None, getattr(app.state, "ctx", None))
+    if ctx is not None and ctx.settings.app_env == "prod" and ctx.settings.app_data_backend == "sqlite":
+        logger.warning("event=runtime_config_warning warning=prod_uses_sqlite action=prefer_postgres")
     logger.info("event=api_startup status=ready")
     yield
     ctx = cast(AppContext | None, getattr(app.state, "ctx", None))
@@ -45,8 +53,8 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
         cast(Any, CORSMiddleware),
         allow_origins=[item.strip() for item in settings.api_cors_origins.split(",") if item.strip()],
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=_csv_values(settings.api_cors_methods, fallback=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]),
+        allow_headers=_csv_values(settings.api_cors_headers, fallback=["Content-Type", "X-Requested-With", "Authorization"]),
     )
     app.middleware("http")(request_context_middleware)
     include_routers(app)

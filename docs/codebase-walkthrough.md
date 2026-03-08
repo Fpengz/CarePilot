@@ -119,5 +119,5 @@ apps/api/tests/           API contract and behavior tests
 
 ## When to Update This Document
 - New top-level modules or major directory reshaping.
-- Changes to ownership boundaries between routers/services/domain/infrastructure.
+- Changes to ownership boundaries between routers/api services/application/infrastructure.
 - New worker/runtime topology or orchestration engine changes.

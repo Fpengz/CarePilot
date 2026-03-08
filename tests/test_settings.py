@@ -181,3 +181,31 @@ def test_auth_seed_demo_users_default_and_non_dev_guardrails() -> None:
             cookie_secure=True,
             auth_seed_demo_users=True,
         )
+
+
+def test_prod_normalizes_tool_policy_mode_to_enforce() -> None:
+    settings = Settings(
+        llm_provider="test",
+        app_env="prod",
+        session_secret="prod-secret",
+        cookie_secure=True,
+        tool_policy_enforcement_mode="shadow",
+    )
+    assert settings.tool_policy_enforcement_mode == "enforce"
+
+
+def test_external_worker_mode_requires_redis_ephemeral_backend() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            llm_provider="test",
+            worker_mode="external",
+            ephemeral_state_backend="in_memory",
+        )
+
+    settings = Settings(
+        llm_provider="test",
+        worker_mode="external",
+        ephemeral_state_backend="redis",
+        redis_url="redis://localhost:6379/0",
+    )
+    assert settings.worker_mode == "external"

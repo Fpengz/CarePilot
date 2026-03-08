@@ -96,3 +96,16 @@ def test_sqlite_auth_store_can_disable_demo_user_seeding(tmp_path) -> None:
     store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
 
     assert store.authenticate("member@example.com", "member-pass") is None
+
+
+def test_sqlite_auth_store_honors_configured_demo_passwords(tmp_path) -> None:
+    db_path = tmp_path / "auth.db"
+    settings = Settings(
+        llm_provider="test",
+        auth_demo_member_password="member-custom-pass",
+    )
+
+    store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
+
+    assert store.authenticate("member@example.com", "member-pass") is None
+    assert store.authenticate("member@example.com", "member-custom-pass") is not None

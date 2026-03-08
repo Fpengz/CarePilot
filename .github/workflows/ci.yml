@@ -29,7 +29,7 @@ jobs:
         run: uv run ty check . --extra-search-path src --output-format concise
 
       - name: Tests with coverage gate
-        run: uv run pytest --cov=src/dietary_guardian --cov=apps/api/dietary_api --cov-report=term-missing --cov-fail-under=35 -q
+        run: uv run pytest --cov=src/dietary_guardian --cov=apps/api/dietary_api --cov-report=term-missing --cov-fail-under=70 -q
 
       - name: Readiness gate (prod profile)
         run: |

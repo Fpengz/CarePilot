@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 
 from ..errors import build_api_error
 from ..routes_shared import current_session, get_context
-from ..schemas import (
+from ..schemas.notifications import (
     NotificationListResponse,
     NotificationMarkAllReadResponse,
     NotificationMarkReadResponse,

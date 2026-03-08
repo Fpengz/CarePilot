@@ -16,7 +16,7 @@ def generate_recommendation_for_session(
     correlation_id: str | None,
 ) -> RecommendationGenerateResponse:
     user_id = str(session["user_id"])
-    meal_records = context.repository.list_meal_records(user_id)
+    meal_records = context.stores.meals.list_meal_records(user_id)
     if not meal_records:
         raise build_api_error(
             status_code=400,
@@ -26,7 +26,7 @@ def generate_recommendation_for_session(
 
     snapshot = context.clinical_memory.get(user_id)
     if snapshot is None:
-        readings = context.repository.list_biomarker_readings(user_id)
+        readings = context.stores.biomarkers.list_biomarker_readings(user_id)
         if not readings:
             raise build_api_error(
                 status_code=400,
@@ -39,7 +39,7 @@ def generate_recommendation_for_session(
     user_profile = build_user_profile_from_session(session, context.repository)
     recommendation = generate_recommendation(meal_records[-1], snapshot, user_profile)
     recommendation_json = recommendation.model_dump(mode="json")
-    context.repository.save_recommendation(user_id, recommendation_json)
+    context.stores.recommendations.save_recommendation(user_id, recommendation_json)
 
     workflow = {
         "workflow_name": "recommendation_generate",

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import AlertTimelineResponse, AlertTriggerRequest, AlertTriggerResponse
+from ..schemas.alerts import AlertTimelineResponse, AlertTriggerRequest, AlertTriggerResponse
 from ..services.alerts import get_alert_timeline, trigger_alert
 
 router = APIRouter(tags=["alerts"])

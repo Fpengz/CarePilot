@@ -173,8 +173,8 @@ def get_daily_suggestions(
     health_profile, user_profile = resolve_user_profile(context.repository, session)
     completeness = compute_profile_completeness(health_profile)
     fallback_mode = completeness.state != "ready"
-    meal_history = context.repository.list_meal_records(str(session["user_id"]))
-    biomarker_history = context.repository.list_biomarker_readings(str(session["user_id"]))
+    meal_history = context.stores.meals.list_meal_records(str(session["user_id"]))
+    biomarker_history = context.stores.biomarkers.list_biomarker_readings(str(session["user_id"]))
     logger.info(
         "event=daily_suggestions_generate user_id=%s request_profile_state=%s fallback_mode=%s",
         session["user_id"],

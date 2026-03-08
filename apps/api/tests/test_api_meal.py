@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Generator
 from datetime import datetime, timezone
 from io import BytesIO
@@ -131,6 +132,25 @@ def test_meal_analyze_rejects_empty_file_payload() -> None:
     assert response.status_code == 400
     assert response.json()["detail"] == "empty upload"
     assert response.json()["error"]["code"] == "meal.empty_upload"
+
+
+def test_meal_analyze_rejects_large_upload_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("API_MEAL_UPLOAD_MAX_BYTES", "32")
+    _reset_settings_cache()
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    response = client.post(
+        "/api/v1/meal/analyze",
+        files={"file": ("meal.jpg", _jpeg_bytes(), "image/jpeg")},
+        data={"runtime_mode": "local", "provider": "test"},
+    )
+
+    assert response.status_code == 413
+    body = response.json()
+    assert body["detail"] == "upload exceeds maximum allowed size"
+    assert body["error"]["code"] == "meal.upload_too_large"
+    _reset_settings_cache()
 
 
 def test_meal_analyze_rejects_missing_content_type() -> None:
@@ -297,6 +317,39 @@ def test_meal_analyze_uses_settings_provider_when_form_provider_missing(
 
     assert response.status_code == 200
     assert captured["provider"] == "vllm"
+    _reset_settings_cache()
+
+
+def test_meal_analyze_times_out_on_slow_vision_inference(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_INFERENCE_WALL_CLOCK_TIMEOUT_SECONDS", "0.1")
+    _reset_settings_cache()
+
+    class _FakeSlowHawkerVisionModule:
+        def __init__(self, provider: str) -> None:
+            del provider
+
+        async def analyze_and_record(self, *args, **kwargs):
+            del args, kwargs
+            await asyncio.sleep(0.2)
+            raise AssertionError("expected timeout before completion")
+
+    monkeypatch.setattr(
+        "apps.api.dietary_api.services.meals.HawkerVisionModule",
+        _FakeSlowHawkerVisionModule,
+    )
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    response = client.post(
+        "/api/v1/meal/analyze",
+        files={"file": ("meal.jpg", _jpeg_bytes(), "image/jpeg")},
+        data={"runtime_mode": "local", "provider": "test"},
+    )
+
+    assert response.status_code == 504
+    body = response.json()
+    assert body["detail"] == "meal analysis timed out"
+    assert body["error"]["code"] == "llm.inference_timeout"
     _reset_settings_cache()
 
 

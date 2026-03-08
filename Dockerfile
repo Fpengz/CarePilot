@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -9,11 +9,29 @@ RUN apt-get update \
 
 WORKDIR /app
 
+RUN pip install --no-cache-dir uv
+
 COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
 COPY apps ./apps
 
-RUN pip install --no-cache-dir .
+RUN uv sync --frozen --no-dev --no-editable
+
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/apps ./apps
 
 RUN useradd --create-home --uid 10001 appuser
 USER appuser

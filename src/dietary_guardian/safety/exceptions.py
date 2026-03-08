@@ -1,6 +1,14 @@
 from dietary_guardian.models.meal import MealState
 
 
+class SafetyViolation(Exception):
+    def __init__(self, message: str, level: str = "Critical", reason: str = ""):
+        self.message = message
+        self.level = level
+        self.reason = reason
+        super().__init__(self.message)
+
+
 class HumanInTheLoopException(Exception):
     """Raised when automated perception confidence is too low and human review is required.
 

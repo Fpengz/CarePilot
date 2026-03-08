@@ -16,9 +16,9 @@ def list_metric_trends_for_session(
     user_id: str,
     metric_names: list[str],
 ) -> MetricTrendListResponse:
-    readings = context.repository.list_biomarker_readings(user_id)
-    meals = context.repository.list_meal_records(user_id)
-    adherence = context.repository.list_medication_adherence_events(user_id=user_id)
+    readings = context.stores.biomarkers.list_biomarker_readings(user_id)
+    meals = context.stores.meals.list_meal_records(user_id)
+    adherence = context.stores.medications.list_medication_adherence_events(user_id=user_id)
     items: list[MetricTrendResponse] = []
     requested = metric_names or ["meal:calories", "adherence:rate"]
     for metric in requested:

@@ -97,3 +97,27 @@ def test_app_context_exposes_runtime_store_aliases(sqlite_lifecycle_env: None) -
         assert ctx.coordination_store is not None
     finally:
         close_app_context(ctx)
+
+
+def test_cors_uses_configured_methods_and_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("API_CORS_METHODS", "GET,POST")
+    monkeypatch.setenv("API_CORS_HEADERS", "Content-Type")
+    _reset_settings_cache()
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.options(
+            "/api/v1/auth/login",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+        )
+    _reset_settings_cache()
+
+    assert response.status_code == 200
+    allow_methods = response.headers.get("access-control-allow-methods", "").upper()
+    allow_headers = response.headers.get("access-control-allow-headers", "").lower()
+    assert "POST" in allow_methods
+    assert "DELETE" not in allow_methods
+    assert "content-type" in allow_headers

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
+from ..schemas.workflows import (
     ToolPolicyCreateRequest,
     ToolPolicyEvaluationResponse,
     ToolPolicyListResponse,

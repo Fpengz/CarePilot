@@ -1,11 +1,85 @@
+from collections import deque
+from dataclasses import dataclass
+from threading import Lock
 from time import perf_counter
+from time import time
+from typing import Any, cast
 
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 
 from dietary_guardian.logging_config import get_logger
+from .errors import api_error_payload
 from .observability import get_correlation_id, get_request_id, render_kv_log
 
 logger = get_logger(__name__)
+
+
+@dataclass(frozen=True)
+class _RateLimitRule:
+    method: str
+    path: str
+    limit_attr: str
+    code: str
+
+
+class _RateLimiterState:
+    def __init__(self) -> None:
+        self._events: dict[str, deque[float]] = {}
+        self._lock = Lock()
+
+    def allow(self, *, key: str, limit: int, window_seconds: int) -> tuple[bool, int]:
+        now = time()
+        cutoff = now - float(window_seconds)
+        with self._lock:
+            events = self._events.setdefault(key, deque())
+            while events and events[0] <= cutoff:
+                events.popleft()
+            if len(events) >= limit:
+                retry_after = int(max(1, window_seconds - (now - events[0]))) if events else window_seconds
+                return (False, retry_after)
+            events.append(now)
+            return (True, 0)
+
+
+_RATE_LIMIT_RULES: tuple[_RateLimitRule, ...] = (
+    _RateLimitRule(
+        method="POST",
+        path="/api/v1/auth/login",
+        limit_attr="api_rate_limit_auth_login_max_requests",
+        code="auth.login.rate_limited",
+    ),
+    _RateLimitRule(
+        method="POST",
+        path="/api/v1/meal/analyze",
+        limit_attr="api_rate_limit_meal_analyze_max_requests",
+        code="meal.analyze.rate_limited",
+    ),
+    _RateLimitRule(
+        method="POST",
+        path="/api/v1/recommendations/generate",
+        limit_attr="api_rate_limit_recommendations_generate_max_requests",
+        code="recommendations.generate.rate_limited",
+    ),
+)
+
+
+def _matching_rate_limit_rule(request: Request) -> _RateLimitRule | None:
+    method = request.method.upper()
+    path = request.url.path
+    for rule in _RATE_LIMIT_RULES:
+        if rule.method == method and rule.path == path:
+            return rule
+    return None
+
+
+def _rate_limiter_state(request: Request) -> _RateLimiterState:
+    state = request.app.state.__dict__.get("_rate_limiter_state")
+    if isinstance(state, _RateLimiterState):
+        return state
+    created = _RateLimiterState()
+    request.app.state.__dict__["_rate_limiter_state"] = created
+    return created
 
 
 async def request_context_middleware(request: Request, call_next) -> Response:
@@ -21,6 +95,30 @@ async def request_context_middleware(request: Request, call_next) -> Response:
     referer = request.headers.get("referer")
     user_agent = request.headers.get("user-agent")
     is_preflight = request.method == "OPTIONS" and bool(request.headers.get("access-control-request-method"))
+    if settings.api_rate_limit_enabled:
+        rule = _matching_rate_limit_rule(request)
+        if rule is not None:
+            limit = int(cast(Any, getattr(settings, rule.limit_attr)))
+            allowed, retry_after = _rate_limiter_state(request).allow(
+                key=f"{rule.method}:{rule.path}:{client_ip or 'unknown'}",
+                limit=limit,
+                window_seconds=int(settings.api_rate_limit_window_seconds),
+            )
+            if not allowed:
+                return JSONResponse(
+                    status_code=429,
+                    content=api_error_payload(
+                        status_code=429,
+                        code=rule.code,
+                        message="rate limit exceeded",
+                        correlation_id=correlation_id,
+                        details={
+                            "retry_after_seconds": retry_after,
+                            "limit": limit,
+                            "window_seconds": int(settings.api_rate_limit_window_seconds),
+                        },
+                    ),
+                )
     if settings.api_dev_log_verbose:
         started_payload: dict[str, object] = {
             "event": "api_request_started",

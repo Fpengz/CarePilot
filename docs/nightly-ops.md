@@ -49,6 +49,6 @@ Required sections:
 - `apps/api`: transport only
 - `apps/web`: UI only
 - `src/dietary_guardian/application`: use-cases + workflows + ports
-- `src/dietary_guardian/domain`: pure rules
+- `src/dietary_guardian/services`: business orchestration and reusable domain services
 - `src/dietary_guardian/infrastructure`: adapters (sqlite/providers/messaging)
 - `src/dietary_guardian/safety`: safety policy and enforcement support

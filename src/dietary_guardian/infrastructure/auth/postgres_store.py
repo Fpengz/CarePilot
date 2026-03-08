@@ -5,6 +5,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 from dietary_guardian.config.settings import Settings
+from dietary_guardian.infrastructure.auth.demo_defaults import build_demo_user_seeds
 from dietary_guardian.infrastructure.auth.in_memory import AuthUserRecord, PasswordHasher
 from dietary_guardian.infrastructure.persistence.postgres_schema import ensure_postgres_auth_schema
 from dietary_guardian.models.identity import AccountRole, ProfileMode
@@ -24,6 +25,7 @@ def _load_psycopg_module() -> Any:
 class PostgresAuthStore:
     def __init__(self, settings: Settings, *, dsn: str) -> None:
         self._hasher = PasswordHasher(settings.auth_password_hash_scheme)
+        self._demo_defaults = build_demo_user_seeds(settings)
         self._session_ttl_seconds = int(settings.auth_session_ttl_seconds)
         self._login_max_failed_attempts = int(settings.auth_login_max_failed_attempts)
         self._login_failure_window_seconds = int(settings.auth_login_failure_window_seconds)
@@ -41,13 +43,8 @@ class PostgresAuthStore:
         return self._psycopg.connect(self._dsn, autocommit=True)
 
     def _seed_defaults(self) -> None:
-        defaults = [
-            ("user_001", "member@example.com", "Alex Member", "member", "self", "member-pass"),
-            ("care_001", "helper@example.com", "Casey Helper", "member", "caregiver", "helper-pass"),
-            ("ops_001", "admin@example.com", "Ops Admin", "admin", "self", "admin-pass"),
-        ]
         with self._connect() as conn, conn.cursor() as cur:
-            for user_id, email, display_name, account_role, profile_mode, password in defaults:
+            for user_id, email, display_name, account_role, profile_mode, password in self._demo_defaults:
                 cur.execute(
                     """
                     INSERT INTO auth_users (user_id, email, display_name, account_role, profile_mode, password_hash, created_at)

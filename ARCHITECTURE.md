@@ -195,7 +195,6 @@ src/
     agents/
     application/
     config/
-    domain/
     infrastructure/
     models/
     observability/
@@ -221,7 +220,7 @@ Next.js frontend.
 Important directories:
 - `apps/web/app/` — route segments and page entry points
 - `apps/web/components/` — reusable UI building blocks
-- `apps/web/lib/api.ts` — typed API client
+- `apps/web/lib/api/` — domain-scoped typed API clients
 - `apps/web/lib/types.ts` — client-side response and domain view types
 - `apps/web/e2e/` — browser smoke coverage
 
@@ -241,13 +240,6 @@ Current usage:
 - household use cases
 - suggestions use cases
 - policy boundaries
-
-### `src/dietary_guardian/domain/`
-Intended home for pure business concepts and rules.
-
-Current status:
-- still thin; some domain concepts remain in `models/` and `services/`
-- contributors should continue extracting stable business rules here
 
 ### `src/dietary_guardian/infrastructure/`
 Infrastructure adapters.
@@ -269,7 +261,7 @@ Current usage:
 - reminder, recommendation, health-profile, workflow, alerting, and output models
 
 ### `src/dietary_guardian/services/`
-Compatibility-heavy service layer.
+Business orchestration and domain-level service logic.
 
 Current usage:
 - repository implementation
@@ -280,7 +272,7 @@ Current usage:
 - memory services
 
 Target direction:
-- continue extracting stable pieces into `application/`, `domain/`, and `infrastructure/`
+- keep service orchestration cohesive, move transport concerns to `apps/api`, and keep persistence adapters in `infrastructure/`
 
 ### `docs/`
 Architecture notes, API contracts, roadmap, runbooks, and operations documentation.

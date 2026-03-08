@@ -8,6 +8,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 from dietary_guardian.config.settings import Settings
+from dietary_guardian.infrastructure.auth.demo_defaults import build_demo_user_seeds
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.identity import AccountRole, ProfileMode
 from dietary_guardian.services.authorization import scopes_for_account_role
@@ -63,6 +64,7 @@ class PasswordHasher:
 class InMemoryAuthStore:
     def __init__(self, settings: Settings) -> None:
         self._hasher = PasswordHasher(settings.auth_password_hash_scheme)
+        self._demo_defaults = build_demo_user_seeds(settings)
         self._session_ttl_seconds = int(settings.auth_session_ttl_seconds)
         self._login_max_failed_attempts = int(settings.auth_login_max_failed_attempts)
         self._login_failure_window_seconds = int(settings.auth_login_failure_window_seconds)
@@ -76,12 +78,7 @@ class InMemoryAuthStore:
             self._seed_defaults()
 
     def _seed_defaults(self) -> None:
-        defaults = [
-            ("user_001", "member@example.com", "Alex Member", "member", "self", "member-pass"),
-            ("care_001", "helper@example.com", "Casey Helper", "member", "caregiver", "helper-pass"),
-            ("ops_001", "admin@example.com", "Ops Admin", "admin", "self", "admin-pass"),
-        ]
-        for user_id, email, name, account_role, profile_mode, password in defaults:
+        for user_id, email, name, account_role, profile_mode, password in self._demo_defaults:
             self._users_by_email[email] = AuthUserRecord(
                 user_id=user_id,
                 email=email,

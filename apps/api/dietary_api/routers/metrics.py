@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import MetricTrendListResponse
+from ..schemas.metrics import MetricTrendListResponse
 from ..services.metrics import list_metric_trends_for_session
 
 router = APIRouter(tags=["metrics"])

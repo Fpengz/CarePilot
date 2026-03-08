@@ -3,16 +3,10 @@ from typing import Any, cast
 from dietary_guardian.models.meal import MealEvent, MealState
 from dietary_guardian.models.user import UserProfile
 from dietary_guardian.safety.db import DrugInteractionDB
+from dietary_guardian.safety.exceptions import SafetyViolation
+from dietary_guardian.safety.thresholds import SODIUM_WARNING_FRACTION, SUGAR_WARNING_FRACTION
 
 logfire_api = cast(Any, logfire)
-
-
-class SafetyViolation(Exception):
-    def __init__(self, message: str, level: str = "Critical", reason: str = ""):
-        self.message = message
-        self.level = level
-        self.reason = reason
-        super().__init__(self.message)
 
 
 class SafetyEngine:
@@ -35,7 +29,7 @@ class SafetyEngine:
             nutrition = meal.nutrition
             ingredients = [i.name for i in meal.ingredients]
 
-            if nutrition.sodium_mg > self.user.daily_sodium_limit_mg * 0.5:
+            if nutrition.sodium_mg > self.user.daily_sodium_limit_mg * SODIUM_WARNING_FRACTION:
                 warning = f"High Sodium Alert: {nutrition.sodium_mg}mg (50% of daily limit)"
                 logfire_api.warn(
                     "nutritional_threshold_exceeded",
@@ -44,7 +38,7 @@ class SafetyEngine:
                 )
                 warnings.append(warning)
 
-            if nutrition.sugar_g > self.user.daily_sugar_limit_g * 0.3:
+            if nutrition.sugar_g > self.user.daily_sugar_limit_g * SUGAR_WARNING_FRACTION:
                 warning = f"High Sugar Alert: {nutrition.sugar_g}g sugar detected."
                 logfire_api.warn(
                     "nutritional_threshold_exceeded",

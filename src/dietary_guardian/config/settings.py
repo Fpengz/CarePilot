@@ -33,6 +33,14 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = Field(default=8001, ge=1, le=65535)
     api_cors_origins: str = "http://localhost:3000"
+    api_cors_methods: str = "GET,POST,PATCH,DELETE,OPTIONS"
+    api_cors_headers: str = "Content-Type,X-Requested-With,Authorization"
+    api_meal_upload_max_bytes: int = Field(default=10 * 1024 * 1024, ge=1, le=50 * 1024 * 1024)
+    api_rate_limit_enabled: bool = True
+    api_rate_limit_window_seconds: int = Field(default=60, ge=1, le=3600)
+    api_rate_limit_auth_login_max_requests: int = Field(default=20, ge=1, le=500)
+    api_rate_limit_meal_analyze_max_requests: int = Field(default=20, ge=1, le=500)
+    api_rate_limit_recommendations_generate_max_requests: int = Field(default=10, ge=1, le=500)
     api_dev_log_verbose: bool = False
     api_dev_log_headers: bool = False
     api_dev_log_response_headers: bool = False
@@ -62,6 +70,9 @@ class Settings(BaseSettings):
     auth_login_lockout_seconds: int = Field(default=300, ge=1, le=86400)
     auth_audit_events_max_entries: int = Field(default=500, ge=10, le=10000)
     auth_seed_demo_users: bool | None = None
+    auth_demo_member_password: str = "member-pass"
+    auth_demo_helper_password: str = "helper-pass"
+    auth_demo_admin_password: str = "admin-pass"
     workflow_trace_persistence_enabled: bool = False
     tool_policy_enforcement_mode: Literal["shadow", "enforce"] = "shadow"
     workflow_contract_bootstrap: bool = True
@@ -94,6 +105,7 @@ class Settings(BaseSettings):
     alert_worker_concurrency: int = 4
     cloud_output_validation_retries: int = Field(default=1, ge=0, le=5)
     local_output_validation_retries: int = Field(default=0, ge=0, le=5)
+    llm_inference_wall_clock_timeout_seconds: float = Field(default=180.0, ge=0.1, le=3600.0)
 
     image_downscale_enabled: bool = False
     image_max_side_px: int = Field(default=1024, ge=256, le=4096)
@@ -129,6 +141,8 @@ class Settings(BaseSettings):
             raise ValueError("SESSION_SECRET must not be empty")
         if self.auth_seed_demo_users is None:
             self.auth_seed_demo_users = self.app_env == "dev"
+        if self.app_env == "prod" and self.tool_policy_enforcement_mode == "shadow":
+            self.tool_policy_enforcement_mode = "enforce"
         if self.app_env in {"staging", "prod"}:
             if self.session_secret == self._DEFAULT_SESSION_SECRET:
                 raise ValueError("SESSION_SECRET must be overridden for staging/prod")
@@ -146,6 +160,8 @@ class Settings(BaseSettings):
             raise ValueError("POSTGRES_DSN must be set when HOUSEHOLD_STORE_BACKEND=postgres")
         if self.ephemeral_state_backend == "redis" and not self.redis_url:
             raise ValueError("REDIS_URL must be set when EPHEMERAL_STATE_BACKEND=redis")
+        if self.worker_mode == "external" and self.ephemeral_state_backend != "redis":
+            raise ValueError("EPHEMERAL_STATE_BACKEND must be redis when WORKER_MODE=external")
 
         return self
 

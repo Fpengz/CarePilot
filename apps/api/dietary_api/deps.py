@@ -6,7 +6,7 @@ from dietary_guardian.infrastructure.auth import InMemoryAuthStore, PostgresAuth
 from dietary_guardian.infrastructure.cache import InMemoryCacheStore, RedisCacheStore
 from dietary_guardian.infrastructure.coordination import InMemoryCoordinationStore, RedisCoordinationStore
 from dietary_guardian.infrastructure.household import PostgresHouseholdStore, SQLiteHouseholdStore
-from dietary_guardian.infrastructure.persistence import PostgresAppStore, SQLiteAppStore
+from dietary_guardian.infrastructure.persistence import AppStores, PostgresAppStore, SQLiteAppStore, build_app_stores
 from dietary_guardian.services.memory_services import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
@@ -23,7 +23,7 @@ from .services.notifications import NotificationReadStateStore
 class AppContext:
     settings: Settings
     app_store: Any
-    repository: Any
+    stores: AppStores
     profile_memory: ProfileMemoryService
     clinical_memory: ClinicalSnapshotMemoryService
     event_timeline: EventTimelineService
@@ -37,10 +37,14 @@ class AppContext:
     coordination_store: Any
     household_store: Any
 
+    @property
+    def repository(self) -> Any:
+        return self.app_store
+
 
 def close_app_context(ctx: AppContext) -> None:
     for component in (
-        ctx.repository,
+        ctx.app_store,
         ctx.auth_store,
         ctx.household_store,
         ctx.cache_store,
@@ -114,7 +118,7 @@ def build_app_context() -> AppContext:
     ctx = AppContext(
         settings=settings,
         app_store=app_store,
-        repository=app_store,
+        stores=build_app_stores(app_store),
         profile_memory=profile_memory,
         clinical_memory=clinical_memory,
         event_timeline=event_timeline,

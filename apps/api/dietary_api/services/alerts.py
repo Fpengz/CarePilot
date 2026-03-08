@@ -37,7 +37,7 @@ def trigger_alert(
     alert_id = None
     if tool_result.output is not None:
         alert_id = cast(dict[str, object], tool_result.output.model_dump()).get("alert_id")
-    outbox = context.repository.list_alert_records(cast(str | None, alert_id))
+    outbox = context.stores.alerts.list_alert_records(cast(str | None, alert_id))
     return AlertTriggerResponse(
         tool_result=tool_result.model_dump(mode="json"),
         outbox_timeline=[item.model_dump(mode="json") for item in outbox],
@@ -46,7 +46,7 @@ def trigger_alert(
 
 
 def get_alert_timeline(*, context: AppContext, alert_id: str) -> AlertTimelineResponse:
-    outbox = context.repository.list_alert_records(alert_id)
+    outbox = context.stores.alerts.list_alert_records(alert_id)
     if not outbox:
         raise build_api_error(status_code=404, code="alerts.not_found", message="alert not found")
     return AlertTimelineResponse(

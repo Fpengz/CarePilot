@@ -32,7 +32,7 @@ def list_notification_preferences(
     scope_type: str | None = None,
     scope_key: str | None = None,
 ) -> ReminderNotificationPreferenceListResponse:
-    items = context.repository.list_reminder_notification_preferences(
+    items = context.stores.reminders.list_reminder_notification_preferences(
         user_id=user_id,
         scope_type=scope_type,
         scope_key=scope_key,
@@ -86,7 +86,7 @@ def replace_notification_preferences(
                 updated_at=now,
             )
         )
-    saved = context.repository.replace_reminder_notification_preferences(
+    saved = context.stores.reminders.replace_reminder_notification_preferences(
         user_id=user_id,
         scope_type=scope_type,
         scope_key=scope_key,
@@ -114,10 +114,10 @@ def list_reminder_notification_schedules(
     user_id: str,
     reminder_id: str,
 ) -> ScheduledReminderNotificationListResponse:
-    reminder = context.repository.get_reminder_event(reminder_id)
+    reminder = context.stores.reminders.get_reminder_event(reminder_id)
     if reminder is None or reminder.user_id != user_id:
         raise build_api_error(status_code=404, code="reminders.not_found", message="reminder not found")
-    items = context.repository.list_scheduled_notifications(reminder_id=reminder_id)
+    items = context.stores.reminders.list_scheduled_notifications(reminder_id=reminder_id)
     return ScheduledReminderNotificationListResponse(
         items=[
             ScheduledReminderNotificationItemResponse(
@@ -137,7 +137,7 @@ def list_reminder_notification_schedules(
 
 
 def list_notification_endpoints(*, context: AppContext, user_id: str) -> ReminderNotificationEndpointListResponse:
-    items = context.repository.list_reminder_notification_endpoints(user_id=user_id)
+    items = context.stores.reminders.list_reminder_notification_endpoints(user_id=user_id)
     return ReminderNotificationEndpointListResponse(
         endpoints=[
             ReminderNotificationEndpointResponse(
@@ -180,7 +180,7 @@ def replace_notification_endpoints(
                 updated_at=now,
             )
         )
-    saved = context.repository.replace_reminder_notification_endpoints(user_id=user_id, endpoints=rows)
+    saved = context.stores.reminders.replace_reminder_notification_endpoints(user_id=user_id, endpoints=rows)
     return ReminderNotificationEndpointListResponse(
         endpoints=[
             ReminderNotificationEndpointResponse(
@@ -201,10 +201,10 @@ def list_reminder_notification_logs(
     user_id: str,
     reminder_id: str,
 ) -> ReminderNotificationLogListResponse:
-    reminder = context.repository.get_reminder_event(reminder_id)
+    reminder = context.stores.reminders.get_reminder_event(reminder_id)
     if reminder is None or reminder.user_id != user_id:
         raise build_api_error(status_code=404, code="reminders.not_found", message="reminder not found")
-    items = context.repository.list_notification_logs(reminder_id=reminder_id)
+    items = context.stores.reminders.list_notification_logs(reminder_id=reminder_id)
     return ReminderNotificationLogListResponse(
         items=[
             ReminderNotificationLogItemResponse(

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from ..routes_shared import current_session, get_context
-from ..schemas import (
+from ..schemas.health_profiles import (
     DailySuggestionsResponse,
     HealthProfileEnvelopeResponse,
     HealthProfileOnboardingEnvelopeResponse,

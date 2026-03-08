@@ -24,7 +24,7 @@ def parse_report_for_session(
     report_input = ReportInput(source="pasted_text", text=payload.text)
     readings = parse_report_input(report_input)
     snapshot = build_clinical_snapshot(readings)
-    context.repository.save_biomarker_readings(user_id, readings)
+    context.stores.biomarkers.save_biomarker_readings(user_id, readings)
     context.clinical_memory.put(user_id, snapshot)
 
     end_date = date.today()

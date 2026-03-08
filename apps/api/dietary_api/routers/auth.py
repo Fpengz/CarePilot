@@ -13,7 +13,7 @@ from dietary_guardian.application.auth.use_cases import (
 )
 
 from ..routes_shared import SESSION_COOKIE, current_session, get_context, require_action, require_resource_action
-from ..schemas import (
+from ..schemas.auth import (
     AuthAuditEvent,
     AuthAuditEventListResponse,
     AuthLoginRequest,

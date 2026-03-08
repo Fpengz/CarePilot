@@ -23,7 +23,7 @@ def _resolve_clinical_snapshot(*, context: AppContext, user_id: str):
     snapshot = context.clinical_memory.get(user_id)
     if snapshot is not None:
         return snapshot
-    readings = context.repository.list_biomarker_readings(user_id)
+    readings = context.stores.biomarkers.list_biomarker_readings(user_id)
     if not readings:
         return None
     snapshot = build_clinical_snapshot(readings)
@@ -40,7 +40,7 @@ def get_daily_agent_for_session(
 ) -> RecommendationAgentResponse:
     user_id = str(session["user_id"])
     health_profile, user_profile = resolve_user_profile(context.repository, session)
-    meal_history = context.repository.list_meal_records(user_id)
+    meal_history = context.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(context=context, user_id=user_id)
     recommendation = generate_daily_agent_recommendation(
         repository=context.repository,
@@ -69,7 +69,7 @@ def get_substitutions_for_session(
 ) -> RecommendationSubstitutionResponse:
     user_id = str(session["user_id"])
     health_profile, user_profile = resolve_user_profile(context.repository, session)
-    meal_history = context.repository.list_meal_records(user_id)
+    meal_history = context.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(context=context, user_id=user_id)
     try:
         plan = build_substitution_plan(
@@ -105,7 +105,7 @@ def record_interaction_for_session(
     payload: RecommendationInteractionRequest,
 ) -> RecommendationInteractionResponse:
     user_id = str(session["user_id"])
-    meal_history = context.repository.list_meal_records(user_id)
+    meal_history = context.stores.meals.list_meal_records(user_id)
     try:
         interaction, snapshot = record_interaction_and_update_preferences(
             repository=context.repository,

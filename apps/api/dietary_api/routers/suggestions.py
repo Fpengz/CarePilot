@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
+from ..schemas.suggestions import (
     SuggestionGenerateFromReportRequest,
     SuggestionDetailResponse,
     SuggestionGenerateFromReportResponse,

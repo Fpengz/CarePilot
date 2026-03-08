@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
+from ..schemas.clinical_cards import (
     ClinicalCardEnvelopeResponse,
     ClinicalCardGenerateRequest,
     ClinicalCardListResponse,

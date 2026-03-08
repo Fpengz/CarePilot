@@ -44,7 +44,7 @@ def _to_adherence_response(event: MedicationAdherenceEvent) -> MedicationAdheren
 
 
 def list_regimens_for_session(*, context: AppContext, user_id: str) -> MedicationRegimenListResponse:
-    items = context.repository.list_medication_regimens(user_id)
+    items = context.stores.medications.list_medication_regimens(user_id)
     return MedicationRegimenListResponse(items=[_to_regimen_response(item) for item in items])
 
 
@@ -73,7 +73,7 @@ def create_regimen_for_session(
         max_daily_doses=payload.max_daily_doses,
         active=payload.active,
     )
-    context.repository.save_medication_regimen(regimen)
+    context.stores.medications.save_medication_regimen(regimen)
     return MedicationRegimenEnvelopeResponse(regimen=_to_regimen_response(regimen))
 
 
@@ -84,7 +84,7 @@ def patch_regimen_for_session(
     regimen_id: str,
     payload: MedicationRegimenPatchRequest,
 ) -> MedicationRegimenEnvelopeResponse:
-    existing = context.repository.get_medication_regimen(user_id=user_id, regimen_id=regimen_id)
+    existing = context.stores.medications.get_medication_regimen(user_id=user_id, regimen_id=regimen_id)
     if existing is None:
         raise build_api_error(status_code=404, code="medications.not_found", message="medication regimen not found")
     updates = payload.model_dump(exclude_unset=True)
@@ -101,12 +101,12 @@ def patch_regimen_for_session(
             message="fixed_time is required for fixed_time regimens",
         )
     updated = MedicationRegimen.model_validate(next_payload)
-    context.repository.save_medication_regimen(updated)
+    context.stores.medications.save_medication_regimen(updated)
     return MedicationRegimenEnvelopeResponse(regimen=_to_regimen_response(updated))
 
 
 def delete_regimen_for_session(*, context: AppContext, user_id: str, regimen_id: str) -> MedicationRegimenDeleteResponse:
-    deleted = context.repository.delete_medication_regimen(user_id=user_id, regimen_id=regimen_id)
+    deleted = context.stores.medications.delete_medication_regimen(user_id=user_id, regimen_id=regimen_id)
     return MedicationRegimenDeleteResponse(deleted=deleted)
 
 
@@ -116,7 +116,7 @@ def record_adherence_for_session(
     user_id: str,
     payload: MedicationAdherenceEventCreateRequest,
 ) -> MedicationAdherenceEventEnvelopeResponse:
-    regimen = context.repository.get_medication_regimen(user_id=user_id, regimen_id=payload.regimen_id)
+    regimen = context.stores.medications.get_medication_regimen(user_id=user_id, regimen_id=payload.regimen_id)
     if regimen is None:
         raise build_api_error(status_code=404, code="medications.not_found", message="medication regimen not found")
     event = MedicationAdherenceEvent(
@@ -130,7 +130,7 @@ def record_adherence_for_session(
         source=payload.source,
         metadata=payload.metadata,
     )
-    saved = context.repository.save_medication_adherence_event(event)
+    saved = context.stores.medications.save_medication_adherence_event(event)
     return MedicationAdherenceEventEnvelopeResponse(event=_to_adherence_response(saved))
 
 
@@ -143,7 +143,7 @@ def adherence_metrics_for_session(
 ) -> MedicationAdherenceMetricsResponse:
     start_at = datetime.combine(from_date, time.min, tzinfo=timezone.utc) if from_date else None
     end_at = datetime.combine(to_date, time.max, tzinfo=timezone.utc) if to_date else None
-    events = context.repository.list_medication_adherence_events(
+    events = context.stores.medications.list_medication_adherence_events(
         user_id=user_id,
         start_at=start_at,
         end_at=end_at,

@@ -1,9 +1,12 @@
 import sqlite3
+from threading import Lock
 
 
 class DrugInteractionDB:
     def __init__(self, db_path: str = "clinical_safety.db"):
         self.db_path = db_path
+        self._cache: dict[str, list[tuple[str, str, str]]] = {}
+        self._cache_lock = Lock()
         self._init_db()
 
     def _init_db(self):
@@ -81,6 +84,11 @@ class DrugInteractionDB:
 
     def get_contraindications(self, medication_name: str) -> list[tuple[str, str, str]]:
         """Returns list of (restricted_item, reason, severity)"""
+        normalized = medication_name.strip().lower()
+        with self._cache_lock:
+            cached = self._cache.get(normalized)
+        if cached is not None:
+            return list(cached)
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -92,4 +100,8 @@ class DrugInteractionDB:
             """,
                 (medication_name,),
             )
-            return cursor.fetchall()
+            rows = cursor.fetchall()
+        typed_rows = [(str(item), str(reason), str(severity)) for item, reason, severity in rows]
+        with self._cache_lock:
+            self._cache[normalized] = typed_rows
+        return list(typed_rows)

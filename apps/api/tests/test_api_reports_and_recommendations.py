@@ -100,6 +100,29 @@ def test_recommendations_generate_requires_clinical_snapshot(sqlite_reports_env:
     assert body["error"]["code"] == "recommendations.no_clinical_snapshot"
 
 
+def test_recommendations_generate_rate_limited(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("API_RATE_LIMIT_RECOMMENDATIONS_GENERATE_MAX_REQUESTS", "1")
+    _reset_settings_cache()
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+    _meal_upload(client)
+    parsed = client.post(
+        "/api/v1/reports/parse",
+        json={"source": "pasted_text", "text": "HbA1c 7.1 LDL 4.2"},
+    )
+    assert parsed.status_code == 200
+
+    first = client.post("/api/v1/recommendations/generate")
+    second = client.post("/api/v1/recommendations/generate")
+    _reset_settings_cache()
+
+    assert first.status_code == 200
+    assert second.status_code == 429
+    body = second.json()
+    assert body["detail"] == "rate limit exceeded"
+    assert body["error"]["code"] == "recommendations.generate.rate_limited"
+
+
 def test_reports_parse_includes_symptom_summary_and_workflow_trace(sqlite_reports_env: None) -> None:
     app = create_app()
     member_client = TestClient(app)
