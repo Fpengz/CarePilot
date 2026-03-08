@@ -4,6 +4,7 @@ from collections import Counter, defaultdict
 from datetime import date, timedelta
 
 from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.services.timezone_utils import local_date_for
 
 
 def _week_end(week_start: date) -> date:
@@ -14,12 +15,13 @@ def build_weekly_nutrition_summary(
     *,
     meal_history: list[MealRecognitionRecord],
     week_start: date,
+    timezone_name: str = "UTC",
 ) -> dict[str, object]:
     week_end = _week_end(week_start)
     week_records = [
         item
         for item in meal_history
-        if week_start <= item.captured_at.date() <= week_end
+        if week_start <= local_date_for(item.captured_at, timezone_name=timezone_name) <= week_end
     ]
     totals = {
         "calories": 0.0,
@@ -39,7 +41,7 @@ def build_weekly_nutrition_summary(
         totals["sodium_mg"] += float(nutrition.sodium_mg)
         totals["protein_g"] += float(nutrition.protein_g)
         totals["fiber_g"] += float(nutrition.fiber_g or 0.0)
-        day_key = record.captured_at.date().isoformat()
+        day_key = local_date_for(record.captured_at, timezone_name=timezone_name).isoformat()
         bucket = daily_breakdown[day_key]
         meal_count = int(bucket.get("meal_count", 0))
         calories = float(bucket.get("calories", 0.0))

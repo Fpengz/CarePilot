@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from dietary_guardian.models.daily_nutrition import DailyNutritionSummary, NutritionInsight, NutritionTotals
 from dietary_guardian.models.health_profile import HealthProfileRecord
 from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.services.timezone_utils import local_date_for
 
 
 def build_daily_nutrition_summary(
@@ -13,8 +14,11 @@ def build_daily_nutrition_summary(
     profile: HealthProfileRecord,
     meal_history: list[MealRecognitionRecord],
     summary_date: date,
+    timezone_name: str = "UTC",
 ) -> DailyNutritionSummary:
-    day_records = [record for record in meal_history if record.captured_at.date() == summary_date]
+    day_records = [
+        record for record in meal_history if local_date_for(record.captured_at, timezone_name=timezone_name) == summary_date
+    ]
     consumed = _sum_records(day_records)
     targets = NutritionTotals(
         calories=float(profile.target_calories_per_day or 0.0),
@@ -30,7 +34,12 @@ def build_daily_nutrition_summary(
         protein_g=max(targets.protein_g - consumed.protein_g, 0.0),
         fiber_g=max(targets.fiber_g - consumed.fiber_g, 0.0),
     )
-    insights = _build_insights(profile=profile, meal_history=meal_history, summary_date=summary_date)
+    insights = _build_insights(
+        profile=profile,
+        meal_history=meal_history,
+        summary_date=summary_date,
+        timezone_name=timezone_name,
+    )
     return DailyNutritionSummary(
         date=summary_date.isoformat(),
         meal_count=len(day_records),
@@ -64,14 +73,15 @@ def _build_insights(
     profile: HealthProfileRecord,
     meal_history: list[MealRecognitionRecord],
     summary_date: date,
+    timezone_name: str,
 ) -> list[NutritionInsight]:
     window_start = summary_date - timedelta(days=6)
     window_records = [
         record
         for record in meal_history
-        if window_start <= record.captured_at.date() <= summary_date
+        if window_start <= local_date_for(record.captured_at, timezone_name=timezone_name) <= summary_date
     ]
-    distinct_days = {record.captured_at.date().isoformat() for record in window_records}
+    distinct_days = {local_date_for(record.captured_at, timezone_name=timezone_name).isoformat() for record in window_records}
     if len(window_records) < 5 or len(distinct_days) < 3:
         return []
 
@@ -103,7 +113,7 @@ def _build_insights(
 
     daily_totals = defaultdict(NutritionTotals)
     for record in window_records:
-        bucket = daily_totals[record.captured_at.date().isoformat()]
+        bucket = daily_totals[local_date_for(record.captured_at, timezone_name=timezone_name).isoformat()]
         nutrition = record.meal_state.nutrition
         bucket.calories += float(nutrition.calories)
         bucket.sugar_g += float(nutrition.sugar_g)

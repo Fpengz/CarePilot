@@ -163,6 +163,7 @@ def get_daily_summary(
         profile=profile,
         meal_history=records,
         summary_date=summary_date,
+        timezone_name=context.settings.app_timezone,
     )
     return MealDailySummaryResponse.model_validate(summary.model_dump(mode="json"))
 
@@ -177,6 +178,7 @@ def get_weekly_summary(
     summary = build_weekly_nutrition_summary(
         meal_history=records,
         week_start=week_start,
+        timezone_name=context.settings.app_timezone,
     )
     return MealWeeklySummaryResponse.model_validate(summary)
 
