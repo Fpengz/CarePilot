@@ -3,7 +3,22 @@ import { useEffect, useRef, useState } from "react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+  emotion?: { label: string; score: number };
+};
+
+const EMOTION_EMOJI: Record<string, string> = {
+  happy: "😊",
+  sad: "😢",
+  angry: "😤",
+  frustrated: "😩",
+  anxious: "😰",
+  neutral: "😐",
+  confused: "😕",
+  fearful: "😨",
+};
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -66,6 +81,20 @@ export default function ChatPage() {
           if (!line.startsWith("data: ")) continue;
           try {
             const data = JSON.parse(line.slice(6));
+            if (data.emotion) {
+              // Attach detected emotion to the most recent user bubble
+              setMessages((prev) => {
+                const msgs = [...prev];
+                const userIdx = msgs.length - 2;
+                if (userIdx >= 0 && msgs[userIdx].role === "user") {
+                  msgs[userIdx] = {
+                    ...msgs[userIdx],
+                    emotion: { label: data.emotion, score: data.score },
+                  };
+                }
+                return msgs;
+              });
+            }
             if (data.text) {
               setMessages((prev) => {
                 const msgs = [...prev];
@@ -193,9 +222,24 @@ export default function ChatPage() {
               setMessages((prev) => {
                 const msgs = [...prev];
                 msgs[msgs.length - 2] = {
+                  ...msgs[msgs.length - 2],
                   role: "user",
                   content: `🎤 ${data.transcribed}`,
                 };
+                return msgs;
+              });
+            }
+            if (data.emotion) {
+              // Attach detected emotion to the user bubble
+              setMessages((prev) => {
+                const msgs = [...prev];
+                const userIdx = msgs.length - 2;
+                if (userIdx >= 0 && msgs[userIdx].role === "user") {
+                  msgs[userIdx] = {
+                    ...msgs[userIdx],
+                    emotion: { label: data.emotion, score: data.score },
+                  };
+                }
                 return msgs;
               });
             }
@@ -276,7 +320,16 @@ export default function ChatPage() {
                   <span className="animate-pulse text-gray-400">▋</span>
                 ) : (
                   ""
-                ))}
+                ))}{" "}
+              {m.emotion && (
+                <div className="mt-1.5 text-xs opacity-80 flex items-center gap-1">
+                  <span>{EMOTION_EMOJI[m.emotion.label] ?? "🫥"}</span>
+                  <span className="capitalize">{m.emotion.label}</span>
+                  <span className="opacity-60">
+                    ({Math.round(m.emotion.score * 100)}%)
+                  </span>
+                </div>
+              )}{" "}
             </div>
           </div>
         ))}

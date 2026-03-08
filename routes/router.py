@@ -15,6 +15,8 @@ Routes:
   food    — Any question about food, drinks, diet, nutrition, or eating
               habits — including Singapore hawker dishes and kopitiam drinks —
               in relation to health or chronic disease management.
+  code    — Any request to calculate, compute, or run a mathematical formula
+              (e.g. calorie totals, BMI, unit conversions, dose arithmetic).
   general — Everything else (no web search; LLM answers from training).
 """
 from __future__ import annotations
@@ -28,6 +30,7 @@ from agents.search_agent import SearchAgent
 from routes.base import RouteResult
 from routes.drug_route import DrugRoute
 from routes.food_route import FoodRoute
+from routes.code_route import CodeRoute
 
 load_dotenv()
 
@@ -35,7 +38,7 @@ _CLASSIFICATION_PROMPT = """\
 You are a query classifier for a Singapore health assistant app that supports
 patients with diabetes, hypertension, and cardiovascular disease.
 
-Classify the user's message into EXACTLY ONE of these three categories:
+Classify the user's message into EXACTLY ONE of these four categories:
 
   drug    — The query is about a specific medicine, drug, tablet, capsule,
               dosage instructions, side effects, drug interactions, missed
@@ -50,11 +53,16 @@ Classify the user's message into EXACTLY ONE of these three categories:
               calorie/GI/sodium questions, or asking "can I eat X" given a
               health condition.
 
-  general — Anything that does not clearly fit drug or food. This includes
-              greetings, general health questions, exercise, symptoms,
+  code    — The user explicitly wants a number calculated, computed, or
+              derived from a formula. Examples: "how many calories in 3 plates
+              of chicken rice?", "calculate my BMI", "what is 250mg x 3 doses?",
+              "convert 180 lbs to kg", or any arithmetic/unit-conversion request.
+
+  general — Anything that does not clearly fit drug, food, or code. This
+              includes greetings, general health questions, exercise, symptoms,
               emotional support, or unrelated topics.
 
-Respond with ONLY the single word: drug, food, or general.
+Respond with ONLY the single word: drug, food, code, or general.
 Do not explain. Do not add punctuation.
 """
 
@@ -65,6 +73,7 @@ class QueryRouter:
     def __init__(self, search_agent: SearchAgent) -> None:
         self._drug_route = DrugRoute(search_agent)
         self._food_route = FoodRoute(search_agent)
+        self._code_route = CodeRoute()
         self._client = OpenAI(
             api_key=os.environ.get("SEALION_API", ""),
             base_url="https://api.sea-lion.ai/v1",
@@ -89,7 +98,7 @@ class QueryRouter:
                 max_tokens=5,
             )
             label = resp.choices[0].message.content.strip().lower()
-            if label not in ("drug", "food", "general"):
+            if label not in ("drug", "food", "code", "general"):
                 print(f"[Router] Unexpected label {label!r} — falling back to general")
                 return "general"
             return label
@@ -109,4 +118,6 @@ class QueryRouter:
             return self._drug_route.enrich(user_message)
         if label == "food":
             return self._food_route.enrich(user_message)
+        if label == "code":
+            return self._code_route.enrich(user_message)
         return RouteResult(route_name="general", context=None)

@@ -17,6 +17,12 @@ type DataPoint = { date: string; value: number };
 type MetricGroup = { label: string; unit: string; data: DataPoint[] };
 type ChartData = { metrics: Record<string, MetricGroup> };
 type RawEntry = { datetime: string; message: string };
+type TrendResult = {
+  change: number;
+  pct: number;
+  direction: "up" | "down" | "flat";
+};
+type TrendsData = Record<string, TrendResult>;
 
 function toShortDate(iso: string) {
   // "2026-03-01T10:00:00" → "Mar 1"
@@ -43,21 +49,48 @@ export default function DashboardPage() {
   const [end, setEnd] = useState(today);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [rawEntries, setRawEntries] = useState<RawEntry[]>([]);
+  const [trends, setTrends] = useState<TrendsData>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const generate = async () => {
     setLoading(true);
     setError("");
+    setTrends({});
     try {
       const [chartRes, entriesRes] = await Promise.all([
         fetch(`${API_BASE}/api/dashboard/chart-data?start=${start}&end=${end}`),
         fetch(`${API_BASE}/api/dashboard/entries?start=${start}&end=${end}`),
       ]);
-      const chart = await chartRes.json();
+      const chart: ChartData = await chartRes.json();
       const entries = await entriesRes.json();
       setChartData(chart);
       setRawEntries(entries.entries ?? []);
+
+      // Build first/last payload for trend computation
+      const metricsPayload: Record<
+        string,
+        { first: number; last: number; unit: string }
+      > = {};
+      for (const [key, group] of Object.entries(chart.metrics ?? {})) {
+        if (group.data.length >= 2) {
+          metricsPayload[key] = {
+            first: group.data[0].value,
+            last: group.data[group.data.length - 1].value,
+            unit: group.unit ?? "",
+          };
+        }
+      }
+
+      if (Object.keys(metricsPayload).length > 0) {
+        const trendRes = await fetch(`${API_BASE}/api/dashboard/trend`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ metrics: metricsPayload }),
+        });
+        const trendData = await trendRes.json();
+        setTrends(trendData.trends ?? {});
+      }
     } catch {
       setError("⚠ Could not reach the server. Is the backend running?");
     } finally {
@@ -136,14 +169,43 @@ export default function DashboardPage() {
             key={metricType}
             className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
           >
-            <h2 className="text-base font-semibold text-gray-700 mb-4">
-              {group.label}
-              {group.unit && (
-                <span className="text-gray-400 font-normal text-sm ml-1">
-                  ({group.unit})
-                </span>
-              )}
-            </h2>
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-700">
+                {group.label}
+                {group.unit && (
+                  <span className="text-gray-400 font-normal text-sm ml-1">
+                    ({group.unit})
+                  </span>
+                )}
+              </h2>
+              {trends[metricType] &&
+                (() => {
+                  const t = trends[metricType];
+                  const isUp = t.direction === "up";
+                  const isDown = t.direction === "down";
+                  const sign = isUp ? "+" : "";
+                  const arrow = isUp ? "▲" : isDown ? "▼" : "→";
+                  const colorClass = isUp
+                    ? "bg-red-50 text-red-600 border-red-200"
+                    : isDown
+                      ? "bg-green-50 text-green-600 border-green-200"
+                      : "bg-gray-50 text-gray-500 border-gray-200";
+                  return (
+                    <div
+                      className={`flex flex-col items-end gap-0.5 text-xs font-medium border rounded-xl px-3 py-1.5 ${colorClass}`}
+                    >
+                      <span>
+                        {arrow} {sign}
+                        {t.change} {group.unit}
+                      </span>
+                      <span className="font-normal opacity-75">
+                        {sign}
+                        {t.pct}% over period
+                      </span>
+                    </div>
+                  );
+                })()}
+            </div>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart
                 data={chartPoints}

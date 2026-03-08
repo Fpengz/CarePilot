@@ -60,7 +60,11 @@ class ChatAgent:
     # Prompt building
     # ------------------------------------------------------------------
 
-    def build_api_messages(self, extra_context: str | None = None) -> list[dict]:
+    def build_api_messages(
+        self,
+        extra_context: str | None = None,
+        emotion_context: str | None = None,
+    ) -> list[dict]:
         """Build the messages list with a single leading system message.
 
         All system-level content (prompt + rolling summary + short-term label)
@@ -72,6 +76,8 @@ class ChatAgent:
         short_term      = ctx["short_term"]
 
         system_parts = [SYSTEM_PROMPT]
+        if emotion_context:
+            system_parts.append(emotion_context)
         if rolling_summary:
             system_parts.append(f"Previous conversation summary:\n{rolling_summary}")
         if short_term:
@@ -122,6 +128,7 @@ class ChatAgent:
         user_message: str,
         async_client,
         model_id: str | None = None,
+        emotion_context: str | None = None,
     ) -> AsyncIterator[str]:
         """Full pipeline: persist → route → build prompt → stream → persist reply.
 
@@ -142,7 +149,7 @@ class ChatAgent:
             return
 
         extra_context = await self.route_async(user_message)
-        api_messages  = self.build_api_messages(extra_context)
+        api_messages  = self.build_api_messages(extra_context, emotion_context)
 
         full_response = ""
         try:

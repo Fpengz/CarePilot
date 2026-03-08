@@ -20,6 +20,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routers import chat, medications, dashboard
+from backend.routers import emotion as emotion_router
 
 app = FastAPI(
     title="SEA-LION Health Assistant API",
@@ -44,6 +45,7 @@ app.add_middleware(
 app.include_router(chat.router)
 app.include_router(medications.router)
 app.include_router(dashboard.router)
+app.include_router(emotion_router.router)
 
 
 # ---------------------------------------------------------------------------

@@ -20,6 +20,7 @@ load_dotenv(ROOT / ".env")
 
 from agents.chat_agent import ChatAgent
 from agents.audio_agent import AudioAgent
+from agents.emotion_agent import EmotionAgent
 from agents.search_agent import SearchAgent
 from agents.health_tracker import HealthTracker
 from routes import QueryRouter
@@ -40,6 +41,7 @@ _search_agent = SearchAgent(max_results=3)
 _router       = QueryRouter(_search_agent)
 chat_agent    = ChatAgent(model_id=CHAT_MODEL_ID, router=_router)
 audio_agent   = AudioAgent()
+emotion_agent = EmotionAgent()
 
 # Async OpenAI client — shares the same credentials & model as chat_agent
 # but supports `await client.chat.completions.create(..., stream=True)`
@@ -54,6 +56,7 @@ health_tracker = HealthTracker(
 __all__ = [
     "chat_agent",
     "audio_agent",
+    "emotion_agent",
     "async_client",
     "health_tracker",
     "user_med_db",
