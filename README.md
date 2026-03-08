@@ -23,6 +23,7 @@ See `docs/feature-audit.md` for the current capability audit.
 See `docs/config-reference.md` for backend environment variables and defaults.
 See `docs/nightly-ops.md` for the nightly autonomous build runbook.
 See `docs/README.md` for the complete documentation suite index.
+See `CONTRIBUTING.md` and `AGENTS.md` for contributor and multi-agent workflow rules.
 See `SAFETY.md` for medical safety guardrails and escalation rules.
 
 ### Demo API Accounts

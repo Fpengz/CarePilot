@@ -10,6 +10,7 @@ This directory is the primary documentation suite for system understanding, onbo
 - System overview and subsystem map: [`docs/system-overview.md`](../docs/system-overview.md)
 - Codebase structure and module walkthrough: [`docs/codebase-walkthrough.md`](../docs/codebase-walkthrough.md)
 - Developer onboarding and extension guide: [`docs/developer-guide.md`](../docs/developer-guide.md)
+- Branching, merge sequencing, and multi-agent workflow: [`docs/branching-strategy.md`](../docs/branching-strategy.md)
 - User-facing and operator usage guide: [`docs/user-manual.md`](../docs/user-manual.md)
 - Operational runbook: [`docs/operations-runbook.md`](../docs/operations-runbook.md)
 - Shared terminology: [`docs/glossary.md`](../docs/glossary.md)
@@ -25,4 +26,5 @@ This directory is the primary documentation suite for system understanding, onbo
 - Update `docs/codebase-walkthrough.md` when major directories or module ownership changes.
 - Update `docs/developer-guide.md` and `docs/operations-runbook.md` when commands/runbooks/env requirements change.
 - Update `docs/user-manual.md` when user flows, UI routes, or core capabilities change.
+- Keep `AGENTS.md` aligned with `CONTRIBUTING.md` whenever collaboration or ownership rules change.
 - Keep active guidance in this directory and remove stale docs during cleanup passes.

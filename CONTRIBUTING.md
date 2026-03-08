@@ -107,6 +107,9 @@ Recommended naming:
 - `fix/<topic>`
 - `docs/<topic>`
 - `refactor/<topic>`
+- `agent/<task-name>` for multi-agent execution branches
+
+For merge ordering, high-risk shared-file coordination, and rebase rules, see `docs/branching-strategy.md`.
 
 ### Pull Request Guidelines
 Each PR should:
@@ -116,6 +119,14 @@ Each PR should:
 - identify affected layers: API, orchestration, agent, tool, data, frontend, infra
 
 PRs that mix unrelated refactors with feature work should be split.
+
+PRs are expected to use `.github/pull_request_template.md`. CI enforces required sections and checklist completion through the `pr-policy` workflow.
+
+### Multi-Agent Workflow
+When using multiple engineers/agents in parallel:
+- Follow `AGENTS.md` for task contract requirements and ownership boundaries.
+- Follow `docs/branching-strategy.md` for branch isolation and merge sequencing.
+- Escalate changes that touch high-risk shared files listed in `AGENTS.md`.
 
 ### Commit Message Standard
 Use Conventional Commits.

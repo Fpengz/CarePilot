@@ -1,0 +1,23 @@
+# Default owner
+* @Fpengz
+
+# CI and automation
+/.github/workflows/* @Fpengz
+
+# Build and dependency roots
+/pyproject.toml @Fpengz
+/package.json @Fpengz
+/pnpm-lock.yaml @Fpengz
+/Dockerfile @Fpengz
+/compose.dev.yml @Fpengz
+/.env.example @Fpengz
+
+# Runtime configuration and policy
+/src/dietary_guardian/config/settings.py @Fpengz
+/apps/api/dietary_api/policy.py @Fpengz
+/apps/api/dietary_api/deps.py @Fpengz
+
+# Auth and persistence critical paths
+/src/dietary_guardian/application/auth/* @Fpengz
+/src/dietary_guardian/infrastructure/auth/* @Fpengz
+/src/dietary_guardian/infrastructure/persistence/* @Fpengz
