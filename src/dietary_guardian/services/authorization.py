@@ -8,6 +8,7 @@ MEMBER_SCOPES: set[str] = {
     "recommendation:generate",
     "reminder:write",
     "reminder:read",
+    "emotion:infer",
 }
 ADMIN_EXTRA_SCOPES: set[str] = {
     "alert:trigger",

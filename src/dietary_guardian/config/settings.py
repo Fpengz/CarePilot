@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     api_rate_limit_auth_login_max_requests: int = Field(default=20, ge=1, le=500)
     api_rate_limit_meal_analyze_max_requests: int = Field(default=20, ge=1, le=500)
     api_rate_limit_recommendations_generate_max_requests: int = Field(default=10, ge=1, le=500)
+    emotion_inference_enabled: bool = False
+    emotion_speech_enabled: bool = False
+    emotion_compat_routes_enabled: bool = True
+    emotion_request_timeout_seconds: float = Field(default=15.0, ge=0.1, le=300.0)
+    emotion_model_device: Literal["auto", "cpu", "cuda"] = "auto"
+    emotion_text_model_id: str = "j-hartmann/emotion-english-distilroberta-base"
+    emotion_speech_model_id: str = "meralion/speech-emotion-recognition"
+    emotion_source_commit: str = "9afc3f1a3a3fec71a4e5920d8f4103710b337ecc"
     api_dev_log_verbose: bool = False
     api_dev_log_headers: bool = False
     api_dev_log_response_headers: bool = False

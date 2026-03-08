@@ -2,6 +2,13 @@ from dietary_guardian.models.analytics import EngagementMetrics
 from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage, OutboxRecord
 from dietary_guardian.models.clinical_card import ClinicalCardRecord
 from dietary_guardian.models.daily_suggestions import DailySuggestionBundle, DailySuggestionItem
+from dietary_guardian.models.emotion import (
+    EmotionConfidenceBand,
+    EmotionEvidence,
+    EmotionInferenceResult,
+    EmotionLabel,
+    EmotionRuntimeHealth,
+)
 from dietary_guardian.models.health_profile import HealthProfileRecord, ProfileCompleteness
 from dietary_guardian.models.inference import (
     InferenceHealth,
@@ -99,6 +106,11 @@ __all__ = [
     "ClinicalCardRecord",
     "DailySuggestionBundle",
     "DailySuggestionItem",
+    "EmotionLabel",
+    "EmotionConfidenceBand",
+    "EmotionEvidence",
+    "EmotionInferenceResult",
+    "EmotionRuntimeHealth",
     "HealthProfileRecord",
     "ProfileCompleteness",
     "AgentProfileState",
