@@ -3,7 +3,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas.companion import (
+from ..schemas import (
     ClinicianDigestEnvelopeResponse,
     CompanionInteractionRequest,
     CompanionInteractionResponse,

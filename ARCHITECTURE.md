@@ -1,656 +1,138 @@
 # Architecture
 
 ## Purpose
-This document is the canonical architecture reference for Dietary Guardian.
+This is the canonical architecture reference for Dietary Guardian. It describes the current modular-monolith baseline, the ownership boundaries that contributors should preserve, and the scale-later direction for the hackathon branch.
 
-It serves two audiences:
-- engineers onboarding to the current codebase
-- future contributors extending the system toward a production AI health companion architecture built on FastAPI, Next.js, PostgreSQL, Redis, RAG, and narrow reasoning agents
-
-Companion documentation:
-- `docs/README.md`
-- `docs/system-overview.md`
-- `docs/codebase-walkthrough.md`
+Related docs:
+- `README.md`
+- `SYSTEM_ROADMAP.md`
 - `docs/developer-guide.md`
-- `docs/user-manual.md`
 - `docs/operations-runbook.md`
 
-This document is explicit about the current repository baseline and the active target shape for the hackathon branch.
+## Current system shape
+Dietary Guardian is a layered companion system with one codebase and clear ownership boundaries.
 
-## Current Maturity Snapshot
-The repository is currently a strong v1 baseline with these production-relevant capabilities already implemented:
-- FastAPI API with centralized error handling, request context middleware, and action-based authorization
-- Next.js web client with typed API bindings and validated user flows
-- shared Python core under `src/dietary_guardian`
-- workflow coordination for meal analysis and alert/reminder delivery
-- adaptive meal recommendation with persisted profile state and online interaction learning
-- durable reminder notification scheduling, logs, and multi-channel delivery adapters
-- SQLite-backed persistence by default, owned by `src/dietary_guardian/infrastructure/persistence/`
-- a DB-backed outbox worker pattern for asynchronous delivery
-- companion APIs for patient guidance, clinician digest generation, and impact summaries
-- a new `domain/` + `application/` backbone for case snapshots, personalization, engagement, care plans, clinician digests, and impact tracking
-- an application-layer companion orchestrator that varies guidance by interaction type and patient message
-- a deterministic evidence adapter that packages supporting citations for care plans and clinician digests
-- a deterministic safety review step that can adjust or escalate guidance before response serialization
+### Interface layer
+- `apps/web` is the primary user-facing interface
+- future messaging channels should integrate through the same API and workflow contracts
 
-The repository does not yet fully implement the target platform in these areas:
-- PostgreSQL as the primary system of record
-- Redis as the standard cache / queue / ephemeral state layer
-- a full RAG retrieval and indexing pipeline
-- a dedicated multi-agent worker runtime with external message bus semantics
-- specialized emotional-support and knowledge-retrieval agents as first-class production services
+### API layer
+- `apps/api/dietary_api` owns HTTP transport, auth, policy checks, request validation, error mapping, and request/correlation IDs
+- routers stay thin and delegate behavior into services and application use cases
 
-The architecture below therefore centers the implemented modular-monolith companion design and its scale-later path.
+### Application layer
+- `src/dietary_guardian/application` owns the core companion workflow:
+  - `case_snapshot`
+  - `personalization`
+  - `engagement`
+  - `evidence`
+  - `care_plans`
+  - `clinician_digest`
+  - `impact`
+  - `interactions`
+  - `safety`
+- this layer builds typed longitudinal state and orchestrates guidance, digest, and impact behavior
 
-## High-Level System Overview
-Dietary Guardian should be understood as a layered companion system.
+### Domain layer
+- `src/dietary_guardian/domain` contains typed companion contracts and domain models
+- domain contracts should stay transport-agnostic and persistence-agnostic
 
-### 1. Interface Layer
-Responsibilities:
-- render user-facing experiences
-- collect structured inputs
-- present companion guidance, reminder state, clinician insights, and impact feedback
-- expose messaging entry points such as web, mobile web, Telegram, WhatsApp, or WeChat integrations
+### Infrastructure layer
+- `src/dietary_guardian/infrastructure` owns persistence, auth, evidence, emotion runtime, cache, and coordination adapters
+- app-data persistence is SQLite-first for the hackathon branch, with one store-selection path for durable local prototyping
 
-Current implementation:
-- Next.js app under `apps/web`
-- Streamlit demo/internal surface under `src/app.py`
+### Agent and workflow layer
+- `src/dietary_guardian/agents` contains bounded model/provider logic
+- `src/dietary_guardian/services/workflow_coordinator.py` and `apps/workers/run.py` coordinate workflows and async processing
+- agents help with bounded reasoning, but they do not own durable state or bypass deterministic safety
 
-Target production expansion:
-- web client remains primary surface
-- messaging adapters become first-class external interfaces
-- future mobile/native clients should integrate through the same API and event contracts
+## Core request lifecycle
+1. A request enters through the web app or another client.
+2. FastAPI authenticates the session, checks policy, validates input, and attaches trace metadata.
+3. The application layer loads and fuses state into a `CaseSnapshot`.
+4. Personalization and engagement modules determine focus, barriers, and support mode.
+5. Evidence retrieval and care-plan generation build the response payload.
+6. Deterministic safety review approves, adjusts, or escalates the result.
+7. Clinician digest and impact summary are produced from the same state bundle when needed.
+8. The system records workflow events and persists durable outputs.
+9. Workers continue reminders, outbox processing, and related background tasks.
 
-### 2. API Layer
-Responsibilities:
-- authenticate and authorize requests
-- validate transport payloads
-- map HTTP concerns to canonical application use cases
-- normalize errors and trace metadata
-
-Current implementation:
-- FastAPI app under `apps/api/dietary_api`
-- route modules remain intentionally thin
-
-### 3. Application Layer
-Responsibilities:
-- build longitudinal case snapshots
-- assemble personalization context
-- assess engagement and proactive intervention need
-- retrieve supporting evidence through an internal port
-- compose care plans
-- generate clinician digests
-- compute impact summaries
-- run deterministic safety review before final response mapping
-- separate business logic from HTTP and UI concerns
-
-Current implementation:
-- `src/dietary_guardian/application/case_snapshot/`
-- `src/dietary_guardian/application/personalization/`
-- `src/dietary_guardian/application/engagement/`
-- `src/dietary_guardian/application/evidence/`
-- `src/dietary_guardian/application/care_plans/`
-- `src/dietary_guardian/application/clinician_digest/`
-- `src/dietary_guardian/application/impact/`
-- `src/dietary_guardian/application/interactions/`
-- `src/dietary_guardian/application/safety/`
-
-Target production expansion:
-- explicit workflow engine with durable state transitions
-- event-driven handoff between agents
-- worker boundary for asynchronous or long-running orchestration
-
-### 4. Workflow and Agent Layer
-Responsibilities:
-- run durable workflow traces and background execution
-- provide narrow reasoning help where deterministic logic is insufficient
-- keep agents bounded behind typed inputs and outputs
-
-Current implementation:
-- `src/dietary_guardian/services/workflow_coordinator.py`
-- `apps/workers/run.py`
-- meal analysis and recommendation-oriented agent logic in `src/dietary_guardian/agents`
-- meal perception is now bounded to typed image-understanding output, with canonical-food normalization/enrichment handled deterministically before persistence and downstream guidance
-
-Target production agent set:
-- Diet Analysis Agent
-- Knowledge Retrieval Agent
-- Emotional Support Agent
-- Reminder Engine
-- Safety / Guardrail Agent
-- Coordinator / Router Agent
-
-### 5. Tool and Safety Layer
-Responsibilities:
-- expose side-effectful capabilities through typed contracts
-- enforce policy and environment restrictions
-- support safe external integrations
-- keep deterministic safety ahead of generative behavior
-
-Current implementation:
-- tool registry under `src/dietary_guardian/services/tool_registry.py`
-- platform tool bindings in `src/dietary_guardian/services/platform_tools.py`
-
-### 6. Data Layer
-Responsibilities:
-- store durable domain state
-- store workflow and audit events
-- support retrieval, memory, recommendation state, digest inputs, and impact metrics
-- provide cache and queue primitives
-
-Current implementation:
-- SQLite repositories for app/auth state, with app-data ownership in `src/dietary_guardian/infrastructure/persistence/`
-- backend-neutral app-store builders and repository contracts in `src/dietary_guardian/infrastructure/persistence/{builders,contracts}.py`
-- in-memory memory services for some workflow state
-- outbox table for async delivery
-- deterministic evidence packaging in `src/dietary_guardian/infrastructure/evidence/`
-
-Target production expansion:
-- PostgreSQL for durable relational state
-- Redis for ephemeral state, cache, distributed locking, and queue coordination
-- vector index / embedding store for RAG
-
-## Core Companion Lifecycle
-A typical companion request lifecycle should be understood as follows:
-
-1. A user sends input from the web client or a messaging channel.
-2. The Interface Layer forwards the request to the FastAPI API.
-3. The API Layer authenticates the caller, checks scopes/policies, validates the payload, and attaches request/correlation IDs.
-4. The API Layer delegates to an application use case.
-5. The Application Layer resolves the active care flow and gathers required state:
-   - user profile
-   - health profile
-   - meal history
-   - reminder and adherence state
-   - symptom history
-   - biomarker and report context
-   - optional emotion signal
-6. The Application Layer builds:
-   - `CaseSnapshot`
-   - `PersonalizationContext`
-   - `EngagementAssessment`
-   - `EvidenceBundle`
-   - `CarePlan`
-   - `ClinicianDigest`
-   - `ImpactSummary`
-7. Safety and policy checks authorize, adjust, or escalate the final user-visible response.
-8. The system records workflow events and returns typed companion outputs.
-9. Workers continue asynchronous tasks such as reminders, notifications, and future proactive engagement triggers.
-
-## System Diagram Explained in Words
-The architecture diagram can be described as the following flow:
-
-- The user interacts with the system through the Next.js web app or external messaging channels.
-- All inbound traffic terminates at the FastAPI API layer.
-- The API forwards requests to orchestration services that determine which workflow applies.
-- The workflow coordinator resolves context and invokes specialized agents.
-- Agents do not directly call infrastructure or external services. They call tools through a registry and policy layer.
-- The RAG subsystem sits beside the agent layer:
-  - retrieval requests go to a retrieval service
-  - retrieval service queries indexed knowledge sources and vector search
-  - retrieved context is returned to prompt assembly before agent execution
-- Durable state such as users, sessions, households, reminders, recommendation history, and audit records belongs in PostgreSQL in the target architecture.
-- Ephemeral state such as cache entries, queue signals, locks, and short-lived conversation buffers belongs in Redis in the target architecture.
-- Worker processes consume queued jobs for notification delivery, indexing, offline evaluation, and model-refresh tasks.
-- Observability spans every layer through structured logs, request IDs, correlation IDs, metrics, and workflow event timelines.
-
-## Codebase Structure Walkthrough
-The current repository structure is a monorepo and should be interpreted as follows.
+## Module ownership map
 
 ```text
-apps/
-  api/
-    dietary_api/
-      main.py
-      deps.py
-      middleware.py
-      policy.py
-      routers/
-      services/
-  web/
-    app/
-    components/
-    lib/
-    e2e/
-src/
-  dietary_guardian/
-    agents/
-    application/
-    config/
-    infrastructure/
-    models/
-    observability/
-    safety/
-    services/
-docs/
-scripts/
-tests/
+apps/api/dietary_api/      HTTP transport, auth, policy, response mapping
+apps/web/                  Next.js routes, components, typed API clients
+apps/workers/              external worker runtime
+src/dietary_guardian/domain/          typed domain contracts
+src/dietary_guardian/application/     use cases, policies, ports
+src/dietary_guardian/infrastructure/  persistence and external adapters
+src/dietary_guardian/agents/          bounded model/provider logic
+src/dietary_guardian/services/        reusable domain services and workflow helpers
 ```
 
-Repository note:
-- `src/dietary_guardian/domain/` is now the canonical home for companion-level domain contracts.
-- legacy `models/` and `services/` still contain important v1 logic that is being reused and gradually rehomed under `application/`.
-
-### `apps/api/`
-FastAPI transport application.
-
-Important files:
-- `apps/api/dietary_api/main.py` — FastAPI app factory and middleware wiring
-- `apps/api/dietary_api/deps.py` — app context construction and dependency container
-- `apps/api/dietary_api/routers/` — HTTP routes only
-- `apps/api/dietary_api/services/` — API-facing orchestration and DTO shaping
-
-### `apps/web/`
-Next.js frontend.
-
-Important directories:
-- `apps/web/app/` — route segments and page entry points
-- `apps/web/components/` — reusable UI building blocks
-- `apps/web/lib/api/` — domain-scoped typed API clients
-- `apps/web/lib/types.ts` — client-side response and domain view types
-- `apps/web/e2e/` — browser smoke coverage
-
-### `src/dietary_guardian/agents/`
-Agent- and provider-specific logic.
-
-Current examples:
-- LLM provider factory
-- meal vision agent logic
-- dietary reasoning agent logic
-
-### `src/dietary_guardian/application/`
-Canonical home for companion use cases, policies, and ports.
-
-Current usage:
-- auth use cases
-- household use cases
-- suggestions use cases
-- policy boundaries
-- case snapshot assembly
-- personalization context assembly
-- engagement scoring
-- care-plan composition
-- clinician digest generation
-- impact summary computation
-- companion interaction orchestration
-
-### `src/dietary_guardian/domain/`
-Companion domain models.
-
-Current usage:
-- `domain/care/models.py` defines `CaseSnapshot`, `PersonalizationContext`, `EngagementAssessment`, `CarePlan`, `ClinicianDigest`, and `ImpactSummary`
-
-### `src/dietary_guardian/infrastructure/`
-Infrastructure adapters.
-
-Current usage:
-- app-data persistence builders/contracts/adapters
-- auth persistence/signing
-- household storage
-
-Target expansion:
-- PostgreSQL repositories
-- Redis cache/queue adapters
-- vector store adapters
-- external messaging clients
-
-### `src/dietary_guardian/models/`
-Typed contracts and data models.
-
-Current usage:
-- reminder, recommendation, health-profile, workflow, alerting, and output models
-
-### `src/dietary_guardian/services/`
-Business orchestration and domain-level service logic.
-
-Current usage:
-- workflow coordinator
-- recommendation engine
-- reminder notification scheduler
-- alerting/outbox worker
-- memory services
-
-Target direction:
-- keep service orchestration cohesive, move transport concerns to `apps/api`, and keep persistence adapters in `infrastructure/`
-
-### `docs/`
-Architecture notes, API contracts, roadmap, runbooks, and operations documentation.
-Use `docs/README.md` as the index for the active modular documentation suite.
-
-### `scripts/`
-Developer-entry scripts and operational helpers.
-
-### `tests/`
-Repository-level unit and integration tests.
-
-## Backend Entry Points
-### FastAPI App Initialization
-Primary entry point:
-- `apps/api/dietary_api/main.py`
-
-Responsibilities:
-- construct or attach `AppContext`
-- register middleware
-- register routers
-- install centralized exception handlers
-- manage startup/shutdown lifecycle
-
-### App Context Initialization
-Primary entry point:
-- `apps/api/dietary_api/deps.py`
-
-Responsibilities:
-- load settings
-- initialize repositories and auth stores
-- initialize workflow coordinator
-- initialize tool registry
-- initialize memory/timeline services
-
-### Route Registration
-Primary entry point:
-- `apps/api/dietary_api/routers/__init__.py`
-
-Responsibilities:
-- compose all API route modules into a single app
-
-### Agent Registry / Provider Initialization
-Current provider/runtime setup:
-- `src/dietary_guardian/agents/provider_factory.py`
-
-Target extension:
-- introduce an explicit `AgentRegistry` that resolves named agents by capability rather than direct imports
-
-### Workflow Coordinator
-Primary current entry point:
-- `src/dietary_guardian/services/workflow_coordinator.py`
-
-Responsibilities:
-- define workflow sequences
-- append timeline events
-- hand off between logical agents
-- coordinate tool invocation through the tool registry
-
-### Tool Binding System
-Primary entry points:
-- `src/dietary_guardian/services/tool_registry.py`
-- `src/dietary_guardian/services/platform_tools.py`
-
-Responsibilities:
-- register tools with schemas and policy constraints
-- validate input/output contracts
-- capture tool metrics and failures
-
-## Frontend Entry Points
-### Next.js Root Layout
-Primary entry point:
-- `apps/web/app/layout.tsx`
-
-Responsibilities:
-- load global CSS
-- install app shell
-- install session provider
-- define top-level metadata and accessibility scaffolding
-
-### Root Navigation Entry Point
-Primary entry point:
-- `apps/web/app/page.tsx`
-
-Responsibilities:
-- redirect authenticated users to the dashboard
-- redirect unauthenticated users to login
-
-### API Integration Layer
-Primary entry point:
-- `apps/web/lib/api.ts`
-
-Responsibilities:
-- same-origin API requests through `/backend`
-- cookie-aware fetch behavior
-- typed response parsing
-- frontend dev logging hooks
-
-### State Management
-Current pattern:
-- route-local React state plus shared session provider
-- typed state hydration from API responses
-
-Target production direction:
-- keep server/client boundaries explicit
-- only promote shared global state when needed for session, realtime presence, or optimistic workflow updates
-
-### Chat / Session Persistence
-Current implementation:
-- auth session and app state persist through backend cookies and database storage
-
-Target direction:
-- if chat-first or messaging-first surfaces are introduced, conversation thread state should persist in PostgreSQL while transient typing/presence state stays in Redis
-
-## Database and State Flow
-## Current Repository Default
-Current durable storage:
-- SQLite app database for reminders, meals, suggestions, recommendation state, and outbox records
-- SQLite auth database for users, sessions, and audit events
-
-Current transient state:
-- in-memory profile memory
-- in-memory clinical snapshot memory
-- in-memory workflow timeline accumulation inside app process
-
-This is acceptable for local-first v1, but it is not the final production target.
-
-## Target Production State Topology
-### PostgreSQL
-PostgreSQL should become the system of record for:
-- users
-- auth sessions and audit events
-- households and membership
-- meal records
-- health profiles
-- biomarker readings
-- reminders and notification schedules
-- recommendation artifacts and interaction events
-- workflow executions and agent logs
-- knowledge-source metadata
-
-Recommended high-level schema groups:
-- `identity`: users, sessions, audit events
-- `health`: profiles, biomarkers, chronic-condition records
-- `meals`: meal captures, nutrition summaries, recommendation artifacts
-- `messaging`: reminders, notification preferences, delivery logs
-- `workflow`: executions, handoffs, tool invocations, agent traces
-- `knowledge`: source metadata, ingestion jobs, chunk/index metadata
-
-### Redis
-Redis should be used for:
-- request-scoped ephemeral coordination when workflow fan-out grows
-- caching hot reads
-- distributed locks
-- rate limiting
-- Celery or worker queue coordination
-- short-lived conversation context and response streaming coordination
-
-### Memory Strategy
-Use three distinct memory classes:
-- short-term memory: Redis / request-local ephemeral context
-- user memory: PostgreSQL-backed durable summaries and preference state
-- knowledge memory: RAG document store + vector index
-
-### Event-Driven State Updates
-Preferred production pattern:
-- APIs write durable state first
-- side effects are emitted to an outbox or queue
-- workers process asynchronous delivery, indexing, evaluation, and refresh jobs
-- workflow and agent events are appended as immutable logs
-
-## Agent Lifecycle
-A production agent lifecycle should follow the same strict pattern regardless of agent type.
-
-1. Resolve agent identity and workflow role.
-2. Load policy context and safety context.
-3. Assemble prompt or structured reasoning input from:
-   - user state
-   - workflow state
-   - memory state
-   - RAG retrieval context if applicable
-4. Decide whether tool usage is required.
-5. Invoke tools only through the registry or tool binding layer.
-6. Validate the output against a typed contract.
-7. Apply safety and post-generation validation.
-8. Persist workflow events, selected outputs, and evaluation metadata.
-9. Update durable memory if the result should influence future behavior.
-10. Emit metrics and structured logs.
-
-### Agent Registration
-Recommended target contract:
-- each agent has a stable name
-- each agent declares supported tasks
-- each agent declares allowed tools
-- each agent declares output schema
-
-### Prompt Assembly
-Prompt assembly should be centralized per agent family.
-Do not scatter prompt strings in route handlers or UI code.
-
-### Tool Call Decision
-Agents should not directly import infrastructure clients.
-They should emit tool requests against registered tool interfaces.
-
-### Response Validation
-Every agent output should be:
-- schema-validated
-- safety-checked
-- logged with correlation metadata
-
-### Memory Updates
-Only persist memory when the signal is stable and useful.
-Examples:
-- accepted substitutions
-- repeated meal preferences
-- reminder channel preferences
-- high-confidence chronic-condition-related guidance outcomes
-
-Do not persist raw speculative emotional or medical conclusions without explicit product intent and retention rules.
-
-## RAG Integration Model
-RAG is not yet a first-class implemented subsystem in this repository, but the architecture should treat it as a dedicated service boundary.
-
-Recommended production components:
-- document ingestion pipeline
-- chunking and metadata enrichment
-- embedding generation
-- vector index adapter
-- retrieval ranking service
-- citation packaging service
-
-Recommended flow:
-1. ingest trusted medical or nutritional sources
-2. normalize and chunk documents
-3. generate embeddings
-4. store chunk metadata and vectors
-5. retrieve by intent and user context
-6. pass only filtered, cited evidence into prompt assembly
-7. log retrieved sources for auditability
-
-## Extension Guidelines
-## Adding a New Agent
-1. Define the agent's responsibility and boundaries.
-2. Add a typed input/output contract.
-3. Implement prompt assembly and validation in a dedicated module.
-4. Register the agent in the workflow routing layer or future registry.
-5. Explicitly declare which tools the agent may call.
-6. Add workflow, API, and evaluation coverage.
-
-Guardrails:
-- no direct database access from agent code
-- no direct HTTP calls to external tools from agent code
-- no untyped outputs crossing workflow boundaries
-
-## Adding a New Tool
-1. Define input and output schemas.
-2. Define required scopes and allowed environments.
-3. Register the tool through the tool registry.
-4. Implement infrastructure side effects in adapters, not in policy or router code.
-5. Add validation, failure-path tests, and observability hooks.
-
-Guardrails:
-- tools must be policy-aware
-- tools must return structured errors
-- tools must be idempotent where possible
-
-## Adding a New Data Source
-1. Define trust level and data ownership.
-2. Define ingestion contract and update cadence.
-3. Add adapter module and normalization rules.
-4. Add storage/indexing path.
-5. Add provenance metadata.
-6. Add security review for secrets, PII, and licensing.
-
-## Modifying Workflow Routing
-1. Change routing logic in orchestration modules, not route handlers.
-2. Add explicit entry and exit criteria for each step.
-3. Preserve correlation/request propagation.
-4. Add replay-safe logging and tests.
-
-## Extending the RAG Pipeline
-1. Add source adapter
-2. add chunker/normalizer
-3. add embedding job
-4. add retrieval evaluation set
-5. add citation rendering and audit capture
-
-Do not allow arbitrary retrieval content to bypass the safety layer.
-
-## Testing and Evaluation
-### Unit Tests
-Required for:
-- domain rules
-- tool contracts
-- routing decisions
-- scheduler and retry behavior
-- repository state transitions
-
-### Integration Tests
-Required for:
-- API contracts
-- workflow execution paths
-- notification delivery scheduling
-- agent orchestration boundaries
-- auth and policy checks
-
-### Prompt Regression Testing
-Required for agentic features that rely on prompt assembly.
-
-Recommended approach:
-- stable fixture inputs
-- snapshot or contract assertions on normalized outputs
-- explicit review when prompt templates change
-
-### Offline Evaluation
-Required as RAG and multi-agent reasoning mature.
-
-Recommended evaluation categories:
-- retrieval quality
-- recommendation acceptance/adherence
-- safety false-negative rate
-- emotional-support escalation correctness
-- reminder delivery success rate
-
-### Observability Metrics
-Minimum recommended metrics:
-- request count and latency by route
-- workflow duration by workflow name
-- tool success/failure rate
-- notification delivery success/retry/dead-letter rates
-- recommendation interaction rates
-- retrieval hit rate and citation coverage
-- safety refusal / escalation rates
-
-## Architectural Principles
-The following principles are mandatory for future extension:
-- thin transport layers
-- typed boundaries
-- policy-first side effects
-- durable event capture for workflows
-- explicit separation between orchestration, agent logic, and infrastructure
-- safe fallback behavior when LLM or external providers fail
-- no hidden cross-layer shortcuts
+## Key architectural rules
+- Keep route handlers transport-only.
+- Keep business logic in `application` or reusable services, not in routers or UI glue.
+- Keep deterministic logic as the source of truth for durable care state.
+- Treat agents as bounded helpers behind typed contracts.
+- Keep persistence and external integrations behind infrastructure adapters.
+- Make durable state transitions observable and testable.
+
+## Governing principles
+- Prefer policy-governed capabilities over agent-first decomposition.
+- Prefer deterministic scoring, retrieval, templates, and state machines before adding model reasoning.
+- Treat typed longitudinal state and event history as the system of record, not chat memory.
+- Keep safety independent from proposal generation so it can veto, downgrade, or escalate any high-impact response.
+- Keep replay, traceability, and explainability as runtime requirements rather than optional observability extras.
+- Keep the product culture-first and safety-always: local Singapore relevance should improve adherence, but it must never weaken the safety boundary.
+
+## Safety and orchestration model
+- Deterministic screening and policy checks run before any optional ambiguity-review agent behavior.
+- Agents may propose, summarize, or enrich, but they do not authorize delivery and they do not write durable state directly.
+- Every user-visible recommendation should remain traceable to the current state snapshot, evidence inputs, workflow events, and final safety decision.
+- Programmatic orchestration remains the default pattern; agent-to-agent delegation should stay limited to bounded synthesis subtasks.
+- The system is informational and care-support oriented, not a diagnosis or treatment authority.
+- The minimum hard-escalation class includes emergency or urgent red flags such as chest pain, trouble breathing, stroke-like symptoms, severe allergic reaction signs, loss of consciousness, severe confusion, severe bleeding, and self-harm risk when in scope.
+- User-visible recommendation flows should preserve structured safety outcomes such as allow, downgrade, clarification, refusal, or escalation.
+
+## Current runtime model
+
+### Local default
+- SQLite for durable storage
+- optional in-memory ephemeral services
+- API and worker can share the same local app store
+
+### Target-aligned local and production path
+- SQLite for durable state during the hackathon branch
+- Redis for optional ephemeral state, coordination, and worker signaling
+- external worker process for reminders, outbox processing, and future async workflows when needed
+
+## Important implemented subsystems
+- companion orchestration with case snapshot, personalization, engagement, evidence, safety, clinician digest, and impact
+- meal analysis with bounded perception plus deterministic canonical-food normalization
+- canonical agent modules now live under `src/dietary_guardian/agents/`, while shared provider/model integration lives under `src/dietary_guardian/llm/`
+- configuration is being consolidated into focused settings modules with `config/settings.py` as the bootstrap surface and grouped runtime responsibilities beneath `config/`
+- recommendation flows with persisted profile and interaction context
+- reminder scheduling and multi-channel delivery with worker support
+- emotion inference behind application and infrastructure boundaries
+- workflow traces, runtime contracts, and policy-governed tool access
+
+## Scale-later direction
+The target architecture is still a modular monolith, not an immediate distributed system. The intended next step is to harden the current boundaries rather than split the runtime prematurely.
+
+Expected future expansion:
+- stronger SQLite-first runtime boundaries with optional Redis coordination
+- richer retrieval and citation infrastructure behind the existing evidence boundary
+- more durable workflow state transitions when current orchestration limits become real
+- additional bounded agents only where deterministic logic is not enough
+
+The preferred order of operations is:
+1. tighten contracts and capability boundaries
+2. migrate behavior behind those boundaries incrementally
+3. introduce heavier workflow/runtime infrastructure only when multi-day durability or human-in-the-loop semantics require it
+
+## When to update this file
+- ownership boundaries change
+- a major subsystem is added or removed
+- default runtime topology changes
+- a new application-layer workflow becomes core to the product

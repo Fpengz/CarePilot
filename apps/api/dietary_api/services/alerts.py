@@ -1,3 +1,5 @@
+"""API helpers for alert triggering and alert timeline reads."""
+
 from typing import cast
 
 from apps.api.dietary_api.session_profiles import build_user_profile_from_session

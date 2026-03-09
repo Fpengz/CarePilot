@@ -13,7 +13,7 @@ def test_import_dietary_agent_without_gemini_keys_does_not_fail() -> None:
     env["PYTHONPATH"] = str(root / "src")
 
     result = subprocess.run(
-        [sys.executable, "-c", "import dietary_guardian.agents.dietary_agent"],
+        [sys.executable, "-c", "import dietary_guardian.agents.dietary"],
         env=env,
         capture_output=True,
         text=True,

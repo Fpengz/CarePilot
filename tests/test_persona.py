@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from rich.console import Console
 
-from dietary_guardian.agents.dietary_agent import dietary_agent
+from dietary_guardian.agents.dietary import dietary_agent
 
 console = Console()
 

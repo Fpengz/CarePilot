@@ -36,16 +36,18 @@ def test_run_reminder_scheduler_once_builds_configured_store_when_repository_omi
 ) -> None:
     fake_repo = object()
     settings = SimpleNamespace(
-        reminder_scheduler_batch_size=25,
-        alert_worker_max_attempts=3,
-        alert_worker_concurrency=4,
+        workers=SimpleNamespace(
+            reminder_scheduler_batch_size=25,
+            alert_worker_max_attempts=3,
+            alert_worker_concurrency=4,
+        )
     )
     recorded: dict[str, object] = {}
 
     def fake_get_settings() -> SimpleNamespace:
         return settings
 
-    def fake_build_app_store(passed_settings: object) -> object:
+    def fake_build_reminder_scheduler_repository(passed_settings: object) -> object:
         recorded["settings"] = passed_settings
         return fake_repo
 
@@ -55,7 +57,11 @@ def test_run_reminder_scheduler_once_builds_configured_store_when_repository_omi
         return []
 
     monkeypatch.setattr(reminder_scheduler, "get_settings", fake_get_settings)
-    monkeypatch.setattr(reminder_scheduler, "build_app_store", fake_build_app_store)
+    monkeypatch.setattr(
+        reminder_scheduler,
+        "build_reminder_scheduler_repository",
+        fake_build_reminder_scheduler_repository,
+    )
     monkeypatch.setattr(reminder_scheduler, "dispatch_due_reminder_notifications", fake_dispatch_due_reminder_notifications)
 
     result = asyncio.run(run_reminder_scheduler_once())
@@ -63,4 +69,4 @@ def test_run_reminder_scheduler_once_builds_configured_store_when_repository_omi
     assert result == reminder_scheduler.ReminderSchedulerRunResult(queued_count=0, delivery_attempts=0)
     assert recorded["settings"] is settings
     assert recorded["dispatch_repository"] is fake_repo
-    assert recorded["dispatch_limit"] == settings.reminder_scheduler_batch_size
+    assert recorded["dispatch_limit"] == settings.workers.reminder_scheduler_batch_size

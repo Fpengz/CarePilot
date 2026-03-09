@@ -1,3 +1,5 @@
+"""API orchestration for recommendation-agent daily plans and interactions."""
+
 from __future__ import annotations
 
 from apps.api.dietary_api.deps import RecommendationAgentDeps

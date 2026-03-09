@@ -71,6 +71,13 @@ export interface HealthProfileCompleteness {
   missing_fields: string[];
 }
 
+export interface HealthProfileMealSchedule {
+  slot: string;
+  start_time: string;
+  end_time: string;
+  timezone: string;
+}
+
 export interface HealthProfile {
   age: number | null;
   locale: string;
@@ -90,6 +97,8 @@ export interface HealthProfile {
   preferred_cuisines: string[];
   disliked_ingredients: string[];
   budget_tier: "budget" | "moderate" | "flexible";
+  meal_schedule: HealthProfileMealSchedule[];
+  preferred_notification_channel: string;
   fallback_mode: boolean;
   completeness: HealthProfileCompleteness;
   updated_at?: string | null;
@@ -852,6 +861,8 @@ export interface ClinicianDigestApi {
   risk_level: "low" | "medium" | "high";
 }
 
+export type ClinicianDigest = ClinicianDigestApi;
+
 export interface ImpactSummaryApi {
   baseline_window: string;
   comparison_window: string;
@@ -862,10 +873,13 @@ export interface ImpactSummaryApi {
   improvement_signals: string[];
 }
 
+export type ImpactSummary = ImpactSummaryApi;
+
 export interface CompanionTodayApiResponse {
   snapshot: CompanionSnapshotApi;
   engagement: CompanionEngagementApi;
   care_plan: CompanionCarePlanApi;
+  clinician_digest_preview: ClinicianDigestApi;
   impact: ImpactSummaryApi;
 }
 
@@ -886,6 +900,9 @@ export interface CompanionInteractionApiResponse {
   impact: ImpactSummaryApi;
   workflow: WorkflowExecutionResult;
 }
+
+export type CarePlan = CompanionCarePlanApi;
+export type EvidenceCitation = CompanionEvidenceCitationApi;
 
 export interface ClinicianDigestEnvelopeApiResponse {
   digest: ClinicianDigestApi;

@@ -1,6 +1,6 @@
 import pytest
 
-from dietary_guardian.agents.hawker_vision import HawkerVisionModule
+from dietary_guardian.agents.vision import HawkerVisionModule
 from dietary_guardian.config.runtime import LocalModelProfile
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.models.inference import InferenceResponse, ProviderMetadata
@@ -99,8 +99,8 @@ def test_hawker_vision_uses_profile_built_model_for_inference_engine(monkeypatch
             del provider, model_name
             StubEngine.seen_model = model
 
-    monkeypatch.setattr("dietary_guardian.agents.hawker_vision.LLMFactory.from_profile", lambda profile: FakeModel())
-    monkeypatch.setattr("dietary_guardian.agents.hawker_vision.InferenceEngine", StubEngine)
+    monkeypatch.setattr("dietary_guardian.agents.vision.LLMFactory.from_profile", lambda profile: FakeModel())
+    monkeypatch.setattr("dietary_guardian.agents.vision.InferenceEngine", StubEngine)
 
     profile = LocalModelProfile(
         id="custom",

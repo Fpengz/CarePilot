@@ -1,4 +1,4 @@
-from apps.api.dietary_api.schemas.models import (
+from apps.api.dietary_api.schemas import (
     AlertTimelineItemResponse,
     AlertTimelineResponse,
     AlertTriggerResponse,

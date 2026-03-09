@@ -18,13 +18,13 @@ def _reset_settings_cache() -> None:
 
 def _create_auth_only_app():
     settings = Settings(
-        llm_provider="test",
-        auth_store_backend="in_memory",
+        llm={"provider": "test"},
+        auth={"store_backend": "in_memory"},
     )
     ctx = SimpleNamespace(
         settings=settings,
         auth_store=InMemoryAuthStore(settings),
-        session_signer=SessionSigner(settings.session_secret),
+        session_signer=SessionSigner(settings.auth.session_secret),
     )
     return create_app(ctx=cast(AppContext, ctx))
 
@@ -469,8 +469,8 @@ def test_patch_password_rejects_weak_or_reused_password() -> None:
 
 def test_settings_default_auth_backend_is_sqlite(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("AUTH_STORE_BACKEND", raising=False)
-    settings = Settings(llm_provider="test")
-    assert settings.auth_store_backend == "sqlite"
+    settings = Settings(llm={"provider": "test"})
+    assert settings.auth.store_backend == "sqlite"
 
 
 def test_auth_api_supports_sqlite_backend_with_persistence_across_app_instances(

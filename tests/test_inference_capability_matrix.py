@@ -1,5 +1,5 @@
 from dietary_guardian.models.inference import InferenceModality
-from dietary_guardian.services.inference_engine import InferenceEngine
+from dietary_guardian.agents.executor import InferenceEngine
 
 
 def test_test_provider_capability_matrix_disables_image() -> None:

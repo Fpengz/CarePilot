@@ -1,3 +1,5 @@
+"""API helpers for medication regimens, adherence events, and adherence metrics."""
+
 from __future__ import annotations
 
 from datetime import date, datetime, time, timezone

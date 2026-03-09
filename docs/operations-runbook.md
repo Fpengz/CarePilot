@@ -1,122 +1,107 @@
 # Operations Runbook
 
-Last updated: 2026-03-09  
-See also: [`docs/developer-guide.md`](../docs/developer-guide.md), [`docs/config-reference.md`](../docs/config-reference.md), [`docs/nightly-ops.md`](../docs/nightly-ops.md)
+See also:
+- `docs/developer-guide.md`
+- `docs/config-reference.md`
 
-## 1) Startup Profiles
+## Supported runtime profiles
 
-### Supported Production Topology
-- API: FastAPI runtime (`apps/api`)
-- Web: Next.js app (`apps/web`)
-- Worker: external worker process (`apps/workers`)
-- Stateful backends: PostgreSQL + Redis
-- Required mode knobs:
-  - `APP_DATA_BACKEND=postgres`
-  - `AUTH_STORE_BACKEND=postgres`
-  - `HOUSEHOLD_STORE_BACKEND=postgres`
-  - `EPHEMERAL_STATE_BACKEND=redis`
-  - `WORKER_MODE=external`
+### Lightweight local
 
-### Lightweight Local (default)
 ```bash
 uv run python scripts/dg.py dev
 ```
 
-Use for rapid application development with local defaults.
+Use this for fast local development with default local backends.
 
-Runtime note:
-- In this profile, API and worker processes use the same SQLite-backed app store selected through `src/dietary_guardian/infrastructure/persistence/builders.py`.
+### Target-aligned local
 
-### Target-Aligned Local (Postgres + Redis + worker)
 ```bash
 uv run python scripts/dg.py infra up
-uv run python scripts/dg.py migrate postgres
-uv run python scripts/dg.py smoke postgres-redis
 ```
 
-Use for validating the supported production topology locally.
+This is the supported production-aligned topology:
+- API runtime
+- web runtime
+- external worker
+- SQLite for durable state
+- Redis for cache, coordination, and worker signaling
 
-Worker runtime note:
-- API and worker processes both resolve app-data persistence through the same backend-selection path, with `APP_DATA_BACKEND=postgres` in this profile.
-- The external worker in `apps/workers/run.py` retries transient scheduler/outbox iteration failures after a short in-process delay instead of exiting immediately.
-- Continue running the worker under external supervision because host restarts, fatal interpreter exits, and repeated crash loops still require process-level recovery.
+## Readiness and health
 
-## 2) Health and Readiness Checks
+Endpoint:
+- `GET /api/v1/health/ready`
 
-### Readiness Endpoint
-- Endpoint: `GET /api/v1/health/ready`
-- Expected statuses:
-  - `ready`
-  - `degraded`
-  - `not_ready`
+CLI gate:
 
-### CLI Readiness Gate
 ```bash
 uv run python scripts/dg.py readiness http://127.0.0.1:8001
 ```
 
-Use strict warning mode in staging/prod-like checks:
+Strict mode:
+
 ```bash
 READINESS_FAIL_ON_WARNINGS=1 uv run python scripts/dg.py readiness http://127.0.0.1:8001
 ```
 
-## 3) Validation Gates
+## Validation gates
 
-### Full Validation
+Full:
+
 ```bash
 uv run python scripts/dg.py test comprehensive
 ```
 
-### Scoped Validation
+Scoped:
+
 ```bash
 uv run python scripts/dg.py test backend
 uv run python scripts/dg.py test web
 ```
 
-## 4) Routine Operational Commands
+## Routine commands
 
-### Infra Control
+Infra control:
+
 ```bash
 uv run python scripts/dg.py infra status
 uv run python scripts/dg.py infra logs
 uv run python scripts/dg.py infra down
 ```
 
-### Migration and Keyspace Operations
+Migration:
+
 ```bash
-uv run python scripts/dg.py migrate postgres
 ```
-Redis runtime paths use the canonical v2 naming scheme directly; there is no separate migration command in the active workflow.
 
-## 5) Incident-Triage Checklist
-1. Confirm Docker/infra health (if using Postgres/Redis profile).
-2. Run readiness endpoint and inspect failed/warn checks.
-3. Verify API and worker process status.
-4. Check scheduler intervals and notification settings.
-5. Re-run scoped tests for affected subsystem.
-6. Escalate to full comprehensive gate before closure.
+## Incident triage
+1. Confirm infra health if Redis-backed worker coordination is expected.
+2. Run readiness and inspect failed or warning checks.
+3. Verify API and worker processes are running with the intended backend settings.
+4. Check reminder and notification settings if async behavior is involved.
+5. Re-run scoped validation for the affected subsystem.
+6. Use the comprehensive gate before closing the incident.
 
-## 6) Common Operational Issues
+## Common issues
 
-### API starts but readiness is degraded
-- Missing provider/env values.
-- Redis/Postgres configured but not reachable.
+### Readiness is degraded
+- provider settings are missing or invalid
+- Redis is configured but unreachable
 
-### Reminder workflows not dispatching
-- Scheduler disabled (`--no-scheduler` or worker not running).
-- Notification endpoints/preferences missing.
+### Reminder workflows are not dispatching
+- worker is not running
+- scheduler-related settings or notification endpoints are missing
 
-### Workflow policy behavior mismatch
-- Enforcement mode in `shadow` when `enforce` is expected.
-- Policy records exist but do not match role/agent/tool/environment filters.
+### Runtime policy behavior is unexpected
+- enforcement mode is still `shadow`
+- policy records do not match the active role, agent, or environment
 
-## 7) Logs and Observability
-- Use correlation ID and request ID for cross-service tracing.
-- Inspect workflow timelines through `/workflows` UI or workflow API routes.
-- Watch for `worker_loop_iteration_failed` log events to identify repeated scheduler/outbox recovery loops.
-- Keep readiness and smoke output artifacts for incident notes.
+## Observability
+- use request ID and correlation ID for traceability
+- inspect workflow traces through the workflows UI or API
+- watch worker-loop failures to distinguish transient retries from process-level incidents
 
-## When to Update This Document
-- New run modes or script commands.
-- Changes in readiness model or dependency checks.
-- Worker/runtime behavior changes that affect operations.
+## Update this file when
+- runtime profiles change
+- readiness/operational commands change
+- incident workflow changes materially

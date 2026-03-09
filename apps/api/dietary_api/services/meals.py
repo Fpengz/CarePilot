@@ -1,3 +1,5 @@
+"""API orchestration for meal analysis, history, and nutrition summaries."""
+
 import asyncio
 import inspect
 from datetime import date
@@ -5,7 +7,7 @@ from typing import Any, cast
 
 from fastapi import Request, UploadFile
 
-from dietary_guardian.agents.hawker_vision import HawkerVisionModule
+from dietary_guardian.agents.vision import HawkerVisionModule
 from dietary_guardian.services.daily_nutrition_service import build_daily_nutrition_summary
 from dietary_guardian.services.health_profile_service import get_or_create_health_profile
 from dietary_guardian.models.meal import ImageInput, VisionResult
@@ -28,7 +30,7 @@ from apps.api.dietary_api.schemas import (
 )
 
 
-def _build_hawker_vision_module(*, provider: str, food_store: Any) -> HawkerVisionModule:
+def _build_hawker_vision_module(*, provider: str | None, food_store: Any) -> HawkerVisionModule:
     params = inspect.signature(HawkerVisionModule).parameters
     if "food_store" in params:
         return HawkerVisionModule(provider=provider, food_store=food_store)
@@ -44,12 +46,12 @@ async def analyze_meal(
     provider: str | None,
 ) -> MealAnalyzeResponse:
     payload = await file.read()
-    if len(payload) > deps.settings.api_meal_upload_max_bytes:
+    if len(payload) > deps.settings.api.meal_upload_max_bytes:
         raise build_api_error(
             status_code=413,
             code="meal.upload_too_large",
             message="upload exceeds maximum allowed size",
-            details={"max_bytes": int(deps.settings.api_meal_upload_max_bytes)},
+            details={"max_bytes": int(deps.settings.api.meal_upload_max_bytes)},
         )
     if len(payload) == 0:
         raise build_api_error(status_code=400, code="meal.empty_upload", message="empty upload")
@@ -64,8 +66,8 @@ async def analyze_meal(
     image_bytes, preprocess_meta = _maybe_downscale_image(
         payload,
         mime_type,
-        enabled=deps.settings.image_downscale_enabled,
-        max_side_px=deps.settings.image_max_side_px,
+        enabled=deps.settings.app.image_downscale_enabled,
+        max_side_px=deps.settings.app.image_max_side_px,
     )
     image_input = ImageInput(
         source="upload",
@@ -90,8 +92,13 @@ async def analyze_meal(
 
     user_profile = build_user_profile_from_session(session, deps.stores.profiles)
     selected_provider = provider.strip() if isinstance(provider, str) else ""
+    routed_provider = (
+        selected_provider
+        if selected_provider
+        else (None if deps.settings.llm.capability_targets else deps.settings.llm.provider)
+    )
     module = _build_hawker_vision_module(
-        provider=selected_provider or deps.settings.llm_provider,
+        provider=routed_provider,
         food_store=deps.stores.foods,
     )
     try:
@@ -102,14 +109,14 @@ async def analyze_meal(
                 request_id=capture.request_id,
                 correlation_id=capture.correlation_id,
             ),
-            timeout=deps.settings.llm_inference_wall_clock_timeout_seconds,
+            timeout=deps.settings.llm.inference_wall_clock_timeout_seconds,
         )
     except asyncio.TimeoutError as exc:
         raise build_api_error(
             status_code=504,
             code="llm.timeout",
             message="meal analysis timed out",
-            details={"timeout_seconds": deps.settings.llm_inference_wall_clock_timeout_seconds},
+            details={"timeout_seconds": deps.settings.llm.inference_wall_clock_timeout_seconds},
         ) from exc
     deps.stores.meals.save_meal_record(meal_record)
     workflow = deps.coordinator.run_meal_analysis_workflow(
@@ -177,7 +184,7 @@ def get_daily_summary(
         profile=profile,
         meal_history=records,
         summary_date=summary_date,
-        timezone_name=deps.settings.app_timezone,
+        timezone_name=deps.settings.app.timezone,
     )
     return MealDailySummaryResponse.model_validate(summary.model_dump(mode="json"))
 
@@ -192,7 +199,7 @@ def get_weekly_summary(
     summary = build_weekly_nutrition_summary(
         meal_history=records,
         week_start=week_start,
-        timezone_name=deps.settings.app_timezone,
+        timezone_name=deps.settings.app.timezone,
     )
     return MealWeeklySummaryResponse.model_validate(summary)
 

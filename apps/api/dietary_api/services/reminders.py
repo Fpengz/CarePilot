@@ -1,3 +1,5 @@
+"""API helpers for reminder generation, listing, confirmation, and mobility settings."""
+
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -56,7 +58,7 @@ def generate_reminders_for_session(*, context: AppContext, session: dict[str, ob
             reminder_type=reminder.reminder_type,
         )
     signal_payload = {"user_id": user_profile.id, "reminder_count": len(reminders)}
-    context.coordination_store.publish_signal(context.settings.redis_worker_signal_channel, signal_payload)
+    context.coordination_store.publish_signal(context.settings.storage.redis_worker_signal_channel, signal_payload)
     context.coordination_store.publish_signal("reminders.ready", signal_payload)
     current_events = context.stores.reminders.list_reminder_events(user_profile.id)
     metrics = compute_mcr(current_events)

@@ -3,7 +3,7 @@ from dietary_guardian.services.readiness_service import build_readiness_report
 
 
 def test_readiness_report_is_ready_for_default_dev_profile() -> None:
-    settings = Settings(llm_provider="test", app_env="dev")
+    settings = Settings(llm={"provider": "test"}, app={"env": "dev"})
 
     report = build_readiness_report(settings=settings)
 
@@ -15,10 +15,9 @@ def test_readiness_report_is_ready_for_default_dev_profile() -> None:
 
 def test_readiness_report_is_degraded_for_optional_channel_warnings() -> None:
     settings = Settings(
-        llm_provider="test",
-        app_env="dev",
-        email_dev_mode=False,
-        email_smtp_host=None,
+        llm={"provider": "test"},
+        app={"env": "dev"},
+        channels={"email_dev_mode": False, "email_smtp_host": None},
     )
 
     report = build_readiness_report(settings=settings)
@@ -29,11 +28,10 @@ def test_readiness_report_is_degraded_for_optional_channel_warnings() -> None:
 
 def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> None:
     settings = Settings(
-        llm_provider="test",
-        app_env="dev",
-        readiness_fail_on_warnings=True,
-        sms_dev_mode=False,
-        sms_webhook_url=None,
+        llm={"provider": "test"},
+        app={"env": "dev"},
+        observability={"readiness_fail_on_warnings": True},
+        channels={"sms_dev_mode": False, "sms_webhook_url": None},
     )
 
     report = build_readiness_report(settings=settings)
@@ -44,16 +42,10 @@ def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> 
 
 def test_readiness_report_requires_shared_rate_limiting_for_prod() -> None:
     settings = Settings(
-        llm_provider="test",
-        app_env="prod",
-        app_data_backend="postgres",
-        auth_store_backend="postgres",
-        household_store_backend="postgres",
-        postgres_dsn="postgresql://dietary_guardian:dietary_guardian@127.0.0.1:5432/dietary_guardian",
-        ephemeral_state_backend="in_memory",
-        session_secret="prod-secret",
-        cookie_secure=True,
-        auth_seed_demo_users=False,
+        llm={"provider": "test"},
+        app={"env": "prod"},
+        storage={"ephemeral_state_backend": "in_memory"},
+        auth={"session_secret": "prod-secret", "cookie_secure": True, "seed_demo_users": False},
     )
 
     report = build_readiness_report(settings=settings)

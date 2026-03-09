@@ -71,6 +71,7 @@ class RawFoodSourceRecord(BaseModel):
 class PerceivedMealItem(BaseModel):
     label: str
     candidate_aliases: list[str] = Field(default_factory=list)
+    detected_components: list[str] = Field(default_factory=list)
     portion_estimate: MealPortionEstimate = Field(default_factory=MealPortionEstimate)
     preparation: str | None = None
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)

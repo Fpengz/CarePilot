@@ -320,6 +320,67 @@ def test_meal_analyze_uses_settings_provider_when_form_provider_missing(
     _reset_settings_cache()
 
 
+def test_meal_analyze_defers_provider_selection_when_capability_routing_is_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setenv(
+        "LLM_CAPABILITY_TARGETS",
+        '{"meal_vision":{"provider":"vllm","model":"vision-local","base_url":"http://vision.local/v1"}}',
+    )
+    _reset_settings_cache()
+    captured: dict[str, str | None] = {}
+
+    class _FakeHawkerVisionModule:
+        def __init__(self, provider: str | None) -> None:
+            captured["provider"] = provider
+
+        async def analyze_and_record(self, *args, **kwargs):
+            state = MealState(
+                dish_name="Test Dish",
+                confidence_score=0.9,
+                identification_method="AI_Flash",
+                ingredients=[],
+                nutrition=Nutrition(
+                    calories=100.0,
+                    carbs_g=10.0,
+                    sugar_g=2.0,
+                    protein_g=5.0,
+                    fat_g=3.0,
+                    sodium_mg=200.0,
+                ),
+            )
+            return (
+                VisionResult(primary_state=state, raw_ai_output="ok"),
+                MealRecognitionRecord(
+                    id=str(uuid4()),
+                    user_id="member_001",
+                    captured_at=datetime.now(timezone.utc),
+                    source="upload",
+                    meal_state=state,
+                ),
+            )
+
+    monkeypatch.setattr(
+        "apps.api.dietary_api.services.meals.HawkerVisionModule",
+        _FakeHawkerVisionModule,
+    )
+
+    client = TestClient(create_app())
+    _login(client, "member@example.com", "member-pass")
+
+    response = client.post(
+        "/api/v1/meal/analyze",
+        files={"file": ("meal.jpg", _jpeg_bytes(), "image/jpeg")},
+        data={"runtime_mode": "local"},
+    )
+
+    assert response.status_code == 200
+    assert captured["provider"] is None
+    _reset_settings_cache()
+
+
 def test_meal_analyze_times_out_on_slow_vision_inference(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LLM_INFERENCE_WALL_CLOCK_TIMEOUT_SECONDS", "0.1")
     _reset_settings_cache()

@@ -46,5 +46,11 @@
     "version:plan": "pnpm dlx @changesets/cli add",
     "version:bump": "pnpm dlx @changesets/cli version",
     "version:release": "pnpm dlx @changesets/cli publish"
+  },
+  "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.91.3"
+  },
+  "dependencies": {
+    "@radix-ui/react-tabs": "^1.1.13"
   }
 }

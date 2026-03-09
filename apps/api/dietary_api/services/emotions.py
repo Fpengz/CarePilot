@@ -1,8 +1,10 @@
+"""API helpers for emotion inference and runtime health checks."""
+
 from __future__ import annotations
 
 from apps.api.dietary_api.deps import EmotionDeps
 from apps.api.dietary_api.errors import build_api_error
-from apps.api.dietary_api.schemas.emotions import (
+from apps.api.dietary_api.schemas import (
     EmotionEvidenceResponse,
     EmotionHealthResponse,
     EmotionInferenceResponse,

@@ -49,15 +49,15 @@ def _try_redis_ping(redis_url: str) -> tuple[bool, str]:
 def build_readiness_report(*, settings: Settings) -> ReadinessReport:
     checks: list[ReadinessCheck] = []
 
-    checks.append(_check("app_env", status="pass", required=True, detail=f"app_env={settings.app_env}"))
+    checks.append(_check("app_env", status="pass", required=True, detail=f"app_env={settings.app.env}"))
 
-    if settings.required_provider is not None and settings.required_provider != settings.llm_provider:
+    if settings.llm.required_provider is not None and settings.llm.required_provider != settings.llm.provider:
         checks.append(
             _check(
                 "required_provider",
                 status="fail",
                 required=True,
-                detail=f"required_provider={settings.required_provider} does not match llm_provider={settings.llm_provider}",
+                detail=f"required_provider={settings.llm.required_provider} does not match llm_provider={settings.llm.provider}",
             )
         )
     else:
@@ -66,35 +66,24 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
                 "required_provider",
                 status="pass",
                 required=False,
-                detail=f"llm_provider={settings.llm_provider}",
+                detail=f"llm_provider={settings.llm.provider}",
             )
         )
 
-    postgres_required = any(
-        backend == "postgres"
-        for backend in (settings.app_data_backend, settings.auth_store_backend, settings.household_store_backend)
+    checks.append(
+        _check(
+            "durable_storage",
+            status="pass",
+            required=True,
+            detail=(
+                "sqlite durable stores configured "
+                f"(app={settings.storage.app_data_backend}, auth={settings.auth.store_backend}, household={settings.storage.household_store_backend})"
+            ),
+        )
     )
-    if postgres_required and not settings.postgres_dsn:
-        checks.append(
-            _check(
-                "postgres_dsn",
-                status="fail",
-                required=True,
-                detail="postgres backend selected but POSTGRES_DSN is missing",
-            )
-        )
-    else:
-        checks.append(
-            _check(
-                "postgres_dsn",
-                status="pass",
-                required=postgres_required,
-                detail="postgres DSN configured" if postgres_required else "postgres backend not selected",
-            )
-        )
 
-    redis_required = settings.ephemeral_state_backend == "redis"
-    if redis_required and not settings.redis_url:
+    redis_required = settings.storage.ephemeral_state_backend == "redis"
+    if redis_required and not settings.storage.redis_url:
         checks.append(
             _check(
                 "redis_url",
@@ -113,8 +102,8 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
             )
         )
 
-    if redis_required and settings.redis_url:
-        ok, detail = _try_redis_ping(str(settings.redis_url))
+    if redis_required and settings.storage.redis_url:
+        ok, detail = _try_redis_ping(str(settings.storage.redis_url))
         checks.append(_check("redis_connectivity", status="pass" if ok else "fail", required=True, detail=detail))
     else:
         checks.append(
@@ -126,8 +115,8 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
             )
         )
 
-    shared_rate_limiting_required = settings.app_env in {"staging", "prod"} and settings.api_rate_limit_enabled
-    if shared_rate_limiting_required and settings.ephemeral_state_backend != "redis":
+    shared_rate_limiting_required = settings.app.env in {"staging", "prod"} and settings.api.rate_limit_enabled
+    if shared_rate_limiting_required and settings.storage.ephemeral_state_backend != "redis":
         checks.append(
             _check(
                 "shared_rate_limiting",
@@ -146,7 +135,7 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
             )
         )
 
-    if not settings.email_dev_mode and not settings.email_smtp_host:
+    if not settings.channels.email_dev_mode and not settings.channels.email_smtp_host:
         checks.append(
             _check(
                 "email_configuration",
@@ -165,7 +154,7 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
             )
         )
 
-    if not settings.sms_dev_mode and not settings.sms_webhook_url:
+    if not settings.channels.sms_dev_mode and not settings.channels.sms_webhook_url:
         checks.append(
             _check(
                 "sms_configuration",
@@ -184,7 +173,7 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
             )
         )
 
-    if not settings.telegram_dev_mode and (not settings.telegram_bot_token or not settings.telegram_chat_id):
+    if not settings.channels.telegram_dev_mode and (not settings.channels.telegram_bot_token or not settings.channels.telegram_chat_id):
         checks.append(
             _check(
                 "telegram_configuration",
@@ -210,7 +199,7 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
     if has_required_failures:
         status = "not_ready"
     elif warnings:
-        status = "not_ready" if bool(settings.readiness_fail_on_warnings) else "degraded"
+        status = "not_ready" if bool(settings.observability.readiness_fail_on_warnings) else "degraded"
     else:
         status = "ready"
 

@@ -4,7 +4,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 LEGACY_REPOSITORY_MODULE = REPO_ROOT / "src" / "dietary_guardian" / "services" / "repository.py"
 LEGACY_API_AUTH_MODULE = REPO_ROOT / "apps" / "api" / "dietary_api" / "auth.py"
 MIGRATED_CALLERS = [
-    "src/app.py",
     "src/dietary_guardian/infrastructure/persistence/sqlite_app_store.py",
     "tests/test_alerting_outbox.py",
     "tests/test_integration_user_story_1.py",
@@ -41,11 +40,6 @@ def test_repo_local_callers_use_canonical_sqlite_repository_import() -> None:
         if LEGACY_IMPORT in contents:
             offenders.append(relative_path)
     assert offenders == []
-
-
-def test_streamlit_app_uses_canonical_sqlite_repository_import() -> None:
-    contents = (REPO_ROOT / "src/app.py").read_text(encoding="utf-8")
-    assert CANONICAL_IMPORT in contents
 
 
 def test_api_services_use_canonical_session_profile_helper_import() -> None:

@@ -1,3 +1,5 @@
+"""API orchestration for report-driven and session-scoped suggestions."""
+
 from __future__ import annotations
 
 from typing import cast

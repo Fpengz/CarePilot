@@ -4,9 +4,9 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.panel import Panel
 
-from dietary_guardian.agents.provider_factory import LLMFactory
+from dietary_guardian.llm import LLMFactory
 from dietary_guardian.config.settings import Settings, get_settings
-from dietary_guardian.agents.dietary_agent import process_meal_request
+from dietary_guardian.agents.dietary import process_meal_request
 from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
 from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
 
@@ -25,7 +25,7 @@ def bootstrap_runtime_settings() -> Settings:
 def _runtime_summary(settings: Settings) -> str:
     model = LLMFactory.get_model()
     return (
-        f"Provider: {settings.llm_provider}\n"
+        f"Provider: {settings.llm.provider}\n"
         f"Model: {getattr(model, 'model_name', 'unknown')}\n"
         f"Destination: {LLMFactory.describe_model_destination(model)}"
     )

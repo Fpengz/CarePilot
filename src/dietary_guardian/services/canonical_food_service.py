@@ -24,20 +24,20 @@ def normalize_text(value: str) -> str:
     return " ".join(cleaned.split())
 
 
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[3]
+def _package_root() -> Path:
+    return Path(__file__).resolve().parents[1]
 
 
 def _teammate_seed_path() -> Path:
-    return _repo_root() / "aichallenge" / "data" / "food" / "sg_hawker_food.json"
+    return _package_root() / "data" / "food" / "sg_hawker_food.json"
 
 
 def _usda_seed_path() -> Path:
-    return _repo_root() / "aichallenge" / "data" / "food" / "usda_foods.json"
+    return _package_root() / "data" / "food" / "usda_foods.json"
 
 
 def _open_food_facts_seed_path() -> Path:
-    return _repo_root() / "aichallenge" / "data" / "food" / "open_food_facts_products.json"
+    return _package_root() / "data" / "food" / "open_food_facts_products.json"
 
 
 def _slot_from_category(category: str) -> MealSlot:
@@ -102,6 +102,17 @@ def _normalize_aliases(values: list[str]) -> list[str]:
         if item and item not in normalized:
             normalized.append(item)
     return normalized
+
+
+def _token_set(value: str) -> set[str]:
+    normalized = normalize_text(value)
+    return {token for token in normalized.split() if token}
+
+
+def _overlap_score(left: set[str], right: set[str]) -> float:
+    if not left or not right:
+        return 0.0
+    return len(left.intersection(right)) / max(1, len(left))
 
 
 def _portion_unit(serving_size: str | None) -> str:
@@ -322,18 +333,65 @@ def build_default_canonical_food_records() -> list[CanonicalFoodRecord]:
     return sorted(merged.values(), key=lambda item: item.food_id)
 
 
+def rank_food_candidates(
+    *,
+    records: list[CanonicalFoodRecord],
+    locale: str,
+    observed_label: str,
+    candidate_aliases: list[str] | None = None,
+    detected_components: list[str] | None = None,
+    preparation: str | None = None,
+) -> list[tuple[CanonicalFoodRecord, float]]:
+    aliases = [observed_label, *(candidate_aliases or [])]
+    normalized_aliases = [normalize_text(item) for item in aliases if normalize_text(item)]
+    observed_tokens = set().union(*(_token_set(item) for item in normalized_aliases)) if normalized_aliases else set()
+    component_tokens = {normalize_text(item) for item in (detected_components or []) if normalize_text(item)}
+    preparation_token = normalize_text(preparation or "")
+    ranked: list[tuple[CanonicalFoodRecord, float]] = []
+    for item in records:
+        if item.locale != locale or not item.active:
+            continue
+        record_names = [normalize_text(item.title), *item.aliases_normalized]
+        name_score = 0.0
+        for alias in normalized_aliases:
+            if alias in record_names:
+                name_score = max(name_score, 1.0)
+                continue
+            if any(alias in record_name or record_name in alias for record_name in record_names):
+                name_score = max(name_score, 0.82)
+                continue
+            alias_tokens = _token_set(alias)
+            record_tokens = set().union(*(_token_set(record_name) for record_name in record_names))
+            name_score = max(name_score, _overlap_score(alias_tokens, record_tokens) * 0.7)
+        ingredient_tokens = {normalize_text(token) for token in item.ingredient_tags if normalize_text(token)}
+        component_score = _overlap_score(component_tokens, ingredient_tokens)
+        prep_tokens = {normalize_text(token) for token in item.preparation_tags if normalize_text(token)}
+        preparation_score = 0.0
+        if preparation_token:
+            if preparation_token in prep_tokens:
+                preparation_score = 1.0
+            elif any(preparation_token in token or token in preparation_token for token in prep_tokens):
+                preparation_score = 0.65
+        token_score = _overlap_score(observed_tokens, ingredient_tokens.union(prep_tokens))
+        score = round(name_score * 0.65 + component_score * 0.2 + preparation_score * 0.1 + token_score * 0.05, 4)
+        if score > 0:
+            ranked.append((item, score))
+    ranked.sort(key=lambda pair: (-pair[1], pair[0].food_id))
+    return ranked
+
+
 def find_food_by_name(
     records: list[CanonicalFoodRecord],
     name: str,
     *,
     locale: str = "en-SG",
 ) -> CanonicalFoodRecord | None:
-    needle = normalize_text(name)
-    candidates = [item for item in records if item.locale == locale and item.active]
-    for item in candidates:
-        if needle in item.aliases_normalized:
-            return item
-    for item in candidates:
-        if any(needle in alias or alias in needle for alias in item.aliases_normalized):
-            return item
-    return None
+    ranked = rank_food_candidates(
+        records=records,
+        locale=locale,
+        observed_label=name,
+    )
+    if not ranked:
+        return None
+    best, score = ranked[0]
+    return best if score >= 0.5 else None

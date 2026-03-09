@@ -15,9 +15,8 @@ _ROOT_MARKER = "_dietary_guardian_logging_configured"
 
 def _resolve_log_level_name() -> str:
     try:
-        return get_settings().dietary_guardian_log_level.upper()
+        return get_settings().observability.log_level.upper()
     except ValidationError:
-        # Keep logging available while bootstrap handles full settings validation.
         return os.getenv("DIETARY_GUARDIAN_LOG_LEVEL", "INFO").upper()
 
 
@@ -43,20 +42,16 @@ def _dedupe_logfire_handlers() -> None:
         handlers.append(handler)
     root.handlers = handlers
 
-def setup_logging(project_name: str = "dietary-guardian"):
-    """
-    Configures logfire and standard logging for clinical-grade observability.
-    """
+
+def setup_logging(project_name: str = "dietary-guardian") -> logging.Logger:
     global _CONFIGURED
     root = logging.getLogger()
     if _CONFIGURED or getattr(root, _ROOT_MARKER, False):
         _dedupe_logfire_handlers()
         return logging.getLogger(project_name)
 
-    # 1. Initialize Logfire (2026 standard for Pydantic-AI)
     logfire_api.configure(send_to_logfire=False)
 
-    # 2. Configure standard logging to work with logfire
     level_name = _resolve_log_level_name()
     level = getattr(logging, level_name, logging.INFO)
     root.setLevel(level)
@@ -78,5 +73,5 @@ def get_logger(name: str) -> logging.Logger:
     setup_logging()
     return logging.getLogger(name)
 
-# Global logger instance
+
 logger = get_logger("dietary-guardian")

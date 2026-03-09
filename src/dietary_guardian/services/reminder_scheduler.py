@@ -3,13 +3,14 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import cast
 
 from dietary_guardian.config.settings import get_settings
-from dietary_guardian.infrastructure.persistence import AppStoreBackend, ReminderSchedulerRepository, build_app_store
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.infrastructure.persistence import AppStoreBackend
+from dietary_guardian.observability import get_logger
 from dietary_guardian.services.alerting_service import OutboxWorker
+from dietary_guardian.services.ports import ReminderSchedulerRepository
 from dietary_guardian.services.reminder_notification_service import dispatch_due_reminder_notifications
+from dietary_guardian.services.runtime_dependencies import build_reminder_scheduler_repository
 
 logger = get_logger(__name__)
 
@@ -26,19 +27,19 @@ async def run_reminder_scheduler_once(
     now: datetime | None = None,
 ) -> ReminderSchedulerRunResult:
     settings = get_settings()
-    repo = repository or cast(ReminderSchedulerRepository, build_app_store(settings))
+    repo = repository or build_reminder_scheduler_repository(settings)
     dispatch_at = now or datetime.now(timezone.utc)
     queued = dispatch_due_reminder_notifications(
         repository=repo,
         now=dispatch_at,
-        limit=settings.reminder_scheduler_batch_size,
+        limit=settings.workers.reminder_scheduler_batch_size,
     )
     if not queued:
         return ReminderSchedulerRunResult(queued_count=0, delivery_attempts=0)
     worker = OutboxWorker(
         repo,
-        max_attempts=settings.alert_worker_max_attempts,
-        concurrency=min(settings.alert_worker_concurrency, max(1, len(queued))),
+        max_attempts=settings.workers.alert_worker_max_attempts,
+        concurrency=min(settings.workers.alert_worker_concurrency, max(1, len(queued))),
     )
     results = await worker.process_once()
     logger.info(
@@ -53,9 +54,9 @@ async def run_reminder_scheduler_loop() -> None:
     settings = get_settings()
     logger.info(
         "reminder_scheduler_loop_start interval_seconds=%s batch_size=%s",
-        settings.reminder_scheduler_interval_seconds,
-        settings.reminder_scheduler_batch_size,
+        settings.workers.reminder_scheduler_interval_seconds,
+        settings.workers.reminder_scheduler_batch_size,
     )
     while True:
         await run_reminder_scheduler_once()
-        await asyncio.sleep(settings.reminder_scheduler_interval_seconds)
+        await asyncio.sleep(settings.workers.reminder_scheduler_interval_seconds)

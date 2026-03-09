@@ -16,8 +16,8 @@ _WORKER_FAILURE_RETRY_SECONDS = 1.0
 def _idle_wait_seconds(settings) -> float:
     return float(
         min(
-            settings.reminder_worker_poll_interval_seconds,
-            settings.outbox_worker_poll_interval_seconds,
+            settings.workers.reminder_worker_poll_interval_seconds,
+            settings.workers.outbox_worker_poll_interval_seconds,
         )
     )
 
@@ -27,7 +27,7 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
     if ctx.coordination_store.acquire_lock(
         "reminder-scheduler",
         owner=owner,
-        ttl_seconds=settings.redis_lock_ttl_seconds,
+        ttl_seconds=settings.storage.redis_lock_ttl_seconds,
     ):
         try:
             reminder_result = await run_reminder_scheduler_once(repository=ctx.app_store)
@@ -38,14 +38,14 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
     if ctx.coordination_store.acquire_lock(
         "outbox-worker",
         owner=owner,
-        ttl_seconds=settings.redis_lock_ttl_seconds,
+        ttl_seconds=settings.storage.redis_lock_ttl_seconds,
     ):
         try:
             worker = OutboxWorker(
                 ctx.app_store,
                 lease_owner=owner,
-                max_attempts=settings.alert_worker_max_attempts,
-                concurrency=settings.alert_worker_concurrency,
+                max_attempts=settings.workers.alert_worker_max_attempts,
+                concurrency=settings.workers.alert_worker_concurrency,
             )
             outbox_results = await worker.process_once()
             processed_work = processed_work or bool(outbox_results)
@@ -59,7 +59,7 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
     wait_for_signal = getattr(ctx.coordination_store, "wait_for_signal", None)
     if callable(wait_for_signal):
         wait_for_signal(
-            settings.redis_worker_signal_channel,
+            settings.storage.redis_worker_signal_channel,
             timeout_seconds=wait_seconds,
         )
         return False
@@ -73,8 +73,8 @@ async def run_worker_loop() -> None:
     owner = f"worker-{uuid4().hex[:8]}"
     logger.info(
         "worker_loop_start worker_mode=%s ephemeral_state_backend=%s owner=%s",
-        settings.worker_mode,
-        settings.ephemeral_state_backend,
+        settings.workers.worker_mode,
+        settings.storage.ephemeral_state_backend,
         owner,
     )
     try:
@@ -84,8 +84,8 @@ async def run_worker_loop() -> None:
             except Exception:
                 logger.exception(
                     "worker_loop_iteration_failed worker_mode=%s ephemeral_state_backend=%s owner=%s retry_in_seconds=%.1f",
-                    settings.worker_mode,
-                    settings.ephemeral_state_backend,
+                    settings.workers.worker_mode,
+                    settings.storage.ephemeral_state_backend,
                     owner,
                     _WORKER_FAILURE_RETRY_SECONDS,
                 )

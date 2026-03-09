@@ -25,7 +25,7 @@ from dietary_guardian.models.meal import (
     VisionResult,
 )
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.services.canonical_food_service import normalize_text
+from dietary_guardian.services.canonical_food_service import normalize_text, rank_food_candidates
 
 _UNIT_GRAMS = {
     "bowl": 400.0,
@@ -112,6 +112,24 @@ def _lookup_reference(portions: list[PortionReference], unit: str) -> PortionRef
     return None
 
 
+def _component_overlap(*, detected_components: list[str], ingredient_tags: list[str]) -> float:
+    left = {normalize_text(item) for item in detected_components if normalize_text(item)}
+    right = {normalize_text(item) for item in ingredient_tags if normalize_text(item)}
+    if not left or not right:
+        return 0.0
+    return len(left.intersection(right)) / max(1, len(left))
+
+
+def _preparation_mismatch(*, preparation: str | None, preparation_tags: list[str]) -> bool:
+    target = normalize_text(preparation or "")
+    if not target:
+        return False
+    normalized_tags = {normalize_text(item) for item in preparation_tags if normalize_text(item)}
+    if not normalized_tags:
+        return False
+    return not any(target == item or target in item or item in target for item in normalized_tags)
+
+
 def _heuristic_risk_tags(*, preparation: str | None, nutrition: MealNutritionProfile, base_tags: list[str]) -> list[str]:
     tags = list(dict.fromkeys(base_tags))
     prep = normalize_text(preparation or "")
@@ -181,25 +199,43 @@ def _pick_glycemic_label(items: list[NormalizedMealItem], food_store: Any, local
 
 def _normalize_item(*, food_store: Any, locale: str, item: Any) -> NormalizedMealItem:
     estimate = MealPortionEstimate.model_validate(item.portion_estimate)
+    detected_components = list(getattr(item, "detected_components", []))
     aliases = [item.label, *item.candidate_aliases]
-    matched = None
+    records = (
+        list(food_store.list_canonical_foods(locale=locale, limit=500))
+        if hasattr(food_store, "list_canonical_foods")
+        else []
+    )
+    ranked = rank_food_candidates(
+        records=records,
+        locale=locale,
+        observed_label=item.label,
+        candidate_aliases=list(item.candidate_aliases),
+        detected_components=detected_components,
+        preparation=item.preparation,
+    )
+    matched = ranked[0][0] if ranked else None
+    ranking_score = ranked[0][1] if ranked else 0.0
     matched_alias = None
     strategy = "unmatched"
     confidence = 0.0
-    for alias in aliases:
-        candidate = food_store.find_food_by_name(locale=locale, name=alias)
-        if candidate is None:
-            continue
-        matched = candidate
-        matched_alias = alias
-        normalized_alias = normalize_text(alias)
-        if normalized_alias in getattr(candidate, "aliases_normalized", []):
-            strategy = "exact_alias"
-            confidence = 0.95
-        else:
-            strategy = "partial_alias"
-            confidence = 0.8
-        break
+    if matched is not None:
+        normalized_record_names = {normalize_text(matched.title), *getattr(matched, "aliases_normalized", [])}
+        for alias in aliases:
+            normalized_alias = normalize_text(alias)
+            if normalized_alias in normalized_record_names:
+                matched_alias = alias
+                strategy = "exact_alias"
+                confidence = 0.95
+                break
+            if any(normalized_alias in record_name or record_name in normalized_alias for record_name in normalized_record_names):
+                matched_alias = alias
+                strategy = "partial_alias"
+                confidence = 0.82
+        if matched_alias is None and ranking_score >= 0.55:
+            matched_alias = item.label
+            strategy = "fuzzy_alias"
+            confidence = min(0.8, ranking_score)
 
     if matched is None:
         nutrition = MealNutritionProfile()
@@ -235,18 +271,30 @@ def _normalize_item(*, food_store: Any, locale: str, item: Any) -> NormalizedMea
         nutrition=nutrition,
         base_tags=list(getattr(matched, "risk_tags", []) or getattr(matched, "health_tags", [])),
     )
+    component_overlap = _component_overlap(
+        detected_components=detected_components,
+        ingredient_tags=list(getattr(matched, "ingredient_tags", [])),
+    )
+    prep_mismatch = _preparation_mismatch(
+        preparation=item.preparation,
+        preparation_tags=list(getattr(matched, "preparation_tags", [])),
+    )
+    if detected_components and component_overlap < 0.34:
+        tags.append("component_mismatch")
+    if prep_mismatch:
+        tags.append("component_mismatch")
     return NormalizedMealItem(
         detected_label=item.label,
         canonical_food_id=matched.food_id,
         canonical_name=matched.title,
         matched_alias=matched_alias,
         match_strategy=strategy,
-        match_confidence=min(max(confidence, item.confidence), 1.0),
+        match_confidence=min(max(confidence, item.confidence, ranking_score), 1.0),
         preparation=item.preparation,
         portion_estimate=estimate,
         estimated_grams=estimated_grams,
         nutrition=nutrition,
-        risk_tags=tags,
+        risk_tags=sorted(set(tags)),
         source_dataset=matched.source_dataset,
     )
 
@@ -301,6 +349,8 @@ def normalize_vision_result(
     needs_manual_review = bool(
         vision_result.needs_manual_review
         or unresolved_items
+        or any(item.match_confidence < 0.7 for item in normalized_items)
+        or any("component_mismatch" in item.risk_tags for item in normalized_items)
         or perception.image_quality == "poor"
         or (perception.image_quality == "fair" and perception.confidence_score < 0.75)
     )

@@ -1,5 +1,5 @@
 from dietary_guardian.models.workflow import WorkflowName
-from dietary_guardian.services.agent_registry import build_default_agent_registry
+from dietary_guardian.agents.registry import build_default_agent_registry
 
 
 def test_default_agent_registry_exposes_core_workflow_contracts() -> None:

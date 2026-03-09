@@ -48,10 +48,10 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
     settings = app.state.ctx.settings
     app.add_middleware(
         cast(Any, CORSMiddleware),
-        allow_origins=[item.strip() for item in settings.api_cors_origins.split(",") if item.strip()],
+        allow_origins=[item.strip() for item in settings.api.cors_origins.split(",") if item.strip()],
         allow_credentials=True,
-        allow_methods=_csv_values(settings.api_cors_methods, fallback=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]),
-        allow_headers=_csv_values(settings.api_cors_headers, fallback=["Content-Type", "X-Requested-With", "Authorization"]),
+        allow_methods=_csv_values(settings.api.cors_methods, fallback=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]),
+        allow_headers=_csv_values(settings.api.cors_headers, fallback=["Content-Type", "X-Requested-With", "Authorization"]),
     )
     app.middleware("http")(request_context_middleware)
     include_routers(app)

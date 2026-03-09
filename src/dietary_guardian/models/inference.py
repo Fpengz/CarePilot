@@ -12,6 +12,7 @@ class InferenceModality(StrEnum):
 
 
 class ProviderMetadata(BaseModel):
+    capability: str | None = None
     provider: str
     model: str
     endpoint: str
@@ -41,6 +42,7 @@ class InferenceResponse(BaseModel):
 
 
 class InferenceHealth(BaseModel):
+    capability: str | None = None
     provider: str
     model: str
     endpoint: str
@@ -49,6 +51,7 @@ class InferenceHealth(BaseModel):
 
 
 class ModalityCapabilityProfile(BaseModel):
+    capability: str | None = None
     provider: str
     model: str
     endpoint: str

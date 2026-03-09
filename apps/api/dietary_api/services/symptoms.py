@@ -1,3 +1,5 @@
+"""API helpers for symptom check-ins, listing, and symptom summaries."""
+
 from __future__ import annotations
 
 from collections import Counter

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 
 from ..deps import emotion_deps
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas.emotions import (
+from ..schemas import (
     EmotionHealthResponse,
     EmotionInferenceResponse,
     EmotionTextRequest,

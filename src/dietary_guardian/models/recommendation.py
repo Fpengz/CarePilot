@@ -1,9 +1,3 @@
-from pydantic import BaseModel, Field
-
-
-class RecommendationOutput(BaseModel):
-    safe: bool
-    rationale: str
-    localized_advice: list[str] = Field(default_factory=list)
-    blocked_reason: str | None = None
-    evidence: dict[str, float] = Field(default_factory=dict)
+"""Compatibility re-export: definitions have moved to dietary_guardian.domain.recommendations.models."""
+# ruff: noqa: F401
+from dietary_guardian.domain.recommendations.models import RecommendationOutput

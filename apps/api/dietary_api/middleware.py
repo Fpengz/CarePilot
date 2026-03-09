@@ -25,19 +25,19 @@ _RATE_LIMIT_RULES: tuple[_RateLimitRule, ...] = (
     _RateLimitRule(
         method="POST",
         path="/api/v1/auth/login",
-        limit_attr="api_rate_limit_auth_login_max_requests",
+        limit_attr="rate_limit_auth_login_max_requests",
         code="auth.login.rate_limited",
     ),
     _RateLimitRule(
         method="POST",
         path="/api/v1/meal/analyze",
-        limit_attr="api_rate_limit_meal_analyze_max_requests",
+        limit_attr="rate_limit_meal_analyze_max_requests",
         code="meal.analyze.rate_limited",
     ),
     _RateLimitRule(
         method="POST",
         path="/api/v1/recommendations/generate",
-        limit_attr="api_rate_limit_recommendations_generate_max_requests",
+        limit_attr="rate_limit_recommendations_generate_max_requests",
         code="recommendations.generate.rate_limited",
     ),
 )
@@ -74,14 +74,14 @@ async def request_context_middleware(request: Request, call_next) -> Response:
     referer = request.headers.get("referer")
     user_agent = request.headers.get("user-agent")
     is_preflight = request.method == "OPTIONS" and bool(request.headers.get("access-control-request-method"))
-    if settings.api_rate_limit_enabled:
+    if settings.api.rate_limit_enabled:
         rule = _matching_rate_limit_rule(request)
         if rule is not None:
-            limit = int(cast(Any, getattr(settings, rule.limit_attr)))
+            limit = int(cast(Any, getattr(settings.api, rule.limit_attr)))
             allowed, retry_after = _rate_limiter_state(request).allow(
                 key=f"{rule.method}:{rule.path}:{client_ip or 'unknown'}",
                 limit=limit,
-                window_seconds=int(settings.api_rate_limit_window_seconds),
+                window_seconds=int(settings.api.rate_limit_window_seconds),
             )
             if not allowed:
                 return JSONResponse(
@@ -94,11 +94,11 @@ async def request_context_middleware(request: Request, call_next) -> Response:
                         details={
                             "retry_after_seconds": retry_after,
                             "limit": limit,
-                            "window_seconds": int(settings.api_rate_limit_window_seconds),
+                            "window_seconds": int(settings.api.rate_limit_window_seconds),
                         },
                     ),
                 )
-    if settings.api_dev_log_verbose:
+    if settings.observability.api_dev_log_verbose:
         started_payload: dict[str, object] = {
             "event": "api_request_started",
             "method": request.method,
@@ -111,7 +111,7 @@ async def request_context_middleware(request: Request, call_next) -> Response:
             "user_agent": user_agent,
             "is_preflight": is_preflight,
         }
-        if settings.api_dev_log_headers:
+        if settings.observability.api_dev_log_headers:
             started_payload["request_headers"] = dict(request.headers.items())
         logger.info(render_kv_log(started_payload))
 
@@ -142,7 +142,7 @@ async def request_context_middleware(request: Request, call_next) -> Response:
             }
         )
     )
-    if settings.api_dev_log_response_headers:
+    if settings.observability.api_dev_log_response_headers:
         logger.info(
             render_kv_log(
                 {

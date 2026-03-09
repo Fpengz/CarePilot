@@ -56,7 +56,7 @@ class EmailSink:
     def send(self, message: AlertMessage) -> AlertDeliveryResult:
         settings = get_settings()
         destination = str(message.payload.get("destination", "")).strip() or "mailto://default"
-        if settings.email_dev_mode:
+        if settings.channels.email_dev_mode:
             logger.info("email_sink_dev_send alert_id=%s destination=%s", message.alert_id, destination)
             return AlertDeliveryResult(
                 alert_id=message.alert_id,
@@ -74,7 +74,7 @@ class EmailSink:
                 attempt=1,
                 error="missing email destination",
             )
-        if not settings.email_smtp_host:
+        if not settings.channels.email_smtp_host:
             return AlertDeliveryResult(
                 alert_id=message.alert_id,
                 sink=self.name,
@@ -84,16 +84,16 @@ class EmailSink:
             )
         composed = compose_alert_message(message, channel=self.name)
         body = format_alert_text_for_transport(composed)
-        smtp = smtplib.SMTP(settings.email_smtp_host, settings.email_smtp_port, timeout=10)
+        smtp = smtplib.SMTP(settings.channels.email_smtp_host, settings.channels.email_smtp_port, timeout=10)
         try:
-            if settings.email_smtp_use_tls:
+            if settings.channels.email_smtp_use_tls:
                 smtp.starttls()
-            if settings.email_smtp_username and settings.email_smtp_password:
-                smtp.login(settings.email_smtp_username, settings.email_smtp_password)
+            if settings.channels.email_smtp_username and settings.channels.email_smtp_password:
+                smtp.login(settings.channels.email_smtp_username, settings.channels.email_smtp_password)
             smtp.sendmail(
-                settings.email_from_address,
+                settings.channels.email_from_address,
                 [destination],
-                f"Subject: {composed.title}\nTo: {destination}\nFrom: {settings.email_from_address}\n\n{body}",
+                f"Subject: {composed.title}\nTo: {destination}\nFrom: {settings.channels.email_from_address}\n\n{body}",
             )
         finally:
             smtp.quit()
@@ -113,7 +113,7 @@ class SmsSink:
     def send(self, message: AlertMessage) -> AlertDeliveryResult:
         settings = get_settings()
         destination = str(message.payload.get("destination", "")).strip()
-        if settings.sms_dev_mode:
+        if settings.channels.sms_dev_mode:
             logger.info("sms_sink_dev_send alert_id=%s destination=%s", message.alert_id, destination or "sms://default")
             return AlertDeliveryResult(
                 alert_id=message.alert_id,
@@ -131,7 +131,7 @@ class SmsSink:
                 attempt=1,
                 error="missing sms destination",
             )
-        if not settings.sms_webhook_url:
+        if not settings.channels.sms_webhook_url:
             return AlertDeliveryResult(
                 alert_id=message.alert_id,
                 sink=self.name,
@@ -143,17 +143,17 @@ class SmsSink:
         payload = json.dumps(
             {
                 "to": destination,
-                "from": settings.sms_sender_id,
+                "from": settings.channels.sms_sender_id,
                 "message": format_alert_text_for_transport(composed),
                 "alert_id": message.alert_id,
             }
         ).encode("utf-8")
         request = urllib.request.Request(
-            str(settings.sms_webhook_url),
+            str(settings.channels.sms_webhook_url),
             data=payload,
             headers={
                 "Content-Type": "application/json",
-                **({"Authorization": f"Bearer {settings.sms_api_key}"} if settings.sms_api_key else {}),
+                **({"Authorization": f"Bearer {settings.channels.sms_api_key}"} if settings.channels.sms_api_key else {}),
             },
             method="POST",
         )

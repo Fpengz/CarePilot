@@ -1,3 +1,5 @@
+"""API helper for single recommendation generation flows."""
+
 from __future__ import annotations
 
 from apps.api.dietary_api.session_profiles import build_user_profile_from_session

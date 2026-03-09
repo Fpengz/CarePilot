@@ -1,3 +1,5 @@
+"""API orchestration for reminder notification preferences, endpoints, and logs."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

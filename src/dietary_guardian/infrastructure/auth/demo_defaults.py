@@ -14,7 +14,7 @@ def build_demo_user_seeds(settings: Settings) -> list[DemoUserSeed]:
             "Alex Member",
             "member",
             "self",
-            settings.auth_demo_member_password,
+            settings.auth.demo_member_password,
         ),
         (
             "care_001",
@@ -22,7 +22,7 @@ def build_demo_user_seeds(settings: Settings) -> list[DemoUserSeed]:
             "Casey Helper",
             "member",
             "caregiver",
-            settings.auth_demo_helper_password,
+            settings.auth.demo_helper_password,
         ),
         (
             "ops_001",
@@ -30,6 +30,6 @@ def build_demo_user_seeds(settings: Settings) -> list[DemoUserSeed]:
             "Ops Admin",
             "admin",
             "self",
-            settings.auth_demo_admin_password,
+            settings.auth.demo_admin_password,
         ),
     ]

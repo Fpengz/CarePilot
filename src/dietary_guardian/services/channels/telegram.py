@@ -16,11 +16,11 @@ class TelegramChannel:
 
     def __init__(self) -> None:
         settings = get_settings()
-        self.bot_token = settings.telegram_bot_token or ""
-        self.chat_id = settings.telegram_chat_id or ""
-        self.dev_mode = settings.telegram_dev_mode
-        self.app_timezone = settings.app_timezone
-        self.request_timeout_seconds = settings.telegram_request_timeout_seconds
+        self.bot_token = settings.channels.telegram_bot_token or ""
+        self.chat_id = settings.channels.telegram_chat_id or ""
+        self.dev_mode = settings.channels.telegram_dev_mode
+        self.app_timezone = settings.app.timezone
+        self.request_timeout_seconds = settings.channels.telegram_request_timeout_seconds
 
     def _build_endpoint(self) -> str:
         return f"https://api.telegram.org/bot{self.bot_token}/sendMessage"

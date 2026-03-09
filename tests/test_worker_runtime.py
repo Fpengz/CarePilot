@@ -38,14 +38,18 @@ class FakeCoordinationStoreNoWait:
 @pytest.mark.anyio
 async def test_worker_loop_recovers_from_scheduler_failure_and_continues(monkeypatch: pytest.MonkeyPatch) -> None:
     settings = SimpleNamespace(
-        worker_mode="external",
-        ephemeral_state_backend="redis",
-        redis_lock_ttl_seconds=30,
-        alert_worker_max_attempts=3,
-        alert_worker_concurrency=2,
-        reminder_worker_poll_interval_seconds=1,
-        outbox_worker_poll_interval_seconds=1,
-        redis_worker_signal_channel="workers.ready",
+        workers=SimpleNamespace(
+            worker_mode="external",
+            alert_worker_max_attempts=3,
+            alert_worker_concurrency=2,
+            reminder_worker_poll_interval_seconds=1,
+            outbox_worker_poll_interval_seconds=1,
+        ),
+        storage=SimpleNamespace(
+            ephemeral_state_backend="redis",
+            redis_lock_ttl_seconds=30,
+            redis_worker_signal_channel="workers.ready",
+        ),
     )
     coordination_store = FakeCoordinationStoreNoWait()
     ctx = SimpleNamespace(
@@ -82,8 +86,8 @@ async def test_worker_loop_recovers_from_scheduler_failure_and_continues(monkeyp
         ) -> None:
             assert repository is ctx.app_store
             assert lease_owner.startswith("worker-")
-            assert max_attempts == settings.alert_worker_max_attempts
-            assert concurrency == settings.alert_worker_concurrency
+            assert max_attempts == settings.workers.alert_worker_max_attempts
+            assert concurrency == settings.workers.alert_worker_concurrency
 
         async def process_once(self) -> list[object]:
             return []
@@ -110,12 +114,13 @@ async def test_worker_loop_recovers_from_scheduler_failure_and_continues(monkeyp
 @pytest.mark.anyio
 async def test_worker_iteration_releases_scheduler_lock_when_scheduler_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     settings = SimpleNamespace(
-        redis_lock_ttl_seconds=30,
-        alert_worker_max_attempts=3,
-        alert_worker_concurrency=2,
-        reminder_worker_poll_interval_seconds=1,
-        outbox_worker_poll_interval_seconds=1,
-        redis_worker_signal_channel="workers.ready",
+        workers=SimpleNamespace(
+            alert_worker_max_attempts=3,
+            alert_worker_concurrency=2,
+            reminder_worker_poll_interval_seconds=1,
+            outbox_worker_poll_interval_seconds=1,
+        ),
+        storage=SimpleNamespace(redis_lock_ttl_seconds=30, redis_worker_signal_channel="workers.ready"),
     )
     coordination_store = FakeCoordinationStore()
     ctx = SimpleNamespace(app_store=object(), coordination_store=coordination_store)
@@ -135,12 +140,13 @@ async def test_worker_iteration_releases_scheduler_lock_when_scheduler_raises(mo
 @pytest.mark.anyio
 async def test_worker_iteration_waits_for_signal_when_idle(monkeypatch: pytest.MonkeyPatch) -> None:
     settings = SimpleNamespace(
-        redis_lock_ttl_seconds=30,
-        alert_worker_max_attempts=3,
-        alert_worker_concurrency=2,
-        reminder_worker_poll_interval_seconds=15,
-        outbox_worker_poll_interval_seconds=5,
-        redis_worker_signal_channel="workers.ready",
+        workers=SimpleNamespace(
+            alert_worker_max_attempts=3,
+            alert_worker_concurrency=2,
+            reminder_worker_poll_interval_seconds=15,
+            outbox_worker_poll_interval_seconds=5,
+        ),
+        storage=SimpleNamespace(redis_lock_ttl_seconds=30, redis_worker_signal_channel="workers.ready"),
     )
     class IdleCoordinationStore(FakeCoordinationStore):
         def acquire_lock(self, name: str, *, owner: str, ttl_seconds: int) -> bool:

@@ -68,9 +68,9 @@ class RedisRateLimiter:
 
 
 def build_rate_limiter(settings: Settings) -> RateLimiter:
-    if settings.ephemeral_state_backend == "redis" and settings.redis_url:
+    if settings.storage.ephemeral_state_backend == "redis" and settings.storage.redis_url:
         return RedisRateLimiter(
-            redis_url=str(settings.redis_url),
-            namespace=settings.redis_namespace,
+            redis_url=str(settings.storage.redis_url),
+            namespace=settings.storage.redis_namespace,
         )
     return InMemoryRateLimiter()

@@ -1,3 +1,5 @@
+"""API orchestration for clinical report parsing and symptom-context enrichment."""
+
 from __future__ import annotations
 
 from datetime import date, timedelta

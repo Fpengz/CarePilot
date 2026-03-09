@@ -1,3 +1,5 @@
+"""API helpers for lightweight metric-trend reads."""
+
 from __future__ import annotations
 
 from apps.api.dietary_api.deps import AppContext

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from ..deps import recommendation_agent_deps, recommendation_deps
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas.recommendations import (
+from ..schemas import (
     RecommendationAgentResponse,
     RecommendationGenerateResponse,
     RecommendationInteractionRequest,

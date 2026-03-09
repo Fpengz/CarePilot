@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from ..deps import clinical_card_deps
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas.clinical_cards import (
+from ..schemas import (
     ClinicalCardEnvelopeResponse,
     ClinicalCardGenerateRequest,
     ClinicalCardListResponse,

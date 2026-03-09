@@ -1,3 +1,5 @@
+"""API helpers for workflow-derived notification feeds and read state."""
+
 from dataclasses import dataclass, field
 from threading import Lock
 from typing import TYPE_CHECKING, Literal

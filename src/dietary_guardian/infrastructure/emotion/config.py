@@ -15,9 +15,9 @@ class EmotionRuntimeConfig:
     @classmethod
     def from_settings(cls, settings: Settings) -> "EmotionRuntimeConfig":
         return cls(
-            text_model_id=settings.emotion_text_model_id,
-            speech_model_id=settings.emotion_speech_model_id,
-            model_device=settings.emotion_model_device,
-            source_commit=settings.emotion_source_commit,
+            text_model_id=settings.emotion.text_model_id,
+            speech_model_id=settings.emotion.speech_model_id,
+            model_device=settings.emotion.model_device,
+            source_commit=settings.emotion.source_commit,
         )
 

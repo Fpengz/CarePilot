@@ -1,18 +1,16 @@
 from datetime import datetime, timezone
 
 from uuid import uuid4
-from typing import cast
-
 from pydantic import BaseModel
 
 from dietary_guardian.config.settings import get_settings
-from dietary_guardian.infrastructure.persistence import build_app_store
-from dietary_guardian.logging_config import get_logger
-from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage, AlertSeverity
-from dietary_guardian.models.medication import ReminderEvent
+from dietary_guardian.domain.alerts import AlertDeliveryResult, AlertMessage, AlertSeverity
+from dietary_guardian.domain.notifications import ReminderEvent
+from dietary_guardian.observability import get_logger
 from dietary_guardian.services.alerting_service import AlertPublisher, AlertRepositoryProtocol, OutboxWorker
 from dietary_guardian.services.channels import TelegramChannel, WeChatChannel, WhatsAppChannel
 from dietary_guardian.services.channels.base import ChannelResult
+from dietary_guardian.services.runtime_dependencies import build_alert_repository
 
 logger = get_logger(__name__)
 PENDING_ALERT_STATES = {"pending", "processing"}
@@ -111,7 +109,7 @@ def dispatch_reminder(
     repository: AlertRepositoryProtocol | None = None,
 ) -> list[DeliveryResult]:
     settings = get_settings()
-    if settings.use_alert_outbox_v2 and repository is not None:
+    if settings.workers.use_alert_outbox_v2 and repository is not None:
         return dispatch_reminder_async(
             reminder_event,
             channels,
@@ -207,8 +205,8 @@ def dispatch_reminder_async(
     publisher = AlertPublisher(repo)
     worker = OutboxWorker(
         repo,
-        max_attempts=(retries + 1) if retries is not None else settings.alert_worker_max_attempts,
-        concurrency=settings.alert_worker_concurrency,
+        max_attempts=(retries + 1) if retries is not None else settings.workers.alert_worker_max_attempts,
+        concurrency=settings.workers.alert_worker_concurrency,
     )
     if force_push_fail and "push" in channels:
         class _ForcedFailPushSink:
@@ -284,8 +282,8 @@ def trigger_alert(
     publisher.publish(alert)
     worker = OutboxWorker(
         repository,
-        max_attempts=get_settings().alert_worker_max_attempts,
-        concurrency=get_settings().alert_worker_concurrency,
+        max_attempts=get_settings().workers.alert_worker_max_attempts,
+        concurrency=get_settings().workers.alert_worker_concurrency,
     )
     channel_results = _drain_alert_for_sync_delivery(
         worker,
@@ -349,4 +347,4 @@ def _drain_alert_for_sync_delivery(
 
 
 def _default_alert_repository() -> AlertRepositoryProtocol:
-    return cast(AlertRepositoryProtocol, build_app_store(get_settings()))
+    return build_alert_repository(get_settings())

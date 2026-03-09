@@ -69,7 +69,7 @@ def require_session(
     for token in candidates:
         session_id = ctx.session_signer.unsign(
             token,
-            max_age_seconds=int(ctx.settings.auth_session_ttl_seconds),
+            max_age_seconds=int(ctx.settings.auth.session_ttl_seconds),
         )
         if not session_id:
             continue

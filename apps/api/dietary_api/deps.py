@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
 from dietary_guardian.config.settings import Settings, get_settings
-from dietary_guardian.infrastructure.auth import InMemoryAuthStore, PostgresAuthStore, SQLiteAuthStore, SessionSigner
+from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SQLiteAuthStore, SessionSigner
 from dietary_guardian.infrastructure.cache import InMemoryCacheStore, RedisCacheStore
 from dietary_guardian.infrastructure.coordination import InMemoryCoordinationStore, RedisCoordinationStore
 from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime
-from dietary_guardian.infrastructure.household import PostgresHouseholdStore, SQLiteHouseholdStore
+from dietary_guardian.infrastructure.household import SQLiteHouseholdStore
 from dietary_guardian.infrastructure.persistence import AppStoreBackend, AppStores, build_app_store, build_app_stores
 from dietary_guardian.services.emotion_service import EmotionService
 from dietary_guardian.services.memory_services import (
@@ -13,17 +13,17 @@ from dietary_guardian.services.memory_services import (
     EventTimelineService,
     ProfileMemoryService,
 )
-from dietary_guardian.services.agent_registry import AgentRegistry, build_default_agent_registry
+from dietary_guardian.agents.registry import AgentRegistry, build_default_agent_registry
 from dietary_guardian.services.platform_tools import build_platform_tool_registry
 from dietary_guardian.services.tool_registry import ToolRegistry
 from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 
 from .services.notifications import NotificationReadStateStore
 
-AuthStore = InMemoryAuthStore | SQLiteAuthStore | PostgresAuthStore
+AuthStore = InMemoryAuthStore | SQLiteAuthStore
 CacheStore = InMemoryCacheStore | RedisCacheStore
 CoordinationStore = InMemoryCoordinationStore | RedisCoordinationStore
-HouseholdStore = SQLiteHouseholdStore | PostgresHouseholdStore
+HouseholdStore = SQLiteHouseholdStore
 
 
 @dataclass
@@ -109,33 +109,29 @@ def _build_app_store(settings: Settings) -> AppStoreBackend:
 
 
 def _build_auth_store(settings: Settings) -> AuthStore:
-    if settings.auth_store_backend == "sqlite":
-        return SQLiteAuthStore(settings=settings, db_path=settings.auth_sqlite_db_path)
-    if settings.auth_store_backend == "in_memory":
+    if settings.auth.store_backend == "in_memory":
         return InMemoryAuthStore(settings)
-    return PostgresAuthStore(settings=settings, dsn=str(settings.postgres_dsn))
+    return SQLiteAuthStore(settings=settings, db_path=settings.auth.sqlite_db_path)
 
 
 def _build_household_store(settings: Settings) -> HouseholdStore:
-    if settings.household_store_backend == "sqlite":
-        return SQLiteHouseholdStore(settings.api_sqlite_db_path)
-    return PostgresHouseholdStore(dsn=str(settings.postgres_dsn))
+    return SQLiteHouseholdStore(settings.storage.api_sqlite_db_path)
 
 
 def _build_cache_store(settings: Settings) -> CacheStore:
-    if settings.ephemeral_state_backend == "redis":
+    if settings.storage.ephemeral_state_backend == "redis":
         return RedisCacheStore(
-            redis_url=str(settings.redis_url),
-            namespace=settings.redis_namespace,
+            redis_url=str(settings.storage.redis_url),
+            namespace=settings.storage.redis_namespace,
         )
     return InMemoryCacheStore()
 
 
 def _build_coordination_store(settings: Settings) -> CoordinationStore:
-    if settings.ephemeral_state_backend == "redis":
+    if settings.storage.ephemeral_state_backend == "redis":
         return RedisCoordinationStore(
-            redis_url=str(settings.redis_url),
-            namespace=settings.redis_namespace,
+            redis_url=str(settings.storage.redis_url),
+            namespace=settings.storage.redis_namespace,
         )
     return InMemoryCoordinationStore()
 
@@ -147,7 +143,7 @@ def build_app_context() -> AppContext:
     clinical_memory = ClinicalSnapshotMemoryService()
     event_timeline = EventTimelineService(
         repository=app_store,
-        persistence_enabled=settings.workflow_trace_persistence_enabled,
+        persistence_enabled=settings.workers.workflow_trace_persistence_enabled,
     )
     tool_registry = build_platform_tool_registry(app_store)
     agent_registry = build_default_agent_registry()
@@ -158,7 +154,7 @@ def build_app_context() -> AppContext:
         event_timeline=event_timeline,
     )
     auth_store = _build_auth_store(settings)
-    session_signer = SessionSigner(settings.session_secret)
+    session_signer = SessionSigner(settings.auth.session_secret)
     notification_reads = NotificationReadStateStore()
     cache_store = _build_cache_store(settings)
     coordination_store = _build_coordination_store(settings)
@@ -166,9 +162,9 @@ def build_app_context() -> AppContext:
     emotion_runtime = InProcessEmotionRuntime(EmotionRuntimeConfig.from_settings(settings))
     emotion_service = EmotionService(
         runtime=emotion_runtime,
-        inference_enabled=settings.emotion_inference_enabled,
-        speech_enabled=settings.emotion_speech_enabled,
-        request_timeout_seconds=settings.emotion_request_timeout_seconds,
+        inference_enabled=settings.emotion.inference_enabled,
+        speech_enabled=settings.emotion.speech_enabled,
+        request_timeout_seconds=settings.emotion.request_timeout_seconds,
     )
     ctx = AppContext(
         settings=settings,

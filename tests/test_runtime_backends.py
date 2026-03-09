@@ -2,11 +2,9 @@ from collections.abc import Generator
 
 import pytest
 
-from apps.api.dietary_api import deps
 from apps.api.dietary_api.deps import build_app_context, close_app_context
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.infrastructure.persistence import SQLiteAppStore, build_app_store
-from dietary_guardian.infrastructure.persistence import builders as persistence_builders
 
 
 def _reset_settings_cache() -> None:
@@ -26,40 +24,6 @@ def runtime_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, No
     _reset_settings_cache()
 
 
-def test_build_app_context_selects_postgres_backends_when_requested(
-    runtime_env: None,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setenv("APP_DATA_BACKEND", "postgres")
-    monkeypatch.setenv("AUTH_STORE_BACKEND", "postgres")
-    monkeypatch.setenv("HOUSEHOLD_STORE_BACKEND", "postgres")
-    monkeypatch.setenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/dietary_guardian")
-    _reset_settings_cache()
-
-    class _FakeStore:
-        def close(self) -> None:
-            return None
-
-    fake_app_store = _FakeStore()
-    fake_auth_store = _FakeStore()
-    fake_household_store = _FakeStore()
-
-    monkeypatch.setattr(deps, "_build_app_store", lambda settings: fake_app_store)
-    monkeypatch.setattr(deps, "_build_auth_store", lambda settings: fake_auth_store)
-    monkeypatch.setattr(deps, "_build_household_store", lambda settings: fake_household_store)
-
-    ctx = build_app_context()
-    try:
-        assert ctx.settings.app_data_backend == "postgres"
-        assert ctx.settings.auth_store_backend == "postgres"
-        assert ctx.settings.household_store_backend == "postgres"
-        assert ctx.app_store is fake_app_store
-        assert ctx.auth_store is fake_auth_store
-        assert ctx.household_store is fake_household_store
-    finally:
-        close_app_context(ctx)
-
-
 def test_build_app_context_supports_redis_ephemeral_backend(
     runtime_env: None,
     monkeypatch: pytest.MonkeyPatch,
@@ -70,7 +34,7 @@ def test_build_app_context_supports_redis_ephemeral_backend(
 
     ctx = build_app_context()
     try:
-        assert ctx.settings.ephemeral_state_backend == "redis"
+        assert ctx.settings.storage.ephemeral_state_backend == "redis"
         assert ctx.coordination_store is not None
         assert ctx.cache_store is not None
     finally:
@@ -80,7 +44,7 @@ def test_build_app_context_supports_redis_ephemeral_backend(
 def test_build_app_context_defaults_to_in_memory_ephemeral_backends(runtime_env: None) -> None:
     ctx = build_app_context()
     try:
-        assert ctx.settings.ephemeral_state_backend == "in_memory"
+        assert ctx.settings.storage.ephemeral_state_backend == "in_memory"
         assert ctx.coordination_store is not None
         assert ctx.cache_store is not None
     finally:
@@ -95,21 +59,11 @@ def test_exported_build_app_store_returns_sqlite_store_in_sqlite_mode(runtime_en
         store.close()
 
 
-def test_exported_build_app_store_uses_postgres_backend_when_requested(
-    runtime_env: None,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setenv("APP_DATA_BACKEND", "postgres")
-    monkeypatch.setenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/dietary_guardian")
-    _reset_settings_cache()
-
-    class FakePostgresAppStore:
-        def __init__(self, *, dsn: str) -> None:
-            self.dsn = dsn
-
-    monkeypatch.setattr(persistence_builders, "PostgresAppStore", FakePostgresAppStore)
-
-    store = persistence_builders.build_app_store(get_settings())
-
-    assert isinstance(store, FakePostgresAppStore)
-    assert store.dsn == "postgresql://user:pass@localhost:5432/dietary_guardian"
+def test_build_app_context_uses_sqlite_backends_for_durable_state(runtime_env: None) -> None:
+    ctx = build_app_context()
+    try:
+        assert ctx.settings.storage.app_data_backend == "sqlite"
+        assert ctx.settings.auth.store_backend == "sqlite"
+        assert ctx.settings.storage.household_store_backend == "sqlite"
+    finally:
+        close_app_context(ctx)

@@ -4,16 +4,17 @@ import hashlib
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from dietary_guardian.infrastructure.persistence import AppStoreBackend, ReminderNotificationRepository
+from dietary_guardian.infrastructure.persistence import AppStoreBackend
+from dietary_guardian.domain.alerts import AlertMessage
+from dietary_guardian.domain.notifications import ReminderEvent
 from dietary_guardian.logging_config import get_logger
-from dietary_guardian.models.alerting import AlertMessage
-from dietary_guardian.models.medication import ReminderEvent
 from dietary_guardian.models.reminder_notifications import (
     QueuedReminderNotification,
     ReminderNotificationLogEntry,
     ReminderNotificationPreference,
     ScheduledReminderNotification,
 )
+from dietary_guardian.services.ports import ReminderNotificationRepository
 
 logger = get_logger(__name__)
 
