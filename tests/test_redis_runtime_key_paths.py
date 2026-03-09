@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from dietary_guardian.infrastructure.cache import redis_store as redis_cache_module
 from dietary_guardian.infrastructure.coordination import redis_coordination as redis_coord_module
 
@@ -64,65 +62,42 @@ class _FakeRedisModule:
         self.Redis._client = self._client
 
 
-def _bind_fake_redis_for_cache(monkeypatch: pytest.MonkeyPatch, client: _FakeRedisClient) -> None:
+def _bind_fake_redis_for_cache(monkeypatch, client: _FakeRedisClient) -> None:
     fake_module = _FakeRedisModule(client)
     fake_module.bind()
     monkeypatch.setattr(redis_cache_module, "_load_redis_module", lambda: fake_module)
 
 
-def _bind_fake_redis_for_coordination(
-    monkeypatch: pytest.MonkeyPatch, client: _FakeRedisClient
-) -> None:
+def _bind_fake_redis_for_coordination(monkeypatch, client: _FakeRedisClient) -> None:
     fake_module = _FakeRedisModule(client)
     fake_module.bind()
     monkeypatch.setattr(redis_coord_module, "_load_redis_module", lambda: fake_module)
 
 
-def test_redis_cache_store_is_v2_only(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_redis_cache_store_uses_canonical_namespaced_keys(monkeypatch) -> None:
     client = _FakeRedisClient()
     _bind_fake_redis_for_cache(monkeypatch, client)
-
-    with pytest.raises(ValueError):
-        redis_cache_module.RedisCacheStore(redis_url="redis://localhost:6379/0", namespace="dietary", keyspace_version="v1")
-
     store = redis_cache_module.RedisCacheStore(redis_url="redis://localhost:6379/0", namespace="dietary")
+
     assert store._key("reminders.ready") == "dietary:cache:reminder:reminders.ready"
-
-
-def test_redis_cache_store_get_json_does_not_fallback_to_legacy_key(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    client = _FakeRedisClient()
-    _bind_fake_redis_for_cache(monkeypatch, client)
-    store = redis_cache_module.RedisCacheStore(redis_url="redis://localhost:6379/0", namespace="dietary")
-
-    value = store.get_json("workers.ready")
-
-    assert value is None
+    assert store.get_json("workers.ready") is None
     assert client.get_calls == ["dietary:cache:general:workers.ready"]
 
 
-def test_redis_coordination_store_v2_signal_paths_only(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_redis_coordination_store_uses_canonical_signal_paths(monkeypatch) -> None:
     client = _FakeRedisClient()
     _bind_fake_redis_for_coordination(monkeypatch, client)
     store = redis_coord_module.RedisCoordinationStore(redis_url="redis://localhost:6379/0", namespace="dietary")
 
-    v2_channel = "dietary:coordination:signal:reminder:reminders.ready"
-    legacy_channel = "dietary:signal:reminders.ready"
-    client._lists[v2_channel] = [json.dumps({"id": 1})]
-    client._lists[legacy_channel] = [json.dumps({"id": 99})]
+    channel = "dietary:coordination:signal:reminder:reminders.ready"
+    client._lists[channel] = [json.dumps({"id": 1})]
     drained = store.drain_signals("reminders.ready")
 
     assert drained == [{"id": 1}]
-    assert client.rpop_calls == [v2_channel, v2_channel]
-    assert legacy_channel in client._lists and client._lists[legacy_channel] == [json.dumps({"id": 99})]
+    assert client.rpop_calls == [channel, channel]
 
 
-def test_redis_coordination_store_wait_for_signal_no_legacy_fallback(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_redis_coordination_store_waits_on_canonical_channel(monkeypatch) -> None:
     client = _FakeRedisClient()
     _bind_fake_redis_for_coordination(monkeypatch, client)
     store = redis_coord_module.RedisCoordinationStore(redis_url="redis://localhost:6379/0", namespace="dietary")

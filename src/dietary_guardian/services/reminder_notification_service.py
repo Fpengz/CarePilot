@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timedelta, timezone
-from typing import Any
 from uuid import uuid4
 
+from dietary_guardian.infrastructure.persistence import AppStoreBackend, ReminderNotificationRepository
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.alerting import AlertMessage
 from dietary_guardian.models.medication import ReminderEvent
@@ -23,7 +23,7 @@ SYSTEM_DEFAULT_OFFSET_MINUTES = 0
 
 def resolve_notification_preferences(
     *,
-    repository: Any,
+    repository: ReminderNotificationRepository | AppStoreBackend,
     user_id: str,
     reminder_type: str,
 ) -> list[ReminderNotificationPreference]:
@@ -66,7 +66,7 @@ def _build_idempotency_key(*, reminder_id: str, channel: str, trigger_at: dateti
 
 def materialize_reminder_notifications(
     *,
-    repository: Any,
+    repository: ReminderNotificationRepository | AppStoreBackend,
     reminder_event: ReminderEvent,
     reminder_type: str,
 ) -> list[ScheduledReminderNotification]:
@@ -134,7 +134,7 @@ def materialize_reminder_notifications(
 
 def dispatch_due_reminder_notifications(
     *,
-    repository: Any,
+    repository: ReminderNotificationRepository | AppStoreBackend,
     now: datetime | None = None,
     limit: int = 100,
 ) -> list[QueuedReminderNotification]:
@@ -193,7 +193,11 @@ def dispatch_due_reminder_notifications(
     return queued
 
 
-def cancel_reminder_notifications(*, repository: Any, reminder_id: str) -> int:
+def cancel_reminder_notifications(
+    *,
+    repository: ReminderNotificationRepository | AppStoreBackend,
+    reminder_id: str,
+) -> int:
     count = repository.cancel_scheduled_notifications_for_reminder(reminder_id)
     for item in repository.list_scheduled_notifications(reminder_id=reminder_id):
         if item.status != "cancelled":

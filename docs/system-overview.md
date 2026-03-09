@@ -1,6 +1,6 @@
 # System Overview
 
-Last updated: 2026-03-06  
+Last updated: 2026-03-09  
 Source of truth for architecture detail: [`ARCHITECTURE.md`](../ARCHITECTURE.md)
 
 ## Purpose
@@ -45,12 +45,18 @@ flowchart LR
 ### Recommendation and Suggestion System
 - Adaptive recommendation generation and substitution ranking.
 - Interaction feedback loop persisted for future recommendations.
-- Core references: recommendation contracts and services.
+- Core references: recommendation contracts/services plus persistence adapters under `src/dietary_guardian/infrastructure/persistence`.
 
 ### Medication and Reminder Automation
 - Medication regimen CRUD, adherence tracking, reminder schedule generation.
 - Multi-channel notification dispatch through scheduler/outbox.
-- Core references: medication/reminder routers, scheduler services, workers.
+- Core references: medication/reminder routers, scheduler services, infrastructure persistence stores, workers.
+
+### Persistence and Runtime Infrastructure
+- Durable app data is owned by `src/dietary_guardian/infrastructure/persistence`.
+- `build_app_store(...)` selects the active app-data backend and returns the backend-neutral store surface used by the API and worker runtimes.
+- SQLite remains the default local app-data backend; Postgres is the supported production-aligned app-data backend.
+- Local schema changes assume fresh development databases rather than compatibility fallbacks for older SQLite files.
 
 ### Symptoms, Reports, and Clinical Cards
 - Symptom check-ins with summaries.
@@ -67,6 +73,7 @@ flowchart LR
 ## Runtime Modes
 - Default local mode: SQLite + optional in-memory ephemeral services.
 - Target-aligned local mode: Postgres + Redis with external worker.
+- In external-worker mode, `apps/workers/run.py` retries transient scheduler/outbox iteration failures in-process after a short delay; deployment supervision is still required for process-level recovery.
 - Runtime toggles and readiness checks are documented in [`docs/config-reference.md`](../docs/config-reference.md).
 
 ## When to Update This Document

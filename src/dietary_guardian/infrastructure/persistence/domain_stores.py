@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .contracts import AppStoreBackend
+
 
 @dataclass(slots=True)
 class MealStore:
@@ -347,7 +349,7 @@ class AppStores:
     alerts: AlertStore
 
 
-def build_app_stores(app_store: Any) -> AppStores:
+def build_app_stores(app_store: AppStoreBackend) -> AppStores:
     return AppStores(
         meals=MealStore(app_store),
         biomarkers=BiomarkerStore(app_store),

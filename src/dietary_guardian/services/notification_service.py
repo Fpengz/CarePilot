@@ -1,17 +1,18 @@
 from datetime import datetime, timezone
 
 from uuid import uuid4
+from typing import cast
 
 from pydantic import BaseModel
 
 from dietary_guardian.config.settings import get_settings
+from dietary_guardian.infrastructure.persistence import build_app_store
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage, AlertSeverity
 from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.services.alerting_service import AlertPublisher, OutboxWorker
+from dietary_guardian.services.alerting_service import AlertPublisher, AlertRepositoryProtocol, OutboxWorker
 from dietary_guardian.services.channels import TelegramChannel, WeChatChannel, WhatsAppChannel
 from dietary_guardian.services.channels.base import ChannelResult
-from dietary_guardian.services.repository import SQLiteRepository
 
 logger = get_logger(__name__)
 PENDING_ALERT_STATES = {"pending", "processing"}
@@ -107,7 +108,7 @@ def dispatch_reminder(
     channels: list[str],
     retries: int = 2,
     force_push_fail: bool = False,
-    repository: SQLiteRepository | None = None,
+    repository: AlertRepositoryProtocol | None = None,
 ) -> list[DeliveryResult]:
     settings = get_settings()
     if settings.use_alert_outbox_v2 and repository is not None:
@@ -197,11 +198,11 @@ def dispatch_reminder(
 def dispatch_reminder_async(
     reminder_event: ReminderEvent,
     channels: list[str],
-    repository: SQLiteRepository | None = None,
+    repository: AlertRepositoryProtocol | None = None,
     retries: int | None = None,
     force_push_fail: bool = False,
 ) -> list[DeliveryResult]:
-    repo = repository or SQLiteRepository()
+    repo = repository or _default_alert_repository()
     settings = get_settings()
     publisher = AlertPublisher(repo)
     worker = OutboxWorker(
@@ -269,7 +270,7 @@ def trigger_alert(
     severity: AlertSeverity,
     payload: dict[str, str],
     destinations: list[str],
-    repository: SQLiteRepository,
+    repository: AlertRepositoryProtocol,
 ) -> tuple[AlertMessage, list[DeliveryResult]]:
     alert = AlertMessage(
         alert_id=str(uuid4()),
@@ -310,7 +311,7 @@ def trigger_alert(
 
 def _drain_alert_for_sync_delivery(
     worker: OutboxWorker,
-    repository: SQLiteRepository,
+    repository: AlertRepositoryProtocol,
     alert_id: str,
     *,
     fast_forward_scheduled_retries: bool,
@@ -345,3 +346,7 @@ def _drain_alert_for_sync_delivery(
             )
 
     return list(by_sink.values())
+
+
+def _default_alert_repository() -> AlertRepositoryProtocol:
+    return cast(AlertRepositoryProtocol, build_app_store(get_settings()))

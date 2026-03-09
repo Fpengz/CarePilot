@@ -3,15 +3,12 @@ from __future__ import annotations
 from apps.api.dietary_api.deps import EmotionDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas.emotions import (
-    CompatEmotionResponse,
-    CompatEmotionTextRequest,
     EmotionEvidenceResponse,
     EmotionHealthResponse,
     EmotionInferenceResponse,
     EmotionObservationResponse,
     EmotionTextRequest,
 )
-from dietary_guardian.infrastructure.emotion import to_compat_response
 from dietary_guardian.models.emotion import EmotionInferenceResult
 from dietary_guardian.services.emotion_service import (
     EmotionServiceDisabledError,
@@ -113,51 +110,3 @@ def infer_speech_for_session(
 def get_emotion_health(*, deps: EmotionDeps) -> EmotionHealthResponse:
     health = deps.emotion_service.health()
     return EmotionHealthResponse.model_validate(health.model_dump(mode="json"))
-
-
-def _ensure_compat_enabled(*, deps: EmotionDeps) -> None:
-    if not deps.settings.emotion_compat_routes_enabled:
-        raise build_api_error(
-            status_code=404,
-            code="emotions.compat_route_disabled",
-            message="emotion compatibility routes are disabled",
-        )
-
-
-def infer_compat_text_for_session(
-    *,
-    deps: EmotionDeps,
-    payload: CompatEmotionTextRequest,
-) -> CompatEmotionResponse:
-    _ensure_compat_enabled(deps=deps)
-    try:
-        result = deps.emotion_service.infer_text(text=payload.text)
-    except Exception as exc:
-        raise _map_inference_error(exc, deps=deps)
-    return CompatEmotionResponse.model_validate(to_compat_response(result))
-
-
-def infer_compat_speech_for_session(
-    *,
-    deps: EmotionDeps,
-    audio_bytes: bytes,
-    filename: str | None,
-    content_type: str | None,
-    transcription: str | None,
-) -> CompatEmotionResponse:
-    _ensure_compat_enabled(deps=deps)
-    try:
-        result = deps.emotion_service.infer_speech(
-            audio_bytes=audio_bytes,
-            filename=filename,
-            content_type=content_type,
-            transcription=transcription,
-        )
-    except Exception as exc:
-        raise _map_inference_error(exc, deps=deps)
-    return CompatEmotionResponse.model_validate(to_compat_response(result))
-
-
-def get_compat_emotion_health(*, deps: EmotionDeps) -> EmotionHealthResponse:
-    _ensure_compat_enabled(deps=deps)
-    return get_emotion_health(deps=deps)

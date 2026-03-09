@@ -1,6 +1,6 @@
 # Operations Runbook
 
-Last updated: 2026-03-06  
+Last updated: 2026-03-09  
 See also: [`docs/developer-guide.md`](../docs/developer-guide.md), [`docs/config-reference.md`](../docs/config-reference.md), [`docs/nightly-ops.md`](../docs/nightly-ops.md)
 
 ## 1) Startup Profiles
@@ -24,6 +24,9 @@ uv run python scripts/dg.py dev
 
 Use for rapid application development with local defaults.
 
+Runtime note:
+- In this profile, API and worker processes use the same SQLite-backed app store selected through `src/dietary_guardian/infrastructure/persistence/builders.py`.
+
 ### Target-Aligned Local (Postgres + Redis + worker)
 ```bash
 uv run python scripts/dg.py infra up
@@ -32,6 +35,11 @@ uv run python scripts/dg.py smoke postgres-redis
 ```
 
 Use for validating the supported production topology locally.
+
+Worker runtime note:
+- API and worker processes both resolve app-data persistence through the same backend-selection path, with `APP_DATA_BACKEND=postgres` in this profile.
+- The external worker in `apps/workers/run.py` retries transient scheduler/outbox iteration failures after a short in-process delay instead of exiting immediately.
+- Continue running the worker under external supervision because host restarts, fatal interpreter exits, and repeated crash loops still require process-level recovery.
 
 ## 2) Health and Readiness Checks
 
@@ -77,10 +85,8 @@ uv run python scripts/dg.py infra down
 ### Migration and Keyspace Operations
 ```bash
 uv run python scripts/dg.py migrate postgres
-uv run python scripts/dg.py migrate redis-keyspace --redis-url <REDIS_URL>
-uv run python scripts/dg.py migrate redis-keyspace --redis-url <REDIS_URL> --apply
 ```
-Use the Redis keyspace migration command only for one-time import of legacy v1 keys into v2 naming.
+Redis runtime paths use the canonical v2 naming scheme directly; there is no separate migration command in the active workflow.
 
 ## 5) Incident-Triage Checklist
 1. Confirm Docker/infra health (if using Postgres/Redis profile).
@@ -107,6 +113,7 @@ Use the Redis keyspace migration command only for one-time import of legacy v1 k
 ## 7) Logs and Observability
 - Use correlation ID and request ID for cross-service tracing.
 - Inspect workflow timelines through `/workflows` UI or workflow API routes.
+- Watch for `worker_loop_iteration_failed` log events to identify repeated scheduler/outbox recovery loops.
 - Keep readiness and smoke output artifacts for incident notes.
 
 ## When to Update This Document

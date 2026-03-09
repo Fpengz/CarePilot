@@ -5,7 +5,7 @@ import time
 import pytest
 
 from dietary_guardian.application.emotion.ports import EmotionInferencePort, SpeechEmotionInput, TextEmotionInput
-from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime, to_compat_response
+from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime
 from dietary_guardian.models.emotion import EmotionInferenceResult, EmotionRuntimeHealth
 from dietary_guardian.services.emotion_service import EmotionService
 
@@ -49,17 +49,6 @@ def test_inprocess_runtime_health_transitions_after_inference() -> None:
 
     assert before.status == "degraded"
     assert after.status == "ready"
-
-
-def test_compat_response_mapping_contains_distribution() -> None:
-    runtime = _runtime()
-    result = runtime.infer_text(TextEmotionInput(text="I feel anxious and worried"))
-
-    compat = to_compat_response(result)
-    assert compat["emotion"] == result.emotion
-    assert isinstance(compat["emotions"], dict)
-    assert result.emotion in compat["emotions"]
-
 
 class _SlowPort(EmotionInferencePort):
     def infer_text(self, payload: TextEmotionInput) -> EmotionInferenceResult:

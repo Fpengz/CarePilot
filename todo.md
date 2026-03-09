@@ -6,7 +6,15 @@ This file is the canonical execution backlog for the repository. It replaces the
 
 - Emotion Phase 1 is already merged:
   - `/api/v1/emotions/{health,text,speech}`
-  - `/emotion/{health,text,speech}`
+- Persistence ownership is now aligned with the architecture:
+  - the canonical SQLite repository lives in `src/dietary_guardian/infrastructure/persistence/sqlite_repository.py`
+  - backend-neutral store builders/contracts live in `src/dietary_guardian/infrastructure/persistence/{builders,contracts}.py`
+- External worker runtime recovery is now part of the baseline:
+  - transient scheduler/outbox iteration failures are retried in-process by `apps/workers/run.py`
+  - process supervision is still required for fatal exits and repeated crash loops
+- The persistence/runtime refactor review completed cleanly:
+  - updated tests passed
+  - no new corrective backlog items were identified from review
 - The codebase is a solid v1 baseline, but not production-hardened for multi-instance traffic.
 - The strongest current areas are:
   - documentation discipline
@@ -72,6 +80,67 @@ Rollback:
 Depends On:
 - none
 
+## Item 0A: Fix Post-Cleanup Regressions
+
+- Status: `ready`
+- Priority: `P0`
+
+Goal:
+- Resolve the regressions surfaced by the latest review in:
+  - emotion wall-clock timeout behavior
+  - local-provider base URL resolution
+  - backend request observability behind the `/backend` proxy
+  - recommendation interaction metadata response validation for nested JSON payloads
+
+Why this matters:
+- These are functional regressions in current behavior, not backlog polish.
+- The current test suite did not catch them, but they are likely to affect real local and proxied deployments.
+- The recommendation metadata regression is especially risky because it persists the interaction before failing response validation, which can turn client retries into duplicate analytics/events.
+
+In Scope:
+- make the emotion timeout path return promptly instead of waiting for the worker thread to finish after `future.result(...)` times out
+- prevent silent misrouting when only `OLLAMA_BASE_URL` is configured
+  - acceptable fixes:
+    - restore alias handling temporarily, or
+    - fail fast while `.env.example`, `GEMINI.md`, and related docs/examples are updated in the same diff
+- forward request context headers (`Origin`, `Referer`, `User-Agent`, and preflight-related headers) through `apps/web/app/backend/[...path]/route.ts`
+- restore fully JSON-serializable recommendation interaction metadata in API responses
+  - specifically, nested objects/arrays that are accepted by `/api/v1/recommendations/interactions` must also survive response-model validation
+
+Out of Scope:
+- broader emotion architecture redesign
+- unrelated local-provider refactors
+- broader frontend proxy policy changes beyond restoring request observability
+
+Primary Files:
+- `src/dietary_guardian/application/emotion/use_cases.py`
+- `src/dietary_guardian/config/settings.py`
+- `apps/web/app/backend/[...path]/route.ts`
+- `apps/api/dietary_api/schemas/models.py`
+- any affected recommendation interaction service/tests under `apps/api/dietary_api/services/` and `apps/api/tests/`
+- any affected env/docs references such as `.env.example` and `GEMINI.md`
+
+Validation:
+- targeted emotion timeout regression test proving the request returns on wall-clock timeout
+- targeted settings/provider tests for `LOCAL_LLM_BASE_URL` / `OLLAMA_BASE_URL` handling
+- targeted proxy tests confirming forwarded request context headers reach FastAPI
+- targeted recommendation interaction test covering nested metadata such as `{\"nested\":{\"deep\":{\"a\":1}}}`
+- `uv run pytest -q`
+- `pnpm web:typecheck`
+
+Risk:
+- High. These touch live request handling, local model routing, and backend observability.
+
+Rollback:
+- Revert each regression fix independently if needed:
+  - emotion timeout handling
+  - local-provider config resolution
+  - proxy header forwarding
+  - recommendation metadata response typing
+
+Depends On:
+- Item 0
+
 ## Item 1: Stabilize Top 5 API Contracts
 
 - Status: `ready`
@@ -127,7 +196,7 @@ Depends On:
 
 Goal:
 - Parse backend error envelopes in the web client instead of throwing raw response text.
-- Continue moving request/response ownership into domain clients instead of the legacy consolidated shim.
+- Keep request/response ownership on the domain client surface with shared helpers in `apps/web/lib/api/core.ts`.
 
 Why this matters:
 - The backend already provides structured `error.code` data, but the frontend discards it.
@@ -136,7 +205,7 @@ Why this matters:
 In Scope:
 - typed request error object
 - domain client request/response ownership
-- compatibility wrapper for legacy imports if needed
+- shared request/error helper module
 
 Out of Scope:
 - backend API behavior changes
@@ -156,7 +225,7 @@ Risk:
 - Medium. Non-envelope failures still need graceful fallback behavior.
 
 Rollback:
-- Keep a compatibility wrapper in `api.ts` if full migration is too wide for one change.
+- Revert the frontend client split as one unit if a domain-client regression is discovered.
 
 Depends On:
 - Item 1 if the frontend uses newly typed DTO shapes
@@ -261,7 +330,7 @@ Why this matters:
 
 In Scope:
 - Redis-backed rate limiting
-- compatibility with current error/retry shape
+- alignment with the current error/retry shape
 - readiness enforcement for production profiles
 
 Out of Scope:

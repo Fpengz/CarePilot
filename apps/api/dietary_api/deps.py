@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any
 
 from dietary_guardian.config.settings import Settings, get_settings
 from dietary_guardian.infrastructure.auth import InMemoryAuthStore, PostgresAuthStore, SQLiteAuthStore, SessionSigner
@@ -7,7 +6,7 @@ from dietary_guardian.infrastructure.cache import InMemoryCacheStore, RedisCache
 from dietary_guardian.infrastructure.coordination import InMemoryCoordinationStore, RedisCoordinationStore
 from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime
 from dietary_guardian.infrastructure.household import PostgresHouseholdStore, SQLiteHouseholdStore
-from dietary_guardian.infrastructure.persistence import AppStores, PostgresAppStore, SQLiteAppStore, build_app_stores
+from dietary_guardian.infrastructure.persistence import AppStoreBackend, AppStores, build_app_store, build_app_stores
 from dietary_guardian.services.emotion_service import EmotionService
 from dietary_guardian.services.memory_services import (
     ClinicalSnapshotMemoryService,
@@ -16,28 +15,34 @@ from dietary_guardian.services.memory_services import (
 )
 from dietary_guardian.services.agent_registry import AgentRegistry, build_default_agent_registry
 from dietary_guardian.services.platform_tools import build_platform_tool_registry
+from dietary_guardian.services.tool_registry import ToolRegistry
 from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 
 from .services.notifications import NotificationReadStateStore
+
+AuthStore = InMemoryAuthStore | SQLiteAuthStore | PostgresAuthStore
+CacheStore = InMemoryCacheStore | RedisCacheStore
+CoordinationStore = InMemoryCoordinationStore | RedisCoordinationStore
+HouseholdStore = SQLiteHouseholdStore | PostgresHouseholdStore
 
 
 @dataclass
 class AppContext:
     settings: Settings
-    app_store: Any
+    app_store: AppStoreBackend
     stores: AppStores
     profile_memory: ProfileMemoryService
     clinical_memory: ClinicalSnapshotMemoryService
     event_timeline: EventTimelineService
-    tool_registry: Any
+    tool_registry: ToolRegistry
     agent_registry: AgentRegistry
     coordinator: WorkflowCoordinator
-    auth_store: Any
+    auth_store: AuthStore
     session_signer: SessionSigner
     notification_reads: NotificationReadStateStore
-    cache_store: Any
-    coordination_store: Any
-    household_store: Any
+    cache_store: CacheStore
+    coordination_store: CoordinationStore
+    household_store: HouseholdStore
     emotion_service: EmotionService
 
 
@@ -99,13 +104,11 @@ def close_app_context(ctx: AppContext) -> None:
             close()
 
 
-def _build_app_store(settings: Settings) -> Any:
-    if settings.app_data_backend == "sqlite":
-        return SQLiteAppStore(settings.api_sqlite_db_path)
-    return PostgresAppStore(dsn=str(settings.postgres_dsn))
+def _build_app_store(settings: Settings) -> AppStoreBackend:
+    return build_app_store(settings)
 
 
-def _build_auth_store(settings: Settings) -> Any:
+def _build_auth_store(settings: Settings) -> AuthStore:
     if settings.auth_store_backend == "sqlite":
         return SQLiteAuthStore(settings=settings, db_path=settings.auth_sqlite_db_path)
     if settings.auth_store_backend == "in_memory":
@@ -113,28 +116,26 @@ def _build_auth_store(settings: Settings) -> Any:
     return PostgresAuthStore(settings=settings, dsn=str(settings.postgres_dsn))
 
 
-def _build_household_store(settings: Settings) -> Any:
+def _build_household_store(settings: Settings) -> HouseholdStore:
     if settings.household_store_backend == "sqlite":
         return SQLiteHouseholdStore(settings.api_sqlite_db_path)
     return PostgresHouseholdStore(dsn=str(settings.postgres_dsn))
 
 
-def _build_cache_store(settings: Settings) -> Any:
+def _build_cache_store(settings: Settings) -> CacheStore:
     if settings.ephemeral_state_backend == "redis":
         return RedisCacheStore(
             redis_url=str(settings.redis_url),
             namespace=settings.redis_namespace,
-            keyspace_version=settings.redis_keyspace_version,
         )
     return InMemoryCacheStore()
 
 
-def _build_coordination_store(settings: Settings) -> Any:
+def _build_coordination_store(settings: Settings) -> CoordinationStore:
     if settings.ephemeral_state_backend == "redis":
         return RedisCoordinationStore(
             redis_url=str(settings.redis_url),
             namespace=settings.redis_namespace,
-            keyspace_version=settings.redis_keyspace_version,
         )
     return InMemoryCoordinationStore()
 

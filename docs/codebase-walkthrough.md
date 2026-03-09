@@ -1,6 +1,6 @@
 # Codebase Walkthrough
 
-Last updated: 2026-03-06  
+Last updated: 2026-03-09  
 See also: [`docs/system-overview.md`](../docs/system-overview.md), [`ARCHITECTURE.md`](../ARCHITECTURE.md)
 
 ## Repository Structure
@@ -82,9 +82,16 @@ apps/api/tests/           API contract and behavior tests
 
 ### Persistence and Data Adapters
 - Path: `src/dietary_guardian/infrastructure/persistence/*`.
+- Canonical app-data ownership lives here for both SQLite and Postgres backends.
 - Backends:
   - SQLite baseline adapters.
   - Postgres schema and adapter implementation.
+- Key modules:
+  - `builders.py`: backend selection for the app-data store.
+  - `contracts.py`: backend-neutral repository protocols and type aliases.
+  - `sqlite_repository.py`: infrastructure-owned SQLite repository implementation.
+  - `sqlite_app_store.py`: SQLite app-store adapter surface.
+  - `postgres_app_store.py`: Postgres app-store adapter surface.
 - Postgres schema entrypoint:
   - `postgres_schema.py`.
 
@@ -106,7 +113,7 @@ apps/api/tests/           API contract and behavior tests
 
 ### API Integration
 - `apps/web/lib/api/*.ts`: domain-scoped typed API clients (`auth`, `profile`, `household`, `meal`, `recommendation`, `reminder`, `workflow`).
-- `apps/web/lib/api.ts`: compatibility-only consolidated client (temporary migration shim).
+- `apps/web/lib/api/core.ts`: shared request/error helpers used by the domain clients.
 - `apps/web/lib/types.ts`: client-side API response type contracts.
 
 ### Component Layer
@@ -115,6 +122,7 @@ apps/api/tests/           API contract and behavior tests
 ## Worker Runtime
 - Entry: `apps/workers/run.py`.
 - Purpose: external scheduler/outbox/dispatch loop for asynchronous operations.
+- Behavior: acquires coordination locks, runs reminder-scheduler and outbox iterations, and retries transient iteration failures in-process.
 - Used by smoke and target-aligned dev flows.
 
 ## When to Update This Document

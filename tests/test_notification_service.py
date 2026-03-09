@@ -11,7 +11,7 @@ from dietary_guardian.services.notification_service import (
     send_in_app,
     send_push,
 )
-from dietary_guardian.services.repository import SQLiteRepository
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
 
 
 def _event() -> ReminderEvent:

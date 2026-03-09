@@ -1,4 +1,4 @@
-import { ApiRequestError, isApiRequestError } from "@/lib/api";
+import { ApiRequestError, isApiRequestError } from "./core";
 import type { ApiErrorEnvelope } from "@/lib/types";
 
 declare const envelope: ApiErrorEnvelope;

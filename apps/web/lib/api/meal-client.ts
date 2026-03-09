@@ -11,4 +11,4 @@ export {
   createSymptomCheckIn,
   listSymptomCheckIns,
   getSymptomSummary,
-} from "@/lib/api";
+} from "./core";

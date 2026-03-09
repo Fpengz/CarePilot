@@ -15,12 +15,10 @@ def _load_redis_module() -> Any:
 
 
 class RedisCacheStore:
-    def __init__(self, *, redis_url: str, namespace: str, keyspace_version: str = "v2") -> None:
+    def __init__(self, *, redis_url: str, namespace: str) -> None:
         redis_module = _load_redis_module()
         self._client = redis_module.Redis.from_url(redis_url, decode_responses=True)
         self._namespace = namespace
-        if keyspace_version != "v2":
-            raise ValueError("Redis cache store requires keyspace_version='v2'")
 
     def _domain(self, key: str) -> str:
         key_lower = key.lower()

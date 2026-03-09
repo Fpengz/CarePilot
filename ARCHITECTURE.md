@@ -5,7 +5,7 @@ This document is the canonical architecture reference for Dietary Guardian.
 
 It serves two audiences:
 - engineers onboarding to the current codebase
-- future contributors extending the system toward a production multi-agent architecture built on FastAPI, Next.js, PostgreSQL, Redis, RAG, and specialized workflow-driven agents
+- future contributors extending the system toward a production AI health companion architecture built on FastAPI, Next.js, PostgreSQL, Redis, RAG, and narrow reasoning agents
 
 Companion documentation:
 - `docs/README.md`
@@ -15,9 +15,7 @@ Companion documentation:
 - `docs/user-manual.md`
 - `docs/operations-runbook.md`
 
-This document is explicit about the difference between:
-- the current repository baseline
-- the target production architecture
+This document is explicit about the current repository baseline and the active target shape for the hackathon branch.
 
 ## Current Maturity Snapshot
 The repository is currently a strong v1 baseline with these production-relevant capabilities already implemented:
@@ -27,8 +25,13 @@ The repository is currently a strong v1 baseline with these production-relevant 
 - workflow coordination for meal analysis and alert/reminder delivery
 - adaptive meal recommendation with persisted profile state and online interaction learning
 - durable reminder notification scheduling, logs, and multi-channel delivery adapters
-- SQLite-backed persistence by default
+- SQLite-backed persistence by default, owned by `src/dietary_guardian/infrastructure/persistence/`
 - a DB-backed outbox worker pattern for asynchronous delivery
+- companion APIs for patient guidance, clinician digest generation, and impact summaries
+- a new `domain/` + `application/` backbone for case snapshots, personalization, engagement, care plans, clinician digests, and impact tracking
+- an application-layer companion orchestrator that varies guidance by interaction type and patient message
+- a deterministic evidence adapter that packages supporting citations for care plans and clinician digests
+- a deterministic safety review step that can adjust or escalate guidance before response serialization
 
 The repository does not yet fully implement the target platform in these areas:
 - PostgreSQL as the primary system of record
@@ -37,18 +40,16 @@ The repository does not yet fully implement the target platform in these areas:
 - a dedicated multi-agent worker runtime with external message bus semantics
 - specialized emotional-support and knowledge-retrieval agents as first-class production services
 
-The architecture below therefore describes both:
-- the current operating model
-- the intended production landing zone
+The architecture below therefore centers the implemented modular-monolith companion design and its scale-later path.
 
 ## High-Level System Overview
-Dietary Guardian should be understood as a layered system.
+Dietary Guardian should be understood as a layered companion system.
 
 ### 1. Interface Layer
 Responsibilities:
 - render user-facing experiences
 - collect structured inputs
-- present recommendation, reminder, and workflow state
+- present companion guidance, reminder state, clinician insights, and impact feedback
 - expose messaging entry points such as web, mobile web, Telegram, WhatsApp, or WeChat integrations
 
 Current implementation:
@@ -64,39 +65,51 @@ Target production expansion:
 Responsibilities:
 - authenticate and authorize requests
 - validate transport payloads
-- map HTTP concerns to application services
+- map HTTP concerns to canonical application use cases
 - normalize errors and trace metadata
 
 Current implementation:
 - FastAPI app under `apps/api/dietary_api`
 - route modules remain intentionally thin
 
-### 3. Orchestration Layer
+### 3. Application Layer
 Responsibilities:
-- coordinate multi-step workflows
-- decide which agent or service executes next
-- propagate request IDs, correlation IDs, and workflow events
-- separate business orchestration from HTTP and UI concerns
+- build longitudinal case snapshots
+- assemble personalization context
+- assess engagement and proactive intervention need
+- retrieve supporting evidence through an internal port
+- compose care plans
+- generate clinician digests
+- compute impact summaries
+- run deterministic safety review before final response mapping
+- separate business logic from HTTP and UI concerns
 
 Current implementation:
-- `src/dietary_guardian/services/workflow_coordinator.py`
-- API services under `apps/api/dietary_api/services/*`
-- recommendation orchestration in shared services
+- `src/dietary_guardian/application/case_snapshot/`
+- `src/dietary_guardian/application/personalization/`
+- `src/dietary_guardian/application/engagement/`
+- `src/dietary_guardian/application/evidence/`
+- `src/dietary_guardian/application/care_plans/`
+- `src/dietary_guardian/application/clinician_digest/`
+- `src/dietary_guardian/application/impact/`
+- `src/dietary_guardian/application/interactions/`
+- `src/dietary_guardian/application/safety/`
 
 Target production expansion:
 - explicit workflow engine with durable state transitions
 - event-driven handoff between agents
 - worker boundary for asynchronous or long-running orchestration
 
-### 4. Agent Layer
+### 4. Workflow and Agent Layer
 Responsibilities:
-- perform specialized reasoning or decision support
-- build prompts and context windows
-- invoke tools when required
-- validate outputs before persistence or delivery
+- run durable workflow traces and background execution
+- provide narrow reasoning help where deterministic logic is insufficient
+- keep agents bounded behind typed inputs and outputs
 
 Current implementation:
-- meal analysis and recommendation-oriented agent logic exists in `src/dietary_guardian/agents` and `src/dietary_guardian/services/recommendation_agent_service.py`
+- `src/dietary_guardian/services/workflow_coordinator.py`
+- `apps/workers/run.py`
+- meal analysis and recommendation-oriented agent logic in `src/dietary_guardian/agents`
 
 Target production agent set:
 - Diet Analysis Agent
@@ -106,11 +119,12 @@ Target production agent set:
 - Safety / Guardrail Agent
 - Coordinator / Router Agent
 
-### 5. Tool Layer
+### 5. Tool and Safety Layer
 Responsibilities:
 - expose side-effectful capabilities through typed contracts
 - enforce policy and environment restrictions
 - support safe external integrations
+- keep deterministic safety ahead of generative behavior
 
 Current implementation:
 - tool registry under `src/dietary_guardian/services/tool_registry.py`
@@ -120,40 +134,47 @@ Current implementation:
 Responsibilities:
 - store durable domain state
 - store workflow and audit events
-- support retrieval, memory, and recommendation state
+- support retrieval, memory, recommendation state, digest inputs, and impact metrics
 - provide cache and queue primitives
 
 Current implementation:
-- SQLite repositories for app data and auth
+- SQLite repositories for app/auth state, with app-data ownership in `src/dietary_guardian/infrastructure/persistence/`
+- backend-neutral app-store builders and repository contracts in `src/dietary_guardian/infrastructure/persistence/{builders,contracts}.py`
 - in-memory memory services for some workflow state
 - outbox table for async delivery
+- deterministic evidence packaging in `src/dietary_guardian/infrastructure/evidence/`
 
 Target production expansion:
 - PostgreSQL for durable relational state
 - Redis for ephemeral state, cache, distributed locking, and queue coordination
 - vector index / embedding store for RAG
 
-## Request Lifecycle
-A typical production request lifecycle should be understood as follows:
+## Core Companion Lifecycle
+A typical companion request lifecycle should be understood as follows:
 
 1. A user sends input from the web client or a messaging channel.
 2. The Interface Layer forwards the request to the FastAPI API.
 3. The API Layer authenticates the caller, checks scopes/policies, validates the payload, and attaches request/correlation IDs.
-4. The API Layer delegates to an application or orchestration service.
-5. The Orchestration Layer resolves the active workflow and gathers required state:
+4. The API Layer delegates to an application use case.
+5. The Application Layer resolves the active care flow and gathers required state:
    - user profile
-   - household context
    - health profile
    - meal history
-   - reminder state
-   - retrieval context if RAG is enabled
-6. The Orchestration Layer invokes one or more specialized agents.
-7. Agents may call registered tools through the Tool Layer.
-8. Outputs are validated, safety-checked, and normalized.
-9. The system persists domain changes and workflow events.
-10. If side effects are required, they are enqueued through the async delivery path instead of running in the request thread.
-11. The API returns a typed response to the frontend.
-12. Background workers continue asynchronous tasks such as notifications, indexing, or model refresh jobs.
+   - reminder and adherence state
+   - symptom history
+   - biomarker and report context
+   - optional emotion signal
+6. The Application Layer builds:
+   - `CaseSnapshot`
+   - `PersonalizationContext`
+   - `EngagementAssessment`
+   - `EvidenceBundle`
+   - `CarePlan`
+   - `ClinicianDigest`
+   - `ImpactSummary`
+7. Safety and policy checks authorize, adjust, or escalate the final user-visible response.
+8. The system records workflow events and returns typed companion outputs.
+9. Workers continue asynchronous tasks such as reminders, notifications, and future proactive engagement triggers.
 
 ## System Diagram Explained in Words
 The architecture diagram can be described as the following flow:
@@ -206,7 +227,8 @@ tests/
 ```
 
 Repository note:
-- `src/dietary_guardian/domain/` is intentionally omitted in the current baseline. Domain rules currently live in `models/` and `services/` until aggregate boundaries are introduced explicitly.
+- `src/dietary_guardian/domain/` is now the canonical home for companion-level domain contracts.
+- legacy `models/` and `services/` still contain important v1 logic that is being reused and gradually rehomed under `application/`.
 
 ### `apps/api/`
 FastAPI transport application.
@@ -236,18 +258,32 @@ Current examples:
 - dietary reasoning agent logic
 
 ### `src/dietary_guardian/application/`
-Target home for use cases, policies, and ports.
+Canonical home for companion use cases, policies, and ports.
 
 Current usage:
 - auth use cases
 - household use cases
 - suggestions use cases
 - policy boundaries
+- case snapshot assembly
+- personalization context assembly
+- engagement scoring
+- care-plan composition
+- clinician digest generation
+- impact summary computation
+- companion interaction orchestration
+
+### `src/dietary_guardian/domain/`
+Companion domain models.
+
+Current usage:
+- `domain/care/models.py` defines `CaseSnapshot`, `PersonalizationContext`, `EngagementAssessment`, `CarePlan`, `ClinicianDigest`, and `ImpactSummary`
 
 ### `src/dietary_guardian/infrastructure/`
 Infrastructure adapters.
 
 Current usage:
+- app-data persistence builders/contracts/adapters
 - auth persistence/signing
 - household storage
 
@@ -267,7 +303,6 @@ Current usage:
 Business orchestration and domain-level service logic.
 
 Current usage:
-- repository implementation
 - workflow coordinator
 - recommendation engine
 - reminder notification scheduler

@@ -1,4 +1,4 @@
-from dietary_guardian.services.repository import SQLiteRepository
+from .sqlite_repository import SQLiteRepository
 
 
 class SQLiteAppStore(SQLiteRepository):

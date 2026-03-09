@@ -361,30 +361,6 @@ class SQLiteRepository:
                 )
                 """
             )
-            # Backward-compatible migration for databases created before payload fields existed.
-            existing_columns = {
-                row[1] for row in cur.execute("PRAGMA table_info(alert_outbox)").fetchall()
-            }
-            if "type" not in existing_columns:
-                cur.execute("ALTER TABLE alert_outbox ADD COLUMN type TEXT NOT NULL DEFAULT 'alert'")
-            if "severity" not in existing_columns:
-                cur.execute("ALTER TABLE alert_outbox ADD COLUMN severity TEXT NOT NULL DEFAULT 'warning'")
-            if "payload_json" not in existing_columns:
-                cur.execute("ALTER TABLE alert_outbox ADD COLUMN payload_json TEXT NOT NULL DEFAULT '{}'")
-            if "correlation_id" not in existing_columns:
-                cur.execute("ALTER TABLE alert_outbox ADD COLUMN correlation_id TEXT NOT NULL DEFAULT ''")
-            if "created_at" not in existing_columns:
-                now_iso = datetime.now(timezone.utc).isoformat()
-                cur.execute(f"ALTER TABLE alert_outbox ADD COLUMN created_at TEXT NOT NULL DEFAULT '{now_iso}'")
-            reminder_event_columns = {
-                row[1] for row in cur.execute("PRAGMA table_info(reminder_events)").fetchall()
-            }
-            if "reminder_type" not in reminder_event_columns:
-                cur.execute("ALTER TABLE reminder_events ADD COLUMN reminder_type TEXT NOT NULL DEFAULT 'medication'")
-            if "title" not in reminder_event_columns:
-                cur.execute("ALTER TABLE reminder_events ADD COLUMN title TEXT NOT NULL DEFAULT 'Medication Reminder'")
-            if "body" not in reminder_event_columns:
-                cur.execute("ALTER TABLE reminder_events ADD COLUMN body TEXT")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_reminders_user_time ON reminder_events(user_id, scheduled_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_meals_user_time ON meal_records(user_id, captured_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_biomarkers_user_time_name ON biomarker_readings(user_id, measured_at, name)")

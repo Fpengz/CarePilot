@@ -9,4 +9,4 @@ export {
   revokeAuthSession,
   revokeOtherAuthSessions,
   listAuthAuditEvents,
-} from "@/lib/api";
+} from "./core";

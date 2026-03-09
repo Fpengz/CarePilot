@@ -41,18 +41,3 @@ class EmotionHealthResponse(BaseModel):
     model_cache_ready: bool
     source_commit: str
     detail: str | None = None
-
-
-class CompatEmotionTextRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=8000)
-
-
-class CompatEmotionResponse(BaseModel):
-    emotion: EmotionLabel
-    confidence: float = Field(ge=0.0, le=1.0)
-    emotions: dict[str, float] = Field(default_factory=dict)
-    source_type: Literal["text", "speech", "mixed"]
-    transcription: str | None = None
-    model_name: str
-    model_version: str
-

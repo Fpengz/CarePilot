@@ -335,7 +335,6 @@ def help_command() -> None:
                 "  uv run python scripts/dg.py dev [--no-api] [--no-web] [--no-scheduler]",
                 "  uv run python scripts/dg.py infra [up|down|restart|status|logs]",
                 "  uv run python scripts/dg.py migrate postgres [--dsn <POSTGRES_DSN>]",
-                "  uv run python scripts/dg.py migrate redis-keyspace [--redis-url <REDIS_URL>] [--namespace <REDIS_NAMESPACE>] [--apply]",
                 "  uv run python scripts/dg.py smoke postgres-redis [--keep-running]",
                 "  uv run python scripts/dg.py readiness [base_url] [--strict-warnings]",
                 "  uv run python scripts/dg.py test [backend|web|comprehensive] [--skip-e2e] [--skip-smoke] [--no-infra-bootstrap]",
@@ -514,38 +513,6 @@ def migrate_postgres(
         check=False,
         env=env,
     ).returncode
-    if code != 0:
-        raise typer.Exit(code)
-
-
-@migrate_app.command("redis-keyspace")
-def migrate_redis_keyspace(
-    redis_url: Annotated[str | None, typer.Option("--redis-url", help="Redis URL to migrate.")] = None,
-    namespace: Annotated[
-        str, typer.Option("--namespace", help="Redis namespace to migrate.")
-    ] = "dietary_guardian",
-    apply: Annotated[bool, typer.Option("--apply", help="Apply migration changes.")] = False,
-) -> None:
-    load_root_env()
-    effective_redis_url = redis_url or os.environ.get("REDIS_URL", "")
-    if not effective_redis_url:
-        error("REDIS_URL is required. Pass --redis-url or set REDIS_URL in environment.")
-        raise typer.Exit(2)
-
-    require_cmd("uv")
-    command = [
-        "uv",
-        "run",
-        "python",
-        "scripts/migrate-redis-keyspace.py",
-        "--redis-url",
-        effective_redis_url,
-        "--namespace",
-        namespace,
-    ]
-    if apply:
-        command.append("--apply")
-    code = run(command, check=False).returncode
     if code != 0:
         raise typer.Exit(code)
 

@@ -3,9 +3,9 @@ from typing import cast
 from pydantic import BaseModel
 
 from dietary_guardian.models.alerting import AlertSeverity
+from dietary_guardian.services.alerting_service import AlertRepositoryProtocol
 from dietary_guardian.models.tooling import ToolPolicyContext, ToolSensitivity, ToolSideEffect, ToolSpec
 from dietary_guardian.services.notification_service import trigger_alert
-from dietary_guardian.services.repository import SQLiteRepository
 from dietary_guardian.services.tool_registry import ToolRegistry
 
 
@@ -22,7 +22,7 @@ class TriggerAlertToolOutput(BaseModel):
     deliveries: list[dict[str, str | int | bool | None]]
 
 
-def build_platform_tool_registry(repository: SQLiteRepository) -> ToolRegistry:
+def build_platform_tool_registry(repository: AlertRepositoryProtocol) -> ToolRegistry:
     registry = ToolRegistry()
 
     def _trigger_alert_tool(payload: BaseModel, _ctx: ToolPolicyContext) -> BaseModel:

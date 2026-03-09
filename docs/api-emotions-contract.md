@@ -6,12 +6,6 @@
 - `POST /api/v1/emotions/text`
 - `POST /api/v1/emotions/speech`
 
-## Compatibility routes
-
-- `GET /emotion/health`
-- `POST /emotion/text`
-- `POST /emotion/speech`
-
 ## Request examples
 
 ### `POST /api/v1/emotions/text`
@@ -23,17 +17,7 @@
 }
 ```
 
-### `POST /emotion/text`
-
-```json
-{
-  "text": "I feel anxious and overwhelmed."
-}
-```
-
-## Response examples
-
-### Native response
+## Response example
 
 ```json
 {
@@ -42,7 +26,7 @@
     "emotion": "anxious",
     "score": 0.76,
     "confidence_band": "high",
-    "model_name": "ai_challenger_compatible_runtime",
+    "model_name": "ai_challenger_runtime",
     "model_version": "heuristic-v1",
     "evidence": [
       {"label": "anxious", "score": 0.76},
@@ -53,22 +37,5 @@
     "request_id": "...",
     "correlation_id": "..."
   }
-}
-```
-
-### Compatibility response
-
-```json
-{
-  "emotion": "anxious",
-  "confidence": 0.76,
-  "emotions": {
-    "anxious": 0.76,
-    "neutral": 0.12
-  },
-  "source_type": "text",
-  "transcription": null,
-  "model_name": "ai_challenger_compatible_runtime",
-  "model_version": "heuristic-v1"
 }
 ```

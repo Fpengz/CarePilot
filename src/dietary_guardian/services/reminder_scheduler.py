@@ -3,12 +3,13 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import cast
 
 from dietary_guardian.config.settings import get_settings
+from dietary_guardian.infrastructure.persistence import AppStoreBackend, ReminderSchedulerRepository, build_app_store
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.services.alerting_service import OutboxWorker
 from dietary_guardian.services.reminder_notification_service import dispatch_due_reminder_notifications
-from dietary_guardian.services.repository import SQLiteRepository
 
 logger = get_logger(__name__)
 
@@ -21,11 +22,11 @@ class ReminderSchedulerRunResult:
 
 async def run_reminder_scheduler_once(
     *,
-    repository: SQLiteRepository | None = None,
+    repository: ReminderSchedulerRepository | AppStoreBackend | None = None,
     now: datetime | None = None,
 ) -> ReminderSchedulerRunResult:
     settings = get_settings()
-    repo = repository or SQLiteRepository(settings.api_sqlite_db_path)
+    repo = repository or cast(ReminderSchedulerRepository, build_app_store(settings))
     dispatch_at = now or datetime.now(timezone.utc)
     queued = dispatch_due_reminder_notifications(
         repository=repo,

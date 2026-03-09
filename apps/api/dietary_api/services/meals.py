@@ -13,7 +13,7 @@ from dietary_guardian.services.weekly_nutrition_service import build_weekly_nutr
 from dietary_guardian.services.media_ingestion import build_capture_envelope, should_suppress_duplicate_capture
 from dietary_guardian.services.upload_service import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
 
-from apps.api.dietary_api.auth import build_user_profile_from_session
+from apps.api.dietary_api.session_profiles import build_user_profile_from_session
 from apps.api.dietary_api.deps import MealDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (

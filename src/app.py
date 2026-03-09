@@ -36,7 +36,7 @@ from dietary_guardian.services.report_parser_service import (
     build_clinical_snapshot,
     parse_report_input,
 )
-from dietary_guardian.services.repository import SQLiteRepository
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
 from dietary_guardian.services.social_service import SocialService
 from dietary_guardian.services.media_ingestion import build_capture_envelope, should_suppress_duplicate_capture
 from dietary_guardian.services.memory_services import (

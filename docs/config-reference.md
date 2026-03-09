@@ -32,7 +32,6 @@ Environment loading conventions:
 - `REDIS_DEFAULT_TTL_SECONDS` (default: `300`)
 - `REDIS_LOCK_TTL_SECONDS` (default: `30`)
 - `REDIS_WORKER_SIGNAL_CHANNEL` (default: `workers.ready`)
-- `REDIS_KEYSPACE_VERSION` (default: `v2`) — fixed to `v2` key naming mode for Redis cache/coordination stores
 - `READINESS_FAIL_ON_WARNINGS` (default: profile-derived; `false` in `dev`, `true` in `staging`/`prod`)
 - `REQUIRED_PROVIDER` (optional) — expected provider (`gemini`, `openai`, `ollama`, `vllm`, `test`) for readiness checks
 - `AUTH_SESSION_TTL_SECONDS` (default: `86400`)
@@ -74,7 +73,7 @@ Deployment guardrails:
 - `OPENAI_BASE_URL`
 - `OPENAI_REQUEST_TIMEOUT_SECONDS`
 - `OPENAI_TRANSPORT_MAX_RETRIES`
-- `LOCAL_LLM_BASE_URL` / `OLLAMA_BASE_URL`
+- `LOCAL_LLM_BASE_URL`
 - `LOCAL_LLM_API_KEY`
 - `LOCAL_LLM_MODEL`
 - `LOCAL_LLM_REQUEST_TIMEOUT_SECONDS`
@@ -119,4 +118,3 @@ Deployment guardrails:
 - Comprehensive validation gate: `uv run python scripts/dg.py test comprehensive`
 - Backend-only validation gate: `uv run python scripts/dg.py test backend`
 - Web-only validation gate: `uv run python scripts/dg.py test web`
-- Redis keyspace migration dry run (legacy pre-cutover data only): `uv run python scripts/dg.py migrate redis-keyspace --redis-url <REDIS_URL>`

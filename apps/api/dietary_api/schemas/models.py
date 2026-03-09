@@ -769,6 +769,114 @@ class AgentContractResponse(BaseModel):
     output_contract: str
 
 
+class CompanionInteractionRequest(BaseModel):
+    interaction_type: Literal["chat", "meal_review", "check_in", "report_follow_up", "adherence_follow_up"]
+    message: str = Field(min_length=1)
+    emotion_text: str | None = None
+
+
+class CompanionInteractionInfoResponse(BaseModel):
+    interaction_type: Literal["chat", "meal_review", "check_in", "report_follow_up", "adherence_follow_up"]
+    message: str
+    request_id: str
+    correlation_id: str
+    emotion_signal: str | None = None
+
+
+class CompanionSnapshotResponse(BaseModel):
+    user_id: str
+    profile_name: str
+    conditions: list[str] = Field(default_factory=list)
+    medications: list[str] = Field(default_factory=list)
+    meal_count: int
+    latest_meal_name: str | None = None
+    meal_risk_streak: int
+    reminder_count: int
+    reminder_response_rate: float
+    adherence_events: int
+    adherence_rate: float | None = None
+    symptom_count: int
+    average_symptom_severity: float
+    biomarker_summary: dict[str, float] = Field(default_factory=dict)
+    active_risk_flags: list[str] = Field(default_factory=list)
+    generated_at: datetime
+
+
+class CompanionEngagementResponse(BaseModel):
+    risk_level: Literal["low", "medium", "high"]
+    recommended_mode: Literal["supportive", "accountability", "follow_up", "escalate"]
+    rationale: list[str] = Field(default_factory=list)
+    intervention_opportunities: int = 0
+
+
+class CompanionEvidenceCitationResponse(BaseModel):
+    title: str
+    summary: str
+    source_type: str
+    relevance: str
+    confidence: float
+
+
+class CompanionCarePlanResponse(BaseModel):
+    interaction_type: Literal["chat", "meal_review", "check_in", "report_follow_up", "adherence_follow_up"]
+    headline: str
+    summary: str
+    reasoning_summary: str
+    why_now: str
+    recommended_actions: list[str] = Field(default_factory=list)
+    clinician_follow_up: bool = False
+    urgency: Literal["routine", "soon", "prompt"] = "routine"
+    citations: list[CompanionEvidenceCitationResponse] = Field(default_factory=list)
+    policy_status: Literal["approved", "adjusted", "escalate"] = "approved"
+
+
+class ClinicianDigestResponse(BaseModel):
+    summary: str
+    what_changed: list[str] = Field(default_factory=list)
+    why_now: str
+    time_window: str
+    priority: Literal["routine", "watch", "urgent"]
+    recommended_actions: list[str] = Field(default_factory=list)
+    interventions_attempted: list[str] = Field(default_factory=list)
+    citations: list[CompanionEvidenceCitationResponse] = Field(default_factory=list)
+    risk_level: Literal["low", "medium", "high"]
+
+
+class ImpactSummaryPayloadResponse(BaseModel):
+    baseline_window: str
+    comparison_window: str
+    tracked_metrics: dict[str, float | int] = Field(default_factory=dict)
+    deltas: dict[str, float] = Field(default_factory=dict)
+    intervention_opportunities: int = 0
+    interventions_measured: list[str] = Field(default_factory=list)
+    improvement_signals: list[str] = Field(default_factory=list)
+
+
+class CompanionTodayResponse(BaseModel):
+    snapshot: CompanionSnapshotResponse
+    engagement: CompanionEngagementResponse
+    care_plan: CompanionCarePlanResponse
+    impact: ImpactSummaryPayloadResponse
+
+
+class CompanionInteractionResponse(BaseModel):
+    interaction: CompanionInteractionInfoResponse
+    snapshot: CompanionSnapshotResponse
+    engagement: CompanionEngagementResponse
+    care_plan: CompanionCarePlanResponse
+    clinician_digest_preview: ClinicianDigestResponse
+    impact: ImpactSummaryPayloadResponse
+    workflow: WorkflowResponse
+
+
+class ClinicianDigestEnvelopeResponse(BaseModel):
+    digest: ClinicianDigestResponse
+
+
+class ImpactSummaryResponse(BaseModel):
+    summary: ImpactSummaryPayloadResponse
+
+
 class WorkflowRuntimeRegistryResponse(BaseModel):
     workflows: list[WorkflowRuntimeContractResponse] = Field(default_factory=list)
     agents: list[AgentContractResponse] = Field(default_factory=list)

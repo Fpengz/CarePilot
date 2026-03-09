@@ -1,6 +1,6 @@
 # Developer Guide
 
-Last updated: 2026-03-06  
+Last updated: 2026-03-09  
 See also: [`docs/config-reference.md`](../docs/config-reference.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 
 ## 1) Development Environment Setup
@@ -67,7 +67,7 @@ uv run python scripts/dg.py infra logs
 4. Register routes if needed in router composition.
 5. Add API tests in `apps/api/tests/`.
 6. Add/extend frontend API client/types in `apps/web/lib/api/*.ts` domain modules and `apps/web/lib/types.ts`.
-   - `apps/web/lib/api.ts` is compatibility-only during the migration window and should not be used for new imports.
+   - shared request/error helpers live in `apps/web/lib/api/core.ts`.
 7. Add UI route/component usage under `apps/web/app/*`.
 
 ### Add or Extend an Agent/Workflow
@@ -79,9 +79,11 @@ uv run python scripts/dg.py infra logs
 
 ### Add Persistence or Runtime Infrastructure
 1. Define schema updates in persistence schema modules.
-2. Implement adapter methods in SQLite/Postgres stores.
-3. Wire backend selection in settings/dependency context.
-4. Add migration or script support in `scripts/dg.py` subcommands where needed.
+2. Add or extend backend-neutral contracts in `src/dietary_guardian/infrastructure/persistence/contracts.py` when the service layer should target a shared repository surface.
+3. Implement adapter methods in SQLite/Postgres stores under `src/dietary_guardian/infrastructure/persistence/`.
+4. Wire backend selection in `src/dietary_guardian/infrastructure/persistence/builders.py` and the dependency context.
+5. Keep imports pointed at the canonical infrastructure or API-layer ownership path; delete obsolete shims instead of preserving them.
+6. Add migration or script support in `scripts/dg.py` subcommands where needed.
 
 ## 4) Testing Workflow
 
@@ -108,6 +110,7 @@ uv run python scripts/dg.py test web
 - Provider/env misconfiguration.
 - Postgres/Redis availability in target-aligned flows.
 - Worker scheduler not running when reminder workflows are expected.
+- Repeated worker iteration failures in scheduler/outbox recovery loops.
 - Tool policy mode differences (`shadow` vs `enforce`).
 
 ### Practical Debug Sequence
@@ -121,7 +124,7 @@ uv run python scripts/dg.py test web
 - Keep route handlers thin.
 - Keep response/request contracts strongly typed.
 - Favor service-layer orchestration over router-level business logic.
-- Preserve backward compatibility unless explicitly planned.
+- Prefer canonical ownership and remove obsolete compatibility layers during development.
 - Include tests for every behavior change.
 
 ## When to Update This Document

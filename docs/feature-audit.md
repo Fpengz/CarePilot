@@ -7,7 +7,7 @@ The repository currently shows end-to-end coverage for all five audited features
 
 - Role/tool contract modeling exists in [`models/role_tools.py`](../src/dietary_guardian/models/role_tools.py) and DB-backed tool policy APIs are available; rollout still defaults to shadow enforcement mode.
 - Workflow runtime contract exposure now exists at [`GET /api/v1/workflows/runtime-contract`](../apps/api/dietary_api/routers/workflows.py), backed by [`services/agent_registry.py`](../src/dietary_guardian/services/agent_registry.py).
-- Redis cache/coordination now runs on v2-only keyspace naming with legacy fallback removed from runtime adapters.
+- Redis cache/coordination now runs on the canonical v2 naming scheme with no alternate keyspace mode.
 - CI-level full Postgres+Redis integration proof for all A–E remains less explicit than unit/API suite coverage in-repo.
 
 #### 2) Feature Audit Table
@@ -86,7 +86,7 @@ The repository currently shows end-to-end coverage for all five audited features
 ## Proposed MVP Scope
 - Keep A–E capabilities at maintenance level (no new feature build required for audit scope).
 - Complete production rollout steps for policy enforcement mode transition (`shadow` -> `enforce`) and validate in staging.
-- Keep Redis keyspace migration utility as operational-only maintenance tooling for legacy environments.
+- Keep Redis-backed flows on the canonical runtime path; no separate legacy keyspace utility is part of the active workflow.
 
 ## One-Page Integration Plan (No Code)
 

@@ -27,7 +27,7 @@ Last updated: 2026-03-06
 - Durable State: Persisted domain state in SQLite/Postgres stores.
 - Ephemeral State: Short-lived cache/coordination state (in-memory or Redis).
 - Outbox: Durable record of side effects queued for asynchronous delivery.
-- Keyspace Version: Redis key naming generation (`v1`/`v2`) for migration compatibility.
+- Redis Keyspace: Canonical Redis key naming scheme used by cache and coordination stores.
 
 ## Product Terms
 - Health Profile: User baseline and constraints used for personalization.

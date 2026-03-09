@@ -7,7 +7,7 @@ class EmotionModelLoader:
     def __init__(self, config: EmotionRuntimeConfig) -> None:
         self._config = config
         self._loaded = False
-        self._model_name = "ai_challenger_compatible_runtime"
+        self._model_name = "ai_challenger_runtime"
         self._model_version = "heuristic-v1"
 
     def ensure_loaded(self) -> None:
@@ -24,4 +24,3 @@ class EmotionModelLoader:
     @property
     def is_ready(self) -> bool:
         return self._loaded
-

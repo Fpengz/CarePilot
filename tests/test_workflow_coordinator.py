@@ -16,7 +16,7 @@ from dietary_guardian.services.memory_services import (
     ProfileMemoryService,
 )
 from dietary_guardian.services.platform_tools import build_platform_tool_registry
-from dietary_guardian.services.repository import SQLiteRepository
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
 from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 from dietary_guardian.models.contracts import CaptureEnvelope
 

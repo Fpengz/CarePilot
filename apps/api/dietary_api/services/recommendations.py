@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from apps.api.dietary_api.auth import build_user_profile_from_session
+from apps.api.dietary_api.session_profiles import build_user_profile_from_session
 from apps.api.dietary_api.deps import RecommendationDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import RecommendationGenerateResponse, WorkflowResponse

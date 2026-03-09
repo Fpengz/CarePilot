@@ -38,14 +38,13 @@ class InMemoryRateLimiter:
 class RedisRateLimiter:
     redis_url: str
     namespace: str
-    keyspace_version: str = "v2"
 
     def __post_init__(self) -> None:
         redis_module = _load_redis_module()
         self._client = redis_module.Redis.from_url(self.redis_url, decode_responses=True)
 
     def _key(self, key: str) -> str:
-        return f"{self.namespace}:rate_limit:{self.keyspace_version}:{key}"
+        return f"{self.namespace}:rate_limit:v2:{key}"
 
     def allow(self, *, key: str, limit: int, window_seconds: int) -> tuple[bool, int]:
         namespaced_key = self._key(key)
@@ -73,6 +72,5 @@ def build_rate_limiter(settings: Settings) -> RateLimiter:
         return RedisRateLimiter(
             redis_url=str(settings.redis_url),
             namespace=settings.redis_namespace,
-            keyspace_version=settings.redis_keyspace_version,
         )
     return InMemoryRateLimiter()

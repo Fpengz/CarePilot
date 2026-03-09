@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from dietary_guardian.models.alerting import AlertMessage
 from dietary_guardian.services.alerting_service import AlertPublisher, OutboxWorker
-from dietary_guardian.services.repository import SQLiteRepository
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
 
 
 def test_alert_publish_persists_to_outbox(tmp_path) -> None:

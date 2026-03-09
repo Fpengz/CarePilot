@@ -24,7 +24,6 @@ class Settings(BaseSettings):
     local_llm_base_url: AnyHttpUrl | str | None = "http://localhost:11434/v1"
     local_llm_api_key: str = "ollama"
     local_llm_model: str = "qwen3-vl:4b"
-    ollama_base_url: AnyHttpUrl | str | None = "http://localhost:11434/v1"
     local_llm_request_timeout_seconds: float = Field(default=1200.0, ge=1.0, le=7200.0)
     local_llm_transport_max_retries: int = Field(default=0, ge=0, le=10)
 
@@ -43,7 +42,6 @@ class Settings(BaseSettings):
     api_rate_limit_recommendations_generate_max_requests: int = Field(default=10, ge=1, le=500)
     emotion_inference_enabled: bool = False
     emotion_speech_enabled: bool = False
-    emotion_compat_routes_enabled: bool = True
     emotion_request_timeout_seconds: float = Field(default=15.0, ge=0.1, le=300.0)
     emotion_model_device: Literal["auto", "cpu", "cuda"] = "auto"
     emotion_text_model_id: str = "j-hartmann/emotion-english-distilroberta-base"
@@ -84,7 +82,6 @@ class Settings(BaseSettings):
     workflow_trace_persistence_enabled: bool = False
     tool_policy_enforcement_mode: Literal["shadow", "enforce"] = "shadow"
     workflow_contract_bootstrap: bool = True
-    redis_keyspace_version: Literal["v2"] = "v2"
 
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
@@ -130,9 +127,6 @@ class Settings(BaseSettings):
         if self.readiness_fail_on_warnings is None:
             self.readiness_fail_on_warnings = self.app_env in {"staging", "prod"}
 
-        if self.llm_provider in {"ollama", "vllm"} and not self.local_llm_base_url:
-            self.local_llm_base_url = self.ollama_base_url
-
         if self.llm_provider == "gemini" and not (self.gemini_api_key or self.google_api_key):
             raise ValueError(
                 "Gemini provider selected but GEMINI_API_KEY/GOOGLE_API_KEY is not set"
@@ -143,7 +137,7 @@ class Settings(BaseSettings):
 
         if self.llm_provider in {"ollama", "vllm"} and not self.local_llm_base_url:
             raise ValueError(
-                "Local provider selected but LOCAL_LLM_BASE_URL/OLLAMA_BASE_URL is not set"
+                "Local provider selected but LOCAL_LLM_BASE_URL is not set"
             )
         if not self.session_secret:
             raise ValueError("SESSION_SECRET must not be empty")

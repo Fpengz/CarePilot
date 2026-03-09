@@ -10,6 +10,61 @@ from dietary_guardian.services.alerting_service import OutboxWorker
 from dietary_guardian.services.reminder_scheduler import run_reminder_scheduler_once
 
 logger = get_logger(__name__)
+_WORKER_FAILURE_RETRY_SECONDS = 1.0
+
+
+def _idle_wait_seconds(settings) -> float:
+    return float(
+        min(
+            settings.reminder_worker_poll_interval_seconds,
+            settings.outbox_worker_poll_interval_seconds,
+        )
+    )
+
+
+async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
+    processed_work = False
+    if ctx.coordination_store.acquire_lock(
+        "reminder-scheduler",
+        owner=owner,
+        ttl_seconds=settings.redis_lock_ttl_seconds,
+    ):
+        try:
+            reminder_result = await run_reminder_scheduler_once(repository=ctx.app_store)
+            processed_work = processed_work or bool(reminder_result.queued_count or reminder_result.delivery_attempts)
+        finally:
+            ctx.coordination_store.release_lock("reminder-scheduler", owner=owner)
+
+    if ctx.coordination_store.acquire_lock(
+        "outbox-worker",
+        owner=owner,
+        ttl_seconds=settings.redis_lock_ttl_seconds,
+    ):
+        try:
+            worker = OutboxWorker(
+                ctx.app_store,
+                lease_owner=owner,
+                max_attempts=settings.alert_worker_max_attempts,
+                concurrency=settings.alert_worker_concurrency,
+            )
+            outbox_results = await worker.process_once()
+            processed_work = processed_work or bool(outbox_results)
+        finally:
+            ctx.coordination_store.release_lock("outbox-worker", owner=owner)
+
+    if processed_work:
+        return True
+
+    wait_seconds = _idle_wait_seconds(settings)
+    wait_for_signal = getattr(ctx.coordination_store, "wait_for_signal", None)
+    if callable(wait_for_signal):
+        wait_for_signal(
+            settings.redis_worker_signal_channel,
+            timeout_seconds=wait_seconds,
+        )
+        return False
+    await asyncio.sleep(wait_seconds)
+    return False
 
 
 async def run_worker_loop() -> None:
@@ -24,52 +79,20 @@ async def run_worker_loop() -> None:
     )
     try:
         while True:
-            processed_work = False
-            if ctx.coordination_store.acquire_lock(
-                "reminder-scheduler",
-                owner=owner,
-                ttl_seconds=settings.redis_lock_ttl_seconds,
-            ):
-                try:
-                    reminder_result = await run_reminder_scheduler_once(repository=ctx.app_store)
-                    processed_work = processed_work or bool(reminder_result.queued_count or reminder_result.delivery_attempts)
-                finally:
-                    ctx.coordination_store.release_lock("reminder-scheduler", owner=owner)
-
-            if ctx.coordination_store.acquire_lock(
-                "outbox-worker",
-                owner=owner,
-                ttl_seconds=settings.redis_lock_ttl_seconds,
-            ):
-                try:
-                    worker = OutboxWorker(
-                        ctx.app_store,
-                        lease_owner=owner,
-                        max_attempts=settings.alert_worker_max_attempts,
-                        concurrency=settings.alert_worker_concurrency,
-                    )
-                    outbox_results = await worker.process_once()
-                    processed_work = processed_work or bool(outbox_results)
-                finally:
-                    ctx.coordination_store.release_lock("outbox-worker", owner=owner)
-
+            try:
+                processed_work = await _run_worker_iteration(ctx=ctx, settings=settings, owner=owner)
+            except Exception:
+                logger.exception(
+                    "worker_loop_iteration_failed worker_mode=%s ephemeral_state_backend=%s owner=%s retry_in_seconds=%.1f",
+                    settings.worker_mode,
+                    settings.ephemeral_state_backend,
+                    owner,
+                    _WORKER_FAILURE_RETRY_SECONDS,
+                )
+                await asyncio.sleep(_WORKER_FAILURE_RETRY_SECONDS)
+                continue
             if processed_work:
                 continue
-
-            wait_seconds = float(
-                min(
-                    settings.reminder_worker_poll_interval_seconds,
-                    settings.outbox_worker_poll_interval_seconds,
-                )
-            )
-            wait_for_signal = getattr(ctx.coordination_store, "wait_for_signal", None)
-            if callable(wait_for_signal):
-                wait_for_signal(
-                    settings.redis_worker_signal_channel,
-                    timeout_seconds=wait_seconds,
-                )
-                continue
-            await asyncio.sleep(wait_seconds)
     finally:
         close_app_context(ctx)
 

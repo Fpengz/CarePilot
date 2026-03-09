@@ -1,5 +1,5 @@
 from dietary_guardian.services.notification_service import trigger_alert
-from dietary_guardian.services.repository import SQLiteRepository
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
 
 
 def test_trigger_alert_enqueues_and_processes(tmp_path) -> None:

@@ -6,7 +6,7 @@ from dietary_guardian.services.medication_service import (
     generate_daily_reminders,
     mark_meal_confirmation,
 )
-from dietary_guardian.services.repository import SQLiteRepository
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
 
 
 def _user() -> UserProfile:

@@ -7,4 +7,4 @@ export {
   generateSuggestionFromReport,
   listSuggestions,
   getSuggestion,
-} from "@/lib/api";
+} from "./core";

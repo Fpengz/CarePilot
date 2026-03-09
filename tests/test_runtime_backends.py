@@ -5,6 +5,8 @@ import pytest
 from apps.api.dietary_api import deps
 from apps.api.dietary_api.deps import build_app_context, close_app_context
 from dietary_guardian.config.settings import get_settings
+from dietary_guardian.infrastructure.persistence import SQLiteAppStore, build_app_store
+from dietary_guardian.infrastructure.persistence import builders as persistence_builders
 
 
 def _reset_settings_cache() -> None:
@@ -83,3 +85,31 @@ def test_build_app_context_defaults_to_in_memory_ephemeral_backends(runtime_env:
         assert ctx.cache_store is not None
     finally:
         close_app_context(ctx)
+
+
+def test_exported_build_app_store_returns_sqlite_store_in_sqlite_mode(runtime_env: None) -> None:
+    store = build_app_store(get_settings())
+    try:
+        assert isinstance(store, SQLiteAppStore)
+    finally:
+        store.close()
+
+
+def test_exported_build_app_store_uses_postgres_backend_when_requested(
+    runtime_env: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("APP_DATA_BACKEND", "postgres")
+    monkeypatch.setenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/dietary_guardian")
+    _reset_settings_cache()
+
+    class FakePostgresAppStore:
+        def __init__(self, *, dsn: str) -> None:
+            self.dsn = dsn
+
+    monkeypatch.setattr(persistence_builders, "PostgresAppStore", FakePostgresAppStore)
+
+    store = persistence_builders.build_app_store(get_settings())
+
+    assert isinstance(store, FakePostgresAppStore)
+    assert store.dsn == "postgresql://user:pass@localhost:5432/dietary_guardian"

@@ -35,6 +35,10 @@ import type {
   MetricTrendListApiResponse,
   MobilityReminderSettingsEnvelopeResponse,
   RecommendationGenerateApiResponse,
+  CompanionInteractionApiResponse,
+  CompanionTodayApiResponse,
+  ClinicianDigestEnvelopeApiResponse,
+  ImpactSummaryEnvelopeApiResponse,
   ClinicalCardEnvelopeApiResponse,
   ClinicalCardListApiResponse,
   SymptomCheckInEnvelopeApiResponse,
@@ -65,9 +69,6 @@ import type {
   ApiErrorEnvelope,
 } from "@/lib/types";
 import { getConsolePrinter } from "@/lib/console-safe";
-
-// Legacy consolidated client kept for compatibility. Prefer domain clients under `@/lib/api/*`.
-// Planned removal: v0.2.0 (follow-up migration PR).
 
 // Default to same-origin proxy so browser auth cookies stay first-party for localhost and LAN hosts.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/backend";
@@ -890,4 +891,27 @@ export async function listMetricTrends(metric?: string[]): Promise<MetricTrendLi
   for (const item of metric ?? []) query.append("metric", item);
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return request<MetricTrendListApiResponse>(`/api/v1/metrics/trends${suffix}`);
+}
+
+export async function getCompanionToday(): Promise<CompanionTodayApiResponse> {
+  return request<CompanionTodayApiResponse>("/api/v1/companion/today");
+}
+
+export async function runCompanionInteraction(payload: {
+  interaction_type: "chat" | "meal_review" | "check_in" | "report_follow_up" | "adherence_follow_up";
+  message: string;
+  emotion_text?: string;
+}): Promise<CompanionInteractionApiResponse> {
+  return request<CompanionInteractionApiResponse>("/api/v1/companion/interactions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getClinicianDigest(): Promise<ClinicianDigestEnvelopeApiResponse> {
+  return request<ClinicianDigestEnvelopeApiResponse>("/api/v1/clinician/digest");
+}
+
+export async function getImpactSummary(): Promise<ImpactSummaryEnvelopeApiResponse> {
+  return request<ImpactSummaryEnvelopeApiResponse>("/api/v1/impact/summary");
 }

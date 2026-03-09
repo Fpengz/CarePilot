@@ -1,60 +1,85 @@
 # Agent Workflow Contract
 
 ## Purpose
-This file defines how AI agents should collaborate in this repository.
-It supplements, and does not replace, [CONTRIBUTING.md](./CONTRIBUTING.md).
+This file defines how human contributors and AI agents should collaborate on the companion architecture in this repository.
 
-## Precedence
-- Product and architecture standards: `CONTRIBUTING.md`, `ARCHITECTURE.md`
-- Agent collaboration and task isolation: `AGENTS.md`
-- Branch and merge operations: `docs/branching-strategy.md`
+It supplements:
+- `CONTRIBUTING.md`
+- `ARCHITECTURE.md`
+- `SYSTEM_ROADMAP.md`
+
+## Product Direction
+The current branch is optimizing for a hackathon-quality AI health companion, not backward compatibility.
+
+Every change should strengthen at least one of:
+- proactive patient engagement
+- multi-source personalization
+- clinician-facing insight quality
+- measurable health impact
+- architectural extensibility
 
 ## Roles
-- Planner: defines decision-complete scope, interfaces, validation, and rollout.
-- Implementer: executes approved scope only and keeps changes minimal.
-- Reviewer: validates correctness, safety, regressions, and boundary hygiene.
+- `Planner`: defines decision-complete scope, contracts, validation, rollout, and risks.
+- `Implementer`: executes the approved scope with the minimum coherent change set.
+- `Reviewer`: checks correctness, regressions, safety, and boundary hygiene.
 
-## Task Contract
-Every multi-agent task must include:
-- Goal: what outcome is required.
-- Scope: in-scope and out-of-scope behavior.
-- Files: owned files and shared files expected to change.
-- Validation: exact commands and expected outcomes.
-- Risk: user impact, migration/compat implications, and rollback approach.
+## Required Task Contract
+Every multi-agent task must define:
+- `Goal`
+- `Scope`
+- `Files`
+- `Validation`
+- `Risk`
 
-## Branching and Isolation
-- Use short-lived task branches from `main`.
-- Recommended branch names:
-  - `feat/<topic>`
-  - `fix/<topic>`
-  - `docs/<topic>`
-  - `refactor/<topic>`
-  - `agent/<task-name>`
-- One coherent change per PR.
-- Avoid mixing unrelated refactors with feature or bugfix work.
+## Architecture Ownership Map
+- Transport/API: `apps/api/dietary_api/**`
+- Web UX: `apps/web/**`
+- Worker/runtime: `apps/workers/**`
+- Domain contracts: `src/dietary_guardian/domain/**`
+- Application use cases: `src/dietary_guardian/application/**`
+- Infrastructure adapters: `src/dietary_guardian/infrastructure/**`
+- Legacy reusable services: `src/dietary_guardian/services/**`
+- Documentation: `README.md`, `ARCHITECTURE.md`, `SYSTEM_ROADMAP.md`, `docs/**`
 
-## Ownership Map
-- Backend API: `apps/api/dietary_api/**`
-- Shared backend core: `src/dietary_guardian/**`
-- Worker runtime: `apps/workers/**`
-- Frontend: `apps/web/**`
-- Tests: `tests/**`, `apps/api/tests/**`, `apps/web/e2e/**`
-- Documentation: `docs/**`, `README.md`, `CONTRIBUTING.md`, `AGENTS.md`
+## Canonical Companion Modules
+Changes that affect patient guidance, clinician summaries, or impact tracking should prefer these modules:
+- `application/case_snapshot`
+- `application/personalization`
+- `application/engagement`
+- `application/care_plans`
+- `application/clinician_digest`
+- `application/impact`
+- `application/interactions`
 
-## High-Risk Files (Coordinator Review Required)
-- `.github/workflows/*`
-- `pyproject.toml`
-- `package.json`
-- `pnpm-lock.yaml`
-- `Dockerfile`
-- `compose.dev.yml`
-- `.env.example`
+Do not put new business logic primarily in route handlers.
+
+## Agent Design Rules
+- Default to deterministic logic before adding an agent.
+- Add a new agent only when specialization materially improves reasoning quality.
+- Agents must use typed input/output contracts.
+- Agents must not write durable state directly.
+- Safety and policy checks remain outside prompts.
+
+## Data Source Extension Rules
+New data sources should integrate through the case snapshot and personalization layers.
+
+Preferred sequence:
+1. define or extend domain contracts
+2. add infrastructure adapter or ingestion service
+3. expose the signal in `CaseSnapshot`
+4. consume it in personalization, engagement, digest, or impact logic
+5. add validation and docs
+
+## High-Risk Files
 - `src/dietary_guardian/config/settings.py`
 - `src/dietary_guardian/infrastructure/persistence/*`
 - `src/dietary_guardian/infrastructure/auth/*`
-- `src/dietary_guardian/application/auth/*`
-- `apps/api/dietary_api/policy.py`
 - `apps/api/dietary_api/deps.py`
+- `apps/api/dietary_api/policy.py`
+- `apps/workers/run.py`
+- `README.md`
+- `ARCHITECTURE.md`
+- `SYSTEM_ROADMAP.md`
 
 ## Validation Matrix
 Backend:
@@ -78,25 +103,14 @@ uv run python scripts/dg.py test web
 uv run python scripts/dg.py test comprehensive
 ```
 
-## PR Requirements
-- Use the repository PR template.
-- Include changed files and affected layers.
-- Include executed validation commands and outcomes.
-- Include risk and rollback notes.
-- Keep diffs scoped and reviewable.
-
-## Conflict Handling
-- If two branches modify the same high-risk file, merge the lower-risk branch first.
-- Rebase feature branches after high-risk merges.
-- Re-run full validation after conflict resolution.
-
 ## Definition of Done
-- Scope complete and behavior matches task contract.
-- Required validation commands pass.
-- No undocumented interface change.
-- Risk and rollback documented in PR.
-- Reviewer confirms no obvious regressions.
+- Scope is complete and coherent.
+- Required validation has been run.
+- Public interface changes are documented.
+- Companion-facing changes improve patient, clinician, or impact behavior explicitly.
+- No new business logic is hidden in routes or UI glue.
 
-## Final Escalation Rule
-If required behavior conflicts with `CONTRIBUTING.md` or production safety constraints,
-stop and escalate to maintainers before implementation.
+## Rollback and Risk Notes
+- Prefer additive migrations inside the modular monolith before deleting reused v1 logic.
+- Document breaking changes clearly because compatibility is not a design constraint in this stage.
+- If a change weakens safety, observability, or clinician signal quality, stop and escalate.

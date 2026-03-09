@@ -1,6 +1,6 @@
 from dietary_guardian.models.tooling import ToolPolicyContext
 from dietary_guardian.services.platform_tools import build_platform_tool_registry
-from dietary_guardian.services.repository import SQLiteRepository
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
 
 
 def test_trigger_alert_tool_allows_admin_scope(tmp_path) -> None:

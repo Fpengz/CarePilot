@@ -28,7 +28,7 @@ Target production direction:
 - Redis for cache, ephemeral coordination, and async worker plumbing
 - expanded worker and retrieval infrastructure
 
-Contributors must preserve compatibility with the current implementation while moving the codebase toward the target architecture.
+Contributors should prefer one canonical implementation path per capability while moving the codebase toward the target architecture. During active development, remove obsolete compatibility layers instead of preserving them.
 
 ## Getting Started
 ### Requirements
@@ -173,7 +173,7 @@ A contribution is not complete if it only works locally but is opaque to operate
 ### Error Handling Patterns
 - Use centralized API error helpers for transport-layer failures.
 - Return typed, machine-readable error codes.
-- Preserve backward-compatible response semantics unless explicitly changing the contract.
+- Keep response semantics explicit and typed. If a contract changes during development, update callers, tests, and docs in the same change.
 - Use retry-safe patterns for side effects.
 
 ## Frontend Standards
@@ -456,7 +456,7 @@ Minimum rule:
 Escalate early when a change affects:
 - authentication or authorization semantics
 - safety behavior
-- database schema compatibility
+- schema reset and bootstrap expectations for development databases
 - workflow event contracts
 - external provider usage or data retention behavior
 

@@ -222,7 +222,6 @@ class LLMFactory:
             if settings is not None:
                 base_url = str(
                     settings.local_llm_base_url
-                    or settings.ollama_base_url
                     or LLMFactory._settings_default("local_llm_base_url", "http://localhost:11434/v1")
                 )
                 api_key = settings.local_llm_api_key
@@ -231,7 +230,7 @@ class LLMFactory:
                 base_url_default = str(LLMFactory._settings_default("local_llm_base_url", "http://localhost:11434/v1"))
                 api_key_default = str(LLMFactory._settings_default("local_llm_api_key", "ollama"))
                 model_default = str(LLMFactory._settings_default("local_llm_model", "llama3"))
-                base_url = os.getenv("LOCAL_LLM_BASE_URL") or os.getenv("OLLAMA_BASE_URL") or base_url_default
+                base_url = os.getenv("LOCAL_LLM_BASE_URL") or base_url_default
                 api_key = os.getenv("LOCAL_LLM_API_KEY", api_key_default)
                 target_model = model_name or os.getenv("LOCAL_LLM_MODEL", model_default)
             local_provider = LLMFactory._build_local_provider(base_url, api_key)
