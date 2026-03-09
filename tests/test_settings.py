@@ -55,8 +55,6 @@ def test_openai_provider_requires_key() -> None:
 def test_openai_provider_allows_with_key() -> None:
     settings = Settings(llm_provider="openai", openai_api_key="test-openai-key")
     assert settings.llm_provider == "openai"
-
-
 def test_runtime_backend_settings_accept_postgres_and_redis_fields() -> None:
     settings = Settings(
         llm_provider="test",

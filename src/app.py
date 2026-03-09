@@ -44,6 +44,7 @@ from dietary_guardian.services.memory_services import (
     EventTimelineService,
     ProfileMemoryService,
 )
+from dietary_guardian.services.meal_record_utils import meal_display_name
 from dietary_guardian.services.platform_tools import TriggerAlertToolOutput, build_platform_tool_registry
 from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 from dietary_guardian.services.upload_service import build_image_input
@@ -158,7 +159,9 @@ selected_provider = (
     if settings.llm_provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, ModelProvider.TEST.value}
     else ModelProvider.GEMINI.value
 )
-selected_model_name = settings.gemini_model if selected_provider == ModelProvider.GEMINI.value else settings.openai_model
+selected_model_name = (
+    settings.gemini_model if selected_provider == ModelProvider.GEMINI.value else settings.openai_model
+)
 local_profile: LocalModelProfile | None = None
 
 if runtime_mode == "cloud":
@@ -166,12 +169,12 @@ if runtime_mode == "cloud":
         "Cloud provider",
         options=[ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, ModelProvider.TEST.value],
         index=(
-            0
-            if selected_provider == ModelProvider.GEMINI.value
-            else (1 if selected_provider == ModelProvider.OPENAI.value else 2)
+            0 if selected_provider == ModelProvider.GEMINI.value else (1 if selected_provider == ModelProvider.OPENAI.value else 2)
         ),
     )
-    default_cloud_model = settings.gemini_model if selected_provider == ModelProvider.GEMINI.value else settings.openai_model
+    default_cloud_model = (
+        settings.gemini_model if selected_provider == ModelProvider.GEMINI.value else settings.openai_model
+    )
     selected_model_name = st.sidebar.text_input("Cloud model name", value=default_cloud_model)
 else:
     profile_keys = list(app_config.local_models.profiles.keys())
@@ -344,6 +347,7 @@ if profile_mode == "self":
                     provider=selected_provider,
                     model_name=selected_model_name,
                     local_profile=local_profile,
+                    food_store=repo,
                 )
                 result, record = run_async(
                     module.analyze_and_record(
@@ -358,13 +362,13 @@ if profile_mode == "self":
                     "app_meal_analyzed user_id=%s record_id=%s dish=%s",
                     mr_tan.id,
                     record.id,
-                    record.meal_state.dish_name,
+                    meal_display_name(record),
                 )
                 st.session_state.meal_history_meta.append(
                     {
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                         "source": record.source,
-                        "dish_name": record.meal_state.dish_name,
+                        "dish_name": meal_display_name(record),
                         "multi_item_count": record.multi_item_count,
                         "content_sha256": image_input.metadata.get("content_sha256"),
                     }

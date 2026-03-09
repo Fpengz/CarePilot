@@ -1,7 +1,10 @@
 from datetime import datetime
 from enum import StrEnum
 from typing import Literal
+
 from pydantic import BaseModel, Field
+
+from dietary_guardian.domain.meals import EnrichedMealEvent, MealPerception
 
 
 class GlycemicIndexLevel(StrEnum):
@@ -97,6 +100,8 @@ class VisionResult(BaseModel):
     Wrapper for the vision pipeline result.
     """
     primary_state: MealState
+    perception: MealPerception | None = None
+    enriched_event: EnrichedMealEvent | None = None
     raw_ai_output: str
     needs_manual_review: bool = False
     processing_latency_ms: float = 0.0

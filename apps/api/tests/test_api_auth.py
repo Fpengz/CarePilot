@@ -1,15 +1,32 @@
 from collections.abc import Generator
+from types import SimpleNamespace
 import time
+from typing import cast
 
 import pytest
 from fastapi.testclient import TestClient
 
+from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import Settings, get_settings
+from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SessionSigner
 
 
 def _reset_settings_cache() -> None:
     get_settings.cache_clear()
+
+
+def _create_auth_only_app():
+    settings = Settings(
+        llm_provider="test",
+        auth_store_backend="in_memory",
+    )
+    ctx = SimpleNamespace(
+        settings=settings,
+        auth_store=InMemoryAuthStore(settings),
+        session_signer=SessionSigner(settings.session_secret),
+    )
+    return create_app(ctx=cast(AppContext, ctx))
 
 
 @pytest.fixture(autouse=True)

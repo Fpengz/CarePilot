@@ -1,7 +1,7 @@
 import asyncio
 import time
 from dataclasses import dataclass
-from typing import Protocol, cast
+from typing import Any, Protocol, cast
 
 from pydantic import BaseModel
 from pydantic_ai import Agent
@@ -65,7 +65,7 @@ class _BaseStrategy:
         output_schema = request.output_schema
         output_retries = self._output_retry_budget()
         agent = Agent(
-            self.model,
+            cast(Any, self.model),
             output_type=output_schema,
             system_prompt=request.system_prompt,
             output_retries=output_retries,

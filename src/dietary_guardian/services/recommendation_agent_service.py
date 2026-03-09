@@ -8,6 +8,7 @@ from typing import Protocol
 from uuid import uuid4
 
 from dietary_guardian.logging_config import get_logger
+from dietary_guardian.models.canonical_food import CanonicalFoodRecord
 from dietary_guardian.models.meal import Ingredient, MealEvent
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.models.recommendation_agent import (
@@ -17,7 +18,6 @@ from dietary_guardian.models.recommendation_agent import (
     DailyAgentRecommendation,
     HealthDelta,
     InteractionEventType,
-    MealCatalogItem,
     MealSlot,
     PreferenceSnapshot,
     RecommendationInteraction,
@@ -29,10 +29,12 @@ from dietary_guardian.models.recommendation_agent import (
 from dietary_guardian.models.report import ClinicalProfileSnapshot
 from dietary_guardian.models.user import UserProfile
 from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
+from dietary_guardian.services.canonical_food_service import normalize_text
 from dietary_guardian.services.health_profile_service import compute_bmi, compute_profile_completeness
-from dietary_guardian.services.meal_catalog_service import find_catalog_item_by_title, normalize_text
+from dietary_guardian.services.meal_record_utils import meal_display_name, meal_ingredients, meal_nutrition
 
 logger = get_logger(__name__)
+FoodItem = CanonicalFoodRecord
 
 MEAL_LOG_WARMUP_THRESHOLD = 10
 INTERACTION_WARMUP_THRESHOLD = 5
@@ -43,13 +45,13 @@ class AgentMealNotFoundError(Exception):
 
 
 class RecommendationAgentRepository(Protocol):
-    def list_meal_catalog_items(
+    def list_canonical_foods(
         self,
         *,
         locale: str,
         slot: str | None = None,
         limit: int = 100,
-    ) -> list[MealCatalogItem]: ...
+    ) -> list[FoodItem]: ...
 
     def get_preference_snapshot(self, user_id: str) -> PreferenceSnapshot | None: ...
 
@@ -57,7 +59,9 @@ class RecommendationAgentRepository(Protocol):
 
     def get_meal_record(self, user_id: str, meal_id: str) -> MealRecognitionRecord | None: ...
 
-    def get_meal_catalog_item(self, meal_id: str) -> MealCatalogItem | None: ...
+    def get_canonical_food(self, food_id: str) -> FoodItem | None: ...
+
+    def find_food_by_name(self, *, locale: str, name: str) -> FoodItem | None: ...
 
     def save_recommendation_interaction(self, interaction: RecommendationInteraction) -> RecommendationInteraction: ...
 
@@ -81,7 +85,7 @@ def _infer_slot(captured_at: datetime) -> MealSlot:
     return "snack"
 
 
-def _build_meal_event(candidate: MealCatalogItem) -> MealEvent:
+def _build_meal_event(candidate: FoodItem) -> MealEvent:
     return MealEvent(
         name=candidate.title,
         ingredients=[Ingredient(name=name) for name in candidate.ingredient_tags],
@@ -89,7 +93,7 @@ def _build_meal_event(candidate: MealCatalogItem) -> MealEvent:
     )
 
 
-def _candidate_tokens(candidate: MealCatalogItem) -> set[str]:
+def _candidate_tokens(candidate: FoodItem) -> set[str]:
     venue_tokens = set(normalize_text(candidate.venue_type).split())
     return {
         normalize_text(candidate.slot),
@@ -105,8 +109,8 @@ def _candidate_tokens(candidate: MealCatalogItem) -> set[str]:
 
 def _record_tokens(record: MealRecognitionRecord) -> set[str]:
     return {
-        *[normalize_text(item.name) for item in record.meal_state.ingredients],
-        *normalize_text(record.meal_state.dish_name).split(),
+        *[normalize_text(item.name) for item in meal_ingredients(record)],
+        *normalize_text(meal_display_name(record)).split(),
     }
 
 
@@ -116,8 +120,8 @@ def _overlap_score(left: set[str], right: set[str]) -> float:
     return len(left.intersection(right)) / max(len(left), len(right))
 
 
-def _score_similarity(candidate: MealCatalogItem, record: MealRecognitionRecord | MealCatalogItem) -> float:
-    if isinstance(record, MealCatalogItem):
+def _score_similarity(candidate: FoodItem, record: MealRecognitionRecord | FoodItem) -> float:
+    if isinstance(record, FoodItem):
         cuisine_score = _overlap_score(set(candidate.cuisine_tags), set(record.cuisine_tags))
         ingredient_score = _overlap_score(set(candidate.ingredient_tags), set(record.ingredient_tags))
         preparation_score = _overlap_score(set(candidate.preparation_tags), set(record.preparation_tags))
@@ -126,11 +130,11 @@ def _score_similarity(candidate: MealCatalogItem, record: MealRecognitionRecord 
         title_score = _overlap_score(set(normalize_text(candidate.title).split()), set(normalize_text(record.title).split()))
     else:
         cuisine_score = 0.15 if "local" in candidate.cuisine_tags else 0.0
-        ingredient_score = _overlap_score(set(candidate.ingredient_tags), {item.name.lower() for item in record.meal_state.ingredients})
+        ingredient_score = _overlap_score(set(candidate.ingredient_tags), {item.name.lower() for item in meal_ingredients(record)})
         preparation_score = 0.0
         venue_score = 0.0
         slot_score = 1.0 if candidate.slot == _infer_slot(record.captured_at) else 0.0
-        title_score = _overlap_score(set(normalize_text(candidate.title).split()), set(normalize_text(record.meal_state.dish_name).split()))
+        title_score = _overlap_score(set(normalize_text(candidate.title).split()), set(normalize_text(meal_display_name(record)).split()))
     return _clamp(
         cuisine_score * 0.3
         + ingredient_score * 0.25
@@ -141,7 +145,7 @@ def _score_similarity(candidate: MealCatalogItem, record: MealRecognitionRecord 
     )
 
 
-def _matches_restriction(candidate: MealCatalogItem, restricted_terms: set[str]) -> bool:
+def _matches_restriction(candidate: FoodItem, restricted_terms: set[str]) -> bool:
     searchable = " ".join(
         [
             candidate.title,
@@ -154,9 +158,9 @@ def _matches_restriction(candidate: MealCatalogItem, restricted_terms: set[str])
 
 
 def _slot_baseline(slot: str, meal_history: list[MealRecognitionRecord]) -> tuple[float, float, float]:
-    items = [record.meal_state.nutrition for record in meal_history if _infer_slot(record.captured_at) == slot]
+    items = [meal_nutrition(record) for record in meal_history if _infer_slot(record.captured_at) == slot]
     if not items:
-        items = [record.meal_state.nutrition for record in meal_history[-3:]]
+        items = [meal_nutrition(record) for record in meal_history[-3:]]
     if not items:
         return (500.0, 7.0, 900.0)
     return (
@@ -166,7 +170,7 @@ def _slot_baseline(slot: str, meal_history: list[MealRecognitionRecord]) -> tupl
     )
 
 
-def _candidate_health_delta(candidate: MealCatalogItem, *, slot: str, meal_history: list[MealRecognitionRecord]) -> HealthDelta:
+def _candidate_health_delta(candidate: FoodItem, *, slot: str, meal_history: list[MealRecognitionRecord]) -> HealthDelta:
     baseline_calories, baseline_sugar, baseline_sodium = _slot_baseline(slot, meal_history)
     return HealthDelta(
         calories=round(candidate.nutrition.calories - baseline_calories, 2),
@@ -181,14 +185,16 @@ def _current_slot(now: datetime | None = None) -> MealSlot:
 
 def _snapshot_from_history(
     *,
+    repository: RecommendationAgentRepository,
     user_id: str,
     meal_history: list[MealRecognitionRecord],
-    catalog: list[MealCatalogItem],
+    catalog: list[FoodItem],
 ) -> PreferenceSnapshot:
     snapshot = PreferenceSnapshot(user_id=user_id)
     catalog_lookup = {item.meal_id: item for item in catalog}
+    catalog_locale = next((item.locale for item in catalog if item.locale), "en-SG")
     for index, record in enumerate(meal_history, start=1):
-        matched = find_catalog_item_by_title(record.meal_state.dish_name) or max(
+        matched = repository.find_food_by_name(locale=catalog_locale, name=meal_display_name(record)) or max(
             catalog_lookup.values(),
             key=lambda item: _score_similarity(item, record),
             default=None,
@@ -210,7 +216,7 @@ def _apply_weight(values: dict[str, float], key: str, weight: float) -> None:
 def _apply_affinity_update(
     snapshot: PreferenceSnapshot,
     *,
-    candidate: MealCatalogItem,
+    candidate: FoodItem,
     event_type: str,
     weight: float | None = None,
 ) -> PreferenceSnapshot:
@@ -248,16 +254,16 @@ def _ensure_snapshot(
     repository: RecommendationAgentRepository,
     user_id: str,
     meal_history: list[MealRecognitionRecord],
-    catalog: list[MealCatalogItem],
+    catalog: list[FoodItem],
 ) -> PreferenceSnapshot:
     stored = repository.get_preference_snapshot(user_id)
     if stored is not None:
         return stored
-    snapshot = _snapshot_from_history(user_id=user_id, meal_history=meal_history, catalog=catalog)
+    snapshot = _snapshot_from_history(repository=repository, user_id=user_id, meal_history=meal_history, catalog=catalog)
     return repository.save_preference_snapshot(snapshot)
 
 
-def _preference_fit(snapshot: PreferenceSnapshot, candidate: MealCatalogItem) -> float:
+def _preference_fit(snapshot: PreferenceSnapshot, candidate: FoodItem) -> float:
     affinity_scores: list[float] = []
     for cuisine in candidate.cuisine_tags:
         affinity_scores.append(snapshot.cuisine_affinity.get(cuisine, 0.0))
@@ -271,7 +277,7 @@ def _preference_fit(snapshot: PreferenceSnapshot, candidate: MealCatalogItem) ->
     return _clamp(1 / (1 + exp(-raw)))
 
 
-def _temporal_fit(candidate: MealCatalogItem, *, temporal: TemporalContext, meal_history: list[MealRecognitionRecord]) -> tuple[float, list[str]]:
+def _temporal_fit(candidate: FoodItem, *, temporal: TemporalContext, meal_history: list[MealRecognitionRecord]) -> tuple[float, list[str]]:
     reasons: list[str] = []
     slot_count = temporal.slot_history_counts.get(candidate.slot, 0)
     slot_max = max(temporal.slot_history_counts.values(), default=1)
@@ -288,7 +294,7 @@ def _temporal_fit(candidate: MealCatalogItem, *, temporal: TemporalContext, meal
 
 
 def _health_gain(
-    candidate: MealCatalogItem,
+    candidate: FoodItem,
     *,
     slot: MealSlot,
     meal_history: list[MealRecognitionRecord],
@@ -329,7 +335,7 @@ def _adherence_likelihood(snapshot: PreferenceSnapshot, *, preference_fit: float
 
 
 def _candidate_constraints(
-    candidate: MealCatalogItem,
+    candidate: FoodItem,
     *,
     profile: UserProfile,
     restricted_terms: set[str],
@@ -359,7 +365,7 @@ def _candidate_constraints(
 
 @dataclass
 class RankedCandidate:
-    item: MealCatalogItem
+    item: FoodItem
     scores: CandidateScores
     reasons: list[str]
     caution_notes: list[str]
@@ -369,13 +375,13 @@ class RankedCandidate:
 def _rank_candidates_for_slot(
     *,
     slot: MealSlot,
-    catalog: list[MealCatalogItem],
+    catalog: list[FoodItem],
     snapshot: PreferenceSnapshot,
     meal_history: list[MealRecognitionRecord],
     clinical_snapshot: ClinicalProfileSnapshot | None,
     profile: UserProfile,
     restricted_terms: set[str],
-    source_meal: MealRecognitionRecord | MealCatalogItem | None = None,
+    source_meal: MealRecognitionRecord | FoodItem | None = None,
 ) -> tuple[list[RankedCandidate], list[str]]:
     temporal = build_temporal_context(
         meal_history=meal_history,
@@ -438,7 +444,7 @@ def _rank_candidates_for_slot(
 
 def build_temporal_context(*, meal_history: list[MealRecognitionRecord], interaction_count: int) -> TemporalContext:
     slot_counts = Counter(_infer_slot(record.captured_at) for record in meal_history)
-    recent_repeat_titles = [record.meal_state.dish_name for record in meal_history[-3:]]
+    recent_repeat_titles = [meal_display_name(record) for record in meal_history[-3:]]
     return TemporalContext(
         current_slot=_current_slot(),
         meal_history_count=len(meal_history),
@@ -457,7 +463,7 @@ def generate_daily_agent_recommendation(
     meal_history: list[MealRecognitionRecord],
     clinical_snapshot: ClinicalProfileSnapshot | None,
 ) -> DailyAgentRecommendation:
-    catalog = repository.list_meal_catalog_items(locale=health_profile.locale)
+    catalog = repository.list_canonical_foods(locale=health_profile.locale)
     snapshot = _ensure_snapshot(repository=repository, user_id=user_id, meal_history=meal_history, catalog=catalog)
     temporal = build_temporal_context(meal_history=meal_history, interaction_count=snapshot.interaction_count)
     restricted_terms = {
@@ -553,10 +559,15 @@ def build_substitution_plan(
         source_record = repository.get_meal_record(user_id, source_meal_id)
         if source_record is None:
             raise AgentMealNotFoundError(source_meal_id)
-    source_catalog = find_catalog_item_by_title(source_record.meal_state.dish_name, locale=health_profile.locale)
+    source_catalog = repository.find_food_by_name(locale=health_profile.locale, name=meal_display_name(source_record))
     source_slot = source_catalog.slot if source_catalog is not None else _infer_slot(source_record.captured_at)
-    catalog = repository.list_meal_catalog_items(locale=health_profile.locale, slot=source_slot)
-    snapshot = _ensure_snapshot(repository=repository, user_id=user_id, meal_history=meal_history, catalog=catalog or repository.list_meal_catalog_items(locale=health_profile.locale))
+    catalog = repository.list_canonical_foods(locale=health_profile.locale, slot=source_slot)
+    snapshot = _ensure_snapshot(
+        repository=repository,
+        user_id=user_id,
+        meal_history=meal_history,
+        catalog=catalog or repository.list_canonical_foods(locale=health_profile.locale),
+    )
     restricted_terms = {
         *[item.lower() for item in health_profile.allergies],
         *[item.lower() for item in health_profile.disliked_ingredients],
@@ -572,13 +583,14 @@ def build_substitution_plan(
         source_meal=source_catalog or source_record,
     )
     alternatives: list[SubstitutionAlternative] = []
+    source_nutrition = meal_nutrition(source_record)
     for candidate in ranked:
-        if normalize_text(candidate.item.title) == normalize_text(source_record.meal_state.dish_name):
+        if normalize_text(candidate.item.title) == normalize_text(meal_display_name(source_record)):
             continue
         delta = HealthDelta(
-            calories=round(candidate.item.nutrition.calories - source_record.meal_state.nutrition.calories, 2),
-            sugar_g=round(candidate.item.nutrition.sugar_g - source_record.meal_state.nutrition.sugar_g, 2),
-            sodium_mg=round(candidate.item.nutrition.sodium_mg - source_record.meal_state.nutrition.sodium_mg, 2),
+            calories=round(candidate.item.nutrition.calories - source_nutrition.calories, 2),
+            sugar_g=round(candidate.item.nutrition.sugar_g - source_nutrition.sugar_g, 2),
+            sodium_mg=round(candidate.item.nutrition.sodium_mg - source_nutrition.sodium_mg, 2),
         )
         if not (delta.calories < 0 or delta.sugar_g < 0 or delta.sodium_mg < 0):
             continue
@@ -600,13 +612,13 @@ def build_substitution_plan(
             break
     if not alternatives:
         return SubstitutionPlan(
-            source_meal=SourceMealSummary(meal_id=source_record.id, title=source_record.meal_state.dish_name, slot=source_slot),
+            source_meal=SourceMealSummary(meal_id=source_record.id, title=meal_display_name(source_record), slot=source_slot),
             blocked_reason="No healthier low-deviation substitution was available for this meal.",
         )
     return SubstitutionPlan(
         source_meal=SourceMealSummary(
             meal_id=source_record.id,
-            title=source_record.meal_state.dish_name,
+            title=meal_display_name(source_record),
             slot=source_slot,
         ),
         alternatives=alternatives,
@@ -626,14 +638,14 @@ def record_interaction_and_update_preferences(
     metadata: dict[str, object],
     meal_history: list[MealRecognitionRecord],
 ) -> tuple[RecommendationInteraction, PreferenceSnapshot]:
-    candidate = repository.get_meal_catalog_item(candidate_id)
+    candidate = repository.get_canonical_food(candidate_id)
     if candidate is None:
         raise AgentMealNotFoundError(candidate_id)
     snapshot = _ensure_snapshot(
         repository=repository,
         user_id=user_id,
         meal_history=meal_history,
-        catalog=repository.list_meal_catalog_items(locale=candidate.locale),
+        catalog=repository.list_canonical_foods(locale=candidate.locale),
     )
     snapshot.interaction_count += 1
     _apply_affinity_update(snapshot, candidate=candidate, event_type=event_type)

@@ -67,8 +67,6 @@ def test_get_model_explicit_test_provider_bypasses_invalid_global_settings(monke
     model = LLMFactory.get_model(provider="test")
     assert "TestModel" in model.__class__.__name__
     get_settings.cache_clear()
-
-
 def test_get_model_explicit_ollama_provider_bypasses_invalid_global_settings(monkeypatch) -> None:
     monkeypatch.setenv("LLM_PROVIDER", "gemini")
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)

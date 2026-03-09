@@ -3,7 +3,9 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 
+from dietary_guardian.domain.meals import EnrichedMealEvent, MealPerception
 from dietary_guardian.logging_config import get_logger
+from dietary_guardian.models.canonical_food import CanonicalFoodRecord
 from dietary_guardian.models.meal import MealState
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.models.medication import MedicationRegimen, ReminderEvent
@@ -27,6 +29,11 @@ from dietary_guardian.models.tool_policy import ToolRolePolicyRecord
 from dietary_guardian.models.user import MealSlot
 from dietary_guardian.models.workflow import WorkflowTimelineEvent
 from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
+from dietary_guardian.services.canonical_food_service import (
+    build_default_canonical_food_records,
+    find_food_by_name,
+    normalize_text,
+)
 
 logger = get_logger(__name__)
 
@@ -82,6 +89,8 @@ class SQLiteRepository:
                     captured_at TEXT NOT NULL,
                     source TEXT NOT NULL,
                     meal_state_json TEXT NOT NULL,
+                    meal_perception_json TEXT,
+                    enriched_event_json TEXT,
                     analysis_version TEXT NOT NULL,
                     multi_item_count INTEGER NOT NULL
                 )
@@ -147,6 +156,39 @@ class SQLiteRepository:
                     slot TEXT NOT NULL,
                     active INTEGER NOT NULL,
                     payload_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS canonical_foods (
+                    food_id TEXT PRIMARY KEY,
+                    locale TEXT NOT NULL,
+                    slot TEXT NOT NULL,
+                    active INTEGER NOT NULL,
+                    payload_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS food_alias (
+                    alias TEXT NOT NULL,
+                    food_id TEXT NOT NULL,
+                    alias_type TEXT NOT NULL,
+                    priority INTEGER NOT NULL,
+                    PRIMARY KEY (alias, food_id)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS portion_reference (
+                    food_id TEXT NOT NULL,
+                    unit TEXT NOT NULL,
+                    grams REAL NOT NULL,
+                    confidence REAL NOT NULL,
+                    PRIMARY KEY (food_id, unit)
                 )
                 """
             )
@@ -370,6 +412,9 @@ class SQLiteRepository:
                 "CREATE INDEX IF NOT EXISTS idx_health_profile_onboarding_updated_at ON health_profile_onboarding_states(updated_at DESC)"
             )
             cur.execute("CREATE INDEX IF NOT EXISTS idx_meal_catalog_locale_slot ON meal_catalog(locale, slot)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_canonical_foods_locale_slot ON canonical_foods(locale, slot)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_food_alias_lookup ON food_alias(alias)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_portion_reference_food ON portion_reference(food_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_recommendation_interactions_user_time ON recommendation_interactions(user_id, created_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_preference_snapshots_updated_at ON preference_snapshots(updated_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_alert_outbox_next_attempt ON alert_outbox(state, next_attempt_at)")
@@ -386,9 +431,19 @@ class SQLiteRepository:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_hash ON workflow_contract_snapshots(contract_hash)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_timeline_corr_created ON workflow_timeline_events(correlation_id, created_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_timeline_user_created ON workflow_timeline_events(user_id, created_at)")
+            self._ensure_sqlite_column(cur, "meal_records", "meal_perception_json", "TEXT")
+            self._ensure_sqlite_column(cur, "meal_records", "enriched_event_json", "TEXT")
             conn.commit()
         self._seed_meal_catalog()
+        self._seed_canonical_foods()
         logger.info("repository_schema_ready db_path=%s", self.db_path)
+
+    @staticmethod
+    def _ensure_sqlite_column(cur: sqlite3.Cursor, table: str, column: str, definition: str) -> None:
+        rows = cur.execute(f"PRAGMA table_info({table})").fetchall()
+        existing = {str(row[1]) for row in rows}
+        if column not in existing:
+            cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def _seed_meal_catalog(self) -> None:
         with sqlite3.connect(self.db_path) as conn:
@@ -403,6 +458,55 @@ class SQLiteRepository:
                     VALUES (?, ?, ?, ?, ?)
                     """,
                     (item.meal_id, item.locale, item.slot, int(item.active), json.dumps(payload)),
+                )
+            conn.commit()
+
+    def _seed_canonical_foods(self) -> None:
+        with sqlite3.connect(self.db_path) as conn:
+            records = build_default_canonical_food_records()
+            existing = conn.execute("SELECT COUNT(*) FROM canonical_foods").fetchone()
+            if not existing or int(cast(int, existing[0])) == 0:
+                conn.executemany(
+                    """
+                    INSERT INTO canonical_foods (food_id, locale, slot, active, payload_json)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            item.food_id,
+                            item.locale,
+                            item.slot,
+                            1 if item.active else 0,
+                            item.model_dump_json(),
+                        )
+                        for item in records
+                    ],
+                )
+            alias_existing = conn.execute("SELECT COUNT(*) FROM food_alias").fetchone()
+            if not alias_existing or int(cast(int, alias_existing[0])) == 0:
+                conn.executemany(
+                    """
+                    INSERT INTO food_alias (alias, food_id, alias_type, priority)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    [
+                        (alias, item.food_id, "canonical", index)
+                        for item in records
+                        for index, alias in enumerate(item.aliases_normalized or [normalize_text(item.title)], start=1)
+                    ],
+                )
+            portion_existing = conn.execute("SELECT COUNT(*) FROM portion_reference").fetchone()
+            if not portion_existing or int(cast(int, portion_existing[0])) == 0:
+                conn.executemany(
+                    """
+                    INSERT INTO portion_reference (food_id, unit, grams, confidence)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    [
+                        (item.food_id, portion.unit, portion.grams, portion.confidence)
+                        for item in records
+                        for portion in item.portion_references
+                    ],
                 )
             conn.commit()
 
@@ -1120,8 +1224,8 @@ class SQLiteRepository:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO meal_records
-                (id, user_id, captured_at, source, meal_state_json, analysis_version, multi_item_count)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     record.id,
@@ -1129,6 +1233,8 @@ class SQLiteRepository:
                     record.captured_at.isoformat(),
                     record.source,
                     record.meal_state.model_dump_json(),
+                    record.meal_perception.model_dump_json() if record.meal_perception is not None else None,
+                    record.enriched_event.model_dump_json() if record.enriched_event is not None else None,
                     record.analysis_version,
                     record.multi_item_count,
                 ),
@@ -1146,7 +1252,7 @@ class SQLiteRepository:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
                 """
-                SELECT id, user_id, captured_at, source, meal_state_json, analysis_version, multi_item_count
+                SELECT id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count
                 FROM meal_records WHERE user_id = ? ORDER BY captured_at
                 """,
                 (user_id,),
@@ -1160,8 +1266,10 @@ class SQLiteRepository:
                     captured_at=datetime.fromisoformat(r[2]),
                     source=r[3],
                     meal_state=MealState.model_validate_json(r[4]),
-                    analysis_version=r[5],
-                    multi_item_count=r[6],
+                    meal_perception=MealPerception.model_validate_json(r[5]) if r[5] is not None else None,
+                    enriched_event=EnrichedMealEvent.model_validate_json(r[6]) if r[6] is not None else None,
+                    analysis_version=r[7],
+                    multi_item_count=r[8],
                 )
             )
         logger.debug("list_meal_records user_id=%s count=%s", user_id, len(out))
@@ -1171,7 +1279,7 @@ class SQLiteRepository:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
-                SELECT id, user_id, captured_at, source, meal_state_json, analysis_version, multi_item_count
+                SELECT id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count
                 FROM meal_records WHERE user_id = ? AND id = ?
                 """,
                 (user_id, meal_id),
@@ -1185,8 +1293,10 @@ class SQLiteRepository:
             captured_at=datetime.fromisoformat(row[2]),
             source=row[3],
             meal_state=MealState.model_validate_json(row[4]),
-            analysis_version=row[5],
-            multi_item_count=row[6],
+            meal_perception=MealPerception.model_validate_json(row[5]) if row[5] is not None else None,
+            enriched_event=EnrichedMealEvent.model_validate_json(row[6]) if row[6] is not None else None,
+            analysis_version=row[7],
+            multi_item_count=row[8],
         )
 
     def save_biomarker_readings(self, user_id: str, readings: list[BiomarkerReading]) -> None:
@@ -1721,6 +1831,56 @@ class SQLiteRepository:
         if row is None:
             return None
         return MealCatalogItem.model_validate_json(cast(str, row[0]))
+
+    def list_canonical_foods(
+        self,
+        *,
+        locale: str,
+        slot: str | None = None,
+        limit: int = 100,
+    ) -> list[CanonicalFoodRecord]:
+        bounded = max(1, min(int(limit), 500))
+        query = """
+            SELECT payload_json FROM canonical_foods
+            WHERE locale = ? AND active = 1
+        """
+        params: list[object] = [locale]
+        if slot is not None:
+            query += " AND slot = ?"
+            params.append(slot)
+        query += " ORDER BY food_id LIMIT ?"
+        params.append(bounded)
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [CanonicalFoodRecord.model_validate_json(cast(str, row[0])) for row in rows]
+
+    def get_canonical_food(self, food_id: str) -> CanonicalFoodRecord | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT payload_json FROM canonical_foods WHERE food_id = ?",
+                (food_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return CanonicalFoodRecord.model_validate_json(cast(str, row[0]))
+
+    def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
+        normalized = normalize_text(name)
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT cf.payload_json
+                FROM food_alias fa
+                JOIN canonical_foods cf ON cf.food_id = fa.food_id
+                WHERE fa.alias = ? AND cf.locale = ? AND cf.active = 1
+                ORDER BY fa.priority ASC
+                LIMIT 1
+                """,
+                (normalized, locale),
+            ).fetchone()
+        if row is not None:
+            return CanonicalFoodRecord.model_validate_json(cast(str, row[0]))
+        return find_food_by_name(self.list_canonical_foods(locale=locale, limit=500), name, locale=locale)
 
     def save_recommendation_interaction(self, interaction: RecommendationInteraction) -> RecommendationInteraction:
         with sqlite3.connect(self.db_path) as conn:

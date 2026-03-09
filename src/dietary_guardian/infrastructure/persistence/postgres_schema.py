@@ -45,6 +45,8 @@ APP_SCHEMA_STATEMENTS: tuple[str, ...] = (
         captured_at TIMESTAMPTZ NOT NULL,
         source TEXT NOT NULL,
         meal_state_json JSONB NOT NULL,
+        meal_perception_json JSONB,
+        enriched_event_json JSONB,
         analysis_version TEXT NOT NULL,
         multi_item_count INTEGER NOT NULL
     )
@@ -98,6 +100,33 @@ APP_SCHEMA_STATEMENTS: tuple[str, ...] = (
         slot TEXT NOT NULL,
         active BOOLEAN NOT NULL,
         payload_json JSONB NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS canonical_foods (
+        food_id TEXT PRIMARY KEY,
+        locale TEXT NOT NULL,
+        slot TEXT NOT NULL,
+        active BOOLEAN NOT NULL,
+        payload_json JSONB NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS food_alias (
+        alias TEXT NOT NULL,
+        food_id TEXT NOT NULL,
+        alias_type TEXT NOT NULL,
+        priority INTEGER NOT NULL,
+        PRIMARY KEY (alias, food_id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS portion_reference (
+        food_id TEXT NOT NULL,
+        unit TEXT NOT NULL,
+        grams DOUBLE PRECISION NOT NULL,
+        confidence DOUBLE PRECISION NOT NULL,
+        PRIMARY KEY (food_id, unit)
     )
     """,
     """
@@ -290,6 +319,9 @@ APP_SCHEMA_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_health_profiles_updated_at ON health_profiles(updated_at DESC)",
     "CREATE INDEX IF NOT EXISTS idx_health_profile_onboarding_updated_at ON health_profile_onboarding_states(updated_at DESC)",
     "CREATE INDEX IF NOT EXISTS idx_meal_catalog_locale_slot ON meal_catalog(locale, slot)",
+    "CREATE INDEX IF NOT EXISTS idx_canonical_foods_locale_slot ON canonical_foods(locale, slot)",
+    "CREATE INDEX IF NOT EXISTS idx_food_alias_lookup ON food_alias(alias)",
+    "CREATE INDEX IF NOT EXISTS idx_portion_reference_food ON portion_reference(food_id)",
     "CREATE INDEX IF NOT EXISTS idx_recommendation_interactions_user_time ON recommendation_interactions(user_id, created_at DESC)",
     "CREATE INDEX IF NOT EXISTS idx_preference_snapshots_updated_at ON preference_snapshots(updated_at DESC)",
     "CREATE INDEX IF NOT EXISTS idx_alert_outbox_next_attempt ON alert_outbox(state, next_attempt_at)",
@@ -306,6 +338,8 @@ APP_SCHEMA_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_hash ON workflow_contract_snapshots(contract_hash)",
     "CREATE INDEX IF NOT EXISTS idx_workflow_timeline_corr_created ON workflow_timeline_events(correlation_id, created_at)",
     "CREATE INDEX IF NOT EXISTS idx_workflow_timeline_user_created ON workflow_timeline_events(user_id, created_at)",
+    "ALTER TABLE meal_records ADD COLUMN IF NOT EXISTS meal_perception_json JSONB",
+    "ALTER TABLE meal_records ADD COLUMN IF NOT EXISTS enriched_event_json JSONB",
 )
 
 AUTH_SCHEMA_STATEMENTS: tuple[str, ...] = (

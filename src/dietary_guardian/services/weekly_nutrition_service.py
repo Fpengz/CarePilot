@@ -4,6 +4,7 @@ from collections import Counter, defaultdict
 from datetime import date, timedelta
 
 from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.services.meal_record_utils import meal_display_name, meal_nutrition
 from dietary_guardian.services.timezone_utils import local_date_for
 
 
@@ -35,7 +36,7 @@ def build_weekly_nutrition_summary(
     )
     repeats = Counter()
     for record in week_records:
-        nutrition = record.meal_state.nutrition
+        nutrition = meal_nutrition(record)
         totals["calories"] += float(nutrition.calories)
         totals["sugar_g"] += float(nutrition.sugar_g)
         totals["sodium_mg"] += float(nutrition.sodium_mg)
@@ -51,7 +52,7 @@ def build_weekly_nutrition_summary(
         bucket["calories"] = calories + float(nutrition.calories)
         bucket["sugar_g"] = sugar_g + float(nutrition.sugar_g)
         bucket["sodium_mg"] = sodium_mg + float(nutrition.sodium_mg)
-        repeats[record.meal_state.dish_name.lower().strip()] += 1
+        repeats[meal_display_name(record).lower().strip()] += 1
     pattern_flags: list[str] = []
     if any(count >= 3 for count in repeats.values()):
         pattern_flags.append("repetitive_meals")

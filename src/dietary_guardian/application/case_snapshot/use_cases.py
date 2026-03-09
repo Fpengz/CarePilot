@@ -8,16 +8,17 @@ from dietary_guardian.models.medication_tracking import MedicationAdherenceEvent
 from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot
 from dietary_guardian.models.symptom import SymptomCheckIn
 from dietary_guardian.models.user import UserProfile
+from dietary_guardian.services.meal_record_utils import meal_confidence, meal_display_name, meal_identification_method, meal_nutrition
 
 
 def _meal_is_risky(record: MealRecognitionRecord) -> bool:
-    nutrition = record.meal_state.nutrition
+    nutrition = meal_nutrition(record)
     return (
         float(nutrition.sodium_mg) >= 900.0
         or float(nutrition.sugar_g) >= 18.0
         or float(nutrition.calories) >= 700.0
-        or record.meal_state.identification_method == "User_Manual"
-        or record.meal_state.confidence_score < 0.75
+        or meal_identification_method(record) == "User_Manual"
+        or meal_confidence(record) < 0.75
     )
 
 
@@ -84,7 +85,7 @@ def build_case_snapshot(
     if health_profile is not None and not medication_names:
         medication_names = [item.name for item in health_profile.medications]
 
-    latest_meal_name = meals[-1].meal_state.dish_name if meals else None
+    latest_meal_name = meal_display_name(meals[-1]) if meals else None
     return CaseSnapshot(
         user_id=user_profile.id,
         profile_name=user_profile.name,

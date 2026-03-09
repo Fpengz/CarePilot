@@ -4,10 +4,12 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 
+from dietary_guardian.domain.meals import EnrichedMealEvent, MealPerception
 from dietary_guardian.infrastructure.persistence.postgres_schema import ensure_postgres_app_schema
 from dietary_guardian.logging_config import get_logger
 from dietary_guardian.models.alerting import AlertMessage, OutboxRecord
 from dietary_guardian.models.agent_runtime import AgentContract, WorkflowRuntimeContract
+from dietary_guardian.models.canonical_food import CanonicalFoodRecord
 from dietary_guardian.models.clinical_card import ClinicalCardRecord
 from dietary_guardian.models.health_profile import HealthProfileRecord
 from dietary_guardian.models.health_profile_onboarding import HealthProfileOnboardingState
@@ -29,6 +31,11 @@ from dietary_guardian.models.tool_policy import ToolRolePolicyRecord
 from dietary_guardian.models.user import MealSlot
 from dietary_guardian.models.workflow import WorkflowTimelineEvent
 from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
+from dietary_guardian.services.canonical_food_service import (
+    build_default_canonical_food_records,
+    find_food_by_name,
+    normalize_text,
+)
 from dietary_guardian.services.meal_catalog_service import DEFAULT_MEAL_CATALOG
 
 logger = get_logger(__name__)
@@ -71,6 +78,7 @@ class PostgresAppStore:
         with self._connect() as conn:
             ensure_postgres_app_schema(conn)
         self._seed_meal_catalog()
+        self._seed_canonical_foods()
 
     def _connect(self) -> Any:
         return self._psycopg.connect(self._dsn, autocommit=True)
@@ -91,6 +99,49 @@ class PostgresAppStore:
                     """,
                     (item.meal_id, item.locale, item.slot, item.active, self._jsonb(payload)),
                 )
+
+    def _seed_canonical_foods(self) -> None:
+        with self._connect() as conn, conn.cursor() as cur:
+            records = build_default_canonical_food_records()
+            cur.execute("SELECT COUNT(*) FROM canonical_foods")
+            existing = cur.fetchone()
+            if existing is None or int(existing[0]) == 0:
+                for item in records:
+                    payload = item.model_dump(mode="json")
+                    cur.execute(
+                        """
+                        INSERT INTO canonical_foods (food_id, locale, slot, active, payload_json)
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (food_id) DO NOTHING
+                        """,
+                        (item.food_id, item.locale, item.slot, item.active, self._jsonb(payload)),
+                    )
+            cur.execute("SELECT COUNT(*) FROM food_alias")
+            alias_existing = cur.fetchone()
+            if alias_existing is None or int(alias_existing[0]) == 0:
+                for item in records:
+                    for index, alias in enumerate(item.aliases_normalized or [normalize_text(item.title)], start=1):
+                        cur.execute(
+                            """
+                            INSERT INTO food_alias (alias, food_id, alias_type, priority)
+                            VALUES (%s, %s, %s, %s)
+                            ON CONFLICT (alias, food_id) DO NOTHING
+                            """,
+                            (alias, item.food_id, "canonical", index),
+                        )
+            cur.execute("SELECT COUNT(*) FROM portion_reference")
+            portion_existing = cur.fetchone()
+            if portion_existing is None or int(portion_existing[0]) == 0:
+                for item in records:
+                    for portion in item.portion_references:
+                        cur.execute(
+                            """
+                            INSERT INTO portion_reference (food_id, unit, grams, confidence)
+                            VALUES (%s, %s, %s, %s)
+                            ON CONFLICT (food_id, unit) DO NOTHING
+                            """,
+                            (item.food_id, portion.unit, portion.grams, portion.confidence),
+                        )
 
     def save_medication_regimen(self, regimen: MedicationRegimen) -> None:
         with self._connect() as conn, conn.cursor() as cur:
@@ -820,13 +871,15 @@ class PostgresAppStore:
             cur.execute(
                 """
                 INSERT INTO meal_records
-                (id, user_id, captured_at, source, meal_state_json, analysis_version, multi_item_count)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                     user_id = EXCLUDED.user_id,
                     captured_at = EXCLUDED.captured_at,
                     source = EXCLUDED.source,
                     meal_state_json = EXCLUDED.meal_state_json,
+                    meal_perception_json = EXCLUDED.meal_perception_json,
+                    enriched_event_json = EXCLUDED.enriched_event_json,
                     analysis_version = EXCLUDED.analysis_version,
                     multi_item_count = EXCLUDED.multi_item_count
                 """,
@@ -836,6 +889,8 @@ class PostgresAppStore:
                     record.captured_at,
                     record.source,
                     self._jsonb(record.meal_state.model_dump(mode="json")),
+                    self._jsonb(record.meal_perception.model_dump(mode="json")) if record.meal_perception is not None else None,
+                    self._jsonb(record.enriched_event.model_dump(mode="json")) if record.enriched_event is not None else None,
                     record.analysis_version,
                     record.multi_item_count,
                 ),
@@ -852,7 +907,7 @@ class PostgresAppStore:
         with self._connect() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT id, user_id, captured_at, source, meal_state_json, analysis_version, multi_item_count
+                SELECT id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count
                 FROM meal_records
                 WHERE user_id = %s
                 ORDER BY captured_at
@@ -867,8 +922,10 @@ class PostgresAppStore:
                 captured_at=row[2],
                 source=row[3],
                 meal_state=MealState.model_validate(_json_payload(row[4])),
-                analysis_version=row[5],
-                multi_item_count=row[6],
+                meal_perception=MealPerception.model_validate(_json_payload(row[5])) if row[5] is not None else None,
+                enriched_event=EnrichedMealEvent.model_validate(_json_payload(row[6])) if row[6] is not None else None,
+                analysis_version=row[7],
+                multi_item_count=row[8],
             )
             for row in rows
         ]
@@ -879,7 +936,7 @@ class PostgresAppStore:
         with self._connect() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT id, user_id, captured_at, source, meal_state_json, analysis_version, multi_item_count
+                SELECT id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count
                 FROM meal_records
                 WHERE user_id = %s AND id = %s
                 """,
@@ -895,8 +952,10 @@ class PostgresAppStore:
             captured_at=row[2],
             source=row[3],
             meal_state=MealState.model_validate(_json_payload(row[4])),
-            analysis_version=row[5],
-            multi_item_count=row[6],
+            meal_perception=MealPerception.model_validate(_json_payload(row[5])) if row[5] is not None else None,
+            enriched_event=EnrichedMealEvent.model_validate(_json_payload(row[6])) if row[6] is not None else None,
+            analysis_version=row[7],
+            multi_item_count=row[8],
         )
 
     def save_biomarker_readings(self, user_id: str, readings: list[BiomarkerReading]) -> None:
@@ -1437,6 +1496,53 @@ class PostgresAppStore:
         if row is None:
             return None
         return _model_from_payload(MealCatalogItem, row[0])
+
+    def list_canonical_foods(
+        self,
+        *,
+        locale: str,
+        slot: str | None = None,
+        limit: int = 100,
+    ) -> list[CanonicalFoodRecord]:
+        bounded = max(1, min(int(limit), 500))
+        query = "SELECT payload_json FROM canonical_foods WHERE locale = %s AND active = TRUE"
+        params: list[Any] = [locale]
+        if slot is not None:
+            query += " AND slot = %s"
+            params.append(slot)
+        query += " ORDER BY food_id LIMIT %s"
+        params.append(bounded)
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(query, tuple(params))
+            rows = cur.fetchall()
+        return [_model_from_payload(CanonicalFoodRecord, row[0]) for row in rows]
+
+    def get_canonical_food(self, food_id: str) -> CanonicalFoodRecord | None:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute("SELECT payload_json FROM canonical_foods WHERE food_id = %s", (food_id,))
+            row = cur.fetchone()
+        if row is None:
+            return None
+        return _model_from_payload(CanonicalFoodRecord, row[0])
+
+    def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
+        normalized = normalize_text(name)
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT cf.payload_json
+                FROM food_alias fa
+                JOIN canonical_foods cf ON cf.food_id = fa.food_id
+                WHERE fa.alias = %s AND cf.locale = %s AND cf.active = TRUE
+                ORDER BY fa.priority ASC
+                LIMIT 1
+                """,
+                (normalized, locale),
+            )
+            row = cur.fetchone()
+        if row is not None:
+            return _model_from_payload(CanonicalFoodRecord, row[0])
+        return find_food_by_name(self.list_canonical_foods(locale=locale, limit=500), name, locale=locale)
 
     def save_recommendation_interaction(self, interaction: RecommendationInteraction) -> RecommendationInteraction:
         with self._connect() as conn, conn.cursor() as cur:

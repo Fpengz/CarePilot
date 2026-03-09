@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from dietary_guardian.models.daily_nutrition import DailyNutritionSummary, NutritionInsight, NutritionTotals
 from dietary_guardian.models.health_profile import HealthProfileRecord
 from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.services.meal_record_utils import meal_display_name, meal_nutrition
 from dietary_guardian.services.timezone_utils import local_date_for
 
 
@@ -55,7 +56,7 @@ def build_daily_nutrition_summary(
 def _sum_records(records: list[MealRecognitionRecord]) -> NutritionTotals:
     totals = NutritionTotals()
     for record in records:
-        nutrition = record.meal_state.nutrition
+        nutrition = meal_nutrition(record)
         totals.calories += float(nutrition.calories)
         totals.sugar_g += float(nutrition.sugar_g)
         totals.sodium_mg += float(nutrition.sodium_mg)
@@ -86,10 +87,8 @@ def _build_insights(
         return []
 
     insights: list[NutritionInsight] = []
-    average_protein = sum(record.meal_state.nutrition.protein_g for record in window_records) / len(window_records)
-    protein_dense_share = (
-        sum(1 for record in window_records if record.meal_state.nutrition.protein_g >= 20.0) / len(window_records)
-    )
+    average_protein = sum(meal_nutrition(record).protein_g for record in window_records) / len(window_records)
+    protein_dense_share = sum(1 for record in window_records if meal_nutrition(record).protein_g >= 20.0) / len(window_records)
     if average_protein < 18.0 or protein_dense_share < 0.4:
         insights.append(
             NutritionInsight(
@@ -100,7 +99,7 @@ def _build_insights(
             )
         )
 
-    average_fiber = sum(float(record.meal_state.nutrition.fiber_g or 0.0) for record in window_records) / len(window_records)
+    average_fiber = sum(float(meal_nutrition(record).fiber_g or 0.0) for record in window_records) / len(window_records)
     if average_fiber < 5.0:
         insights.append(
             NutritionInsight(
@@ -114,13 +113,13 @@ def _build_insights(
     daily_totals = defaultdict(NutritionTotals)
     for record in window_records:
         bucket = daily_totals[local_date_for(record.captured_at, timezone_name=timezone_name).isoformat()]
-        nutrition = record.meal_state.nutrition
+        nutrition = meal_nutrition(record)
         bucket.calories += float(nutrition.calories)
         bucket.sugar_g += float(nutrition.sugar_g)
         bucket.sodium_mg += float(nutrition.sodium_mg)
 
     avg_daily_sodium = sum(bucket.sodium_mg for bucket in daily_totals.values()) / len(daily_totals)
-    sodium_heavy_meals = sum(1 for record in window_records if record.meal_state.nutrition.sodium_mg > 900.0)
+    sodium_heavy_meals = sum(1 for record in window_records if meal_nutrition(record).sodium_mg > 900.0)
     if avg_daily_sodium > float(profile.daily_sodium_limit_mg) * 0.9 or sodium_heavy_meals >= 3:
         insights.append(
             NutritionInsight(
@@ -132,7 +131,7 @@ def _build_insights(
         )
 
     avg_daily_sugar = sum(bucket.sugar_g for bucket in daily_totals.values()) / len(daily_totals)
-    sugar_heavy_meals = sum(1 for record in window_records if record.meal_state.nutrition.sugar_g > 15.0)
+    sugar_heavy_meals = sum(1 for record in window_records if meal_nutrition(record).sugar_g > 15.0)
     if avg_daily_sugar > float(profile.daily_sugar_limit_g) * 0.9 or sugar_heavy_meals >= 3:
         insights.append(
             NutritionInsight(
@@ -156,7 +155,7 @@ def _build_insights(
                 )
             )
 
-    repeats = Counter(_normalize_dish_name(record.meal_state.dish_name) for record in window_records)
+    repeats = Counter(_normalize_dish_name(meal_display_name(record)) for record in window_records)
     if any(count >= 3 for count in repeats.values()):
         insights.append(
             NutritionInsight(

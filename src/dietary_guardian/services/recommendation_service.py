@@ -5,6 +5,7 @@ from dietary_guardian.models.recommendation import RecommendationOutput
 from dietary_guardian.models.report import ClinicalProfileSnapshot
 from dietary_guardian.models.user import UserProfile
 from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
+from dietary_guardian.services.meal_record_utils import meal_display_name, meal_ingredients, meal_nutrition
 
 logger = get_logger(__name__)
 
@@ -38,9 +39,9 @@ def _local_advice_for_dish(dish_name: str, user_profile: UserProfile, clinical_s
 
 def _to_meal_event(record: MealRecognitionRecord) -> MealEvent:
     return MealEvent(
-        name=record.meal_state.dish_name,
-        ingredients=record.meal_state.ingredients,
-        nutrition=record.meal_state.nutrition,
+        name=meal_display_name(record),
+        ingredients=meal_ingredients(record),
+        nutrition=meal_nutrition(record),
     )
 
 
@@ -52,7 +53,7 @@ def generate_recommendation(
     logger.info(
         "generate_recommendation_start user_id=%s dish=%s biomarkers=%s",
         user_profile.id,
-        meal_record.meal_state.dish_name,
+        meal_display_name(meal_record),
         sorted(clinical_snapshot.biomarkers.keys()),
     )
     safety_engine = SafetyEngine(user_profile)
@@ -64,7 +65,7 @@ def generate_recommendation(
         logger.warning(
             "generate_recommendation_blocked user_id=%s dish=%s reason=%s",
             user_profile.id,
-            meal_record.meal_state.dish_name,
+            meal_display_name(meal_record),
             exc.message,
         )
         return RecommendationOutput(
@@ -79,10 +80,10 @@ def generate_recommendation(
     biomarker_line = ", ".join(f"{k}={v}" for k, v in biomarkers.items()) or "no biomarkers available"
     goals_line = ", ".join(user_profile.nutrition_goals) or "general wellness"
     rationale = (
-        f"Based on {meal_record.meal_state.dish_name}, goals ({goals_line}), and biomarkers ({biomarker_line}), "
+        f"Based on {meal_display_name(meal_record)}, goals ({goals_line}), and biomarkers ({biomarker_line}), "
         "here are localized recommendations for Singapore hawker options."
     )
-    advice = _local_advice_for_dish(meal_record.meal_state.dish_name, user_profile, clinical_snapshot)
+    advice = _local_advice_for_dish(meal_display_name(meal_record), user_profile, clinical_snapshot)
     for warning in safety_warnings:
         advice.append(warning)
 

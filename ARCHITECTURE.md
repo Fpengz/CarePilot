@@ -110,6 +110,7 @@ Current implementation:
 - `src/dietary_guardian/services/workflow_coordinator.py`
 - `apps/workers/run.py`
 - meal analysis and recommendation-oriented agent logic in `src/dietary_guardian/agents`
+- meal perception is now bounded to typed image-understanding output, with canonical-food normalization/enrichment handled deterministically before persistence and downstream guidance
 
 Target production agent set:
 - Diet Analysis Agent

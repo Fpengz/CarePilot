@@ -47,7 +47,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl">{SHOW_DEMO_ACCOUNTS ? "Sign In to Demo Accounts" : "Sign In"}</CardTitle>
           <CardDescription>
-            Backend-issued session cookie flow (`/api/v1/auth/login`). Responses return `account_role`, `scopes`, and `profile_mode`.
+            Backend-issued session cookie flow (`/api/v1/auth/login`).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

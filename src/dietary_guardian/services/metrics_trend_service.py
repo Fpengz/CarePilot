@@ -7,6 +7,7 @@ from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.models.medication_tracking import MedicationAdherenceEvent
 from dietary_guardian.models.metrics_trend import MetricPoint, MetricTrend
 from dietary_guardian.models.report import BiomarkerReading
+from dietary_guardian.services.meal_record_utils import meal_nutrition
 
 
 def _sorted_points(points: list[MetricPoint]) -> list[MetricPoint]:
@@ -56,7 +57,7 @@ def meal_calorie_points(records: list[MealRecognitionRecord]) -> list[MetricPoin
     by_day: dict[str, float] = defaultdict(float)
     for record in records:
         key = record.captured_at.date().isoformat()
-        by_day[key] += float(record.meal_state.nutrition.calories)
+        by_day[key] += float(meal_nutrition(record).calories)
     points: list[MetricPoint] = []
     for day, value in by_day.items():
         points.append(MetricPoint(timestamp=datetime.fromisoformat(f"{day}T00:00:00+00:00"), value=round(value, 4)))

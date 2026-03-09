@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 from datetime import date
 from typing import Any, cast
 
@@ -25,6 +26,13 @@ from apps.api.dietary_api.schemas import (
     MealWeeklySummaryResponse,
     WorkflowResponse,
 )
+
+
+def _build_hawker_vision_module(*, provider: str, food_store: Any) -> HawkerVisionModule:
+    params = inspect.signature(HawkerVisionModule).parameters
+    if "food_store" in params:
+        return HawkerVisionModule(provider=provider, food_store=food_store)
+    return HawkerVisionModule(provider=provider)
 
 
 async def analyze_meal(
@@ -82,7 +90,10 @@ async def analyze_meal(
 
     user_profile = build_user_profile_from_session(session, deps.stores.profiles)
     selected_provider = provider.strip() if isinstance(provider, str) else ""
-    module = HawkerVisionModule(provider=selected_provider or deps.settings.llm_provider)
+    module = _build_hawker_vision_module(
+        provider=selected_provider or deps.settings.llm_provider,
+        food_store=deps.stores.foods,
+    )
     try:
         vision_result, meal_record = await asyncio.wait_for(
             module.analyze_and_record(

@@ -1,6 +1,20 @@
+from dietary_guardian.domain.meals import (
+    EnrichedMealEvent,
+    MealNutritionProfile,
+    MealPerception,
+    MealPortionEstimate,
+    NormalizedMealItem,
+    PortionReference,
+    RawFoodSourceRecord,
+)
 from dietary_guardian.models.analytics import EngagementMetrics
 from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage, OutboxRecord
 from dietary_guardian.models.clinical_card import ClinicalCardRecord
+from dietary_guardian.models.canonical_food import (
+    CanonicalFoodAdvice,
+    CanonicalFoodAlternative,
+    CanonicalFoodRecord,
+)
 from dietary_guardian.models.daily_suggestions import DailySuggestionBundle, DailySuggestionItem
 from dietary_guardian.models.emotion import (
     EmotionConfidenceBand,
@@ -104,6 +118,9 @@ __all__ = [
     "OutboxRecord",
     "AlertDeliveryResult",
     "ClinicalCardRecord",
+    "CanonicalFoodAdvice",
+    "CanonicalFoodAlternative",
+    "CanonicalFoodRecord",
     "DailySuggestionBundle",
     "DailySuggestionItem",
     "EmotionLabel",
@@ -138,4 +155,11 @@ __all__ = [
     "InferenceRequest",
     "InferenceResponse",
     "InferenceHealth",
+    "MealNutritionProfile",
+    "MealPerception",
+    "MealPortionEstimate",
+    "NormalizedMealItem",
+    "EnrichedMealEvent",
+    "PortionReference",
+    "RawFoodSourceRecord",
 ]
