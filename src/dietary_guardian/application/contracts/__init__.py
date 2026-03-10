@@ -1,4 +1,7 @@
-from dietary_guardian.models.agent_runtime import AgentContract, WorkflowRuntimeContract
+from dietary_guardian.domain.workflows.models import (
+    AgentContract,
+    WorkflowRuntimeContract,
+)
 from dietary_guardian.models.analytics import EngagementMetrics
 from dietary_guardian.models.contracts import AgentExecutionTrace, AgentHandoff
 from dietary_guardian.models.emotion import (
