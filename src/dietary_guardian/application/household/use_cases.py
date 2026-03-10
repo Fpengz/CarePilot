@@ -16,7 +16,7 @@ from dietary_guardian.application.policies.household_access import (
     ensure_household_member,
     ensure_household_owner,
 )
-from dietary_guardian.domain.profiles.health_profile import (
+from dietary_guardian.domain.identity.health_profile import (
     compute_profile_completeness,
     get_or_create_health_profile,
 )

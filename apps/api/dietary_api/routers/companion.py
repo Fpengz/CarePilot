@@ -12,7 +12,7 @@ from ..schemas import (
     CompanionTodayResponse,
     ImpactSummaryResponse,
 )
-from dietary_guardian.application.companion.use_cases import (
+from .._companion_orchestration import (
     get_clinician_digest,
     get_companion_today,
     get_impact_summary,

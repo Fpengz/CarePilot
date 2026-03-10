@@ -27,14 +27,14 @@ from apps.api.dietary_api.schemas import (
 from dietary_guardian.application.auth.session_context import build_user_profile_from_session
 from dietary_guardian.capabilities import MealAnalysisAgent
 from dietary_guardian.capabilities.base import AgentContext
-from dietary_guardian.capabilities.schemas import MealAnalysisAgentInput
+from dietary_guardian.domain.meals.agent_schemas import MealAnalysisAgentInput
 from dietary_guardian.domain.meals.models import ImageInput, VisionResult
 from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
-from dietary_guardian.domain.nutrition import (
+from dietary_guardian.domain.meals import (
     build_daily_nutrition_summary,
     build_weekly_nutrition_summary,
 )
-from dietary_guardian.domain.profiles.health_profile import get_or_create_health_profile
+from dietary_guardian.domain.identity.health_profile import get_or_create_health_profile
 from dietary_guardian.infrastructure.media.ingestion import (
     build_capture_envelope,
     should_suppress_duplicate_capture,

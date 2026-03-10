@@ -11,7 +11,7 @@ from dietary_guardian.domain.health.models import (
     MetricPoint,
     MetricTrend,
 )
-from dietary_guardian.domain.nutrition.meal_record_accessors import meal_nutrition
+from dietary_guardian.domain.meals.meal_record_accessors import meal_nutrition
 from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dietary_guardian.capabilities.base import AgentContext, AgentResult, BaseAgent
-from dietary_guardian.capabilities.schemas import (
+from dietary_guardian.domain.emotion.schemas import (
     EmotionAgentOutput,
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dietary_guardian.capabilities.base import AgentContext, AgentResult, BaseAgent
-from dietary_guardian.capabilities.schemas import RecommendationAgentInput, RecommendationAgentOutput
+from dietary_guardian.domain.recommendations.schemas import RecommendationAgentInput, RecommendationAgentOutput
 from dietary_guardian.domain.recommendations.engine import (
     generate_daily_agent_recommendation,
 )

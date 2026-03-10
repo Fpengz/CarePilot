@@ -1,12 +1,14 @@
 """Safety logic for engine."""
 
+from __future__ import annotations
+
 from typing import Any, cast
 
 import logfire
 from dietary_guardian.domain.identity.models import UserProfile
 from dietary_guardian.domain.meals.models import MealEvent, MealState
-from dietary_guardian.infrastructure.safety.drug_interaction_db import DrugInteractionDB
 from dietary_guardian.domain.safety.exceptions import SafetyViolation
+from dietary_guardian.domain.safety.ports import DrugInteractionRepository
 from dietary_guardian.domain.safety.thresholds import (
     HYPOGLYCEMIA_LOW_CARB_THRESHOLD_G,
     SODIUM_WARNING_FRACTION,
@@ -17,9 +19,12 @@ logfire_api = cast(Any, logfire)
 
 
 class SafetyEngine:
-    def __init__(self, user: UserProfile, db: DrugInteractionDB | None = None):
+    def __init__(self, user: UserProfile, db: DrugInteractionRepository | None = None):
         self.user = user
-        self.db = db or DrugInteractionDB()
+        if db is None:
+            from dietary_guardian.infrastructure.safety.drug_interaction_db import DrugInteractionDB
+            db = DrugInteractionDB()
+        self.db: DrugInteractionRepository = db
 
     def validate_meal(self, meal: MealEvent | MealState) -> list[str]:
         """

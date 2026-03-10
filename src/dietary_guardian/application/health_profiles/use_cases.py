@@ -19,14 +19,14 @@ from apps.api.dietary_api.schemas import (
     HealthProfileUpdateRequest,
 )
 from dietary_guardian.application.recommendations.daily_suggestions import build_daily_suggestions
-from dietary_guardian.domain.profiles.health_profile import (
+from dietary_guardian.domain.identity.health_profile import (
     compute_bmi,
     compute_profile_completeness,
     get_or_create_health_profile,
     resolve_user_profile,
     update_health_profile,
 )
-from dietary_guardian.domain.profiles.onboarding import (
+from dietary_guardian.domain.identity.onboarding import (
     complete_health_profile_onboarding,
     get_or_create_health_profile_onboarding_state,
     list_onboarding_steps,

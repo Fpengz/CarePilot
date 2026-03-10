@@ -11,7 +11,7 @@ from dietary_guardian.domain.companion import (
 from dietary_guardian.domain.health.models import HealthProfileRecord
 from dietary_guardian.domain.identity.models import ProfileMode, UserProfile
 from dietary_guardian.domain.meals.models import MealState
-from dietary_guardian.domain.profiles.profile_tools import (
+from dietary_guardian.domain.identity.profile_tools import (
     CaregiverToolState,
     ClinicalSummaryToolState,
     SelfToolState,

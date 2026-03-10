@@ -3,7 +3,7 @@
 from typing import Any, cast
 
 from dietary_guardian.domain.identity.models import AccountRole, ProfileMode, UserProfile
-from dietary_guardian.domain.profiles.health_profile import (
+from dietary_guardian.domain.identity.health_profile import (
     HealthProfileRepository,
     build_user_profile_from_health_profile,
     default_health_profile,

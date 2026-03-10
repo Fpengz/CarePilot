@@ -12,7 +12,7 @@ from dietary_guardian.domain.health.models import (
 )
 from dietary_guardian.domain.identity.models import UserProfile
 from dietary_guardian.domain.notifications.models import ReminderEvent
-from dietary_guardian.domain.nutrition import (
+from dietary_guardian.domain.meals import (
     meal_confidence,
     meal_display_name,
     meal_identification_method,

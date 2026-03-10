@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from dietary_guardian.capabilities.base import AgentContext, AgentResult, BaseAgent
-from dietary_guardian.capabilities.schemas import MealAnalysisAgentInput, MealAnalysisAgentOutput
+from dietary_guardian.domain.meals.agent_schemas import MealAnalysisAgentInput, MealAnalysisAgentOutput
 from dietary_guardian.capabilities.vision import HawkerVisionModule
 
 

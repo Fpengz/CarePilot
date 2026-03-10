@@ -30,22 +30,22 @@ from dietary_guardian.domain.recommendations.models import (
     SubstitutionPlan,
     TemporalContext,
 )
-from dietary_guardian.infrastructure.observability import get_logger
+import logging
 from dietary_guardian.domain.meals.models import Ingredient, MealEvent
 from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 from dietary_guardian.domain.safety.engine import SafetyEngine, SafetyViolation
-from dietary_guardian.domain.nutrition import (
+from dietary_guardian.domain.meals import (
     meal_display_name,
     meal_ingredients,
     meal_nutrition,
 )
-from dietary_guardian.domain.profiles.health_profile import (
+from dietary_guardian.domain.identity.health_profile import (
     compute_bmi,
     compute_profile_completeness,
 )
 from dietary_guardian.domain.recommendations.canonical_food_matching import normalize_text
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 FoodItem = CanonicalFoodRecord
 
 MEAL_LOG_WARMUP_THRESHOLD = 10

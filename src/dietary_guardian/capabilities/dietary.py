@@ -7,7 +7,7 @@ from pydantic import BaseModel
 import logfire
 from dietary_guardian.capabilities.base import AgentContext, AgentResult, BaseAgent
 from dietary_guardian.infrastructure.ai.engine import InferenceEngine
-from dietary_guardian.capabilities.schemas import DietaryAgentInput
+from dietary_guardian.domain.meals.agent_schemas import DietaryAgentInput
 from dietary_guardian.application.safety.ports import SafetyPort
 from dietary_guardian.config.llm import LLMCapability
 from dietary_guardian.config.app import get_settings

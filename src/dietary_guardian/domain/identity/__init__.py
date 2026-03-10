@@ -1,4 +1,5 @@
-"""Identity domain: accounts, roles, user profiles, meal scheduling, role tools, and social."""
+"""Identity domain: accounts, roles, user profiles, meal scheduling, role tools, social, and health profile management."""
+
 # ruff: noqa: F401
 from .models import (
     AccountPrincipal,

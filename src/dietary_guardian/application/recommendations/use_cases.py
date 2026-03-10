@@ -23,9 +23,9 @@ from dietary_guardian.application.policies.household_access import (
     ensure_household_member,
     household_source_members,
 )
-from dietary_guardian.capabilities.schemas import RecommendationAgentInput
+from dietary_guardian.domain.recommendations.schemas import RecommendationAgentInput
 from dietary_guardian.domain.health.models import ReportInput
-from dietary_guardian.domain.profiles.health_profile import resolve_user_profile
+from dietary_guardian.domain.identity.health_profile import resolve_user_profile
 from dietary_guardian.domain.recommendations.engine import (
     AgentMealNotFoundError,
     build_substitution_plan,

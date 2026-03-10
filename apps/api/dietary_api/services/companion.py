@@ -1,11 +1,11 @@
 """API orchestration entry points for companion, clinician digest, and impact views.
 
-Shim: business logic lives in dietary_guardian.application.companion.use_cases.
+Shim: logic now lives in dietary_api._companion_orchestration.
 """
 
 from __future__ import annotations
 
-from dietary_guardian.application.companion.use_cases import (  # noqa: F401
+from dietary_api._companion_orchestration import (  # noqa: F401
     get_clinician_digest,
     get_companion_today,
     get_impact_summary,
