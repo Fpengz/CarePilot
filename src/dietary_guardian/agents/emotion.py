@@ -33,7 +33,7 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
     """Canonical agent facade for text and speech emotion inference."""
 
     name = "emotion_agent"
-    input_schema = EmotionTextAgentInput
+    input_schema = (EmotionTextAgentInput, EmotionSpeechAgentInput)
     output_schema = EmotionAgentOutput
 
     def __init__(

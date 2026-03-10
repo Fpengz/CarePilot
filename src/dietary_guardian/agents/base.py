@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Generic, TypeVar
 
+from pydantic import BaseModel
+
 InputT = TypeVar("InputT")
 OutputT = TypeVar("OutputT")
 
@@ -42,12 +44,15 @@ class BaseAgent(ABC, Generic[InputT, OutputT]):
 
     Subclasses must declare:
     - ``name``: str — agent identifier
-    - ``input_schema``: type[InputT] — Pydantic model for inputs
+    - ``input_schema``: type[InputT] | tuple[type[BaseModel], ...] — Pydantic
+      model (or tuple of models) describing accepted inputs.  Agents that
+      accept a union of input types must store a tuple so that callers can
+      perform ``isinstance(payload, agent.input_schema)`` correctly.
     - ``output_schema``: type[OutputT] — Pydantic model for outputs
     """
 
     name: str
-    input_schema: type[InputT]
+    input_schema: type[BaseModel] | tuple[type[BaseModel], ...]
     output_schema: type[OutputT]
 
     @abstractmethod
