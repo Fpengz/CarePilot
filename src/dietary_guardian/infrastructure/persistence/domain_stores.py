@@ -1,7 +1,11 @@
+"""Infrastructure support for domain stores."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+
+from .contracts import AppStoreBackend
 
 
 @dataclass(slots=True)
@@ -22,6 +26,20 @@ class MealStore:
 
     def get_meal_catalog_item(self, meal_id: str) -> Any | None:
         return self._store.get_meal_catalog_item(meal_id)
+
+
+@dataclass(slots=True)
+class FoodStore:
+    _store: Any
+
+    def list_canonical_foods(self, *, locale: str, slot: str | None = None, limit: int = 100) -> list[Any]:
+        return self._store.list_canonical_foods(locale=locale, slot=slot, limit=limit)
+
+    def get_canonical_food(self, food_id: str) -> Any | None:
+        return self._store.get_canonical_food(food_id)
+
+    def find_food_by_name(self, *, locale: str, name: str) -> Any | None:
+        return self._store.find_food_by_name(locale=locale, name=name)
 
 
 @dataclass(slots=True)
@@ -265,17 +283,20 @@ class RecommendationStore:
     def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
         self._store.save_recommendation(user_id, payload)
 
-    def list_meal_catalog_items(
+    def list_canonical_foods(
         self,
         *,
         locale: str,
         slot: str | None = None,
         limit: int = 100,
     ) -> list[Any]:
-        return self._store.list_meal_catalog_items(locale=locale, slot=slot, limit=limit)
+        return self._store.list_canonical_foods(locale=locale, slot=slot, limit=limit)
 
-    def get_meal_catalog_item(self, meal_id: str) -> Any | None:
-        return self._store.get_meal_catalog_item(meal_id)
+    def get_canonical_food(self, food_id: str) -> Any | None:
+        return self._store.get_canonical_food(food_id)
+
+    def find_food_by_name(self, *, locale: str, name: str) -> Any | None:
+        return self._store.find_food_by_name(locale=locale, name=name)
 
     def get_meal_record(self, user_id: str, meal_id: str) -> Any | None:
         return self._store.get_meal_record(user_id, meal_id)
@@ -336,6 +357,7 @@ class AlertStore:
 @dataclass(slots=True)
 class AppStores:
     meals: MealStore
+    foods: FoodStore
     biomarkers: BiomarkerStore
     symptoms: SymptomStore
     medications: MedicationStore
@@ -347,9 +369,10 @@ class AppStores:
     alerts: AlertStore
 
 
-def build_app_stores(app_store: Any) -> AppStores:
+def build_app_stores(app_store: AppStoreBackend) -> AppStores:
     return AppStores(
         meals=MealStore(app_store),
+        foods=FoodStore(app_store),
         biomarkers=BiomarkerStore(app_store),
         symptoms=SymptomStore(app_store),
         medications=MedicationStore(app_store),

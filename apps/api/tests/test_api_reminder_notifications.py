@@ -1,14 +1,18 @@
+"""Module for test api reminder notifications."""
+
+import asyncio
 from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
 
-import asyncio
 import pytest
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
-from dietary_guardian.services.alerting_service import OutboxWorker
-from dietary_guardian.services.reminder_notification_service import dispatch_due_reminder_notifications
+from dietary_guardian.application.notifications.reminder_materialization import (
+    dispatch_due_reminder_notifications,
+)
+from dietary_guardian.infrastructure.notifications.alert_outbox import OutboxWorker
 
 
 def _reset_settings_cache() -> None:

@@ -1,9 +1,11 @@
+"""API router for suggestions endpoints."""
+
 from fastapi import APIRouter, Depends, Query, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas.suggestions import (
-    SuggestionGenerateFromReportRequest,
+from ..schemas import (
     SuggestionDetailResponse,
+    SuggestionGenerateFromReportRequest,
     SuggestionGenerateFromReportResponse,
     SuggestionListResponse,
 )

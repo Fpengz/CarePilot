@@ -1,3 +1,5 @@
+"""Application ports for household."""
+
 from typing import Any, Protocol
 
 

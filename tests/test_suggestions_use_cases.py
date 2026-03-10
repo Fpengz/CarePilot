@@ -1,3 +1,5 @@
+"""Tests for suggestions use cases."""
+
 from dataclasses import dataclass, field
 from typing import Any, cast
 
@@ -10,7 +12,11 @@ from dietary_guardian.application.suggestions.use_cases import (
     generate_suggestion_from_report,
     list_suggestions_for_session,
 )
-from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
 
 
 @dataclass

@@ -11,6 +11,8 @@ wheels/
 .pytest_cache/
 .ruff_cache/
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 .coverage
@@ -32,3 +34,9 @@ apps/web/playwright-report/
 node_modules/
 *.tsbuildinfo
 .turbo/
+
+# Generated codebase index files
+CODEBASE_INDEX.md
+CODEBASE_MAP.md
+CODEBASE_SUMMARY.txt
+DEPENDENCY_GRAPH.txt

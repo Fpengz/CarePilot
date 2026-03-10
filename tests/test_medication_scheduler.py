@@ -1,12 +1,21 @@
+"""Tests for medication scheduler."""
+
 from datetime import date, datetime
 
-from dietary_guardian.models.medication import MedicationRegimen, ReminderEvent
-from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
-from dietary_guardian.services.medication_service import (
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
+from dietary_guardian.domain.notifications.models import (
+    MedicationRegimen,
+    ReminderEvent,
+)
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
+from dietary_guardian.domain.medications import (
     generate_daily_reminders,
     mark_meal_confirmation,
 )
-from dietary_guardian.services.repository import SQLiteRepository
 
 
 def _user() -> UserProfile:

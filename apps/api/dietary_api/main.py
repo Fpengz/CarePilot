@@ -1,3 +1,5 @@
+"""Module for main."""
+
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, cast
@@ -6,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 
 from .deps import AppContext, build_app_context, close_app_context
 from .errors import (
@@ -48,10 +50,10 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
     settings = app.state.ctx.settings
     app.add_middleware(
         cast(Any, CORSMiddleware),
-        allow_origins=[item.strip() for item in settings.api_cors_origins.split(",") if item.strip()],
+        allow_origins=[item.strip() for item in settings.api.cors_origins.split(",") if item.strip()],
         allow_credentials=True,
-        allow_methods=_csv_values(settings.api_cors_methods, fallback=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]),
-        allow_headers=_csv_values(settings.api_cors_headers, fallback=["Content-Type", "X-Requested-With", "Authorization"]),
+        allow_methods=_csv_values(settings.api.cors_methods, fallback=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]),
+        allow_headers=_csv_values(settings.api.cors_headers, fallback=["Content-Type", "X-Requested-With", "Authorization"]),
     )
     app.middleware("http")(request_context_middleware)
     include_routers(app)

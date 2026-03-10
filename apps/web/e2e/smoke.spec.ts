@@ -14,7 +14,12 @@ test.describe("mobile navigation", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("opens and closes the mobile drawer", async ({ page }) => {
-    await page.goto("/dashboard");
+    await page.goto("/login");
+    await page.getByLabel("Email").fill("member@example.com");
+    await page.getByLabel("Password").fill("member-pass");
+    await page.getByRole("button", { name: "Login" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
+
     await page.getByRole("button", { name: "Open navigation drawer" }).click();
     await expect(page.getByRole("dialog", { name: "Navigation menu" })).toBeVisible();
     await expect(page.getByText("Primary routes and account context")).toBeVisible();
@@ -44,7 +49,8 @@ test("settings page exposes guided health profile setup with advanced edit fallb
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/settings");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.locator("#main-content").getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Health Profile" }).click();
   await expect(page.getByRole("heading", { name: "Guided Health Setup" })).toBeVisible();
   await expect(page.getByText("Step 1 of 5")).toBeVisible();
   await expect(page.getByRole("button", { name: "Advanced Edit" })).toBeVisible();
@@ -75,8 +81,8 @@ test("meals page includes weekly summary insights", async ({ page }) => {
 
   await page.goto("/meals");
   await expect(page.locator("#main-content").getByRole("heading", { name: "Meal Analysis and Record Review" })).toBeVisible();
+  await page.getByRole("tab", { name: "Weekly" }).click();
   await expect(page.getByRole("heading", { name: "Weekly Pattern Summary" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Load Weekly Summary" })).toBeVisible();
 });
 
 test("medications page exposes regimen and adherence tooling", async ({ page }) => {
@@ -86,10 +92,9 @@ test("medications page exposes regimen and adherence tooling", async ({ page }) 
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/medications");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Medication Tracking and Adherence" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Regimen Management" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Create Regimen" })).toBeVisible();
+  await expect(page.locator("#main-content").getByRole("heading", { name: "Medications & Adherence" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Adherence Metrics" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Regimens" })).toBeVisible();
 });
 
 test("symptoms, reports, clinical cards, and metrics pages are available", async ({ page }) => {

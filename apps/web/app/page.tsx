@@ -11,7 +11,7 @@ export default function RootPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/dashboard");
+      router.replace("/companion");
       return;
     }
     if (status === "unauthenticated") {

@@ -1,11 +1,11 @@
-from pathlib import Path
+"""Tests for dg cli."""
+
 import subprocess
 import sys
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DG = ROOT / "scripts" / "dg.py"
-REDIS_MIGRATION_SCRIPT = ROOT / "scripts" / "migrate-redis-keyspace.py"
 
 
 def _run(*args: str) -> subprocess.CompletedProcess[str]:
@@ -22,7 +22,7 @@ def test_help_lists_new_migrate_and_test_commands() -> None:
     result = _run("help")
     assert result.returncode == 0
     output = result.stdout
-    assert "migrate redis-keyspace" in output
+    assert "migrate redis-keyspace" not in output
     assert "test [backend|web|comprehensive]" in output
     assert "web env -- <command...>" in output
 
@@ -33,11 +33,7 @@ def test_test_command_help_is_available() -> None:
     assert "comprehensive" in result.stdout
 
 
-def test_migrate_redis_keyspace_requires_redis_url() -> None:
+def test_redis_keyspace_migration_command_is_removed() -> None:
     result = _run("migrate", "redis-keyspace")
-    assert result.returncode == 2
-    assert "REDIS_URL is required" in result.stderr
-
-
-def test_migrate_redis_keyspace_script_exists() -> None:
-    assert REDIS_MIGRATION_SCRIPT.exists()
+    assert result.returncode != 0
+    assert "No such command 'redis-keyspace'" in (result.stderr or result.stdout)

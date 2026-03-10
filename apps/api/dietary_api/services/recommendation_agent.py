@@ -1,6 +1,8 @@
+"""API orchestration for recommendation-agent daily plans and interactions."""
+
 from __future__ import annotations
 
-from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.deps import RecommendationAgentDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
     RecommendationAgentResponse,
@@ -9,47 +11,50 @@ from apps.api.dietary_api.schemas import (
     RecommendationSubstitutionRequest,
     RecommendationSubstitutionResponse,
 )
-from dietary_guardian.services.health_profile_service import resolve_user_profile
-from dietary_guardian.services.recommendation_agent_service import (
+from dietary_guardian.agents.schemas import RecommendationAgentInput
+from dietary_guardian.agents.recommendation_engine import (
     AgentMealNotFoundError,
     build_substitution_plan,
-    generate_daily_agent_recommendation,
     record_interaction_and_update_preferences,
 )
-from dietary_guardian.services.report_parser_service import build_clinical_snapshot
+from dietary_guardian.domain.profiles.health_profile import resolve_user_profile
+from dietary_guardian.domain.reports import build_clinical_snapshot
 
 
-def _resolve_clinical_snapshot(*, context: AppContext, user_id: str):
-    snapshot = context.clinical_memory.get(user_id)
+def _resolve_clinical_snapshot(*, deps: RecommendationAgentDeps, user_id: str):
+    snapshot = deps.clinical_memory.get(user_id)
     if snapshot is not None:
         return snapshot
-    readings = context.stores.biomarkers.list_biomarker_readings(user_id)
+    readings = deps.stores.biomarkers.list_biomarker_readings(user_id)
     if not readings:
         return None
     snapshot = build_clinical_snapshot(readings)
-    context.clinical_memory.put(user_id, snapshot)
+    deps.clinical_memory.put(user_id, snapshot)
     return snapshot
 
 
 def get_daily_agent_for_session(
     *,
-    context: AppContext,
+    deps: RecommendationAgentDeps,
     session: dict[str, object],
     request_id: str | None,
     correlation_id: str | None,
 ) -> RecommendationAgentResponse:
     user_id = str(session["user_id"])
-    health_profile, user_profile = resolve_user_profile(context.stores.profiles, session)
-    meal_history = context.stores.meals.list_meal_records(user_id)
-    clinical_snapshot = _resolve_clinical_snapshot(context=context, user_id=user_id)
-    recommendation = generate_daily_agent_recommendation(
-        repository=context.stores.recommendations,
-        user_id=user_id,
-        health_profile=health_profile,
-        user_profile=user_profile,
-        meal_history=meal_history,
-        clinical_snapshot=clinical_snapshot,
+    health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
+    meal_history = deps.stores.meals.list_meal_records(user_id)
+    clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
+    output = deps.recommendation_agent.generate(
+        RecommendationAgentInput(
+            user_id=user_id,
+            health_profile=health_profile,
+            user_profile=user_profile,
+            meal_history=meal_history,
+            clinical_snapshot=clinical_snapshot,
+        ),
+        repository=deps.stores.recommendations,
     )
+    recommendation = output.recommendation
     payload = recommendation.model_dump(mode="json")
     payload["workflow"] = {
         "workflow_name": "daily_recommendation_agent",
@@ -63,17 +68,17 @@ def get_daily_agent_for_session(
 
 def get_substitutions_for_session(
     *,
-    context: AppContext,
+    deps: RecommendationAgentDeps,
     session: dict[str, object],
     payload: RecommendationSubstitutionRequest,
 ) -> RecommendationSubstitutionResponse:
     user_id = str(session["user_id"])
-    health_profile, user_profile = resolve_user_profile(context.stores.profiles, session)
-    meal_history = context.stores.meals.list_meal_records(user_id)
-    clinical_snapshot = _resolve_clinical_snapshot(context=context, user_id=user_id)
+    health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
+    meal_history = deps.stores.meals.list_meal_records(user_id)
+    clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
     try:
         plan = build_substitution_plan(
-            repository=context.stores.recommendations,
+            repository=deps.stores.recommendations,
             user_id=user_id,
             health_profile=health_profile,
             user_profile=user_profile,
@@ -100,15 +105,15 @@ def get_substitutions_for_session(
 
 def record_interaction_for_session(
     *,
-    context: AppContext,
+    deps: RecommendationAgentDeps,
     session: dict[str, object],
     payload: RecommendationInteractionRequest,
 ) -> RecommendationInteractionResponse:
     user_id = str(session["user_id"])
-    meal_history = context.stores.meals.list_meal_records(user_id)
+    meal_history = deps.stores.meals.list_meal_records(user_id)
     try:
         interaction, snapshot = record_interaction_and_update_preferences(
-            repository=context.stores.recommendations,
+            repository=deps.stores.recommendations,
             user_id=user_id,
             candidate_id=payload.candidate_id,
             recommendation_id=payload.recommendation_id,

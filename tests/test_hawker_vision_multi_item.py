@@ -1,6 +1,8 @@
+"""Tests for hawker vision multi item."""
+
 import pytest
 
-from dietary_guardian.agents.hawker_vision import HawkerVisionModule
+from dietary_guardian.agents.vision import HawkerVisionModule
 from dietary_guardian.models.meal import ImageInput
 
 

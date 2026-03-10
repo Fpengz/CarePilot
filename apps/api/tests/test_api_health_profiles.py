@@ -1,11 +1,13 @@
+"""Module for test api health profiles."""
+
 from collections.abc import Generator
 from io import BytesIO
 
 import pytest
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
 
 

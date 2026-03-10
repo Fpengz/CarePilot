@@ -1,3 +1,5 @@
+"""Infrastructure support for redis coordination."""
+
 from __future__ import annotations
 
 import json
@@ -15,12 +17,10 @@ def _load_redis_module() -> Any:
 
 
 class RedisCoordinationStore:
-    def __init__(self, *, redis_url: str, namespace: str, keyspace_version: str = "v2") -> None:
+    def __init__(self, *, redis_url: str, namespace: str) -> None:
         redis_module = _load_redis_module()
         self._client = redis_module.Redis.from_url(redis_url, decode_responses=True)
         self._namespace = namespace
-        if keyspace_version != "v2":
-            raise ValueError("Redis coordination store requires keyspace_version='v2'")
         self._release_script = """
         if redis.call('GET', KEYS[1]) == ARGV[1] then
             return redis.call('DEL', KEYS[1])

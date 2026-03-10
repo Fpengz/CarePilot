@@ -1,9 +1,10 @@
+"""Module for test api policy."""
+
 from typing import Any
 
 import pytest
-from fastapi import HTTPException
-
 from apps.api.dietary_api.policy import POLICY_RULES, authorize_action, authorize_resource_action
+from fastapi import HTTPException
 
 
 def _session(scopes: list[str], *, account_role: str = "member") -> dict[str, Any]:
@@ -25,6 +26,8 @@ def test_policy_table_contains_core_actions() -> None:
         "recommendations.daily_agent.read",
         "recommendations.substitutions.generate",
         "recommendations.interactions.write",
+        "emotions.text.infer",
+        "emotions.speech.infer",
         "suggestions.generate",
         "suggestions.read",
         "alerts.trigger",

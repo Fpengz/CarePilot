@@ -1,3 +1,5 @@
+"""Infrastructure support for session signer."""
+
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 

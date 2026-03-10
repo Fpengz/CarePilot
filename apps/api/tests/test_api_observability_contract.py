@@ -1,12 +1,14 @@
-from io import BytesIO
+"""Module for test api observability contract."""
+
 import logging
 from collections.abc import Generator
+from io import BytesIO
 
+import pytest
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
-import pytest
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
 
 

@@ -1,3 +1,5 @@
+"""API helpers for workflow-derived notification feeds and read state."""
+
 from dataclasses import dataclass, field
 from threading import Lock
 from typing import TYPE_CHECKING, Literal
@@ -8,7 +10,7 @@ from apps.api.dietary_api.schemas import (
     NotificationMarkAllReadResponse,
     NotificationMarkReadResponse,
 )
-from dietary_guardian.models.workflow import WorkflowTimelineEvent
+from dietary_guardian.domain.workflows.models import WorkflowTimelineEvent
 
 if TYPE_CHECKING:
     from apps.api.dietary_api.deps import AppContext
@@ -131,7 +133,7 @@ def _notification_from_event(*, event: WorkflowTimelineEvent, reads: Notificatio
 
 
 def _user_notification_events(*, context: "AppContext", user_id: str) -> list[WorkflowTimelineEvent]:
-    events = context.event_timeline.list(user_id=user_id)
+    events = context.event_timeline.get_events(user_id=user_id)
     return [event for event in events if event.event_type == "workflow_completed"]
 
 

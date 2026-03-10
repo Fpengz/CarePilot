@@ -1,3 +1,5 @@
+"""Tests for logging config."""
+
 import logging
 
 import dietary_guardian.logging_config as logging_config

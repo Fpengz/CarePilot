@@ -1,8 +1,9 @@
+"""Data models for contracts."""
+
 from datetime import datetime, timezone
 from typing import Any
 
 from pydantic import BaseModel, Field
-
 
 SCHEMA_VERSION_V1 = "1.0"
 

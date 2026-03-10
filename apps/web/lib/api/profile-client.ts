@@ -4,4 +4,4 @@ export {
   updateHealthProfileOnboarding,
   completeHealthProfileOnboarding,
   updateHealthProfile,
-} from "@/lib/api";
+} from "./core";

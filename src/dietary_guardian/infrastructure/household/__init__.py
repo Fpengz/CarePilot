@@ -1,4 +1,5 @@
-from .postgres_store import PostgresHouseholdStore
+"""Package exports for household."""
+
 from .sqlite_store import SQLiteHouseholdStore
 
-__all__ = ["PostgresHouseholdStore", "SQLiteHouseholdStore"]
+__all__ = ["SQLiteHouseholdStore"]

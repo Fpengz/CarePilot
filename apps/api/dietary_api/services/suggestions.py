@@ -1,7 +1,19 @@
+"""API orchestration for report-driven and session-scoped suggestions."""
+
 from __future__ import annotations
 
 from typing import cast
 
+from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.errors import build_api_error
+from apps.api.dietary_api.schemas import (
+    SuggestionDetailResponse,
+    SuggestionGenerateFromReportRequest,
+    SuggestionGenerateFromReportResponse,
+    SuggestionItemResponse,
+    SuggestionListResponse,
+)
+from apps.api.dietary_api.session_profiles import build_user_profile_from_session
 from dietary_guardian.application.suggestions import (
     MissingActiveHouseholdError,
     NoMealRecordsError,
@@ -15,17 +27,6 @@ from dietary_guardian.application.suggestions.ports import (
     BuildUserProfileFn,
     HouseholdStorePort,
     SuggestionRepositoryPort,
-)
-
-from apps.api.dietary_api.auth import build_user_profile_from_session
-from apps.api.dietary_api.deps import AppContext
-from apps.api.dietary_api.errors import build_api_error
-from apps.api.dietary_api.schemas import (
-    SuggestionDetailResponse,
-    SuggestionGenerateFromReportRequest,
-    SuggestionGenerateFromReportResponse,
-    SuggestionItemResponse,
-    SuggestionListResponse,
 )
 
 

@@ -1,3 +1,5 @@
+"""API orchestration for reminder notification preferences, endpoints, and logs."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -13,12 +15,12 @@ from apps.api.dietary_api.schemas import (
     ReminderNotificationLogItemResponse,
     ReminderNotificationLogListResponse,
     ReminderNotificationPreferenceListResponse,
-    ReminderNotificationPreferenceRuleResponse,
     ReminderNotificationPreferenceRuleRequest,
+    ReminderNotificationPreferenceRuleResponse,
     ScheduledReminderNotificationItemResponse,
     ScheduledReminderNotificationListResponse,
 )
-from dietary_guardian.models.reminder_notifications import (
+from dietary_guardian.domain.notifications.models import (
     NotificationPreferenceScope,
     ReminderNotificationEndpoint,
     ReminderNotificationPreference,

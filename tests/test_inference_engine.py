@@ -1,12 +1,13 @@
+"""Tests for inference engine."""
+
 import asyncio
 
 import pytest
 from pydantic import BaseModel
 
-from dietary_guardian.models.inference import InferenceModality
-from dietary_guardian.models.inference import InferenceRequest
+from dietary_guardian.agents.executor import InferenceEngine
 from dietary_guardian.config.settings import get_settings
-from dietary_guardian.services.inference_engine import InferenceEngine
+from dietary_guardian.models.inference import InferenceModality, InferenceRequest
 
 
 def test_inference_engine_strategy_selection_test_provider(monkeypatch) -> None:

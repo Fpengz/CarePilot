@@ -1,20 +1,29 @@
+"""API router for auth endpoints."""
+
 from datetime import datetime
 from typing import Annotated, Literal, cast
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
-from dietary_guardian.models.identity import AccountRole, ProfileMode
+
 from dietary_guardian.application.auth.use_cases import (
+    MIN_PASSWORD_LENGTH,
     DuplicateEmailError,
     InvalidCredentialsError,
     InvalidSignupPasswordError,
     LoginLockedError,
-    MIN_PASSWORD_LENGTH,
     login_and_create_session,
     signup_member_and_create_session,
 )
+from dietary_guardian.domain.identity.models import AccountRole, ProfileMode
 
-from ..routes_shared import SESSION_COOKIE, current_session, get_context, require_action, require_resource_action
-from ..schemas.auth import (
+from ..routes_shared import (
+    SESSION_COOKIE,
+    current_session,
+    get_context,
+    require_action,
+    require_resource_action,
+)
+from ..schemas import (
     AuthAuditEvent,
     AuthAuditEventListResponse,
     AuthLoginRequest,
@@ -23,11 +32,11 @@ from ..schemas.auth import (
     AuthPasswordUpdateRequest,
     AuthPasswordUpdateResponse,
     AuthProfileUpdateRequest,
-    AuthSignupRequest,
     AuthSessionListItem,
     AuthSessionListResponse,
     AuthSessionRevokeOthersResponse,
     AuthSessionRevokeResponse,
+    AuthSignupRequest,
     SessionInfo,
     SessionUser,
 )
@@ -82,8 +91,8 @@ def auth_login(payload: AuthLoginRequest, response: Response, request: Request) 
         key=SESSION_COOKIE,
         value=signed,
         httponly=True,
-        secure=context.settings.cookie_secure,
-        samesite=context.settings.cookie_samesite,
+        secure=context.settings.auth.cookie_secure,
+        samesite=context.settings.auth.cookie_samesite,
         path="/",
     )
     return AuthLoginResponse(
@@ -127,8 +136,8 @@ def auth_signup(payload: AuthSignupRequest, response: Response, request: Request
         key=SESSION_COOKIE,
         value=signed,
         httponly=True,
-        secure=context.settings.cookie_secure,
-        samesite=context.settings.cookie_samesite,
+        secure=context.settings.auth.cookie_secure,
+        samesite=context.settings.auth.cookie_samesite,
         path="/",
     )
     return AuthLoginResponse(
@@ -154,14 +163,14 @@ def auth_logout(
     if session_cookie:
         session_id = context.session_signer.unsign(
             session_cookie,
-            max_age_seconds=int(context.settings.auth_session_ttl_seconds),
+            max_age_seconds=int(context.settings.auth.session_ttl_seconds),
         )
         if session_id:
             context.auth_store.destroy_session(session_id)
     _clear_session_cookie(
         response,
-        secure=context.settings.cookie_secure,
-        samesite=context.settings.cookie_samesite,
+        secure=context.settings.auth.cookie_secure,
+        samesite=context.settings.auth.cookie_samesite,
     )
     return {"ok": True}
 
@@ -291,8 +300,8 @@ def auth_revoke_session(
     if session_id == str(session["session_id"]):
         _clear_session_cookie(
             response,
-            secure=context.settings.cookie_secure,
-            samesite=context.settings.cookie_samesite,
+            secure=context.settings.auth.cookie_secure,
+            samesite=context.settings.auth.cookie_samesite,
         )
     return AuthSessionRevokeResponse(revoked=True)
 

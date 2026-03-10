@@ -1,3 +1,5 @@
+"""Module for policy."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -5,7 +7,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from dietary_guardian.services.authorization import has_scopes
+from dietary_guardian.domain.tooling import has_scopes
 
 SessionData = dict[str, Any]
 ResourceData = dict[str, Any]
@@ -25,6 +27,8 @@ POLICY_RULES: dict[str, PolicyRule] = {
     "recommendations.daily_agent.read": PolicyRule(required_scopes=frozenset({"recommendation:generate"})),
     "recommendations.substitutions.generate": PolicyRule(required_scopes=frozenset({"recommendation:generate"})),
     "recommendations.interactions.write": PolicyRule(required_scopes=frozenset({"recommendation:generate"})),
+    "emotions.text.infer": PolicyRule(required_scopes=frozenset({"emotion:infer"})),
+    "emotions.speech.infer": PolicyRule(required_scopes=frozenset({"emotion:infer"})),
     "suggestions.generate": PolicyRule(required_scopes=frozenset({"report:write", "recommendation:generate"})),
     "suggestions.read": PolicyRule(required_scopes=frozenset({"report:read"})),
     "reminders.generate": PolicyRule(required_scopes=frozenset({"reminder:write"})),
@@ -39,6 +43,10 @@ POLICY_RULES: dict[str, PolicyRule] = {
     "clinical_cards.read": PolicyRule(required_scopes=frozenset({"report:read"})),
     "clinical_cards.generate": PolicyRule(required_scopes=frozenset({"report:read", "recommendation:generate"})),
     "metrics.trends.read": PolicyRule(required_scopes=frozenset({"report:read"})),
+    "companion.today.read": PolicyRule(required_scopes=frozenset({"meal:read", "reminder:read", "report:read"})),
+    "companion.interactions.write": PolicyRule(required_scopes=frozenset({"recommendation:generate", "report:read"})),
+    "clinician.digest.read": PolicyRule(required_scopes=frozenset({"report:read", "recommendation:generate"})),
+    "impact.summary.read": PolicyRule(required_scopes=frozenset({"meal:read", "reminder:read", "report:read"})),
     "households.care.read_members": PolicyRule(required_scopes=frozenset()),
     "households.care.read_profile": PolicyRule(required_scopes=frozenset()),
     "households.care.read_meals": PolicyRule(required_scopes=frozenset({"meal:read"})),

@@ -1,82 +1,37 @@
-import logging
-import os
-from typing import Any, cast
+"""Backward-compatibility shim — import from dietary_guardian.observability instead."""
+# ruff: noqa: F401
+import sys
+import types
 
-import logfire
-from pydantic import ValidationError
+import dietary_guardian.observability.setup as _setup_module
+from dietary_guardian.observability.setup import (
+    _CONFIGURED,
+    _HANDLER_MARKER,
+    _ROOT_MARKER,
+    _dedupe_logfire_handlers,
+    _has_logfire_handler,
+    _resolve_log_level_name,
+    get_logger,
+    logger,
+    logfire_api,
+    setup_logging,
+)
 
-from dietary_guardian.config.settings import get_settings
-
-logfire_api = cast(Any, logfire)
-_CONFIGURED = False
-_HANDLER_MARKER = "_dietary_guardian_logfire_handler"
-_ROOT_MARKER = "_dietary_guardian_logging_configured"
-
-
-def _resolve_log_level_name() -> str:
-    try:
-        return get_settings().dietary_guardian_log_level.upper()
-    except ValidationError:
-        # Keep logging available while bootstrap handles full settings validation.
-        return os.getenv("DIETARY_GUARDIAN_LOG_LEVEL", "INFO").upper()
-
-
-def _has_logfire_handler() -> bool:
-    root = logging.getLogger()
-    return any(
-        getattr(handler, _HANDLER_MARKER, False) or handler.__class__.__name__ == "LogfireLoggingHandler"
-        for handler in root.handlers
-    )
+logfire = _setup_module.logfire
 
 
-def _dedupe_logfire_handlers() -> None:
-    root = logging.getLogger()
-    keep_one = False
-    handlers: list[logging.Handler] = []
-    for handler in root.handlers:
-        is_logfire = getattr(handler, _HANDLER_MARKER, False) or handler.__class__.__name__ == "LogfireLoggingHandler"
-        if is_logfire:
-            if keep_one:
-                continue
-            setattr(handler, _HANDLER_MARKER, True)
-            keep_one = True
-        handlers.append(handler)
-    root.handlers = handlers
+class _ShimModule(types.ModuleType):
+    """Module subclass that forwards attribute writes to the canonical setup module.
 
-def setup_logging(project_name: str = "dietary-guardian"):
+    This ensures that test code which resets `_CONFIGURED` via
+    ``logging_config._CONFIGURED = False`` properly affects the live state in
+    ``observability.setup``.
     """
-    Configures logfire and standard logging for clinical-grade observability.
-    """
-    global _CONFIGURED
-    root = logging.getLogger()
-    if _CONFIGURED or getattr(root, _ROOT_MARKER, False):
-        _dedupe_logfire_handlers()
-        return logging.getLogger(project_name)
 
-    # 1. Initialize Logfire (2026 standard for Pydantic-AI)
-    logfire_api.configure(send_to_logfire=False)
-
-    # 2. Configure standard logging to work with logfire
-    level_name = _resolve_log_level_name()
-    level = getattr(logging, level_name, logging.INFO)
-    root.setLevel(level)
-    if not _has_logfire_handler():
-        handler = cast(logging.Handler, logfire.LogfireLoggingHandler())
-        setattr(handler, _HANDLER_MARKER, True)
-        handler.setLevel(level)
-        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
-        root.addHandler(handler)
-    _dedupe_logfire_handlers()
-    logger = logging.getLogger(project_name)
-    logger.setLevel(level)
-    setattr(root, _ROOT_MARKER, True)
-    _CONFIGURED = True
-    return logger
+    def __setattr__(self, name: str, value: object) -> None:
+        super().__setattr__(name, value)
+        if hasattr(_setup_module, name):
+            setattr(_setup_module, name, value)
 
 
-def get_logger(name: str) -> logging.Logger:
-    setup_logging()
-    return logging.getLogger(name)
-
-# Global logger instance
-logger = get_logger("dietary-guardian")
+sys.modules[__name__].__class__ = _ShimModule

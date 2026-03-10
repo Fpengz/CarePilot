@@ -24,11 +24,11 @@ Current local-first default:
 - in-process orchestration for most workflows
 
 Target production direction:
-- PostgreSQL for primary durable state
+- SQLite for durable storage remains the supported runtime
 - Redis for cache, ephemeral coordination, and async worker plumbing
 - expanded worker and retrieval infrastructure
 
-Contributors must preserve compatibility with the current implementation while moving the codebase toward the target architecture.
+Contributors should prefer one canonical implementation path per capability while moving the codebase toward the target architecture. During active development, remove obsolete compatibility layers instead of preserving them.
 
 ## Getting Started
 ### Requirements
@@ -109,7 +109,7 @@ Recommended naming:
 - `refactor/<topic>`
 - `agent/<task-name>` for multi-agent execution branches
 
-For merge ordering, high-risk shared-file coordination, and rebase rules, see `docs/branching-strategy.md`.
+Merge ordering, high-risk shared-file coordination, and rebase rules are defined below in this document.
 
 ### Pull Request Guidelines
 Each PR should:
@@ -125,8 +125,20 @@ PRs are expected to use `.github/pull_request_template.md`. CI enforces required
 ### Multi-Agent Workflow
 When using multiple engineers/agents in parallel:
 - Follow `AGENTS.md` for task contract requirements and ownership boundaries.
-- Follow `docs/branching-strategy.md` for branch isolation and merge sequencing.
+- Follow the branch isolation and merge sequencing rules in this document.
 - Escalate changes that touch high-risk shared files listed in `AGENTS.md`.
+
+Minimum multi-agent task contract:
+- `Goal`
+- `Scope`
+- `Files`
+- `Validation`
+- `Risk`
+
+Working rule:
+- one agent or branch owns one coherent change at a time
+- avoid mixing unrelated refactors with feature or bugfix work
+- if repo-wide planning changes, update the canonical docs instead of creating new temporary root planning files
 
 ### Commit Message Standard
 Use Conventional Commits.
@@ -149,6 +161,30 @@ Reviewers should focus on:
 - observability impact
 
 A contribution is not complete if it only works locally but is opaque to operate or debug.
+
+### Merge and Rebase Rules
+- Keep branches short-lived and task-scoped.
+- Merge low-risk isolated changes first.
+- Sequence high-risk shared-file work with explicit owner review.
+- Rebase against `main` before final review when the branch has drifted.
+- If conflicts touch shared infrastructure, auth, or policy files, pause and coordinate rather than guessing through the merge.
+
+High-risk shared-file areas:
+- `.github/workflows/*`
+- `pyproject.toml`, `package.json`, `pnpm-lock.yaml`
+- `src/dietary_guardian/config/settings.py`
+- `src/dietary_guardian/infrastructure/persistence/*`
+- `src/dietary_guardian/infrastructure/auth/*`
+- `apps/api/dietary_api/policy.py`
+- `apps/api/dietary_api/deps.py`
+
+Nightly or batch contributor work should still follow the same rule: one coherent milestone, validation before handoff, and docs updated in the same change when behavior or architecture moved.
+
+### Planning and backlog hygiene
+- `SYSTEM_ROADMAP.md` is the canonical roadmap and status document.
+- Do not create new root planning files for temporary execution packets or one-off backlogs.
+- If a plan is still active and generally useful, fold it into `SYSTEM_ROADMAP.md`, `ARCHITECTURE.md`, or `docs/developer-guide.md`.
+- If a plan is task-local and temporary, keep it in the PR or issue context instead of adding another repository-level markdown file.
 
 ## Coding Standards
 ## Python Standards
@@ -173,7 +209,7 @@ A contribution is not complete if it only works locally but is opaque to operate
 ### Error Handling Patterns
 - Use centralized API error helpers for transport-layer failures.
 - Return typed, machine-readable error codes.
-- Preserve backward-compatible response semantics unless explicitly changing the contract.
+- Keep response semantics explicit and typed. If a contract changes during development, update callers, tests, and docs in the same change.
 - Use retry-safe patterns for side effects.
 
 ## Frontend Standards
@@ -437,18 +473,16 @@ Primary index:
 - `docs/README.md`
 
 Core docs:
-- `docs/system-overview.md`
-- `docs/codebase-walkthrough.md`
 - `docs/developer-guide.md`
 - `docs/user-manual.md`
 - `docs/operations-runbook.md`
-- `docs/glossary.md`
 
 Canonical references that must stay consistent:
+- `README.md`
 - `ARCHITECTURE.md`
+- `SYSTEM_ROADMAP.md`
+- `AGENTS.md`
 - `docs/config-reference.md`
-- `docs/roadmap-v1.md`
-- `docs/feature-audit.md`
 
 Minimum rule:
 - if a PR changes architecture, runtime commands, APIs, workflows, or user-facing flows, update relevant docs in the same PR.
@@ -456,7 +490,7 @@ Minimum rule:
 Escalate early when a change affects:
 - authentication or authorization semantics
 - safety behavior
-- database schema compatibility
+- schema reset and bootstrap expectations for development databases
 - workflow event contracts
 - external provider usage or data retention behavior
 

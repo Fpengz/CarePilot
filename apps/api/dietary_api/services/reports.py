@@ -1,13 +1,22 @@
+"""API orchestration for clinical report parsing and symptom-context enrichment."""
+
 from __future__ import annotations
 
 from datetime import date, timedelta
 from uuid import uuid4
 
 from apps.api.dietary_api.deps import AppContext
-from apps.api.dietary_api.schemas import ReportParseRequest, ReportParseResponse, SymptomSummaryWindowResponse
+from apps.api.dietary_api.schemas import (
+    ReportParseRequest,
+    ReportParseResponse,
+    SymptomSummaryWindowResponse,
+)
 from apps.api.dietary_api.services.symptoms import summarize_checkins_for_session
-from dietary_guardian.models.report import ReportInput
-from dietary_guardian.services.report_parser_service import build_clinical_snapshot, parse_report_input
+from dietary_guardian.domain.health.models import ReportInput
+from dietary_guardian.domain.reports import (
+    build_clinical_snapshot,
+    parse_report_input,
+)
 
 
 def parse_report_for_session(

@@ -1,10 +1,12 @@
+"""Tests for app upload flow."""
+
 from dataclasses import dataclass
 from io import BytesIO
 
 from PIL import Image
 
 from dietary_guardian.models.meal import ImageInput
-from dietary_guardian.services.upload_service import build_image_input
+from dietary_guardian.infrastructure.media.upload import build_image_input
 
 
 @dataclass

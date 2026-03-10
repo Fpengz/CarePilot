@@ -16,4 +16,4 @@ export {
   deleteMedicationRegimen,
   createMedicationAdherenceEvent,
   getMedicationAdherenceMetrics,
-} from "@/lib/api";
+} from "./core";

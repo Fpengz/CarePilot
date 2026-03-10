@@ -1,3 +1,5 @@
+"""Data models for daily nutrition."""
+
 from pydantic import BaseModel, Field
 
 

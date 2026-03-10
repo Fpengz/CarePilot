@@ -15,11 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
+const SHOW_DEMO_ACCOUNTS = process.env.NODE_ENV === "development";
+
 export default function LoginPage() {
   const router = useRouter();
   const { refreshSession } = useSession();
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("admin-pass");
+  const [email, setEmail] = useState(SHOW_DEMO_ACCOUNTS ? "admin@example.com" : "");
+  const [password, setPassword] = useState(SHOW_DEMO_ACCOUNTS ? "admin-pass" : "");
   const [result, setResult] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [meResult, setMeResult] = useState<object | null>(null);
@@ -29,8 +31,12 @@ export default function LoginPage() {
       <PageTitle
         eyebrow="Auth"
         title="Sign In"
-        description="Use demo accounts to test session cookies, role/scopes, and the account panel flows."
-        tags={["cookie session", "account_role", "profile_mode"]}
+        description={
+          SHOW_DEMO_ACCOUNTS
+            ? "Use demo accounts to test session cookies, role/scopes, and the account panel flows."
+            : "Sign in with your account to access the Dietary Guardian workspace."
+        }
+
       />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,540px)_minmax(0,1fr)]">
       <Card className="grain-overlay relative overflow-hidden">
@@ -39,9 +45,9 @@ export default function LoginPage() {
             <Badge>Auth v2</Badge>
             <Badge variant="outline">account_role + scopes</Badge>
           </div>
-          <CardTitle className="text-2xl">Sign In to Demo Accounts</CardTitle>
+          <CardTitle className="text-2xl">{SHOW_DEMO_ACCOUNTS ? "Sign In to Demo Accounts" : "Sign In"}</CardTitle>
           <CardDescription>
-            Backend-issued session cookie flow (`/api/v1/auth/login`). Responses return `account_role`, `scopes`, and `profile_mode`.
+            Backend-issued session cookie flow (`/api/v1/auth/login`).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -106,32 +112,34 @@ export default function LoginPage() {
               <Link href="/signup">Go to Sign Up</Link>
             </Button>
           </div>
-          <div className="grid gap-2 pt-2">
-            {[
-              { label: "Member (self)", email: "member@example.com", pass: "member-pass", icon: UserRound },
-              { label: "Helper (member + caregiver mode)", email: "helper@example.com", pass: "helper-pass", icon: Users },
-              { label: "Admin", email: "admin@example.com", pass: "admin-pass", icon: ShieldCheck },
-            ].map((acct) => {
-              const Icon = acct.icon;
-              return (
-                <button
-                  key={acct.email}
-                  className="flex items-center justify-between rounded-xl border border-[color:var(--border)] bg-white/75 px-3 py-2 text-left text-[color:var(--foreground)] transition hover:bg-white dark:bg-[color:var(--panel-soft)] dark:hover:bg-[color:var(--card)]"
-                  onClick={() => {
-                    setEmail(acct.email);
-                    setPassword(acct.pass);
-                  }}
-                  type="button"
-                >
-                  <span className="flex items-center gap-2 text-sm font-medium">
-                    <Icon className="h-4 w-4 text-[color:var(--accent)]" />
-                    {acct.label}
-                  </span>
-                  <span className="text-xs text-[color:var(--muted-foreground)]">{acct.email}</span>
-                </button>
-              );
-            })}
-          </div>
+          {SHOW_DEMO_ACCOUNTS ? (
+            <div className="grid gap-2 pt-2">
+              {[
+                { label: "Member (self)", email: "member@example.com", pass: "member-pass", icon: UserRound },
+                { label: "Helper (member + caregiver mode)", email: "helper@example.com", pass: "helper-pass", icon: Users },
+                { label: "Admin", email: "admin@example.com", pass: "admin-pass", icon: ShieldCheck },
+              ].map((acct) => {
+                const Icon = acct.icon;
+                return (
+                  <button
+                    key={acct.email}
+                    className="flex items-center justify-between rounded-xl border border-[color:var(--border)] bg-white/75 px-3 py-2 text-left text-[color:var(--foreground)] transition hover:bg-white dark:bg-[color:var(--panel-soft)] dark:hover:bg-[color:var(--card)]"
+                    onClick={() => {
+                      setEmail(acct.email);
+                      setPassword(acct.pass);
+                    }}
+                    type="button"
+                  >
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <Icon className="h-4 w-4 text-[color:var(--accent)]" />
+                      {acct.label}
+                    </span>
+                    <span className="text-xs text-[color:var(--muted-foreground)]">{acct.email}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

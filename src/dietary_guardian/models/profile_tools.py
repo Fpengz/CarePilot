@@ -1,3 +1,5 @@
+"""Data models for profile tools."""
+
 from typing import Any
 
 from pydantic import BaseModel, Field

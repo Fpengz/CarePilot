@@ -7,10 +7,13 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   ["Login", "/login"],
+  ["Companion", "/companion"],
   ["Dashboard", "/dashboard"],
   ["Meals", "/meals"],
   ["Medications", "/medications"],
   ["Symptoms", "/symptoms"],
+  ["Clinician Digest", "/clinician-digest"],
+  ["Impact", "/impact"],
   ["Clinical Cards", "/clinical-cards"],
   ["Metrics", "/metrics"],
   ["Suggestions", "/suggestions"],

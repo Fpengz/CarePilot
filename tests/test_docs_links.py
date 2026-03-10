@@ -1,3 +1,5 @@
+"""Tests for docs links."""
+
 from pathlib import Path
 
 

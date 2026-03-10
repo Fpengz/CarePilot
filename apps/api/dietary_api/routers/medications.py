@@ -1,3 +1,5 @@
+"""API router for medications endpoints."""
+
 from __future__ import annotations
 
 from datetime import date
@@ -5,7 +7,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas.medications import (
+from ..schemas import (
     MedicationAdherenceEventCreateRequest,
     MedicationAdherenceEventEnvelopeResponse,
     MedicationAdherenceMetricsResponse,
