@@ -1,3 +1,5 @@
+"""Module for test api reminder notifications."""
+
 import asyncio
 from collections.abc import Generator
 from datetime import datetime, timedelta, timezone

@@ -1,3 +1,5 @@
+"""Application ports for auth."""
+
 from typing import Any, Protocol
 
 from dietary_guardian.domain.identity.models import AccountRole, ProfileMode

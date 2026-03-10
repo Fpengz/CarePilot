@@ -1,3 +1,5 @@
+"""Infrastructure support for rate limiter."""
+
 from __future__ import annotations
 
 from collections import deque

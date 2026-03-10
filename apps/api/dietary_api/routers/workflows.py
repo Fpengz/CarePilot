@@ -1,3 +1,5 @@
+"""API router for workflows endpoints."""
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from ..deps import workflow_deps

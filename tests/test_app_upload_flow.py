@@ -1,3 +1,5 @@
+"""Tests for app upload flow."""
+
 from dataclasses import dataclass
 from io import BytesIO
 

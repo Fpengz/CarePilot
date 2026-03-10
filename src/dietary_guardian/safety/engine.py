@@ -1,3 +1,5 @@
+"""Safety logic for engine."""
+
 from typing import Any, cast
 
 import logfire

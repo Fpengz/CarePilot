@@ -1,3 +1,5 @@
+"""Application use cases for auth."""
+
 from dataclasses import dataclass
 from typing import Any
 

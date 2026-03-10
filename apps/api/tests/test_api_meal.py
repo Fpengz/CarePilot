@@ -1,3 +1,5 @@
+"""Module for test api meal."""
+
 import asyncio
 import logging
 from collections.abc import Generator

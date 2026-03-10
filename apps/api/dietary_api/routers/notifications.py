@@ -1,3 +1,5 @@
+"""API router for notifications endpoints."""
+
 from fastapi import APIRouter, Depends, Request
 
 from ..errors import build_api_error

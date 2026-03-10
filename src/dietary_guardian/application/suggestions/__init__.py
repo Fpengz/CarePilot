@@ -1,3 +1,5 @@
+"""Package exports for suggestions."""
+
 from .use_cases import (
     MissingActiveHouseholdError,
     NoMealRecordsError,

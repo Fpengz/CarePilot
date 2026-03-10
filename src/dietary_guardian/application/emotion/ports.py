@@ -1,3 +1,5 @@
+"""Application ports for emotion."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

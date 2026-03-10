@@ -1,3 +1,5 @@
+"""Domain models and helpers for models."""
+
 from __future__ import annotations
 
 from typing import Literal

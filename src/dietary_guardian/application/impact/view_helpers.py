@@ -1,3 +1,5 @@
+"""Application module for view helpers."""
+
 from dietary_guardian.domain.notifications.models import ReminderEvent
 from dietary_guardian.domain.recommendations.models import RecommendationOutput
 from dietary_guardian.models.analytics import EngagementMetrics

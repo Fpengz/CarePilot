@@ -1,3 +1,5 @@
+"""Safety logic for exceptions."""
+
 from dietary_guardian.models.meal import MealState
 
 

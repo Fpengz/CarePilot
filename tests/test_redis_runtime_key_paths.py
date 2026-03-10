@@ -1,3 +1,5 @@
+"""Tests for redis runtime key paths."""
+
 from __future__ import annotations
 
 import json

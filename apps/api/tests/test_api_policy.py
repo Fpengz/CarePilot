@@ -1,3 +1,5 @@
+"""Module for test api policy."""
+
 from typing import Any
 
 import pytest

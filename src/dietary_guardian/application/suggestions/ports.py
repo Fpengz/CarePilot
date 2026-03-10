@@ -1,3 +1,5 @@
+"""Application ports for suggestions."""
+
 from collections.abc import Sequence
 from typing import Any, Protocol
 

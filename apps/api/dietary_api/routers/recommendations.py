@@ -1,3 +1,5 @@
+"""API router for recommendations endpoints."""
+
 from fastapi import APIRouter, Depends, Request
 
 from ..deps import recommendation_agent_deps, recommendation_deps

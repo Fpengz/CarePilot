@@ -1,3 +1,5 @@
+"""Module for test api households."""
+
 from collections.abc import Generator
 from datetime import date
 

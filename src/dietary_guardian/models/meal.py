@@ -1,3 +1,5 @@
+"""Data models for meal."""
+
 from datetime import datetime
 from enum import StrEnum
 from typing import Literal

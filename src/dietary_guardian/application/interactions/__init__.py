@@ -1,3 +1,5 @@
+"""Package exports for interactions."""
+
 from .use_cases import (
     CompanionStateInputs,
     build_companion_runtime_state,

@@ -1,3 +1,5 @@
+"""Data models for contracts."""
+
 from datetime import datetime, timezone
 from typing import Any
 

@@ -1,3 +1,5 @@
+"""API router for alerts endpoints."""
+
 from fastapi import APIRouter, Depends, Request
 
 from ..deps import alert_deps

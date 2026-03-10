@@ -1,3 +1,5 @@
+"""Tests for biomarker normalization."""
+
 from dietary_guardian.domain.health.models import BiomarkerReading
 from dietary_guardian.domain.reports import build_clinical_snapshot
 

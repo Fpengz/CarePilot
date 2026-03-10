@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Utility script for dg."""
+
 from __future__ import annotations
 
 import json

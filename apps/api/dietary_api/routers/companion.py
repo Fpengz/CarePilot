@@ -1,3 +1,5 @@
+"""API router for companion endpoints."""
+
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Request

@@ -1,3 +1,5 @@
+"""Tests for agent registry."""
+
 from dietary_guardian.agents.registry import build_default_agent_registry
 from dietary_guardian.domain.workflows.models import WorkflowName
 

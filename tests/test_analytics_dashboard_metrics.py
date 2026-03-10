@@ -1,3 +1,5 @@
+"""Tests for analytics dashboard metrics."""
+
 from datetime import datetime
 
 from dietary_guardian.application.impact.view_helpers import build_analytics_summary

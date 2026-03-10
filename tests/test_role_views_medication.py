@@ -1,3 +1,5 @@
+"""Tests for role views medication."""
+
 from datetime import datetime
 
 from dietary_guardian.application.impact.view_helpers import build_profile_mode_medication_view

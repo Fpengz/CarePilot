@@ -1,3 +1,5 @@
+"""Module for run reminder scheduler."""
+
 import asyncio
 
 from dietary_guardian.infrastructure.schedulers.reminder_scheduler import run_reminder_scheduler_loop

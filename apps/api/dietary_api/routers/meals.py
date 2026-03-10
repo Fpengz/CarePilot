@@ -1,3 +1,5 @@
+"""API router for meals endpoints."""
+
 from datetime import date
 from typing import Annotated
 

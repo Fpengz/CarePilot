@@ -1,3 +1,5 @@
+"""Application module for daily suggestions."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

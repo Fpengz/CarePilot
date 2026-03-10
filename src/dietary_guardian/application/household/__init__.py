@@ -1,3 +1,5 @@
+"""Package exports for household."""
+
 from .use_cases import (
     HouseholdAlreadyExistsError,
     HouseholdForbiddenError,

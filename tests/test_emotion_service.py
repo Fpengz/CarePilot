@@ -1,3 +1,5 @@
+"""Tests for emotion service."""
+
 from __future__ import annotations
 
 import time

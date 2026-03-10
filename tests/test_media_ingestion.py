@@ -1,3 +1,5 @@
+"""Tests for media ingestion."""
+
 from datetime import datetime, timezone
 
 from dietary_guardian.models.meal import ImageInput

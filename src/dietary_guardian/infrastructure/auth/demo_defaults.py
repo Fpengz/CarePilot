@@ -1,3 +1,5 @@
+"""Infrastructure support for demo defaults."""
+
 from __future__ import annotations
 
 from dietary_guardian.config.settings import Settings

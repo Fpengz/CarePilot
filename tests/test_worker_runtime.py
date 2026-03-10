@@ -1,3 +1,5 @@
+"""Tests for worker runtime."""
+
 from types import SimpleNamespace
 
 import pytest

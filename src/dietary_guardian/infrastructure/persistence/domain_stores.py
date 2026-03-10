@@ -1,3 +1,5 @@
+"""Infrastructure support for domain stores."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

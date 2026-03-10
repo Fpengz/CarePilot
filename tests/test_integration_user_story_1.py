@@ -1,3 +1,5 @@
+"""Tests for integration user story 1."""
+
 from datetime import date, datetime
 
 from dietary_guardian.domain.identity.models import (

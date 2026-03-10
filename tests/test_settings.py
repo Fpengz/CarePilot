@@ -1,3 +1,5 @@
+"""Tests for settings."""
+
 import pytest
 from pydantic import ValidationError
 

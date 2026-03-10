@@ -1,3 +1,5 @@
+"""Infrastructure support for inprocess emotion runtime."""
+
 from __future__ import annotations
 
 from dietary_guardian.application.emotion.ports import (

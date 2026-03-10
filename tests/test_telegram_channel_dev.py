@@ -1,3 +1,5 @@
+"""Tests for telegram channel dev."""
+
 from datetime import datetime, timezone
 from urllib import request
 

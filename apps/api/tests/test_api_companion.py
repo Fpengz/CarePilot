@@ -1,3 +1,5 @@
+"""Module for test api companion."""
+
 from __future__ import annotations
 
 from collections.abc import Generator

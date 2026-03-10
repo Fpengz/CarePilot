@@ -1,3 +1,5 @@
+"""Module for test api notifications."""
+
 from io import BytesIO
 
 from apps.api.dietary_api.main import create_app

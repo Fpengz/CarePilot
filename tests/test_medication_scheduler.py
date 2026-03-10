@@ -1,3 +1,5 @@
+"""Tests for medication scheduler."""
+
 from datetime import date, datetime
 
 from dietary_guardian.domain.identity.models import (

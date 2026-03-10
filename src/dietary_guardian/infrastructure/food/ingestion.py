@@ -1,3 +1,5 @@
+"""Infrastructure support for ingestion."""
+
 from __future__ import annotations
 
 import json

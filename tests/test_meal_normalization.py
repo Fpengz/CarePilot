@@ -1,3 +1,5 @@
+"""Tests for meal normalization."""
+
 from dietary_guardian.application.meals.use_cases import normalize_vision_result
 from dietary_guardian.domain.meals import MealPerception
 from dietary_guardian.domain.recommendations.models import CanonicalFoodRecord

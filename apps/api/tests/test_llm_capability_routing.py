@@ -1,3 +1,5 @@
+"""Module for test llm capability routing."""
+
 from dietary_guardian.agents.executor import InferenceEngine
 from dietary_guardian.config.settings import Settings
 from dietary_guardian.llm import LLMCapability, LLMFactory, ModelProvider

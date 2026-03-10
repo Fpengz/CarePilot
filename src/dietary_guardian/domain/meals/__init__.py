@@ -1,3 +1,5 @@
+"""Package exports for meals."""
+
 from .models import (
     EnrichedMealEvent,
     MealNutritionProfile,

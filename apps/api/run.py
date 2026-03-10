@@ -1,3 +1,5 @@
+"""Module for run."""
+
 import uvicorn
 
 from apps.api.dietary_api.main import create_app

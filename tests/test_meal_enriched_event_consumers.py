@@ -1,3 +1,5 @@
+"""Tests for meal enriched event consumers."""
+
 from datetime import date, datetime, timezone
 from typing import Any, cast
 

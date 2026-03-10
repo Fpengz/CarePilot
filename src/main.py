@@ -1,3 +1,5 @@
+"""Module for main."""
+
 import asyncio
 
 from pydantic import ValidationError

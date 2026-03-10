@@ -1,3 +1,5 @@
+"""Module for test api auth."""
+
 import time
 from collections.abc import Generator
 from types import SimpleNamespace

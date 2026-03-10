@@ -1,3 +1,5 @@
+"""Tests for local model profiles."""
+
 from typing import cast
 
 from dietary_guardian.config.runtime import AppConfig, LocalModelProfile

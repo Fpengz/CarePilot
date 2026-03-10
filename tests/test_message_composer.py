@@ -1,3 +1,5 @@
+"""Tests for message composer."""
+
 from dietary_guardian.domain.alerts.models import AlertMessage
 from dietary_guardian.infrastructure.notifications.message_composer import CHANNEL_CAPABILITIES, compose_alert_message
 

@@ -1,3 +1,5 @@
+"""Tests for inference engine."""
+
 import asyncio
 
 import pytest

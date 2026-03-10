@@ -1,3 +1,5 @@
+"""Tests for inference retry config."""
+
 from pydantic import BaseModel
 
 from dietary_guardian.agents.executor import InferenceEngine

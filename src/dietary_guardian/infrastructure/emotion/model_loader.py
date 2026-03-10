@@ -1,3 +1,5 @@
+"""Infrastructure support for model loader."""
+
 from __future__ import annotations
 
 from dietary_guardian.infrastructure.emotion.config import EmotionRuntimeConfig

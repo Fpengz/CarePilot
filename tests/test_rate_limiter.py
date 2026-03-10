@@ -1,3 +1,5 @@
+"""Tests for rate limiter."""
+
 from dietary_guardian.config.settings import Settings
 from dietary_guardian.infrastructure.cache.rate_limiter import (
     InMemoryRateLimiter,

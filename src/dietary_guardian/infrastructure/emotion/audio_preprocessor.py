@@ -1,3 +1,5 @@
+"""Infrastructure support for audio preprocessor."""
+
 from __future__ import annotations
 
 SUPPORTED_AUDIO_CONTENT_TYPES = {

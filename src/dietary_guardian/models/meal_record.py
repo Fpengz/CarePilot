@@ -1,3 +1,5 @@
+"""Data models for meal record."""
+
 from datetime import datetime, timezone
 
 from pydantic import BaseModel, Field

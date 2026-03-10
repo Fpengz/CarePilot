@@ -1,3 +1,5 @@
+"""Tests for safety."""
+
 import pytest
 
 from dietary_guardian.domain.identity.models import (

@@ -1,3 +1,5 @@
+"""Application ports for evidence."""
+
 from __future__ import annotations
 
 from typing import Protocol

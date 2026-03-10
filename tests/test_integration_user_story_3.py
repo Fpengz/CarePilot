@@ -1,3 +1,5 @@
+"""Tests for integration user story 3."""
+
 from datetime import datetime
 
 from dietary_guardian.domain.health.models import ReportInput

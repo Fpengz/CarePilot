@@ -1,3 +1,5 @@
+"""Module for test api error envelope."""
+
 from collections.abc import Generator
 
 import pytest

@@ -1,3 +1,5 @@
+"""Tests for food ingestion."""
+
 from pathlib import Path
 
 from dietary_guardian.infrastructure.food.ingestion import (

@@ -1,3 +1,5 @@
+"""Module for test api observability contract."""
+
 import logging
 from collections.abc import Generator
 from io import BytesIO

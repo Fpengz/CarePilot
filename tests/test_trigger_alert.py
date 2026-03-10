@@ -1,3 +1,5 @@
+"""Tests for trigger alert."""
+
 from dietary_guardian.infrastructure.persistence import SQLiteRepository
 from dietary_guardian.application.notifications.alert_dispatch import trigger_alert
 

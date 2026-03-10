@@ -1,3 +1,5 @@
+"""Module for routes shared."""
+
 from typing import Annotated, Any, cast
 
 from fastapi import Cookie, Depends, HTTPException, Request

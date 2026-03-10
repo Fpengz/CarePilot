@@ -1,3 +1,5 @@
+"""Package exports for contracts."""
+
 from dietary_guardian.domain.workflows.models import (
     AgentContract,
     WorkflowRuntimeContract,

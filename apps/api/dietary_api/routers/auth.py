@@ -1,3 +1,5 @@
+"""API router for auth endpoints."""
+
 from datetime import datetime
 from typing import Annotated, Literal, cast
 

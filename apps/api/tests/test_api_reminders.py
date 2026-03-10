@@ -1,3 +1,5 @@
+"""Module for test api reminders."""
+
 from collections.abc import Generator
 
 import pytest

@@ -1,3 +1,5 @@
+"""API router for health profiles endpoints."""
+
 from fastapi import APIRouter, Depends, Request
 
 from ..routes_shared import current_session, get_context

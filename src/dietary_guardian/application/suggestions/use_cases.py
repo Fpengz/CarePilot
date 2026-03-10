@@ -1,3 +1,5 @@
+"""Application use cases for suggestions."""
+
 from datetime import datetime, timezone
 from typing import Any, TypedDict
 from uuid import uuid4

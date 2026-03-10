@@ -1,3 +1,5 @@
+"""Tests for web api module layout."""
+
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

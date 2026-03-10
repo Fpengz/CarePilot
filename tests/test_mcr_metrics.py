@@ -1,3 +1,5 @@
+"""Tests for mcr metrics."""
+
 from datetime import datetime
 
 from dietary_guardian.domain.notifications.models import ReminderEvent

@@ -1,3 +1,5 @@
+"""Infrastructure support for text emotion."""
+
 from __future__ import annotations
 
 from dietary_guardian.models.emotion import EmotionLabel

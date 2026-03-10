@@ -1,3 +1,5 @@
+"""Module for test api emotions."""
+
 from collections.abc import Generator
 
 import pytest

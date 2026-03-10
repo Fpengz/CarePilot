@@ -1,3 +1,5 @@
+"""Package exports for routers."""
+
 from fastapi import FastAPI
 
 from .alerts import router as alerts_router

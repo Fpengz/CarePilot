@@ -1,3 +1,5 @@
+"""Module for test domain dependency providers."""
+
 from typing import get_type_hints
 
 from apps.api.dietary_api import deps

@@ -1,3 +1,5 @@
+"""Data models for inference."""
+
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Any

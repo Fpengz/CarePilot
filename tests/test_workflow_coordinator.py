@@ -1,3 +1,5 @@
+"""Tests for workflow coordinator."""
+
 from datetime import datetime, timezone
 
 from dietary_guardian.domain.identity.models import (

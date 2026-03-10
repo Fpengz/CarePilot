@@ -1,3 +1,5 @@
+"""Module for session profiles."""
+
 from typing import Any, cast
 
 from dietary_guardian.domain.identity.models import AccountRole, ProfileMode, UserProfile

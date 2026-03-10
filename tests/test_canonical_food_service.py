@@ -1,3 +1,5 @@
+"""Tests for canonical food service."""
+
 from __future__ import annotations
 
 from dietary_guardian.domain.recommendations.models import CanonicalFoodRecord

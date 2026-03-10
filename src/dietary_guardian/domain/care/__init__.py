@@ -1,3 +1,5 @@
+"""Package exports for care."""
+
 from .models import (
     CarePlan,
     CaseSnapshot,

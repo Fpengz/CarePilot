@@ -1,3 +1,5 @@
+"""Infrastructure support for builders."""
+
 from __future__ import annotations
 
 from dietary_guardian.config.settings import Settings

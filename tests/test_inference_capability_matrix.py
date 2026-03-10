@@ -1,3 +1,5 @@
+"""Tests for inference capability matrix."""
+
 from dietary_guardian.agents.executor import InferenceEngine
 from dietary_guardian.models.inference import InferenceModality
 

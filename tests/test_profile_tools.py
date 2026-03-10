@@ -1,3 +1,5 @@
+"""Tests for profile tools."""
+
 from typing import Literal
 
 from dietary_guardian.application.personalization.profile_tools import (

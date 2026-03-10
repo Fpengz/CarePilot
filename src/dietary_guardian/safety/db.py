@@ -1,3 +1,5 @@
+"""Safety logic for db."""
+
 import sqlite3
 from threading import Lock
 

@@ -1,3 +1,5 @@
+"""Infrastructure support for sqlite bootstrap."""
+
 from __future__ import annotations
 
 import sqlite3

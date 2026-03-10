@@ -1,3 +1,5 @@
+"""Module for test api suggestions."""
+
 from collections.abc import Generator
 from io import BytesIO
 

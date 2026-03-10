@@ -1,3 +1,5 @@
+"""Infrastructure support for redis store."""
+
 from __future__ import annotations
 
 import json

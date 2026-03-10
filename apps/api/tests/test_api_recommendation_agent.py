@@ -1,3 +1,5 @@
+"""Module for test api recommendation agent."""
+
 from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
 

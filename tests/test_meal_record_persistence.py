@@ -1,3 +1,5 @@
+"""Tests for meal record persistence."""
+
 from datetime import datetime
 
 from dietary_guardian.domain.meals import EnrichedMealEvent, MealNutritionProfile, MealPerception

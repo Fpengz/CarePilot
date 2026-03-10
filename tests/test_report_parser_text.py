@@ -1,3 +1,5 @@
+"""Tests for report parser text."""
+
 from dietary_guardian.domain.health.models import ReportInput
 from dietary_guardian.domain.reports import parse_report_input
 

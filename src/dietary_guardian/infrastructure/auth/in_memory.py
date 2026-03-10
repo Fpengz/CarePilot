@@ -1,3 +1,5 @@
+"""Infrastructure support for in memory."""
+
 import base64
 import hashlib
 import hmac

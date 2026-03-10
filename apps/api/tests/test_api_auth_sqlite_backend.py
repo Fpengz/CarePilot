@@ -1,3 +1,5 @@
+"""Module for test api auth sqlite backend."""
+
 from collections.abc import Generator
 
 import pytest

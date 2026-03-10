@@ -1,3 +1,5 @@
+"""Tests for reminder notification service."""
+
 from datetime import datetime, timezone
 
 from dietary_guardian.domain.notifications.models import ReminderEvent

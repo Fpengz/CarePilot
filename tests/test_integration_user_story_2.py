@@ -1,3 +1,5 @@
+"""Tests for integration user story 2."""
+
 import pytest
 
 from dietary_guardian.agents.vision import HawkerVisionModule

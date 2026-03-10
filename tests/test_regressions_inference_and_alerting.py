@@ -1,3 +1,5 @@
+"""Tests for regressions inference and alerting."""
+
 from datetime import datetime
 
 import pytest

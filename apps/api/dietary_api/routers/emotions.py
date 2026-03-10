@@ -1,3 +1,5 @@
+"""API router for emotions endpoints."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile

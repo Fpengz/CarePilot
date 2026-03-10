@@ -1,3 +1,5 @@
+"""Application use cases for interactions."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

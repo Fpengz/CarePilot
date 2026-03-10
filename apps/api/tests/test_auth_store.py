@@ -1,3 +1,5 @@
+"""Module for test auth store."""
+
 from datetime import datetime, timedelta, timezone
 
 from dietary_guardian.config.settings import Settings

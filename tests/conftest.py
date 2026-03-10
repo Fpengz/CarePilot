@@ -1,3 +1,5 @@
+"""Pytest fixtures and shared test configuration."""
+
 import sys
 from pathlib import Path
 

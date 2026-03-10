@@ -1,3 +1,5 @@
+"""Tests for hawker vision."""
+
 import pytest
 
 from dietary_guardian.agents.vision import HawkerVisionModule

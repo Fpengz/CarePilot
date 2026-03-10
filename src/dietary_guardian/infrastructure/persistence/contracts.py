@@ -1,3 +1,5 @@
+"""Infrastructure support for contracts."""
+
 from __future__ import annotations
 
 from typing import TypeAlias

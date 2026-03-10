@@ -1,3 +1,5 @@
+"""Tests for tool registry metrics."""
+
 from pydantic import BaseModel
 
 from dietary_guardian.models.tooling import (

@@ -1,3 +1,5 @@
+"""API router for households endpoints."""
+
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Request

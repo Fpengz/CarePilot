@@ -1,3 +1,5 @@
+"""Module for test api auth cookie resolution."""
+
 from collections.abc import Generator
 
 import pytest

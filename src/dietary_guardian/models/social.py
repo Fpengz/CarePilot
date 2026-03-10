@@ -1,3 +1,5 @@
+"""Data models for social."""
+
 from pydantic import BaseModel
 
 

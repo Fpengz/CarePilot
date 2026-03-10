@@ -1,3 +1,5 @@
+"""Tests for dg cli."""
+
 import subprocess
 import sys
 from pathlib import Path

@@ -1,3 +1,5 @@
+"""Module for test api meal weekly."""
+
 from __future__ import annotations
 
 from collections.abc import Generator

@@ -1,3 +1,5 @@
+"""API router for health endpoints."""
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from dietary_guardian.infrastructure.diagnostics.readiness import build_readiness_report

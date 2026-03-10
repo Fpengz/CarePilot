@@ -1,3 +1,5 @@
+"""Tests for timezone datetimes."""
+
 from datetime import timezone
 
 from dietary_guardian.domain.health.models import ReportInput

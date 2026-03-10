@@ -1,3 +1,5 @@
+"""Module for main."""
+
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, cast

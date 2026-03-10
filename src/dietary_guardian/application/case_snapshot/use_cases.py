@@ -1,3 +1,5 @@
+"""Application use cases for case snapshot."""
+
 from __future__ import annotations
 
 from dietary_guardian.domain.care import CaseSnapshot

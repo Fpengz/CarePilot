@@ -1,3 +1,5 @@
+"""Tests for recommendation grounding."""
+
 from datetime import datetime
 
 from dietary_guardian.domain.health.models import ClinicalProfileSnapshot
