@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dietary_guardian.logging_config import get_logger
-from dietary_guardian.services.daily_suggestions_service import build_daily_suggestions
+from dietary_guardian.application.suggestions.daily_suggestions import build_daily_suggestions
 from dietary_guardian.services.health_profile_onboarding_service import (
     complete_health_profile_onboarding,
     get_or_create_health_profile_onboarding_state,
