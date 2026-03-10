@@ -68,8 +68,8 @@ def household_invite_response(invite: dict[str, object]) -> HouseholdInviteRespo
         created_by_user_id=str(invite["created_by_user_id"]),
         created_at=datetime.fromisoformat(str(invite["created_at"])),
         expires_at=datetime.fromisoformat(str(invite["expires_at"])),
-        max_uses=int(invite["max_uses"]),
-        uses=int(invite["uses"]),
+        max_uses=int(invite["max_uses"]),  # type: ignore[arg-type]
+        uses=int(invite["uses"]),  # type: ignore[arg-type]
     )
 
 

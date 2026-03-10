@@ -82,7 +82,7 @@ def load_companion_inputs(
 
 def build_workflow_response(*, context: AppContext, correlation_id: str, request_id: str) -> WorkflowResponse:
     """Render the recorded companion workflow timeline into the API response shape."""
-    timeline = context.event_timeline.list(correlation_id=correlation_id)
+    timeline = context.event_timeline.get_events(correlation_id=correlation_id)
     return WorkflowResponse(
         workflow_name="companion_interaction",
         request_id=request_id,

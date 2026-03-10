@@ -58,7 +58,7 @@ class WorkflowCoordinator:
             user_id=user_profile.id,
             payload={"dish_name": vision_result.primary_state.dish_name, "manual_review": vision_result.needs_manual_review, "handoff_count": len(handoffs), "meal_record_id": meal_record_id, "confidence": vision_result.primary_state.confidence_score, "estimated_calories": vision_result.primary_state.nutrition.calories, "model_version": vision_result.model_version},
         )
-        return WorkflowExecutionResult(workflow_name=WorkflowName.MEAL_ANALYSIS, request_id=capture.request_id, correlation_id=capture.correlation_id, user_id=user_profile.id, output_envelope=output, handoffs=handoffs, timeline_events=self.event_timeline.list(correlation_id=capture.correlation_id))
+        return WorkflowExecutionResult(workflow_name=WorkflowName.MEAL_ANALYSIS, request_id=capture.request_id, correlation_id=capture.correlation_id, user_id=user_profile.id, output_envelope=output, handoffs=handoffs, timeline_events=self.event_timeline.get_events(correlation_id=capture.correlation_id))
 
     def run_alert_workflow(self, *, user_profile: UserProfile, alert_type: str, severity: AlertSeverity, message: str, destinations: list[str], request_id: str | None = None, correlation_id: str | None = None, account_role: str = "member", scopes: list[str] | None = None, environment: str = "dev") -> WorkflowExecutionResult:
         issued_request_id = request_id or str(uuid4())
@@ -68,15 +68,15 @@ class WorkflowCoordinator:
         tool_result = self.tool_registry.execute("trigger_alert", {"alert_type": alert_type, "severity": severity, "message": message, "destinations": destinations}, ToolPolicyContext(account_role=account_role, scopes=scopes or [], environment=environment, user_id=user_profile.id, correlation_id=issued_correlation_id))
         handoffs = [AgentHandoff(from_agent="care_orchestrator", to_agent="notification_agent", request_id=issued_request_id, correlation_id=issued_correlation_id, confidence=1.0 if tool_result.success else 0.0, obligations=["deliver_alert_via_channels"], payload={"alert_type": alert_type, "destinations": destinations})]
         self.event_timeline.append(event_type="workflow_completed", workflow_name=WorkflowName.ALERT_ONLY, correlation_id=issued_correlation_id, request_id=issued_request_id, user_id=user_profile.id, payload={"tool_success": tool_result.success, "tool_name": tool_result.tool_name})
-        return WorkflowExecutionResult(workflow_name=WorkflowName.ALERT_ONLY, request_id=issued_request_id, correlation_id=issued_correlation_id, user_id=user_profile.id, handoffs=handoffs, tool_results=[tool_result], timeline_events=self.event_timeline.list(correlation_id=issued_correlation_id))
+        return WorkflowExecutionResult(workflow_name=WorkflowName.ALERT_ONLY, request_id=issued_request_id, correlation_id=issued_correlation_id, user_id=user_profile.id, handoffs=handoffs, tool_results=[tool_result], timeline_events=self.event_timeline.get_events(correlation_id=issued_correlation_id))
 
     def run_report_parse_workflow(self, *, user_id: str, request_id: str, correlation_id: str, source: str, reading_count: int, symptom_checkin_count: int, red_flag_count: int, window: dict[str, object]) -> WorkflowExecutionResult:
         self.event_timeline.append(event_type="workflow_started", workflow_name=WorkflowName.REPORT_PARSE, correlation_id=correlation_id, request_id=request_id, user_id=user_id, payload={"source": source, "steps": WORKFLOW_DEFINITIONS[WorkflowName.REPORT_PARSE]})
         self.event_timeline.append(event_type="workflow_completed", workflow_name=WorkflowName.REPORT_PARSE, correlation_id=correlation_id, request_id=request_id, user_id=user_id, payload={"reading_count": reading_count, "symptom_checkin_count": symptom_checkin_count, "red_flag_count": red_flag_count, "window": window})
-        return WorkflowExecutionResult(workflow_name=WorkflowName.REPORT_PARSE, request_id=request_id, correlation_id=correlation_id, user_id=user_id, timeline_events=self.event_timeline.list(correlation_id=correlation_id))
+        return WorkflowExecutionResult(workflow_name=WorkflowName.REPORT_PARSE, request_id=request_id, correlation_id=correlation_id, user_id=user_id, timeline_events=self.event_timeline.get_events(correlation_id=correlation_id))
 
     def replay_workflow(self, correlation_id: str) -> WorkflowExecutionResult:
-        events = self.event_timeline.list(correlation_id=correlation_id)
+        events = self.event_timeline.get_events(correlation_id=correlation_id)
         request_id = events[0].request_id if events else str(uuid4())
         user_id = events[0].user_id if events else None
         logger.info("workflow_replay correlation_id=%s events=%s side_effects=false", correlation_id, len(events))

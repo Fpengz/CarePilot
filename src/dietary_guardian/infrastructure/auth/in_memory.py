@@ -85,8 +85,8 @@ class InMemoryAuthStore:
                 user_id=user_id,
                 email=email,
                 display_name=name,
-                account_role=account_role,  # type: ignore[arg-type]
-                profile_mode=profile_mode,  # type: ignore[arg-type]
+                account_role=account_role,
+                profile_mode=profile_mode,
                 password_hash=self._hasher.hash(password),
             )
 

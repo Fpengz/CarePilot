@@ -22,7 +22,7 @@ def get_workflow(*, deps: WorkflowDeps, correlation_id: str) -> WorkflowResponse
 
 def list_workflows(*, deps: WorkflowDeps) -> WorkflowListResponse:
     """List known workflows grouped by correlation id."""
-    events = deps.event_timeline.list()
+    events = deps.event_timeline.get_events()
     by_correlation: dict[str, WorkflowListItem] = {}
     for event in events:
         item = by_correlation.get(event.correlation_id)

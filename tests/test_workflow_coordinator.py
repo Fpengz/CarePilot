@@ -107,7 +107,7 @@ def test_meal_workflow_emits_typed_output_and_handoff(tmp_path) -> None:
     assert result.output_envelope.trace.correlation_id == "corr1"
     assert result.handoffs
     assert result.handoffs[0].to_agent == "dietary_agent"
-    events = timeline.list(correlation_id="corr1")
+    events = timeline.get_events(correlation_id="corr1")
     assert len(events) >= 2
     completed = [event for event in events if event.event_type == "workflow_completed"][-1]
     assert completed.payload["meal_record_id"] == "meal-rec-123"
@@ -143,7 +143,7 @@ def test_alert_workflow_uses_tool_registry_and_records_timeline(tmp_path) -> Non
     assert result.workflow_name == "alert_only"
     assert result.tool_results
     assert result.tool_results[0].success is True
-    assert timeline.list(correlation_id=result.correlation_id)
+    assert timeline.get_events(correlation_id=result.correlation_id)
 
 
 def test_alert_workflow_propagates_environment_to_tool_context(tmp_path) -> None:
@@ -269,7 +269,7 @@ def test_report_parse_workflow_emits_summary_timeline(tmp_path) -> None:
     )
 
     assert result.workflow_name == "report_parse"
-    events = timeline.list(correlation_id="corr-report-1")
+    events = timeline.get_events(correlation_id="corr-report-1")
     assert [event.event_type for event in events] == ["workflow_started", "workflow_completed"]
     assert events[0].workflow_name == "report_parse"
     assert events[1].payload["reading_count"] == 4

@@ -73,7 +73,7 @@ class EventTimelineService:
         )
         return event
 
-    def list(self, *, correlation_id: str | None = None, user_id: str | None = None) -> list[WorkflowTimelineEvent]:
+    def get_events(self, *, correlation_id: str | None = None, user_id: str | None = None) -> list[WorkflowTimelineEvent]:
         if self._persistence_enabled and self._repository is not None:
             return self._repository.list_workflow_timeline_events(
                 correlation_id=correlation_id,
