@@ -5,7 +5,7 @@ from fastapi import Cookie, Depends, HTTPException, Request
 from dietary_guardian.domain.notifications.models import MedicationRegimen
 from dietary_guardian.domain.tooling import has_scopes
 
-from .deps import AppContext
+from .deps import AppContext, AuthContext, auth_context
 from .policy import authorize_action, authorize_resource_action
 
 SESSION_COOKIE = "dg_session"
@@ -14,6 +14,10 @@ SessionData = dict[str, Any]
 
 def get_context(request: Request) -> AppContext:
     return cast(AppContext, request.app.state.ctx)
+
+
+def get_auth_context(request: Request) -> AuthContext:
+    return auth_context(get_context(request))
 
 
 def _is_valid_session_payload(session: object) -> bool:
@@ -59,7 +63,7 @@ def require_session(
     request: Request,
     session_cookie: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> SessionData:
-    ctx = get_context(request)
+    ctx = get_auth_context(request)  # narrow context — only auth fields needed
     candidates = _session_cookie_candidates(request, session_cookie)
     if not candidates:
         raise HTTPException(status_code=401, detail="authentication required")
