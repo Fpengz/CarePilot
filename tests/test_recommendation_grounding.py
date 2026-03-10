@@ -1,10 +1,14 @@
 from datetime import datetime
 
+from dietary_guardian.domain.health.models import ClinicalProfileSnapshot
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
 from dietary_guardian.models.meal import Ingredient, MealState, Nutrition
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.report import ClinicalProfileSnapshot
-from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
-from dietary_guardian.services.recommendation_service import generate_recommendation
+from dietary_guardian.domain.recommendations.meal_recommendations import generate_recommendation
 
 
 def _user() -> UserProfile:

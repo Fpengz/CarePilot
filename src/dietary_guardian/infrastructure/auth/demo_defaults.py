@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dietary_guardian.config.settings import Settings
-from dietary_guardian.models.identity import AccountRole, ProfileMode
+from dietary_guardian.domain.identity.models import AccountRole, ProfileMode
 
 DemoUserSeed = tuple[str, str, str, AccountRole, ProfileMode, str]
 

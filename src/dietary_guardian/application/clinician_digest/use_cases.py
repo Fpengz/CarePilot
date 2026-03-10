@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from dietary_guardian.domain.care import CarePlan, CaseSnapshot, ClinicianDigest, CompanionInteraction, EngagementAssessment, EvidenceBundle, SafetyDecision
+from dietary_guardian.domain.care import (
+    CarePlan,
+    CaseSnapshot,
+    ClinicianDigest,
+    CompanionInteraction,
+    EngagementAssessment,
+    EvidenceBundle,
+    SafetyDecision,
+)
 
 
 def build_clinician_digest(

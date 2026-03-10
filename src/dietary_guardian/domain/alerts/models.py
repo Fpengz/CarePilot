@@ -7,7 +7,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 AlertSeverity = Literal["info", "warning", "critical"]
 OutboxState = Literal["pending", "processing", "delivered", "dead_letter"]
 

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dietary_guardian.services.canonical_food_service import (
+from dietary_guardian.domain.recommendations.models import CanonicalFoodRecord
+from dietary_guardian.models.meal import Nutrition
+from dietary_guardian.domain.recommendations.canonical_food_matching import (
     build_default_canonical_food_records,
     find_food_by_name,
     rank_food_candidates,
 )
-from dietary_guardian.models.canonical_food import CanonicalFoodRecord
-from dietary_guardian.models.meal import Nutrition
 
 
 def test_default_canonical_food_records_include_teammate_hawker_seed() -> None:

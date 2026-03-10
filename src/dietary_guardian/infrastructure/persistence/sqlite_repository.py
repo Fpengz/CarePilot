@@ -3,37 +3,47 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 
+from dietary_guardian.domain.alerts.models import AlertMessage, OutboxRecord
+from dietary_guardian.domain.health.models import (
+    BiomarkerReading,
+    HealthProfileOnboardingState,
+    HealthProfileRecord,
+    MedicationAdherenceEvent,
+    SymptomCheckIn,
+    SymptomSafety,
+)
+from dietary_guardian.domain.identity.models import MealSlot
 from dietary_guardian.domain.meals import EnrichedMealEvent, MealPerception
-from dietary_guardian.logging_config import get_logger
-from dietary_guardian.models.canonical_food import CanonicalFoodRecord
-from dietary_guardian.models.meal import MealState
-from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.medication import MedicationRegimen, ReminderEvent
-from dietary_guardian.models.mobility import MobilityReminderSettings
-from dietary_guardian.models.report import BiomarkerReading
-from dietary_guardian.models.alerting import AlertMessage, OutboxRecord
-from dietary_guardian.models.health_profile import HealthProfileRecord
-from dietary_guardian.models.health_profile_onboarding import HealthProfileOnboardingState
-from dietary_guardian.models.clinical_card import ClinicalCardRecord
-from dietary_guardian.models.medication_tracking import MedicationAdherenceEvent
-from dietary_guardian.models.recommendation_agent import MealCatalogItem, PreferenceSnapshot, RecommendationInteraction
-from dietary_guardian.models.reminder_notifications import (
+from dietary_guardian.domain.notifications.models import (
+    MedicationRegimen,
+    MobilityReminderSettings,
+    ReminderEvent,
     ReminderNotificationEndpoint,
     ReminderNotificationLogEntry,
     ReminderNotificationPreference,
     ScheduledReminderNotification,
 )
-from dietary_guardian.services.meal_catalog_service import DEFAULT_MEAL_CATALOG
-from dietary_guardian.models.symptom import SymptomCheckIn, SymptomSafety
-from dietary_guardian.models.tool_policy import ToolRolePolicyRecord
-from dietary_guardian.models.user import MealSlot
-from dietary_guardian.models.workflow import WorkflowTimelineEvent
-from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
-from dietary_guardian.services.canonical_food_service import (
+from dietary_guardian.domain.recommendations.canonical_food_matching import (
     build_default_canonical_food_records,
     find_food_by_name,
     normalize_text,
 )
+from dietary_guardian.domain.recommendations.meal_catalog_queries import DEFAULT_MEAL_CATALOG
+from dietary_guardian.domain.recommendations.models import (
+    CanonicalFoodRecord,
+    MealCatalogItem,
+    PreferenceSnapshot,
+    RecommendationInteraction,
+)
+from dietary_guardian.domain.workflows.models import (
+    ToolRolePolicyRecord,
+    WorkflowContractSnapshotRecord,
+    WorkflowTimelineEvent,
+)
+from dietary_guardian.logging_config import get_logger
+from dietary_guardian.models.clinical_card import ClinicalCardRecord
+from dietary_guardian.models.meal import MealState
+from dietary_guardian.models.meal_record import MealRecognitionRecord
 
 logger = get_logger(__name__)
 

@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from dietary_guardian.services.authorization import has_scopes
+from dietary_guardian.domain.tooling import has_scopes
 
 SessionData = dict[str, Any]
 ResourceData = dict[str, Any]

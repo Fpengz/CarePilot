@@ -2,18 +2,6 @@
 
 from __future__ import annotations
 
-from dietary_guardian.application.household import (
-    create_household_for_user,
-    create_household_invite_for_owner,
-    get_current_household_bundle,
-    join_household_by_code,
-    leave_household_for_member,
-    list_household_members_for_user,
-    remove_household_member_for_owner,
-    rename_household_for_owner,
-    validate_active_household_for_user,
-)
-
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
@@ -29,6 +17,17 @@ from apps.api.dietary_api.services.households_support import (
     household_invite_response,
     household_member_response,
     map_household_error,
+)
+from dietary_guardian.application.household import (
+    create_household_for_user,
+    create_household_invite_for_owner,
+    get_current_household_bundle,
+    join_household_by_code,
+    leave_household_for_member,
+    list_household_members_for_user,
+    remove_household_member_for_owner,
+    rename_household_for_owner,
+    validate_active_household_for_user,
 )
 
 

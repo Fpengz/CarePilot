@@ -5,11 +5,11 @@ from io import BytesIO
 from sqlite3 import Row
 
 import pytest
+from apps.api.dietary_api.main import create_app
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
 
 

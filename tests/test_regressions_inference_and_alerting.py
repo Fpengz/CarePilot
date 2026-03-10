@@ -2,13 +2,13 @@ from datetime import datetime
 
 import pytest
 
-from dietary_guardian.config.llm import LLMCapability
 from dietary_guardian.agents.dietary import AgentResponse, process_meal_request
-from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage
-from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
-from dietary_guardian.models.user import MedicalCondition, UserProfile
-from dietary_guardian.services.alerting_service import AlertPublisher, OutboxWorker
+from dietary_guardian.config.llm import LLMCapability
+from dietary_guardian.domain.alerts.models import AlertDeliveryResult, AlertMessage
+from dietary_guardian.domain.identity.models import MedicalCondition, UserProfile
 from dietary_guardian.infrastructure.persistence import SQLiteRepository
+from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
+from dietary_guardian.infrastructure.notifications.alert_outbox import AlertPublisher, OutboxWorker
 
 
 @pytest.mark.anyio

@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
+from dietary_guardian.agents.executor import InferenceEngine
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.models.inference import InferenceModality, InferenceRequest
-from dietary_guardian.agents.executor import InferenceEngine
 
 
 class _DummyOutput(BaseModel):

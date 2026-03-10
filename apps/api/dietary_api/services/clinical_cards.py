@@ -13,14 +13,14 @@ from apps.api.dietary_api.schemas import (
     ClinicalCardListResponse,
     ClinicalCardResponse,
 )
-from dietary_guardian.models.clinical_card import ClinicalCardRecord
-from dietary_guardian.models.metrics_trend import MetricTrend
-from dietary_guardian.services.metrics_trend_service import (
+from dietary_guardian.domain.health.models import MetricTrend
+from dietary_guardian.domain.metrics import (
     adherence_rate_points,
     biomarker_points,
     build_metric_trend,
     meal_calorie_points,
 )
+from dietary_guardian.models.clinical_card import ClinicalCardRecord
 
 
 def _parse_date(value: str | None) -> date | None:

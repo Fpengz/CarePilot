@@ -1,7 +1,7 @@
 from typing import Any, Protocol
 
+from dietary_guardian.domain.identity.models import AccountRole, ProfileMode
 from dietary_guardian.infrastructure.auth import AuthUserRecord
-from dietary_guardian.models.identity import AccountRole, ProfileMode
 
 
 class AuthStorePort(Protocol):

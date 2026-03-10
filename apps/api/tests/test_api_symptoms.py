@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
 
 

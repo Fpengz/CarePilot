@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from dietary_guardian.models.medication import ReminderEvent
 from dietary_guardian.application.impact.view_helpers import build_profile_mode_medication_view
+from dietary_guardian.domain.notifications.models import ReminderEvent
 
 
 def test_profile_mode_medication_views() -> None:

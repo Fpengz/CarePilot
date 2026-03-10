@@ -2,22 +2,36 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from dietary_guardian.application.case_snapshot import build_case_snapshot
 from dietary_guardian.application.care_plans import compose_care_plan
+from dietary_guardian.application.case_snapshot import build_case_snapshot
 from dietary_guardian.application.clinician_digest import build_clinician_digest
 from dietary_guardian.application.engagement import assess_engagement
-from dietary_guardian.application.evidence import EvidenceRetrievalPort, retrieve_supporting_evidence
+from dietary_guardian.application.evidence import (
+    EvidenceRetrievalPort,
+    retrieve_supporting_evidence,
+)
 from dietary_guardian.application.impact import build_impact_summary
 from dietary_guardian.application.personalization import build_personalization_context
 from dietary_guardian.application.safety import apply_safety_decision, review_care_plan
-from dietary_guardian.domain.care import CaseSnapshot, ClinicianDigest, CompanionInteraction, CompanionInteractionResult, EngagementAssessment, ImpactSummary, PersonalizationContext
-from dietary_guardian.models.health_profile import HealthProfileRecord
+from dietary_guardian.domain.care import (
+    CaseSnapshot,
+    ClinicianDigest,
+    CompanionInteraction,
+    CompanionInteractionResult,
+    EngagementAssessment,
+    ImpactSummary,
+    PersonalizationContext,
+)
+from dietary_guardian.domain.health.models import (
+    BiomarkerReading,
+    ClinicalProfileSnapshot,
+    HealthProfileRecord,
+    MedicationAdherenceEvent,
+    SymptomCheckIn,
+)
+from dietary_guardian.domain.identity.models import UserProfile
+from dietary_guardian.domain.notifications.models import ReminderEvent
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.models.medication_tracking import MedicationAdherenceEvent
-from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot
-from dietary_guardian.models.symptom import SymptomCheckIn
-from dietary_guardian.models.user import UserProfile
 
 
 @dataclass(frozen=True, slots=True)

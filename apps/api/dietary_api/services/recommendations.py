@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from apps.api.dietary_api.session_profiles import build_user_profile_from_session
 from apps.api.dietary_api.deps import RecommendationDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import RecommendationGenerateResponse, WorkflowResponse
-from dietary_guardian.services.recommendation_service import generate_recommendation
-from dietary_guardian.services.report_parser_service import build_clinical_snapshot
+from apps.api.dietary_api.session_profiles import build_user_profile_from_session
+from dietary_guardian.domain.recommendations.meal_recommendations import generate_recommendation
+from dietary_guardian.domain.reports import build_clinical_snapshot
 
 
 def generate_recommendation_for_session(

@@ -2,23 +2,34 @@ from datetime import date, datetime, timezone
 from typing import Any, cast
 
 from dietary_guardian.application.case_snapshot.use_cases import build_case_snapshot
-from dietary_guardian.domain.meals import EnrichedMealEvent, MealNutritionProfile, MealPortionEstimate, NormalizedMealItem
-from dietary_guardian.models.canonical_food import CanonicalFoodRecord
-from dietary_guardian.models.health_profile import HealthProfileRecord
+from dietary_guardian.domain.health.models import ClinicalProfileSnapshot, HealthProfileRecord
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
+from dietary_guardian.domain.meals import (
+    EnrichedMealEvent,
+    MealNutritionProfile,
+    MealPortionEstimate,
+    NormalizedMealItem,
+)
+from dietary_guardian.domain.recommendations.models import (
+    CanonicalFoodRecord,
+    PreferenceSnapshot,
+    RecommendationInteraction,
+)
 from dietary_guardian.models.meal import Ingredient, MealState, Nutrition
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.recommendation_agent import PreferenceSnapshot, RecommendationInteraction
-from dietary_guardian.models.report import ClinicalProfileSnapshot
-from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
-from dietary_guardian.services.daily_nutrition_service import build_daily_nutrition_summary
-from dietary_guardian.services.metrics_trend_service import meal_calorie_points
-from dietary_guardian.services.recommendation_agent_service import (
+from dietary_guardian.domain.nutrition import build_daily_nutrition_summary
+from dietary_guardian.domain.metrics import meal_calorie_points
+from dietary_guardian.agents.recommendation_engine import (
     _snapshot_from_history,
     build_substitution_plan,
     build_temporal_context,
 )
-from dietary_guardian.services.recommendation_service import generate_recommendation
-from dietary_guardian.services.weekly_nutrition_service import build_weekly_nutrition_summary
+from dietary_guardian.domain.recommendations.meal_recommendations import generate_recommendation
+from dietary_guardian.domain.nutrition import build_weekly_nutrition_summary
 
 
 def _record(*, enriched: bool = True) -> MealRecognitionRecord:

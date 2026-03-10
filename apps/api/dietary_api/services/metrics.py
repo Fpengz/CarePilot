@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.schemas import MetricTrendListResponse, MetricTrendResponse
-from dietary_guardian.services.metrics_trend_service import (
+from dietary_guardian.domain.metrics import (
     adherence_rate_points,
     biomarker_points,
     build_metric_trend,

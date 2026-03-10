@@ -1,9 +1,9 @@
 from datetime import datetime
 
 from dietary_guardian.domain.meals import EnrichedMealEvent, MealNutritionProfile, MealPerception
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
 from dietary_guardian.models.meal import MealState, Nutrition
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.infrastructure.persistence import SQLiteRepository
 
 
 def test_meal_record_round_trip(tmp_path) -> None:

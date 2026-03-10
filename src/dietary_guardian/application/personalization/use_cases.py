@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from dietary_guardian.domain.care import CaseSnapshot, InteractionGoal, InteractionType, PersonalizationContext
-from dietary_guardian.models.health_profile import HealthProfileRecord
-from dietary_guardian.models.user import UserProfile
+from dietary_guardian.domain.care import (
+    CaseSnapshot,
+    InteractionGoal,
+    InteractionType,
+    PersonalizationContext,
+)
+from dietary_guardian.domain.health.models import HealthProfileRecord
+from dietary_guardian.domain.identity.models import UserProfile
 
 
 def _infer_interaction_goal(*, interaction_type: InteractionType, message: str) -> InteractionGoal:

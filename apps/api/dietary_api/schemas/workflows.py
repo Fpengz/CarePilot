@@ -3,29 +3,41 @@
 from __future__ import annotations
 
 # ruff: noqa: F401
-
 from datetime import date, datetime, timezone
 from typing import Literal, TypeAlias
 
-from pydantic import BaseModel, Field, EmailStr, RootModel
-from dietary_guardian.models.identity import AccountRole, ProfileMode
+from pydantic import BaseModel, EmailStr, Field, RootModel
+
+from dietary_guardian.domain.alerts.models import OutboxState
+from dietary_guardian.domain.health.models import (
+    BiomarkerReading,
+    ClinicalProfileSnapshot,
+)
+from dietary_guardian.domain.identity.models import (
+    AccountRole,
+    MealScheduleWindow,
+    MealSlot,
+    ProfileMode,
+)
+from dietary_guardian.domain.notifications.models import ReminderEvent
+from dietary_guardian.domain.recommendations.models import (
+    InteractionEventType,
+    RecommendationOutput,
+)
 from dietary_guardian.models.analytics import EngagementMetrics
-from dietary_guardian.models.alerting import OutboxState
 from dietary_guardian.models.contracts import AgentOutputEnvelope
-from dietary_guardian.models.emotion import EmotionConfidenceBand, EmotionLabel, EmotionRuntimeHealth
+from dietary_guardian.models.emotion import (
+    EmotionConfidenceBand,
+    EmotionLabel,
+    EmotionRuntimeHealth,
+)
 from dietary_guardian.models.meal import VisionResult
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.models.recommendation import RecommendationOutput
-from dietary_guardian.models.recommendation_agent import InteractionEventType, MealSlot
-from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot
 from dietary_guardian.models.tooling import ToolExecutionResult
-from dietary_guardian.models.user import MealScheduleWindow
-
 
 from .core import JsonValue
-
 from .notifications import AlertTimelineItemResponse, WorkflowTimelineEventPayloadResponse
+
 
 class WorkflowTimelineEventResponse(BaseModel):
     event_id: str

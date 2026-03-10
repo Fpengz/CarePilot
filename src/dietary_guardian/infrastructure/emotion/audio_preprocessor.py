@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 SUPPORTED_AUDIO_CONTENT_TYPES = {
     "audio/wav",
     "audio/x-wav",

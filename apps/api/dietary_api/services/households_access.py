@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.errors import build_api_error
+from apps.api.dietary_api.schemas import HouseholdCareContextResponse
 from dietary_guardian.application.policies.household_access import (
     HouseholdAccessNotFoundError,
     ensure_household_member,
 )
-
-from apps.api.dietary_api.deps import AppContext
-from apps.api.dietary_api.errors import build_api_error
-from apps.api.dietary_api.schemas import HouseholdCareContextResponse
 
 
 def ensure_household_subject_access(

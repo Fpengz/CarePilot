@@ -11,14 +11,14 @@ from apps.api.dietary_api.schemas import (
     RecommendationSubstitutionRequest,
     RecommendationSubstitutionResponse,
 )
-from dietary_guardian.services.health_profile_service import resolve_user_profile
-from dietary_guardian.services.recommendation_agent_service import (
+from dietary_guardian.agents.schemas import RecommendationAgentInput
+from dietary_guardian.agents.recommendation_engine import (
     AgentMealNotFoundError,
     build_substitution_plan,
-    generate_daily_agent_recommendation,
     record_interaction_and_update_preferences,
 )
-from dietary_guardian.services.report_parser_service import build_clinical_snapshot
+from dietary_guardian.domain.profiles.health_profile import resolve_user_profile
+from dietary_guardian.domain.reports import build_clinical_snapshot
 
 
 def _resolve_clinical_snapshot(*, deps: RecommendationAgentDeps, user_id: str):
@@ -44,14 +44,17 @@ def get_daily_agent_for_session(
     health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
     meal_history = deps.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
-    recommendation = generate_daily_agent_recommendation(
+    output = deps.recommendation_agent.generate(
+        RecommendationAgentInput(
+            user_id=user_id,
+            health_profile=health_profile,
+            user_profile=user_profile,
+            meal_history=meal_history,
+            clinical_snapshot=clinical_snapshot,
+        ),
         repository=deps.stores.recommendations,
-        user_id=user_id,
-        health_profile=health_profile,
-        user_profile=user_profile,
-        meal_history=meal_history,
-        clinical_snapshot=clinical_snapshot,
     )
+    recommendation = output.recommendation
     payload = recommendation.model_dump(mode="json")
     payload["workflow"] = {
         "workflow_name": "daily_recommendation_agent",

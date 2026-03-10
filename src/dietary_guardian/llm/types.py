@@ -2,7 +2,12 @@
 
 from dataclasses import dataclass
 
-from dietary_guardian.config.llm import LLMCapability, LLMCapabilityTarget, LocalModelProfile, ModelProvider
+from dietary_guardian.config.llm import (
+    LLMCapability,
+    LLMCapabilityTarget,
+    LocalModelProfile,
+    ModelProvider,
+)
 
 
 @dataclass(frozen=True)

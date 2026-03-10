@@ -1,7 +1,15 @@
 from typing import get_type_hints
 
 from apps.api.dietary_api import deps
-from apps.api.dietary_api.services import alerts, clinical_cards, emotions, meals, recommendation_agent, recommendations, workflows
+from apps.api.dietary_api.services import (
+    alerts,
+    clinical_cards,
+    emotions,
+    meals,
+    recommendation_agent,
+    recommendations,
+    workflows,
+)
 
 
 def test_domain_dependency_provider_types_exist() -> None:

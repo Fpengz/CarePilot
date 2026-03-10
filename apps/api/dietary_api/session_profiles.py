@@ -1,13 +1,12 @@
 from typing import Any, cast
 
-from dietary_guardian.models.identity import AccountRole, ProfileMode
-from dietary_guardian.models.user import UserProfile
-from dietary_guardian.services.authorization import default_profile_mode_for_role
-from dietary_guardian.services.health_profile_service import (
+from dietary_guardian.domain.identity.models import AccountRole, ProfileMode, UserProfile
+from dietary_guardian.domain.profiles.health_profile import (
     HealthProfileRepository,
     build_user_profile_from_health_profile,
     default_health_profile,
 )
+from dietary_guardian.domain.tooling import default_profile_mode_for_role
 
 
 def build_user_profile_from_session(

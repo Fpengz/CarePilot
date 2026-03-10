@@ -10,7 +10,7 @@ from apps.api.dietary_api.schemas import (
     NotificationMarkAllReadResponse,
     NotificationMarkReadResponse,
 )
-from dietary_guardian.models.workflow import WorkflowTimelineEvent
+from dietary_guardian.domain.workflows.models import WorkflowTimelineEvent
 
 if TYPE_CHECKING:
     from apps.api.dietary_api.deps import AppContext

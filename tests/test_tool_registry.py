@@ -7,7 +7,7 @@ from dietary_guardian.models.tooling import (
     ToolSideEffect,
     ToolSpec,
 )
-from dietary_guardian.services.tool_registry import ToolRegistry
+from dietary_guardian.infrastructure.tooling.registry import ToolRegistry
 
 
 class EchoInput(BaseModel):

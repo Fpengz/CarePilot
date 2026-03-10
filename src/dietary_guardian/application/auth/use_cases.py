@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from dietary_guardian.domain.identity.models import ProfileMode
 from dietary_guardian.infrastructure.auth import AuthUserRecord
-from dietary_guardian.models.identity import ProfileMode
 
 from .ports import AuthStorePort
 

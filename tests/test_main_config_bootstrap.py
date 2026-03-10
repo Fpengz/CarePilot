@@ -1,5 +1,4 @@
 import main as main_module
-
 from dietary_guardian.config.settings import Settings
 
 

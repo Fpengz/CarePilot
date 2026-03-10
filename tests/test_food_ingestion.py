@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from dietary_guardian.infrastructure.food.ingestion import load_open_food_facts_records, load_usda_records
+from dietary_guardian.infrastructure.food.ingestion import (
+    load_open_food_facts_records,
+    load_usda_records,
+)
 
 
 def test_load_usda_records_reduces_source_payload(tmp_path: Path) -> None:

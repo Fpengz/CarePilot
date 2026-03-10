@@ -1,6 +1,6 @@
+from dietary_guardian.domain.notifications.models import ReminderEvent
+from dietary_guardian.domain.recommendations.models import RecommendationOutput
 from dietary_guardian.models.analytics import EngagementMetrics
-from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.models.recommendation import RecommendationOutput
 
 
 def build_profile_mode_medication_view(profile_mode: str, reminders: list[ReminderEvent]) -> dict[str, int]:

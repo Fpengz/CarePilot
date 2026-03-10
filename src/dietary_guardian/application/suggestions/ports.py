@@ -1,9 +1,12 @@
 from collections.abc import Sequence
 from typing import Any, Protocol
 
+from dietary_guardian.domain.health.models import (
+    BiomarkerReading,
+    ClinicalProfileSnapshot,
+)
+from dietary_guardian.domain.identity.models import UserProfile
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot
-from dietary_guardian.models.user import UserProfile
 
 
 class SuggestionRepositoryPort(Protocol):

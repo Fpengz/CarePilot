@@ -5,7 +5,12 @@ from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
 from ..deps import meal_deps
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import MealAnalyzeResponse, MealDailySummaryResponse, MealRecordsResponse, MealWeeklySummaryResponse
+from ..schemas import (
+    MealAnalyzeResponse,
+    MealDailySummaryResponse,
+    MealRecordsResponse,
+    MealWeeklySummaryResponse,
+)
 from ..services.meals import analyze_meal, get_daily_summary, get_weekly_summary, list_meal_records
 
 router = APIRouter(tags=["meals"])

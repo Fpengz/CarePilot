@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import TypeAlias
 
-from dietary_guardian.services.ports import (
+from dietary_guardian.application.contracts.notifications import (
     ReminderNotificationRepository as ServiceReminderNotificationRepository,
+)
+from dietary_guardian.application.contracts.notifications import (
     ReminderSchedulerRepository as ServiceReminderSchedulerRepository,
 )
 

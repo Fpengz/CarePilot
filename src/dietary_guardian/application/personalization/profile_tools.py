@@ -1,11 +1,10 @@
+from dietary_guardian.domain.identity.models import ProfileMode, UserProfile
 from dietary_guardian.models.meal import MealState
-from dietary_guardian.models.identity import ProfileMode
 from dietary_guardian.models.profile_tools import (
     CaregiverToolState,
     ClinicalSummaryToolState,
     SelfToolState,
 )
-from dietary_guardian.models.user import UserProfile
 
 
 def get_profile_sections(profile_mode: ProfileMode) -> list[str]:

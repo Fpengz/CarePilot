@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from collections.abc import Sequence
 
+from dietary_guardian.domain.health.models import (
+    BiomarkerReading,
+    ClinicalProfileSnapshot,
+    HealthProfileRecord,
+)
+from dietary_guardian.domain.identity.models import UserProfile
+from dietary_guardian.domain.recommendations.models import (
+    DailySuggestionBundle,
+    DailySuggestionItem,
+)
 from dietary_guardian.logging_config import get_logger
-from dietary_guardian.models.daily_suggestions import DailySuggestionBundle, DailySuggestionItem
-from dietary_guardian.models.health_profile import HealthProfileRecord
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.report import BiomarkerReading
-from dietary_guardian.models.report import ClinicalProfileSnapshot
-from dietary_guardian.models.user import UserProfile
 
 logger = get_logger(__name__)
 
@@ -94,7 +99,7 @@ SINGAPORE_CANDIDATES: tuple[MealCandidate, ...] = (
 
 
 def _latest_snapshot_from_history(readings: Sequence[BiomarkerReading]) -> ClinicalProfileSnapshot | None:
-    from dietary_guardian.services.report_parser_service import build_clinical_snapshot
+    from dietary_guardian.domain.reports import build_clinical_snapshot
 
     if not readings:
         return None

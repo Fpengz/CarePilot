@@ -1,5 +1,5 @@
-from dietary_guardian.models.recommendation import RecommendationOutput
 from dietary_guardian.application.impact.view_helpers import build_profile_mode_report_advice_view
+from dietary_guardian.domain.recommendations.models import RecommendationOutput
 
 
 def test_profile_mode_report_advice_views() -> None:

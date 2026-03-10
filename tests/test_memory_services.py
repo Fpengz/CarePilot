@@ -1,6 +1,10 @@
-from dietary_guardian.models.report import ClinicalProfileSnapshot
-from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
-from dietary_guardian.services.memory_services import (
+from dietary_guardian.domain.health.models import ClinicalProfileSnapshot
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
+from dietary_guardian.runtime.memory import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,

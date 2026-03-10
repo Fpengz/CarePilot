@@ -12,7 +12,6 @@ from dietary_guardian.domain.identity.models import AccountRole
 from dietary_guardian.models.contracts import AgentHandoff, AgentOutputEnvelope
 from dietary_guardian.models.tooling import ToolExecutionResult
 
-
 ToolPolicyEffect = Literal["allow", "deny"]
 
 

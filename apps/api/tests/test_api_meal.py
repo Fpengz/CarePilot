@@ -1,15 +1,15 @@
 import asyncio
+import logging
 from collections.abc import Generator
 from datetime import datetime, timezone
 from io import BytesIO
-import logging
 from uuid import uuid4
 
 import pytest
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.models.meal import MealState, Nutrition, VisionResult
 from dietary_guardian.models.meal_record import MealRecognitionRecord

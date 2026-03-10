@@ -2,15 +2,15 @@ from datetime import datetime, timezone
 from typing import Any, TypedDict
 from uuid import uuid4
 
-from dietary_guardian.models.report import ReportInput
 from dietary_guardian.application.policies.household_access import (
     HouseholdAccessNotFoundError,
     ensure_household_member,
     household_source_members,
 )
+from dietary_guardian.domain.health.models import ReportInput
+from dietary_guardian.domain.recommendations.meal_recommendations import generate_recommendation
+from dietary_guardian.domain.reports import build_clinical_snapshot, parse_report_input
 from dietary_guardian.safety.triage import evaluate_text_safety
-from dietary_guardian.services.recommendation_service import generate_recommendation
-from dietary_guardian.services.report_parser_service import build_clinical_snapshot, parse_report_input
 
 from .ports import (
     BuildUserProfileFn,

@@ -6,7 +6,11 @@ from typing import Any, Iterator
 
 from dietary_guardian.logging_config import (
     get_logger as _get_logger,
+)
+from dietary_guardian.logging_config import (
     logger as _root_logger,
+)
+from dietary_guardian.logging_config import (
     setup_logging as _setup_logging,
 )
 

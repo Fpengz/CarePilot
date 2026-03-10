@@ -2,18 +2,25 @@ from datetime import datetime
 from typing import Annotated, Literal, cast
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
-from dietary_guardian.models.identity import AccountRole, ProfileMode
+
 from dietary_guardian.application.auth.use_cases import (
+    MIN_PASSWORD_LENGTH,
     DuplicateEmailError,
     InvalidCredentialsError,
     InvalidSignupPasswordError,
     LoginLockedError,
-    MIN_PASSWORD_LENGTH,
     login_and_create_session,
     signup_member_and_create_session,
 )
+from dietary_guardian.domain.identity.models import AccountRole, ProfileMode
 
-from ..routes_shared import SESSION_COOKIE, current_session, get_context, require_action, require_resource_action
+from ..routes_shared import (
+    SESSION_COOKIE,
+    current_session,
+    get_context,
+    require_action,
+    require_resource_action,
+)
 from ..schemas import (
     AuthAuditEvent,
     AuthAuditEventListResponse,
@@ -23,11 +30,11 @@ from ..schemas import (
     AuthPasswordUpdateRequest,
     AuthPasswordUpdateResponse,
     AuthProfileUpdateRequest,
-    AuthSignupRequest,
     AuthSessionListItem,
     AuthSessionListResponse,
     AuthSessionRevokeOthersResponse,
     AuthSessionRevokeResponse,
+    AuthSignupRequest,
     SessionInfo,
     SessionUser,
 )

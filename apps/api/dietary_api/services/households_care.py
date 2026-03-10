@@ -10,11 +10,17 @@ from apps.api.dietary_api.schemas import (
     HouseholdCareReminderListResponse,
 )
 from apps.api.dietary_api.services._health_profile_support import to_profile_response
-from apps.api.dietary_api.services.households_access import build_care_context, ensure_household_subject_access
+from apps.api.dietary_api.services.households_access import (
+    build_care_context,
+    ensure_household_subject_access,
+)
 from apps.api.dietary_api.services.households_support import household_member_response
 from apps.api.dietary_api.services.meals import get_daily_summary
 from apps.api.dietary_api.services.reminders import list_reminders_for_session
-from dietary_guardian.services.health_profile_service import compute_profile_completeness, get_or_create_health_profile
+from dietary_guardian.domain.profiles.health_profile import (
+    compute_profile_completeness,
+    get_or_create_health_profile,
+)
 
 
 def list_household_care_members(

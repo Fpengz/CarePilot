@@ -7,7 +7,11 @@ from ..schemas import (
     NotificationMarkAllReadResponse,
     NotificationMarkReadResponse,
 )
-from ..services.notifications import list_notifications, mark_all_notifications_read, mark_notification_read
+from ..services.notifications import (
+    list_notifications,
+    mark_all_notifications_read,
+    mark_notification_read,
+)
 
 router = APIRouter(tags=["notifications"])
 

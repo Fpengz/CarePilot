@@ -1,5 +1,5 @@
 from dietary_guardian.config.settings import Settings
-from dietary_guardian.services.readiness_service import build_readiness_report
+from dietary_guardian.infrastructure.diagnostics.readiness import build_readiness_report
 
 
 def test_readiness_report_is_ready_for_default_dev_profile() -> None:

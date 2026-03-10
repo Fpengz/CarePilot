@@ -1,22 +1,33 @@
+"""Dependency wiring for API runtime stores, agents, and orchestrators."""
+
 from dataclasses import dataclass
 
+from dietary_guardian.agents.emotion import EmotionAgent
+from dietary_guardian.agents.recommendation import RecommendationAgent
+from dietary_guardian.agents.registry import AgentRegistry, build_default_agent_registry
+from dietary_guardian.application.tooling.platform_registry import build_platform_tool_registry
 from dietary_guardian.config.settings import Settings, get_settings
-from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SQLiteAuthStore, SessionSigner
+from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SessionSigner, SQLiteAuthStore
 from dietary_guardian.infrastructure.cache import InMemoryCacheStore, RedisCacheStore
-from dietary_guardian.infrastructure.coordination import InMemoryCoordinationStore, RedisCoordinationStore
+from dietary_guardian.infrastructure.coordination import (
+    InMemoryCoordinationStore,
+    RedisCoordinationStore,
+)
 from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime
 from dietary_guardian.infrastructure.household import SQLiteHouseholdStore
-from dietary_guardian.infrastructure.persistence import AppStoreBackend, AppStores, build_app_store, build_app_stores
-from dietary_guardian.services.emotion_service import EmotionService
-from dietary_guardian.services.memory_services import (
+from dietary_guardian.infrastructure.persistence import (
+    AppStoreBackend,
+    AppStores,
+    build_app_store,
+    build_app_stores,
+)
+from dietary_guardian.infrastructure.tooling.registry import ToolRegistry
+from dietary_guardian.orchestrators import WorkflowCoordinator
+from dietary_guardian.runtime.memory import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,
 )
-from dietary_guardian.agents.registry import AgentRegistry, build_default_agent_registry
-from dietary_guardian.services.platform_tools import build_platform_tool_registry
-from dietary_guardian.services.tool_registry import ToolRegistry
-from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
 
 from .services.notifications import NotificationReadStateStore
 
@@ -43,7 +54,8 @@ class AppContext:
     cache_store: CacheStore
     coordination_store: CoordinationStore
     household_store: HouseholdStore
-    emotion_service: EmotionService
+    emotion_agent: EmotionAgent
+    recommendation_agent: RecommendationAgent
 
 
 @dataclass(frozen=True)
@@ -63,6 +75,7 @@ class RecommendationDeps:
 class RecommendationAgentDeps:
     stores: AppStores
     clinical_memory: ClinicalSnapshotMemoryService
+    recommendation_agent: RecommendationAgent
 
 
 @dataclass(frozen=True)
@@ -77,7 +90,7 @@ class WorkflowDeps:
 @dataclass(frozen=True)
 class EmotionDeps:
     settings: Settings
-    emotion_service: EmotionService
+    emotion_agent: EmotionAgent
 
 
 @dataclass(frozen=True)
@@ -160,7 +173,7 @@ def build_app_context() -> AppContext:
     coordination_store = _build_coordination_store(settings)
     household_store = _build_household_store(settings)
     emotion_runtime = InProcessEmotionRuntime(EmotionRuntimeConfig.from_settings(settings))
-    emotion_service = EmotionService(
+    emotion_agent = EmotionAgent(
         runtime=emotion_runtime,
         inference_enabled=settings.emotion.inference_enabled,
         speech_enabled=settings.emotion.speech_enabled,
@@ -182,7 +195,8 @@ def build_app_context() -> AppContext:
         cache_store=cache_store,
         coordination_store=coordination_store,
         household_store=household_store,
-        emotion_service=emotion_service,
+        emotion_agent=emotion_agent,
+        recommendation_agent=RecommendationAgent(),
     )
     from .services.workflows import ensure_runtime_contract_snapshot_bootstrap
 
@@ -209,11 +223,15 @@ def workflow_deps(ctx: AppContext) -> WorkflowDeps:
 
 
 def emotion_deps(ctx: AppContext) -> EmotionDeps:
-    return EmotionDeps(settings=ctx.settings, emotion_service=ctx.emotion_service)
+    return EmotionDeps(settings=ctx.settings, emotion_agent=ctx.emotion_agent)
 
 
 def recommendation_agent_deps(ctx: AppContext) -> RecommendationAgentDeps:
-    return RecommendationAgentDeps(stores=ctx.stores, clinical_memory=ctx.clinical_memory)
+    return RecommendationAgentDeps(
+        stores=ctx.stores,
+        clinical_memory=ctx.clinical_memory,
+        recommendation_agent=ctx.recommendation_agent,
+    )
 
 
 def alert_deps(ctx: AppContext) -> AlertDeps:

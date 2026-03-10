@@ -7,16 +7,6 @@ from typing import Any, cast
 
 from fastapi import Request, UploadFile
 
-from dietary_guardian.agents.vision import HawkerVisionModule
-from dietary_guardian.services.daily_nutrition_service import build_daily_nutrition_summary
-from dietary_guardian.services.health_profile_service import get_or_create_health_profile
-from dietary_guardian.models.meal import ImageInput, VisionResult
-from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.services.weekly_nutrition_service import build_weekly_nutrition_summary
-from dietary_guardian.services.media_ingestion import build_capture_envelope, should_suppress_duplicate_capture
-from dietary_guardian.services.upload_service import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
-
-from apps.api.dietary_api.session_profiles import build_user_profile_from_session
 from apps.api.dietary_api.deps import MealDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
@@ -28,9 +18,27 @@ from apps.api.dietary_api.schemas import (
     MealWeeklySummaryResponse,
     WorkflowResponse,
 )
+from apps.api.dietary_api.session_profiles import build_user_profile_from_session
+from dietary_guardian.agents import MealAnalysisAgent
+from dietary_guardian.agents.base import AgentContext
+from dietary_guardian.agents.schemas import MealAnalysisAgentInput
+from dietary_guardian.domain.nutrition import (
+    build_daily_nutrition_summary,
+    build_weekly_nutrition_summary,
+)
+from dietary_guardian.models.meal import ImageInput, VisionResult
+from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.profiles.health_profile import get_or_create_health_profile
+from dietary_guardian.infrastructure.media.ingestion import (
+    build_capture_envelope,
+    should_suppress_duplicate_capture,
+)
+from dietary_guardian.infrastructure.media.upload import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
+
+HawkerVisionModule = MealAnalysisAgent
 
 
-def _build_hawker_vision_module(*, provider: str | None, food_store: Any) -> HawkerVisionModule:
+def _build_hawker_vision_module(*, provider: str | None, food_store: Any) -> MealAnalysisAgent:
     params = inspect.signature(HawkerVisionModule).parameters
     if "food_store" in params:
         return HawkerVisionModule(provider=provider, food_store=food_store)
@@ -97,20 +105,53 @@ async def analyze_meal(
         if selected_provider
         else (None if deps.settings.llm.capability_targets else deps.settings.llm.provider)
     )
-    module = _build_hawker_vision_module(
+    agent = _build_hawker_vision_module(
         provider=routed_provider,
         food_store=deps.stores.foods,
     )
     try:
-        vision_result, meal_record = await asyncio.wait_for(
-            module.analyze_and_record(
-                image_input,
-                user_profile.id,
-                request_id=capture.request_id,
-                correlation_id=capture.correlation_id,
-            ),
-            timeout=deps.settings.llm.inference_wall_clock_timeout_seconds,
-        )
+        if hasattr(agent, "run"):
+            result = await asyncio.wait_for(
+                agent.run(
+                    MealAnalysisAgentInput(
+                        image_input=image_input,
+                        user_id=user_profile.id,
+                        request_id=capture.request_id,
+                        correlation_id=capture.correlation_id,
+                        persist_record=True,
+                    ),
+                    AgentContext(
+                        user_id=user_profile.id,
+                        request_id=capture.request_id,
+                        correlation_id=capture.correlation_id,
+                    ),
+                ),
+                timeout=deps.settings.llm.inference_wall_clock_timeout_seconds,
+            )
+        else:
+            vision_result, meal_record = await asyncio.wait_for(
+                agent.analyze_and_record(
+                    image_input,
+                    user_profile.id,
+                    request_id=capture.request_id,
+                    correlation_id=capture.correlation_id,
+                ),
+                timeout=deps.settings.llm.inference_wall_clock_timeout_seconds,
+            )
+            result = type(
+                "_LegacyMealAnalysisResult",
+                (),
+                {
+                    "output": type(
+                        "_LegacyMealAnalysisOutput",
+                        (),
+                        {
+                            "vision_result": vision_result,
+                            "meal_record": meal_record,
+                        },
+                    )(),
+                },
+            )()
     except asyncio.TimeoutError as exc:
         raise build_api_error(
             status_code=504,
@@ -118,6 +159,14 @@ async def analyze_meal(
             message="meal analysis timed out",
             details={"timeout_seconds": deps.settings.llm.inference_wall_clock_timeout_seconds},
         ) from exc
+    if result.output is None or result.output.meal_record is None:
+        raise build_api_error(
+            status_code=500,
+            code="meal.agent_failed",
+            message="meal analysis agent returned no meal record",
+        )
+    vision_result = result.output.vision_result
+    meal_record = result.output.meal_record
     deps.stores.meals.save_meal_record(meal_record)
     workflow = deps.coordinator.run_meal_analysis_workflow(
         capture=capture,

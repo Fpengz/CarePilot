@@ -1,5 +1,5 @@
-from dietary_guardian.models.report import ReportInput
-from dietary_guardian.services.report_parser_service import parse_report_input
+from dietary_guardian.domain.health.models import ReportInput
+from dietary_guardian.domain.reports import parse_report_input
 
 
 def test_parse_text_report_extracts_key_biomarkers() -> None:

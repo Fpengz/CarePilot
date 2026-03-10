@@ -12,9 +12,11 @@ from apps.api.dietary_api.schemas import (
     WorkflowTimelineEventPayloadResponse,
     WorkflowTimelineEventResponse,
 )
-from dietary_guardian.models.tool_policy import ToolRolePolicyRecord
-from dietary_guardian.models.workflow import WorkflowTimelineEvent
-from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
+from dietary_guardian.domain.workflows.models import (
+    ToolRolePolicyRecord,
+    WorkflowContractSnapshotRecord,
+    WorkflowTimelineEvent,
+)
 
 
 def policy_item_response(item: ToolRolePolicyRecord) -> ToolPolicyItemResponse:

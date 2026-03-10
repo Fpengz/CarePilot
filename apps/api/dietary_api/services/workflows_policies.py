@@ -11,7 +11,11 @@ from apps.api.dietary_api.schemas import (
     ToolPolicyWriteResponse,
 )
 from apps.api.dietary_api.services.workflows_support import policy_item_response
-from dietary_guardian.services.policy_service import apply_tool_policy_patch, create_tool_policy_record, evaluate_tool_policy
+from dietary_guardian.domain.tooling import (
+    apply_tool_policy_patch,
+    create_tool_policy_record,
+    evaluate_tool_policy,
+)
 
 
 def list_tool_policies(*, deps: WorkflowDeps) -> ToolPolicyListResponse:

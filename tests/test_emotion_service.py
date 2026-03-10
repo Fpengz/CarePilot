@@ -4,10 +4,14 @@ import time
 
 import pytest
 
-from dietary_guardian.application.emotion.ports import EmotionInferencePort, SpeechEmotionInput, TextEmotionInput
+from dietary_guardian.application.emotion.ports import (
+    EmotionInferencePort,
+    SpeechEmotionInput,
+    TextEmotionInput,
+)
 from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime
 from dietary_guardian.models.emotion import EmotionInferenceResult, EmotionRuntimeHealth
-from dietary_guardian.services.emotion_service import EmotionService
+from dietary_guardian.agents.emotion import EmotionAgent
 
 
 def _runtime() -> InProcessEmotionRuntime:
@@ -67,7 +71,7 @@ class _SlowPort(EmotionInferencePort):
 
 
 def test_emotion_service_times_out_with_wall_clock_limit() -> None:
-    service = EmotionService(
+    service = EmotionAgent(
         runtime=_SlowPort(),
         inference_enabled=True,
         speech_enabled=True,

@@ -1,6 +1,6 @@
-from dietary_guardian.llm import LLMCapability, LLMFactory, ModelProvider
-from dietary_guardian.config.settings import Settings
 from dietary_guardian.agents.executor import InferenceEngine
+from dietary_guardian.config.settings import Settings
+from dietary_guardian.llm import LLMCapability, LLMFactory, ModelProvider
 
 
 def test_settings_parse_capability_targets_from_env_shape() -> None:

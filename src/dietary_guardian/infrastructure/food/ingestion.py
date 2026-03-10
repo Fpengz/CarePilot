@@ -4,10 +4,10 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
+from dietary_guardian.domain.identity.models import MealSlot
 from dietary_guardian.domain.meals import PortionReference
-from dietary_guardian.models.canonical_food import CanonicalFoodRecord
+from dietary_guardian.domain.recommendations.models import CanonicalFoodRecord
 from dietary_guardian.models.meal import Nutrition
-from dietary_guardian.models.recommendation_agent import MealSlot
 
 
 def _normalize_text(value: str) -> str:

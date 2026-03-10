@@ -15,8 +15,11 @@ from apps.api.dietary_api.schemas import (
     WorkflowSnapshotListResponse,
     WorkflowSnapshotWriteResponse,
 )
-from apps.api.dietary_api.services.workflows_support import runtime_contract_hash, snapshot_item_response
-from dietary_guardian.models.workflow_contract_snapshot import WorkflowContractSnapshotRecord
+from apps.api.dietary_api.services.workflows_support import (
+    runtime_contract_hash,
+    snapshot_item_response,
+)
+from dietary_guardian.domain.workflows.models import WorkflowContractSnapshotRecord
 
 
 def get_runtime_contract(*, deps: WorkflowDeps) -> WorkflowRuntimeRegistryResponse:

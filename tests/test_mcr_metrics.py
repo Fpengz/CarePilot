@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.services.medication_service import compute_mcr
+from dietary_guardian.domain.notifications.models import ReminderEvent
+from dietary_guardian.domain.medications import compute_mcr
 
 
 def test_compute_mcr_zero_denominator() -> None:

@@ -2,9 +2,9 @@ import logging
 import os
 from typing import Any, cast
 
-import logfire
 from pydantic import ValidationError
 
+import logfire
 from dietary_guardian.config.settings import get_settings
 
 logfire_api = cast(Any, logfire)

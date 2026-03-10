@@ -2,10 +2,14 @@
 
 from typing import cast
 
-from apps.api.dietary_api.session_profiles import build_user_profile_from_session
 from apps.api.dietary_api.deps import AlertDeps
 from apps.api.dietary_api.errors import build_api_error
-from apps.api.dietary_api.schemas import AlertTimelineResponse, AlertTriggerRequest, AlertTriggerResponse
+from apps.api.dietary_api.schemas import (
+    AlertTimelineResponse,
+    AlertTriggerRequest,
+    AlertTriggerResponse,
+)
+from apps.api.dietary_api.session_profiles import build_user_profile_from_session
 
 
 def trigger_alert(

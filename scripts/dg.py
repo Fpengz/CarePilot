@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import signal
@@ -8,7 +9,6 @@ import socket
 import subprocess
 import sys
 import time
-import json
 from pathlib import Path
 from typing import Annotated
 

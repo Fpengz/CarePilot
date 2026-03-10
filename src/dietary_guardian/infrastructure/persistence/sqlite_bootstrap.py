@@ -4,11 +4,11 @@ import sqlite3
 from collections.abc import Sequence
 
 from dietary_guardian.domain.recommendations import CanonicalFoodRecord, MealCatalogItem
-from dietary_guardian.services.canonical_food_service import (
+from dietary_guardian.domain.recommendations.canonical_food_matching import (
     build_default_canonical_food_records,
     normalize_text,
 )
-from dietary_guardian.services.meal_catalog_service import DEFAULT_MEAL_CATALOG
+from dietary_guardian.domain.recommendations.meal_catalog_queries import DEFAULT_MEAL_CATALOG
 
 SCHEMA_STATEMENTS: tuple[str, ...] = (
     """

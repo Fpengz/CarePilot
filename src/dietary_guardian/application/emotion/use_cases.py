@@ -1,9 +1,14 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Callable, TypeVar
 
-from dietary_guardian.application.emotion.ports import EmotionInferencePort, SpeechEmotionInput, TextEmotionInput
+from dietary_guardian.application.emotion.ports import (
+    EmotionInferencePort,
+    SpeechEmotionInput,
+    TextEmotionInput,
+)
 from dietary_guardian.models.emotion import EmotionInferenceResult
 
 T = TypeVar("T")

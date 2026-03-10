@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
-from dietary_guardian.infrastructure.auth import InMemoryAuthStore
 from dietary_guardian.config.settings import Settings
+from dietary_guardian.infrastructure.auth import InMemoryAuthStore
 
 
 def test_get_session_drops_expired_sessions() -> None:

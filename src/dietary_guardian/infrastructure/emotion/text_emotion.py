@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dietary_guardian.models.emotion import EmotionLabel
 
-
 _KEYWORDS: dict[EmotionLabel, tuple[str, ...]] = {
     EmotionLabel.HAPPY: ("happy", "glad", "great", "good", "relieved", "calm", "joy"),
     EmotionLabel.SAD: ("sad", "down", "unhappy", "depressed", "upset"),

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from dietary_guardian.services.readiness_service import build_readiness_report
+from dietary_guardian.infrastructure.diagnostics.readiness import build_readiness_report
 
 from ..routes_shared import current_session, get_context
 

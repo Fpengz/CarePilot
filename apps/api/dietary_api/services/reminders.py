@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from apps.api.dietary_api.session_profiles import build_user_profile_from_session
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.routes_shared import default_demo_regimens
@@ -16,14 +15,17 @@ from apps.api.dietary_api.schemas import (
     ReminderGenerateResponse,
     ReminderListResponse,
 )
-from dietary_guardian.models.mobility import MobilityReminderSettings
-from dietary_guardian.services.medication_service import (
+from apps.api.dietary_api.session_profiles import build_user_profile_from_session
+from dietary_guardian.domain.medications import (
     compute_mcr,
+    default_mobility_settings,
     generate_daily_reminders,
+    generate_mobility_reminders,
     mark_meal_confirmation,
+    parse_hhmm,
 )
-from dietary_guardian.services.mobility_service import default_mobility_settings, generate_mobility_reminders, parse_hhmm
-from dietary_guardian.services.reminder_notification_service import (
+from dietary_guardian.domain.notifications.models import MobilityReminderSettings
+from dietary_guardian.application.notifications.reminder_materialization import (
     cancel_reminder_notifications,
     materialize_reminder_notifications,
 )

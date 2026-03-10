@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from dietary_guardian.application.interactions import CompanionStateInputs
-from dietary_guardian.models.report import ClinicalProfileSnapshot
-from dietary_guardian.services.report_parser_service import build_clinical_snapshot
-
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.schemas import WorkflowResponse, WorkflowTimelineEventResponse
 from apps.api.dietary_api.session_profiles import build_user_profile_from_session
+from dietary_guardian.application.interactions import CompanionStateInputs
+from dietary_guardian.domain.health.models import ClinicalProfileSnapshot
+from dietary_guardian.domain.reports import build_clinical_snapshot
 
 
 def _subject_user_id(session: dict[str, object]) -> str:
@@ -36,7 +35,7 @@ def _emotion_signal(context: AppContext, *, emotion_text: str | None) -> str | N
     if not emotion_text:
         return None
     try:
-        result = context.emotion_service.infer_text(text=emotion_text)
+        result = context.emotion_agent.infer_text(text=emotion_text)
     except Exception:
         lowered = emotion_text.lower()
         if any(term in lowered for term in ("stress", "stressed", "worried", "anxious")):

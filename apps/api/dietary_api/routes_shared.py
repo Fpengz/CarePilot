@@ -1,9 +1,9 @@
-from typing import Any, Annotated, cast
+from typing import Annotated, Any, cast
 
 from fastapi import Cookie, Depends, HTTPException, Request
 
-from dietary_guardian.models.medication import MedicationRegimen
-from dietary_guardian.services.authorization import has_scopes
+from dietary_guardian.domain.notifications.models import MedicationRegimen
+from dietary_guardian.domain.tooling import has_scopes
 
 from .deps import AppContext
 from .policy import authorize_action, authorize_resource_action

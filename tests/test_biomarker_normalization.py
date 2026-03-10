@@ -1,5 +1,5 @@
-from dietary_guardian.models.report import BiomarkerReading
-from dietary_guardian.services.report_parser_service import build_clinical_snapshot
+from dietary_guardian.domain.health.models import BiomarkerReading
+from dietary_guardian.domain.reports import build_clinical_snapshot
 
 
 def test_build_snapshot_sets_risk_flags() -> None:

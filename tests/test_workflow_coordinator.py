@@ -1,5 +1,12 @@
 from datetime import datetime, timezone
 
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
+from dietary_guardian.models.contracts import CaptureEnvelope
 from dietary_guardian.models.meal import (
     GlycemicIndexLevel,
     Ingredient,
@@ -9,16 +16,13 @@ from dietary_guardian.models.meal import (
     PortionSize,
     VisionResult,
 )
-from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
-from dietary_guardian.services.memory_services import (
+from dietary_guardian.runtime.memory import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,
 )
-from dietary_guardian.services.platform_tools import build_platform_tool_registry
-from dietary_guardian.infrastructure.persistence import SQLiteRepository
-from dietary_guardian.services.workflow_coordinator import WorkflowCoordinator
-from dietary_guardian.models.contracts import CaptureEnvelope
+from dietary_guardian.application.tooling.platform_registry import build_platform_tool_registry
+from dietary_guardian.orchestrators.workflow import WorkflowCoordinator
 
 
 def _user() -> UserProfile:
@@ -100,7 +104,7 @@ def test_meal_workflow_emits_typed_output_and_handoff(tmp_path) -> None:
     assert result.output_envelope.audit_record.correlation_id == "corr1"
     assert result.output_envelope.trace.correlation_id == "corr1"
     assert result.handoffs
-    assert result.handoffs[0].to_agent == "clinical_reasoning_agent"
+    assert result.handoffs[0].to_agent == "dietary_agent"
     events = timeline.list(correlation_id="corr1")
     assert len(events) >= 2
     completed = [event for event in events if event.event_type == "workflow_completed"][-1]

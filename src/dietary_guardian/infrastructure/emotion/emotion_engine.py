@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from dietary_guardian.infrastructure.emotion.audio_preprocessor import preprocess_audio
 from dietary_guardian.infrastructure.emotion.config import EmotionRuntimeConfig
 from dietary_guardian.infrastructure.emotion.model_loader import EmotionModelLoader
@@ -13,7 +15,6 @@ from dietary_guardian.models.emotion import (
     EmotionLabel,
     EmotionRuntimeHealth,
 )
-from typing import Literal
 
 
 class EmotionEngine:

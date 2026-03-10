@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 from urllib import request
 
 from dietary_guardian.config.settings import get_settings
-from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.services.channels.telegram import TelegramChannel
+from dietary_guardian.domain.notifications.models import ReminderEvent
+from dietary_guardian.infrastructure.notifications.channels.telegram import TelegramChannel
 
 
 def _event() -> ReminderEvent:

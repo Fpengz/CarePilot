@@ -2,21 +2,6 @@
 
 from __future__ import annotations
 
-from dietary_guardian.logging_config import get_logger
-from dietary_guardian.application.suggestions.daily_suggestions import build_daily_suggestions
-from dietary_guardian.services.health_profile_onboarding_service import (
-    complete_health_profile_onboarding,
-    get_or_create_health_profile_onboarding_state,
-    list_onboarding_steps,
-    update_health_profile_onboarding,
-)
-from dietary_guardian.services.health_profile_service import (
-    compute_profile_completeness,
-    get_or_create_health_profile,
-    resolve_user_profile,
-    update_health_profile,
-)
-
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
@@ -30,6 +15,20 @@ from apps.api.dietary_api.schemas import (
     HealthProfileUpdateRequest,
 )
 from apps.api.dietary_api.services._health_profile_support import to_profile_response
+from dietary_guardian.application.suggestions.daily_suggestions import build_daily_suggestions
+from dietary_guardian.logging_config import get_logger
+from dietary_guardian.domain.profiles.onboarding import (
+    complete_health_profile_onboarding,
+    get_or_create_health_profile_onboarding_state,
+    list_onboarding_steps,
+    update_health_profile_onboarding,
+)
+from dietary_guardian.domain.profiles.health_profile import (
+    compute_profile_completeness,
+    get_or_create_health_profile,
+    resolve_user_profile,
+    update_health_profile,
+)
 
 logger = get_logger(__name__)
 

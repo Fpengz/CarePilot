@@ -11,11 +11,11 @@ from apps.api.dietary_api.schemas import (
     EmotionObservationResponse,
     EmotionTextRequest,
 )
-from dietary_guardian.models.emotion import EmotionInferenceResult
-from dietary_guardian.services.emotion_service import (
-    EmotionServiceDisabledError,
+from dietary_guardian.agents.emotion import (
+    EmotionAgentDisabledError,
     EmotionSpeechDisabledError,
 )
+from dietary_guardian.models.emotion import EmotionInferenceResult
 
 
 def _to_observation(
@@ -40,7 +40,7 @@ def _to_observation(
 
 
 def _map_inference_error(exc: Exception, *, deps: EmotionDeps) -> Exception:
-    if isinstance(exc, EmotionServiceDisabledError):
+    if isinstance(exc, EmotionAgentDisabledError):
         return build_api_error(
             status_code=503,
             code="emotions.disabled",
@@ -52,7 +52,7 @@ def _map_inference_error(exc: Exception, *, deps: EmotionDeps) -> Exception:
             code="emotions.speech_disabled",
             message="speech emotion inference is disabled",
         )
-    if isinstance(exc, deps.emotion_service.timeout_error_type):
+    if isinstance(exc, deps.emotion_agent.timeout_error_type):
         return build_api_error(
             status_code=504,
             code="emotions.timeout",
@@ -75,7 +75,7 @@ def infer_text_for_session(
     correlation_id: str | None,
 ) -> EmotionInferenceResponse:
     try:
-        result = deps.emotion_service.infer_text(text=payload.text, language=payload.language)
+        result = deps.emotion_agent.infer_text(text=payload.text, language=payload.language)
     except Exception as exc:
         raise _map_inference_error(exc, deps=deps)
     return EmotionInferenceResponse(
@@ -95,7 +95,7 @@ def infer_speech_for_session(
     correlation_id: str | None,
 ) -> EmotionInferenceResponse:
     try:
-        result = deps.emotion_service.infer_speech(
+        result = deps.emotion_agent.infer_speech(
             audio_bytes=audio_bytes,
             filename=filename,
             content_type=content_type,
@@ -110,5 +110,5 @@ def infer_speech_for_session(
 
 
 def get_emotion_health(*, deps: EmotionDeps) -> EmotionHealthResponse:
-    health = deps.emotion_service.health()
+    health = deps.emotion_agent.health()
     return EmotionHealthResponse.model_validate(health.model_dump(mode="json"))

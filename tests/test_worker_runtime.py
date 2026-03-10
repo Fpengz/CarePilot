@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 
 import pytest
-
 from apps.workers import run as worker_run
 
 

@@ -2,7 +2,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from ..routes_shared import current_session, get_context
+from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
     HouseholdActiveUpdateRequest,
     HouseholdActiveUpdateResponse,
@@ -34,7 +34,6 @@ from ..services.households import (
     rename_household,
     set_active_household,
 )
-from ..routes_shared import require_action
 
 router = APIRouter(tags=["households"])
 

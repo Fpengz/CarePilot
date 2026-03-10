@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 from dietary_guardian.domain.care import CaseSnapshot
-from dietary_guardian.models.health_profile import HealthProfileRecord
+from dietary_guardian.domain.health.models import (
+    BiomarkerReading,
+    ClinicalProfileSnapshot,
+    HealthProfileRecord,
+    MedicationAdherenceEvent,
+    SymptomCheckIn,
+)
+from dietary_guardian.domain.identity.models import UserProfile
+from dietary_guardian.domain.notifications.models import ReminderEvent
+from dietary_guardian.domain.nutrition import (
+    meal_confidence,
+    meal_display_name,
+    meal_identification_method,
+    meal_nutrition,
+)
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.models.medication_tracking import MedicationAdherenceEvent
-from dietary_guardian.models.report import BiomarkerReading, ClinicalProfileSnapshot
-from dietary_guardian.models.symptom import SymptomCheckIn
-from dietary_guardian.models.user import UserProfile
-from dietary_guardian.services.meal_record_utils import meal_confidence, meal_display_name, meal_identification_method, meal_nutrition
 
 
 def _meal_is_risky(record: MealRecognitionRecord) -> bool:

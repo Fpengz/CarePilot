@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from dietary_guardian.services.health_profile_service import compute_bmi, compute_profile_completeness
-
 from apps.api.dietary_api.schemas import (
     HealthProfileCompletenessResponse,
     HealthProfileCondition,
     HealthProfileMedication,
     HealthProfileResponseItem,
+)
+from dietary_guardian.domain.profiles.health_profile import (
+    compute_bmi,
+    compute_profile_completeness,
 )
 
 

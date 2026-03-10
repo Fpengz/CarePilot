@@ -1,6 +1,5 @@
-from fastapi.testclient import TestClient
-
 from apps.api.dietary_api.main import create_app
+from fastapi.testclient import TestClient
 
 
 def _login(client: TestClient, email: str, password: str) -> None:

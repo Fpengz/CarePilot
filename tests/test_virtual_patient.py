@@ -1,9 +1,15 @@
-from hypothesis import given, settings, strategies as st
-from dietary_guardian.models.meal import MealEvent, Ingredient, Nutrition
-from dietary_guardian.models.user import UserProfile, MedicalCondition, Medication
-from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
-from dietary_guardian.safety.db import DrugInteractionDB
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
+from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
+from dietary_guardian.safety.db import DrugInteractionDB
+from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
 
 # Clinical setup for Mr. Tan
 mr_tan = UserProfile(

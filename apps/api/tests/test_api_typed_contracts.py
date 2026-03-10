@@ -3,31 +3,32 @@ from apps.api.dietary_api.schemas import (
     AlertTimelineResponse,
     AlertTriggerResponse,
     ClinicalCardProvenanceResponse,
-    ClinicalCardTrendResponse,
     ClinicalCardResponse,
+    ClinicalCardTrendResponse,
     CursorPageResponse,
     MealAnalyzeResponse,
     MealAnalyzeSummaryResponse,
     MealRecordsResponse,
+    RecommendationGenerateResponse,
     RecommendationInteractionItemResponse,
     RecommendationInteractionResponse,
     RecommendationPreferenceSnapshotResponse,
-    RecommendationGenerateResponse,
     ReminderConfirmResponse,
     ReminderGenerateResponse,
     ReminderListResponse,
-    SuggestionReportParseResponse,
     SuggestionItemResponse,
+    SuggestionReportParseResponse,
     WorkflowResponse,
     WorkflowTimelineEventPayloadResponse,
     WorkflowTimelineEventResponse,
 )
+
+from dietary_guardian.domain.notifications.models import ReminderEvent
+from dietary_guardian.domain.recommendations.models import RecommendationOutput
 from dietary_guardian.models.analytics import EngagementMetrics
 from dietary_guardian.models.contracts import AgentOutputEnvelope
 from dietary_guardian.models.meal import VisionResult
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.models.recommendation import RecommendationOutput
 
 
 def test_meal_contract_responses_use_typed_models() -> None:

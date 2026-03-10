@@ -90,7 +90,11 @@ if TYPE_CHECKING:
         SubstitutionPlan,
         TemporalContext,
     )
-    from .workflows import ToolRolePolicyRecord, WorkflowContractSnapshotRecord, WorkflowTimelineEvent
+    from .workflows import (
+        ToolRolePolicyRecord,
+        WorkflowContractSnapshotRecord,
+        WorkflowTimelineEvent,
+    )
 
 _EXPORT_MODULES = {
     "AccountPrincipal": ".identity",

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from dietary_guardian.application.emotion.ports import EmotionInferencePort, SpeechEmotionInput, TextEmotionInput
+from dietary_guardian.application.emotion.ports import (
+    EmotionInferencePort,
+    SpeechEmotionInput,
+    TextEmotionInput,
+)
 from dietary_guardian.infrastructure.emotion.config import EmotionRuntimeConfig
 from dietary_guardian.infrastructure.emotion.emotion_engine import EmotionEngine
 from dietary_guardian.infrastructure.emotion.model_loader import EmotionModelLoader

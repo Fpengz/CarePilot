@@ -3,9 +3,10 @@ import pytest
 from dietary_guardian.agents.vision import HawkerVisionModule
 from dietary_guardian.config.runtime import LocalModelProfile
 from dietary_guardian.config.settings import get_settings
+from dietary_guardian.domain.meals import MealPerception
 from dietary_guardian.models.inference import InferenceResponse, ProviderMetadata
 from dietary_guardian.models.meal import ImageInput
-from dietary_guardian.domain.meals import MealPerception
+
 
 @pytest.mark.anyio
 async def test_hawker_vision_returns_bounded_perception_contract() -> None:

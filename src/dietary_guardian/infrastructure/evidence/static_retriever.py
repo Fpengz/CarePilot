@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from dietary_guardian.domain.care import CaseSnapshot, EvidenceBundle, EvidenceCitation, InteractionType, PersonalizationContext
+from dietary_guardian.domain.care import (
+    CaseSnapshot,
+    EvidenceBundle,
+    EvidenceCitation,
+    InteractionType,
+    PersonalizationContext,
+)
 
 
 class StaticEvidenceRetriever:

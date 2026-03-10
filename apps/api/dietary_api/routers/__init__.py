@@ -15,9 +15,9 @@ from .notifications import router as notifications_router
 from .recommendations import router as recommendations_router
 from .reminders import router as reminders_router
 from .reports import router as reports_router
+from .suggestions import router as suggestions_router
 from .symptoms import router as symptoms_router
 from .workflows import router as workflows_router
-from .suggestions import router as suggestions_router
 
 
 def include_routers(app: FastAPI) -> None:

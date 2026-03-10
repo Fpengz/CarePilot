@@ -1,8 +1,8 @@
 from typing import cast
 
-from dietary_guardian.llm import LLMFactory
-from dietary_guardian.config.settings import get_settings
 from dietary_guardian.config.runtime import AppConfig, LocalModelProfile
+from dietary_guardian.config.settings import get_settings
+from dietary_guardian.llm import LLMFactory
 
 
 def test_default_local_model_profiles_are_available() -> None:

@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from dietary_guardian.domain.care import CaseSnapshot, CompanionInteraction, EngagementAssessment, ImpactSummary
+from dietary_guardian.domain.care import (
+    CaseSnapshot,
+    CompanionInteraction,
+    EngagementAssessment,
+    ImpactSummary,
+)
 
 
 def build_impact_summary(

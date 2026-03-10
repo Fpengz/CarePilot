@@ -7,18 +7,29 @@ from uuid import uuid4
 
 from pydantic_ai import Agent
 
+from dietary_guardian.agents.executor import InferenceEngine
 from dietary_guardian.application.meals import build_meal_record, normalize_vision_result
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.config.llm import LLMCapability, LocalModelProfile, ModelProvider
 from dietary_guardian.domain.meals import MealPerception, MealPortionEstimate, PerceivedMealItem
+from dietary_guardian.domain.recommendations.canonical_food_matching import (
+    build_default_canonical_food_records,
+    find_food_by_name,
+)
+from dietary_guardian.domain.recommendations.models import CanonicalFoodRecord
 from dietary_guardian.llm import LLMFactory
 from dietary_guardian.logging_config import get_logger
-from dietary_guardian.models.canonical_food import CanonicalFoodRecord
 from dietary_guardian.models.inference import InferenceModality, InferenceRequest
-from dietary_guardian.models.meal import GlycemicIndexLevel, ImageInput, Ingredient, MealState, Nutrition, PortionSize, VisionResult
+from dietary_guardian.models.meal import (
+    GlycemicIndexLevel,
+    ImageInput,
+    Ingredient,
+    MealState,
+    Nutrition,
+    PortionSize,
+    VisionResult,
+)
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.agents.executor import InferenceEngine
-from dietary_guardian.services.canonical_food_service import build_default_canonical_food_records, find_food_by_name
 
 logger = get_logger(__name__)
 SLOW_INFERENCE_WARNING_MS = 10_000.0

@@ -5,7 +5,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 RiskLevel = Literal["low", "medium", "high"]
 EngagementMode = Literal["supportive", "accountability", "follow_up", "escalate"]
 UrgencyLevel = Literal["routine", "soon", "prompt"]

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 WEB_ROOT = ROOT / "apps" / "web"
 LEGACY_API_MODULE = WEB_ROOT / "lib" / "api.ts"

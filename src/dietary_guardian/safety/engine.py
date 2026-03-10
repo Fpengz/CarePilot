@@ -1,7 +1,8 @@
-import logfire
 from typing import Any, cast
+
+import logfire
+from dietary_guardian.domain.identity.models import UserProfile
 from dietary_guardian.models.meal import MealEvent, MealState
-from dietary_guardian.models.user import UserProfile
 from dietary_guardian.safety.db import DrugInteractionDB
 from dietary_guardian.safety.exceptions import SafetyViolation
 from dietary_guardian.safety.thresholds import (

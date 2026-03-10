@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from dietary_guardian.domain.care import CarePlan, CaseSnapshot, CompanionInteraction, EngagementAssessment, EvidenceBundle, PersonalizationContext
+from dietary_guardian.domain.care import (
+    CarePlan,
+    CaseSnapshot,
+    CompanionInteraction,
+    EngagementAssessment,
+    EvidenceBundle,
+    PersonalizationContext,
+)
 
 
 def _message_wants_why(message: str) -> bool:

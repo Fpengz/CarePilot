@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from dietary_guardian.domain.care import CaseSnapshot, EvidenceBundle, InteractionType, PersonalizationContext
+from dietary_guardian.domain.care import (
+    CaseSnapshot,
+    EvidenceBundle,
+    InteractionType,
+    PersonalizationContext,
+)
 
 from .ports import EvidenceRetrievalPort
 
