@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from dietary_guardian.config.settings import Settings
+from dietary_guardian.config.app import AppSettings as Settings
 from dietary_guardian.infrastructure.auth import InMemoryAuthStore
 
 

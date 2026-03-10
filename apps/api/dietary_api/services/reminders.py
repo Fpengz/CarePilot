@@ -15,7 +15,7 @@ from apps.api.dietary_api.schemas import (
     ReminderGenerateResponse,
     ReminderListResponse,
 )
-from apps.api.dietary_api.session_profiles import build_user_profile_from_session
+from dietary_guardian.application.auth.session_context import build_user_profile_from_session
 from dietary_guardian.domain.medications import (
     compute_mcr,
     default_mobility_settings,

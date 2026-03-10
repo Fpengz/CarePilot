@@ -9,7 +9,7 @@ from typing import Any, cast
 from dietary_guardian.domain.identity.models import MealSlot
 from dietary_guardian.domain.meals import PortionReference
 from dietary_guardian.domain.recommendations.models import CanonicalFoodRecord
-from dietary_guardian.models.meal import Nutrition
+from dietary_guardian.domain.meals.models import Nutrition
 
 
 def _normalize_text(value: str) -> str:

@@ -1,20 +1,18 @@
-"""Package exports for care."""
+"""Backward-compatible re-export shim.
 
-from .models import (
+The companion domain models have moved to
+``dietary_guardian.domain.companion``.
+"""
+
+from dietary_guardian.domain.companion import (  # noqa: F401
     CarePlan,
     CaseSnapshot,
     ClinicianDigest,
     CompanionInteraction,
     CompanionInteractionResult,
     EngagementAssessment,
-    EvidenceBundle,
-    EvidenceCitation,
     ImpactSummary,
-    InteractionGoal,
-    InteractionType,
     PersonalizationContext,
-    PolicyStatus,
-    SafetyDecision,
 )
 
 __all__ = [
@@ -24,12 +22,6 @@ __all__ = [
     "CompanionInteraction",
     "CompanionInteractionResult",
     "EngagementAssessment",
-    "EvidenceBundle",
-    "EvidenceCitation",
     "ImpactSummary",
-    "InteractionGoal",
-    "InteractionType",
     "PersonalizationContext",
-    "PolicyStatus",
-    "SafetyDecision",
 ]

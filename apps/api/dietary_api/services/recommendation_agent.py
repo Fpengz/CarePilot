@@ -11,8 +11,8 @@ from apps.api.dietary_api.schemas import (
     RecommendationSubstitutionRequest,
     RecommendationSubstitutionResponse,
 )
-from dietary_guardian.agents.schemas import RecommendationAgentInput
-from dietary_guardian.agents.recommendation_engine import (
+from dietary_guardian.capabilities.schemas import RecommendationAgentInput
+from dietary_guardian.domain.recommendations.engine import (
     AgentMealNotFoundError,
     build_substitution_plan,
     record_interaction_and_update_preferences,

@@ -3,7 +3,7 @@
 import sqlite3
 from datetime import datetime, timedelta, timezone
 
-from dietary_guardian.config.settings import Settings
+from dietary_guardian.config.app import AppSettings as Settings
 from dietary_guardian.infrastructure.auth.sqlite_store import SQLiteAuthStore
 
 

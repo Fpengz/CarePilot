@@ -7,9 +7,9 @@ import pytest
 from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.settings import get_settings
-from dietary_guardian.models.meal import Ingredient, MealState, Nutrition
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.config.app import get_settings
+from dietary_guardian.domain.meals.models import Ingredient, MealState, Nutrition
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 
 
 def _reset_settings_cache() -> None:

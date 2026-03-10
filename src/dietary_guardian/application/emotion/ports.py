@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from dietary_guardian.models.emotion import EmotionInferenceResult, EmotionRuntimeHealth
+from dietary_guardian.domain.health.emotion import EmotionInferenceResult, EmotionRuntimeHealth
 
 
 @dataclass(frozen=True, slots=True)

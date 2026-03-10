@@ -8,8 +8,8 @@ from dietary_guardian.domain.identity.models import (
     UserProfile,
 )
 from dietary_guardian.infrastructure.persistence import SQLiteRepository
-from dietary_guardian.models.contracts import CaptureEnvelope
-from dietary_guardian.models.meal import (
+from dietary_guardian.application.contracts.agent_envelopes import CaptureEnvelope
+from dietary_guardian.domain.meals.models import (
     GlycemicIndexLevel,
     Ingredient,
     LocalizationDetails,
@@ -24,7 +24,7 @@ from dietary_guardian.infrastructure.cache import (
     ProfileMemoryService,
 )
 from dietary_guardian.application.tooling.platform_registry import build_platform_tool_registry
-from dietary_guardian.orchestrators.workflow import WorkflowCoordinator
+from dietary_guardian.application.workflows.coordinator import WorkflowCoordinator
 
 
 def _user() -> UserProfile:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from dietary_guardian.config.settings import Settings
+from dietary_guardian.config.app import AppSettings as Settings
 
 
 @dataclass(frozen=True, slots=True)

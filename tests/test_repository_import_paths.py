@@ -21,7 +21,7 @@ MIGRATED_CALLERS = [
 LEGACY_IMPORT = "from dietary_guardian.services.repository import SQLiteRepository"
 CANONICAL_IMPORT = "from dietary_guardian.infrastructure.persistence import SQLiteRepository"
 LEGACY_API_AUTH_IMPORT = "from apps.api.dietary_api.auth import build_user_profile_from_session"
-CANONICAL_API_AUTH_IMPORT = "from apps.api.dietary_api.session_profiles import build_user_profile_from_session"
+CANONICAL_API_AUTH_IMPORT = "from dietary_guardian.application.auth.session_context import build_user_profile_from_session"
 
 
 def test_infrastructure_persistence_exports_sqlite_repository() -> None:

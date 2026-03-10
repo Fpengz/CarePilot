@@ -9,9 +9,9 @@ from dietary_guardian.domain.identity.models import (
     Medication,
     UserProfile,
 )
-from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
-from dietary_guardian.safety.db import DrugInteractionDB
-from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
+from dietary_guardian.domain.meals.models import Ingredient, MealEvent, Nutrition
+from dietary_guardian.infrastructure.safety.drug_interaction_db import DrugInteractionDB
+from dietary_guardian.domain.safety.engine import SafetyEngine, SafetyViolation
 
 # Clinical setup for Mr. Tan
 mr_tan = UserProfile(

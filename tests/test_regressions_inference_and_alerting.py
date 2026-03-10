@@ -4,12 +4,12 @@ from datetime import datetime
 
 import pytest
 
-from dietary_guardian.agents.dietary import AgentResponse, process_meal_request
+from dietary_guardian.capabilities.dietary import AgentResponse, process_meal_request
 from dietary_guardian.config.llm import LLMCapability
 from dietary_guardian.domain.alerts.models import AlertDeliveryResult, AlertMessage
 from dietary_guardian.domain.identity.models import MedicalCondition, UserProfile
 from dietary_guardian.infrastructure.persistence import SQLiteRepository
-from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
+from dietary_guardian.domain.meals.models import Ingredient, MealEvent, Nutrition
 from dietary_guardian.infrastructure.notifications.alert_outbox import AlertPublisher, OutboxWorker
 
 
@@ -49,10 +49,10 @@ async def test_process_meal_request_does_not_force_gemini_model_for_test_provide
 
     monkeypatch.setenv("LLM_PROVIDER", "test")
     monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-pro")
-    from dietary_guardian.config.settings import get_settings
+    from dietary_guardian.config.app import get_settings
 
     get_settings.cache_clear()
-    monkeypatch.setattr("dietary_guardian.agents.dietary.InferenceEngine", StubEngine)
+    monkeypatch.setattr("dietary_guardian.capabilities.dietary.InferenceEngine", StubEngine)
 
     user = UserProfile(
         id="u1",

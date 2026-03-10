@@ -5,7 +5,7 @@ from io import BytesIO
 
 from PIL import Image
 
-from dietary_guardian.models.meal import ImageInput
+from dietary_guardian.domain.meals.models import ImageInput
 from dietary_guardian.infrastructure.media.upload import build_image_input
 
 

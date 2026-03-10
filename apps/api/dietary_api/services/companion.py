@@ -20,13 +20,13 @@ from apps.api.dietary_api.services.companion_context import (
     build_workflow_response,
     load_companion_inputs,
 )
-from dietary_guardian.application.interactions import (
+from dietary_guardian.application.companion import (
     build_companion_today_bundle,
 )
-from dietary_guardian.application.interactions import (
+from dietary_guardian.application.companion import (
     run_companion_interaction as orchestrate_companion_interaction,
 )
-from dietary_guardian.domain.care import CompanionInteraction
+from dietary_guardian.domain.companion import CompanionInteraction
 from dietary_guardian.infrastructure.evidence import StaticEvidenceRetriever
 
 _EVIDENCE_RETRIEVER = StaticEvidenceRetriever()

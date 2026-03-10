@@ -7,8 +7,8 @@ from dietary_guardian.domain.identity.models import (
     Medication,
     UserProfile,
 )
-from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
-from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
+from dietary_guardian.domain.meals.models import Ingredient, MealEvent, Nutrition
+from dietary_guardian.domain.safety.engine import SafetyEngine, SafetyViolation
 
 
 @pytest.fixture

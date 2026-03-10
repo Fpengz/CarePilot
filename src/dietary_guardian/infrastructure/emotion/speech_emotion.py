@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 
 from dietary_guardian.infrastructure.emotion.text_emotion import TextEmotionClassifier
-from dietary_guardian.models.emotion import EmotionLabel
+from dietary_guardian.domain.health.emotion import EmotionLabel
 
 
 class SpeechEmotionClassifier:

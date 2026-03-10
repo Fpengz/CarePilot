@@ -2,9 +2,9 @@
 
 import pytest
 
-from dietary_guardian.agents.vision import HawkerVisionModule
+from dietary_guardian.capabilities.vision import HawkerVisionModule
 from dietary_guardian.infrastructure.persistence import SQLiteRepository
-from dietary_guardian.models.meal import ImageInput
+from dietary_guardian.domain.meals.models import ImageInput
 
 
 @pytest.mark.anyio

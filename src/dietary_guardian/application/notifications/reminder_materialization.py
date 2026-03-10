@@ -27,7 +27,7 @@ from dietary_guardian.domain.notifications.models import (
     ScheduledReminderNotification,
 )
 from dietary_guardian.infrastructure.persistence import AppStoreBackend
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 
 logger = get_logger(__name__)
 

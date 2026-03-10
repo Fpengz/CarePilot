@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from dietary_guardian.application.personalization.profile_tools import (
+from dietary_guardian.application.companion.personalization import (
     build_caregiver_tool_state,
     build_clinical_summary_tool_state,
     build_self_tool_state,
@@ -13,8 +13,8 @@ from dietary_guardian.domain.identity.models import (
     Medication,
     UserProfile,
 )
-from dietary_guardian.models.meal import MealState, Nutrition
-from dietary_guardian.models.profile_tools import (
+from dietary_guardian.domain.meals.models import MealState, Nutrition
+from dietary_guardian.domain.profiles.profile_tools import (
     CaregiverToolState,
     ClinicalSummaryToolState,
     SelfToolState,

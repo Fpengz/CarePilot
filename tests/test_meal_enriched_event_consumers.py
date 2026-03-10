@@ -3,7 +3,7 @@
 from datetime import date, datetime, timezone
 from typing import Any, cast
 
-from dietary_guardian.application.case_snapshot.use_cases import build_case_snapshot
+from dietary_guardian.application.companion.snapshot import build_case_snapshot
 from dietary_guardian.domain.health.models import ClinicalProfileSnapshot, HealthProfileRecord
 from dietary_guardian.domain.identity.models import (
     MedicalCondition,
@@ -21,11 +21,11 @@ from dietary_guardian.domain.recommendations.models import (
     PreferenceSnapshot,
     RecommendationInteraction,
 )
-from dietary_guardian.models.meal import Ingredient, MealState, Nutrition
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.meals.models import Ingredient, MealState, Nutrition
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 from dietary_guardian.domain.nutrition import build_daily_nutrition_summary
 from dietary_guardian.domain.metrics import meal_calorie_points
-from dietary_guardian.agents.recommendation_engine import (
+from dietary_guardian.domain.recommendations.engine import (
     _snapshot_from_history,
     build_substitution_plan,
     build_temporal_context,

@@ -8,7 +8,7 @@ from threading import Lock
 from time import time
 from typing import Protocol
 
-from dietary_guardian.config.settings import Settings
+from dietary_guardian.config.app import AppSettings as Settings
 
 from .redis_store import _load_redis_module
 

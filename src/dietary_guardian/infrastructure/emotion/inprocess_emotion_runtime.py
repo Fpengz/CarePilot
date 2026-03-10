@@ -12,7 +12,7 @@ from dietary_guardian.infrastructure.emotion.emotion_engine import EmotionEngine
 from dietary_guardian.infrastructure.emotion.model_loader import EmotionModelLoader
 from dietary_guardian.infrastructure.emotion.speech_emotion import SpeechEmotionClassifier
 from dietary_guardian.infrastructure.emotion.text_emotion import TextEmotionClassifier
-from dietary_guardian.models.emotion import EmotionInferenceResult, EmotionRuntimeHealth
+from dietary_guardian.domain.health.emotion import EmotionInferenceResult, EmotionRuntimeHealth
 
 
 class InProcessEmotionRuntime(EmotionInferencePort):

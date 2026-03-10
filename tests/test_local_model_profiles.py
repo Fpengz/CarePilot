@@ -3,8 +3,8 @@
 from typing import cast
 
 from dietary_guardian.config.runtime import AppConfig, LocalModelProfile
-from dietary_guardian.config.settings import get_settings
-from dietary_guardian.llm import LLMFactory
+from dietary_guardian.config.app import get_settings
+from dietary_guardian.infrastructure.llm import LLMFactory
 
 
 def test_default_local_model_profiles_are_available() -> None:
@@ -96,8 +96,8 @@ def test_profile_uses_profile_specific_api_key_env(monkeypatch) -> None:
             self.model_name = model_name
             self.provider = provider
 
-    monkeypatch.setattr("dietary_guardian.llm.factory.OpenAIProvider", FakeProvider)
-    monkeypatch.setattr("dietary_guardian.llm.factory.OpenAIChatModel", FakeModel)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.OpenAIChatModel", FakeModel)
     monkeypatch.setenv("CUSTOM_PROFILE_API_KEY", "profile-secret")
     monkeypatch.delenv("LOCAL_LLM_API_KEY", raising=False)
     get_settings.cache_clear()
@@ -130,8 +130,8 @@ def test_profile_creation_does_not_require_global_provider_validation(monkeypatc
             self.model_name = model_name
             self.provider = provider
 
-    monkeypatch.setattr("dietary_guardian.llm.factory.OpenAIProvider", FakeProvider)
-    monkeypatch.setattr("dietary_guardian.llm.factory.OpenAIChatModel", FakeModel)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.OpenAIChatModel", FakeModel)
     monkeypatch.setenv("LLM_PROVIDER", "gemini")
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
@@ -172,9 +172,9 @@ def test_local_provider_uses_configured_timeout_and_transport_retries(monkeypatc
             self.model_name = model_name
             self.provider = provider
 
-    monkeypatch.setattr("dietary_guardian.llm.factory.AsyncOpenAI", FakeAsyncOpenAI)
-    monkeypatch.setattr("dietary_guardian.llm.factory.OpenAIProvider", FakeProvider)
-    monkeypatch.setattr("dietary_guardian.llm.factory.OpenAIChatModel", FakeModel)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.AsyncOpenAI", FakeAsyncOpenAI)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.OpenAIChatModel", FakeModel)
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
     monkeypatch.setenv("LOCAL_LLM_MODEL", "qwen3-vl:4b")
@@ -210,9 +210,9 @@ def test_get_model_explicit_openai_provider_uses_openai_settings(monkeypatch) ->
             self.model_name = model_name
             self.provider = provider
 
-    monkeypatch.setattr("dietary_guardian.llm.factory.AsyncOpenAI", FakeAsyncOpenAI)
-    monkeypatch.setattr("dietary_guardian.llm.factory.OpenAIProvider", FakeProvider)
-    monkeypatch.setattr("dietary_guardian.llm.factory.OpenAIChatModel", FakeModel)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.AsyncOpenAI", FakeAsyncOpenAI)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("dietary_guardian.infrastructure.llm.factory.OpenAIChatModel", FakeModel)
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("OPENAI_MODEL", "gpt-4o-mini")
     monkeypatch.setenv("OPENAI_REQUEST_TIMEOUT_SECONDS", "90")

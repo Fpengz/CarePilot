@@ -20,7 +20,7 @@ from dietary_guardian.domain.metrics import (
     build_metric_trend,
     meal_calorie_points,
 )
-from dietary_guardian.models.clinical_card import ClinicalCardRecord
+from dietary_guardian.domain.health.clinical_card import ClinicalCardRecord
 
 
 def _parse_date(value: str | None) -> date | None:

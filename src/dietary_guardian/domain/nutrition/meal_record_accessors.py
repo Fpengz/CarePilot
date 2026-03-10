@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from dietary_guardian.domain.meals import MealNutritionProfile
-from dietary_guardian.models.meal import Ingredient, Nutrition
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.meals.models import Ingredient, Nutrition
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 
 
 def meal_display_name(record: MealRecognitionRecord) -> str:

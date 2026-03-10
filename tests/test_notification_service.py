@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.app import get_settings
 from dietary_guardian.domain.alerts.models import AlertDeliveryResult, AlertMessage
 from dietary_guardian.domain.notifications.models import ReminderEvent
 from dietary_guardian.infrastructure.persistence import SQLiteRepository

@@ -5,8 +5,8 @@ from typing import Any, cast
 
 import pytest
 
-from dietary_guardian.application.suggestions.ports import BuildUserProfileFn
-from dietary_guardian.application.suggestions.use_cases import (
+from dietary_guardian.application.recommendations.ports import BuildUserProfileFn
+from dietary_guardian.application.recommendations.use_cases import (
     MissingActiveHouseholdError,
     NoMealRecordsError,
     generate_suggestion_from_report,

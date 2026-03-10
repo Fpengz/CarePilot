@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from dietary_guardian.models.meal import ImageInput
+from dietary_guardian.domain.meals.models import ImageInput
 from dietary_guardian.infrastructure.media.ingestion import (
     build_capture_envelope,
     should_suppress_duplicate_capture,

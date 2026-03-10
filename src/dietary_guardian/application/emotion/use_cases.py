@@ -11,7 +11,7 @@ from dietary_guardian.application.emotion.ports import (
     SpeechEmotionInput,
     TextEmotionInput,
 )
-from dietary_guardian.models.emotion import EmotionInferenceResult
+from dietary_guardian.domain.health.emotion import EmotionInferenceResult
 
 T = TypeVar("T")
 

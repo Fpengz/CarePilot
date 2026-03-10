@@ -9,7 +9,7 @@ import pytest
 from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.app import get_settings
 from dietary_guardian.domain.health.models import BiomarkerReading
 
 

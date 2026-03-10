@@ -2,9 +2,9 @@
 
 from datetime import datetime
 
-from dietary_guardian.application.impact.view_helpers import build_analytics_summary
+from apps.api.dietary_api.routers._companion_views import build_analytics_summary
 from dietary_guardian.domain.notifications.models import ReminderEvent
-from dietary_guardian.models.analytics import EngagementMetrics
+from dietary_guardian.domain.health.analytics import EngagementMetrics
 
 
 def test_dashboard_metrics_summary() -> None:

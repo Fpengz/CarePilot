@@ -8,7 +8,7 @@ provide normalised-text lookup over the catalog.
 from __future__ import annotations
 
 from dietary_guardian.domain.recommendations.models import MealCatalogItem
-from dietary_guardian.models.meal import Nutrition
+from dietary_guardian.domain.meals.models import Nutrition
 
 DEFAULT_MEAL_CATALOG: tuple[MealCatalogItem, ...] = (
     MealCatalogItem(

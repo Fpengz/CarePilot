@@ -20,7 +20,7 @@ from dietary_guardian.domain.recommendations.canonical_food_matching import (
     normalize_text,
     rank_food_candidates,
 )
-from dietary_guardian.models.meal import (
+from dietary_guardian.domain.meals.models import (
     GlycemicIndexLevel,
     ImageInput,
     Ingredient,
@@ -30,7 +30,7 @@ from dietary_guardian.models.meal import (
     PortionSize,
     VisionResult,
 )
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 
 _UNIT_GRAMS = {
     "bowl": 400.0,

@@ -1,7 +1,7 @@
 """Tests for platform tools."""
 
 from dietary_guardian.infrastructure.persistence import SQLiteRepository
-from dietary_guardian.models.tooling import ToolPolicyContext
+from dietary_guardian.domain.tooling.models import ToolPolicyContext
 from dietary_guardian.application.tooling.platform_registry import build_platform_tool_registry
 
 

@@ -6,9 +6,9 @@ import asyncio
 from uuid import uuid4
 
 from apps.api.dietary_api.deps import build_app_context, close_app_context
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.app import get_settings
 from dietary_guardian.infrastructure.notifications.alert_outbox import OutboxWorker
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 from dietary_guardian.infrastructure.schedulers.reminder_scheduler import run_reminder_scheduler_once
 
 logger = get_logger(__name__)

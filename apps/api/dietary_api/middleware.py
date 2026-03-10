@@ -8,7 +8,7 @@ from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 
 from dietary_guardian.infrastructure.cache import build_rate_limiter
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 
 from .errors import api_error_payload
 from .observability import get_correlation_id, get_request_id, render_kv_log

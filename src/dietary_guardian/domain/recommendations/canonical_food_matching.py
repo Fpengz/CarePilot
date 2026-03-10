@@ -30,7 +30,7 @@ from dietary_guardian.infrastructure.food.ingestion import (
     load_open_food_facts_records,
     load_usda_records,
 )
-from dietary_guardian.models.meal import Nutrition
+from dietary_guardian.domain.meals.models import Nutrition
 
 
 def normalize_text(value: str) -> str:

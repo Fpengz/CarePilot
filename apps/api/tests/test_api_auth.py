@@ -10,7 +10,7 @@ from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.settings import Settings, get_settings
+from dietary_guardian.config.app import AppSettings as Settings, get_settings
 from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SessionSigner
 
 

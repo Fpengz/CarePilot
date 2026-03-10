@@ -13,8 +13,8 @@ from apps.api.dietary_api.schemas import (
     SuggestionItemResponse,
     SuggestionListResponse,
 )
-from apps.api.dietary_api.session_profiles import build_user_profile_from_session
-from dietary_guardian.application.suggestions import (
+from dietary_guardian.application.auth.session_context import build_user_profile_from_session
+from dietary_guardian.application.recommendations import (
     MissingActiveHouseholdError,
     NoMealRecordsError,
     SuggestionForbiddenError,
@@ -23,7 +23,7 @@ from dietary_guardian.application.suggestions import (
     get_suggestion_for_session,
     list_suggestions_for_session,
 )
-from dietary_guardian.application.suggestions.ports import (
+from dietary_guardian.application.recommendations.ports import (
     BuildUserProfileFn,
     HouseholdStorePort,
     SuggestionRepositoryPort,

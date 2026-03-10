@@ -6,12 +6,12 @@ from collections import Counter, defaultdict
 from datetime import date, timedelta
 
 from dietary_guardian.domain.health.models import HealthProfileRecord
-from dietary_guardian.models.daily_nutrition import (
+from dietary_guardian.domain.nutrition.models import (
     DailyNutritionSummary,
     NutritionInsight,
     NutritionTotals,
 )
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 from dietary_guardian.shared.time import local_date_for
 
 from .meal_record_accessors import meal_display_name, meal_nutrition

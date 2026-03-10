@@ -3,8 +3,8 @@
 from datetime import timezone
 
 from dietary_guardian.domain.health.models import ReportInput
-from dietary_guardian.models.meal import MealState, Nutrition
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.meals.models import MealState, Nutrition
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 from dietary_guardian.domain.reports import parse_report_input
 
 

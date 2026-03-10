@@ -8,14 +8,16 @@ from typing import ClassVar, Literal
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from dietary_guardian.config.api import APISettings
-from dietary_guardian.config.auth import AuthSettings
-from dietary_guardian.config.channels import ChannelSettings
-from dietary_guardian.config.emotion import EmotionSettings
 from dietary_guardian.config.llm import LLMCapability, LLMSettings
-from dietary_guardian.config.observability import ObservabilitySettings
-from dietary_guardian.config.storage import StorageSettings
-from dietary_guardian.config.workers import WorkerSettings
+from dietary_guardian.config.runtime import (
+    APISettings,
+    AuthSettings,
+    ChannelSettings,
+    EmotionSettings,
+    ObservabilitySettings,
+    StorageSettings,
+    WorkerSettings,
+)
 
 
 class AppIdentitySettings(BaseModel):

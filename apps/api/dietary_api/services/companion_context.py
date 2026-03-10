@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.schemas import WorkflowResponse, WorkflowTimelineEventResponse
-from apps.api.dietary_api.session_profiles import build_user_profile_from_session
-from dietary_guardian.application.interactions import CompanionStateInputs
+from dietary_guardian.application.auth.session_context import build_user_profile_from_session
+from dietary_guardian.application.companion import CompanionStateInputs
 from dietary_guardian.domain.health.models import ClinicalProfileSnapshot
 from dietary_guardian.domain.reports import build_clinical_snapshot
 

@@ -10,7 +10,7 @@ from dietary_guardian.infrastructure.emotion.model_loader import EmotionModelLoa
 from dietary_guardian.infrastructure.emotion.speech_emotion import SpeechEmotionClassifier
 from dietary_guardian.infrastructure.emotion.text_emotion import TextEmotionClassifier
 from dietary_guardian.infrastructure.emotion.text_preprocessor import normalize_text
-from dietary_guardian.models.emotion import (
+from dietary_guardian.domain.health.emotion import (
     EmotionConfidenceBand,
     EmotionEvidence,
     EmotionInferenceResult,

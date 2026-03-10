@@ -12,8 +12,8 @@ from dietary_guardian.application.emotion.ports import (
     TextEmotionInput,
 )
 from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime
-from dietary_guardian.models.emotion import EmotionInferenceResult, EmotionRuntimeHealth
-from dietary_guardian.agents.emotion import EmotionAgent
+from dietary_guardian.domain.health.emotion import EmotionInferenceResult, EmotionRuntimeHealth
+from dietary_guardian.capabilities.emotion import EmotionAgent
 
 
 def _runtime() -> InProcessEmotionRuntime:

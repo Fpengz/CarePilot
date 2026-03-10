@@ -1,6 +1,6 @@
 """Tests for readiness service."""
 
-from dietary_guardian.config.settings import Settings
+from dietary_guardian.config.app import AppSettings as Settings
 from dietary_guardian.infrastructure.diagnostics.readiness import build_readiness_report
 
 

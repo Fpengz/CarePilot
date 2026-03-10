@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from dietary_guardian.config.settings import Settings, get_settings
+from dietary_guardian.config.app import AppSettings as Settings, get_settings
 
 
 def test_settings_cache_returns_same_instance(monkeypatch) -> None:

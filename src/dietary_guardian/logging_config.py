@@ -3,8 +3,8 @@
 import sys
 import types
 
-import dietary_guardian.observability.setup as _setup_module
-from dietary_guardian.observability.setup import (
+import dietary_guardian.infrastructure.observability.setup as _setup_module
+from dietary_guardian.infrastructure.observability.setup import (
     _CONFIGURED,
     _HANDLER_MARKER,
     _ROOT_MARKER,

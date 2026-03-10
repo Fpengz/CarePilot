@@ -5,7 +5,7 @@ persistence layer on every request.  Cache misses propagate to the repository.
 """
 
 from dietary_guardian.domain.identity.models import UserProfile
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 
 logger = get_logger(__name__)
 

@@ -9,11 +9,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 from uuid import uuid4
 
-from dietary_guardian.config.settings import Settings
+from dietary_guardian.config.app import AppSettings as Settings
 from dietary_guardian.domain.identity.models import AccountRole, ProfileMode
 from dietary_guardian.domain.tooling import scopes_for_account_role
 from dietary_guardian.infrastructure.auth.demo_defaults import build_demo_user_seeds
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 
 logger = get_logger(__name__)
 

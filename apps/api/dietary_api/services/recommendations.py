@@ -5,7 +5,7 @@ from __future__ import annotations
 from apps.api.dietary_api.deps import RecommendationDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import RecommendationGenerateResponse, WorkflowResponse
-from apps.api.dietary_api.session_profiles import build_user_profile_from_session
+from dietary_guardian.application.auth.session_context import build_user_profile_from_session
 from dietary_guardian.domain.recommendations.meal_recommendations import generate_recommendation
 from dietary_guardian.domain.reports import build_clinical_snapshot
 

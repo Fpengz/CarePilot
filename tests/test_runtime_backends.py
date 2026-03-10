@@ -5,7 +5,7 @@ from collections.abc import Generator
 import pytest
 from apps.api.dietary_api.deps import build_app_context, close_app_context
 
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.app import get_settings
 from dietary_guardian.infrastructure.persistence import SQLiteAppStore, build_app_store
 
 

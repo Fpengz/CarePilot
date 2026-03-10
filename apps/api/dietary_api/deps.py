@@ -2,11 +2,11 @@
 
 from dataclasses import dataclass
 
-from dietary_guardian.agents.emotion import EmotionAgent
-from dietary_guardian.agents.recommendation import RecommendationAgent
-from dietary_guardian.agents.registry import AgentRegistry, build_default_agent_registry
+from dietary_guardian.capabilities.emotion import EmotionAgent
+from dietary_guardian.capabilities.recommendation import RecommendationAgent
+from dietary_guardian.capabilities.registry import AgentRegistry, build_default_agent_registry
 from dietary_guardian.application.tooling.platform_registry import build_platform_tool_registry
-from dietary_guardian.config.settings import Settings, get_settings
+from dietary_guardian.config.app import AppSettings as Settings, get_settings
 from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SessionSigner, SQLiteAuthStore
 from dietary_guardian.infrastructure.cache import InMemoryCacheStore, RedisCacheStore
 from dietary_guardian.infrastructure.coordination import (
@@ -22,7 +22,7 @@ from dietary_guardian.infrastructure.persistence import (
     build_app_stores,
 )
 from dietary_guardian.infrastructure.tooling.registry import ToolRegistry
-from dietary_guardian.orchestrators import WorkflowCoordinator
+from dietary_guardian.application.workflows import WorkflowCoordinator
 from dietary_guardian.infrastructure.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,

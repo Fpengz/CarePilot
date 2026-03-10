@@ -9,7 +9,7 @@ from apps.api.dietary_api.schemas import (
     AlertTriggerRequest,
     AlertTriggerResponse,
 )
-from apps.api.dietary_api.session_profiles import build_user_profile_from_session
+from dietary_guardian.application.auth.session_context import build_user_profile_from_session
 
 
 def trigger_alert(

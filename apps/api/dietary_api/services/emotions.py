@@ -11,11 +11,11 @@ from apps.api.dietary_api.schemas import (
     EmotionObservationResponse,
     EmotionTextRequest,
 )
-from dietary_guardian.agents.emotion import (
+from dietary_guardian.capabilities.emotion import (
     EmotionAgentDisabledError,
     EmotionSpeechDisabledError,
 )
-from dietary_guardian.models.emotion import EmotionInferenceResult
+from dietary_guardian.domain.health.emotion import EmotionInferenceResult
 
 
 def _to_observation(

@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from dietary_guardian.models.tooling import (
+from dietary_guardian.domain.tooling.models import (
     ToolPolicyContext,
     ToolSensitivity,
     ToolSideEffect,

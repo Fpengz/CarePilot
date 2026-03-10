@@ -14,7 +14,7 @@ from dietary_guardian.application.contracts.notifications import (
     ReminderNotificationRepository,
     ReminderSchedulerRepository,
 )
-from dietary_guardian.config.settings import Settings, get_settings
+from dietary_guardian.config.app import AppSettings as Settings, get_settings
 from dietary_guardian.infrastructure.persistence import AppStoreBackend, build_app_store
 
 

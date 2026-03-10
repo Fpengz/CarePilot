@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dietary_guardian.domain.care import (
+from dietary_guardian.domain.companion import (
     CaseSnapshot,
     EvidenceBundle,
     EvidenceCitation,

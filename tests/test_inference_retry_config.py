@@ -2,9 +2,9 @@
 
 from pydantic import BaseModel
 
-from dietary_guardian.agents.executor import InferenceEngine
-from dietary_guardian.config.settings import get_settings
-from dietary_guardian.models.inference import InferenceModality, InferenceRequest
+from dietary_guardian.infrastructure.ai.engine import InferenceEngine
+from dietary_guardian.config.app import get_settings
+from dietary_guardian.infrastructure.ai.types import InferenceModality, InferenceRequest
 
 
 class _DummyOutput(BaseModel):
@@ -32,7 +32,7 @@ def test_inference_engine_logs_retry_exhaustion_with_estimated_request_count(mon
             del prompt
             raise RuntimeError("Exceeded maximum retries (1) for output validation")
 
-    monkeypatch.setattr("dietary_guardian.agents.executor.Agent", FakeAgent)
+    monkeypatch.setattr("dietary_guardian.infrastructure.ai.engine.Agent", FakeAgent)
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
     monkeypatch.setenv("LOCAL_OUTPUT_VALIDATION_RETRIES", "0")

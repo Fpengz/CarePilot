@@ -27,10 +27,10 @@ from apps.api.dietary_api.schemas import (
 
 from dietary_guardian.domain.notifications.models import ReminderEvent
 from dietary_guardian.domain.recommendations.models import RecommendationOutput
-from dietary_guardian.models.analytics import EngagementMetrics
-from dietary_guardian.models.contracts import AgentOutputEnvelope
-from dietary_guardian.models.meal import VisionResult
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.health.analytics import EngagementMetrics
+from dietary_guardian.application.contracts.agent_envelopes import AgentOutputEnvelope
+from dietary_guardian.domain.meals.models import VisionResult
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 
 
 def test_meal_contract_responses_use_typed_models() -> None:

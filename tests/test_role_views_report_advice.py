@@ -1,6 +1,6 @@
 """Tests for role views report advice."""
 
-from dietary_guardian.application.impact.view_helpers import build_profile_mode_report_advice_view
+from apps.api.dietary_api.routers._companion_views import build_profile_mode_report_advice_view
 from dietary_guardian.domain.recommendations.models import RecommendationOutput
 
 

@@ -14,7 +14,7 @@ from uuid import uuid4
 from pydantic import BaseModel
 
 from dietary_guardian.application.contracts.notifications import AlertRepositoryProtocol
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.app import get_settings
 from dietary_guardian.domain.alerts import AlertDeliveryResult, AlertMessage, AlertSeverity
 from dietary_guardian.domain.notifications import ReminderEvent
 from dietary_guardian.infrastructure.notifications.alert_outbox import AlertPublisher, OutboxWorker
@@ -24,7 +24,7 @@ from dietary_guardian.infrastructure.notifications.channels import (
     WhatsAppChannel,
 )
 from dietary_guardian.infrastructure.notifications.channels.base import ChannelResult
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 from dietary_guardian.infrastructure.persistence.runtime_bootstrap import build_alert_repository
 
 logger = get_logger(__name__)

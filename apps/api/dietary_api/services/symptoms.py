@@ -17,7 +17,7 @@ from apps.api.dietary_api.schemas import (
     SymptomSummaryResponse,
 )
 from dietary_guardian.domain.health.models import SymptomCheckIn, SymptomSafety
-from dietary_guardian.safety.triage import evaluate_text_safety
+from dietary_guardian.domain.safety.triage import evaluate_text_safety
 
 
 def _to_response(item: SymptomCheckIn) -> SymptomCheckInResponse:

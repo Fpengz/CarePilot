@@ -3,7 +3,7 @@
 import uvicorn
 
 from apps.api.dietary_api.main import create_app
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.app import get_settings
 
 
 def main() -> None:

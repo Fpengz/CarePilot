@@ -1,6 +1,6 @@
 """Domain profiles package.
 
-Re-exports health profile domain rules and onboarding state machine.
+Re-exports health profile domain rules, onboarding state machine, and profile tools.
 """
 
 from dietary_guardian.domain.profiles.health_profile import (
@@ -24,13 +24,21 @@ from dietary_guardian.domain.profiles.onboarding import (
     list_onboarding_steps,
     update_health_profile_onboarding,
 )
+from dietary_guardian.domain.profiles.profile_tools import (
+    CaregiverToolState,
+    ClinicalSummaryToolState,
+    SelfToolState,
+)
 
 __all__ = [
     "DEFAULT_PROFILE_AGE",
     "ONBOARDING_STEP_DEFINITIONS",
     "ONBOARDING_STEP_IDS",
+    "CaregiverToolState",
+    "ClinicalSummaryToolState",
     "HealthProfileOnboardingRepository",
     "HealthProfileRepository",
+    "SelfToolState",
     "build_user_profile_from_health_profile",
     "complete_health_profile_onboarding",
     "compute_bmi",

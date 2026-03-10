@@ -1,7 +1,7 @@
 """Tests for main config bootstrap."""
 
 import main as main_module
-from dietary_guardian.config.settings import Settings
+from dietary_guardian.config.app import AppSettings as Settings
 
 
 def test_bootstrap_runtime_settings_exits_on_validation_error(monkeypatch) -> None:
