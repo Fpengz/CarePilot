@@ -16,7 +16,7 @@ from apps.api.dietary_api.schemas import (
 )
 from apps.api.dietary_api.services._health_profile_support import to_profile_response
 from dietary_guardian.application.suggestions.daily_suggestions import build_daily_suggestions
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.domain.profiles.onboarding import (
     complete_health_profile_onboarding,
     get_or_create_health_profile_onboarding_state,

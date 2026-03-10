@@ -11,7 +11,7 @@ from pydantic_ai import Agent
 from dietary_guardian.config.app import AppSettings, get_settings
 from dietary_guardian.config.llm import LLMCapability, ModelProvider
 from dietary_guardian.llm import LLMFactory, ModelType
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.models.inference import (
     InferenceHealth,
     InferenceModality,

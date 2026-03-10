@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from apps.api.dietary_api.observability import render_kv_log
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 
 logger = get_logger(__name__)
 

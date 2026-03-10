@@ -18,7 +18,7 @@ from dietary_guardian.domain.recommendations.canonical_food_matching import (
 )
 from dietary_guardian.domain.recommendations.models import CanonicalFoodRecord
 from dietary_guardian.llm import LLMFactory
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.models.inference import InferenceModality, InferenceRequest
 from dietary_guardian.models.meal import (
     GlycemicIndexLevel,

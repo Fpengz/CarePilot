@@ -14,7 +14,7 @@ from dietary_guardian.config.app import AppSettings, get_settings
 from dietary_guardian.config.llm import LLMCapability, LLMSettings, LocalModelProfile, ModelProvider
 from dietary_guardian.llm.routing import LLMCapabilityRouter
 from dietary_guardian.llm.types import ResolvedModelRuntime
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 
 ModelType = GoogleModel | OpenAIChatModel | TestModel
 logger = get_logger(__name__)

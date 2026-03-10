@@ -40,7 +40,7 @@ from dietary_guardian.domain.workflows.models import (
     WorkflowContractSnapshotRecord,
     WorkflowTimelineEvent,
 )
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.models.clinical_card import ClinicalCardRecord
 from dietary_guardian.models.meal import MealState
 from dietary_guardian.models.meal_record import MealRecognitionRecord

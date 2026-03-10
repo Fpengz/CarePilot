@@ -15,7 +15,7 @@ from dietary_guardian.domain.health.models import (
     ClinicalProfileSnapshot,
     ReportInput,
 )
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 
 logger = get_logger(__name__)
 

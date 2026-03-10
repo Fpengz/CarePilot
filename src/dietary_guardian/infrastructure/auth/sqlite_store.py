@@ -10,7 +10,7 @@ from dietary_guardian.domain.identity.models import AccountRole, ProfileMode
 from dietary_guardian.domain.tooling import scopes_for_account_role
 from dietary_guardian.infrastructure.auth.demo_defaults import build_demo_user_seeds
 from dietary_guardian.infrastructure.auth.in_memory import AuthUserRecord, PasswordHasher
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 
 logger = get_logger(__name__)
 

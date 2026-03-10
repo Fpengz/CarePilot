@@ -14,7 +14,7 @@ from dietary_guardian.domain.recommendations.models import (
     DailySuggestionBundle,
     DailySuggestionItem,
 )
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 
 logger = get_logger(__name__)

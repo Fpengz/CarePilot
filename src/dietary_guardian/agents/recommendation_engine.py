@@ -30,7 +30,7 @@ from dietary_guardian.domain.recommendations.models import (
     SubstitutionPlan,
     TemporalContext,
 )
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.models.meal import Ingredient, MealEvent
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation

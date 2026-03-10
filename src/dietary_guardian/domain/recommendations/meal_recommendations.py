@@ -13,7 +13,7 @@ from dietary_guardian.domain.nutrition.meal_record_accessors import (
     meal_nutrition,
 )
 from dietary_guardian.domain.recommendations.models import RecommendationOutput
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.models.meal import MealEvent
 from dietary_guardian.models.meal_record import MealRecognitionRecord
 from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation

@@ -10,7 +10,7 @@ from typing import Protocol
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from dietary_guardian.infrastructure.media.ingestion import compute_content_sha256
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.models.meal import ImageInput
 
 SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}

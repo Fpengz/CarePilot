@@ -37,7 +37,7 @@ from dietary_guardian.infrastructure.notifications.message_composer import (
     compose_alert_message,
     format_alert_text_for_transport,
 )
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 
 logger = get_logger(__name__)
 

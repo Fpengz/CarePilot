@@ -4,24 +4,12 @@ import logging
 from contextlib import contextmanager
 from typing import Any, Iterator
 
-from dietary_guardian.logging_config import (
-    get_logger as _get_logger,
-)
-from dietary_guardian.logging_config import (
-    logger as _root_logger,
-)
-from dietary_guardian.logging_config import (
-    setup_logging as _setup_logging,
-)
+from dietary_guardian.observability.setup import get_logger, logger, setup_logging  # noqa: F401
 
 from .context import bind_observability_context, current_observability_context
 
-get_logger = _get_logger
-logger = _root_logger
-setup_logging = _setup_logging
 
-
-def log_event(logger: logging.Logger, level: int, event: str, /, **fields: Any) -> None:
+def log_event(logger: logging.Logger, level: int, event: str, /, **fields: Any) -> None:  # noqa: F811
     merged_fields = {**current_observability_context(), **fields}
     if merged_fields:
         serialized_fields = " ".join(f"{key}={value}" for key, value in merged_fields.items())
