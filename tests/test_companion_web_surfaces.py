@@ -23,10 +23,12 @@ def test_route_meta_advertises_companion_surfaces() -> None:
 def test_companion_page_uses_interaction_selector_and_product_cards() -> None:
     companion_page = (WEB_ROOT / "app" / "companion" / "page.tsx").read_text(encoding="utf-8")
     assert 'interaction_type: "check_in"' not in companion_page
-    assert "Select" in companion_page or "interaction type" in companion_page.lower()
-    assert "Supporting Evidence" in companion_page
-    assert "Why This Matters" in companion_page
-    assert "Impact to Watch" in companion_page
+    # The interaction-type selector lives in InteractionForm; verify it is composed here.
+    assert "InteractionForm" in companion_page
+    # Domain-specific product cards must be present.
+    assert "SupportingEvidenceCard" in companion_page
+    assert "CarePlanCard" in companion_page
+    assert "ImpactWatchCard" in companion_page
     assert "JsonViewer" not in companion_page
 
 
