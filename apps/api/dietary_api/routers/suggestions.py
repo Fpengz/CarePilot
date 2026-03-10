@@ -9,7 +9,11 @@ from ..schemas import (
     SuggestionGenerateFromReportResponse,
     SuggestionListResponse,
 )
-from ..services.suggestions import generate_from_report, get_for_session, list_for_session
+from dietary_guardian.application.recommendations.suggestion_session import (
+    generate_from_report,
+    get_for_session,
+    list_for_session,
+)
 
 router = APIRouter(tags=["suggestions"])
 

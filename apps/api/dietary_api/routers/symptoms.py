@@ -13,7 +13,7 @@ from ..schemas import (
     SymptomCheckInRequest,
     SymptomSummaryResponse,
 )
-from ..services.symptoms import (
+from dietary_guardian.application.symptoms.use_cases import (
     create_checkin_for_session,
     list_checkins_for_session,
     summarize_checkins_for_session,

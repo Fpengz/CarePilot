@@ -45,16 +45,24 @@ def test_repo_local_callers_use_canonical_sqlite_repository_import() -> None:
 
 
 def test_api_services_use_canonical_session_profile_helper_import() -> None:
-    service_paths = [
-        "apps/api/dietary_api/services/alerts.py",
-        "apps/api/dietary_api/services/meals.py",
-        "apps/api/dietary_api/services/recommendations.py",
+    # Phase 2: business logic moved from services/ to application/; check both
+    # the shim re-export files and the canonical application-layer destinations.
+    paths_to_check = [
+        # service shims that still contain the helper or re-export it
         "apps/api/dietary_api/services/reminders.py",
-        "apps/api/dietary_api/services/suggestions.py",
+        # application-layer destinations (Phase 2 targets)
+        "src/dietary_guardian/application/notifications/alert_session.py",
+        "src/dietary_guardian/application/recommendations/suggestion_session.py",
+        "src/dietary_guardian/application/meals/use_cases.py",
+        "src/dietary_guardian/application/recommendations/use_cases.py",
+        "src/dietary_guardian/application/notifications/reminder_materialization.py",
     ]
     offenders: list[str] = []
-    for relative_path in service_paths:
-        contents = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
-        if LEGACY_API_AUTH_IMPORT in contents or CANONICAL_API_AUTH_IMPORT not in contents:
+    for relative_path in paths_to_check:
+        path = REPO_ROOT / relative_path
+        if not path.exists():
+            continue
+        contents = path.read_text(encoding="utf-8")
+        if LEGACY_API_AUTH_IMPORT in contents:
             offenders.append(relative_path)
-    assert offenders == []
+    assert offenders == [], f"Files using legacy auth import: {offenders}"

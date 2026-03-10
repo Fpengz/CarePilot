@@ -16,6 +16,10 @@ from .use_cases import (
     CompanionStateInputs,
     build_companion_runtime_state,
     build_companion_today_bundle,
+    get_clinician_digest,
+    get_companion_today,
+    get_impact_summary,
+    handle_companion_interaction,
     run_companion_interaction,
 )
 __all__ = [
@@ -32,5 +36,9 @@ __all__ = [
     "CompanionStateInputs",
     "build_companion_runtime_state",
     "build_companion_today_bundle",
+    "get_clinician_digest",
+    "get_companion_today",
+    "get_impact_summary",
+    "handle_companion_interaction",
     "run_companion_interaction",
 ]

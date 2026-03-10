@@ -11,7 +11,7 @@ from ..schemas import (
     ClinicalCardGenerateRequest,
     ClinicalCardListResponse,
 )
-from ..services.clinical_cards import (
+from dietary_guardian.application.clinical_cards.use_cases import (
     generate_clinical_card_for_session,
     get_clinical_card_for_session,
     list_clinical_cards_for_session,

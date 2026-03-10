@@ -1,4 +1,4 @@
-"""Application module for daily suggestions."""
+"""Application module for daily suggestions and session-scoped suggestion orchestration."""
 
 from __future__ import annotations
 
@@ -12,12 +12,12 @@ from dietary_guardian.domain.health.models import (
     HealthProfileRecord,
 )
 from dietary_guardian.domain.identity.models import UserProfile
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 from dietary_guardian.domain.recommendations.models import (
     DailySuggestionBundle,
     DailySuggestionItem,
 )
 from dietary_guardian.infrastructure.observability import get_logger
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 
 logger = get_logger(__name__)
 

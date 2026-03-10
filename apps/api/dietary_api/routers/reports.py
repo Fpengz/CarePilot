@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request
 
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import ReportParseRequest, ReportParseResponse
-from ..services.reports import parse_report_for_session
+from dietary_guardian.application.reports.use_cases import parse_report_for_session
 
 router = APIRouter(tags=["reports"])
 

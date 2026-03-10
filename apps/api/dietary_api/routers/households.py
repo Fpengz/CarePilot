@@ -21,7 +21,7 @@ from ..schemas import (
     HouseholdMembersResponse,
     HouseholdUpdateRequest,
 )
-from ..services.households import (
+from dietary_guardian.application.household.use_cases import (
     create_household,
     create_household_invite,
     get_current_household,

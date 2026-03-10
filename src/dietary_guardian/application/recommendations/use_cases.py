@@ -1,15 +1,36 @@
 """Application use cases for recommendations."""
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from typing import Any, TypedDict
 from uuid import uuid4
 
+from apps.api.dietary_api.deps import RecommendationAgentDeps, RecommendationDeps
+from apps.api.dietary_api.errors import build_api_error
+from apps.api.dietary_api.schemas import (
+    RecommendationAgentResponse,
+    RecommendationGenerateResponse,
+    RecommendationInteractionRequest,
+    RecommendationInteractionResponse,
+    RecommendationSubstitutionRequest,
+    RecommendationSubstitutionResponse,
+    WorkflowResponse,
+)
+from dietary_guardian.application.auth.session_context import build_user_profile_from_session
 from dietary_guardian.application.policies.household_access import (
     HouseholdAccessNotFoundError,
     ensure_household_member,
     household_source_members,
 )
+from dietary_guardian.capabilities.schemas import RecommendationAgentInput
 from dietary_guardian.domain.health.models import ReportInput
+from dietary_guardian.domain.profiles.health_profile import resolve_user_profile
+from dietary_guardian.domain.recommendations.engine import (
+    AgentMealNotFoundError,
+    build_substitution_plan,
+    record_interaction_and_update_preferences,
+)
 from dietary_guardian.domain.recommendations.meal_recommendations import generate_recommendation
 from dietary_guardian.domain.reports import build_clinical_snapshot, parse_report_input
 from dietary_guardian.domain.safety.triage import evaluate_text_safety
@@ -253,3 +274,178 @@ def get_suggestion_for_session(
             normalized.setdefault("source_display_name", source_display_names.get(source_user_id, source_user_id))
             return normalized
     raise SuggestionNotFoundError
+
+
+# ---------------------------------------------------------------------------
+# Clinical-snapshot helper (shared across recommendation flows)
+# ---------------------------------------------------------------------------
+
+def _resolve_clinical_snapshot(*, deps: Any, user_id: str) -> Any:
+    """Resolve the clinical snapshot from cache or by rebuilding from biomarker readings."""
+    snapshot = deps.clinical_memory.get(user_id)
+    if snapshot is not None:
+        return snapshot
+    readings = deps.stores.biomarkers.list_biomarker_readings(user_id)
+    if not readings:
+        return None
+    snapshot = build_clinical_snapshot(readings)
+    deps.clinical_memory.put(user_id, snapshot)
+    return snapshot
+
+
+# ---------------------------------------------------------------------------
+# Single-record recommendation flow
+# ---------------------------------------------------------------------------
+
+def generate_recommendation_for_session(
+    *,
+    deps: RecommendationDeps,
+    session: dict[str, object],
+    request_id: str | None,
+    correlation_id: str | None,
+) -> RecommendationGenerateResponse:
+    user_id = str(session["user_id"])
+    meal_records = deps.stores.meals.list_meal_records(user_id)
+    if not meal_records:
+        raise build_api_error(
+            status_code=400,
+            code="recommendations.no_meal_records",
+            message="no meal records available",
+        )
+
+    snapshot = deps.clinical_memory.get(user_id)
+    if snapshot is None:
+        readings = deps.stores.biomarkers.list_biomarker_readings(user_id)
+        if not readings:
+            raise build_api_error(
+                status_code=400,
+                code="recommendations.no_clinical_snapshot",
+                message="no clinical snapshot available",
+            )
+        snapshot = build_clinical_snapshot(readings)
+        deps.clinical_memory.put(user_id, snapshot)
+
+    user_profile = build_user_profile_from_session(session, deps.stores.profiles)
+    recommendation = generate_recommendation(meal_records[-1], snapshot, user_profile)
+    recommendation_json = recommendation.model_dump(mode="json")
+    deps.stores.recommendations.save_recommendation(user_id, recommendation_json)
+
+    workflow = {
+        "workflow_name": "recommendation_generate",
+        "request_id": str(request_id or ""),
+        "correlation_id": str(correlation_id or ""),
+        "replayed": False,
+        "timeline_events": [],
+    }
+    return RecommendationGenerateResponse(
+        recommendation=recommendation,
+        workflow=WorkflowResponse.model_validate(workflow),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Agent-based daily plan flows
+# ---------------------------------------------------------------------------
+
+def get_daily_agent_for_session(
+    *,
+    deps: RecommendationAgentDeps,
+    session: dict[str, object],
+    request_id: str | None,
+    correlation_id: str | None,
+) -> RecommendationAgentResponse:
+    user_id = str(session["user_id"])
+    health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
+    meal_history = deps.stores.meals.list_meal_records(user_id)
+    clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
+    output = deps.recommendation_agent.generate(
+        RecommendationAgentInput(
+            user_id=user_id,
+            health_profile=health_profile,
+            user_profile=user_profile,
+            meal_history=meal_history,
+            clinical_snapshot=clinical_snapshot,
+        ),
+        repository=deps.stores.recommendations,
+    )
+    recommendation = output.recommendation
+    payload = recommendation.model_dump(mode="json")
+    payload["workflow"] = {
+        "workflow_name": "daily_recommendation_agent",
+        "request_id": str(request_id or ""),
+        "correlation_id": str(correlation_id or ""),
+        "replayed": False,
+        "timeline_events": [],
+    }
+    return RecommendationAgentResponse.model_validate(payload)
+
+
+def get_substitutions_for_session(
+    *,
+    deps: RecommendationAgentDeps,
+    session: dict[str, object],
+    payload: RecommendationSubstitutionRequest,
+) -> RecommendationSubstitutionResponse:
+    user_id = str(session["user_id"])
+    health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
+    meal_history = deps.stores.meals.list_meal_records(user_id)
+    clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
+    try:
+        plan = build_substitution_plan(
+            repository=deps.stores.recommendations,
+            user_id=user_id,
+            health_profile=health_profile,
+            user_profile=user_profile,
+            meal_history=meal_history,
+            clinical_snapshot=clinical_snapshot,
+            source_meal_id=payload.source_meal_id,
+            limit=payload.limit,
+        )
+    except AgentMealNotFoundError as exc:
+        raise build_api_error(
+            status_code=404,
+            code="recommendations.meal_not_found",
+            message="meal record not found",
+            details={"meal_id": str(exc)},
+        ) from exc
+    if plan is None:
+        raise build_api_error(
+            status_code=400,
+            code="recommendations.no_meal_records",
+            message="no meal records available",
+        )
+    return RecommendationSubstitutionResponse.model_validate(plan.model_dump(mode="json"))
+
+
+def record_interaction_for_session(
+    *,
+    deps: RecommendationAgentDeps,
+    session: dict[str, object],
+    payload: RecommendationInteractionRequest,
+) -> RecommendationInteractionResponse:
+    user_id = str(session["user_id"])
+    meal_history = deps.stores.meals.list_meal_records(user_id)
+    try:
+        interaction, snapshot = record_interaction_and_update_preferences(
+            repository=deps.stores.recommendations,
+            user_id=user_id,
+            candidate_id=payload.candidate_id,
+            recommendation_id=payload.recommendation_id,
+            event_type=payload.event_type,
+            slot=payload.slot,
+            source_meal_id=payload.source_meal_id,
+            selected_meal_id=payload.selected_meal_id,
+            metadata=payload.metadata,
+            meal_history=meal_history,
+        )
+    except AgentMealNotFoundError as exc:
+        raise build_api_error(
+            status_code=404,
+            code="recommendations.candidate_not_found",
+            message="candidate not found",
+            details={"candidate_id": str(exc)},
+        ) from exc
+    return RecommendationInteractionResponse(
+        interaction=interaction.model_dump(mode="json"),
+        preference_snapshot=snapshot.model_dump(mode="json"),
+    )
