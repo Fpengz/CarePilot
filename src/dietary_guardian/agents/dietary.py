@@ -55,6 +55,7 @@ class DietaryAgent(BaseAgent[DietaryAgentInput, AgentResponse]):
     name = "dietary_agent"
     input_schema = DietaryAgentInput
     output_schema = AgentResponse
+    _system_prompts = [SYSTEM_PROMPT]
 
     def __init__(self, safety_port: SafetyPort | None = None) -> None:
         self._safety_port = safety_port
