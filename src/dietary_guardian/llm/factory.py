@@ -119,6 +119,13 @@ class LLMFactory:
                 return OpenAIProvider(base_url=base_url, api_key=api_key)
             return OpenAIProvider(api_key=api_key)
 
+    # Canonical provider base URLs that represent "default" routing (no custom endpoint).
+    _DEFAULT_PROVIDER_URLS: frozenset[str] = frozenset({
+        "https://api.openai.com/v1",
+        "https://api.openai.com",
+        "https://generativelanguage.googleapis.com/v1beta",
+    })
+
     @staticmethod
     def describe_model_destination(model: ModelType) -> str:
         model_name = getattr(model, "model_name", getattr(model, "model", "unknown"))
@@ -127,7 +134,9 @@ class LLMFactory:
         if provider_obj is not None:
             base_url = getattr(provider_obj, "base_url", None)
         if base_url:
-            return f"model={model_name} endpoint={str(base_url).rstrip('/')}"
+            normalised = str(base_url).rstrip("/")
+            if normalised not in LLMFactory._DEFAULT_PROVIDER_URLS:
+                return f"model={model_name} endpoint={normalised}"
         return f"model={model_name} endpoint=default"
 
     @staticmethod
