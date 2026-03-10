@@ -40,7 +40,7 @@ export default function AlertsPage() {
         eyebrow="Alerts"
         title="Privileged Alert Trigger and Timeline"
         description="Admin-scoped operation for triggering alerts and inspecting the outbox timeline read endpoint."
-        tags={["admin scope", "alert:trigger", "alert:timeline:read"]}
+
       />
 
       <div className="page-grid">

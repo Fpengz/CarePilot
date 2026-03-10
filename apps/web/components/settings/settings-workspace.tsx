@@ -397,7 +397,7 @@ export function SettingsWorkspace() {
         eyebrow="Account"
         title="Settings"
         description="Manage account preferences, guided profile setup, and reminder defaults without crowding the dashboard."
-        tags={["guided setup", "health profile", "mobility reminders"]}
+
       />
 
       {error ? <ErrorCard message={error} /> : null}

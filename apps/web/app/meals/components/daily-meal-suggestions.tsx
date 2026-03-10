@@ -43,7 +43,7 @@ export function DailyMealSuggestions() {
                     </Badge>
                     <Badge variant="outline">{Math.round(item.confidence * 100)}% Match</Badge>
                   </div>
-                  <div className="mt-2 font-semibold">{item.title}</div>
+                  <div className="mt-2 truncate font-semibold">{item.title}</div>
                   <div className="text-xs text-[color:var(--muted-foreground)] mb-2">{item.venue_type}</div>
                   <ul className="space-y-1">
                     {item.why_it_fits.map((reason, idx) => (

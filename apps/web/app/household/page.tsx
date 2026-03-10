@@ -157,7 +157,7 @@ export default function HouseholdPage() {
         eyebrow="Household"
         title="Shared Wellness Group"
         description="Create a household, invite members, and manage a simple shared group (Apple-family-like basics for v1)."
-        tags={["v1 household", "owner/member", "sqlite-backed"]}
+
       />
 
       <div className="page-grid">

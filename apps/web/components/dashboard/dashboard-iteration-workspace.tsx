@@ -94,7 +94,6 @@ export function DashboardIterationWorkspace() {
         eyebrow="Overview"
         title="Today at a Glance"
         description="A cleaner dashboard for quick status checks. Use Settings, Meals, and Reminders for the detailed workflows."
-        tags={["summary-first", "meal tracking", "daily guidance"]}
       />
 
       {status === "unauthenticated" ? <ErrorCard message="Sign in to view your daily dashboard." /> : null}
@@ -131,7 +130,7 @@ export function DashboardIterationWorkspace() {
             </div>
             <div className="metric-card sm:col-span-2">
               <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Missing context</div>
-              <div className="mt-1 text-sm font-semibold">
+              <div className="mt-1 line-clamp-2 text-sm font-semibold">
                 {profile?.completeness.missing_fields.length
                   ? profile.completeness.missing_fields.join(", ")
                   : "Profile is ready for personalized guidance."}
@@ -143,7 +142,7 @@ export function DashboardIterationWorkspace() {
         <Card>
           <CardHeader>
             <CardTitle>Today’s Intake Snapshot</CardTitle>
-            <CardDescription>Daily progress now lives on the Meals page, with this dashboard showing the headline view.</CardDescription>
+            <CardDescription>Calories and key macros remaining for today.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
             <div className="metric-card">
@@ -196,13 +195,13 @@ export function DashboardIterationWorkspace() {
           <CardContent className="space-y-4">
             <div className="metric-card">
               <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Next reminder</div>
-              <div className="mt-1 text-sm font-semibold">{nextReminder?.title ?? "No pending reminder"}</div>
+              <div className="mt-1 truncate text-sm font-semibold">{nextReminder?.title ?? "No pending reminder"}</div>
               <div className="app-muted mt-1 text-xs">{formatWhen(nextReminder?.scheduled_at)}</div>
             </div>
             <div className="metric-card">
               <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Suggested next meal</div>
-              <div className="mt-1 text-sm font-semibold">{firstSuggestion?.title ?? "Waiting for suggestions"}</div>
-              <div className="app-muted mt-1 text-xs">
+              <div className="mt-1 truncate text-sm font-semibold">{firstSuggestion?.title ?? "Waiting for suggestions"}</div>
+              <div className="app-muted mt-1 line-clamp-2 text-xs">
                 {firstSuggestion ? firstSuggestion.why_it_fits.join(" ") : "Complete your profile and meal logging for sharper guidance."}
               </div>
             </div>
@@ -213,7 +212,7 @@ export function DashboardIterationWorkspace() {
           <Card>
             <CardHeader>
               <CardTitle>Caregiving View</CardTitle>
-              <CardDescription>Read-only household monitoring now lives on the Household page.</CardDescription>
+              <CardDescription>Quick view of your active household member&apos;s status.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="metric-card">

@@ -22,7 +22,7 @@ export default function MealsPage() {
         eyebrow="Meals"
         title="Meal Analysis and Record Review"
         description="Log meals, inspect saved records, and track how much room is left in today’s nutrition targets."
-        tags={["daily tracking", "member scope", "workflow trace"]}
+        tags={["daily tracking"]}
       />
 
       <div className="page-grid">
@@ -36,7 +36,7 @@ export default function MealsPage() {
             <TabsTrigger value="history">History</TabsTrigger>
             <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
             <TabsTrigger value="weekly">Weekly</TabsTrigger>
-            <TabsTrigger value="debug">Analysis Debug</TabsTrigger>
+            <TabsTrigger value="debug">Last Analysis</TabsTrigger>
           </TabsList>
 
           <TabsContent value="history" className="space-y-6 mt-0">
@@ -54,10 +54,8 @@ export default function MealsPage() {
           <TabsContent value="debug" className="space-y-6 mt-0">
             <Card>
               <CardHeader>
-                <CardTitle>Analysis Summary</CardTitle>
-                <CardDescription>
-                  Detailed breakdown of the last analyzed meal.
-                </CardDescription>
+                <CardTitle>Last Analysis</CardTitle>
+                <CardDescription>Nutritional breakdown of the most recently analyzed meal image.</CardDescription>
               </CardHeader>
               <CardContent>
                 {lastAnalysis?.summary ? (

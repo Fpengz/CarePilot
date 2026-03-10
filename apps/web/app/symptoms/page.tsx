@@ -71,7 +71,7 @@ export default function SymptomsPage() {
         eyebrow="Symptoms"
         title="Symptom Check-Ins and Safety Triage"
         description="Log symptom severity and notes, then review safety decisions and symptom trends."
-        tags={["check-ins", "safety gate", "summary metrics"]}
+        tags={["check-ins"]}
       />
 
       <div className="page-grid">

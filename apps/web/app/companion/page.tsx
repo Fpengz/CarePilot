@@ -40,8 +40,7 @@ export default function CompanionPage() {
       <PageTitle
         eyebrow="Companion"
         title="AI Health Companion"
-        description="Select an interaction type to turn meals, reminders, symptoms, biomarkers, and patient intent into one next-best action, one clinician-ready rationale, and one impact signal to watch."
-        tags={["Supporting Evidence", "Why This Matters", "Impact to Watch"]}
+        description="Turn your health signals into a personalized next-best action, clinical rationale, and impact insight."
       />
 
       <div className="page-grid">

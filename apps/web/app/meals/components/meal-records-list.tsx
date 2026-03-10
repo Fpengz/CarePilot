@@ -28,7 +28,7 @@ export function MealRecordsList() {
                   className="data-list-row sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
-                    <div className="text-sm font-medium">{String(record.meal_name ?? "Meal record")}</div>
+                    <div className="truncate text-sm font-medium">{String(record.meal_name ?? "Meal record")}</div>
                     <div className="app-muted mt-1 text-xs">
                       {String(record.captured_at ?? record.created_at ?? "Unknown capture time")}
                     </div>

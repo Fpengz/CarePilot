@@ -36,7 +36,7 @@ export default function LoginPage() {
             ? "Use demo accounts to test session cookies, role/scopes, and the account panel flows."
             : "Sign in with your account to access the Dietary Guardian workspace."
         }
-        tags={["cookie session", "account_role", "profile_mode"]}
+
       />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,540px)_minmax(0,1fr)]">
       <Card className="grain-overlay relative overflow-hidden">
