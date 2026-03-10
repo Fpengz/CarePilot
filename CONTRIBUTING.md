@@ -24,7 +24,7 @@ Current local-first default:
 - in-process orchestration for most workflows
 
 Target production direction:
-- PostgreSQL for primary durable state
+- SQLite for durable storage remains the supported runtime
 - Redis for cache, ephemeral coordination, and async worker plumbing
 - expanded worker and retrieval infrastructure
 

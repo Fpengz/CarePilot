@@ -36,6 +36,7 @@ Current hardening emphasis:
 - reduce opaque orchestration and broad service-locator patterns
 - strengthen runtime topology validation for the SQLite plus optional Redis path
 - improve observability and safety behavior on real request paths before adding more surface area
+- completed architecture refactor: deleted services/, runtime/, and models lazy-export shim; consolidated observability; added SafetyPort and typed agent schema contracts
 
 ## Delivered phases
 

@@ -40,10 +40,12 @@ Dietary Guardian is a layered companion system with one codebase and clear owner
 ### Infrastructure layer
 - `src/dietary_guardian/infrastructure` owns persistence, auth, evidence, emotion runtime, cache, and coordination adapters
 - app-data persistence is SQLite-first for the hackathon branch, with one store-selection path for durable local prototyping
+- `infrastructure/cache/` hosts in-process memory services: ProfileMemoryService, ClinicalSnapshotMemoryService, EventTimelineService
+- `infrastructure/schedulers/` hosts the reminder scheduler
 
 ### Agent and workflow layer
 - `src/dietary_guardian/agents` contains bounded model/provider logic
-- `src/dietary_guardian/services/workflow_coordinator.py` and `apps/workers/run.py` coordinate workflows and async processing
+- `src/dietary_guardian/orchestrators/workflow.py` and `apps/workers/run.py` coordinate workflows and async processing
 - agents help with bounded reasoning, but they do not own durable state or bypass deterministic safety
 
 ## Core request lifecycle
@@ -67,7 +69,7 @@ src/dietary_guardian/domain/          typed domain contracts
 src/dietary_guardian/application/     use cases, policies, ports
 src/dietary_guardian/infrastructure/  persistence and external adapters
 src/dietary_guardian/agents/          bounded model/provider logic
-src/dietary_guardian/services/        reusable domain services and workflow helpers
+src/dietary_guardian/observability/   single logging and tracing entry point
 ```
 
 ## Key architectural rules
@@ -77,6 +79,7 @@ src/dietary_guardian/services/        reusable domain services and workflow help
 - Treat agents as bounded helpers behind typed contracts.
 - Keep persistence and external integrations behind infrastructure adapters.
 - Make durable state transitions observable and testable.
+- Keep safety validation injectable via `SafetyPort` — agents must not instantiate concrete safety implementations directly.
 
 ## Governing principles
 - Prefer policy-governed capabilities over agent-first decomposition.

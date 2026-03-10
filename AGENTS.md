@@ -38,7 +38,6 @@ Every multi-agent task must define:
 - Domain contracts: `src/dietary_guardian/domain/**`
 - Application use cases: `src/dietary_guardian/application/**`
 - Infrastructure adapters: `src/dietary_guardian/infrastructure/**`
-- Legacy reusable services: `src/dietary_guardian/services/**`
 - Documentation: `README.md`, `ARCHITECTURE.md`, `SYSTEM_ROADMAP.md`, `docs/**`
 
 ## Canonical Companion Modules
@@ -84,9 +83,9 @@ Preferred sequence:
 ## Validation Matrix
 Backend:
 ```bash
-uv run ruff check .
-uv run ty check . --extra-search-path src --output-format concise
-uv run pytest -q
+SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 uv run ruff check .
+SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 uv run ty check . --extra-search-path src --output-format concise
+SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 uv run pytest -q
 ```
 
 Web:

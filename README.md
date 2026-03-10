@@ -22,7 +22,6 @@ src/
     domain/          typed companion contracts
     infrastructure/  persistence, auth, evidence, emotion, coordination
     agents/          bounded model/provider logic
-    services/        reusable domain services and workflow helpers
 docs/         canonical docs and focused references
 tests/        repository-level tests
 ```

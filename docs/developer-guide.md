@@ -52,7 +52,6 @@ uv run python scripts/dg.py infra up
 - `src/dietary_guardian/application/`: use cases, policies, orchestration, ports
 - `src/dietary_guardian/infrastructure/`: persistence and external adapters
 - `src/dietary_guardian/agents/`: bounded model/provider logic
-- `src/dietary_guardian/services/`: reusable domain services and workflow helpers
 - `tests/` and `apps/api/tests/`: repository and API tests
 
 ## Extension patterns
