@@ -13,6 +13,8 @@ class RecommendationAgent(BaseAgent[RecommendationAgentInput, RecommendationAgen
     """Agent facade over daily recommendation synthesis logic."""
 
     name = "recommendation_agent"
+    input_schema = RecommendationAgentInput
+    output_schema = RecommendationAgentOutput
 
     def generate(
         self,

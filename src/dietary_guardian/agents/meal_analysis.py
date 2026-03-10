@@ -13,6 +13,8 @@ class MealAnalysisAgent(BaseAgent[MealAnalysisAgentInput, MealAnalysisAgentOutpu
     """Agent facade for meal perception, normalization, and persistence."""
 
     name = "meal_analysis_agent"
+    input_schema = MealAnalysisAgentInput
+    output_schema = MealAnalysisAgentOutput
 
     def __init__(
         self,

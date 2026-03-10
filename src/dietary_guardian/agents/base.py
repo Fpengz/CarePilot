@@ -38,9 +38,17 @@ class AgentResult(Generic[OutputT]):
 
 
 class BaseAgent(ABC, Generic[InputT, OutputT]):
-    """Abstract base class for agentic runtime units."""
+    """Abstract base class for agentic runtime units.
+
+    Subclasses must declare:
+    - ``name``: str — agent identifier
+    - ``input_schema``: type[InputT] — Pydantic model for inputs
+    - ``output_schema``: type[OutputT] — Pydantic model for outputs
+    """
 
     name: str
+    input_schema: type[InputT]
+    output_schema: type[OutputT]
 
     @abstractmethod
     async def run(self, input_data: InputT, context: AgentContext) -> AgentResult[OutputT]:
