@@ -32,3 +32,9 @@ apps/web/playwright-report/
 node_modules/
 *.tsbuildinfo
 .turbo/
+
+# Generated codebase index files
+CODEBASE_INDEX.md
+CODEBASE_MAP.md
+CODEBASE_SUMMARY.txt
+DEPENDENCY_GRAPH.txt
