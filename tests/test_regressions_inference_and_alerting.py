@@ -1,26 +1,35 @@
+"""Tests for regressions inference and alerting."""
+
 from datetime import datetime
 
 import pytest
 
-from dietary_guardian.agents.dietary_agent import AgentResponse, process_meal_request
-from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage
+from dietary_guardian.agents.dietary import AgentResponse, process_meal_request
+from dietary_guardian.config.llm import LLMCapability
+from dietary_guardian.domain.alerts.models import AlertDeliveryResult, AlertMessage
+from dietary_guardian.domain.identity.models import MedicalCondition, UserProfile
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
 from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
-from dietary_guardian.models.user import MedicalCondition, UserProfile
-from dietary_guardian.services.alerting_service import AlertPublisher, OutboxWorker
-from dietary_guardian.services.repository import SQLiteRepository
+from dietary_guardian.infrastructure.notifications.alert_outbox import AlertPublisher, OutboxWorker
 
 
 @pytest.mark.anyio
 async def test_process_meal_request_does_not_force_gemini_model_for_test_provider(monkeypatch) -> None:
     class StubEngine:
-        init_args: tuple[str | None, str | None] | None = None
+        init_args: tuple[str | None, str | None, str | None] | None = None
 
-        def __init__(self, provider: str | None = None, model_name: str | None = None) -> None:
-            StubEngine.init_args = (provider, model_name)
+        def __init__(
+            self,
+            provider: str | None = None,
+            model_name: str | None = None,
+            capability: str | None = None,
+        ) -> None:
+            StubEngine.init_args = (provider, model_name, capability)
 
         def health(self):
             class Health:
                 endpoint = "default"
+                provider = "test"
 
             return Health()
 
@@ -43,7 +52,7 @@ async def test_process_meal_request_does_not_force_gemini_model_for_test_provide
     from dietary_guardian.config.settings import get_settings
 
     get_settings.cache_clear()
-    monkeypatch.setattr("dietary_guardian.agents.dietary_agent.InferenceEngine", StubEngine)
+    monkeypatch.setattr("dietary_guardian.agents.dietary.InferenceEngine", StubEngine)
 
     user = UserProfile(
         id="u1",
@@ -61,7 +70,7 @@ async def test_process_meal_request_does_not_force_gemini_model_for_test_provide
 
     await process_meal_request(user, meal)
 
-    assert StubEngine.init_args == ("test", None)
+    assert StubEngine.init_args == ("test", None, LLMCapability.DIETARY_REASONING.value)
     get_settings.cache_clear()
 
 

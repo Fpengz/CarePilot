@@ -1,3 +1,5 @@
+"""Data models for role tools."""
+
 from pydantic import BaseModel, Field
 
 

@@ -1,15 +1,34 @@
-from collections.abc import Generator
+"""Module for test api auth."""
+
 import time
+from collections.abc import Generator
+from types import SimpleNamespace
+from typing import cast
 
 import pytest
+from apps.api.dietary_api.deps import AppContext
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import Settings, get_settings
+from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SessionSigner
 
 
 def _reset_settings_cache() -> None:
     get_settings.cache_clear()
+
+
+def _create_auth_only_app():
+    settings = Settings(
+        llm={"provider": "test"},
+        auth={"store_backend": "in_memory"},
+    )
+    ctx = SimpleNamespace(
+        settings=settings,
+        auth_store=InMemoryAuthStore(settings),
+        session_signer=SessionSigner(settings.auth.session_secret),
+    )
+    return create_app(ctx=cast(AppContext, ctx))
 
 
 @pytest.fixture(autouse=True)
@@ -353,6 +372,17 @@ def test_login_locks_after_repeated_failures_and_then_allows_after_lockout_expir
     assert "too many login attempts" not in next_failed.text.lower()
 
 
+def test_login_normalizes_email_for_authentication_and_lockout() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    failed = client.post("/api/v1/auth/login", json={"email": " MEMBER@EXAMPLE.COM ", "password": "wrong-pass"})
+    assert failed.status_code == 401
+
+    success = client.post("/api/v1/auth/login", json={"email": " MEMBER@EXAMPLE.COM ", "password": "member-pass"})
+    assert success.status_code == 200
+
+
 def test_auth_audit_events_admin_only_and_bounded() -> None:
     app = create_app()
     member_client = TestClient(app)
@@ -441,8 +471,8 @@ def test_patch_password_rejects_weak_or_reused_password() -> None:
 
 def test_settings_default_auth_backend_is_sqlite(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("AUTH_STORE_BACKEND", raising=False)
-    settings = Settings(llm_provider="test")
-    assert settings.auth_store_backend == "sqlite"
+    settings = Settings(llm={"provider": "test"})
+    assert settings.auth.store_backend == "sqlite"
 
 
 def test_auth_api_supports_sqlite_backend_with_persistence_across_app_instances(

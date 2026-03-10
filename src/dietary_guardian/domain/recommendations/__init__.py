@@ -1,0 +1,43 @@
+"""Recommendations domain: food catalog, preferences, substitutions, and suggestion bundles."""
+# ruff: noqa: F401
+from .models import (
+    AgentProfileState,
+    AgentRecommendationCard,
+    CandidateScores,
+    CanonicalFoodAdvice,
+    CanonicalFoodAlternative,
+    CanonicalFoodRecord,
+    DailyAgentRecommendation,
+    DailySuggestionBundle,
+    DailySuggestionItem,
+    HealthDelta,
+    MealCatalogItem,
+    PreferenceSnapshot,
+    RecommendationInteraction,
+    RecommendationOutput,
+    SourceMealSummary,
+    SubstitutionAlternative,
+    SubstitutionPlan,
+    TemporalContext,
+)
+
+__all__ = [
+    "AgentProfileState",
+    "AgentRecommendationCard",
+    "CandidateScores",
+    "CanonicalFoodAdvice",
+    "CanonicalFoodAlternative",
+    "CanonicalFoodRecord",
+    "DailyAgentRecommendation",
+    "DailySuggestionBundle",
+    "DailySuggestionItem",
+    "HealthDelta",
+    "MealCatalogItem",
+    "PreferenceSnapshot",
+    "RecommendationInteraction",
+    "RecommendationOutput",
+    "SourceMealSummary",
+    "SubstitutionAlternative",
+    "SubstitutionPlan",
+    "TemporalContext",
+]

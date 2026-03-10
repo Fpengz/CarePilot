@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { LogOut } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
 import { PageTitle } from "@/components/app/page-title";
 import { useSession } from "@/components/app/session-provider";
-import { updateAuthProfile } from "@/lib/api/auth-client";
+import { updateAuthProfile, logout } from "@/lib/api/auth-client";
 import {
   getMobilityReminderSettings,
   updateMobilityReminderSettings,
@@ -31,7 +33,10 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-type SettingsTab = "account" | "health" | "reminders";
+import { HouseholdTab } from "./tabs/household-tab";
+import { ClinicalSuggestionsTab } from "./tabs/clinical-suggestions-tab";
+
+type SettingsTab = "account" | "health" | "reminders" | "household" | "clinical_suggestions";
 type HealthViewMode = "guided" | "advanced";
 type HealthProfileDraft = {
   age: string;
@@ -51,6 +56,8 @@ type HealthProfileDraft = {
   conditions: string;
   medications: string;
   budget_tier: "budget" | "moderate" | "flexible";
+  preferred_notification_channel: string;
+  meal_schedule: string;
 };
 
 const GUIDED_STEP_ORDER = [
@@ -106,6 +113,10 @@ function buildDraft(profile: HealthProfile): HealthProfileDraft {
     conditions: conditionsText(profile),
     medications: medicationsText(profile),
     budget_tier: profile.budget_tier,
+    preferred_notification_channel: profile.preferred_notification_channel || "in_app",
+    meal_schedule: (profile.meal_schedule || [])
+      .map((w) => `${w.slot}:${w.start_time}-${w.end_time}`)
+      .join(", "),
   };
 }
 
@@ -134,6 +145,14 @@ function buildFullProfilePayload(draft: HealthProfileDraft) {
       return { name, dosage, contraindications: [] };
     }),
     budget_tier: draft.budget_tier,
+    preferred_notification_channel: draft.preferred_notification_channel,
+    meal_schedule: csvToList(draft.meal_schedule).map((item) => {
+      const [slot, range] = item.split(":").map((part) => part.trim());
+      const [start_time, end_time] = (range || "00:00-00:00")
+        .split("-")
+        .map((part) => part.trim());
+      return { slot, start_time, end_time, timezone: "Asia/Singapore" };
+    }),
   };
 }
 
@@ -191,8 +210,9 @@ function stepButtonVariant(currentStepId: string, activeStepId: string): "defaul
 }
 
 export function SettingsWorkspace() {
+  const router = useRouter();
   const { status, user, refreshSession } = useSession();
-  const [activeTab, setActiveTab] = useState<SettingsTab>("health");
+  const [activeTab, setActiveTab] = useState<SettingsTab>("account");
   const [healthViewMode, setHealthViewMode] = useState<HealthViewMode>("guided");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -200,6 +220,7 @@ export function SettingsWorkspace() {
   const [displayNameInput, setDisplayNameInput] = useState("");
   const [profileModeInput, setProfileModeInput] = useState<"self" | "caregiver">("self");
   const [savingAccount, setSavingAccount] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const [profileBusy, setProfileBusy] = useState(false);
   const [draft, setDraft] = useState<HealthProfileDraft>({
@@ -220,6 +241,8 @@ export function SettingsWorkspace() {
     conditions: "",
     medications: "",
     budget_tier: "moderate",
+    preferred_notification_channel: "in_app",
+    meal_schedule: "breakfast:07:00-09:00, lunch:12:00-14:00, dinner:18:00-20:00",
   });
   const [guidedSteps, setGuidedSteps] = useState<GuidedHealthStep[]>([]);
   const [guidedCurrentStep, setGuidedCurrentStep] = useState("basic_identity");
@@ -296,6 +319,18 @@ export function SettingsWorkspace() {
     }
   }
 
+  async function handleLogout() {
+    setLoggingOut(true);
+    setError(null);
+    try {
+      await logout();
+      router.replace("/login");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setLoggingOut(false);
+    }
+  }
+
   async function handleHealthProfileSave() {
     setProfileBusy(true);
     setError(null);
@@ -362,7 +397,7 @@ export function SettingsWorkspace() {
         eyebrow="Account"
         title="Settings"
         description="Manage account preferences, guided profile setup, and reminder defaults without crowding the dashboard."
-        tags={["guided setup", "health profile", "mobility reminders"]}
+
       />
 
       {error ? <ErrorCard message={error} /> : null}
@@ -374,13 +409,19 @@ export function SettingsWorkspace() {
 
       <div className="mb-4 flex flex-wrap gap-2">
         <Button variant={activeTab === "account" ? "default" : "secondary"} onClick={() => setActiveTab("account")}>
-          Account
+          Identity
         </Button>
         <Button variant={activeTab === "health" ? "default" : "secondary"} onClick={() => setActiveTab("health")}>
           Health Profile
         </Button>
         <Button variant={activeTab === "reminders" ? "default" : "secondary"} onClick={() => setActiveTab("reminders")}>
           Reminder Settings
+        </Button>
+        <Button variant={activeTab === "household" ? "default" : "secondary"} onClick={() => setActiveTab("household")}>
+          Household
+        </Button>
+        <Button variant={activeTab === "clinical_suggestions" ? "default" : "secondary"} onClick={() => setActiveTab("clinical_suggestions")}>
+          Clinical Suggestions
         </Button>
       </div>
 
@@ -417,6 +458,10 @@ export function SettingsWorkspace() {
             <div className="flex flex-wrap gap-2">
               <Button onClick={handleAccountSave} disabled={status !== "authenticated" || savingAccount}>
                 <AsyncLabel active={savingAccount} idle="Save Account" loading="Saving" />
+              </Button>
+              <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleLogout} disabled={loggingOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <AsyncLabel active={loggingOut} idle="Sign Out" loading="Signing out" />
               </Button>
               <Button asChild variant="secondary">
                 <Link href="/dashboard">Back to Dashboard</Link>
@@ -822,6 +867,19 @@ export function SettingsWorkspace() {
                     <Label htmlFor="profile-dislikes">Disliked ingredients</Label>
                     <Input id="profile-dislikes" value={draft.disliked_ingredients} onChange={(event) => setDraft((current) => ({ ...current, disliked_ingredients: event.target.value }))} placeholder="lard, organ meat" />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-notification-channel">Preferred notification channel</Label>
+                    <Select id="profile-notification-channel" value={draft.preferred_notification_channel} onChange={(event) => setDraft((current) => ({ ...current, preferred_notification_channel: event.target.value }))}>
+                      <option value="in_app">In-App</option>
+                      <option value="push">Push Notification</option>
+                      <option value="email">Email</option>
+                      <option value="sms">SMS</option>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-meal-schedule">Meal schedule (slot:HH:MM-HH:MM)</Label>
+                    <Input id="profile-meal-schedule" value={draft.meal_schedule} onChange={(event) => setDraft((current) => ({ ...current, meal_schedule: event.target.value }))} placeholder="breakfast:07:00-09:00, lunch:12:00-14:00" />
+                  </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-2">
@@ -917,6 +975,9 @@ export function SettingsWorkspace() {
           </CardContent>
         </Card>
       ) : null}
+
+      {activeTab === "household" ? <HouseholdTab /> : null}
+      {activeTab === "clinical_suggestions" ? <ClinicalSuggestionsTab /> : null}
     </div>
   );
 }

@@ -1,30 +1,39 @@
 # Documentation Index
 
-Last updated: 2026-03-06  
-Primary audience: contributors, operators, and product stakeholders
+This directory contains focused documentation that supplements the three root canonical docs:
+- `README.md`
+- `ARCHITECTURE.md`
+- `SYSTEM_ROADMAP.md`
 
-This directory is the primary documentation suite for system understanding, onboarding, and operations.
+## Core contributor docs
+- `docs/developer-guide.md`
+- `docs/operations-runbook.md`
+- `docs/user-manual.md`
+- `docs/config-reference.md`
 
-## Start Here
-- System architecture and boundaries: [`ARCHITECTURE.md`](../ARCHITECTURE.md)
-- System overview and subsystem map: [`docs/system-overview.md`](../docs/system-overview.md)
-- Codebase structure and module walkthrough: [`docs/codebase-walkthrough.md`](../docs/codebase-walkthrough.md)
-- Developer onboarding and extension guide: [`docs/developer-guide.md`](../docs/developer-guide.md)
-- Branching, merge sequencing, and multi-agent workflow: [`docs/branching-strategy.md`](../docs/branching-strategy.md)
-- User-facing and operator usage guide: [`docs/user-manual.md`](../docs/user-manual.md)
-- Operational runbook: [`docs/operations-runbook.md`](../docs/operations-runbook.md)
-- Shared terminology: [`docs/glossary.md`](../docs/glossary.md)
+## Auth and policy references
+- `docs/api-auth-contract.md`
+- `docs/rbac-matrix.md`
 
-## Existing Canonical References
-- Product roadmap and maturity: [`docs/roadmap-v1.md`](../docs/roadmap-v1.md)
-- Feature capability audit: [`docs/feature-audit.md`](../docs/feature-audit.md)
-- Environment and runtime config: [`docs/config-reference.md`](../docs/config-reference.md)
-- Auth and RBAC contracts: [`docs/api-auth-contract.md`](../docs/api-auth-contract.md), [`docs/rbac-matrix.md`](../docs/rbac-matrix.md)
+## Focused subsystem notes
+- `docs/meal-analysis-agents.md`
 
-## Maintenance Notes
-- Update `docs/system-overview.md` when architecture layers or subsystem boundaries change.
-- Update `docs/codebase-walkthrough.md` when major directories or module ownership changes.
-- Update `docs/developer-guide.md` and `docs/operations-runbook.md` when commands/runbooks/env requirements change.
-- Update `docs/user-manual.md` when user flows, UI routes, or core capabilities change.
-- Keep `AGENTS.md` aligned with `CONTRIBUTING.md` whenever collaboration or ownership rules change.
-- Keep active guidance in this directory and remove stale docs during cleanup passes.
+## Product and pitch notes
+- `docs/hackathon-answer.md`
+  This is judge-facing and narrative-focused. It is not the canonical engineering source of truth.
+
+## API contract references
+- `docs/api-emotions-contract.md`
+- `docs/api-recommendation-agent-contract.md`
+- `docs/api-suggestions-contract.md`
+- `docs/api-auth-contract.md`
+
+Runtime API discovery:
+- FastAPI interactive docs: `http://localhost:8001/docs`
+- Route definitions under `apps/api/dietary_api/routers/` remain the code-level source of truth for current endpoints
+
+## Supporting assets
+- `docs/architecture/target-system-architecture.drawio`
+
+## Maintenance rule
+Keep this index small. If a document mostly repeats architecture, roadmap, or contributor workflow content, fold that content back into the canonical files instead of adding another overview doc.

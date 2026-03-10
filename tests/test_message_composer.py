@@ -1,5 +1,7 @@
-from dietary_guardian.models.alerting import AlertMessage
-from dietary_guardian.services.message_composer import CHANNEL_CAPABILITIES, compose_alert_message
+"""Tests for message composer."""
+
+from dietary_guardian.domain.alerts.models import AlertMessage
+from dietary_guardian.infrastructure.notifications.message_composer import CHANNEL_CAPABILITIES, compose_alert_message
 
 
 def test_compose_manual_alert_message_uses_generic_title_not_medication_label() -> None:

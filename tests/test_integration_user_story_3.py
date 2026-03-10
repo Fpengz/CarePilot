@@ -1,11 +1,20 @@
+"""Tests for integration user story 3."""
+
 from datetime import datetime
 
+from dietary_guardian.domain.health.models import ReportInput
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
 from dietary_guardian.models.meal import MealState, Nutrition
 from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.report import ReportInput
-from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
-from dietary_guardian.services.recommendation_service import generate_recommendation
-from dietary_guardian.services.report_parser_service import build_clinical_snapshot, parse_report_input
+from dietary_guardian.domain.recommendations.meal_recommendations import generate_recommendation
+from dietary_guardian.domain.reports import (
+    build_clinical_snapshot,
+    parse_report_input,
+)
 
 
 def test_user_story_3_report_to_grounded_recommendation() -> None:

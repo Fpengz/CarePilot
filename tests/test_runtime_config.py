@@ -1,3 +1,5 @@
+"""Tests for runtime config."""
+
 import pytest
 from pydantic import ValidationError
 

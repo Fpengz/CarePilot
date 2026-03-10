@@ -1,3 +1,5 @@
+"""API helpers for medication regimens, adherence events, and adherence metrics."""
+
 from __future__ import annotations
 
 from datetime import date, datetime, time, timezone
@@ -18,8 +20,11 @@ from apps.api.dietary_api.schemas import (
     MedicationRegimenPatchRequest,
     MedicationRegimenResponse,
 )
-from dietary_guardian.models.medication import MedicationRegimen
-from dietary_guardian.models.medication_tracking import MedicationAdherenceEvent, MedicationAdherenceMetrics
+from dietary_guardian.domain.health.models import (
+    MedicationAdherenceEvent,
+    MedicationAdherenceMetrics,
+)
+from dietary_guardian.domain.notifications.models import MedicationRegimen
 
 
 def _parse_hhmm(value: str | None) -> str | None:

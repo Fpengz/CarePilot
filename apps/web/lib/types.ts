@@ -1,6 +1,19 @@
 export type AccountRole = "member" | "admin";
 export type ProfileMode = "self" | "caregiver";
 
+export interface ApiErrorBody {
+  code: string;
+  message: string;
+  details: Record<string, unknown>;
+  correlation_id?: string | null;
+  status_code?: number;
+}
+
+export interface ApiErrorEnvelope {
+  detail: string;
+  error: ApiErrorBody;
+}
+
 export interface SessionUser {
   user_id: string;
   email: string;
@@ -58,6 +71,13 @@ export interface HealthProfileCompleteness {
   missing_fields: string[];
 }
 
+export interface HealthProfileMealSchedule {
+  slot: string;
+  start_time: string;
+  end_time: string;
+  timezone: string;
+}
+
 export interface HealthProfile {
   age: number | null;
   locale: string;
@@ -77,6 +97,8 @@ export interface HealthProfile {
   preferred_cuisines: string[];
   disliked_ingredients: string[];
   budget_tier: "budget" | "moderate" | "flexible";
+  meal_schedule: HealthProfileMealSchedule[];
+  preferred_notification_channel: string;
   fallback_mode: boolean;
   completeness: HealthProfileCompleteness;
   updated_at?: string | null;
@@ -778,4 +800,114 @@ export interface MetricTrendApi {
 
 export interface MetricTrendListApiResponse {
   items: MetricTrendApi[];
+}
+
+export interface CompanionSnapshotApi {
+  user_id: string;
+  profile_name: string;
+  conditions: string[];
+  medications: string[];
+  meal_count: number;
+  latest_meal_name: string | null;
+  meal_risk_streak: number;
+  reminder_count: number;
+  reminder_response_rate: number;
+  adherence_events: number;
+  adherence_rate: number | null;
+  symptom_count: number;
+  average_symptom_severity: number;
+  biomarker_summary: Record<string, number>;
+  active_risk_flags: string[];
+  generated_at: string;
+}
+
+export interface CompanionEngagementApi {
+  risk_level: "low" | "medium" | "high";
+  recommended_mode: "supportive" | "accountability" | "follow_up" | "escalate";
+  rationale: string[];
+  intervention_opportunities: number;
+}
+
+export interface CompanionEvidenceCitationApi {
+  title: string;
+  summary: string;
+  source_type: string;
+  relevance: string;
+  confidence: number;
+}
+
+export interface CompanionCarePlanApi {
+  interaction_type: "chat" | "meal_review" | "check_in" | "report_follow_up" | "adherence_follow_up";
+  headline: string;
+  summary: string;
+  reasoning_summary: string;
+  why_now: string;
+  recommended_actions: string[];
+  clinician_follow_up: boolean;
+  urgency: "routine" | "soon" | "prompt";
+  citations: CompanionEvidenceCitationApi[];
+  policy_status: "approved" | "adjusted" | "escalate";
+}
+
+export interface ClinicianDigestApi {
+  summary: string;
+  what_changed: string[];
+  why_now: string;
+  time_window: string;
+  priority: "routine" | "watch" | "urgent";
+  recommended_actions: string[];
+  interventions_attempted: string[];
+  citations: CompanionEvidenceCitationApi[];
+  risk_level: "low" | "medium" | "high";
+}
+
+export type ClinicianDigest = ClinicianDigestApi;
+
+export interface ImpactSummaryApi {
+  baseline_window: string;
+  comparison_window: string;
+  tracked_metrics: Record<string, number>;
+  deltas: Record<string, number>;
+  intervention_opportunities: number;
+  interventions_measured: string[];
+  improvement_signals: string[];
+}
+
+export type ImpactSummary = ImpactSummaryApi;
+
+export interface CompanionTodayApiResponse {
+  snapshot: CompanionSnapshotApi;
+  engagement: CompanionEngagementApi;
+  care_plan: CompanionCarePlanApi;
+  clinician_digest_preview: ClinicianDigestApi;
+  impact: ImpactSummaryApi;
+}
+
+export interface CompanionInteractionInfoApi {
+  interaction_type: "chat" | "meal_review" | "check_in" | "report_follow_up" | "adherence_follow_up";
+  message: string;
+  request_id: string;
+  correlation_id: string;
+  emotion_signal: string | null;
+}
+
+export interface CompanionInteractionApiResponse {
+  interaction: CompanionInteractionInfoApi;
+  snapshot: CompanionSnapshotApi;
+  engagement: CompanionEngagementApi;
+  care_plan: CompanionCarePlanApi;
+  clinician_digest_preview: ClinicianDigestApi;
+  impact: ImpactSummaryApi;
+  workflow: WorkflowExecutionResult;
+}
+
+export type CarePlan = CompanionCarePlanApi;
+export type EvidenceCitation = CompanionEvidenceCitationApi;
+
+export interface ClinicianDigestEnvelopeApiResponse {
+  digest: ClinicianDigestApi;
+}
+
+export interface ImpactSummaryEnvelopeApiResponse {
+  summary: ImpactSummaryApi;
 }

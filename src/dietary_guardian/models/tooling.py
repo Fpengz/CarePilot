@@ -1,3 +1,5 @@
+"""Data models for tooling."""
+
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Any

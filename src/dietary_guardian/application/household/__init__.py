@@ -1,3 +1,5 @@
+"""Package exports for household."""
+
 from .use_cases import (
     HouseholdAlreadyExistsError,
     HouseholdForbiddenError,
@@ -11,8 +13,8 @@ from .use_cases import (
     join_household_by_code,
     leave_household_for_member,
     list_household_members_for_user,
-    rename_household_for_owner,
     remove_household_member_for_owner,
+    rename_household_for_owner,
     validate_active_household_for_user,
 )
 

@@ -1,7 +1,10 @@
+"""Data models for meal record."""
+
 from datetime import datetime, timezone
 
 from pydantic import BaseModel, Field
 
+from dietary_guardian.domain.meals import EnrichedMealEvent, MealPerception
 from dietary_guardian.models.meal import MealState
 
 
@@ -11,5 +14,7 @@ class MealRecognitionRecord(BaseModel):
     captured_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     source: str
     meal_state: MealState
+    meal_perception: MealPerception | None = None
+    enriched_event: EnrichedMealEvent | None = None
     analysis_version: str = "v1"
     multi_item_count: int = 1

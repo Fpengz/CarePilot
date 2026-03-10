@@ -1,10 +1,11 @@
+"""Data models for clinical card."""
+
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, Field
-
 
 ClinicalCardFormat = Literal["sectioned", "soap"]
 

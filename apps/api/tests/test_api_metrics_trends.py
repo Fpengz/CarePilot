@@ -1,14 +1,16 @@
+"""Module for test api metrics trends."""
+
 from __future__ import annotations
 
 from collections.abc import Generator
 from datetime import datetime, timezone
 
 import pytest
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
-from dietary_guardian.models.report import BiomarkerReading
+from dietary_guardian.domain.health.models import BiomarkerReading
 
 
 def _reset_settings_cache() -> None:

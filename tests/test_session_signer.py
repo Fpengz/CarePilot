@@ -1,3 +1,5 @@
+"""Tests for session signer."""
+
 import time
 
 from dietary_guardian.infrastructure.auth.session_signer import SessionSigner

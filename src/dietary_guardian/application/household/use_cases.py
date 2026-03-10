@@ -1,3 +1,5 @@
+"""Application use cases for household."""
+
 from dataclasses import dataclass
 from typing import Any
 

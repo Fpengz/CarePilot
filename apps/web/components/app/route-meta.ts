@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 export type NavGroup = "main" | "admin" | "auth";
+export type SidebarSectionId = "daily" | "care" | "insights" | "account" | "admin";
 
 export interface RouteMeta {
   href: string;
@@ -28,7 +29,16 @@ export interface RouteMeta {
   icon: LucideIcon;
   showInSidebar: boolean;
   mobileTab: boolean;
+  sidebarSection?: SidebarSectionId;
+  sidebarOrder?: number;
   requiredAnyScopes?: string[];
+}
+
+export interface SidebarSection {
+  id: SidebarSectionId;
+  title: string;
+  group: Exclude<NavGroup, "auth">;
+  routes: RouteMeta[];
 }
 
 export const ROUTE_META: RouteMeta[] = [
@@ -53,6 +63,18 @@ export const ROUTE_META: RouteMeta[] = [
     mobileTab: false,
   },
   {
+    href: "/companion",
+    label: "Companion",
+    pageTitle: "Companion",
+    breadcrumbLabel: "Companion",
+    group: "main",
+    icon: House,
+    showInSidebar: true,
+    mobileTab: true,
+    sidebarSection: "daily",
+    sidebarOrder: 1,
+  },
+  {
     href: "/dashboard",
     label: "Dashboard",
     pageTitle: "Dashboard",
@@ -61,6 +83,8 @@ export const ROUTE_META: RouteMeta[] = [
     icon: House,
     showInSidebar: true,
     mobileTab: true,
+    sidebarSection: "daily",
+    sidebarOrder: 2,
   },
   {
     href: "/meals",
@@ -71,6 +95,8 @@ export const ROUTE_META: RouteMeta[] = [
     icon: Salad,
     showInSidebar: true,
     mobileTab: true,
+    sidebarSection: "daily",
+    sidebarOrder: 3,
   },
   {
     href: "/suggestions",
@@ -79,18 +105,20 @@ export const ROUTE_META: RouteMeta[] = [
     breadcrumbLabel: "Suggestions",
     group: "main",
     icon: ChartColumn,
-    showInSidebar: true,
-    mobileTab: true,
+    showInSidebar: false,
+    mobileTab: false,
   },
   {
     href: "/reports",
-    label: "Reports",
-    pageTitle: "Reports",
-    breadcrumbLabel: "Reports",
+    label: "Medical",
+    pageTitle: "Medical Reports & Insights",
+    breadcrumbLabel: "Medical",
     group: "main",
     icon: FileText,
     showInSidebar: true,
     mobileTab: false,
+    sidebarSection: "care",
+    sidebarOrder: 3,
   },
   {
     href: "/reminders",
@@ -101,6 +129,8 @@ export const ROUTE_META: RouteMeta[] = [
     icon: Bell,
     showInSidebar: true,
     mobileTab: true,
+    sidebarSection: "daily",
+    sidebarOrder: 4,
   },
   {
     href: "/medications",
@@ -111,6 +141,8 @@ export const ROUTE_META: RouteMeta[] = [
     icon: Pill,
     showInSidebar: true,
     mobileTab: false,
+    sidebarSection: "care",
+    sidebarOrder: 1,
   },
   {
     href: "/symptoms",
@@ -121,26 +153,32 @@ export const ROUTE_META: RouteMeta[] = [
     icon: Activity,
     showInSidebar: true,
     mobileTab: false,
+    sidebarSection: "care",
+    sidebarOrder: 2,
   },
   {
-    href: "/clinical-cards",
-    label: "Clinical Cards",
-    pageTitle: "Clinical Cards",
-    breadcrumbLabel: "Clinical Cards",
-    group: "main",
-    icon: FileHeart,
-    showInSidebar: true,
-    mobileTab: false,
-  },
-  {
-    href: "/metrics",
-    label: "Metrics",
-    pageTitle: "Metrics",
-    breadcrumbLabel: "Metrics",
+    href: "/impact",
+    label: "Impact",
+    pageTitle: "Impact",
+    breadcrumbLabel: "Impact",
     group: "main",
     icon: LineChart,
     showInSidebar: true,
     mobileTab: false,
+    sidebarSection: "insights",
+    sidebarOrder: 1,
+  },
+  {
+    href: "/clinician-digest",
+    label: "Clinician Digest",
+    pageTitle: "Clinician Digest",
+    breadcrumbLabel: "Clinician Digest",
+    group: "main",
+    icon: FileHeart,
+    showInSidebar: true,
+    mobileTab: false,
+    sidebarSection: "insights",
+    sidebarOrder: 2,
   },
   {
     href: "/household",
@@ -149,18 +187,20 @@ export const ROUTE_META: RouteMeta[] = [
     breadcrumbLabel: "Household",
     group: "main",
     icon: HousePlus,
-    showInSidebar: true,
+    showInSidebar: false,
     mobileTab: false,
   },
   {
     href: "/settings",
-    label: "Settings",
-    pageTitle: "Settings",
-    breadcrumbLabel: "Settings",
+    label: "Account",
+    pageTitle: "Account Settings",
+    breadcrumbLabel: "Account",
     group: "main",
     icon: Settings2,
-    showInSidebar: false,
+    showInSidebar: true,
     mobileTab: false,
+    sidebarSection: "account",
+    sidebarOrder: 1,
   },
   {
     href: "/alerts",
@@ -171,6 +211,8 @@ export const ROUTE_META: RouteMeta[] = [
     icon: ShieldAlert,
     showInSidebar: true,
     mobileTab: false,
+    sidebarSection: "admin",
+    sidebarOrder: 1,
     requiredAnyScopes: ["alert:trigger", "alert:timeline:read"],
   },
   {
@@ -182,11 +224,20 @@ export const ROUTE_META: RouteMeta[] = [
     icon: Workflow,
     showInSidebar: true,
     mobileTab: false,
+    sidebarSection: "admin",
+    sidebarOrder: 2,
     requiredAnyScopes: ["workflow:read", "workflow:replay"],
   },
 ];
 
 export const CORE_MOBILE_TABS = ROUTE_META.filter((route) => route.mobileTab);
+const SIDEBAR_SECTION_META = [
+  { id: "daily", title: "Daily", group: "main" },
+  { id: "care", title: "Care tracking", group: "main" },
+  { id: "insights", title: "Insights", group: "main" },
+  { id: "account", title: "Account", group: "main" },
+  { id: "admin", title: "Admin", group: "admin" },
+] satisfies Array<Omit<SidebarSection, "routes">>;
 
 export function findRouteMeta(pathname: string): RouteMeta | undefined {
   return ROUTE_META.find((route) => route.href === pathname);
@@ -199,4 +250,15 @@ export function isAdminRoute(route: RouteMeta): boolean {
 export function routeIsEnabled(route: RouteMeta, hasScope: (scope: string) => boolean): boolean {
   if (!route.requiredAnyScopes || route.requiredAnyScopes.length === 0) return true;
   return route.requiredAnyScopes.some((scope) => hasScope(scope));
+}
+
+export function getSidebarSections(group: Exclude<NavGroup, "auth">): SidebarSection[] {
+  return SIDEBAR_SECTION_META.filter((section) => section.group === group)
+    .map((section) => ({
+      ...section,
+      routes: ROUTE_META.filter(
+        (route) => route.group === group && route.showInSidebar && route.sidebarSection === section.id,
+      ).sort((left, right) => (left.sidebarOrder ?? 0) - (right.sidebarOrder ?? 0)),
+    }))
+    .filter((section) => section.routes.length > 0);
 }

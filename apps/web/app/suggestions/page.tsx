@@ -72,7 +72,7 @@ export default function SuggestionsPage() {
         eyebrow="Suggestions"
         title="Report-to-Suggestion Workflow"
         description="Generate structured suggestions from pasted report text and review saved history with scope-aware filters."
-        tags={["workflow visibility", "typed states"]}
+
       />
 
       <div className="page-grid">

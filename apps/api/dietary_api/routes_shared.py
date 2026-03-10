@@ -1,11 +1,13 @@
-from typing import Any, Annotated, cast
+"""Module for routes shared."""
+
+from typing import Annotated, Any, cast
 
 from fastapi import Cookie, Depends, HTTPException, Request
 
-from dietary_guardian.models.medication import MedicationRegimen
-from dietary_guardian.services.authorization import has_scopes
+from dietary_guardian.domain.notifications.models import MedicationRegimen
+from dietary_guardian.domain.tooling import has_scopes
 
-from .deps import AppContext
+from .deps import AppContext, AuthContext, auth_context
 from .policy import authorize_action, authorize_resource_action
 
 SESSION_COOKIE = "dg_session"
@@ -14,6 +16,10 @@ SessionData = dict[str, Any]
 
 def get_context(request: Request) -> AppContext:
     return cast(AppContext, request.app.state.ctx)
+
+
+def get_auth_context(request: Request) -> AuthContext:
+    return auth_context(get_context(request))
 
 
 def _is_valid_session_payload(session: object) -> bool:
@@ -59,7 +65,7 @@ def require_session(
     request: Request,
     session_cookie: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> SessionData:
-    ctx = get_context(request)
+    ctx = get_auth_context(request)  # narrow context — only auth fields needed
     candidates = _session_cookie_candidates(request, session_cookie)
     if not candidates:
         raise HTTPException(status_code=401, detail="authentication required")
@@ -69,7 +75,7 @@ def require_session(
     for token in candidates:
         session_id = ctx.session_signer.unsign(
             token,
-            max_age_seconds=int(ctx.settings.auth_session_ttl_seconds),
+            max_age_seconds=int(ctx.settings.auth.session_ttl_seconds),
         )
         if not session_id:
             continue

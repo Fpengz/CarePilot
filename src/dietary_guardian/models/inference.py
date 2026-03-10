@@ -1,3 +1,5 @@
+"""Data models for inference."""
+
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Any
@@ -12,6 +14,7 @@ class InferenceModality(StrEnum):
 
 
 class ProviderMetadata(BaseModel):
+    capability: str | None = None
     provider: str
     model: str
     endpoint: str
@@ -41,6 +44,7 @@ class InferenceResponse(BaseModel):
 
 
 class InferenceHealth(BaseModel):
+    capability: str | None = None
     provider: str
     model: str
     endpoint: str
@@ -49,6 +53,7 @@ class InferenceHealth(BaseModel):
 
 
 class ModalityCapabilityProfile(BaseModel):
+    capability: str | None = None
     provider: str
     model: str
     endpoint: str

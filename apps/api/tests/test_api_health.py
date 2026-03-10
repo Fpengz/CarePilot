@@ -1,9 +1,11 @@
+"""Module for test api health."""
+
 from collections.abc import Generator
 
 import pytest
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
 
 
@@ -26,12 +28,9 @@ def test_health_endpoints() -> None:
 
     live = client.get("/api/v1/health/live")
     ready = client.get("/api/v1/health/ready")
-    config = client.get("/api/v1/health/config")
 
     assert live.status_code == 200
     assert ready.status_code == 200
-    assert config.status_code == 200
-    assert "llm_provider" in config.json()
     ready_body = ready.json()
     assert ready_body["status"] in {"ready", "degraded", "not_ready"}
     assert ready_body["app_env"] == "dev"
@@ -39,6 +38,25 @@ def test_health_endpoints() -> None:
     assert isinstance(ready_body["warnings"], list)
     assert isinstance(ready_body["errors"], list)
     assert "alerts_outbox_v2" in ready_body
+
+
+def test_health_config_requires_authenticated_admin() -> None:
+    client = TestClient(create_app())
+
+    unauthenticated = client.get("/api/v1/health/config")
+    assert unauthenticated.status_code == 401
+
+    member_login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    assert member_login.status_code == 200
+    forbidden = client.get("/api/v1/health/config")
+    assert forbidden.status_code == 403
+
+    admin_client = TestClient(create_app())
+    admin_login = admin_client.post("/api/v1/auth/login", json={"email": "admin@example.com", "password": "admin-pass"})
+    assert admin_login.status_code == 200
+    config = admin_client.get("/api/v1/health/config")
+    assert config.status_code == 200
+    assert "llm_provider" in config.json()
 
 
 def test_health_ready_reports_degraded_when_optional_notification_config_is_missing(

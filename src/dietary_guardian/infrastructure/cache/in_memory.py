@@ -1,3 +1,5 @@
+"""Infrastructure support for in memory."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone

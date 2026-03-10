@@ -1,10 +1,12 @@
+"""Tests for alerting outbox."""
+
 import asyncio
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from dietary_guardian.models.alerting import AlertMessage
-from dietary_guardian.services.alerting_service import AlertPublisher, OutboxWorker
-from dietary_guardian.services.repository import SQLiteRepository
+from dietary_guardian.domain.alerts.models import AlertMessage
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
+from dietary_guardian.infrastructure.notifications.alert_outbox import AlertPublisher, OutboxWorker
 
 
 def test_alert_publish_persists_to_outbox(tmp_path) -> None:

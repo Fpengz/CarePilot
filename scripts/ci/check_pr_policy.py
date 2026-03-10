@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""Validate pull request bodies against the repository's current review contract.
+
+The policy enforced here matches the present multi-agent architecture workflow:
+PRs must describe scope, ownership, validation, and rollback risk in a form that
+reviewers can audit quickly. GitHub Actions calls this script in CI to reject
+changes that do not include the required headings and checked validation items.
+"""
+
 from __future__ import annotations
 
 import json

@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const backendDbPrefix = process.env.PLAYWRIGHT_SQLITE_PREFIX ?? "/tmp/dietary-playwright";
 
 export default defineConfig({
+  globalSetup: "./e2e/global-setup.ts",
   testDir: "./e2e",
   timeout: 30_000,
   expect: {

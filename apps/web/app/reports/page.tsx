@@ -27,15 +27,15 @@ export default function ReportsPage() {
       <PageTitle
         eyebrow="Reports"
         title="Clinical Report Parser"
-        description="Parse report text into biomarker signals and symptom-context summaries for downstream recommendations."
-        tags={["reports.parse", "biomarkers", "symptom summary"]}
+        description="Paste a clinical report to extract biomarkers and generate targeted health recommendations."
+        tags={["biomarkers"]}
       />
 
       <div className="page-grid">
         <Card className="grain-overlay">
           <CardHeader>
             <CardTitle>Parse Report Text</CardTitle>
-            <CardDescription>Calls `POST /api/v1/reports/parse` and returns biomarkers, risk flags, and a symptom summary window.</CardDescription>
+            <CardDescription>Extracts biomarkers, risk flags, and symptom context from pasted lab or clinical text.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">

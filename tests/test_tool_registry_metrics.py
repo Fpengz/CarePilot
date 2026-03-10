@@ -1,7 +1,14 @@
+"""Tests for tool registry metrics."""
+
 from pydantic import BaseModel
 
-from dietary_guardian.models.tooling import ToolPolicyContext, ToolSensitivity, ToolSideEffect, ToolSpec
-from dietary_guardian.services.tool_registry import ToolRegistry
+from dietary_guardian.models.tooling import (
+    ToolPolicyContext,
+    ToolSensitivity,
+    ToolSideEffect,
+    ToolSpec,
+)
+from dietary_guardian.infrastructure.tooling.registry import ToolRegistry
 
 
 class PingInput(BaseModel):

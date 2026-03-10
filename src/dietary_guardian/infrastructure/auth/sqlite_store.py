@@ -1,3 +1,5 @@
+"""Infrastructure support for sqlite store."""
+
 import json
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -6,28 +8,28 @@ from typing import Any, cast
 from uuid import uuid4
 
 from dietary_guardian.config.settings import Settings
+from dietary_guardian.domain.identity.models import AccountRole, ProfileMode
+from dietary_guardian.domain.tooling import scopes_for_account_role
 from dietary_guardian.infrastructure.auth.demo_defaults import build_demo_user_seeds
 from dietary_guardian.infrastructure.auth.in_memory import AuthUserRecord, PasswordHasher
-from dietary_guardian.logging_config import get_logger
-from dietary_guardian.models.identity import AccountRole, ProfileMode
-from dietary_guardian.services.authorization import scopes_for_account_role
+from dietary_guardian.observability import get_logger
 
 logger = get_logger(__name__)
 
 
 class SQLiteAuthStore:
     def __init__(self, settings: Settings, db_path: str = "dietary_guardian_api.db") -> None:
-        self._hasher = PasswordHasher(settings.auth_password_hash_scheme)
+        self._hasher = PasswordHasher(settings.auth.password_hash_scheme)
         self._demo_defaults = build_demo_user_seeds(settings)
-        self._session_ttl_seconds = int(settings.auth_session_ttl_seconds)
-        self._login_max_failed_attempts = int(settings.auth_login_max_failed_attempts)
-        self._login_failure_window_seconds = int(settings.auth_login_failure_window_seconds)
-        self._login_lockout_seconds = int(settings.auth_login_lockout_seconds)
-        self._auth_audit_events_max_entries = int(settings.auth_audit_events_max_entries)
+        self._session_ttl_seconds = int(settings.auth.session_ttl_seconds)
+        self._login_max_failed_attempts = int(settings.auth.login_max_failed_attempts)
+        self._login_failure_window_seconds = int(settings.auth.login_failure_window_seconds)
+        self._login_lockout_seconds = int(settings.auth.login_lockout_seconds)
+        self._auth_audit_events_max_entries = int(settings.auth.audit_events_max_entries)
         self._lock = RLock()
         self._db_path = db_path
         self._init_db()
-        if settings.auth_seed_demo_users:
+        if settings.auth.seed_demo_users:
             self._seed_defaults()
 
     def _connect(self) -> sqlite3.Connection:

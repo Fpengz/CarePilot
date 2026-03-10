@@ -1,9 +1,11 @@
+"""Tests for timezone datetimes."""
+
 from datetime import timezone
 
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.health.models import ReportInput
 from dietary_guardian.models.meal import MealState, Nutrition
-from dietary_guardian.models.report import ReportInput
-from dietary_guardian.services.report_parser_service import parse_report_input
+from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.reports import parse_report_input
 
 
 def _sample_meal_state() -> MealState:

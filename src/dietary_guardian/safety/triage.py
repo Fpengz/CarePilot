@@ -1,3 +1,5 @@
+"""Safety logic for triage."""
+
 from dataclasses import dataclass, field
 
 

@@ -1,6 +1,12 @@
-from dietary_guardian.models.report import ClinicalProfileSnapshot
-from dietary_guardian.models.user import MedicalCondition, Medication, UserProfile
-from dietary_guardian.services.memory_services import (
+"""Tests for memory services."""
+
+from dietary_guardian.domain.health.models import ClinicalProfileSnapshot
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
+from dietary_guardian.infrastructure.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,
@@ -61,7 +67,7 @@ def test_event_timeline_append_list_and_filter() -> None:
         user_id="u2",
     )
 
-    c1_events = svc.list(correlation_id="c1")
+    c1_events = svc.get_events(correlation_id="c1")
     assert len(c1_events) == 2
     assert [e.event_type for e in c1_events] == ["workflow_started", "workflow_completed"]
 

@@ -100,7 +100,7 @@ export default function WorkflowsPage() {
         eyebrow="Workflows"
         title="Workflow Trace Inspector"
         description="List workflow traces and replay a specific correlation timeline. This page exercises both the collection and detail read endpoints."
-        tags={["admin scope", "workflow:read", "workflow:replay"]}
+
       />
 
       <div className="page-grid">

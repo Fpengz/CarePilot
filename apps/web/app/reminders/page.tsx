@@ -154,7 +154,7 @@ export default function RemindersPage() {
         eyebrow="Reminders"
         title="Medication and Mobility Reminder Operations"
         description="Generate daily reminders, tune delivery channels, and opt into periodic mobility nudges without mixing them into meal confirmation."
-        tags={["member scopes", "MCR metrics", "mobility"]}
+
       />
 
       <div className="page-grid">

@@ -1,3 +1,5 @@
+"""Module for runtime validate."""
+
 from dietary_guardian.config.settings import get_settings
 
 

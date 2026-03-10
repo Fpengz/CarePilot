@@ -1,3 +1,5 @@
+"""API router for symptoms endpoints."""
+
 from __future__ import annotations
 
 from datetime import date
@@ -5,7 +7,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query, Request
 
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas.symptoms import (
+from ..schemas import (
     SymptomCheckInEnvelopeResponse,
     SymptomCheckInListResponse,
     SymptomCheckInRequest,

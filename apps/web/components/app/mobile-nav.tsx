@@ -5,16 +5,13 @@ import { Menu, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
-import { CORE_MOBILE_TABS, ROUTE_META } from "@/components/app/route-meta";
+import { CORE_MOBILE_TABS, getSidebarSections } from "@/components/app/route-meta";
 import { SidebarNav } from "@/components/app/sidebar-nav";
 import { useSession } from "@/components/app/session-provider";
 import { useDialogA11y } from "@/components/app/use-dialog-a11y";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const mainRoutes = ROUTE_META.filter((route) => route.group === "main" && route.showInSidebar);
-const adminRoutes = ROUTE_META.filter((route) => route.group === "admin" && route.showInSidebar);
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -23,6 +20,8 @@ export function MobileNav() {
   const openButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const mainSections = getSidebarSections("main");
+  const adminSections = getSidebarSections("admin");
 
   useEffect(() => {
     setOpen(false);
@@ -130,8 +129,26 @@ export function MobileNav() {
             </div>
 
             <div className="space-y-4 overflow-y-auto pb-24">
-              <SidebarNav routes={mainRoutes} activePathname={pathname} title="Primary" titleId="mobile-sidebar-primary" />
-              <SidebarNav routes={adminRoutes} activePathname={pathname} title="Admin" titleId="mobile-sidebar-admin" />
+              {mainSections.map((section) => (
+                <SidebarNav
+                  key={section.id}
+                  routes={section.routes}
+                  activePathname={pathname}
+                  title={section.title}
+                  titleId={`mobile-sidebar-${section.id}`}
+                  isCollapsed={false}
+                />
+              ))}
+              {adminSections.map((section) => (
+                <SidebarNav
+                  key={section.id}
+                  routes={section.routes}
+                  activePathname={pathname}
+                  title={section.title}
+                  titleId={`mobile-sidebar-${section.id}`}
+                  isCollapsed={false}
+                />
+              ))}
             </div>
           </div>
         </div>

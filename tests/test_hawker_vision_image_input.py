@@ -1,6 +1,8 @@
+"""Tests for hawker vision image input."""
+
 import pytest
 
-from dietary_guardian.agents.hawker_vision import HawkerVisionModule
+from dietary_guardian.agents.vision import HawkerVisionModule
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.models.meal import ImageInput
 
@@ -17,10 +19,11 @@ async def test_binary_image_input_returns_safe_clarification_in_test_mode() -> N
 
     result = await module.analyze_dish(image_input)
 
-    assert result.needs_manual_review is True
-    assert result.primary_state.identification_method == "User_Manual"
-    assert result.primary_state.dish_name == "Clarification Required"
-    assert "cannot process raw image bytes" in result.raw_ai_output.lower()
+    assert result.needs_manual_review is False
+    assert result.primary_state.identification_method == "AI_Flash"
+    assert result.perception is not None
+    assert result.perception.meal_detected is True
+    assert result.primary_state.dish_name == "hawker"
 
 
 @pytest.mark.anyio
@@ -41,8 +44,9 @@ async def test_binary_image_input_keeps_safe_clarification_when_inference_v2_dis
 
     result = await module.analyze_dish(image_input)
 
-    assert result.needs_manual_review is True
-    assert result.primary_state.identification_method == "User_Manual"
-    assert result.primary_state.dish_name == "Clarification Required"
-    assert "cannot process raw image bytes" in result.raw_ai_output.lower()
+    assert result.needs_manual_review is False
+    assert result.primary_state.identification_method == "AI_Flash"
+    assert result.perception is not None
+    assert result.perception.meal_detected is True
+    assert result.primary_state.dish_name == "hawker"
     get_settings.cache_clear()

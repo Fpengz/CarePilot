@@ -1,12 +1,13 @@
+"""Module for test auth store."""
+
 from datetime import datetime, timedelta, timezone
 
 from dietary_guardian.config.settings import Settings
-
-from apps.api.dietary_api.auth import InMemoryAuthStore
+from dietary_guardian.infrastructure.auth import InMemoryAuthStore
 
 
 def test_get_session_drops_expired_sessions() -> None:
-    settings = Settings(llm_provider="test", auth_session_ttl_seconds=1)
+    settings = Settings(llm={"provider": "test"}, auth={"session_ttl_seconds": 1})
     store = InMemoryAuthStore(settings)
     user = store.authenticate("member@example.com", "member-pass")
     assert user is not None
@@ -22,8 +23,8 @@ def test_get_session_drops_expired_sessions() -> None:
 
 def test_in_memory_store_honors_configured_demo_passwords() -> None:
     settings = Settings(
-        llm_provider="test",
-        auth_demo_member_password="member-custom-pass",
+        llm={"provider": "test"},
+        auth={"demo_member_password": "member-custom-pass"},
     )
     store = InMemoryAuthStore(settings)
 

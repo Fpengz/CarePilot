@@ -1,11 +1,13 @@
+"""Tests for reminder notification service."""
+
 from datetime import datetime, timezone
 
-from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.services.reminder_notification_service import (
+from dietary_guardian.domain.notifications.models import ReminderEvent
+from dietary_guardian.infrastructure.persistence import SQLiteAppStore
+from dietary_guardian.application.notifications.reminder_materialization import (
     dispatch_due_reminder_notifications,
     materialize_reminder_notifications,
 )
-from dietary_guardian.services.repository import SQLiteRepository
 
 
 def _event() -> ReminderEvent:
@@ -19,7 +21,7 @@ def _event() -> ReminderEvent:
 
 
 def test_materialize_reminder_notifications_uses_default_in_app_fallback(tmp_path) -> None:
-    repo = SQLiteRepository(str(tmp_path / "notifications.db"))
+    repo = SQLiteAppStore(str(tmp_path / "notifications.db"))
 
     repo.save_reminder_event(_event())
     created = materialize_reminder_notifications(repository=repo, reminder_event=_event(), reminder_type="medication")
@@ -31,7 +33,7 @@ def test_materialize_reminder_notifications_uses_default_in_app_fallback(tmp_pat
 
 
 def test_dispatch_due_reminder_notifications_is_idempotent_per_schedule(tmp_path) -> None:
-    repo = SQLiteRepository(str(tmp_path / "notifications.db"))
+    repo = SQLiteAppStore(str(tmp_path / "notifications.db"))
     event = _event()
     repo.save_reminder_event(event)
     schedules = materialize_reminder_notifications(repository=repo, reminder_event=event, reminder_type="medication")

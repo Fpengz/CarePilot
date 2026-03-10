@@ -1,9 +1,10 @@
+"""Module for test api notifications."""
+
 from io import BytesIO
 
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
-
-from apps.api.dietary_api.main import create_app
 
 
 def _login(client: TestClient, email: str, password: str) -> None:

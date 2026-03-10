@@ -1,9 +1,11 @@
+"""Module for test api auth cookie resolution."""
+
 from collections.abc import Generator
 
 import pytest
+from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
-from apps.api.dietary_api.main import create_app
 from dietary_guardian.config.settings import get_settings
 
 
@@ -46,7 +48,7 @@ def test_require_session_accepts_live_session_when_duplicate_cookie_contains_exp
     headers = {"cookie": f"dg_session={old_cookie}; dg_session={live_cookie}"}
     me = probe_client.get("/api/v1/auth/me", headers=headers)
 
-    ttl = int(app.state.ctx.settings.auth_session_ttl_seconds)
+    ttl = int(app.state.ctx.settings.auth.session_ttl_seconds)
     assert signer.unsign(old_cookie, max_age_seconds=ttl) is not None
     assert signer.unsign(live_cookie, max_age_seconds=ttl) is not None
     assert me.status_code == 200

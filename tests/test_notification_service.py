@@ -1,17 +1,19 @@
+"""Tests for notification service."""
+
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from dietary_guardian.config.settings import get_settings
-from dietary_guardian.models.alerting import AlertDeliveryResult, AlertMessage
-from dietary_guardian.models.medication import ReminderEvent
-from dietary_guardian.services.notification_service import (
+from dietary_guardian.domain.alerts.models import AlertDeliveryResult, AlertMessage
+from dietary_guardian.domain.notifications.models import ReminderEvent
+from dietary_guardian.infrastructure.persistence import SQLiteRepository
+from dietary_guardian.application.notifications.alert_dispatch import (
     dispatch_reminder,
     dispatch_reminder_async,
-    trigger_alert,
     send_in_app,
     send_push,
+    trigger_alert,
 )
-from dietary_guardian.services.repository import SQLiteRepository
 
 
 def _event() -> ReminderEvent:
@@ -78,7 +80,7 @@ def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(monkeypa
         )()
 
     monkeypatch.setattr(
-        "dietary_guardian.services.alerting_service.TelegramChannel.send",
+        "dietary_guardian.infrastructure.notifications.channels.telegram.TelegramChannel.send",
         fake_send,
     )
 
@@ -169,7 +171,7 @@ def test_dispatch_reminder_v2_retries_until_success(monkeypatch, tmp_path) -> No
             error=None if success else "push delivery failed",
         )
 
-    monkeypatch.setattr("dietary_guardian.services.alerting_service.PushSink.send", flaky_push_send)
+    monkeypatch.setattr("dietary_guardian.infrastructure.notifications.alert_outbox.PushSink.send", flaky_push_send)
 
     results = dispatch_reminder_async(
         event,
@@ -209,15 +211,15 @@ def test_trigger_alert_drains_all_destinations_across_batches(monkeypatch, tmp_p
         )()
 
     monkeypatch.setattr(
-        "dietary_guardian.services.alerting_service.TelegramChannel.send",
+        "dietary_guardian.infrastructure.notifications.channels.telegram.TelegramChannel.send",
         fake_channel_send,
     )
     monkeypatch.setattr(
-        "dietary_guardian.services.alerting_service.WhatsAppChannel.send",
+        "dietary_guardian.infrastructure.notifications.channels.whatsapp.WhatsAppChannel.send",
         fake_channel_send,
     )
     monkeypatch.setattr(
-        "dietary_guardian.services.alerting_service.WeChatChannel.send",
+        "dietary_guardian.infrastructure.notifications.channels.wechat.WeChatChannel.send",
         fake_channel_send,
     )
 
@@ -245,7 +247,7 @@ def test_dispatch_reminder_v2_handles_sink_exceptions_as_delivery_failures(monke
         del self, message
         raise RuntimeError("push provider timeout")
 
-    monkeypatch.setattr("dietary_guardian.services.alerting_service.PushSink.send", broken_push_send)
+    monkeypatch.setattr("dietary_guardian.infrastructure.notifications.alert_outbox.PushSink.send", broken_push_send)
 
     results = dispatch_reminder_async(
         event,

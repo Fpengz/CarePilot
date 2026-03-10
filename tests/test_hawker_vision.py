@@ -1,105 +1,90 @@
+"""Tests for hawker vision."""
+
 import pytest
 
-from dietary_guardian.agents.hawker_vision import HawkerVisionModule
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.agents.vision import HawkerVisionModule
 from dietary_guardian.config.runtime import LocalModelProfile
+from dietary_guardian.config.settings import get_settings
+from dietary_guardian.domain.meals import MealPerception
 from dietary_guardian.models.inference import InferenceResponse, ProviderMetadata
-from dietary_guardian.models.meal import MealState, Nutrition
+from dietary_guardian.models.meal import ImageInput
 
-def test_safe_fail_fallback():
-    """
-    Test that Tier 3 'Safe-Fail' triggers when confidence < 75%.
-    """
-    module = HawkerVisionModule()
 
-    # Mock a low confidence result
-    low_conf_state = MealState(
-        dish_name="Mee Siam",
-        confidence_score=0.60,  # < 0.75
-        identification_method="AI_Flash",
-        ingredients=[],
-        nutrition=Nutrition(
-            calories=0, carbs_g=0, sugar_g=0, protein_g=0, fat_g=0, sodium_mg=0
-        ),
+@pytest.mark.anyio
+async def test_hawker_vision_returns_bounded_perception_contract() -> None:
+    module = HawkerVisionModule(provider="test")
+
+    result = await module.analyze_dish("laksa with egg")
+
+    assert result.perception is not None
+    assert result.perception.meal_detected is True
+    assert result.perception.items
+    assert result.primary_state.nutrition.calories == 0
+    assert result.enriched_event is None
+
+
+@pytest.mark.anyio
+async def test_analyze_and_record_normalizes_into_enriched_event() -> None:
+    module = HawkerVisionModule(provider="test")
+    image_input = ImageInput(
+        source="upload",
+        filename="laksa.jpg",
+        mime_type="image/jpeg",
+        content=b"abc",
     )
 
-    # Apply fallback logic
-    result_state = module._apply_fallback_logic(low_conf_state)
+    result, record = await module.analyze_and_record(image_input, user_id="u1")
 
-    assert result_state is not low_conf_state
-    assert low_conf_state.identification_method == "AI_Flash"
-    assert result_state.identification_method == "HPB_Fallback"
-    assert result_state.nutrition.sodium_mg == 2660  # From HPB_DATABASE
-    assert "Health Promotion Board" in result_state.suggested_modifications[0]
-
-def test_localization_logic():
-    """
-    Verify the model structure supports localization.
-    """
-    state = MealState(
-        dish_name="Mee Rebus",
-        confidence_score=0.95,
-        identification_method="AI_Flash",
-        ingredients=[],
-        nutrition=Nutrition(
-            calories=570, carbs_g=60, sugar_g=10, protein_g=15, fat_g=20, sodium_mg=2100
-        ),
-    )
-    assert "Mee Rebus" in state.dish_name
-    assert state.localization.variant is None  # Default
-
-
-def test_safe_fail_fallback_matches_normalized_dish_names() -> None:
-    module = HawkerVisionModule()
-    low_conf_state = MealState(
-        dish_name="Mee-Siam (with gravy)",
-        confidence_score=0.61,
-        identification_method="AI_Flash",
-        ingredients=[],
-        nutrition=Nutrition(
-            calories=0, carbs_g=0, sugar_g=0, protein_g=0, fat_g=0, sodium_mg=0
-        ),
-    )
-
-    result_state = module._apply_fallback_logic(low_conf_state)
-
-    assert result_state.identification_method == "HPB_Fallback"
-    assert result_state.nutrition.sodium_mg == 2660
-    assert not any("Dish not found in standard database" in tip for tip in result_state.suggested_modifications)
+    assert result.perception is not None
+    assert result.enriched_event is not None
+    assert result.enriched_event.meal_name == "Laksa"
+    assert result.primary_state.nutrition.calories > 0
+    assert record.enriched_event is not None
+    assert record.meal_perception is not None
+    assert record.analysis_version == "v2"
 
 
 @pytest.mark.anyio
 async def test_clarification_dialogue_for_very_low_confidence(monkeypatch: pytest.MonkeyPatch) -> None:
     module = HawkerVisionModule(provider="test")
 
-    very_low_conf_state = MealState(
-        dish_name="Possibly Laksa",
-        confidence_score=0.30,  # < 0.40, should trigger clarification flow
-        identification_method="AI_Flash",
-        ingredients=[],
-        nutrition=Nutrition(
-            calories=450, carbs_g=50, sugar_g=8, protein_g=15, fat_g=18, sodium_mg=900
-        ),
+    very_low_confidence = MealPerception.model_validate(
+        {
+            "meal_detected": True,
+            "items": [
+                {
+                    "label": "Possibly Laksa",
+                    "candidate_aliases": ["Laksa"],
+                    "portion_estimate": {"amount": 1.0, "unit": "bowl", "confidence": 0.3},
+                    "confidence": 0.3,
+                }
+            ],
+            "uncertainties": ["Blurred broth"],
+            "image_quality": "poor",
+            "confidence_score": 0.30,
+        }
     )
 
     async def fake_infer(*args, **kwargs) -> InferenceResponse:
         del args, kwargs
         return InferenceResponse(
             request_id="req-1",
-            structured_output=very_low_conf_state,
-            confidence=very_low_conf_state.confidence_score,
+            structured_output=very_low_confidence,
+            confidence=very_low_confidence.confidence_score,
             latency_ms=5.0,
             provider_metadata=ProviderMetadata(provider="test", model="test-model", endpoint="default"),
         )
 
     monkeypatch.setattr(module.inference_engine, "infer", fake_infer)
+    monkeypatch.setattr(module, "provider", "gemini")
 
     result = await module.analyze_dish("blurred bowl of noodles")
 
     assert result.needs_manual_review is True
     assert result.primary_state.identification_method == "User_Manual"
     assert result.primary_state.dish_name == "Clarification Required"
-    assert any("clarification" in tip.lower() for tip in result.primary_state.suggested_modifications)
+    assert result.perception is not None
+    assert result.perception.image_quality == "poor"
 
 
 def test_hawker_vision_uses_profile_built_model_for_inference_engine(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -117,8 +102,8 @@ def test_hawker_vision_uses_profile_built_model_for_inference_engine(monkeypatch
             del provider, model_name
             StubEngine.seen_model = model
 
-    monkeypatch.setattr("dietary_guardian.agents.hawker_vision.LLMFactory.from_profile", lambda profile: FakeModel())
-    monkeypatch.setattr("dietary_guardian.agents.hawker_vision.InferenceEngine", StubEngine)
+    monkeypatch.setattr("dietary_guardian.agents.vision.LLMFactory.from_profile", lambda profile: FakeModel())
+    monkeypatch.setattr("dietary_guardian.agents.vision.InferenceEngine", StubEngine)
 
     profile = LocalModelProfile(
         id="custom",
@@ -151,25 +136,29 @@ async def test_hawker_vision_feature_flag_disables_inference_engine_v2(monkeypat
             "Result",
             (),
             {
-                "output": MealState(
-                    dish_name="Mee Rebus",
-                    confidence_score=0.95,
-                    identification_method="AI_Flash",
-                    ingredients=[],
-                    nutrition=Nutrition(
-                        calories=500,
-                        carbs_g=60,
-                        sugar_g=10,
-                        protein_g=20,
-                        fat_g=18,
-                        sodium_mg=900,
-                    ),
+                "output": MealPerception.model_validate(
+                    {
+                        "meal_detected": True,
+                        "items": [
+                            {
+                                "label": "Mee Rebus",
+                                "candidate_aliases": ["Mee Rebus"],
+                                "portion_estimate": {"amount": 1.0, "unit": "bowl", "confidence": 0.9},
+                                "preparation": "soup",
+                                "confidence": 0.95,
+                            }
+                        ],
+                        "uncertainties": [],
+                        "image_quality": "good",
+                        "confidence_score": 0.95,
+                    }
                 )
             },
         )()
 
     monkeypatch.setattr(module.inference_engine, "infer", fail_infer)
     monkeypatch.setattr(module.agent, "run", fake_run)
+    monkeypatch.setattr(module, "provider", "gemini")
 
     result = await module.analyze_dish("mee rebus")
 

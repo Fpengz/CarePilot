@@ -1,6 +1,13 @@
+"""Tests for safety."""
+
 import pytest
-from dietary_guardian.models.meal import MealEvent, Ingredient, Nutrition
-from dietary_guardian.models.user import UserProfile, MedicalCondition, Medication
+
+from dietary_guardian.domain.identity.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
+from dietary_guardian.models.meal import Ingredient, MealEvent, Nutrition
 from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
 
 

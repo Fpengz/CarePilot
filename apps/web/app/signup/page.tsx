@@ -32,7 +32,7 @@ export default function SignupPage() {
         eyebrow="Auth"
         title="Create Account"
         description="Email/password signup creates a member account and signs you in immediately."
-        tags={["signup", "member account", "session bootstrap"]}
+
       />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
       <Card className="grain-overlay relative overflow-hidden">

@@ -1,125 +1,113 @@
 # Developer Guide
 
-Last updated: 2026-03-06  
-See also: [`docs/config-reference.md`](../docs/config-reference.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md)
+See also:
+- `CONTRIBUTING.md`
+- `ARCHITECTURE.md`
+- `docs/config-reference.md`
 
-## 1) Development Environment Setup
+## Setup
 
-### Prerequisites
+Requirements:
 - Python 3.12+
 - Node.js 20+
 - `uv`
 - `pnpm`
-- Docker (recommended for Postgres/Redis smoke)
+- Docker for optional Redis-backed worker smoke paths
 
-### Install Dependencies
+Install:
+
 ```bash
 uv sync
 pnpm install
-```
-
-### Configure Environment
-```bash
 cp .env.example .env
 ```
 
-Use `docs/config-reference.md` for all runtime variables and defaults.
+## Run locally
 
-## 2) Run the System Locally
+Default local stack:
 
-### Standard Dev
 ```bash
 uv run python scripts/dg.py dev
 ```
 
-Optional:
+Useful variants:
+
 ```bash
 uv run python scripts/dg.py dev --no-web
 uv run python scripts/dg.py dev --no-api
 uv run python scripts/dg.py dev --no-scheduler
 ```
 
-### Target-Aligned Local Stack (Postgres + Redis + worker)
+Target-aligned local stack:
+
 ```bash
 uv run python scripts/dg.py infra up
-uv run python scripts/dg.py migrate postgres
-uv run python scripts/dg.py smoke postgres-redis
 ```
 
-### Useful Health/Readiness Checks
-```bash
-uv run python scripts/dg.py readiness http://127.0.0.1:8001
-uv run python scripts/dg.py infra status
-uv run python scripts/dg.py infra logs
-```
+## Repository map
+- `apps/api/dietary_api/`: FastAPI app, routers, API services, schemas
+- `apps/web/`: Next.js app, components, typed API clients, e2e coverage
+- `apps/workers/`: external worker runtime
+- `src/dietary_guardian/domain/`: typed domain contracts
+- `src/dietary_guardian/application/`: use cases, policies, orchestration, ports
+- `src/dietary_guardian/infrastructure/`: persistence and external adapters
+- `src/dietary_guardian/agents/`: bounded model/provider logic
+- `tests/` and `apps/api/tests/`: repository and API tests
 
-## 3) Extend the System
+## Extension patterns
 
-### Add a New API Feature
-1. Add or update schema contracts in `apps/api/dietary_api/schemas/` (domain module + shared model updates).
-2. Implement service logic in `apps/api/dietary_api/services/<feature>.py`.
-3. Map route handler in `apps/api/dietary_api/routers/<feature>.py`.
-4. Register routes if needed in router composition.
-5. Add API tests in `apps/api/tests/`.
-6. Add/extend frontend API client/types in `apps/web/lib/api/*.ts` domain modules and `apps/web/lib/types.ts`.
-   - `apps/web/lib/api.ts` is compatibility-only during the migration window and should not be used for new imports.
-7. Add UI route/component usage under `apps/web/app/*`.
+### Add or change an API feature
+1. Update schema contracts in `apps/api/dietary_api/schemas/` if the API shape changes.
+2. Implement request handling in `apps/api/dietary_api/services/<feature>.py`.
+3. Keep the route in `apps/api/dietary_api/routers/<feature>.py` transport-only.
+4. Add or update API tests in `apps/api/tests/`.
+5. Update typed web client code in `apps/web/lib/api/` and UI consumers in `apps/web/app/`.
 
-### Add or Extend an Agent/Workflow
-1. Define typed model contracts in `src/dietary_guardian/models/`.
-2. Implement or extend agent logic in `src/dietary_guardian/agents/`.
-3. Wire orchestration in workflow/services layer.
-4. Register tools and policy constraints via tool registry/policy services.
-5. Add workflow/API tests for expected timeline and policy behavior.
+### Add or change core behavior
+1. Prefer `src/dietary_guardian/application/` for new use cases and orchestration.
+2. Extend `src/dietary_guardian/domain/` contracts before wiring infrastructure.
+3. Add infrastructure adapters under `src/dietary_guardian/infrastructure/` only after the port or contract is clear.
+4. Keep agents behind typed contracts and out of durable-state ownership.
 
-### Add Persistence or Runtime Infrastructure
-1. Define schema updates in persistence schema modules.
-2. Implement adapter methods in SQLite/Postgres stores.
-3. Wire backend selection in settings/dependency context.
-4. Add migration or script support in `scripts/dg.py` subcommands where needed.
+### Add or change persistence/runtime infrastructure
+1. Update backend-neutral contracts when the app layer should not know the backend.
+2. Implement SQLite behavior in infrastructure persistence and keep external services optional.
+3. Wire backend selection through the existing builder/dependency path.
+4. Extend scripts and readiness behavior only when the operational path changes.
 
-## 4) Testing Workflow
+## Testing workflow
 
-### Recommended Full Gate
+Recommended full gate:
+
 ```bash
 uv run python scripts/dg.py test comprehensive
 ```
 
-### Focused Gates
+Focused gates:
+
 ```bash
 uv run python scripts/dg.py test backend
 uv run python scripts/dg.py test web
 ```
 
-### Test Locations
-- API tests: `apps/api/tests/`
-- Core/unit tests: `tests/`
-- Web e2e: `apps/web/e2e/`
+Direct gates:
 
-## 5) Debugging Workflow
+```bash
+uv run ruff check .
+uv run ty check . --extra-search-path src --output-format concise
+uv run pytest -q
+pnpm web:lint
+pnpm web:typecheck
+pnpm web:build
+```
 
-### Common Failure Surfaces
-- Auth/session and scope mismatch.
-- Provider/env misconfiguration.
-- Postgres/Redis availability in target-aligned flows.
-- Worker scheduler not running when reminder workflows are expected.
-- Tool policy mode differences (`shadow` vs `enforce`).
+## Debugging workflow
+1. Check readiness and environment configuration.
+2. Run the narrowest affected backend or web tests first.
+3. Confirm worker/runtime assumptions if the feature depends on reminders or async processing.
+4. Escalate to the comprehensive gate before finalizing a cross-cutting change.
 
-### Practical Debug Sequence
-1. Check env and readiness endpoint.
-2. Run backend tests for affected feature.
-3. Run web typecheck/build for UI/API integration.
-4. Run e2e for impacted user flow.
-5. Run comprehensive gate before finalizing changes.
-
-## 6) Coding and Contribution Expectations
-- Keep route handlers thin.
-- Keep response/request contracts strongly typed.
-- Favor service-layer orchestration over router-level business logic.
-- Preserve backward compatibility unless explicitly planned.
-- Include tests for every behavior change.
-
-## When to Update This Document
-- CLI command changes or new operational paths.
-- New extension pattern (agent/workflow/persistence).
-- Test gate changes or debug runbook changes.
+## Update this file when
+- setup or local runtime commands change
+- extension patterns change
+- validation gates change materially
