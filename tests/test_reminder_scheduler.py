@@ -6,11 +6,11 @@ import pytest
 
 from dietary_guardian.domain.notifications.models import ReminderEvent
 from dietary_guardian.infrastructure.persistence import SQLiteAppStore
-from dietary_guardian.runtime.schedulers import reminder_scheduler
+from dietary_guardian.infrastructure.schedulers import reminder_scheduler
 from dietary_guardian.application.notifications.reminder_materialization import (
     materialize_reminder_notifications,
 )
-from dietary_guardian.runtime.schedulers.reminder_scheduler import run_reminder_scheduler_once
+from dietary_guardian.infrastructure.schedulers.reminder_scheduler import run_reminder_scheduler_once
 
 
 def test_run_reminder_scheduler_once_dispatches_and_delivers_due_notifications(tmp_path) -> None:

@@ -23,7 +23,7 @@ from dietary_guardian.infrastructure.persistence import (
 )
 from dietary_guardian.infrastructure.tooling.registry import ToolRegistry
 from dietary_guardian.orchestrators import WorkflowCoordinator
-from dietary_guardian.runtime.memory import (
+from dietary_guardian.infrastructure.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,
@@ -102,6 +102,24 @@ class AlertDeps:
 @dataclass(frozen=True)
 class ClinicalCardDeps:
     stores: AppStores
+
+
+@dataclass(frozen=True)
+class AuthContext:
+    """Focused context for session validation — auth routes only."""
+
+    auth_store: AuthStore
+    session_signer: SessionSigner
+    settings: Settings
+
+
+def auth_context(ctx: AppContext) -> AuthContext:
+    """Extract the auth-focused context slice from AppContext."""
+    return AuthContext(
+        auth_store=ctx.auth_store,
+        session_signer=ctx.session_signer,
+        settings=ctx.settings,
+    )
 
 
 def close_app_context(ctx: AppContext) -> None:

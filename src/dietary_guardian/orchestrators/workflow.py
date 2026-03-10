@@ -7,11 +7,11 @@ from dietary_guardian.domain.alerts.models import AlertSeverity
 from dietary_guardian.domain.identity.models import UserProfile
 from dietary_guardian.domain.workflows.models import WorkflowExecutionResult, WorkflowName
 from dietary_guardian.infrastructure.tooling.registry import ToolRegistry
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.models.contracts import AgentHandoff, CaptureEnvelope
 from dietary_guardian.models.meal import VisionResult
 from dietary_guardian.models.tooling import ToolPolicyContext
-from dietary_guardian.runtime.memory import (
+from dietary_guardian.infrastructure.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,

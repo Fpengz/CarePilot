@@ -1,4 +1,9 @@
-"""Runtime dependency factories used by workers and notification entrypoints."""
+"""Runtime dependency factories used by workers and notification entrypoints.
+
+Provides factory functions that construct repository instances backed by the
+configured ``AppStoreBackend``.  Used by background workers and scheduler loops
+that need repository access outside the FastAPI dependency-injection context.
+"""
 
 from __future__ import annotations
 

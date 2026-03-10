@@ -5,7 +5,7 @@ Snapshots are keyed by user ID and replaced on every new report upload.
 """
 
 from dietary_guardian.domain.health.models import ClinicalProfileSnapshot
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 
 logger = get_logger(__name__)
 

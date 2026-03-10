@@ -16,7 +16,7 @@ from dietary_guardian.models.meal import (
     PortionSize,
     VisionResult,
 )
-from dietary_guardian.runtime.memory import (
+from dietary_guardian.infrastructure.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,

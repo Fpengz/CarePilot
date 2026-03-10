@@ -25,7 +25,7 @@ from dietary_guardian.infrastructure.notifications.channels import (
 )
 from dietary_guardian.infrastructure.notifications.channels.base import ChannelResult
 from dietary_guardian.observability import get_logger
-from dietary_guardian.runtime.bootstrap.dependencies import build_alert_repository
+from dietary_guardian.infrastructure.persistence.runtime_bootstrap import build_alert_repository
 
 logger = get_logger(__name__)
 PENDING_ALERT_STATES = {"pending", "processing"}

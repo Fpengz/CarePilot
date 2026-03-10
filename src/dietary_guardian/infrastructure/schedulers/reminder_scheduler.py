@@ -25,7 +25,7 @@ from dietary_guardian.config.settings import get_settings
 from dietary_guardian.infrastructure.notifications.alert_outbox import OutboxWorker
 from dietary_guardian.infrastructure.persistence import AppStoreBackend
 from dietary_guardian.observability import get_logger
-from dietary_guardian.runtime.bootstrap.dependencies import build_reminder_scheduler_repository
+from dietary_guardian.infrastructure.persistence.runtime_bootstrap import build_reminder_scheduler_repository
 
 logger = get_logger(__name__)
 

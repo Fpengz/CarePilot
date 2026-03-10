@@ -4,7 +4,7 @@ from dietary_guardian.domain.identity.models import (
     Medication,
     UserProfile,
 )
-from dietary_guardian.runtime.memory import (
+from dietary_guardian.infrastructure.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,
