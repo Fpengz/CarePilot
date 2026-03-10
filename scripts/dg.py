@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Utility script for dg."""
+"""Developer CLI for the current Dietary Guardian backend, web, and infra workflows.
+
+This script is the canonical entry point for local development tasks in the
+modular monolith: starting the API and web surfaces, bootstrapping Redis-backed
+ephemeral state when needed, running validation suites, and locating generated
+reports. The command set mirrors the current repository layout under `apps/`,
+`src/`, and `reports/` rather than older legacy runtime shapes.
+"""
 
 from __future__ import annotations
 
