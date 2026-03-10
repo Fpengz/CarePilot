@@ -8,11 +8,12 @@ import logfire
 from dietary_guardian.agents.base import AgentContext, AgentResult, BaseAgent
 from dietary_guardian.agents.executor import InferenceEngine
 from dietary_guardian.agents.schemas import DietaryAgentInput
+from dietary_guardian.application.safety.ports import SafetyPort
 from dietary_guardian.config.llm import LLMCapability
 from dietary_guardian.config.settings import get_settings
 from dietary_guardian.domain.identity.models import UserProfile
 from dietary_guardian.llm import LLMFactory
-from dietary_guardian.logging_config import get_logger
+from dietary_guardian.observability import get_logger
 from dietary_guardian.models.inference import InferenceModality, InferenceRequest
 from dietary_guardian.models.meal import MealEvent
 from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
@@ -52,13 +53,18 @@ class DietaryAgent(BaseAgent[DietaryAgentInput, AgentResponse]):
     """Canonical dietary reasoning agent with explicit safety enforcement."""
 
     name = "dietary_agent"
+    input_schema = DietaryAgentInput
+    output_schema = AgentResponse
+
+    def __init__(self, safety_port: SafetyPort | None = None) -> None:
+        self._safety_port = safety_port
 
     async def run(self, input_data: DietaryAgentInput, context: AgentContext) -> AgentResult[AgentResponse]:
         with logfire_api.span("process_meal_request", user_id=input_data.user.id, meal_name=input_data.meal.name):
-            safety_engine = SafetyEngine(input_data.user)
+            safety: SafetyPort = self._safety_port if self._safety_port is not None else SafetyEngine(input_data.user)
             engine = InferenceEngine(provider=get_settings().llm.provider, capability=LLMCapability.DIETARY_REASONING)
             try:
-                warnings = safety_engine.validate_meal(input_data.meal)
+                warnings = safety.validate_meal(input_data.meal)
                 logger.info("dietary_agent_request user_id=%s meal=%s destination=%s request_id=%s", input_data.user.id, input_data.meal.name, engine.health().endpoint, context.request_id)
                 request = InferenceRequest(
                     request_id=context.request_id or f"dietary-{input_data.user.id}-{input_data.meal.timestamp.isoformat()}",
