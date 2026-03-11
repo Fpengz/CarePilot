@@ -2,14 +2,20 @@
 
 All concrete channel adapters (Telegram, WhatsApp, WeChat …) must implement
 ``NotificationChannel`` and return a ``ChannelResult``.
+
+``SinkAdapter`` is the protocol for outbox sink adapters that accept an
+``AlertMessage`` and return an ``AlertDeliveryResult``.
 """
 
 from datetime import datetime
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from pydantic import BaseModel
 
 from dietary_guardian.features.reminders.domain.models import ReminderEvent
+
+if TYPE_CHECKING:
+    from dietary_guardian.features.safety.domain.alerts import AlertDeliveryResult, AlertMessage
 
 
 class ChannelResult(BaseModel):
@@ -31,4 +37,12 @@ class NotificationChannel(Protocol):
     def send(self, reminder_event: ReminderEvent) -> ChannelResult: ...
 
 
-__all__ = ["ChannelResult", "NotificationChannel"]
+class SinkAdapter(Protocol):
+    """Transport adapter protocol for outbox alert delivery."""
+
+    name: str
+
+    def send(self, message: "AlertMessage") -> "AlertDeliveryResult": ...
+
+
+__all__ = ["ChannelResult", "NotificationChannel", "SinkAdapter"]
