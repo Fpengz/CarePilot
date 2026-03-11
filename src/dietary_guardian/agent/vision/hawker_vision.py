@@ -60,7 +60,7 @@ class _LazyMealPerceptionAgent:
             settings = get_settings()
             provider_name = getattr(getattr(self._model, "provider", None), "__class__", type(None)).__name__.lower()
             local_like = "ollama" in provider_name or "openai" in provider_name
-            output_retries = settings.llm.local_output_validation_retries if local_like else settings.llm.cloud_output_validation_retries
+            output_retries = settings.llm.inference.local_output_validation_retries if local_like else settings.llm.inference.cloud_output_validation_retries
             self._agent = Agent(self._model, output_type=MealPerception, system_prompt=self._system_prompt, output_retries=output_retries)
         return self._agent
 
@@ -200,7 +200,7 @@ class HawkerVisionModule:
                 )
                 self._log_response_summary(request_id=request_id, correlation_id=correlation_id, user_id=user_id, source=source, filename=filename, result=clarification, reason="unsupported_modality")
                 return clarification
-            elif get_settings().llm.use_inference_engine_v2:
+            elif get_settings().llm.inference.use_engine_v2:
                 inference = await self.inference_engine.infer(
                     InferenceRequest(
                         request_id=request_id,

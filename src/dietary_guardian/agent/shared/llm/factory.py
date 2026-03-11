@@ -40,8 +40,8 @@ class LLMFactory:
         try:
             settings = get_settings()
             return (
-                float(settings.llm.local_llm_request_timeout_seconds),
-                int(settings.llm.local_llm_transport_max_retries),
+                float(settings.llm.local.request_timeout_seconds),
+                int(settings.llm.local.transport_max_retries),
             )
         except ValidationError:
             timeout_default = str(LLMFactory._settings_default("local_llm_request_timeout_seconds", 1200.0))
@@ -57,8 +57,8 @@ class LLMFactory:
         try:
             settings = get_settings()
             return (
-                float(settings.llm.openai_request_timeout_seconds),
-                int(settings.llm.openai_transport_max_retries),
+                float(settings.llm.openai.request_timeout_seconds),
+                int(settings.llm.openai.transport_max_retries),
             )
         except ValidationError:
             timeout_default = str(LLMFactory._settings_default("openai_request_timeout_seconds", 120.0))
@@ -148,7 +148,7 @@ class LLMFactory:
         api_key = os.getenv(profile.api_key_env) or os.getenv("LOCAL_LLM_API_KEY")
         if not api_key:
             try:
-                api_key = get_settings().llm.local_llm_api_key
+                api_key = get_settings().llm.local.api_key
             except ValidationError:
                 api_key = "ollama"
         provider = LLMFactory._build_local_provider(profile.base_url, api_key)
@@ -199,7 +199,7 @@ class LLMFactory:
             )
         if target_provider == ModelProvider.GEMINI.value:
             api_key = (
-                runtime_settings.llm.effective_google_api_key
+                runtime_settings.llm.gemini.effective_api_key
                 if runtime_settings is not None
                 else (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
             )
@@ -207,7 +207,7 @@ class LLMFactory:
                 provider=ModelProvider.GEMINI.value,
                 model_name=model_name
                 or (
-                    runtime_settings.llm.gemini_model
+                    runtime_settings.llm.gemini.model
                     if runtime_settings is not None
                     else str(LLMFactory._settings_default("gemini_model", "gemini-1.5-flash"))
                 ),
@@ -219,17 +219,17 @@ class LLMFactory:
                 provider=ModelProvider.OPENAI.value,
                 model_name=model_name
                 or (
-                    runtime_settings.llm.openai_model
+                    runtime_settings.llm.openai.model
                     if runtime_settings is not None
                     else str(LLMFactory._settings_default("openai_model", "gpt-4o-mini"))
                 ),
                 capability=capability.value if isinstance(capability, LLMCapability) else capability,
                 base_url=(
-                    str(runtime_settings.llm.openai_base_url)
-                    if runtime_settings is not None and runtime_settings.llm.openai_base_url
+                    runtime_settings.llm.openai.base_url
+                    if runtime_settings is not None and runtime_settings.llm.openai.base_url
                     else os.getenv("OPENAI_BASE_URL")
                 ),
-                api_key=(runtime_settings.llm.openai_api_key if runtime_settings is not None else None)
+                api_key=(runtime_settings.llm.openai.api_key if runtime_settings is not None else None)
                 or os.getenv("OPENAI_API_KEY"),
             )
         if target_provider in (ModelProvider.OLLAMA.value, ModelProvider.VLLM.value):
@@ -237,17 +237,17 @@ class LLMFactory:
                 provider=target_provider,
                 model_name=model_name
                 or (
-                    runtime_settings.llm.local_llm_model
+                    runtime_settings.llm.local.model
                     if runtime_settings is not None
                     else str(LLMFactory._settings_default("local_llm_model", "qwen3-vl:4b"))
                 ),
                 capability=capability.value if isinstance(capability, LLMCapability) else capability,
                 base_url=(
-                    str(runtime_settings.llm.local_llm_base_url)
-                    if runtime_settings is not None and runtime_settings.llm.local_llm_base_url
+                    runtime_settings.llm.local.base_url
+                    if runtime_settings is not None and runtime_settings.llm.local.base_url
                     else os.getenv("LOCAL_LLM_BASE_URL")
                 ),
-                api_key=(runtime_settings.llm.local_llm_api_key if runtime_settings is not None else None)
+                api_key=(runtime_settings.llm.local.api_key if runtime_settings is not None else None)
                 or os.getenv("LOCAL_LLM_API_KEY"),
             )
         if target_provider == ModelProvider.CODEX.value:
@@ -255,7 +255,7 @@ class LLMFactory:
                 provider=ModelProvider.CODEX.value,
                 model_name=model_name
                 or (
-                    runtime_settings.llm.openai_model
+                    runtime_settings.llm.openai.model
                     if runtime_settings is not None
                     else str(LLMFactory._settings_default("openai_model", "gpt-4o-mini"))
                 ),

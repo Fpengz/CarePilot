@@ -58,9 +58,9 @@ class _BaseStrategy:
     def _output_retry_budget(self) -> int:
         settings = get_settings()
         if self.provider_name in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, ModelProvider.CODEX.value}:
-            return settings.llm.cloud_output_validation_retries
+            return settings.llm.inference.cloud_output_validation_retries
         if self.provider_name in {ModelProvider.OLLAMA.value, ModelProvider.VLLM.value}:
-            return settings.llm.local_output_validation_retries
+            return settings.llm.inference.local_output_validation_retries
         return 0
 
     async def run(self, request: InferenceRequest) -> InferenceResponse:
@@ -179,7 +179,7 @@ class InferenceEngine:
             self.strategy = TestStrategy(self.capability, ModelProvider.TEST.value, self.model)
 
     async def infer(self, request: InferenceRequest) -> InferenceResponse:
-        timeout_seconds = get_settings().llm.inference_wall_clock_timeout_seconds
+        timeout_seconds = get_settings().llm.inference.wall_clock_timeout_seconds
         if not self.strategy.supports(request.modality):
             raise ValueError(f"Provider {self.provider} does not support modality {request.modality}")
         return await asyncio.wait_for(self.strategy.run(request), timeout=timeout_seconds)

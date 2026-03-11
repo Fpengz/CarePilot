@@ -2,14 +2,13 @@
 
 from typing import cast
 
-from dietary_guardian.config.runtime import AppConfig, LocalModelProfile
+from dietary_guardian.config.llm import LocalModelProfile, LLMSettings
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.agent.shared.llm import LLMFactory
 
 
 def test_default_local_model_profiles_are_available() -> None:
-    config = AppConfig()
-    profiles = config.local_models.profiles
+    profiles = LLMSettings().local.profiles
 
     assert "ollama_qwen3-vl:4b" in profiles
     assert "vllm_qwen" in profiles

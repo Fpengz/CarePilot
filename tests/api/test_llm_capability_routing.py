@@ -11,7 +11,7 @@ def test_settings_parse_capability_targets_from_env_shape() -> None:
         llm={
             "provider": "openai",
             "openai_api_key": "test-openai-key",
-            "capability_targets": {
+            "capability_map": {
                 "chatbot": {
                     "provider": "vllm",
                     "model": "aisingapore/sealion",
@@ -21,7 +21,7 @@ def test_settings_parse_capability_targets_from_env_shape() -> None:
         },
     )
 
-    target = settings.llm.capability_targets[LLMCapability.CHATBOT.value]
+    target = settings.llm.capability_map[LLMCapability.CHATBOT]
 
     assert target.provider == ModelProvider.VLLM.value
     assert target.model == "aisingapore/sealion"
@@ -34,7 +34,7 @@ def test_factory_uses_capability_specific_target_over_global_provider() -> None:
             "provider": "openai",
             "openai_api_key": "test-openai-key",
             "openai_model": "gpt-4o-mini",
-            "capability_targets": {
+            "capability_map": {
                 "chatbot": {
                     "provider": "vllm",
                     "model": "aisingapore/sealion",
@@ -55,7 +55,7 @@ def test_inference_engine_health_reports_capability_metadata() -> None:
         llm={
             "provider": "openai",
             "openai_api_key": "test-openai-key",
-            "capability_targets": {
+            "capability_map": {
                 "meal_vision": {
                     "provider": "vllm",
                     "model": "vision-local",

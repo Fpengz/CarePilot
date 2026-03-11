@@ -8,7 +8,7 @@ from typing import ClassVar, Literal
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from dietary_guardian.config.llm import LLMCapability, LLMSettings
+from dietary_guardian.config.llm import LLMSettings
 from dietary_guardian.config.runtime import (
     APISettings,
     AuthSettings,
@@ -45,28 +45,15 @@ class AppSettings(BaseModel):
 
     @model_validator(mode="after")
     def normalize_and_validate(self) -> "AppSettings":
-        valid_capabilities = {item.value for item in LLMCapability}
-        invalid_capabilities = sorted(set(self.llm.capability_targets) - valid_capabilities)
-        if invalid_capabilities:
-            joined = ", ".join(invalid_capabilities)
-            raise ValueError(f"LLM_CAPABILITY_TARGETS contains unsupported capability keys: {joined}")
-
-        if self.llm.default_capability not in valid_capabilities:
-            raise ValueError(f"LLM_DEFAULT_CAPABILITY must be one of: {', '.join(sorted(valid_capabilities))}")
+        # Provider credential checks are enforced in LLMSettings._validate_provider_credentials.
+        # Capability key/type checks are enforced by the dict[LLMCapability, ...] annotation.
+        # This validator handles cross-group (multi-section) business rules only.
 
         if self.observability.readiness_fail_on_warnings is None:
             self.observability.readiness_fail_on_warnings = self.app.env in {"staging", "prod"}
         if self.auth.seed_demo_users is None:
             self.auth.seed_demo_users = self.app.env == "dev"
 
-        if self.llm.provider == "gemini" and not (self.llm.gemini_api_key or self.llm.google_api_key):
-            raise ValueError("Gemini provider selected but GEMINI_API_KEY/GOOGLE_API_KEY is not set")
-        if self.llm.provider == "openai" and not self.llm.openai_api_key:
-            raise ValueError("OpenAI provider selected but OPENAI_API_KEY is not set")
-        if self.llm.provider == "codex":
-            raise ValueError("Codex provider routing is reserved but not implemented yet")
-        if self.llm.provider in {"ollama", "vllm"} and not self.llm.local_llm_base_url:
-            raise ValueError("Local provider selected but LOCAL_LLM_BASE_URL is not set")
         if not self.auth.session_secret:
             raise ValueError("SESSION_SECRET must not be empty")
 

@@ -3,7 +3,7 @@
 import pytest
 
 from dietary_guardian.agent.vision import HawkerVisionModule
-from dietary_guardian.config.runtime import LocalModelProfile
+from dietary_guardian.config.llm import LocalModelProfile
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.features.meals.domain import MealPerception
 from dietary_guardian.agent.shared.ai.types import InferenceResponse, ProviderMetadata

@@ -16,7 +16,7 @@ def test_local_provider_defaults_output_validation_retries_to_zero(monkeypatch) 
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
     settings = get_settings()
-    assert settings.llm.local_output_validation_retries == 0
+    assert settings.llm.inference.local_output_validation_retries == 0
     get_settings.cache_clear()
 
 
