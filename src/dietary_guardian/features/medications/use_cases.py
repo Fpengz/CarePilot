@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time, timezone
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from apps.api.dietary_api.deps import AppContext
+if TYPE_CHECKING:
+    from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
     MedicationAdherenceEventCreateRequest,

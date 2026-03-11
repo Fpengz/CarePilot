@@ -1,42 +1,6 @@
 """Package exports for household."""
 
-from .use_cases import (
-    HouseholdAlreadyExistsError,
-    HouseholdForbiddenError,
-    HouseholdInviteInvalidError,
-    HouseholdMembershipConflictError,
-    HouseholdNotFoundError,
-    HouseholdOwnerLeaveForbiddenError,
-    build_care_context,
-    create_household,
-    create_household_for_user,
-    create_household_invite,
-    create_household_invite_for_owner,
-    ensure_household_subject_access,
-    get_current_household,
-    get_current_household_bundle,
-    get_household_care_member_daily_summary,
-    get_household_care_member_profile,
-    household_bundle_response,
-    household_invite_response,
-    household_member_response,
-    household_response,
-    join_household,
-    join_household_by_code,
-    leave_household,
-    leave_household_for_member,
-    list_household_care_member_reminders,
-    list_household_care_members,
-    list_household_members,
-    list_household_members_for_user,
-    map_household_error,
-    remove_household_member,
-    remove_household_member_for_owner,
-    rename_household,
-    rename_household_for_owner,
-    set_active_household,
-    validate_active_household_for_user,
-)
+from __future__ import annotations
 
 __all__ = [
     "HouseholdAlreadyExistsError",
@@ -75,3 +39,11 @@ __all__ = [
     "set_active_household",
     "validate_active_household_for_user",
 ]
+
+
+def __getattr__(name: str) -> object:
+    if name in __all__:
+        from . import use_cases
+
+        return getattr(use_cases, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

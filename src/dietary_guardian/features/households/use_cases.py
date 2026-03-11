@@ -10,28 +10,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal, cast
 
+from dietary_guardian.core.errors import build_api_error
 from dietary_guardian.features.households.policies import (
     HouseholdAccessForbiddenError,
     HouseholdAccessNotFoundError,
     ensure_household_member,
     ensure_household_owner,
 )
-from dietary_guardian.features.profiles.domain.health_profile import (
-    compute_profile_completeness,
-    get_or_create_health_profile,
-)
-
-from .ports import HouseholdStorePort
-
-# ---------------------------------------------------------------------------
-# Deferred imports: these pull in the API layer which depends on this module
-# indirectly.  We import them here so that ruff can resolve the names used in
-# return type annotations.  Python will resolve the actual objects at call time
-# when all modules are already loaded.
-# ---------------------------------------------------------------------------
-from apps.api.dietary_api.deps import AppContext  # noqa: E402
-from apps.api.dietary_api.errors import build_api_error  # noqa: E402
-from apps.api.dietary_api.schemas import (  # noqa: E402
+from dietary_guardian.features.households.schemas import (
     HouseholdActiveUpdateResponse,
     HouseholdBundleResponse,
     HouseholdCareContextResponse,
@@ -47,6 +33,13 @@ from apps.api.dietary_api.schemas import (  # noqa: E402
     HouseholdMembersResponse,
     HouseholdResponse,
 )
+from dietary_guardian.features.meals.deps import MealDeps
+from dietary_guardian.features.profiles.domain.health_profile import (
+    compute_profile_completeness,
+    get_or_create_health_profile,
+)
+
+from .ports import HouseholdContext, HouseholdStorePort
 
 
 class HouseholdAlreadyExistsError(Exception):
@@ -307,7 +300,7 @@ def map_household_error(
 
 def ensure_household_subject_access(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     viewer_user_id: str,
     subject_user_id: str | None = None,
@@ -350,7 +343,7 @@ def build_care_context(
 
 def create_household(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     user_id: str,
     display_name: str,
     name: str,
@@ -378,7 +371,7 @@ def create_household(
 
 def get_current_household(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     user_id: str,
     active_household_id: str | None,
 ) -> HouseholdBundleResponse:
@@ -389,7 +382,7 @@ def get_current_household(
 
 def set_active_household(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     session_id: str,
     user_id: str,
     household_id: str | None,
@@ -415,7 +408,7 @@ def set_active_household(
 
 def list_household_members(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     user_id: str,
 ) -> HouseholdMembersResponse:
@@ -434,7 +427,7 @@ def list_household_members(
 
 def rename_household(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     actor_user_id: str,
     name: str,
@@ -463,7 +456,7 @@ def rename_household(
 
 def create_household_invite(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     user_id: str,
 ) -> HouseholdInviteCreateResponse:
@@ -482,7 +475,7 @@ def create_household_invite(
 
 def join_household(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     code: str,
     user_id: str,
     display_name: str,
@@ -503,7 +496,7 @@ def join_household(
 
 def remove_household_member(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     actor_user_id: str,
     target_user_id: str,
@@ -524,7 +517,7 @@ def remove_household_member(
 
 def leave_household(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     user_id: str,
 ) -> HouseholdLeaveResponse:
@@ -547,7 +540,7 @@ def leave_household(
 
 def list_household_care_members(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     viewer_user_id: str,
 ) -> HouseholdCareMembersResponse:
@@ -567,13 +560,13 @@ def list_household_care_members(
 
 def get_household_care_member_profile(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     viewer_user_id: str,
     subject_user_id: str,
 ) -> HouseholdCareProfileResponse:
     """Read a household member's health profile through caregiver access rules."""
-    from apps.api.dietary_api.services._health_profile_support import to_profile_response
+    from dietary_guardian.features.profiles.use_cases import to_profile_response  # noqa: PLC0415
     ensure_household_subject_access(
         context=context,
         household_id=household_id,
@@ -594,21 +587,21 @@ def get_household_care_member_profile(
 
 def get_household_care_member_daily_summary(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     viewer_user_id: str,
     subject_user_id: str,
     summary_date: Any,
 ) -> HouseholdCareMealSummaryResponse:
     """Read a household member's daily meal summary through caregiver access rules."""
-    from apps.api.dietary_api.deps import MealDeps
-    from apps.api.dietary_api.services.meals import get_daily_summary
     ensure_household_subject_access(
         context=context,
         household_id=household_id,
         viewer_user_id=viewer_user_id,
         subject_user_id=subject_user_id,
     )
+    from dietary_guardian.features.meals.api_service import get_daily_summary
+
     summary = get_daily_summary(
         deps=MealDeps(
             settings=context.settings,
@@ -630,29 +623,27 @@ def get_household_care_member_daily_summary(
 
 def list_household_care_member_reminders(
     *,
-    context: AppContext,
+    context: HouseholdContext,
     household_id: str,
     viewer_user_id: str,
     subject_user_id: str,
 ) -> HouseholdCareReminderListResponse:
     """Read a household member's reminders through caregiver access rules."""
-    from apps.api.dietary_api.services.reminders import list_reminders_for_session
+    from dietary_guardian.features.medications.domain import compute_mcr  # noqa: PLC0415
     ensure_household_subject_access(
         context=context,
         household_id=household_id,
         viewer_user_id=viewer_user_id,
         subject_user_id=subject_user_id,
     )
-    reminder_list = list_reminders_for_session(
-        context=context,
-        user_id=subject_user_id,
-    )
+    events = context.stores.reminders.list_reminder_events(subject_user_id)
+    metrics = compute_mcr(events)
     return HouseholdCareReminderListResponse(
         context=build_care_context(
             household_id=household_id,
             viewer_user_id=viewer_user_id,
             subject_user_id=subject_user_id,
         ),
-        reminders=reminder_list.reminders,
-        metrics=reminder_list.metrics,
+        reminders=events,
+        metrics=metrics,
     )

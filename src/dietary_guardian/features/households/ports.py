@@ -2,6 +2,10 @@
 
 from typing import Any, Protocol
 
+from dietary_guardian.config.app import AppSettings as Settings
+from dietary_guardian.platform.observability.workflows.coordinator import WorkflowCoordinator
+from dietary_guardian.platform.persistence import AppStores
+
 
 class HouseholdStorePort(Protocol):
     def get_household_for_user(self, user_id: str) -> dict[str, Any] | None: ...
@@ -15,3 +19,29 @@ class HouseholdStorePort(Protocol):
         self, *, code: str, user_id: str, display_name: str
     ) -> tuple[dict[str, Any], bool] | None: ...
     def remove_member(self, *, household_id: str, user_id: str) -> bool: ...
+
+
+class AuthStorePort(Protocol):
+    def set_active_household_for_session(
+        self, session_id: str, *, active_household_id: str | None
+    ) -> Any: ...
+
+
+class HouseholdContext(Protocol):
+    """Structural protocol for AppContext used by household use cases."""
+
+    @property
+    def settings(self) -> Settings: ...
+
+    @property
+    def stores(self) -> AppStores: ...
+
+    @property
+    def coordinator(self) -> WorkflowCoordinator: ...
+
+    @property
+    def household_store(self) -> HouseholdStorePort: ...
+
+    @property
+    def auth_store(self) -> AuthStorePort: ...
+

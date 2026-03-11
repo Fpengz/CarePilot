@@ -2,26 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-
 from fastapi import HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from apps.api.dietary_api.observability import render_kv_log
+from dietary_guardian.core.errors import ApiAppError, build_api_error  # noqa: F401
 from dietary_guardian.platform.observability import get_logger
 
 logger = get_logger(__name__)
-
-
-@dataclass(slots=True)
-class ApiAppError(Exception):
-    status_code: int
-    code: str
-    message: str
-    details: dict[str, object] = field(default_factory=dict)
-    headers: dict[str, str] | None = None
 
 
 def api_error_payload(
@@ -147,18 +136,3 @@ async def handle_unhandled_exception(request: Request, exc: Exception) -> JSONRe
         correlation_id=getattr(request.state, "correlation_id", None),
     )
     return JSONResponse(content=body, status_code=500)
-
-
-def build_api_error(
-    *,
-    status_code: int,
-    code: str,
-    message: str,
-    details: dict[str, Any] | None = None,
-) -> ApiAppError:
-    return ApiAppError(
-        status_code=status_code,
-        code=code,
-        message=message,
-        details={str(k): v for k, v in (details or {}).items()},
-    )

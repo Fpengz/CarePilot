@@ -30,6 +30,7 @@ from dietary_guardian.agent.emotion.infra.inprocess_emotion_runtime import InPro
 from dietary_guardian.platform.persistence.household import SQLiteHouseholdStore
 from dietary_guardian.platform.observability.tooling.registry import ToolRegistry
 from dietary_guardian.platform.observability.workflows.coordinator import WorkflowCoordinator
+from dietary_guardian.features.meals.deps import MealDeps  # noqa: F401
 
 from .services.notifications import NotificationReadStateStore
 
@@ -58,13 +59,6 @@ class AppContext:
     household_store: HouseholdStore
     emotion_agent: EmotionAgent
     recommendation_agent: RecommendationAgent
-
-
-@dataclass(frozen=True)
-class MealDeps:
-    settings: Settings
-    stores: AppStores
-    coordinator: WorkflowCoordinator
 
 
 @dataclass(frozen=True)

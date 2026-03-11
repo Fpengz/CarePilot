@@ -31,7 +31,17 @@ from dietary_guardian.features.companion.core.health.emotion import (
     EmotionLabel,
     EmotionRuntimeHealth,
 )
-from dietary_guardian.features.meals.models import NutritionRiskProfile, RawObservationBundle, ValidatedMealEvent
+from dietary_guardian.features.meals.domain.models import NutritionRiskProfile, RawObservationBundle, ValidatedMealEvent
+from dietary_guardian.features.households.schemas import (  # noqa: F401
+    HouseholdCareMealSummaryResponse,
+    HouseholdCareProfileResponse,
+    HouseholdCareReminderListResponse,
+)
+from dietary_guardian.features.meals.schemas import (  # noqa: F401
+    DailyNutritionInsightResponse,
+    DailyNutritionTotalsResponse,
+    MealDailySummaryResponse,
+)
 from dietary_guardian.platform.observability.tooling.domain.models import ToolExecutionResult
 
 from .core import CursorPageResponse, HealthProfileResponseItem, HouseholdCareContextResponse
@@ -50,31 +60,6 @@ class MealRecordsResponse(BaseModel):
     records: list[ValidatedMealEvent]
     page: CursorPageResponse | None = None
 
-
-class DailyNutritionTotalsResponse(BaseModel):
-    calories: float
-    sugar_g: float
-    sodium_mg: float
-    protein_g: float
-    fiber_g: float
-
-
-class DailyNutritionInsightResponse(BaseModel):
-    code: str
-    title: str
-    summary: str
-    actions: list[str] = Field(default_factory=list)
-
-
-class MealDailySummaryResponse(BaseModel):
-    date: str
-    meal_count: int
-    last_logged_at: datetime | None = None
-    consumed: DailyNutritionTotalsResponse
-    targets: DailyNutritionTotalsResponse
-    remaining: DailyNutritionTotalsResponse
-    insights: list[DailyNutritionInsightResponse] = Field(default_factory=list)
-    recommendation_hints: list[str] = Field(default_factory=list)
 
 
 class MealWeeklySummaryDayResponse(BaseModel):
@@ -283,26 +268,6 @@ class MetricTrendResponse(BaseModel):
 class MetricTrendListResponse(BaseModel):
     items: list[MetricTrendResponse] = Field(default_factory=list)
 
-
-class HouseholdCareProfileResponse(BaseModel):
-    context: HouseholdCareContextResponse
-    profile: HealthProfileResponseItem
-
-
-class HouseholdCareMealSummaryResponse(BaseModel):
-    context: HouseholdCareContextResponse
-    summary: MealDailySummaryResponse
-
-
-class HouseholdCareReminderListResponse(BaseModel):
-    context: HouseholdCareContextResponse
-    reminders: list[ReminderEvent] = Field(default_factory=list)
-    metrics: EngagementMetrics = Field(default_factory=lambda: EngagementMetrics(
-        reminders_sent=0,
-        meal_confirmed_yes=0,
-        meal_confirmed_no=0,
-        meal_confirmation_rate=0.0,
-    ))
 
 
 MealAnalyzeResponse.model_rebuild(_types_namespace={"WorkflowResponse": WorkflowResponse})
