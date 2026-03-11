@@ -7,6 +7,18 @@ from dietary_guardian.platform.persistence.contracts import (
     ReminderSchedulerRepository,
 )
 from dietary_guardian.platform.persistence.domain_stores import AppStores, build_app_stores
+from dietary_guardian.platform.persistence.protocols import (
+    AlertRepositoryProtocol,
+    CatalogRepositoryProtocol,
+    ClinicalCardRepositoryProtocol,
+    ClinicalRepositoryProtocol,
+    FoodRepositoryProtocol,
+    MealRepositoryProtocol,
+    MedicationRepositoryProtocol,
+    ProfileRepositoryProtocol,
+    ReminderRepositoryProtocol,
+    WorkflowRepositoryProtocol,
+)
 from dietary_guardian.platform.persistence.runtime_bootstrap import (
     build_alert_repository,
     build_reminder_notification_repository,
@@ -17,12 +29,22 @@ from dietary_guardian.platform.persistence.sqlite_app_store import SQLiteAppStor
 from dietary_guardian.platform.persistence.sqlite_repository import SQLiteRepository
 
 __all__ = [
+    "AlertRepositoryProtocol",
     "AppStoreBackend",
     "AppStores",
+    "CatalogRepositoryProtocol",
+    "ClinicalCardRepositoryProtocol",
+    "ClinicalRepositoryProtocol",
+    "FoodRepositoryProtocol",
+    "MealRepositoryProtocol",
+    "MedicationRepositoryProtocol",
+    "ProfileRepositoryProtocol",
     "ReminderNotificationRepository",
+    "ReminderRepositoryProtocol",
     "ReminderSchedulerRepository",
     "SQLiteAppStore",
     "SQLiteRepository",
+    "WorkflowRepositoryProtocol",
     "build_alert_repository",
     "build_app_store",
     "build_app_stores",
