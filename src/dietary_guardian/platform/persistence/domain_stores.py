@@ -6,11 +6,23 @@ from dataclasses import dataclass
 from typing import Any
 
 from .contracts import AppStoreBackend
+from .protocols import (
+    AlertRepositoryProtocol,
+    CatalogRepositoryProtocol,
+    ClinicalCardRepositoryProtocol,
+    ClinicalRepositoryProtocol,
+    FoodRepositoryProtocol,
+    MealRepositoryProtocol,
+    MedicationRepositoryProtocol,
+    ProfileRepositoryProtocol,
+    ReminderRepositoryProtocol,
+    WorkflowRepositoryProtocol,
+)
 
 
 @dataclass(slots=True)
 class MealStore:
-    _store: Any
+    _store: MealRepositoryProtocol
 
     def save_meal_record(self, record: Any) -> None:
         self._store.save_meal_record(record)
@@ -54,7 +66,7 @@ class MealStore:
 
 @dataclass(slots=True)
 class FoodStore:
-    _store: Any
+    _store: FoodRepositoryProtocol
 
     def list_canonical_foods(self, *, locale: str, slot: str | None = None, limit: int = 100) -> list[Any]:
         return self._store.list_canonical_foods(locale=locale, slot=slot, limit=limit)
@@ -68,7 +80,7 @@ class FoodStore:
 
 @dataclass(slots=True)
 class BiomarkerStore:
-    _store: Any
+    _store: ClinicalRepositoryProtocol
 
     def save_biomarker_readings(self, user_id: str, readings: list[Any]) -> None:
         self._store.save_biomarker_readings(user_id, readings)
@@ -79,7 +91,7 @@ class BiomarkerStore:
 
 @dataclass(slots=True)
 class SymptomStore:
-    _store: Any
+    _store: ClinicalRepositoryProtocol
 
     def save_symptom_checkin(self, checkin: Any) -> Any:
         return self._store.save_symptom_checkin(checkin)
@@ -102,7 +114,7 @@ class SymptomStore:
 
 @dataclass(slots=True)
 class MedicationStore:
-    _store: Any
+    _store: MedicationRepositoryProtocol
 
     def list_medication_regimens(self, user_id: str, *, active_only: bool = False) -> list[Any]:
         return self._store.list_medication_regimens(user_id, active_only=active_only)
@@ -137,7 +149,7 @@ class MedicationStore:
 
 @dataclass(slots=True)
 class ReminderStore:
-    _store: Any
+    _store: ReminderRepositoryProtocol
 
     def save_reminder_event(self, event: Any) -> None:
         self._store.save_reminder_event(event)
@@ -247,7 +259,7 @@ class ReminderStore:
 
 @dataclass(slots=True)
 class ClinicalCardStore:
-    _store: Any
+    _store: ClinicalCardRepositoryProtocol
 
     def save_clinical_card(self, card: Any) -> Any:
         return self._store.save_clinical_card(card)
@@ -261,7 +273,7 @@ class ClinicalCardStore:
 
 @dataclass(slots=True)
 class WorkflowStore:
-    _store: Any
+    _store: WorkflowRepositoryProtocol
 
     def list_tool_role_policies(
         self,
@@ -302,7 +314,7 @@ class WorkflowStore:
 
 @dataclass(slots=True)
 class RecommendationStore:
-    _store: Any
+    _store: CatalogRepositoryProtocol
 
     def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
         self._store.save_recommendation(user_id, payload)
@@ -355,7 +367,7 @@ class RecommendationStore:
 
 @dataclass(slots=True)
 class ProfileStore:
-    _store: Any
+    _store: ProfileRepositoryProtocol
 
     def get_health_profile(self, user_id: str) -> Any | None:
         return self._store.get_health_profile(user_id)
@@ -372,7 +384,7 @@ class ProfileStore:
 
 @dataclass(slots=True)
 class AlertStore:
-    _store: Any
+    _store: AlertRepositoryProtocol
 
     def list_alert_records(self, alert_id: str | None = None) -> list[Any]:
         return self._store.list_alert_records(alert_id)
