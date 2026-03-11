@@ -15,7 +15,7 @@ from fastapi import Request, UploadFile
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
-from apps.api.dietary_api.deps import MealDeps
+from dietary_guardian.features.meals.deps import MealDeps
 from apps.api.dietary_api.errors import build_api_error
 from apps.api.dietary_api.schemas import (
     CursorPageResponse,
@@ -40,7 +40,7 @@ from dietary_guardian.platform.storage.media.ingestion import (
     should_suppress_duplicate_capture,
 )
 from dietary_guardian.platform.storage.media.upload import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
-from dietary_guardian.features.meals.models import (
+from dietary_guardian.features.meals.domain.models import (
     ContextSnapshot,
     DietaryClaim,
     DietaryClaims,
@@ -208,7 +208,7 @@ async def analyze_meal(
     routed_provider = (
         selected_provider
         if selected_provider
-        else (None if deps.settings.llm.capability_targets else deps.settings.llm.provider)
+        else (None if deps.settings.llm.capability_map else deps.settings.llm.provider)
     )
     agent = cast(
         Any,
@@ -234,7 +234,7 @@ async def analyze_meal(
                         correlation_id=capture.correlation_id,
                     ),
                 ),
-                timeout=deps.settings.llm.inference_wall_clock_timeout_seconds,
+                timeout=deps.settings.llm.inference.wall_clock_timeout_seconds,
             )
         else:
             vision_result, meal_record = await asyncio.wait_for(
@@ -244,7 +244,7 @@ async def analyze_meal(
                     request_id=capture.request_id,
                     correlation_id=capture.correlation_id,
                 ),
-                timeout=deps.settings.llm.inference_wall_clock_timeout_seconds,
+                timeout=deps.settings.llm.inference.wall_clock_timeout_seconds,
             )
             result = type(
                 "_LegacyMealAnalysisResult",
@@ -265,7 +265,7 @@ async def analyze_meal(
             status_code=504,
             code="llm.timeout",
             message="meal analysis timed out",
-            details={"timeout_seconds": deps.settings.llm.inference_wall_clock_timeout_seconds},
+            details={"timeout_seconds": deps.settings.llm.inference.wall_clock_timeout_seconds},
         ) from exc
     if result.output is None or result.output.meal_record is None:
         raise build_api_error(

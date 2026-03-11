@@ -15,7 +15,7 @@ from PIL import Image
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.features.meals.domain.models import MealState, Nutrition, VisionResult
 from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
-from dietary_guardian.features.meals.models import NutritionRiskProfile
+from dietary_guardian.features.meals.domain.models import NutritionRiskProfile
 
 
 @pytest.fixture

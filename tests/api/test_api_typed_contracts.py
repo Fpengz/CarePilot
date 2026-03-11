@@ -28,7 +28,7 @@ from dietary_guardian.features.reminders.domain import ReminderEvent
 from dietary_guardian.features.recommendations.domain import RecommendationOutput
 from dietary_guardian.features.companion.core.health.analytics import EngagementMetrics
 from dietary_guardian.core.contracts.agent_envelopes import AgentOutputEnvelope
-from dietary_guardian.features.meals.models import NutritionRiskProfile, RawObservationBundle, ValidatedMealEvent
+from dietary_guardian.features.meals.domain.models import NutritionRiskProfile, RawObservationBundle, ValidatedMealEvent
 
 
 def test_meal_contract_responses_use_typed_models() -> None:

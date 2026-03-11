@@ -15,7 +15,7 @@ from dietary_guardian.features.meals.domain.agent_schemas import DietaryAgentInp
 from dietary_guardian.features.meals.domain.models import MealEvent
 from dietary_guardian.features.profiles.domain.models import UserProfile
 from dietary_guardian.features.safety.domain.engine import SafetyEngine, SafetyViolation
-from dietary_guardian.features.safety.ports import SafetyPort
+from dietary_guardian.features.safety.domain.ports import SafetyPort
 from dietary_guardian.platform.observability import get_logger
 
 logfire.configure(send_to_logfire=False)

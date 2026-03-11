@@ -10,7 +10,7 @@ from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
 from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.meals.models import NutritionRiskProfile
+from dietary_guardian.features.meals.domain.models import NutritionRiskProfile
 
 
 def _reset_settings_cache() -> None:
