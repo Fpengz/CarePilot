@@ -1,11 +1,11 @@
 """API meal service — thin shim.
 
-All logic lives in ``dietary_guardian.application.meals.api_service``.
+Canonical logic lives in ``dietary_guardian.features.meals.service``.
 """
 
 from __future__ import annotations
 
-from dietary_guardian.application.meals.api_service import (  # noqa: F401
+from dietary_guardian.features.meals.service import (  # noqa: F401
     HawkerVisionModule,
     analyze_meal,
     get_daily_summary,

@@ -4,8 +4,8 @@ from typing import Annotated, Any, cast
 
 from fastapi import Cookie, Depends, HTTPException, Request
 
-from dietary_guardian.domain.notifications.models import MedicationRegimen
-from dietary_guardian.domain.tooling import has_scopes
+from dietary_guardian.features.reminders.domain.models import MedicationRegimen
+from dietary_guardian.platform.observability.tooling.domain.authorization import has_scopes
 
 from .deps import AppContext, AuthContext, auth_context
 from .policy import authorize_action, authorize_resource_action

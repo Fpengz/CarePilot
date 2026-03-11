@@ -6,15 +6,15 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.panel import Panel
 
-from dietary_guardian.capabilities.dietary import process_meal_request
+from dietary_guardian.agent.dietary.agent import process_meal_request
 from dietary_guardian.config.app import AppSettings as Settings, get_settings
-from dietary_guardian.domain.identity.models import (
+from dietary_guardian.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.infrastructure.llm import LLMFactory
-from dietary_guardian.domain.meals.models import Ingredient, MealEvent, Nutrition
+from dietary_guardian.agent.shared.llm import LLMFactory
+from dietary_guardian.features.meals.domain.models import Ingredient, MealEvent, Nutrition
 
 console = Console()
 

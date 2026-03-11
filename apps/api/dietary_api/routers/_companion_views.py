@@ -1,8 +1,8 @@
 """Presentation helpers for companion router responses."""
 
-from dietary_guardian.domain.notifications.models import ReminderEvent
-from dietary_guardian.domain.recommendations.models import RecommendationOutput
-from dietary_guardian.domain.health.analytics import EngagementMetrics
+from dietary_guardian.features.reminders.domain.models import ReminderEvent
+from dietary_guardian.features.recommendations.domain.models import RecommendationOutput
+from dietary_guardian.features.companion.core.health.analytics import EngagementMetrics
 
 
 def build_profile_mode_medication_view(profile_mode: str, reminders: list[ReminderEvent]) -> dict[str, int]:

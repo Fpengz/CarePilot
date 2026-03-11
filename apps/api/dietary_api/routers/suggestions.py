@@ -9,7 +9,7 @@ from ..schemas import (
     SuggestionGenerateFromReportResponse,
     SuggestionListResponse,
 )
-from dietary_guardian.application.recommendations.suggestion_session import (
+from dietary_guardian.features.recommendations.service import (
     generate_from_report,
     get_for_session,
     list_for_session,

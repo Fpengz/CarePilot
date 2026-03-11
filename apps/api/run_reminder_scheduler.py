@@ -2,7 +2,7 @@
 
 import asyncio
 
-from dietary_guardian.infrastructure.schedulers.reminder_scheduler import run_reminder_scheduler_loop
+from dietary_guardian.platform.scheduling import run_reminder_scheduler_loop
 
 
 def main() -> None:

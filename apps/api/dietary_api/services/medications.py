@@ -1,12 +1,12 @@
 """API helpers for medication regimens, adherence events, and adherence metrics.
 
 Shim: business logic lives in
-``dietary_guardian.application.medications.use_cases``.
+``dietary_guardian.features.medications.use_cases``.
 """
 
 from __future__ import annotations
 
-from dietary_guardian.application.medications.use_cases import (  # noqa: F401
+from dietary_guardian.features.medications.use_cases import (  # noqa: F401
     adherence_metrics_for_session,
     create_regimen_for_session,
     delete_regimen_for_session,

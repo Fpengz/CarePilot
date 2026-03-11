@@ -12,7 +12,7 @@ from ..schemas import (
     RecommendationSubstitutionRequest,
     RecommendationSubstitutionResponse,
 )
-from dietary_guardian.application.recommendations.use_cases import (
+from dietary_guardian.features.recommendations.service import (
     generate_recommendation_for_session,
     get_daily_agent_for_session,
     get_substitutions_for_session,

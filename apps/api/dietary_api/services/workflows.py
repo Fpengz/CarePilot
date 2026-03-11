@@ -1,7 +1,7 @@
 """Public workflow API service facade.
 
 Thin re-export shim. Most logic lives in
-``dietary_guardian.application.workflows.coordinator``.
+``dietary_guardian.platform.observability.workflows.coordinator``.
 get_workflow / list_workflows re-declared here so get_type_hints() resolves
 WorkflowDeps at runtime (coordinator uses TYPE_CHECKING to avoid a cycle).
 """
@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from apps.api.dietary_api.deps import WorkflowDeps
-from dietary_guardian.application.workflows.coordinator import (  # noqa: F401
+from dietary_guardian.platform.observability.workflows.coordinator import (  # noqa: F401
     compare_runtime_contract_snapshots,
     create_runtime_contract_snapshot,
     create_tool_policy,

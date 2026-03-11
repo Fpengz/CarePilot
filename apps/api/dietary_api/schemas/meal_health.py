@@ -8,60 +8,46 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, EmailStr, Field, RootModel
 
-from dietary_guardian.domain.alerts.models import OutboxState
-from dietary_guardian.domain.health.models import (
+from dietary_guardian.features.safety.domain.alerts.models import OutboxState
+from dietary_guardian.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
 )
-from dietary_guardian.domain.identity.models import (
+from dietary_guardian.features.profiles.domain.models import (
     AccountRole,
     MealScheduleWindow,
     MealSlot,
     ProfileMode,
 )
-from dietary_guardian.domain.notifications.models import ReminderEvent
-from dietary_guardian.domain.recommendations.models import (
+from dietary_guardian.features.reminders.domain.models import ReminderEvent
+from dietary_guardian.features.recommendations.domain.models import (
     InteractionEventType,
     RecommendationOutput,
 )
-from dietary_guardian.domain.health.analytics import EngagementMetrics
-from dietary_guardian.application.contracts.agent_envelopes import AgentOutputEnvelope
-from dietary_guardian.domain.health.emotion import (
+from dietary_guardian.features.companion.core.health.analytics import EngagementMetrics
+from dietary_guardian.core.contracts.agent_envelopes import AgentOutputEnvelope
+from dietary_guardian.features.companion.core.health.emotion import (
     EmotionConfidenceBand,
     EmotionLabel,
     EmotionRuntimeHealth,
 )
-from dietary_guardian.domain.meals.models import VisionResult
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
-from dietary_guardian.domain.tooling.models import ToolExecutionResult
+from dietary_guardian.features.meals.models import NutritionRiskProfile, RawObservationBundle, ValidatedMealEvent
+from dietary_guardian.platform.observability.tooling.domain.models import ToolExecutionResult
 
 from .core import CursorPageResponse, HealthProfileResponseItem, HouseholdCareContextResponse
 from .workflows import WorkflowResponse
 
 
-class MealAnalyzeSummaryResponse(BaseModel):
-    meal_record_id: str
-    meal_name: str
-    confidence: float
-    identification_method: str
-    estimated_calories: float
-    portion_size: str
-    needs_manual_review: bool
-    flags: list[str] = Field(default_factory=list)
-    portion_notes: list[str] = Field(default_factory=list)
-    captured_at: datetime
-
-
 class MealAnalyzeResponse(BaseModel):
-    summary: MealAnalyzeSummaryResponse
-    vision_result: VisionResult
-    meal_record: MealRecognitionRecord
-    output_envelope: AgentOutputEnvelope | None
+    raw_observation: RawObservationBundle
+    validated_event: ValidatedMealEvent
+    nutrition_profile: NutritionRiskProfile
+    output_envelope: AgentOutputEnvelope | None = None
     workflow: "WorkflowResponse"
 
 
 class MealRecordsResponse(BaseModel):
-    records: list[MealRecognitionRecord]
+    records: list[ValidatedMealEvent]
     page: CursorPageResponse | None = None
 
 
@@ -320,4 +306,3 @@ class HouseholdCareReminderListResponse(BaseModel):
 
 
 MealAnalyzeResponse.model_rebuild(_types_namespace={"WorkflowResponse": WorkflowResponse})
-

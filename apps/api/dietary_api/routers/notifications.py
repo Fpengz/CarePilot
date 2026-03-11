@@ -9,7 +9,7 @@ from ..schemas import (
     NotificationMarkAllReadResponse,
     NotificationMarkReadResponse,
 )
-from dietary_guardian.application.notifications.use_cases import (
+from dietary_guardian.features.reminders.notifications.use_cases import (
     list_notifications,
     mark_all_notifications_read,
     mark_notification_read,

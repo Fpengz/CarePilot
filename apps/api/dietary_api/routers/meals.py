@@ -13,7 +13,7 @@ from ..schemas import (
     MealRecordsResponse,
     MealWeeklySummaryResponse,
 )
-from dietary_guardian.application.meals.api_service import (
+from dietary_guardian.features.meals.api_service import (
     analyze_meal,
     get_daily_summary,
     get_weekly_summary,
@@ -29,6 +29,7 @@ async def meal_analyze(
     file: UploadFile = File(...),
     runtime_mode: str = Form("local"),
     provider: str | None = Form(default=None),
+    meal_text: str | None = Form(default=None),
     session: dict[str, object] = Depends(current_session),
 ) -> MealAnalyzeResponse:
     del runtime_mode
@@ -39,6 +40,7 @@ async def meal_analyze(
         session=session,
         file=file,
         provider=provider,
+        meal_text=meal_text,
     )
 
 

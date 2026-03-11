@@ -11,7 +11,7 @@ from ..schemas import (
     EmotionInferenceResponse,
     EmotionTextRequest,
 )
-from dietary_guardian.application.emotion.session import (
+from dietary_guardian.features.companion.engagement.emotion.session import (
     get_emotion_health,
     infer_speech_for_session,
     infer_text_for_session,
@@ -60,4 +60,3 @@ async def emotions_speech(
         request_id=getattr(request.state, "request_id", None),
         correlation_id=getattr(request.state, "correlation_id", None),
     )
-

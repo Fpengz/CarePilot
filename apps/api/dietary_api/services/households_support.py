@@ -2,12 +2,12 @@
 
 .. deprecated::
     Thin re-export shim. All logic lives in
-    ``dietary_guardian.application.household.use_cases``.
+    ``dietary_guardian.features.households.use_cases``.
 """
 
 from __future__ import annotations
 
-from dietary_guardian.application.household.use_cases import (  # noqa: F401
+from dietary_guardian.features.households.use_cases import (  # noqa: F401
     household_bundle_response,
     household_invite_response,
     household_member_response,

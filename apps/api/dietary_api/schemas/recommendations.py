@@ -8,32 +8,32 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, EmailStr, Field, RootModel
 
-from dietary_guardian.domain.alerts.models import OutboxState
-from dietary_guardian.domain.health.models import (
+from dietary_guardian.features.safety.domain.alerts.models import OutboxState
+from dietary_guardian.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
 )
-from dietary_guardian.domain.identity.models import (
+from dietary_guardian.features.profiles.domain.models import (
     AccountRole,
     MealScheduleWindow,
     MealSlot,
     ProfileMode,
 )
-from dietary_guardian.domain.notifications.models import ReminderEvent
-from dietary_guardian.domain.recommendations.models import (
+from dietary_guardian.features.reminders.domain.models import ReminderEvent
+from dietary_guardian.features.recommendations.domain.models import (
     InteractionEventType,
     RecommendationOutput,
 )
-from dietary_guardian.domain.health.analytics import EngagementMetrics
-from dietary_guardian.application.contracts.agent_envelopes import AgentOutputEnvelope
-from dietary_guardian.domain.health.emotion import (
+from dietary_guardian.features.companion.core.health.analytics import EngagementMetrics
+from dietary_guardian.core.contracts.agent_envelopes import AgentOutputEnvelope
+from dietary_guardian.features.companion.core.health.emotion import (
     EmotionConfidenceBand,
     EmotionLabel,
     EmotionRuntimeHealth,
 )
-from dietary_guardian.domain.meals.models import VisionResult
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
-from dietary_guardian.domain.tooling.models import ToolExecutionResult
+from dietary_guardian.features.meals.domain.models import VisionResult
+from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
+from dietary_guardian.platform.observability.tooling.domain.models import ToolExecutionResult
 
 from .core import HealthProfileResponseItem, JsonValue
 from .meal_health import SymptomSummaryResponse

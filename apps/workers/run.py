@@ -6,11 +6,11 @@ import asyncio
 from uuid import uuid4
 
 from apps.api.dietary_api.deps import build_app_context, close_app_context
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.infrastructure.notifications.alert_outbox import OutboxWorker
-from dietary_guardian.infrastructure.observability import get_logger
-from dietary_guardian.infrastructure.schedulers.reminder_scheduler import run_reminder_scheduler_once
 from apps.workers.reminder_worker import run_once as run_sqlite_reminder_worker_once
+from dietary_guardian.config.app import get_settings
+from dietary_guardian.platform.messaging import OutboxWorker
+from dietary_guardian.platform.observability import get_logger
+from dietary_guardian.platform.scheduling import run_reminder_scheduler_once
 
 logger = get_logger(__name__)
 _WORKER_FAILURE_RETRY_SECONDS = 1.0

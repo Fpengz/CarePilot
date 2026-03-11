@@ -2,32 +2,34 @@
 
 from dataclasses import dataclass
 
-from dietary_guardian.capabilities.emotion import EmotionAgent
-from dietary_guardian.capabilities.recommendation import RecommendationAgent
-from dietary_guardian.capabilities.registry import AgentRegistry, build_default_agent_registry
-from dietary_guardian.application.tooling.platform_registry import build_platform_tool_registry
+from dietary_guardian.agent.emotion import EmotionAgent
+from dietary_guardian.agent.recommendation import RecommendationAgent
+from dietary_guardian.agent.shared import AgentRegistry, build_default_agent_registry
+from dietary_guardian.platform.observability.tooling.platform_registry import build_platform_tool_registry
 from dietary_guardian.config.app import AppSettings as Settings, get_settings
-from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SessionSigner, SQLiteAuthStore
-from dietary_guardian.infrastructure.cache import InMemoryCacheStore, RedisCacheStore
-from dietary_guardian.infrastructure.coordination import (
-    InMemoryCoordinationStore,
-    RedisCoordinationStore,
+from dietary_guardian.platform.auth import InMemoryAuthStore, SessionSigner, SQLiteAuthStore
+from dietary_guardian.platform.cache import (
+    ClinicalSnapshotMemoryService,
+    EventTimelineService,
+    InMemoryCacheStore,
+    ProfileMemoryService,
+    RedisCacheStore,
 )
-from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime
-from dietary_guardian.infrastructure.household import SQLiteHouseholdStore
-from dietary_guardian.infrastructure.persistence import (
+from dietary_guardian.platform.persistence import (
     AppStoreBackend,
     AppStores,
     build_app_store,
     build_app_stores,
 )
-from dietary_guardian.infrastructure.tooling.registry import ToolRegistry
-from dietary_guardian.application.workflows import WorkflowCoordinator
-from dietary_guardian.infrastructure.cache import (
-    ClinicalSnapshotMemoryService,
-    EventTimelineService,
-    ProfileMemoryService,
+from dietary_guardian.platform.scheduling.coordination import (
+    InMemoryCoordinationStore,
+    RedisCoordinationStore,
 )
+from dietary_guardian.agent.emotion.infra.config import EmotionRuntimeConfig
+from dietary_guardian.agent.emotion.infra.inprocess_emotion_runtime import InProcessEmotionRuntime
+from dietary_guardian.platform.persistence.household import SQLiteHouseholdStore
+from dietary_guardian.platform.observability.tooling.registry import ToolRegistry
+from dietary_guardian.platform.observability.workflows.coordinator import WorkflowCoordinator
 
 from .services.notifications import NotificationReadStateStore
 

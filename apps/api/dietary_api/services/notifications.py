@@ -1,12 +1,12 @@
 """API helpers for workflow-derived notification feeds and read state.
 
 Shim: business logic lives in
-``dietary_guardian.application.notifications.use_cases``.
+``dietary_guardian.features.reminders.notifications.use_cases``.
 """
 
 from __future__ import annotations
 
-from dietary_guardian.application.notifications.use_cases import (  # noqa: F401
+from dietary_guardian.features.reminders.notifications.use_cases import (  # noqa: F401
     NotificationReadStateStore,
     list_notifications,
     mark_all_notifications_read,

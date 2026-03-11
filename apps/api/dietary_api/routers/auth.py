@@ -5,7 +5,7 @@ from typing import Annotated, Literal, cast
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 
-from dietary_guardian.application.auth.use_cases import (
+from dietary_guardian.platform.auth.use_cases import (
     MIN_PASSWORD_LENGTH,
     DuplicateEmailError,
     InvalidCredentialsError,
@@ -14,7 +14,7 @@ from dietary_guardian.application.auth.use_cases import (
     login_and_create_session,
     signup_member_and_create_session,
 )
-from dietary_guardian.domain.identity.models import AccountRole, ProfileMode
+from dietary_guardian.features.profiles.domain.models import AccountRole, ProfileMode
 
 from ..routes_shared import (
     SESSION_COOKIE,
