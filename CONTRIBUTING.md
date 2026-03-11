@@ -173,8 +173,8 @@ High-risk shared-file areas:
 - `.github/workflows/*`
 - `pyproject.toml`, `package.json`, `pnpm-lock.yaml`
 - `src/dietary_guardian/config/settings.py`
-- `src/dietary_guardian/infrastructure/persistence/*`
-- `src/dietary_guardian/infrastructure/auth/*`
+- `src/dietary_guardian/platform/persistence/*`
+- `src/dietary_guardian/platform/auth/*`
 - `apps/api/dietary_api/policy.py`
 - `apps/api/dietary_api/deps.py`
 
@@ -236,7 +236,7 @@ export async function getDailyInsights(): Promise<DailyInsight[]> {
 ## Architecture Rules for Contributors
 Mandatory rules:
 - routers are HTTP mapping only
-- orchestration belongs in services/use cases
+- orchestration belongs in feature `service.py` entrypoints
 - tools are invoked through typed registries
 - side effects should be decoupled from request-time business logic
 - persistent state transitions must be observable and testable
@@ -311,7 +311,7 @@ Registration should happen in orchestration or registry code, not inside route h
 2. Define the tool output schema.
 3. Define required scopes and allowed environments.
 4. Register the tool in the tool registry.
-5. Implement adapter logic in the infrastructure or service layer.
+5. Implement adapter logic in the platform layer or feature boundary.
 6. Add integration tests for policy, success, and failure semantics.
 
 A tool must:

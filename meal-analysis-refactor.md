@@ -1,5 +1,8 @@
 # AI Dietary Companion: Robust Closed-Loop Multi-Modal Architecture
 
+> **Status**: Implemented in the feature-first architecture (March 12, 2026).  
+> **Note**: This document is retained as the design rationale; refer to `docs/meal-analysis-agents.md` and `ARCHITECTURE.md` for current module paths.
+
 ## 1. Executive Framing
 
 This system should be described as a:

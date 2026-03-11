@@ -1,5 +1,8 @@
 # Feature-First Modular Monolith Big-Bang Refactor
 
+> **Status**: Implemented (March 12, 2026).  
+> **Note**: This design doc is retained for rationale; the canonical reference is `ARCHITECTURE.md`.
+
 ## Goal
 Perform a one-shot cutover to the feature-first modular monolith with a visible companion spine, a bounded AI layer, and a boring platform layer. Remove all legacy layered packages (`application/`, `domain/`, `infrastructure/`, `capabilities/`) with no backward compatibility.
 

@@ -18,21 +18,22 @@ apps/
   workers/    async worker runtime
 src/
   dietary_guardian/
-    application/     use cases and orchestration
-    domain/          typed companion contracts
-    infrastructure/  persistence, auth, evidence, emotion, coordination
-    agents/          bounded model/provider logic
+    core/            tiny shared primitives and base contracts
+    features/        product behavior and service entrypoints
+    agent/           bounded model/provider logic
+    platform/        persistence, auth, scheduling, storage, observability
+    shared/          shared utilities (time, etc.)
 docs/         canonical docs and focused references
 tests/        repository-level tests
 ```
 
 ## Architecture in one view
 - `apps/web` is the main patient and admin interface
-- `apps/api` keeps routers thin and maps HTTP requests into typed use cases
-- `src/dietary_guardian/application` owns companion logic such as case snapshots, personalization, engagement, care plans, clinician digests, impact, and safety
-- `src/dietary_guardian/infrastructure` owns persistence and external integrations
+- `apps/api` keeps routers thin and maps HTTP requests into feature services
+- `src/dietary_guardian/features` owns companion logic such as case snapshots, personalization, engagement, care plans, clinician digests, impact, and safety
+- `src/dietary_guardian/platform` owns persistence and external integrations
 - `apps/workers` runs reminder, outbox, and related async processing
-- agents stay bounded behind typed inputs and outputs; deterministic logic remains the source of truth for durable health state
+- `src/dietary_guardian/agent` stays bounded behind typed inputs and outputs; deterministic logic remains the source of truth for durable health state
 
 ## Quickstart
 

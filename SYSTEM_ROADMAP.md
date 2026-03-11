@@ -13,7 +13,7 @@ Current objective:
 Implemented baseline:
 - FastAPI API with auth, policy, typed contracts, and workflow trace support
 - Next.js frontend with companion-facing routes and typed API integration
-- modular `domain` and `application` backbone for companion workflows
+- feature-first `features/` backbone for companion workflows
 - deterministic evidence and safety boundaries in the companion flow
 - companion APIs for today view, interactions, clinician digest, and impact summary
 - meal analysis with bounded perception and deterministic canonical-food enrichment
@@ -37,13 +37,13 @@ Current hardening emphasis:
 - strengthen runtime topology validation for the SQLite plus optional Redis path
 - improve observability and safety behavior on real request paths before adding more surface area
 - establish `features/`, `agent/`, `platform/`, and `core/` as the canonical backend import surfaces
-- completed architecture refactor: deleted services/, runtime/, and models lazy-export shim; consolidated observability; added SafetyPort and typed agent schema contracts
+- completed architecture refactor: removed legacy layered packages, consolidated observability, and added SafetyPort and typed agent schema contracts
 
 ## Delivered phases
 
 ### Phase 1: Companion backbone
 Delivered:
-- `domain/care` and related application modules for case snapshot, personalization, engagement, care plans, clinician digest, and impact
+- `features/companion/*` modules for case snapshot, personalization, engagement, care plans, clinician digest, and impact
 - typed companion APIs:
   - `GET /api/v1/companion/today`
   - `POST /api/v1/companion/interactions`

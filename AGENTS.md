@@ -35,20 +35,21 @@ Every multi-agent task must define:
 - Transport/API: `apps/api/dietary_api/**`
 - Web UX: `apps/web/**`
 - Worker/runtime: `apps/workers/**`
-- Domain contracts: `src/dietary_guardian/domain/**`
-- Application use cases: `src/dietary_guardian/application/**`
-- Infrastructure adapters: `src/dietary_guardian/infrastructure/**`
+- Core primitives: `src/dietary_guardian/core/**`
+- Feature behavior: `src/dietary_guardian/features/**`
+- Agent capabilities: `src/dietary_guardian/agent/**`
+- Platform adapters: `src/dietary_guardian/platform/**`
 - Documentation: `README.md`, `ARCHITECTURE.md`, `SYSTEM_ROADMAP.md`, `docs/**`
 
 ## Canonical Companion Modules
 Changes that affect patient guidance, clinician summaries, or impact tracking should prefer these modules:
-- `application/case_snapshot`
-- `application/personalization`
-- `application/engagement`
-- `application/care_plans`
-- `application/clinician_digest`
-- `application/impact`
-- `application/interactions`
+- `features/companion/core`
+- `features/companion/personalization`
+- `features/companion/engagement`
+- `features/companion/care_plans`
+- `features/companion/clinician_digest`
+- `features/companion/impact`
+- `features/companion/interactions`
 
 Do not put new business logic primarily in route handlers.
 
@@ -71,8 +72,8 @@ Preferred sequence:
 
 ## High-Risk Files
 - `src/dietary_guardian/config/settings.py`
-- `src/dietary_guardian/infrastructure/persistence/*`
-- `src/dietary_guardian/infrastructure/auth/*`
+- `src/dietary_guardian/platform/persistence/*`
+- `src/dietary_guardian/platform/auth/*`
 - `apps/api/dietary_api/deps.py`
 - `apps/api/dietary_api/policy.py`
 - `apps/workers/run.py`

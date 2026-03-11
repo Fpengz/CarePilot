@@ -59,36 +59,33 @@ Image or text input
 ## Module Map
 
 ### Vision and perception
-- `src/dietary_guardian/agents/vision.py`
+- `src/dietary_guardian/agent/vision/hawker_vision.py`
 
 ### Domain contracts
-- `src/dietary_guardian/domain/meals/models.py`
+- `src/dietary_guardian/features/meals/domain/models.py`
 
 ### Application normalization and enrichment
-- `src/dietary_guardian/application/meals/use_cases.py`
+- `src/dietary_guardian/features/meals/use_cases.py`
 
 ### Provider/runtime integration
-- `src/dietary_guardian/llm/factory.py`
-- `src/dietary_guardian/llm/routing.py`
-- `src/dietary_guardian/agents/executor.py`
+- `src/dietary_guardian/agent/shared/llm/factory.py`
+- `src/dietary_guardian/agent/shared/llm/routing.py`
+- `src/dietary_guardian/agent/shared/ai/engine.py`
 
 ### Canonical food seed, ranking, and loading logic
-- `src/dietary_guardian/services/canonical_food_service.py`
-- `src/dietary_guardian/infrastructure/food/ingestion.py`
+- `src/dietary_guardian/features/recommendations/domain/canonical_food_matching.py`
+- `src/dietary_guardian/platform/persistence/food/ingestion.py`
 
 ### Persistence
-- `src/dietary_guardian/infrastructure/persistence/sqlite_repository.py`
+- `src/dietary_guardian/platform/persistence/sqlite_repository.py`
 
 ### Compatibility helpers for downstream consumers
-- `src/dietary_guardian/services/meal_record_utils.py`
+- `src/dietary_guardian/features/meals/presenter.py`
 
 ### Example downstream consumers
-- `src/dietary_guardian/services/daily_nutrition_service.py`
-- `src/dietary_guardian/services/weekly_nutrition_service.py`
-- `src/dietary_guardian/services/recommendation_service.py`
-- `src/dietary_guardian/services/recommendation_agent_service.py`
-- `src/dietary_guardian/application/case_snapshot/use_cases.py`
-- `src/dietary_guardian/services/metrics_trend_service.py`
+- `src/dietary_guardian/features/meals/api_service.py`
+- `src/dietary_guardian/features/recommendations/use_cases.py`
+- `src/dietary_guardian/features/companion/core/use_cases.py`
 
 ## Core Contracts
 
@@ -155,7 +152,7 @@ Each `NormalizedMealItem` captures:
 - the compatibility `MealState` still exists, but it is now rebuilt from the enriched event and prior perception rather than treated as the primary architecture target
 
 ## What the Deterministic Layer Currently Does
-The application layer in `application/meals/use_cases.py` now handles:
+The feature layer in `features/meals/use_cases.py` now handles:
 - legacy-to-perception conversion when needed
 - ranked canonical food candidate selection
 - portion-unit to gram estimation

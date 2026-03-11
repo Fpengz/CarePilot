@@ -18,7 +18,7 @@ Canonical backend import surfaces:
 - `src/dietary_guardian/platform/` for infrastructure and runtime adapters
 - `src/dietary_guardian/core/` for tiny shared primitives
 
-Legacy layered packages under `application/`, `domain/`, `infrastructure/`, and `capabilities/` remain available as compatibility surfaces while migration continues, but they are no longer the preferred place to start.
+Legacy layered packages under `application/`, `domain/`, `infrastructure/`, and `capabilities/` have been removed. New work should only target the feature-first surfaces described below.
 
 ### Interface layer
 - `apps/web` is the primary user-facing interface
@@ -74,7 +74,6 @@ src/dietary_guardian/features/       product behavior and business entrypoints
 src/dietary_guardian/agent/          bounded model/provider logic
 src/dietary_guardian/platform/       persistence and external adapters
 src/dietary_guardian/core/           tiny shared primitives
-legacy layered packages/             compatibility surfaces during migration
 ```
 
 ## Key architectural rules
@@ -118,8 +117,8 @@ legacy layered packages/             compatibility surfaces during migration
 ## Important implemented subsystems
 - companion orchestration with case snapshot, personalization, engagement, evidence, safety, clinician digest, and impact
 - meal analysis with bounded perception plus deterministic canonical-food normalization
-- canonical agent modules now live under `src/dietary_guardian/agents/`, while shared provider/model integration lives under `src/dietary_guardian/llm/`
-- configuration is being consolidated into focused settings modules with `config/settings.py` as the bootstrap surface and grouped runtime responsibilities beneath `config/`
+- canonical agent modules now live under `src/dietary_guardian/agent/`, while shared provider/model integration lives under `src/dietary_guardian/agent/shared/llm/`
+- configuration is consolidated into focused settings modules with `src/dietary_guardian/config/` as the bootstrap surface
 - recommendation flows with persisted profile and interaction context
 - reminder scheduling and multi-channel delivery with worker support
 - emotion inference behind application and infrastructure boundaries

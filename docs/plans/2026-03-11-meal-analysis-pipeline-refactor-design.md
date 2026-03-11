@@ -1,5 +1,8 @@
 # Meal Analysis Pipeline Refactor (Stages 1–4)
 
+> **Status**: Implemented (March 12, 2026).  
+> **Note**: Use `docs/meal-analysis-agents.md` and `ARCHITECTURE.md` for current module paths.
+
 ## Summary
 Refactor the meal-analysis pipeline into a staged, feature-first flow: multi‑modal perception (vision + dietary claims) → deterministic reconciliation with hybrid arbitration for unresolved conflicts → canonicalization → deterministic nutrition/risk derivation → layered persistence. Replace current meal endpoints with new schemas and write new data into new tables only (drop‑legacy, no backfill).
 
