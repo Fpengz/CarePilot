@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 from datetime import date
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import Request, UploadFile
 from pydantic import BaseModel, Field
@@ -27,7 +27,6 @@ from apps.api.dietary_api.schemas import (
     MealWeeklySummaryResponse,
     WorkflowResponse,
 )
-from dietary_guardian.agent.meal_analysis import MealAnalysisAgent
 from dietary_guardian.agent.shared import AgentContext
 from dietary_guardian.agent.shared.llm import LLMFactory
 from dietary_guardian.features.meals.domain import MealPerception, MealPortionEstimate, PerceivedMealItem
@@ -51,8 +50,8 @@ from dietary_guardian.features.meals.models import (
 )
 from dietary_guardian.shared.time import local_date_for
 
-HawkerVisionModule = MealAnalysisAgent
-
+if TYPE_CHECKING:
+    from dietary_guardian.agent.vision.hawker_vision import HawkerVisionModule as HawkerVisionModuleType
 
 class _ArbitrationDecision(BaseModel):
     chosen_label: str
@@ -60,7 +59,10 @@ class _ArbitrationDecision(BaseModel):
     rationale: str | None = None
 
 
-def _build_hawker_vision_module(*, provider: str | None, food_store: Any) -> MealAnalysisAgent:
+def _build_hawker_vision_module(*, provider: str | None, food_store: Any) -> "HawkerVisionModuleType":
+    from dietary_guardian.agent.vision import hawker_vision  # noqa: PLC0415
+
+    HawkerVisionModule = cast("type[HawkerVisionModuleType]", hawker_vision.HawkerVisionModule)
     params = inspect.signature(HawkerVisionModule).parameters
     if "food_store" in params:
         return HawkerVisionModule(provider=provider, food_store=food_store)
@@ -208,9 +210,12 @@ async def analyze_meal(
         if selected_provider
         else (None if deps.settings.llm.capability_targets else deps.settings.llm.provider)
     )
-    agent = _build_hawker_vision_module(
-        provider=routed_provider,
-        food_store=deps.stores.foods,
+    agent = cast(
+        Any,
+        _build_hawker_vision_module(
+            provider=routed_provider,
+            food_store=deps.stores.foods,
+        ),
     )
     try:
         if hasattr(agent, "run"):
@@ -292,7 +297,7 @@ async def analyze_meal(
     )
     raw_observation = RawObservationBundle(
         user_id=user_profile.id,
-        source=str(image_input.source),
+        source=image_input.source,
         vision_result=vision_result,
         dietary_claims=claims,
         context=_context_snapshot(session=session),

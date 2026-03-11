@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from dietary_guardian.features.companion.core.service import (  # noqa: F401
+    build_companion_today_bundle as _build_companion_today_bundle,
+    run_companion_interaction as _run_companion_interaction,
+)
 from apps.api.dietary_api.services.companion_context import (  # noqa: F401
     get_clinician_digest,
     get_companion_today,
