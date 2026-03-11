@@ -64,9 +64,9 @@ Do not put new business logic primarily in route handlers.
 New data sources should integrate through the case snapshot and personalization layers.
 
 Preferred sequence:
-1. define or extend domain contracts
-2. add infrastructure adapter or ingestion service
-3. expose the signal in `CaseSnapshot`
+1. define or extend feature/domain contracts
+2. add platform adapter or ingestion service
+3. expose the signal in `CaseSnapshot` (features/companion/core)
 4. consume it in personalization, engagement, digest, or impact logic
 5. add validation and docs
 

@@ -26,11 +26,11 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
-from agents.search_agent import SearchAgent
-from routes.base import RouteResult
-from routes.drug_route import DrugRoute
-from routes.food_route import FoodRoute
-from routes.code_route import CodeRoute
+from dietary_guardian.agent.chat.search import SearchAgent
+from dietary_guardian.agent.chat.routes_base import RouteResult
+from dietary_guardian.agent.chat.drug_route import DrugRoute
+from dietary_guardian.agent.chat.food_route import FoodRoute
+from dietary_guardian.agent.chat.code_route import CodeRoute
 
 load_dotenv()
 

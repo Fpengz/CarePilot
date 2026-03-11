@@ -5,7 +5,7 @@ Low-level DuckDuckGo search wrapper.
 
 Provides a single `search()` primitive used by the route handlers.
 Routing decisions (drug vs food vs general) are made by the LLM in
-routes/router.py — this module has no opinion on what the query is about.
+chat/router.py — this module has no opinion on what the query is about.
 """
 
 from __future__ import annotations

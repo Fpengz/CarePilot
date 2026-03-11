@@ -16,9 +16,9 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
-from agents.search_agent import SearchAgent, SearchResult
-from ingestion.foodinfo_ingest import FoodInfoRetriever
-from routes.base import BaseRoute, RouteResult
+from dietary_guardian.agent.chat.search import SearchAgent, SearchResult
+from dietary_guardian.agent.chat.routes_base import BaseRoute, RouteResult
+from dietary_guardian.platform.persistence.food.local_retriever import FoodInfoRetriever
 
 load_dotenv()
 

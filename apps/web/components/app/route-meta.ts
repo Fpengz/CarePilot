@@ -9,6 +9,7 @@ import {
   HousePlus,
   LineChart,
   LogIn,
+  MessageCircle,
   Pill,
   UserPlus,
   Salad,
@@ -75,6 +76,18 @@ export const ROUTE_META: RouteMeta[] = [
     sidebarOrder: 1,
   },
   {
+    href: "/chat",
+    label: "Chat",
+    pageTitle: "Companion Chat",
+    breadcrumbLabel: "Chat",
+    group: "main",
+    icon: MessageCircle,
+    showInSidebar: true,
+    mobileTab: true,
+    sidebarSection: "daily",
+    sidebarOrder: 2,
+  },
+  {
     href: "/dashboard",
     label: "Dashboard",
     pageTitle: "Dashboard",
@@ -84,7 +97,7 @@ export const ROUTE_META: RouteMeta[] = [
     showInSidebar: true,
     mobileTab: true,
     sidebarSection: "daily",
-    sidebarOrder: 2,
+    sidebarOrder: 3,
   },
   {
     href: "/meals",
@@ -96,7 +109,7 @@ export const ROUTE_META: RouteMeta[] = [
     showInSidebar: true,
     mobileTab: true,
     sidebarSection: "daily",
-    sidebarOrder: 3,
+    sidebarOrder: 4,
   },
   {
     href: "/suggestions",
@@ -130,7 +143,7 @@ export const ROUTE_META: RouteMeta[] = [
     showInSidebar: true,
     mobileTab: true,
     sidebarSection: "daily",
-    sidebarOrder: 4,
+    sidebarOrder: 5,
   },
   {
     href: "/medications",

@@ -18,10 +18,10 @@ from typing import AsyncIterator, TYPE_CHECKING
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from agents.memory_manager import MemoryManager
+from dietary_guardian.agent.chat.memory import MemoryManager
 
 if TYPE_CHECKING:
-    from routes.router import QueryRouter
+    from dietary_guardian.agent.chat.router import QueryRouter
 
 load_dotenv()
 
@@ -115,7 +115,7 @@ class ChatAgent:
         """Run the synchronous router in a thread pool (non-blocking)."""
         if self.router is None:
             return None
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, self.router.route, user_message)
         return result.context
 

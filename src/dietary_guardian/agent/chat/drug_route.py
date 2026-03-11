@@ -16,8 +16,8 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
-from agents.search_agent import SearchAgent, SearchResult
-from routes.base import BaseRoute, RouteResult
+from dietary_guardian.agent.chat.search import SearchAgent, SearchResult
+from dietary_guardian.agent.chat.routes_base import BaseRoute, RouteResult
 
 load_dotenv()
 

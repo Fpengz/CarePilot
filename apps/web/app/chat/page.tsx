@@ -1,7 +1,8 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/backend";
 
 type Message = {
   role: "user" | "assistant";
@@ -35,15 +36,13 @@ export default function ChatPage() {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Load history on mount
   useEffect(() => {
-    fetch(`${API_BASE}/api/chat/history`)
+    fetch(`${API_BASE}/api/v1/chat/history`)
       .then((r) => r.json())
       .then((data) => setMessages(data.messages ?? []))
       .catch(console.error);
   }, []);
 
-  // Auto-scroll whenever messages change
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -54,7 +53,6 @@ export default function ChatPage() {
 
     setInput("");
     setLoading(true);
-    // Append user bubble + empty assistant slot
     setMessages((prev) => [
       ...prev,
       { role: "user", content: message },
@@ -62,7 +60,7 @@ export default function ChatPage() {
     ]);
 
     try {
-      const response = await fetch(`${API_BASE}/api/chat`, {
+      const response = await fetch(`${API_BASE}/api/v1/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
@@ -82,7 +80,6 @@ export default function ChatPage() {
           try {
             const data = JSON.parse(line.slice(6));
             if (data.emotion) {
-              // Attach detected emotion to the most recent user bubble
               setMessages((prev) => {
                 const msgs = [...prev];
                 const userIdx = msgs.length - 2;
@@ -106,7 +103,7 @@ export default function ChatPage() {
               });
             }
           } catch {
-            /* incomplete chunk — skip */
+            // ignore incomplete chunk
           }
         }
       }
@@ -138,11 +135,10 @@ export default function ChatPage() {
   };
 
   const clearHistory = async () => {
-    await fetch(`${API_BASE}/api/chat/history`, { method: "DELETE" });
+    await fetch(`${API_BASE}/api/v1/chat/history`, { method: "DELETE" });
     setMessages([]);
   };
 
-  // ── Audio recording ──────────────────────────────────────────────────
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -156,10 +152,7 @@ export default function ChatPage() {
       setIsRecording(true);
       setRecordingMs(0);
       setShowAudio(true);
-      timerRef.current = setInterval(
-        () => setRecordingMs((ms) => ms + 100),
-        100,
-      );
+      timerRef.current = setInterval(() => setRecordingMs((ms) => ms + 100), 100);
     } catch {
       alert("Microphone access denied.");
       setShowAudio(false);
@@ -194,7 +187,6 @@ export default function ChatPage() {
     form.append("audio", blob, `recording.${ext}`);
     form.append("backend_name", "groq");
 
-    // Placeholder assistant bubble
     setMessages((prev) => [
       ...prev,
       { role: "user", content: "🎤 (audio)" },
@@ -202,7 +194,7 @@ export default function ChatPage() {
     ]);
 
     try {
-      const response = await fetch(`${API_BASE}/api/chat/audio`, {
+      const response = await fetch(`${API_BASE}/api/v1/chat/audio`, {
         method: "POST",
         body: form,
       });
@@ -218,7 +210,6 @@ export default function ChatPage() {
           try {
             const data = JSON.parse(line.slice(6));
             if (data.transcribed) {
-              // Replace the placeholder user bubble with the actual transcription
               setMessages((prev) => {
                 const msgs = [...prev];
                 msgs[msgs.length - 2] = {
@@ -230,7 +221,6 @@ export default function ChatPage() {
               });
             }
             if (data.emotion) {
-              // Attach detected emotion to the user bubble
               setMessages((prev) => {
                 const msgs = [...prev];
                 const userIdx = msgs.length - 2;
@@ -254,7 +244,7 @@ export default function ChatPage() {
               });
             }
           } catch {
-            /* skip */
+            // skip
           }
         }
       }
@@ -279,7 +269,6 @@ export default function ChatPage() {
 
   return (
     <div className="max-w-3xl mx-auto w-full flex flex-col flex-1 px-4 pb-4 h-full">
-      {/* Header */}
       <div className="flex items-center justify-between py-4">
         <h1 className="text-2xl font-bold text-gray-800">Chat with SEA-LION</h1>
         <button
@@ -290,7 +279,6 @@ export default function ChatPage() {
         </button>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-3 pb-4 min-h-0">
         {messages.length === 0 && (
           <p className="text-gray-400 text-sm text-center mt-16">
@@ -336,27 +324,18 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Backdrop to close menu on outside click */}
       {menuOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setMenuOpen(false)}
-        />
+        <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
       )}
 
-      {/* Input area */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3 flex flex-col gap-2 shrink-0">
-        {/* Audio recording panel */}
         {showAudio && isRecording && (
           <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse inline-block" />
-            <span className="text-sm text-red-600 font-mono">
-              {fmtTime(recordingMs)}
-            </span>
+            <span className="text-sm text-red-600 font-mono">{fmtTime(recordingMs)}</span>
             <span className="text-xs text-red-500 flex-1">Recording…</span>
             <button
               onClick={() => {
-                // Cancel: stop tracks without sending
                 const mr = mediaRecRef.current;
                 if (mr) {
                   if (timerRef.current) clearInterval(timerRef.current);
@@ -391,7 +370,6 @@ export default function ChatPage() {
           className="w-full resize-none border-none outline-none text-sm text-gray-800 placeholder-gray-400"
         />
         <div className="flex items-center gap-2">
-          {/* Plus button with floating popup */}
           <div className="relative z-50">
             <button
               onClick={() => setMenuOpen((v) => !v)}

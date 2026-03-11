@@ -75,6 +75,14 @@ Deployment guardrails:
 - `LOCAL_LLM_REQUEST_TIMEOUT_SECONDS`
 - `LOCAL_LLM_TRANSPORT_MAX_RETRIES`
 
+## Chat Companion (SEA-LION stack)
+- `SEALION_API` — API key for SEA-LION OpenAI-compatible endpoint
+- `SEALION_BASE_URL` (default: `https://api.sea-lion.ai/v1`)
+- `CHAT_MODEL_ID` (default: `aisingapore/Gemma-SEA-LION-v4-27B-IT`)
+- `REASONING_MODEL_ID` (default: `aisingapore/Llama-SEA-LION-v3.5-70B-R`)
+- `GROQ_API_KEY` — Whisper transcription for audio chat
+- `E2B_API_KEY` — sandboxed Python execution for dashboard trend calculations
+
 ## Image Processing
 - `IMAGE_DOWNSCALE_ENABLED` (default: `false`)
 - `IMAGE_MAX_SIDE_PX` (default: `1024`)

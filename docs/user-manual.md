@@ -1,11 +1,12 @@
 # User Manual
 
-Last updated: 2026-03-06  
+Last updated: 2026-03-12  
 Audience: end users and technical operators/contributors
 
 ## System Capabilities
 - Health profile setup and guided onboarding.
 - Meal logging and daily/weekly nutrition summaries.
+- Companion chat with emotion-aware responses and audio transcription.
 - Recommendation generation and substitution guidance.
 - Medication regimen tracking and adherence logging.
 - Reminder generation and notification delivery.
@@ -95,3 +96,8 @@ Use built-in local demo credentials:
 - New user-visible capabilities/routes.
 - Changes to key task flows.
 - Changes to admin/operator workflows.
+### 6) Use Companion Chat and Track Metrics
+1. Open `/chat`.
+2. Ask a question or record audio to get a streamed response.
+3. Use `[TRACK]` to log health metrics (weight, blood pressure, glucose, etc.).
+4. Review `/dashboard` for charted `[TRACK]` entries and trends.

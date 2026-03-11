@@ -15,14 +15,14 @@ from e2b_code_interpreter import Sandbox
 
 load_dotenv()
 
-# E2B SDK reads E2B_API_KEY from the environment automatically.
-# Ensure it is present before any Sandbox is created.
-_api_key = os.environ.get("E2B_API_KEY", "")
-if not _api_key:
-    raise EnvironmentError(
-        "E2B_API_KEY is not set. "
-        "Get a free key at https://e2b.dev and add it to your .env file."
-    )
+
+def _require_api_key() -> None:
+    api_key = os.environ.get("E2B_API_KEY", "")
+    if not api_key:
+        raise EnvironmentError(
+            "E2B_API_KEY is not set. "
+            "Get a free key at https://e2b.dev and add it to your .env file."
+        )
 
 
 class CodeAgent:
@@ -38,6 +38,7 @@ class CodeAgent:
         Uses Sandbox.create() (the non-deprecated API) and always kills the
         sandbox on completion.
         """
+        _require_api_key()
         sandbox = None
         try:
             sandbox = Sandbox.create(timeout=timeout)

@@ -3,7 +3,7 @@ agents/memory_manager.py
 ------------------------
 Manages long-term and short-term conversation memory for ChatAgent.
 
-Long-term  : SQLite — every message persisted (vectorstore/chat_memory.db)
+Long-term  : SQLite — every message persisted (data/runtime/chat_memory.db)
 Short-term : In-memory list — latest SHORT_TERM_SIZE messages for LLM prompt
 Summary    : Rolling summary of all messages before the short-term window,
              stored in SQLite and updated every time SHORT_TERM_SIZE new
@@ -40,8 +40,8 @@ if TYPE_CHECKING:
 SHORT_TERM_SIZE = 3          # messages kept in the prompt window
 SUMMARIZE_EVERY = 3          # trigger summarisation after N new out-of-window msgs
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH  = BASE_DIR / "vectorstore" / "chat_memory.db"
+BASE_DIR = Path(__file__).resolve().parents[4]
+DB_PATH  = BASE_DIR / "data" / "runtime" / "chat_memory.db"
 
 _SUMMARY_PROMPT = """\
 You are a conversation summarizer. Given the previous rolling summary and a \
@@ -77,7 +77,7 @@ class MemoryManager:
         self._model_id    = model_id
         self._db_path     = db_path
 
-        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
 
         # Load persisted state

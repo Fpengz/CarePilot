@@ -53,8 +53,8 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH  = BASE_DIR / "vectorstore" / "chat_memory.db"
+BASE_DIR = Path(__file__).resolve().parents[4]
+DB_PATH  = BASE_DIR / "data" / "runtime" / "chat_memory.db"
 
 _PARSE_PROMPT = """\
 The user sent a health-tracking message. Extract every numeric health metric \
@@ -102,7 +102,7 @@ class HealthTracker:
         self._client     = client
         self._model_id   = model_id
         self._db_path    = db_path
-        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
         print(f"[HealthTracker] Initialised — session={session_id!r}")
 

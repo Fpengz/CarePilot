@@ -18,8 +18,8 @@ from dotenv import load_dotenv
 
 import re
 
-from agents.code_agent import CodeAgent
-from routes.base import BaseRoute, RouteResult
+from dietary_guardian.agent.chat.code import CodeAgent
+from dietary_guardian.agent.chat.routes_base import BaseRoute, RouteResult
 
 load_dotenv()
 

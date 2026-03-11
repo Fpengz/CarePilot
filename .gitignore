@@ -67,6 +67,8 @@ apps/web/.env
 
 # Runtime data
 vectorstore/
+data/runtime/
+data/vectorstore/
 
 # Generated codebase index files
 CODEBASE_INDEX.md

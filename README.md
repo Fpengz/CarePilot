@@ -9,14 +9,14 @@ Dietary Guardian SG is an AI health companion for chronic-condition support outs
 - generates clinician digests and impact summaries from the same underlying case state
 - supports Singapore-local meal reasoning with deterministic canonical-food normalization
 
-## Imported Healthcare-Agent capabilities (pending refactor)
-- streaming chat with audio transcription
-- emotion detection and empathy context injection
-- health tracking via `[TRACK]` parsing + chart data
-- dashboard metrics views and trend computation
-- medication schedule management
-- RAG routing for drug/food/general queries
-- E2B code sandbox for safe calculations
+## Companion chat + dashboard (refactored)
+- streaming chat with audio transcription and emotion context injection
+- `[TRACK]` parsing with health-metric chart data and trend computation
+- RAG routing for drug/food/general queries and local Singapore food retrieval
+- E2B sandboxed calculations for dashboard trends
+Endpoint surface:
+- `/api/v1/chat` + `/api/v1/chat/audio` + `/api/v1/chat/history`
+- `/api/v1/dashboard/entries` + `/api/v1/dashboard/chart-data` + `/api/v1/dashboard/trend`
 
 ## Repository shape
 
@@ -43,6 +43,7 @@ tests/        repository-level tests
 - `src/dietary_guardian/platform` owns persistence and external integrations
 - `apps/workers` runs reminder, outbox, and related async processing
 - `src/dietary_guardian/agent` stays bounded behind typed inputs and outputs; deterministic logic remains the source of truth for durable health state
+- chat-specific agents live under `src/dietary_guardian/agent/chat/`
 
 ## Quickstart
 

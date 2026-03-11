@@ -44,6 +44,7 @@ Legacy layered packages under `application/`, `domain/`, `infrastructure/`, and 
 ### Agent layer
 - `src/dietary_guardian/agent` contains bounded model/provider logic
 - agents help with bounded reasoning, but they do not own durable state or bypass deterministic safety
+- chat-specific agent wiring (routing, memory, emotion, audio, tracking) lives under `src/dietary_guardian/agent/chat/`
 
 ### Platform layer
 - `src/dietary_guardian/platform` owns persistence, auth, messaging, scheduling, storage, observability, and cache adapters
@@ -108,6 +109,7 @@ src/dietary_guardian/core/           tiny shared primitives
 - SQLite for durable storage
 - optional in-memory ephemeral services
 - API and worker can share the same local app store
+- chat memory and local vector stores persist under `data/runtime/` and `data/vectorstore/`
 
 ### Target-aligned local and production path
 - SQLite for durable state during the hackathon branch
@@ -122,6 +124,7 @@ src/dietary_guardian/core/           tiny shared primitives
 - recommendation flows with persisted profile and interaction context
 - reminder scheduling and multi-channel delivery with worker support
 - emotion inference behind application and infrastructure boundaries
+- chat pipeline with SSE streaming, audio transcription, emotion context, and `[TRACK]` metric parsing
 - workflow traces, runtime contracts, and policy-governed tool access
 
 ## Scale-later direction
