@@ -1,0 +1,158 @@
+{
+  "emotion_detection": {
+    "description": "多语言情绪关键词和回应模板，用于检测患者情绪变化并主动提供心理支持。供林美彤的情绪Tool使用。",
+    "negative_emotion_keywords": {
+      "mandarin": {
+        "frustration": ["累了", "烦死了", "受不了", "烦", "厌倦", "够了"],
+        "hopelessness": ["没用", "放弃", "没有希望", "治不好", "不想治了", "算了"],
+        "sadness": ["不开心", "难过", "想哭", "伤心", "寂寞", "孤独"],
+        "anxiety": ["害怕", "焦虑", "担心", "紧张", "不安", "睡不着", "失眠"],
+        "medication_fatigue": ["不想吃药", "吃药没用", "药太多了", "吃不下", "忘了吃药"],
+        "pain": ["痛", "疼", "不舒服", "难受", "头晕", "头痛"],
+        "stress": ["压力大", "太累了", "做不到", "太难了", "坚持不了"],
+        "self_blame": ["都是我的错", "我不好", "管不住嘴", "又吃多了", "又忘了"]
+      },
+      "english": {
+        "frustration": ["tired of this", "fed up", "can't take it", "frustrated", "annoying", "had enough"],
+        "hopelessness": ["hopeless", "useless", "give up", "no point", "won't get better", "why bother"],
+        "sadness": ["sad", "unhappy", "depressed", "lonely", "miss", "crying"],
+        "anxiety": ["scared", "worried", "anxious", "nervous", "can't sleep", "insomnia", "fear"],
+        "medication_fatigue": ["don't want to take medicine", "pills don't work", "too many pills", "forgot medicine"],
+        "pain": ["pain", "hurts", "uncomfortable", "dizzy", "headache", "unwell"],
+        "stress": ["stressed", "overwhelmed", "too much", "can't cope", "exhausted"],
+        "self_blame": ["my fault", "I failed", "couldn't control", "ate too much", "forgot again"]
+      },
+      "singlish": {
+        "frustration": ["sian", "sian half", "bo liao", "cannot tahan", "very shag"],
+        "hopelessness": ["no hope lah", "give up liao", "no use one", "die die also no use"],
+        "sadness": ["damn sad", "so sad sia", "heart pain"],
+        "anxiety": ["scared leh", "worry sia", "cannot sleep leh", "stress sia"],
+        "general_negative": ["jialat", "no mood", "gg", "die liao", "cmi", "walao"]
+      },
+      "malay": {
+        "frustration": ["penat", "bosan", "tak tahan", "fed up"],
+        "sadness": ["sedih", "sayu", "rindu"],
+        "anxiety": ["takut", "risau", "gelisah", "tak boleh tidur"],
+        "stress": ["stress", "tekanan", "susah"]
+      },
+      "tamil": {
+        "frustration": ["சோர்வா", "அலுப்பா"],
+        "sadness": ["சோகமா", "வருத்தமா"],
+        "anxiety": ["பயமா", "கவலை"]
+      }
+    },
+    "emotion_severity_levels": {
+      "mild": {
+        "description": "轻微情绪波动，日常挫折感",
+        "triggers": ["单次提到疲倦或烦躁", "偶尔忘记服药的自责"],
+        "response_approach": "共情 + 轻度鼓励 + 实际建议"
+      },
+      "moderate": {
+        "description": "持续的负面情绪，用药疲劳，焦虑",
+        "triggers": ["多次表达不想吃药", "持续焦虑或担忧", "失眠", "明显情绪低落"],
+        "response_approach": "深度共情 + 具体支持策略 + 建议寻求帮助"
+      },
+      "severe": {
+        "description": "严重心理困扰，绝望感，可能需要专业帮助",
+        "triggers": ["表达放弃治疗", "强烈绝望感", "社交退缩", "严重失眠"],
+        "response_approach": "紧急关怀 + 提供心理援助资源 + 建议立即寻求专业帮助"
+      }
+    },
+    "response_templates": {
+      "mild_frustration": {
+        "cn": "我理解管理慢性病确实不容易，每天要注意很多事情。你已经做得很好了，每一小步都是进步。有什么我可以帮你的吗？",
+        "en": "I understand managing a chronic condition isn't easy — there's so much to keep track of every day. You're doing great, and every small step counts. How can I help?",
+        "malay": "Saya faham menguruskan penyakit kronik tidak mudah. Anda sudah buat dengan baik. Bagaimana saya boleh membantu?"
+      },
+      "medication_fatigue": {
+        "cn": "吃药确实是件辛苦的事，特别是每天都要记得。但它在默默保护你的身体。要不要我帮你整理一下药物时间表，让服药变得更简单？",
+        "en": "Taking medication every day can feel tiring, but it's quietly protecting your health. Would you like me to help organize your medication schedule to make it easier?",
+        "malay": "Makan ubat setiap hari memang memenatkan, tapi ia melindungi kesihatan anda. Boleh saya bantu susun jadual ubat?"
+      },
+      "anxiety_about_condition": {
+        "cn": "有这样的担忧是很正常的，很多慢性病患者都有同样的感受。新加坡有很好的医疗系统来帮助你。定期检查和按时服药是最好的保护。如果你感到非常焦虑，也可以和家人朋友聊聊，或者拨打心理援助热线。",
+        "en": "It's completely natural to feel worried — many people managing chronic conditions feel the same way. Singapore has excellent healthcare to support you. Regular check-ups and taking your medication are the best protection. If you're feeling very anxious, talking to family or friends can help, or you can call a mental health helpline.",
+        "malay": "Perasaan risau itu normal. Ramai pesakit kronik merasakan perkara yang sama. Sistem kesihatan Singapura sangat baik untuk membantu anda."
+      },
+      "hopelessness": {
+        "cn": "听到你这样说我很担心你。管理慢性病确实是一场长期的旅程，有时候会感到疲惫和灰心，这很正常。但请记住，你不是一个人在面对。如果你现在感到非常难受，请拨打：\n- 心理援助热线：1800-221-4444（全天候）\n- SOS热线：1767（24小时）\n或者告诉你身边信任的人。",
+        "en": "I'm concerned about how you're feeling. Managing a chronic condition is a long journey, and it's okay to feel tired and discouraged sometimes. But please remember — you're not alone. If you're really struggling right now, please reach out:\n- Mental Health Helpline: 1800-221-4444 (24/7)\n- SOS: 1767 (24 hours)\nOr talk to someone you trust.",
+        "malay": "Saya risau tentang perasaan anda. Jika anda memerlukan bantuan, sila hubungi:\n- Talian Bantuan Kesihatan Mental: 1800-221-4444\n- SOS: 1767"
+      },
+      "self_blame_about_diet": {
+        "cn": "不要太自责了！偶尔放纵是人之常情，重要的是整体趋势而不是某一餐。明天又是新的一天，我们一起继续加油。要不要看看下一餐可以吃什么更健康的选择？",
+        "en": "Don't be too hard on yourself! It's perfectly human to indulge once in a while. What matters is the overall trend, not one meal. Tomorrow is a new day — let's keep going together. Would you like to see some healthier options for your next meal?",
+        "malay": "Jangan terlalu menyalahkan diri sendiri! Kadang-kadang nak makan sesuatu yang sedap itu biasa. Esok hari baru, kita teruskan bersama."
+      },
+      "pain_or_discomfort": {
+        "cn": "听到你不舒服我很关心。你现在的症状是什么？如果症状严重或持续，建议尽快就医。记录一下症状发生的时间和情况，这些信息对医生很有用。",
+        "en": "I'm sorry to hear you're not feeling well. Can you describe your symptoms? If they're severe or persistent, please see a doctor soon. Try to note when the symptoms started and any triggers — this information will be helpful for your doctor.",
+        "malay": "Saya dengar anda tidak sihat. Jika simptom teruk atau berterusan, sila berjumpa doktor."
+      },
+      "encouragement_after_good_reading": {
+        "cn": "做得好！你的{metric}在正常范围内。你的努力得到了回报，请继续保持！",
+        "en": "Well done! Your {metric} is in the normal range. Your hard work is paying off — keep it up!",
+        "malay": "Bagus! {metric} anda dalam julat normal. Teruskan usaha anda!"
+      }
+    },
+    "proactive_check_in_templates": {
+      "description": "当系统检测到用户一段时间没有互动或健康指标有波动时，主动关怀",
+      "no_interaction_3days": {
+        "cn": "嗨！好几天没有看到你的记录了，一切还好吗？记得按时吃药和测量哦。如果有什么困扰，随时告诉我。",
+        "en": "Hi! I haven't seen your records for a few days. Is everything okay? Remember to take your medication and check your vitals. If anything is bothering you, I'm here to listen."
+      },
+      "after_bad_reading": {
+        "cn": "我注意到你最近的{metric}有些波动。不用太担心，我们一起看看是什么原因。最近饮食或生活习惯有什么变化吗？",
+        "en": "I noticed your recent {metric} readings have been fluctuating. Don't worry too much — let's figure out why together. Have there been any changes in your diet or routine recently?"
+      },
+      "medication_non_adherence": {
+        "cn": "我注意到你最近几次药物提醒都没有确认。吃药确实不容易，有什么困难可以告诉我。如果是忘记了，我可以调整提醒时间。如果有其他原因，我们可以一起想办法。",
+        "en": "I've noticed you haven't confirmed your medication reminders recently. Taking medicine regularly isn't easy — tell me if there's a difficulty. If you're forgetting, I can adjust reminder times. If there's another reason, let's figure it out together."
+      }
+    }
+  },
+  "singapore_mental_health_resources": [
+    {
+      "name": "Institute of Mental Health (IMH)",
+      "name_cn": "心理卫生学院",
+      "hotline": "6389 2222",
+      "description": "新加坡国立精神健康机构",
+      "hours": "24/7 Emergency"
+    },
+    {
+      "name": "Samaritans of Singapore (SOS)",
+      "name_cn": "新加坡撒玛利亚人协会",
+      "hotline": "1767",
+      "description": "24小时情绪危机热线",
+      "hours": "24/7"
+    },
+    {
+      "name": "Singapore Association for Mental Health (SAMH)",
+      "name_cn": "新加坡心理健康协会",
+      "hotline": "1800-283-7019",
+      "description": "心理健康咨询和支持",
+      "hours": "Mon-Fri 9am-6pm"
+    },
+    {
+      "name": "Silver Ribbon Singapore",
+      "name_cn": "银丝带",
+      "hotline": "6385 3714",
+      "description": "心理健康宣导和支持",
+      "hours": "Mon-Fri 9am-6pm"
+    },
+    {
+      "name": "TOUCHline",
+      "name_cn": "关怀热线",
+      "hotline": "1800-377-2252",
+      "description": "情绪支持热线",
+      "hours": "Mon-Fri 9am-6pm"
+    },
+    {
+      "name": "National CARE Hotline",
+      "name_cn": "全国关怀热线",
+      "hotline": "1800-202-6868",
+      "description": "心理和情绪支持",
+      "hours": "8am-12am daily"
+    }
+  ]
+}

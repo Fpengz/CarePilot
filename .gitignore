@@ -1,6 +1,9 @@
 # Python-generated files
 __pycache__/
-*.py[oc]
+*.py[ocd]
+*$py.class
+*.so
+.Python
 src/dietary_guardian/_version.py
 build/
 dist/
@@ -10,6 +13,7 @@ wheels/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+.deps_installed
 *.db
 *.db-shm
 *.db-wal
@@ -18,22 +22,51 @@ wheels/
 .coverage
 htmlcov/
 coverage/
-.idea/
-.env
-apps/web/.env
-.DS_Store
 
 # Virtual environments
 .venv
+venv/
+env/
+ENV/
 
-# web build/deps
+# Node
 apps/web/.next/
 apps/web/node_modules/
 apps/web/test-results/
 apps/web/playwright-report/
 node_modules/
+.next/
+out/
 *.tsbuildinfo
 .turbo/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+apps/web/.env
+
+# Runtime data
+vectorstore/
 
 # Generated codebase index files
 CODEBASE_INDEX.md

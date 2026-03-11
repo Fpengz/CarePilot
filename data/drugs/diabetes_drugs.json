@@ -1,0 +1,533 @@
+[
+  {
+    "drug_id": "DM001",
+    "drug_name_en": "Metformin",
+    "drug_name_cn": "二甲双胍",
+    "drug_name_malay": "Metformin",
+    "drug_name_tamil": "மெட்ஃபோர்மின்",
+    "brand_names": ["Glucophage", "Fortamet", "Glumetza"],
+    "drug_class": "Biguanide",
+    "drug_class_cn": "双胍类",
+    "indication": "Type 2 Diabetes Mellitus",
+    "indication_cn": "2型糖尿病",
+    "is_first_line": true,
+    "dosage": {
+      "initial": "500mg once or twice daily",
+      "maintenance": "500mg-1000mg twice daily",
+      "max_daily": "2550mg/day",
+      "titration": "每1-2周增加500mg，根据血糖和耐受性调整"
+    },
+    "timing": {
+      "relation_to_meal": "after_meal",
+      "relation_to_meal_cn": "饭后服用",
+      "relation_to_meal_en": "Take with or immediately after meals",
+      "reason": "减少胃肠道副作用"
+    },
+    "frequency": "twice_daily",
+    "frequency_cn": "每日两次（早餐后、晚餐后）",
+    "reminder_templates": {
+      "before_meal_cn": null,
+      "after_meal_cn": "请在饭后服用二甲双胍 {dose}。随餐或饭后立即服用可以减少胃部不适。",
+      "after_meal_en": "Please take your Metformin {dose} after your meal. Taking it with food helps reduce stomach discomfort.",
+      "missed_dose_cn": "您似乎忘记服用二甲双胍了。如果距离下次服药时间还早，请现在补服。如果快到下次服药时间了，跳过这次，下次正常服用即可。",
+      "missed_dose_en": "It seems you missed your Metformin dose. If it's not close to your next dose time, please take it now. Otherwise, skip and take the next dose as scheduled."
+    },
+    "side_effects": {
+      "common": ["胃肠不适", "恶心", "腹泻", "腹痛", "食欲下降"],
+      "common_en": ["Gastrointestinal discomfort", "Nausea", "Diarrhea", "Abdominal pain", "Decreased appetite"],
+      "serious": ["乳酸酸中毒（罕见但严重）", "维生素B12缺乏（长期使用）"],
+      "serious_en": ["Lactic acidosis (rare but serious)", "Vitamin B12 deficiency (long-term use)"]
+    },
+    "contraindications": [
+      "严重肾功能不全 (eGFR < 30 mL/min)",
+      "急性或慢性代谢性酸中毒",
+      "严重肝功能不全",
+      "急性心力衰竭",
+      "酗酒"
+    ],
+    "food_interactions": [
+      "避免过量饮酒（增加乳酸酸中毒风险）",
+      "高纤维饮食可能减少药物吸收"
+    ],
+    "monitoring": {
+      "parameters": ["HbA1c", "空腹血糖", "肾功能(eGFR)", "维生素B12"],
+      "hba1c_target": "<7.0%",
+      "frequency": "HbA1c每3-6个月；肾功能每年；B12每年（长期使用者）"
+    },
+    "special_notes": "新加坡MOH/ACE推荐为2型糖尿病一线用药。不会引起低血糖（单独使用时）。有助于体重控制。",
+    "singapore_subsidy": "CDMP覆盖药物，Healthier SG Chronic Tier可获补贴"
+  },
+  {
+    "drug_id": "DM002",
+    "drug_name_en": "Glipizide",
+    "drug_name_cn": "格列吡嗪",
+    "drug_name_malay": "Glipizide",
+    "drug_name_tamil": "க்ளிபிசைடு",
+    "brand_names": ["Glucotrol", "Minidiab"],
+    "drug_class": "Sulfonylurea",
+    "drug_class_cn": "磺脲类",
+    "indication": "Type 2 Diabetes Mellitus",
+    "indication_cn": "2型糖尿病",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "2.5-5mg once daily",
+      "maintenance": "5-10mg daily",
+      "max_daily": "20mg/day (分次服用)",
+      "titration": "每1-2周增加2.5-5mg"
+    },
+    "timing": {
+      "relation_to_meal": "before_meal_30min",
+      "relation_to_meal_cn": "饭前30分钟服用",
+      "relation_to_meal_en": "Take 30 minutes before meals",
+      "reason": "需要在进食前刺激胰岛素分泌"
+    },
+    "frequency": "once_or_twice_daily",
+    "frequency_cn": "每日一次（早餐前）或两次（早餐前、晚餐前）",
+    "reminder_templates": {
+      "before_meal_cn": "请在早餐前30分钟服用格列吡嗪 {dose}。服药后请记得按时吃饭，避免低血糖。",
+      "before_meal_en": "Please take your Glipizide {dose} 30 minutes before breakfast. Remember to eat on time after taking it to avoid low blood sugar.",
+      "after_meal_cn": null,
+      "missed_dose_cn": "您似乎忘记服用格列吡嗪了。如果还未吃饭，可以现在服用并在30分钟后吃饭。如果已经吃饭了，请跳过这次。",
+      "missed_dose_en": "You may have missed your Glipizide. If you haven't eaten yet, take it now and eat in 30 minutes. If you've already eaten, skip this dose."
+    },
+    "side_effects": {
+      "common": ["低血糖", "体重增加", "头晕", "恶心"],
+      "common_en": ["Hypoglycemia", "Weight gain", "Dizziness", "Nausea"],
+      "serious": ["严重低血糖", "过敏反应"],
+      "serious_en": ["Severe hypoglycemia", "Allergic reactions"]
+    },
+    "contraindications": [
+      "1型糖尿病",
+      "糖尿病酮症酸中毒",
+      "磺脲类过敏",
+      "严重肝肾功能不全"
+    ],
+    "food_interactions": [
+      "必须饭前服用，服药后必须进食",
+      "避免空腹饮酒（增加低血糖风险）"
+    ],
+    "monitoring": {
+      "parameters": ["HbA1c", "空腹血糖", "餐后血糖", "低血糖症状"],
+      "hba1c_target": "<7.0%",
+      "frequency": "HbA1c每3-6个月；血糖自我监测（根据医嘱）"
+    },
+    "special_notes": "磺脲类药物会引起低血糖，患者需了解低血糖症状（出汗、心悸、手抖、饥饿感）。随身携带糖果或葡萄糖片。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "DM003",
+    "drug_name_en": "Gliclazide",
+    "drug_name_cn": "格列齐特",
+    "drug_name_malay": "Gliclazide",
+    "drug_name_tamil": "க்ளிக்ளாசைடு",
+    "brand_names": ["Diamicron", "Diamicron MR"],
+    "drug_class": "Sulfonylurea",
+    "drug_class_cn": "磺脲类",
+    "indication": "Type 2 Diabetes Mellitus",
+    "indication_cn": "2型糖尿病",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "40-80mg daily (普通片) / 30mg daily (缓释片MR)",
+      "maintenance": "80-240mg daily (普通片) / 30-120mg daily (MR)",
+      "max_daily": "320mg/day (普通片) / 120mg/day (MR)",
+      "titration": "每2-4周调整"
+    },
+    "timing": {
+      "relation_to_meal": "before_meal",
+      "relation_to_meal_cn": "饭前服用（缓释片早餐时服用）",
+      "relation_to_meal_en": "Take before meals (MR tablets with breakfast)",
+      "reason": "刺激胰岛素分泌，需要在进食前起效"
+    },
+    "frequency": "once_or_twice_daily",
+    "frequency_cn": "缓释片每日一次（早餐前）；普通片每日1-2次",
+    "reminder_templates": {
+      "before_meal_cn": "请在早餐前服用格列齐特 {dose}。服药后请按时吃早餐。",
+      "before_meal_en": "Please take your Gliclazide {dose} before breakfast. Remember to eat after taking it.",
+      "after_meal_cn": null,
+      "missed_dose_cn": "您似乎忘记服用格列齐特了。如果距离下次服药时间超过4小时，请补服。否则跳过，下次正常服用。",
+      "missed_dose_en": "You may have missed your Gliclazide. If there are more than 4 hours until your next dose, take it now. Otherwise, skip and take the next dose as usual."
+    },
+    "side_effects": {
+      "common": ["低血糖", "体重增加", "胃肠不适"],
+      "common_en": ["Hypoglycemia", "Weight gain", "GI discomfort"],
+      "serious": ["严重低血糖"],
+      "serious_en": ["Severe hypoglycemia"]
+    },
+    "contraindications": [
+      "1型糖尿病",
+      "糖尿病酮症酸中毒",
+      "严重肝肾功能不全"
+    ],
+    "food_interactions": [
+      "服药后必须进食",
+      "避免大量饮酒"
+    ],
+    "monitoring": {
+      "parameters": ["HbA1c", "血糖", "低血糖症状"],
+      "hba1c_target": "<7.0%",
+      "frequency": "HbA1c每3-6个月"
+    },
+    "special_notes": "比Glipizide低血糖风险稍低。缓释片(MR)不可掰开或咀嚼。新加坡常用的磺脲类药物之一。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "DM004",
+    "drug_name_en": "Sitagliptin",
+    "drug_name_cn": "西格列汀",
+    "drug_name_malay": "Sitagliptin",
+    "drug_name_tamil": "சிடாக்ளிப்டின்",
+    "brand_names": ["Januvia"],
+    "drug_class": "DPP-4 Inhibitor",
+    "drug_class_cn": "DPP-4抑制剂",
+    "indication": "Type 2 Diabetes Mellitus",
+    "indication_cn": "2型糖尿病",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "100mg once daily",
+      "maintenance": "100mg once daily",
+      "max_daily": "100mg/day",
+      "titration": "肾功能不全需调整：eGFR 30-45: 50mg; eGFR <30: 25mg"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "不受进食影响，任何时间服用",
+      "relation_to_meal_en": "Can be taken with or without food",
+      "reason": "药物吸收不受食物影响"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次",
+    "reminder_templates": {
+      "before_meal_cn": null,
+      "after_meal_cn": null,
+      "fixed_time_cn": "请服用今天的西格列汀 {dose}。",
+      "fixed_time_en": "Time to take your Januvia (Sitagliptin) {dose}.",
+      "missed_dose_cn": "您今天还没有服用西格列汀。如果想起来了请尽快服用，但不要一次服用两倍剂量。",
+      "missed_dose_en": "You haven't taken your Sitagliptin today. Take it as soon as you remember, but don't double the dose."
+    },
+    "side_effects": {
+      "common": ["头痛", "上呼吸道感染", "鼻塞"],
+      "common_en": ["Headache", "Upper respiratory infection", "Nasal congestion"],
+      "serious": ["胰腺炎（罕见）", "严重关节痛"],
+      "serious_en": ["Pancreatitis (rare)", "Severe joint pain"]
+    },
+    "contraindications": [
+      "对DPP-4抑制剂过敏",
+      "有胰腺炎病史需谨慎"
+    ],
+    "food_interactions": [],
+    "monitoring": {
+      "parameters": ["HbA1c", "肾功能"],
+      "hba1c_target": "<7.0%",
+      "frequency": "HbA1c每3-6个月；肾功能每年"
+    },
+    "special_notes": "低血糖风险低（单独使用时）。体重中性。ACE指南推荐为二甲双胍后的加用选项之一。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "DM005",
+    "drug_name_en": "Linagliptin",
+    "drug_name_cn": "利格列汀",
+    "drug_name_malay": "Linagliptin",
+    "drug_name_tamil": "லினாக்ளிப்டின்",
+    "brand_names": ["Trajenta"],
+    "drug_class": "DPP-4 Inhibitor",
+    "drug_class_cn": "DPP-4抑制剂",
+    "indication": "Type 2 Diabetes Mellitus",
+    "indication_cn": "2型糖尿病",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "5mg once daily",
+      "maintenance": "5mg once daily",
+      "max_daily": "5mg/day",
+      "titration": "无需因肾功能调整剂量"
+    },
+    "timing": {
+      "relation_to_meal": "any_time",
+      "relation_to_meal_cn": "不受进食影响",
+      "relation_to_meal_en": "Can be taken with or without food",
+      "reason": "药物吸收不受食物影响"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次",
+    "reminder_templates": {
+      "fixed_time_cn": "请服用今天的利格列汀 {dose}。",
+      "fixed_time_en": "Time to take your Trajenta (Linagliptin) {dose}.",
+      "missed_dose_cn": "您今天还没有服用利格列汀，请尽快补服。",
+      "missed_dose_en": "You haven't taken your Linagliptin today. Please take it as soon as you remember."
+    },
+    "side_effects": {
+      "common": ["鼻咽炎", "腹泻"],
+      "common_en": ["Nasopharyngitis", "Diarrhea"],
+      "serious": ["胰腺炎（罕见）"],
+      "serious_en": ["Pancreatitis (rare)"]
+    },
+    "contraindications": ["对DPP-4抑制剂过敏"],
+    "food_interactions": [],
+    "monitoring": {
+      "parameters": ["HbA1c"],
+      "hba1c_target": "<7.0%",
+      "frequency": "HbA1c每3-6个月"
+    },
+    "special_notes": "主要经胆汁排泄，肾功能不全患者无需调整剂量，适合肾功能较差的老年患者。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "DM006",
+    "drug_name_en": "Empagliflozin",
+    "drug_name_cn": "恩格列净",
+    "drug_name_malay": "Empagliflozin",
+    "drug_name_tamil": "எம்பாக்ளிஃப்ளோசின்",
+    "brand_names": ["Jardiance"],
+    "drug_class": "SGLT2 Inhibitor",
+    "drug_class_cn": "SGLT2抑制剂",
+    "indication": "Type 2 Diabetes Mellitus（尤其合并心血管疾病或慢性肾病者）",
+    "indication_cn": "2型糖尿病，特别推荐用于合并心血管疾病或慢性肾病的患者",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "10mg once daily",
+      "maintenance": "10-25mg once daily",
+      "max_daily": "25mg/day",
+      "titration": "可从10mg增加至25mg"
+    },
+    "timing": {
+      "relation_to_meal": "any_time_morning_preferred",
+      "relation_to_meal_cn": "不受进食影响，建议早晨服用",
+      "relation_to_meal_en": "Can be taken with or without food, preferably in the morning",
+      "reason": "可能增加排尿，早晨服用避免夜间频尿"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次（建议早晨）",
+    "reminder_templates": {
+      "fixed_time_cn": "早上好！请服用今天的恩格列净 {dose}。记得今天多喝水。",
+      "fixed_time_en": "Good morning! Time to take your Jardiance (Empagliflozin) {dose}. Remember to drink plenty of water today.",
+      "missed_dose_cn": "您今天还没有服用恩格列净。请尽快补服，并记得多喝水。",
+      "missed_dose_en": "You haven't taken your Empagliflozin today. Take it as soon as you remember and keep hydrated."
+    },
+    "side_effects": {
+      "common": ["泌尿道感染", "生殖器真菌感染", "多尿", "口渴"],
+      "common_en": ["Urinary tract infection", "Genital mycotic infection", "Increased urination", "Thirst"],
+      "serious": ["糖尿病酮症酸中毒（罕见）", "脱水", "急性肾损伤"],
+      "serious_en": ["Diabetic ketoacidosis (rare)", "Dehydration", "Acute kidney injury"]
+    },
+    "contraindications": [
+      "严重肾功能不全 (eGFR < 20)",
+      "1型糖尿病",
+      "反复泌尿道/生殖器感染"
+    ],
+    "food_interactions": [
+      "需要增加水分摄入",
+      "避免过量饮酒"
+    ],
+    "monitoring": {
+      "parameters": ["HbA1c", "肾功能(eGFR)", "血压", "体重", "酮体（如有症状）"],
+      "hba1c_target": "<7.0%",
+      "frequency": "HbA1c每3-6个月；肾功能每3-6个月"
+    },
+    "special_notes": "ACE指南推荐：合并心血管疾病或慢性肾病的2型糖尿病患者应优先考虑SGLT2抑制剂。有心血管和肾脏保护作用。有助于减重和降血压。",
+    "singapore_subsidy": "CDMP覆盖药物，Healthier SG Chronic Tier可获补贴"
+  },
+  {
+    "drug_id": "DM007",
+    "drug_name_en": "Dapagliflozin",
+    "drug_name_cn": "达格列净",
+    "drug_name_malay": "Dapagliflozin",
+    "drug_name_tamil": "டாபாக்ளிஃப்ளோசின்",
+    "brand_names": ["Forxiga"],
+    "drug_class": "SGLT2 Inhibitor",
+    "drug_class_cn": "SGLT2抑制剂",
+    "indication": "Type 2 Diabetes Mellitus, Heart Failure, Chronic Kidney Disease",
+    "indication_cn": "2型糖尿病、心力衰竭、慢性肾病",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "5mg once daily",
+      "maintenance": "10mg once daily",
+      "max_daily": "10mg/day",
+      "titration": "可从5mg增至10mg"
+    },
+    "timing": {
+      "relation_to_meal": "any_time_morning_preferred",
+      "relation_to_meal_cn": "不受进食影响，建议早晨服用",
+      "relation_to_meal_en": "Can be taken with or without food, preferably in the morning",
+      "reason": "增加排尿，早晨服用避免夜尿"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次（建议早晨）",
+    "reminder_templates": {
+      "fixed_time_cn": "早上好！请服用今天的达格列净 {dose}。今天记得多喝水哦。",
+      "fixed_time_en": "Good morning! Please take your Forxiga (Dapagliflozin) {dose}. Stay hydrated today.",
+      "missed_dose_cn": "您今天还没有服用达格列净，请补服并多喝水。",
+      "missed_dose_en": "You haven't taken your Dapagliflozin today. Take it now and drink plenty of water."
+    },
+    "side_effects": {
+      "common": ["泌尿道感染", "生殖器真菌感染", "多尿", "背痛"],
+      "common_en": ["UTI", "Genital mycotic infection", "Polyuria", "Back pain"],
+      "serious": ["酮症酸中毒（罕见）", "Fournier坏疽（极罕见）"],
+      "serious_en": ["Ketoacidosis (rare)", "Fournier's gangrene (very rare)"]
+    },
+    "contraindications": ["严重肾功能不全 (用于降糖时eGFR<20)", "1型糖尿病"],
+    "food_interactions": ["增加水分摄入"],
+    "monitoring": {
+      "parameters": ["HbA1c", "eGFR", "血压", "体重"],
+      "hba1c_target": "<7.0%",
+      "frequency": "HbA1c每3-6个月；肾功能每3-6个月"
+    },
+    "special_notes": "与Empagliflozin同类。在新加坡也被批准用于心力衰竭和慢性肾病（不限于糖尿病患者）。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "DM008",
+    "drug_name_en": "Liraglutide",
+    "drug_name_cn": "利拉鲁肽",
+    "drug_name_malay": "Liraglutide",
+    "drug_name_tamil": "லிராக்ளூடைடு",
+    "brand_names": ["Victoza", "Saxenda (减重)"],
+    "drug_class": "GLP-1 Receptor Agonist",
+    "drug_class_cn": "GLP-1受体激动剂",
+    "indication": "Type 2 Diabetes Mellitus（尤其合并心血管疾病或需要减重者）",
+    "indication_cn": "2型糖尿病，推荐用于合并心血管疾病或需要减重的患者",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "0.6mg once daily (皮下注射)",
+      "maintenance": "1.2-1.8mg once daily",
+      "max_daily": "1.8mg/day",
+      "titration": "0.6mg起始，1周后增至1.2mg，可增至1.8mg"
+    },
+    "timing": {
+      "relation_to_meal": "any_time_fixed",
+      "relation_to_meal_cn": "每天固定时间注射，不受进食影响",
+      "relation_to_meal_en": "Inject at the same time each day, with or without food",
+      "reason": "长效制剂，固定时间使用保持稳定血药浓度"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次（皮下注射）",
+    "reminder_templates": {
+      "fixed_time_cn": "请在固定时间注射今天的利拉鲁肽 {dose}。注射部位可选腹部、大腿或上臂。",
+      "fixed_time_en": "Time for your Victoza (Liraglutide) {dose} injection. You can inject in your abdomen, thigh, or upper arm.",
+      "missed_dose_cn": "您今天还没有注射利拉鲁肽。如果距离遗漏时间不超过12小时，请补打。否则跳过，明天正常注射。",
+      "missed_dose_en": "You missed your Liraglutide injection. If less than 12 hours late, inject now. Otherwise, skip and inject tomorrow at the usual time."
+    },
+    "side_effects": {
+      "common": ["恶心", "呕吐", "腹泻", "注射部位反应"],
+      "common_en": ["Nausea", "Vomiting", "Diarrhea", "Injection site reactions"],
+      "serious": ["胰腺炎", "甲状腺C细胞肿瘤（动物实验）"],
+      "serious_en": ["Pancreatitis", "Thyroid C-cell tumors (animal studies)"]
+    },
+    "contraindications": [
+      "个人或家族有甲状腺髓样癌病史",
+      "多发性内分泌腺瘤综合征2型",
+      "有胰腺炎病史需谨慎"
+    ],
+    "food_interactions": [],
+    "monitoring": {
+      "parameters": ["HbA1c", "体重", "胰腺炎症状"],
+      "hba1c_target": "<7.0%",
+      "frequency": "HbA1c每3-6个月"
+    },
+    "special_notes": "ACE指南推荐：合并心血管疾病的2型糖尿病患者可考虑GLP-1受体激动剂。有助于减重（平均减3-5kg）。需冷藏保存（未使用），使用中可室温保存30天。",
+    "singapore_subsidy": "部分补贴，需specialist处方"
+  },
+  {
+    "drug_id": "DM009",
+    "drug_name_en": "Insulin Glargine",
+    "drug_name_cn": "甘精胰岛素",
+    "drug_name_malay": "Insulin Glargine",
+    "drug_name_tamil": "இன்சுலின் க்ளார்ஜின்",
+    "brand_names": ["Lantus", "Toujeo", "Semglee"],
+    "drug_class": "Long-acting Insulin",
+    "drug_class_cn": "长效胰岛素",
+    "indication": "Type 1 & Type 2 Diabetes Mellitus",
+    "indication_cn": "1型和2型糖尿病",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "10 units once daily 或 0.1-0.2 units/kg/day",
+      "maintenance": "根据血糖调整",
+      "max_daily": "无固定上限，根据需要调整",
+      "titration": "每3天根据空腹血糖调整2-4 units"
+    },
+    "timing": {
+      "relation_to_meal": "fixed_time",
+      "relation_to_meal_cn": "每天同一时间注射（通常睡前或早晨），不受进食影响",
+      "relation_to_meal_en": "Inject at the same time daily (usually bedtime or morning), independent of meals",
+      "reason": "提供24小时基础胰岛素覆盖"
+    },
+    "frequency": "once_daily",
+    "frequency_cn": "每日一次（通常睡前）",
+    "reminder_templates": {
+      "fixed_time_cn": "晚安！请记得注射今天的甘精胰岛素 {dose} units。",
+      "fixed_time_en": "Good night! Remember to inject your Lantus (Insulin Glargine) {dose} units.",
+      "missed_dose_cn": "您似乎忘记注射胰岛素了。如果距离遗漏时间不太久，请补打。如果已经接近下次注射时间，请咨询医生。",
+      "missed_dose_en": "You may have missed your insulin injection. If it's not too late, inject now. If close to next dose time, consult your doctor."
+    },
+    "side_effects": {
+      "common": ["低血糖", "注射部位反应", "体重增加"],
+      "common_en": ["Hypoglycemia", "Injection site reactions", "Weight gain"],
+      "serious": ["严重低血糖", "过敏反应"],
+      "serious_en": ["Severe hypoglycemia", "Allergic reactions"]
+    },
+    "contraindications": ["低血糖发作期间"],
+    "food_interactions": [
+      "注意碳水化合物摄入量",
+      "避免不规律进食",
+      "饮酒需谨慎（掩盖低血糖症状）"
+    ],
+    "monitoring": {
+      "parameters": ["HbA1c", "空腹血糖", "自我血糖监测", "低血糖发作次数"],
+      "hba1c_target": "<7.0%",
+      "frequency": "空腹血糖每日（调整期间）；HbA1c每3个月"
+    },
+    "special_notes": "长效胰岛素提供全天基础覆盖。不可与其他胰岛素混合。需冷藏保存（未开封），开封后室温可保存28天。教育患者识别和处理低血糖。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  },
+  {
+    "drug_id": "DM010",
+    "drug_name_en": "Insulin Aspart / Insulin Lispro",
+    "drug_name_cn": "门冬胰岛素 / 赖脯胰岛素",
+    "drug_name_malay": "Insulin Aspart / Insulin Lispro",
+    "drug_name_tamil": "இன்சுலின் அஸ்பார்ட் / இன்சுலின் லிஸ்ப்ரோ",
+    "brand_names": ["NovoRapid (Aspart)", "Humalog (Lispro)", "Fiasp"],
+    "drug_class": "Rapid-acting Insulin",
+    "drug_class_cn": "速效胰岛素",
+    "indication": "Type 1 & Type 2 Diabetes Mellitus",
+    "indication_cn": "1型和2型糖尿病（餐时胰岛素）",
+    "is_first_line": false,
+    "dosage": {
+      "initial": "根据医嘱，通常每餐4-6 units",
+      "maintenance": "根据碳水化合物摄入和血糖调整",
+      "max_daily": "根据需要",
+      "titration": "根据餐后血糖调整"
+    },
+    "timing": {
+      "relation_to_meal": "immediately_before_meal",
+      "relation_to_meal_cn": "餐前0-15分钟注射",
+      "relation_to_meal_en": "Inject 0-15 minutes before meals",
+      "reason": "速效胰岛素需在进食时起效，控制餐后血糖"
+    },
+    "frequency": "with_each_meal",
+    "frequency_cn": "每餐前注射（通常每日3次）",
+    "reminder_templates": {
+      "before_meal_cn": "用餐时间到了！请在开始吃饭前注射速效胰岛素 {dose} units。",
+      "before_meal_en": "Mealtime! Please inject your rapid-acting insulin {dose} units before eating.",
+      "missed_dose_cn": "您这餐还没有注射餐前胰岛素。如果刚开始吃饭，可以现在注射。如果已经吃完了，请监测血糖并在下一餐正常注射。",
+      "missed_dose_en": "You haven't injected your mealtime insulin. If just starting to eat, inject now. If finished eating, monitor blood sugar and inject normally at next meal."
+    },
+    "side_effects": {
+      "common": ["低血糖", "注射部位反应", "体重增加"],
+      "common_en": ["Hypoglycemia", "Injection site reactions", "Weight gain"],
+      "serious": ["严重低血糖"],
+      "serious_en": ["Severe hypoglycemia"]
+    },
+    "contraindications": ["低血糖发作期间"],
+    "food_interactions": [
+      "必须在进食前注射",
+      "注射后必须吃饭，否则低血糖风险极高",
+      "碳水化合物摄入量影响剂量"
+    ],
+    "monitoring": {
+      "parameters": ["餐前血糖", "餐后2小时血糖", "HbA1c"],
+      "hba1c_target": "<7.0%",
+      "frequency": "每餐监测（调整期间）；HbA1c每3个月"
+    },
+    "special_notes": "速效胰岛素，注射后必须吃饭！忘记吃饭会导致严重低血糖。建议老年患者餐前有人提醒。起效时间10-20分钟，持续3-5小时。",
+    "singapore_subsidy": "CDMP覆盖药物"
+  }
+]

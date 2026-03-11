@@ -9,6 +9,15 @@ Dietary Guardian SG is an AI health companion for chronic-condition support outs
 - generates clinician digests and impact summaries from the same underlying case state
 - supports Singapore-local meal reasoning with deterministic canonical-food normalization
 
+## Imported Healthcare-Agent capabilities (pending refactor)
+- streaming chat with audio transcription
+- emotion detection and empathy context injection
+- health tracking via `[TRACK]` parsing + chart data
+- dashboard metrics views and trend computation
+- medication schedule management
+- RAG routing for drug/food/general queries
+- E2B code sandbox for safe calculations
+
 ## Repository shape
 
 ```text

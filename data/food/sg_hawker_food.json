@@ -1,0 +1,940 @@
+[
+  {
+    "food_id": "SG001",
+    "food_name_en": "Chicken Rice (Hainanese)",
+    "food_name_cn": "海南鸡饭",
+    "food_name_malay": "Nasi Ayam Hainan",
+    "food_name_tamil": "சிக்கன் ரைஸ்",
+    "category": "rice_dishes",
+    "category_cn": "饭类",
+    "cuisine": "chinese",
+    "source": "Hawker Centre",
+    "serving_size": "1 plate (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 607,
+      "carbohydrates_g": 73,
+      "protein_g": 27,
+      "total_fat_g": 23,
+      "saturated_fat_g": 8,
+      "sodium_mg": 1200,
+      "sugar_g": 4,
+      "fiber_g": 1,
+      "cholesterol_mg": 85
+    },
+    "glycemic_index": "high",
+    "gi_value": 72,
+    "health_tags": ["high_sodium", "high_carb", "high_GI", "high_fat"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "海南鸡饭的白米饭GI值高，容易导致血糖快速升高。建议：1) 选择糙米饭版本 2) 只吃半份饭 3) 多吃配菜蔬菜 4) 去掉鸡皮减少脂肪摄入",
+        "en": "Chicken rice has high GI white rice that can spike blood sugar. Tips: 1) Choose brown rice 2) Take half portion of rice 3) Add vegetables 4) Remove chicken skin",
+        "risk_level": "moderate"
+      },
+      "hypertension": {
+        "cn": "鸡饭的酱料和鸡汤饭含钠量较高。建议：1) 少放酱油和辣椒酱 2) 不要额外加酱料 3) 选择白斩鸡而非烧鸡（烧鸡含钠更高）",
+        "en": "The sauces and chicken broth rice are high in sodium. Tips: 1) Less soy sauce and chili 2) Skip extra sauces 3) Choose steamed over roast chicken",
+        "risk_level": "moderate"
+      },
+      "hyperlipidemia": {
+        "cn": "鸡皮和油饭含较多饱和脂肪。建议：1) 去掉鸡皮 2) 选择鸡胸肉而非鸡腿 3) 减少油饭份量",
+        "en": "Chicken skin and oily rice are high in saturated fat. Tips: 1) Remove skin 2) Choose breast over thigh 3) Less rice",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "糙米鸡饭", "name_en": "Brown rice chicken rice", "benefit": "低GI，更多纤维"},
+      {"name_cn": "白斩鸡胸肉配蔬菜", "name_en": "Steamed chicken breast with vegetables", "benefit": "低脂低钠"},
+      {"name_cn": "半份饭 + 加一份蔬菜", "name_en": "Half rice + extra vegetables", "benefit": "减少碳水摄入"}
+    ]
+  },
+  {
+    "food_id": "SG002",
+    "food_name_en": "Nasi Lemak",
+    "food_name_cn": "椰浆饭",
+    "food_name_malay": "Nasi Lemak",
+    "food_name_tamil": "நாசி லெமக்",
+    "category": "rice_dishes",
+    "category_cn": "饭类",
+    "cuisine": "malay",
+    "source": "Hawker Centre",
+    "serving_size": "1 plate (standard with fried chicken wing)",
+    "nutrition_per_serving": {
+      "calories_kcal": 740,
+      "carbohydrates_g": 68,
+      "protein_g": 22,
+      "total_fat_g": 43,
+      "saturated_fat_g": 18,
+      "sodium_mg": 1050,
+      "sugar_g": 6,
+      "fiber_g": 2,
+      "cholesterol_mg": 120
+    },
+    "glycemic_index": "high",
+    "gi_value": 70,
+    "health_tags": ["high_fat", "high_saturated_fat", "high_sodium", "high_calorie", "high_GI"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "椰浆饭热量和GI值都高。椰浆含大量饱和脂肪。建议：1) 减少饭量 2) 选择烤鸡翅而非炸鸡翅 3) 多吃花生和江鱼仔中的蛋白质 4) 加一份蔬菜",
+        "en": "Nasi Lemak is calorie-dense with high GI. Tips: 1) Reduce rice portion 2) Choose grilled over fried chicken 3) Eat peanuts and ikan bilis for protein 4) Add vegetables",
+        "risk_level": "high"
+      },
+      "hypertension": {
+        "cn": "参巴辣椒酱含高钠，炸江鱼仔也偏咸。建议：1) 少放参巴酱 2) 控制江鱼仔摄入 3) 选择较清淡的配菜",
+        "en": "Sambal is high in sodium, ikan bilis are salty. Tips: 1) Less sambal 2) Limit ikan bilis 3) Choose lighter side dishes",
+        "risk_level": "high"
+      },
+      "hyperlipidemia": {
+        "cn": "椰浆富含饱和脂肪（月桂酸），炸鸡翅额外增加脂肪。建议：1) 减少椰浆饭份量 2) 不要炸鸡翅，选择煎蛋或烤鱼 3) 限制频率（每周不超过1-2次）",
+        "en": "Coconut milk is high in saturated fat. Tips: 1) Reduce portion 2) Skip fried chicken, choose egg or grilled fish 3) Limit to 1-2 times per week",
+        "risk_level": "high"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "少椰浆版本 + 烤鸡", "name_en": "Less coconut milk + grilled chicken", "benefit": "减少饱和脂肪"},
+      {"name_cn": "半份饭 + 多加蔬菜", "name_en": "Half rice + extra vegetables", "benefit": "减少热量和碳水"}
+    ]
+  },
+  {
+    "food_id": "SG003",
+    "food_name_en": "Char Kway Teow",
+    "food_name_cn": "炒粿条",
+    "food_name_malay": "Char Kway Teow",
+    "food_name_tamil": "சார் குவே தியோ",
+    "category": "noodle_dishes",
+    "category_cn": "面类",
+    "cuisine": "chinese",
+    "source": "Hawker Centre",
+    "serving_size": "1 plate (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 745,
+      "carbohydrates_g": 84,
+      "protein_g": 20,
+      "total_fat_g": 37,
+      "saturated_fat_g": 12,
+      "sodium_mg": 1800,
+      "sugar_g": 8,
+      "fiber_g": 2,
+      "cholesterol_mg": 200
+    },
+    "glycemic_index": "high",
+    "gi_value": 68,
+    "health_tags": ["very_high_sodium", "high_fat", "high_calorie", "high_cholesterol"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "炒粿条碳水化合物含量高，且加了甜酱油增加糖分。建议：1) 选择小份 2) 要求少油少甜酱油 3) 偶尔食用",
+        "en": "High in carbs with sweet dark soy sauce. Tips: 1) Small portion 2) Request less oil and sweet sauce 3) Eat occasionally",
+        "risk_level": "high"
+      },
+      "hypertension": {
+        "cn": "炒粿条含钠量非常高（酱油+鱼露+调味料）。建议：1) 少吃（每周不超过1次）2) 要求少放酱油 3) 搭配新鲜蔬菜",
+        "en": "Very high sodium from soy sauce and fish sauce. Tips: 1) Limit to once a week 2) Request less sauce 3) Pair with fresh vegetables",
+        "risk_level": "high"
+      },
+      "hyperlipidemia": {
+        "cn": "用大量猪油/食用油炒制，含血蛤（高胆固醇）。建议：1) 要求少油 2) 不要血蛤 3) 选择小份",
+        "en": "Cooked with lots of lard/oil, contains cockles (high cholesterol). Tips: 1) Request less oil 2) Skip cockles 3) Small portion",
+        "risk_level": "high"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "清炒粿条（少油少酱）", "name_en": "Light-fried kway teow (less oil, less sauce)", "benefit": "减少钠和脂肪"},
+      {"name_cn": "汤粿条", "name_en": "Kway teow soup", "benefit": "不经过炒制，脂肪更少"}
+    ]
+  },
+  {
+    "food_id": "SG004",
+    "food_name_en": "Laksa",
+    "food_name_cn": "叻沙",
+    "food_name_malay": "Laksa",
+    "food_name_tamil": "லக்சா",
+    "category": "noodle_dishes",
+    "category_cn": "面类",
+    "cuisine": "peranakan",
+    "source": "Hawker Centre",
+    "serving_size": "1 bowl (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 589,
+      "carbohydrates_g": 55,
+      "protein_g": 18,
+      "total_fat_g": 33,
+      "saturated_fat_g": 20,
+      "sodium_mg": 2100,
+      "sugar_g": 5,
+      "fiber_g": 3,
+      "cholesterol_mg": 95
+    },
+    "glycemic_index": "medium",
+    "gi_value": 55,
+    "health_tags": ["very_high_sodium", "very_high_saturated_fat", "high_calorie"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "叻沙的米粉碳水较高，但GI值中等。椰浆汤底热量高。建议：1) 不要喝完所有汤 2) 选择米粉而非黄面（混合更好）3) 加豆腐泡增加蛋白质",
+        "en": "Rice noodles are moderate GI. Coconut broth is calorie-dense. Tips: 1) Don't finish the soup 2) Choose vermicelli 3) Add tofu puffs for protein",
+        "risk_level": "moderate"
+      },
+      "hypertension": {
+        "cn": "叻沙汤底含钠量极高（虾膏+盐+椰浆）。建议：1) 不要喝汤！2) 偶尔食用 3) 选择干捞版本（如果有）",
+        "en": "Laksa broth is extremely high in sodium. Tips: 1) DON'T drink the soup! 2) Eat occasionally 3) Choose dry version if available",
+        "risk_level": "high"
+      },
+      "hyperlipidemia": {
+        "cn": "椰浆含大量饱和脂肪。建议：1) 不喝汤 2) 限制频率 3) 选择Assam Laksa（酸辣叻沙，不含椰浆）代替",
+        "en": "Coconut milk is very high in saturated fat. Tips: 1) Skip the soup 2) Limit frequency 3) Choose Assam Laksa (no coconut milk) instead",
+        "risk_level": "high"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "酸辣叻沙 (Assam Laksa)", "name_en": "Assam Laksa (tamarind-based, no coconut)", "benefit": "无椰浆，脂肪大幅减少"},
+      {"name_cn": "叻沙不喝汤 + 加蔬菜", "name_en": "Laksa without soup + extra vegetables", "benefit": "减少钠和脂肪摄入"}
+    ]
+  },
+  {
+    "food_id": "SG005",
+    "food_name_en": "Roti Prata (Plain)",
+    "food_name_cn": "印度煎饼（原味）",
+    "food_name_malay": "Roti Prata/Canai",
+    "food_name_tamil": "ரொட்டி பிராட்டா",
+    "category": "bread_pastry",
+    "category_cn": "饼类",
+    "cuisine": "indian",
+    "source": "Hawker Centre / Prata Shop",
+    "serving_size": "2 pieces (plain) with curry",
+    "nutrition_per_serving": {
+      "calories_kcal": 500,
+      "carbohydrates_g": 56,
+      "protein_g": 10,
+      "total_fat_g": 27,
+      "saturated_fat_g": 12,
+      "sodium_mg": 800,
+      "sugar_g": 4,
+      "fiber_g": 2,
+      "cholesterol_mg": 30
+    },
+    "glycemic_index": "high",
+    "gi_value": 70,
+    "health_tags": ["high_fat", "high_saturated_fat", "high_carb", "high_GI"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "Roti Prata是精制面粉制品，GI值高，容易升血糖。建议：1) 限制在1片 2) 搭配含蛋白质的咖喱（如鱼咖喱、鸡咖喱）3) 选择Thosai作为替代",
+        "en": "Roti Prata is refined flour with high GI. Tips: 1) Limit to 1 piece 2) Pair with protein-rich curry 3) Choose Thosai as alternative",
+        "risk_level": "moderate"
+      },
+      "hypertension": {
+        "cn": "煎饼本身钠含量中等，但咖喱酱可能偏咸。建议：1) 少蘸咖喱 2) 选择蔬菜咖喱而非肉咖喱",
+        "en": "Moderate sodium, but curry can be salty. Tips: 1) Less curry dipping 2) Choose vegetable curry over meat curry",
+        "risk_level": "moderate"
+      },
+      "hyperlipidemia": {
+        "cn": "制作过程使用大量黄油/ghee，饱和脂肪高。建议：1) 限制频率 2) 选择Thosai（无需黄油）3) 不要加芝士或鸡蛋版本",
+        "en": "Made with lots of ghee/butter, high saturated fat. Tips: 1) Limit frequency 2) Choose Thosai (no ghee needed) 3) Avoid cheese or egg versions",
+        "risk_level": "high"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "Thosai（印度薄饼）", "name_en": "Thosai/Dosa", "benefit": "发酵制品，低脂肪，GI较低"},
+      {"name_cn": "Chapati（全麦薄饼）", "name_en": "Chapati", "benefit": "全麦，无油炸，更多纤维"},
+      {"name_cn": "Idli（印度蒸米糕）", "name_en": "Idli", "benefit": "蒸制，低脂肪"}
+    ]
+  },
+  {
+    "food_id": "SG006",
+    "food_name_en": "Thosai / Dosa (Plain)",
+    "food_name_cn": "印度薄饼",
+    "food_name_malay": "Thosai",
+    "food_name_tamil": "தோசை",
+    "category": "bread_pastry",
+    "category_cn": "饼类",
+    "cuisine": "indian",
+    "source": "Hawker Centre / Indian Restaurant",
+    "serving_size": "2 pieces with sambar and chutney",
+    "nutrition_per_serving": {
+      "calories_kcal": 300,
+      "carbohydrates_g": 48,
+      "protein_g": 8,
+      "total_fat_g": 8,
+      "saturated_fat_g": 2,
+      "sodium_mg": 600,
+      "sugar_g": 3,
+      "fiber_g": 3,
+      "cholesterol_mg": 5
+    },
+    "glycemic_index": "medium",
+    "gi_value": 55,
+    "health_tags": ["moderate_carb", "low_fat"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "Thosai由发酵米糊和扁豆制成，GI值中等，比Roti Prata好。建议：1) 可以适量食用 2) 搭配Sambar（扁豆汤）增加蛋白质和纤维 3) 避免加过多椰子酱",
+        "en": "Fermented rice and lentil crepe with moderate GI. Tips: 1) OK in moderation 2) Pair with Sambar for protein/fiber 3) Go easy on coconut chutney",
+        "risk_level": "low"
+      },
+      "hypertension": {
+        "cn": "钠含量适中。建议正常食用，注意酱料的盐分。",
+        "en": "Moderate sodium. Eat normally, watch the salt in accompaniments.",
+        "risk_level": "low"
+      },
+      "hyperlipidemia": {
+        "cn": "低脂肪选择！比Roti Prata健康很多。建议：1) 选择plain Thosai 2) 少加黄油/ghee 3) 搭配Sambar",
+        "en": "Low fat option! Much healthier than Roti Prata. Tips: 1) Choose plain 2) Skip butter/ghee 3) Pair with Sambar",
+        "risk_level": "low"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "Rava Thosai（粗粒面粉版本）", "name_en": "Rava Thosai", "benefit": "更多纤维"}
+    ]
+  },
+  {
+    "food_id": "SG007",
+    "food_name_en": "Biryani (Chicken)",
+    "food_name_cn": "鸡肉印度香饭",
+    "food_name_malay": "Nasi Briyani Ayam",
+    "food_name_tamil": "சிக்கன் பிரியாணி",
+    "category": "rice_dishes",
+    "category_cn": "饭类",
+    "cuisine": "indian",
+    "source": "Hawker Centre / Indian Restaurant",
+    "serving_size": "1 plate (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 680,
+      "carbohydrates_g": 82,
+      "protein_g": 28,
+      "total_fat_g": 26,
+      "saturated_fat_g": 8,
+      "sodium_mg": 1100,
+      "sugar_g": 5,
+      "fiber_g": 3,
+      "cholesterol_mg": 95
+    },
+    "glycemic_index": "medium_high",
+    "gi_value": 60,
+    "health_tags": ["high_carb", "high_calorie", "high_sodium"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "Biryani饭量大且使用Basmati米（GI比白米低但仍需控量）。建议：1) 只吃半份饭 2) 多吃鸡肉和蔬菜 3) Basmati米比普通白米GI稍低，可接受",
+        "en": "Large rice portion but Basmati has lower GI than white rice. Tips: 1) Eat half the rice 2) Focus on chicken and vegetables 3) Basmati rice is a better choice",
+        "risk_level": "moderate"
+      },
+      "hypertension": {
+        "cn": "香料较多但钠含量中等偏高。建议：1) 少加额外的腌菜/酱料 2) 选择鸡肉而非羊肉版本",
+        "en": "Moderately high sodium. Tips: 1) Skip extra pickles/sauces 2) Choose chicken over mutton",
+        "risk_level": "moderate"
+      },
+      "hyperlipidemia": {
+        "cn": "含一定量的ghee和油，但比Nasi Lemak好。建议：1) 去掉鸡皮 2) 减少饭量 3) 选择鸡胸而非鸡腿",
+        "en": "Contains ghee but better than Nasi Lemak. Tips: 1) Remove chicken skin 2) Reduce rice 3) Choose breast over thigh",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "半份Biryani + Raita（酸奶酱）", "name_en": "Half Biryani + Raita", "benefit": "减少碳水，酸奶增加益生菌"},
+      {"name_cn": "Tandoori鸡配Chapati", "name_en": "Tandoori Chicken with Chapati", "benefit": "烤制低脂，全麦低GI"}
+    ]
+  },
+  {
+    "food_id": "SG008",
+    "food_name_en": "Mee Rebus",
+    "food_name_cn": "卤面",
+    "food_name_malay": "Mee Rebus",
+    "food_name_tamil": "மீ ரெபஸ்",
+    "category": "noodle_dishes",
+    "category_cn": "面类",
+    "cuisine": "malay",
+    "source": "Hawker Centre",
+    "serving_size": "1 bowl (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 480,
+      "carbohydrates_g": 65,
+      "protein_g": 15,
+      "total_fat_g": 18,
+      "saturated_fat_g": 5,
+      "sodium_mg": 1500,
+      "sugar_g": 10,
+      "fiber_g": 3,
+      "cholesterol_mg": 60
+    },
+    "glycemic_index": "medium_high",
+    "gi_value": 62,
+    "health_tags": ["high_sodium", "high_carb", "moderate_sugar"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "卤面的甜辣酱汁含糖较多，面条也是碳水来源。建议：1) 不喝完所有酱汁 2) 要求少甜酱 3) 多吃配料中的鸡蛋和豆腐",
+        "en": "The sweet gravy contains sugar and noodles are carb-heavy. Tips: 1) Don't finish all the gravy 2) Request less sweet sauce 3) Eat the egg and tofu",
+        "risk_level": "moderate"
+      },
+      "hypertension": {
+        "cn": "酱汁含钠高。建议：1) 少喝酱汁 2) 不加额外酱油",
+        "en": "Gravy is high in sodium. Tips: 1) Less gravy 2) No extra soy sauce",
+        "risk_level": "high"
+      },
+      "hyperlipidemia": {
+        "cn": "比炒粿条脂肪含量低。酱汁用红薯和虾米制成。建议：适量食用，控制酱汁摄入。",
+        "en": "Lower fat than Char Kway Teow. Tips: Eat in moderation, control gravy intake.",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "少酱汁版本", "name_en": "Less gravy version", "benefit": "减少钠和糖"},
+      {"name_cn": "Mee Soto（鸡肉汤面）", "name_en": "Mee Soto (chicken soup noodles)", "benefit": "清汤，更少脂肪和钠"}
+    ]
+  },
+  {
+    "food_id": "SG009",
+    "food_name_en": "Bak Kut Teh",
+    "food_name_cn": "肉骨茶",
+    "food_name_malay": "Bak Kut Teh",
+    "food_name_tamil": "பாக் குட் தே",
+    "category": "soup_dishes",
+    "category_cn": "汤类",
+    "cuisine": "chinese",
+    "source": "Hawker Centre / Restaurant",
+    "serving_size": "1 bowl with rice and you tiao",
+    "nutrition_per_serving": {
+      "calories_kcal": 550,
+      "carbohydrates_g": 55,
+      "protein_g": 30,
+      "total_fat_g": 22,
+      "saturated_fat_g": 7,
+      "sodium_mg": 1600,
+      "sugar_g": 2,
+      "fiber_g": 1,
+      "cholesterol_mg": 85
+    },
+    "glycemic_index": "medium",
+    "gi_value": 58,
+    "health_tags": ["high_sodium", "high_fat", "good_protein"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "肉骨茶配白饭和油条碳水偏高。建议：1) 少吃饭和油条 2) 多吃排骨肉（蛋白质好）3) 可加蔬菜 4) 胡椒汤底（潮州式）比药材汤底稍好",
+        "en": "Rice and you tiao add carbs. Tips: 1) Less rice and you tiao 2) Focus on the pork ribs (good protein) 3) Add vegetables 4) Pepper broth slightly better than herbal",
+        "risk_level": "moderate"
+      },
+      "hypertension": {
+        "cn": "肉骨茶汤底含钠量高。建议：1) 不要喝太多汤 2) 不要加额外酱油蘸排骨 3) 少吃油条（吸收了高钠汤汁）",
+        "en": "Broth is high in sodium. Tips: 1) Don't drink too much soup 2) Skip soy sauce dip 3) Less you tiao (absorbs salty broth)",
+        "risk_level": "high"
+      },
+      "hyperlipidemia": {
+        "cn": "排骨含一定脂肪，油条是油炸食品。建议：1) 选择瘦排骨 2) 少吃或不吃油条 3) 汤底的脂肪含量取决于烹饪方式",
+        "en": "Pork ribs have some fat, you tiao is deep-fried. Tips: 1) Choose lean ribs 2) Skip you tiao 3) Skim fat from broth",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "肉骨茶不加油条配糙米饭", "name_en": "BKT without you tiao + brown rice", "benefit": "去掉油炸食品，低GI"},
+      {"name_cn": "少喝汤，多吃肉和蔬菜", "name_en": "Less soup, more meat and vegetables", "benefit": "减少钠摄入"}
+    ]
+  },
+  {
+    "food_id": "SG010",
+    "food_name_en": "Ban Mian (Handmade Noodles)",
+    "food_name_cn": "板面",
+    "food_name_malay": "Ban Mian",
+    "food_name_tamil": "பான் மியான்",
+    "category": "noodle_dishes",
+    "category_cn": "面类",
+    "cuisine": "chinese",
+    "source": "Hawker Centre",
+    "serving_size": "1 bowl (soup version)",
+    "nutrition_per_serving": {
+      "calories_kcal": 420,
+      "carbohydrates_g": 52,
+      "protein_g": 18,
+      "total_fat_g": 16,
+      "saturated_fat_g": 4,
+      "sodium_mg": 1200,
+      "sugar_g": 3,
+      "fiber_g": 3,
+      "cholesterol_mg": 70
+    },
+    "glycemic_index": "medium",
+    "gi_value": 55,
+    "health_tags": ["high_sodium", "moderate_fat", "good_fiber"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "板面的面条是手工面，GI中等。汤版本比干捞好。建议：1) 选择汤面版本 2) 加多蔬菜（通常有菜心）3) 面条份量适中",
+        "en": "Handmade noodles have moderate GI. Soup version is better. Tips: 1) Choose soup version 2) Add vegetables 3) Moderate noodle portion",
+        "risk_level": "low"
+      },
+      "hypertension": {
+        "cn": "汤底可能偏咸。建议：1) 不喝完所有汤 2) 不加额外调味料",
+        "en": "Broth can be salty. Tips: 1) Don't finish all the soup 2) No extra seasoning",
+        "risk_level": "moderate"
+      },
+      "hyperlipidemia": {
+        "cn": "相对较健康的选择，脂肪含量中等。建议：1) 选择汤面而非干捞（干捞加了更多油和酱）2) 不加炸鱼片/炸猪肉",
+        "en": "Relatively healthy choice. Tips: 1) Choose soup over dry (dry has more oil/sauce) 2) Skip fried toppings",
+        "risk_level": "low"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "汤板面加多蔬菜", "name_en": "Soup ban mian with extra vegetables", "benefit": "增加纤维和维生素"}
+    ]
+  },
+  {
+    "food_id": "SG011",
+    "food_name_en": "Economy Rice (Cai Fan)",
+    "food_name_cn": "经济饭/杂菜饭",
+    "food_name_malay": "Nasi Campur",
+    "food_name_tamil": "எகானமி ரைஸ்",
+    "category": "rice_dishes",
+    "category_cn": "饭类",
+    "cuisine": "chinese",
+    "source": "Hawker Centre",
+    "serving_size": "1 plate (rice + 2 veg + 1 meat)",
+    "nutrition_per_serving": {
+      "calories_kcal": 550,
+      "carbohydrates_g": 68,
+      "protein_g": 22,
+      "total_fat_g": 20,
+      "saturated_fat_g": 5,
+      "sodium_mg": 1000,
+      "sugar_g": 6,
+      "fiber_g": 4,
+      "cholesterol_mg": 70
+    },
+    "glycemic_index": "variable",
+    "gi_value": 65,
+    "health_tags": ["customizable", "moderate_sodium"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "经济饭的好处是可以自己选菜！建议：1) 要求少饭或糙米饭 2) 选择蒸/炒蔬菜而非油炸菜 3) 选择蒸鱼/鸡胸而非炸鸡/咕噜肉 4) 多选绿叶蔬菜",
+        "en": "Economy rice lets you customize! Tips: 1) Request less rice or brown rice 2) Choose steamed/stir-fried veg over deep-fried 3) Pick steamed fish/chicken breast over fried 4) More green leafy vegetables",
+        "risk_level": "low_to_moderate"
+      },
+      "hypertension": {
+        "cn": "取决于选择什么菜。建议：1) 选择少酱汁的菜 2) 避免腌制品（咸蛋、咸菜）3) 选择清蒸类菜肴",
+        "en": "Depends on choices. Tips: 1) Less sauce 2) Avoid preserved items (salted egg, pickled veg) 3) Choose steamed dishes",
+        "risk_level": "low_to_moderate"
+      },
+      "hyperlipidemia": {
+        "cn": "可以通过选择控制脂肪摄入。建议：1) 避免油炸菜（如炸鸡翅、炸豆腐）2) 选择蒸鱼、白切鸡 3) 多蔬菜少肉",
+        "en": "Fat content depends on choices. Tips: 1) Avoid fried items 2) Choose steamed fish, white chicken 3) More veg, less meat",
+        "risk_level": "low_to_moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "少饭 + 2份蔬菜 + 1份清蒸肉类", "name_en": "Less rice + 2 veg + 1 steamed meat", "benefit": "可控热量和营养均衡"},
+      {"name_cn": "糙米饭版本", "name_en": "Brown rice version", "benefit": "低GI，更多纤维"}
+    ]
+  },
+  {
+    "food_id": "SG012",
+    "food_name_en": "Fish Head Curry",
+    "food_name_cn": "咖喱鱼头",
+    "food_name_malay": "Kari Kepala Ikan",
+    "food_name_tamil": "மீன் தலை கறி",
+    "category": "curry_dishes",
+    "category_cn": "咖喱类",
+    "cuisine": "indian",
+    "source": "Hawker Centre / Restaurant",
+    "serving_size": "1 portion (shared, per person) with rice",
+    "nutrition_per_serving": {
+      "calories_kcal": 520,
+      "carbohydrates_g": 55,
+      "protein_g": 25,
+      "total_fat_g": 22,
+      "saturated_fat_g": 10,
+      "sodium_mg": 1300,
+      "sugar_g": 5,
+      "fiber_g": 4,
+      "cholesterol_mg": 80
+    },
+    "glycemic_index": "medium",
+    "gi_value": 55,
+    "health_tags": ["high_sodium", "high_saturated_fat", "good_protein", "good_omega3"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "咖喱鱼头含好的蛋白质和Omega-3。建议：1) 少吃饭，多吃鱼肉和蔬菜（秋葵、茄子）2) 不要用面包蘸太多咖喱汁 3) 鱼肉是很好的蛋白质来源",
+        "en": "Good protein and Omega-3. Tips: 1) Less rice, more fish and vegetables 2) Don't soak too much bread in curry 3) Fish is excellent protein",
+        "risk_level": "low_to_moderate"
+      },
+      "hypertension": {
+        "cn": "咖喱酱含钠较高。建议：1) 少吃咖喱汁 2) 多吃鱼肉和蔬菜 3) 不加额外盐",
+        "en": "Curry sauce is high in sodium. Tips: 1) Less curry sauce 2) More fish and vegetables 3) No extra salt",
+        "risk_level": "moderate"
+      },
+      "hyperlipidemia": {
+        "cn": "咖喱通常含椰浆（饱和脂肪高），但鱼肉含好的Omega-3脂肪酸。建议：1) 少吃咖喱汁 2) 多吃鱼肉 3) 选择不含椰浆的版本（如果有）",
+        "en": "Curry has coconut milk (high sat fat) but fish has Omega-3. Tips: 1) Less curry sauce 2) More fish 3) Choose non-coconut version if available",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "清蒸鱼 + 少许咖喱", "name_en": "Steamed fish with small side of curry", "benefit": "保留Omega-3，减少脂肪"},
+      {"name_cn": "Assam鱼头（罗望子汁）", "name_en": "Assam Fish Head (tamarind-based)", "benefit": "无椰浆，更少饱和脂肪"}
+    ]
+  },
+  {
+    "food_id": "SG013",
+    "food_name_en": "Satay (Chicken/Mutton)",
+    "food_name_cn": "沙爹",
+    "food_name_malay": "Satay",
+    "food_name_tamil": "சத்தாய்",
+    "category": "grilled",
+    "category_cn": "烧烤类",
+    "cuisine": "malay",
+    "source": "Hawker Centre",
+    "serving_size": "10 sticks with peanut sauce, ketupat, cucumber",
+    "nutrition_per_serving": {
+      "calories_kcal": 550,
+      "carbohydrates_g": 35,
+      "protein_g": 35,
+      "total_fat_g": 30,
+      "saturated_fat_g": 10,
+      "sodium_mg": 900,
+      "sugar_g": 12,
+      "fiber_g": 3,
+      "cholesterol_mg": 100
+    },
+    "glycemic_index": "medium",
+    "gi_value": 55,
+    "health_tags": ["high_fat", "moderate_sugar", "good_protein"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "沙爹酱含糖分（花生+甜酱），Ketupat（粽子米糕）是碳水来源。建议：1) 少蘸花生酱 2) 少吃Ketupat 3) 多吃黄瓜 4) 选择鸡肉沙爹（比羊肉脂肪少）",
+        "en": "Peanut sauce has sugar, ketupat adds carbs. Tips: 1) Less peanut sauce 2) Less ketupat 3) More cucumber 4) Choose chicken over mutton",
+        "risk_level": "moderate"
+      },
+      "hypertension": {
+        "cn": "钠含量中等。建议正常食用，注意花生酱的用量。",
+        "en": "Moderate sodium. Eat normally, watch peanut sauce portions.",
+        "risk_level": "low"
+      },
+      "hyperlipidemia": {
+        "cn": "花生酱含脂肪较高，但花生中的不饱和脂肪酸对心血管有益。建议：1) 适量蘸花生酱 2) 选择鸡胸沙爹 3) 烧烤比油炸好",
+        "en": "Peanut sauce has fat but peanuts have healthy unsaturated fats. Tips: 1) Moderate peanut sauce 2) Choose chicken breast satay 3) Grilling is better than frying",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "鸡肉沙爹少酱 + 黄瓜", "name_en": "Chicken satay with less sauce + cucumber", "benefit": "烤制蛋白质，控制脂肪"}
+    ]
+  },
+  {
+    "food_id": "SG014",
+    "food_name_en": "Teh Tarik",
+    "food_name_cn": "拉茶",
+    "food_name_malay": "Teh Tarik",
+    "food_name_tamil": "தேநீர் டரிக்",
+    "category": "beverages",
+    "category_cn": "饮品",
+    "cuisine": "malay",
+    "source": "Hawker Centre / Kopitiam",
+    "serving_size": "1 cup (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 130,
+      "carbohydrates_g": 22,
+      "protein_g": 3,
+      "total_fat_g": 4,
+      "saturated_fat_g": 3,
+      "sodium_mg": 50,
+      "sugar_g": 20,
+      "fiber_g": 0,
+      "cholesterol_mg": 10
+    },
+    "glycemic_index": "high",
+    "gi_value": 75,
+    "health_tags": ["very_high_sugar", "high_GI"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "拉茶含大量炼奶和糖，会导致血糖快速上升！建议：1) 点Teh O Kosong（红茶不加糖不加奶）2) 或Teh C Siu Dai（淡奶少糖）3) 避免每天喝",
+        "en": "Teh Tarik has lots of condensed milk and sugar! Tips: 1) Order Teh O Kosong (black tea, no sugar, no milk) 2) Or Teh C Siu Dai (evaporated milk, less sugar) 3) Don't drink daily",
+        "risk_level": "high"
+      },
+      "hypertension": {
+        "cn": "钠含量低，但高糖饮食长期可影响血压。建议选择少糖版本。",
+        "en": "Low sodium, but long-term high sugar affects BP. Choose less sugar versions.",
+        "risk_level": "low"
+      },
+      "hyperlipidemia": {
+        "cn": "炼奶含饱和脂肪。建议：1) 选择Teh O（不加奶）2) 或用低脂奶",
+        "en": "Condensed milk has saturated fat. Tips: 1) Choose Teh O (no milk) 2) Or use low-fat milk",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "Teh O Kosong（红茶无糖无奶）", "name_en": "Teh O Kosong (black tea, no sugar, no milk)", "benefit": "零卡零糖"},
+      {"name_cn": "Teh C Siu Dai（淡奶少糖）", "name_en": "Teh C Siu Dai (evaporated milk, less sugar)", "benefit": "减糖减脂"},
+      {"name_cn": "中国茶（绿茶/乌龙茶）", "name_en": "Chinese tea (green/oolong)", "benefit": "零卡，含抗氧化剂"}
+    ]
+  },
+  {
+    "food_id": "SG015",
+    "food_name_en": "Kopi",
+    "food_name_cn": "南洋咖啡",
+    "food_name_malay": "Kopi",
+    "food_name_tamil": "கோப்பி",
+    "category": "beverages",
+    "category_cn": "饮品",
+    "cuisine": "chinese",
+    "source": "Kopitiam",
+    "serving_size": "1 cup (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 135,
+      "carbohydrates_g": 21,
+      "protein_g": 3,
+      "total_fat_g": 5,
+      "saturated_fat_g": 3,
+      "sodium_mg": 40,
+      "sugar_g": 19,
+      "fiber_g": 0,
+      "cholesterol_mg": 10
+    },
+    "glycemic_index": "high",
+    "gi_value": 75,
+    "health_tags": ["very_high_sugar"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "南洋咖啡加了炼奶和糖，糖分极高。建议：1) 点Kopi O Kosong（黑咖啡无糖）2) 或Kopi C Siu Dai（淡奶少糖）3) 最好的选择是Kopi O Kosong",
+        "en": "Kopi has condensed milk and sugar. Tips: 1) Order Kopi O Kosong (black, no sugar) 2) Or Kopi C Siu Dai (evaporated milk, less sugar) 3) Best choice: Kopi O Kosong",
+        "risk_level": "high"
+      },
+      "hypertension": {
+        "cn": "咖啡因可能短暂升高血压。建议：1) 每天不超过2杯 2) 选择少糖版本",
+        "en": "Caffeine may temporarily raise BP. Tips: 1) Max 2 cups daily 2) Choose less sugar version",
+        "risk_level": "low"
+      },
+      "hyperlipidemia": {
+        "cn": "炼奶含饱和脂肪。建议选择Kopi O（不加奶）或Kopi C（淡奶）。",
+        "en": "Condensed milk has saturated fat. Choose Kopi O (no milk) or Kopi C (evaporated milk).",
+        "risk_level": "low_to_moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "Kopi O Kosong（黑咖啡无糖）", "name_en": "Kopi O Kosong (black, no sugar)", "benefit": "几乎零卡"},
+      {"name_cn": "Kopi C Siu Dai（淡奶少糖）", "name_en": "Kopi C Siu Dai (evaporated milk, less sugar)", "benefit": "减糖50%以上"}
+    ]
+  },
+  {
+    "food_id": "SG016",
+    "food_name_en": "Sugarcane Juice",
+    "food_name_cn": "甘蔗水",
+    "food_name_malay": "Air Tebu",
+    "food_name_tamil": "கரும்புச் சாறு",
+    "category": "beverages",
+    "category_cn": "饮品",
+    "cuisine": "general",
+    "source": "Hawker Centre",
+    "serving_size": "1 cup (500ml)",
+    "nutrition_per_serving": {
+      "calories_kcal": 180,
+      "carbohydrates_g": 45,
+      "protein_g": 0,
+      "total_fat_g": 0,
+      "saturated_fat_g": 0,
+      "sodium_mg": 10,
+      "sugar_g": 43,
+      "fiber_g": 0,
+      "cholesterol_mg": 0
+    },
+    "glycemic_index": "high",
+    "gi_value": 73,
+    "health_tags": ["extremely_high_sugar", "high_GI"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "⚠️ 甘蔗水含糖量极高，会导致血糖急剧飙升！一杯含糖约43克（相当于10颗方糖）。强烈建议：1) 避免饮用 2) 如果很想喝，最多喝几口 3) 选择无糖饮品代替",
+        "en": "⚠️ Extremely high sugar (43g per cup = 10 sugar cubes)! Will cause blood sugar spike. Strongly recommend: 1) Avoid 2) If craving, take just a few sips 3) Choose sugar-free drinks",
+        "risk_level": "very_high"
+      },
+      "hypertension": {
+        "cn": "钠含量低，但高糖摄入长期不利于血压控制。建议少喝。",
+        "en": "Low sodium, but chronic high sugar intake affects BP. Drink less.",
+        "risk_level": "low"
+      },
+      "hyperlipidemia": {
+        "cn": "高糖可导致甘油三酯升高。建议避免或极少量饮用。",
+        "en": "High sugar can raise triglycerides. Avoid or drink very small amounts.",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "柠檬水（无糖）", "name_en": "Lemon water (no sugar)", "benefit": "清爽解渴，零糖"},
+      {"name_cn": "薏米水（少糖）", "name_en": "Barley water (less sugar)", "benefit": "清热，可控糖量"},
+      {"name_cn": "白开水", "name_en": "Plain water", "benefit": "最佳选择"}
+    ]
+  },
+  {
+    "food_id": "SG017",
+    "food_name_en": "Ice Kachang",
+    "food_name_cn": "红豆冰",
+    "food_name_malay": "Ais Kacang",
+    "food_name_tamil": "ஐஸ் கச்சாங்",
+    "category": "desserts",
+    "category_cn": "甜品",
+    "cuisine": "general",
+    "source": "Hawker Centre",
+    "serving_size": "1 bowl (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 310,
+      "carbohydrates_g": 72,
+      "protein_g": 4,
+      "total_fat_g": 2,
+      "saturated_fat_g": 1,
+      "sodium_mg": 50,
+      "sugar_g": 58,
+      "fiber_g": 3,
+      "cholesterol_mg": 5
+    },
+    "glycemic_index": "high",
+    "gi_value": 75,
+    "health_tags": ["extremely_high_sugar"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "⚠️ 红豆冰含大量糖浆、炼奶、红豆（含糖煮过），糖分极高。强烈建议避免。如果必须吃：1) 要求不加糖浆和炼奶 2) 只吃少量 3) 不要当正餐后的甜品",
+        "en": "⚠️ Extremely high sugar from syrup, condensed milk, and sweetened beans. Strongly avoid. If must eat: 1) No syrup/condensed milk 2) Small portion only 3) Don't have after a meal",
+        "risk_level": "very_high"
+      },
+      "hypertension": {
+        "cn": "高糖长期不利于代谢健康。建议少吃。",
+        "en": "Chronic high sugar is bad for metabolic health. Eat less.",
+        "risk_level": "low"
+      },
+      "hyperlipidemia": {
+        "cn": "高糖可升高甘油三酯。建议少吃或避免。",
+        "en": "High sugar raises triglycerides. Eat less or avoid.",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "水果（西瓜/木瓜）", "name_en": "Fresh fruit (watermelon/papaya)", "benefit": "天然甜味，含纤维和维生素"},
+      {"name_cn": "无糖豆花", "name_en": "Sugar-free soy beancurd", "benefit": "低糖，蛋白质丰富"}
+    ]
+  },
+  {
+    "food_id": "SG018",
+    "food_name_en": "Yong Tau Foo",
+    "food_name_cn": "酿豆腐",
+    "food_name_malay": "Yong Tau Foo",
+    "food_name_tamil": "யோங் டவ் ஃபூ",
+    "category": "customizable",
+    "category_cn": "自选类",
+    "cuisine": "chinese",
+    "source": "Hawker Centre",
+    "serving_size": "6 items with soup/dry, with noodles/rice",
+    "nutrition_per_serving": {
+      "calories_kcal": 380,
+      "carbohydrates_g": 45,
+      "protein_g": 18,
+      "total_fat_g": 14,
+      "saturated_fat_g": 3,
+      "sodium_mg": 1000,
+      "sugar_g": 5,
+      "fiber_g": 5,
+      "cholesterol_mg": 40
+    },
+    "glycemic_index": "variable",
+    "gi_value": 50,
+    "health_tags": ["customizable", "can_be_healthy", "good_fiber"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "酿豆腐是非常好的选择！可以自己控制食材。建议：1) 多选蔬菜（苦瓜、豆角、生菜、蘑菇）2) 选豆腐（好蛋白质）3) 少选炸的食品（如炸腐皮）4) 选择汤版本，少用甜酱",
+        "en": "YTF is a great choice! You control ingredients. Tips: 1) More vegetables (bitter gourd, beans, lettuce, mushrooms) 2) Choose tofu (good protein) 3) Less fried items 4) Soup version, less sweet sauce",
+        "risk_level": "low"
+      },
+      "hypertension": {
+        "cn": "汤底和甜酱可能含钠较高。建议：1) 选择清汤 2) 少放甜酱和辣酱 3) 多选新鲜蔬菜",
+        "en": "Soup and sauces may have sodium. Tips: 1) Choose clear soup 2) Less sweet/chili sauce 3) More fresh vegetables",
+        "risk_level": "low"
+      },
+      "hyperlipidemia": {
+        "cn": "可以通过选择低脂食材来控制。建议：1) 避免炸腐皮和炸鱼丸 2) 多选蔬菜和豆腐 3) 选择汤版而非干捞（干版加更多油和酱）",
+        "en": "Control fat by choosing wisely. Tips: 1) Avoid fried items 2) More vegetables and tofu 3) Soup over dry version",
+        "risk_level": "low"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "全蔬菜选择 + 豆腐 + 清汤", "name_en": "All vegetables + tofu + clear soup", "benefit": "最健康的小贩中心选择之一"}
+    ]
+  },
+  {
+    "food_id": "SG019",
+    "food_name_en": "Wanton Mee (Dry)",
+    "food_name_cn": "云吞面（干）",
+    "food_name_malay": "Mee Wantan",
+    "food_name_tamil": "வான்டான் மீ",
+    "category": "noodle_dishes",
+    "category_cn": "面类",
+    "cuisine": "chinese",
+    "source": "Hawker Centre",
+    "serving_size": "1 plate (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 470,
+      "carbohydrates_g": 58,
+      "protein_g": 18,
+      "total_fat_g": 18,
+      "saturated_fat_g": 5,
+      "sodium_mg": 1400,
+      "sugar_g": 6,
+      "fiber_g": 2,
+      "cholesterol_mg": 65
+    },
+    "glycemic_index": "medium",
+    "gi_value": 55,
+    "health_tags": ["high_sodium", "moderate_fat"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "鸡蛋面GI中等。干版的酱汁含糖。建议：1) 选择汤面版本（少酱汁）2) 控制面条份量 3) 多吃配菜蔬菜",
+        "en": "Egg noodles have moderate GI. Dry version sauce has sugar. Tips: 1) Choose soup version 2) Control noodle portion 3) Eat the vegetables",
+        "risk_level": "moderate"
+      },
+      "hypertension": {
+        "cn": "酱油和辣椒酱含钠高。建议：1) 少放酱 2) 选择汤面 3) 不加额外调味料",
+        "en": "Soy sauce and chili sauce are high in sodium. Tips: 1) Less sauce 2) Choose soup version 3) No extra seasoning",
+        "risk_level": "moderate"
+      },
+      "hyperlipidemia": {
+        "cn": "猪油是传统配料，增加饱和脂肪。建议：1) 要求少油/不加猪油 2) 叉烧选择瘦肉版",
+        "en": "Lard is traditional, adds saturated fat. Tips: 1) Request less oil/no lard 2) Choose lean char siu",
+        "risk_level": "moderate"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "汤云吞面（少酱少油）", "name_en": "Soup wanton mee (less sauce, less oil)", "benefit": "减少钠和脂肪"}
+    ]
+  },
+  {
+    "food_id": "SG020",
+    "food_name_en": "Mee Siam",
+    "food_name_cn": "暹罗面",
+    "food_name_malay": "Mee Siam",
+    "food_name_tamil": "மீ சியாம்",
+    "category": "noodle_dishes",
+    "category_cn": "面类",
+    "cuisine": "malay",
+    "source": "Hawker Centre",
+    "serving_size": "1 bowl (standard)",
+    "nutrition_per_serving": {
+      "calories_kcal": 420,
+      "carbohydrates_g": 60,
+      "protein_g": 12,
+      "total_fat_g": 15,
+      "saturated_fat_g": 4,
+      "sodium_mg": 1300,
+      "sugar_g": 8,
+      "fiber_g": 2,
+      "cholesterol_mg": 55
+    },
+    "glycemic_index": "medium",
+    "gi_value": 55,
+    "health_tags": ["high_sodium", "moderate_sugar"],
+    "disease_advice": {
+      "diabetes": {
+        "cn": "米粉碳水含量中等，酱汁含糖。建议：1) 不喝完酱汁 2) 多吃配料中的鸡蛋和豆芽 3) 控制分量",
+        "en": "Rice noodles have moderate carbs, sauce has sugar. Tips: 1) Don't finish the gravy 2) Eat the egg and bean sprouts 3) Moderate portion",
+        "risk_level": "moderate"
+      },
+      "hypertension": {
+        "cn": "酱汁含钠较高。建议少喝酱汁。",
+        "en": "Gravy is high in sodium. Eat less gravy.",
+        "risk_level": "moderate"
+      },
+      "hyperlipidemia": {
+        "cn": "脂肪含量适中。比炒粿条和叻沙健康。正常食用即可。",
+        "en": "Moderate fat. Healthier than Char Kway Teow and Laksa. OK to eat normally.",
+        "risk_level": "low"
+      }
+    },
+    "healthier_alternatives": [
+      {"name_cn": "少酱汁版本 + 加蔬菜", "name_en": "Less gravy + extra vegetables", "benefit": "减少钠和糖"}
+    ]
+  }
+]
