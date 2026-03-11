@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal, cast
 
-from dietary_guardian.features.households.policies.household_access import (
+from dietary_guardian.features.households.policies import (
     HouseholdAccessForbiddenError,
     HouseholdAccessNotFoundError,
     ensure_household_member,
