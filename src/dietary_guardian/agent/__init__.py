@@ -8,7 +8,7 @@ from typing import Any
 _EXPORT_MAP = {
     "AgentContext": ("dietary_guardian.agent.shared", "AgentContext"),
     "AgentRegistry": ("dietary_guardian.agent.shared", "AgentRegistry"),
-    "AgentResponse": ("dietary_guardian.agent.shared", "AgentResponse"),
+    "AgentResponse": ("dietary_guardian.agent.dietary", "AgentResponse"),
     "AgentResult": ("dietary_guardian.agent.shared", "AgentResult"),
     "BaseAgent": ("dietary_guardian.agent.shared", "BaseAgent"),
     "EmotionAgent": ("dietary_guardian.agent.emotion", "EmotionAgent"),
@@ -20,9 +20,9 @@ _EXPORT_MAP = {
     "RecommendationAgent": ("dietary_guardian.agent.recommendation", "RecommendationAgent"),
     "build_default_agent_registry": ("dietary_guardian.agent.shared", "build_default_agent_registry"),
     "destination_ref": ("dietary_guardian.agent.shared", "destination_ref"),
-    "dietary_agent": ("dietary_guardian.agent.shared", "dietary_agent"),
-    "get_model": ("dietary_guardian.agent.shared", "get_model"),
-    "process_meal_request": ("dietary_guardian.agent.shared", "process_meal_request"),
+    "dietary_agent": ("dietary_guardian.agent.dietary", "dietary_agent"),
+    "get_model": ("dietary_guardian.agent.dietary.agent", "get_model"),
+    "process_meal_request": ("dietary_guardian.agent.dietary.agent", "process_meal_request"),
 }
 
 __all__ = sorted(_EXPORT_MAP)
