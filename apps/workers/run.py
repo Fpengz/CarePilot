@@ -10,6 +10,7 @@ from dietary_guardian.config.app import get_settings
 from dietary_guardian.infrastructure.notifications.alert_outbox import OutboxWorker
 from dietary_guardian.infrastructure.observability import get_logger
 from dietary_guardian.infrastructure.schedulers.reminder_scheduler import run_reminder_scheduler_once
+from apps.workers.reminder_worker import run_once as run_sqlite_reminder_worker_once
 
 logger = get_logger(__name__)
 _WORKER_FAILURE_RETRY_SECONDS = 1.0
@@ -26,6 +27,7 @@ def _idle_wait_seconds(settings) -> float:
 
 async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
     processed_work = False
+
     if ctx.coordination_store.acquire_lock(
         "reminder-scheduler",
         owner=owner,
@@ -33,9 +35,22 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
     ):
         try:
             reminder_result = await run_reminder_scheduler_once(repository=ctx.app_store)
-            processed_work = processed_work or bool(reminder_result.queued_count or reminder_result.delivery_attempts)
+            processed_work = processed_work or bool(
+                reminder_result.queued_count or reminder_result.delivery_attempts
+            )
         finally:
             ctx.coordination_store.release_lock("reminder-scheduler", owner=owner)
+
+    if ctx.coordination_store.acquire_lock(
+        "sqlite-reminder-worker",
+        owner=owner,
+        ttl_seconds=settings.storage.redis_lock_ttl_seconds,
+    ):
+        try:
+            sqlite_processed = run_sqlite_reminder_worker_once()
+            processed_work = processed_work or bool(sqlite_processed)
+        finally:
+            ctx.coordination_store.release_lock("sqlite-reminder-worker", owner=owner)
 
     if ctx.coordination_store.acquire_lock(
         "outbox-worker",
@@ -65,6 +80,7 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
             timeout_seconds=wait_seconds,
         )
         return False
+
     await asyncio.sleep(wait_seconds)
     return False
 

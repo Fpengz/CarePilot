@@ -319,6 +319,10 @@ def command_dev(
     no_scheduler: Annotated[
         bool, typer.Option("--no-scheduler", help="Do not start reminder scheduler.")
     ] = False,
+    no_sqlite_reminder_worker: Annotated[
+        bool,
+        typer.Option("--no-sqlite-reminder-worker", help="Do not start SQLite reminder worker."),
+    ] = False,
 ) -> None:
     if no_api and no_web:
         error("Nothing to start: both --no-api and --no-web were set.")
@@ -331,6 +335,10 @@ def command_dev(
     start_scheduler = os.environ.get("START_REMINDER_SCHEDULER", "1")
     if no_scheduler:
         start_scheduler = "0"
+
+    start_sqlite_reminder_worker = os.environ.get("START_SQLITE_REMINDER_WORKER", "1")
+    if no_sqlite_reminder_worker:
+        start_sqlite_reminder_worker = "0"
 
     lan_ip = detect_lan_ip()
     lan_origin = f"http://{lan_ip}:3000" if lan_ip else ""
@@ -353,6 +361,7 @@ def command_dev(
     os.environ.setdefault("NEXT_PUBLIC_DEV_LOG_FRONTEND", "1")
     os.environ.setdefault("NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE", "0")
     os.environ["START_REMINDER_SCHEDULER"] = start_scheduler
+    os.environ["START_SQLITE_REMINDER_WORKER"] = start_sqlite_reminder_worker
 
     processes: list[subprocess.Popen[str]] = []
 
@@ -394,6 +403,16 @@ def command_dev(
             )
             processes.append(scheduler_proc)
 
+        if start_sqlite_reminder_worker == "1":
+            info("starting SQLite Reminder Worker: uv run python -m apps.workers.reminder_worker")
+            sqlite_worker_proc = subprocess.Popen(
+                ["uv", "run", "python", "-m", "apps.workers.reminder_worker"],
+                cwd=REPO_ROOT,
+                text=True,
+                env=os.environ.copy(),
+            )
+            processes.append(sqlite_worker_proc)
+
     if not no_web:
         info("starting Web: pnpm web:dev")
         web_proc = subprocess.Popen(
@@ -407,6 +426,22 @@ def command_dev(
     for proc in processes:
         if proc.args:
             info(f"PID: {proc.pid} command={proc.args}")
+
+    exit_code = 0
+    try:
+        while processes:
+            for proc in list(processes):
+                status = proc.poll()
+                if status is not None:
+                    if status != 0 and exit_code == 0:
+                        exit_code = status
+                    processes.remove(proc)
+            time.sleep(1)
+    finally:
+        terminate_all()
+
+    if exit_code:
+        raise typer.Exit(exit_code)
 
     info(f"API_CORS_ORIGINS={os.environ['API_CORS_ORIGINS']}")
     info(f"NEXT_ALLOWED_DEV_ORIGINS={os.environ['NEXT_ALLOWED_DEV_ORIGINS']}")
