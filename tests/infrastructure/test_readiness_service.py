@@ -4,8 +4,12 @@ from dietary_guardian.config.app import AppSettings as Settings
 from dietary_guardian.platform.observability.diagnostics.readiness import build_readiness_report
 
 
+def _build_settings(**overrides: object) -> Settings:
+    return Settings.model_validate(overrides)
+
+
 def test_readiness_report_is_ready_for_default_dev_profile() -> None:
-    settings = Settings(llm={"provider": "test"}, app={"env": "dev"})
+    settings = _build_settings(llm={"provider": "test"}, app={"env": "dev"})
 
     report = build_readiness_report(settings=settings)
 
@@ -16,7 +20,7 @@ def test_readiness_report_is_ready_for_default_dev_profile() -> None:
 
 
 def test_readiness_report_is_degraded_for_optional_channel_warnings() -> None:
-    settings = Settings(
+    settings = _build_settings(
         llm={"provider": "test"},
         app={"env": "dev"},
         channels={"email_dev_mode": False, "email_smtp_host": None},
@@ -29,7 +33,7 @@ def test_readiness_report_is_degraded_for_optional_channel_warnings() -> None:
 
 
 def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> None:
-    settings = Settings(
+    settings = _build_settings(
         llm={"provider": "test"},
         app={"env": "dev"},
         observability={"readiness_fail_on_warnings": True},
@@ -43,7 +47,7 @@ def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> 
 
 
 def test_readiness_report_requires_shared_rate_limiting_for_prod() -> None:
-    settings = Settings(
+    settings = _build_settings(
         llm={"provider": "test"},
         app={"env": "prod"},
         storage={"ephemeral_state_backend": "in_memory"},

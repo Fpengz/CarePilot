@@ -7,9 +7,13 @@ from dietary_guardian.config.app import AppSettings as Settings
 from dietary_guardian.platform.auth.sqlite_store import SQLiteAuthStore
 
 
+def _build_settings(**overrides: object) -> Settings:
+    return Settings.model_validate(overrides)
+
+
 def test_sqlite_auth_store_persists_users_and_sessions_across_instances(tmp_path) -> None:
     db_path = tmp_path / "auth.db"
-    settings = Settings(llm={"provider": "test"})
+    settings = _build_settings(llm={"provider": "test"})
 
     store_a = SQLiteAuthStore(settings=settings, db_path=str(db_path))
     created = store_a.create_user(
@@ -34,7 +38,7 @@ def test_sqlite_auth_store_persists_users_and_sessions_across_instances(tmp_path
 
 def test_sqlite_auth_store_expires_sessions(tmp_path) -> None:
     db_path = tmp_path / "auth.db"
-    settings = Settings(llm={"provider": "test"}, auth={"session_ttl_seconds": 1})
+    settings = _build_settings(llm={"provider": "test"}, auth={"session_ttl_seconds": 1})
     store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
     user = store.authenticate("member@example.com", "member-pass")
     assert user is not None
@@ -53,7 +57,7 @@ def test_sqlite_auth_store_expires_sessions(tmp_path) -> None:
 
 def test_sqlite_auth_store_records_login_lockout_and_audit_events(tmp_path) -> None:
     db_path = tmp_path / "auth.db"
-    settings = Settings(
+    settings = _build_settings(
         llm={"provider": "test"},
         auth={"login_max_failed_attempts": 2, "login_lockout_seconds": 60},
     )
@@ -71,7 +75,7 @@ def test_sqlite_auth_store_records_login_lockout_and_audit_events(tmp_path) -> N
 
 def test_sqlite_auth_store_drops_session_with_invalid_scopes_json(tmp_path) -> None:
     db_path = tmp_path / "auth.db"
-    settings = Settings(llm={"provider": "test"})
+    settings = _build_settings(llm={"provider": "test"})
     store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
     user = store.authenticate("member@example.com", "member-pass")
     assert user is not None
@@ -96,7 +100,7 @@ def test_sqlite_auth_store_drops_session_with_invalid_scopes_json(tmp_path) -> N
 
 def test_sqlite_auth_store_can_disable_demo_user_seeding(tmp_path) -> None:
     db_path = tmp_path / "auth.db"
-    settings = Settings(llm={"provider": "test"}, auth={"seed_demo_users": False})
+    settings = _build_settings(llm={"provider": "test"}, auth={"seed_demo_users": False})
 
     store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
 
@@ -105,7 +109,7 @@ def test_sqlite_auth_store_can_disable_demo_user_seeding(tmp_path) -> None:
 
 def test_sqlite_auth_store_honors_configured_demo_passwords(tmp_path) -> None:
     db_path = tmp_path / "auth.db"
-    settings = Settings(
+    settings = _build_settings(
         llm={"provider": "test"},
         auth={"demo_member_password": "member-custom-pass"},
     )

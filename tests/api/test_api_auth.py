@@ -18,8 +18,12 @@ def _reset_settings_cache() -> None:
     get_settings.cache_clear()
 
 
+def _build_settings(**overrides: object) -> Settings:
+    return Settings.model_validate(overrides)
+
+
 def _create_auth_only_app():
-    settings = Settings(
+    settings = _build_settings(
         llm={"provider": "test"},
         auth={"store_backend": "in_memory"},
     )
@@ -471,7 +475,7 @@ def test_patch_password_rejects_weak_or_reused_password() -> None:
 
 def test_settings_default_auth_backend_is_sqlite(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("AUTH_STORE_BACKEND", raising=False)
-    settings = Settings(llm={"provider": "test"})
+    settings = _build_settings(llm={"provider": "test"})
     assert settings.auth.store_backend == "sqlite"
 
 

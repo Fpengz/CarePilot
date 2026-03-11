@@ -7,7 +7,7 @@ from dietary_guardian.platform.auth import InMemoryAuthStore
 
 
 def test_get_session_drops_expired_sessions() -> None:
-    settings = Settings(llm={"provider": "test"}, auth={"session_ttl_seconds": 1})
+    settings = _build_settings(llm={"provider": "test"}, auth={"session_ttl_seconds": 1})
     store = InMemoryAuthStore(settings)
     user = store.authenticate("member@example.com", "member-pass")
     assert user is not None
@@ -22,7 +22,7 @@ def test_get_session_drops_expired_sessions() -> None:
 
 
 def test_in_memory_store_honors_configured_demo_passwords() -> None:
-    settings = Settings(
+    settings = _build_settings(
         llm={"provider": "test"},
         auth={"demo_member_password": "member-custom-pass"},
     )
@@ -30,3 +30,5 @@ def test_in_memory_store_honors_configured_demo_passwords() -> None:
 
     assert store.authenticate("member@example.com", "member-pass") is None
     assert store.authenticate("member@example.com", "member-custom-pass") is not None
+def _build_settings(**overrides: object) -> Settings:
+    return Settings.model_validate(overrides)

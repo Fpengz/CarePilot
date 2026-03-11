@@ -7,7 +7,7 @@ from dietary_guardian.agent.shared.llm.factory import LLMFactory
 
 
 def test_settings_parse_capability_targets_from_env_shape() -> None:
-    settings = Settings(
+    settings = _build_settings(
         llm={
             "provider": "openai",
             "openai_api_key": "test-openai-key",
@@ -29,7 +29,7 @@ def test_settings_parse_capability_targets_from_env_shape() -> None:
 
 
 def test_factory_uses_capability_specific_target_over_global_provider() -> None:
-    settings = Settings(
+    settings = _build_settings(
         llm={
             "provider": "openai",
             "openai_api_key": "test-openai-key",
@@ -51,7 +51,7 @@ def test_factory_uses_capability_specific_target_over_global_provider() -> None:
 
 
 def test_inference_engine_health_reports_capability_metadata() -> None:
-    settings = Settings(
+    settings = _build_settings(
         llm={
             "provider": "openai",
             "openai_api_key": "test-openai-key",
@@ -75,9 +75,11 @@ def test_inference_engine_health_reports_capability_metadata() -> None:
 
 
 def test_unmapped_capability_falls_back_to_legacy_global_settings() -> None:
-    settings = Settings(llm={"provider": "openai", "openai_api_key": "test-openai-key", "openai_model": "gpt-4o-mini"})
+    settings = _build_settings(llm={"provider": "openai", "openai_api_key": "test-openai-key", "openai_model": "gpt-4o-mini"})
 
     model = LLMFactory.get_model(settings=settings, capability=LLMCapability.CLINICAL_SUMMARY)
 
     assert getattr(model, "model_name", None) == "gpt-4o-mini"
     assert "endpoint=default" in LLMFactory.describe_model_destination(model)
+def _build_settings(**overrides: object) -> Settings:
+    return Settings.model_validate(overrides)
