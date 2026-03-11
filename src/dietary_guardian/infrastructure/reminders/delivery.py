@@ -4,7 +4,7 @@ import json
 import logging
 import uuid
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from dietary_guardian.domain.reminders.models import ReminderDispatchResult, ReminderEvent
 

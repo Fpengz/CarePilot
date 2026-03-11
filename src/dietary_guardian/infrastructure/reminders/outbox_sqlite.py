@@ -5,7 +5,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator, Optional
 
-from dietary_guardian.domain.reminders.models import ReminderDispatchResult, ReminderEvent
+from dietary_guardian.features.reminders.outbox.enums import ReminderType
+from dietary_guardian.features.reminders.outbox.models import ReminderEvent
 
 
 class SQLiteOutboxRepository:
@@ -112,7 +113,7 @@ class SQLiteOutboxRepository:
                 event_id=row["event_id"],
                 user_id=row["user_id"],
                 reminder_id=row["reminder_id"],
-                reminder_type=row["reminder_type"],  # type: ignore[arg-type]
+                reminder_type=ReminderType(row["reminder_type"]),
                 scheduled_at=row["scheduled_at"],
                 channel=row["channel"],
                 payload=row["payload"],

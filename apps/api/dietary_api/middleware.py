@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Any, cast
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -80,7 +79,7 @@ async def request_context_middleware(request: Request, call_next) -> Response:
     if settings.api.rate_limit_enabled:
         rule = _matching_rate_limit_rule(request)
         if rule is not None:
-            limit = int(cast(Any, getattr(settings.api, rule.limit_attr)))
+            limit = int(getattr(settings.api, rule.limit_attr))
             allowed, retry_after = _rate_limiter_state(request).allow(
                 key=f"{rule.method}:{rule.path}:{client_ip or 'unknown'}",
                 limit=limit,
