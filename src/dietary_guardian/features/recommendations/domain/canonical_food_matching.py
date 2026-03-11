@@ -35,7 +35,7 @@ def normalize_text(value: str) -> str:
 
 
 def _package_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    return Path(__file__).resolve().parents[3]
 
 
 def _teammate_seed_path() -> Path:
