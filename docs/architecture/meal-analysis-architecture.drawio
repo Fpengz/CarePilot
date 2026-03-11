@@ -1,0 +1,501 @@
+<mxfile host="app.diagrams.net" modified="2026-03-11T07:22:47Z" agent="Copilot" version="24.7.17">
+  <diagram id="meal-analysis-arch" name="Meal Analysis Architecture">
+    <!--
+      Layout rules
+      ============
+      • Page 1600 × 950
+      • 5 tiers (x=60, w=1480).  30 px gaps between tiers so edge routing
+        legs land in clear white space and never touch tier-label text.
+      • Tier labels: bottom-left corner → clear of all incoming arrows.
+      • T4 stores: plain rectangles (no database shape that clips labels).
+      • All edge routing legs that cross tier boundaries use explicit
+        waypoints placed in the mid-point of the 30 px inter-tier gap.
+      • "User Profile" label removed; "Validated Meal Event" label placed
+        in the 213 px gap between recon and nrs at the same y-level.
+      • Feedback loop routes along the far-right margin (x=1450), which is
+        well clear of all tier labels and node text.
+    -->
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10"
+      guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1"
+      pageScale="1" pageWidth="1600" pageHeight="950"
+      math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ─────────────────────────────────────────────
+             TITLE
+        ───────────────────────────────────────────── -->
+        <mxCell id="ttl"
+          value="AI-Driven Meal Analysis — Architecture"
+          style="text;html=1;strokeColor=none;fillColor=none;
+                 align=center;verticalAlign=middle;
+                 fontSize=16;fontStyle=1;fontColor=#1a1a1a;"
+          vertex="1" parent="1">
+          <mxGeometry x="300" y="8" width="1000" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             TIER CONTAINERS
+             Label position: bottom-left (never touched by
+             incoming arrows, never touched by right-side
+             feedback loop).
+        ───────────────────────────────────────────── -->
+
+        <!-- T1  y=50  h=130  bottom=180 -->
+        <mxCell id="tc1" value="TIER 1  ·  INGESTION"
+          style="rounded=0;fillColor=#FAFAFA;strokeColor=#C8C8C8;
+                 fontColor=#AAAAAA;fontStyle=1;fontSize=10;
+                 align=left;verticalAlign=bottom;
+                 spacingBottom=8;spacingLeft=14;strokeWidth=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="60" y="50" width="1480" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- T2  y=210  h=138  bottom=348   gap from T1: 30 px -->
+        <mxCell id="tc2" value="TIER 2  ·  PERCEPTION"
+          style="rounded=0;fillColor=#FAFAFA;strokeColor=#C8C8C8;
+                 fontColor=#AAAAAA;fontStyle=1;fontSize=10;
+                 align=left;verticalAlign=bottom;
+                 spacingBottom=8;spacingLeft=14;strokeWidth=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="60" y="210" width="1480" height="138" as="geometry" />
+        </mxCell>
+
+        <!-- T3  y=378  h=138  bottom=516   gap from T2: 30 px -->
+        <mxCell id="tc3" value="TIER 3  ·  RECONCILIATION &amp; SCORING"
+          style="rounded=0;fillColor=#FAFAFA;strokeColor=#C8C8C8;
+                 fontColor=#AAAAAA;fontStyle=1;fontSize=10;
+                 align=left;verticalAlign=bottom;
+                 spacingBottom=8;spacingLeft=14;strokeWidth=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="60" y="378" width="1480" height="138" as="geometry" />
+        </mxCell>
+
+        <!-- T4  y=546  h=155  bottom=701   gap from T3: 30 px -->
+        <mxCell id="tc4" value="TIER 4  ·  MEMORY"
+          style="rounded=0;fillColor=#FAFAFA;strokeColor=#C8C8C8;
+                 fontColor=#AAAAAA;fontStyle=1;fontSize=10;
+                 align=left;verticalAlign=bottom;
+                 spacingBottom=8;spacingLeft=14;strokeWidth=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="60" y="546" width="1480" height="155" as="geometry" />
+        </mxCell>
+
+        <!-- T5  y=731  h=165  bottom=896   gap from T4: 30 px -->
+        <mxCell id="tc5" value="TIER 5  ·  INTELLIGENCE &amp; ACTION"
+          style="rounded=0;fillColor=#FAFAFA;strokeColor=#C8C8C8;
+                 fontColor=#AAAAAA;fontStyle=1;fontSize=10;
+                 align=left;verticalAlign=bottom;
+                 spacingBottom=8;spacingLeft=14;strokeWidth=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="60" y="731" width="1480" height="165" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             TIER 1 — INPUT NODES
+             Centers:  img=290  txt=797  loc=1277
+             All within T1 (y=50–180).
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="img" value="📷  Meal Image"
+          style="rounded=1;arcSize=30;fillColor=#ffffff;strokeColor=#666666;
+                 html=1;fontSize=12;strokeWidth=1.5;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=215 w=150 → cx=290  y=80 h=72 → bottom=152 -->
+          <mxGeometry x="215" y="80" width="150" height="72" as="geometry" />
+        </mxCell>
+
+        <mxCell id="txt" value="💬  User Text"
+          style="rounded=1;arcSize=30;fillColor=#ffffff;strokeColor=#666666;
+                 html=1;fontSize=12;strokeWidth=1.5;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=725 w=145 → cx=797 -->
+          <mxGeometry x="725" y="80" width="145" height="72" as="geometry" />
+        </mxCell>
+
+        <mxCell id="loc" value="📍  Location + Context"
+          style="rounded=1;arcSize=30;fillColor=#ffffff;strokeColor=#666666;
+                 html=1;fontSize=12;strokeWidth=1.5;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=1180 w=195 → cx=1277 -->
+          <mxGeometry x="1180" y="80" width="195" height="72" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             TIER 2 — PERCEPTION AGENTS
+             Centers:  va=287  da=797  cis=1277
+             Align ↔ with T1: img≈va  txt≈da  loc≈cis
+             All within T2 (y=210–348).
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="va" value="⚙  Vision Agent"
+          style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
+                 html=1;fontStyle=1;fontSize=12;strokeWidth=2;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=180 w=215 → cx=287  y=243 h=65 → bottom=308 -->
+          <mxGeometry x="180" y="243" width="215" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="da" value="⚙  Dietary Agent"
+          style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
+                 html=1;fontStyle=1;fontSize=12;strokeWidth=2;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=690 w=215 → cx=797 -->
+          <mxGeometry x="690" y="243" width="215" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cis" value="Context Ingestion Service"
+          style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
+                 html=1;fontSize=12;strokeWidth=2;verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=1155 w=245 → cx=1277 -->
+          <mxGeometry x="1155" y="243" width="245" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             TIER 3 — RECONCILIATION & SCORING
+             recon cx=542 (midpoint of va 287 and da 797)
+             nrs   cx=1025 (below cis area)
+             Gap between recon-right=687 and nrs-left=900: 213 px
+             All within T3 (y=378–516).
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="recon" value="Reconciliation &amp; Canonicalization"
+          style="rounded=1;arcSize=15;fillColor=#ffffff;strokeColor=#1a1a1a;
+                 html=1;fontStyle=1;fontSize=12;strokeWidth=2;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=397 w=290 → cx=542  y=400 h=65 → bottom=465 -->
+          <mxGeometry x="397" y="400" width="290" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nrs" value="Nutrition &amp; Risk Scoring"
+          style="rounded=1;arcSize=15;fillColor=#ffffff;strokeColor=#1a1a1a;
+                 html=1;fontStyle=1;fontSize=12;strokeWidth=2;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=900 w=250 → cx=1025 -->
+          <mxGeometry x="900" y="400" width="250" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             TIER 4 — MEMORY STORES
+             Plain rectangles (rounded=0) — no database
+             shape whose cap would clip label text.
+             Centers: mes=290  ns=780  ums=1232
+             Align ↔ with T5: mes≈hsi  ns≈reng  ums≈presp
+             All within T4 (y=546–701).
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="mes" value="Meal Event Store"
+          style="rounded=0;fillColor=#ffffff;strokeColor=#666666;
+                 html=1;fontSize=12;fontStyle=1;strokeWidth=1.5;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=193 w=195 → cx=290  y=578 h=75 → bottom=653 -->
+          <mxGeometry x="193" y="578" width="195" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ns" value="Nutrition Store"
+          style="rounded=0;fillColor=#ffffff;strokeColor=#666666;
+                 html=1;fontSize=12;fontStyle=1;strokeWidth=1.5;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=683 w=195 → cx=780 -->
+          <mxGeometry x="683" y="578" width="195" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ums" value="User Memory Store"
+          style="rounded=0;fillColor=#ffffff;strokeColor=#666666;
+                 html=1;fontSize=12;fontStyle=1;strokeWidth=1.5;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=1130 w=205 → cx=1232  right=1335  cy=615 -->
+          <mxGeometry x="1130" y="578" width="205" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             TIER 5 — INTELLIGENCE & ACTION
+             Centers: hsi=290  reng=780  presp=1232
+             Align ↔ with T4 → vertical drops from stores.
+             All within T5 (y=731–896).
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="hsi" value="Health-State Interpretation"
+          style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
+                 html=1;fontStyle=1;fontSize=12;strokeWidth=2;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=155 w=270 → cx=290  y=762 h=65 → bottom=827 -->
+          <mxGeometry x="155" y="762" width="270" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="reng" value="Recommendation Engine"
+          style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
+                 html=1;fontStyle=1;fontSize=12;strokeWidth=2;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=640 w=280 → cx=780 -->
+          <mxGeometry x="640" y="762" width="280" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="presp" value="Patient Response"
+          style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
+                 html=1;fontStyle=1;fontSize=12;strokeWidth=2;
+                 verticalAlign=middle;"
+          vertex="1" parent="1">
+          <!-- x=1125 w=215 → cx=1232  right=1340 -->
+          <mxGeometry x="1125" y="762" width="215" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             EDGES — TIER 1 → TIER 2
+             Near-vertical drops (centres are aligned).
+             No waypoints needed; auto-router handles the
+             tiny x-offset between img/va (290 vs 287).
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="e-img-va"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="img" target="va">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-txt-da"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="txt" target="da">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-loc-cis"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="loc" target="cis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             EDGES — TIER 2 → TIER 3
+             All horizontal legs land at y=363, which is
+             the mid-point of the 30 px T2/T3 gap
+             (T2 bottom=348, T3 top=378 → mid=363).
+             No tier-label text exists at y=363.
+        ───────────────────────────────────────────── -->
+
+        <!-- Vision Agent → enters recon from LEFT side -->
+        <mxCell id="e-va-recon"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0;entryY=0.5;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="va" target="recon">
+          <mxGeometry relative="1" as="geometry">
+            <!-- (287,308)→(287,363)→(397,363)→(397,432) -->
+            <Array as="points">
+              <mxPoint x="287" y="363" />
+              <mxPoint x="397" y="363" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Dietary Agent → enters recon from TOP (different entry
+             point to va so the two paths don't share any segment) -->
+        <mxCell id="e-da-recon"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="da" target="recon">
+          <mxGeometry relative="1" as="geometry">
+            <!-- (797,308)→(797,363)→(542,363)→(542,400) -->
+            <Array as="points">
+              <mxPoint x="797" y="363" />
+              <mxPoint x="542" y="363" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Context Ingestion → enters nrs from TOP -->
+        <mxCell id="e-cis-nrs"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="cis" target="nrs">
+          <mxGeometry relative="1" as="geometry">
+            <!-- (1277,308)→(1277,363)→(1025,363)→(1025,400) -->
+            <Array as="points">
+              <mxPoint x="1277" y="363" />
+              <mxPoint x="1025" y="363" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             EDGE — TIER 3 INTERNAL
+             Horizontal connector with label in the 213 px
+             gap between recon-right (687) and nrs-left (900).
+             labelBackgroundColor matches tier fill so it
+             sits cleanly on the #FAFAFA background.
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="e-recon-nrs" value="Validated Meal Event"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#1a1a1a;strokeWidth=2;
+                 fontSize=10;fontColor=#444444;
+                 labelBackgroundColor=#FAFAFA;labelBorderColor=none;
+                 exitX=1;exitY=0.5;exitDx=0;exitDy=0;
+                 entryX=0;entryY=0.5;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="recon" target="nrs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             EDGES — TIER 3 → TIER 4
+             Horizontal legs at y=531, the mid-point of the
+             30 px T3/T4 gap (T3 bottom=516, T4 top=546).
+             Two legs: (542–290) and (1025–780) — no overlap.
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="e-recon-mes"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="recon" target="mes">
+          <mxGeometry relative="1" as="geometry">
+            <!-- (542,465)→(542,531)→(290,531)→(290,578) -->
+            <Array as="points">
+              <mxPoint x="542" y="531" />
+              <mxPoint x="290" y="531" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e-nrs-ns"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="nrs" target="ns">
+          <mxGeometry relative="1" as="geometry">
+            <!-- (1025,465)→(1025,531)→(780,531)→(780,578) -->
+            <Array as="points">
+              <mxPoint x="1025" y="531" />
+              <mxPoint x="780" y="531" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             EDGES — TIER 4 → TIER 5
+             mes→hsi and ns→reng are near-vertical (centres
+             are aligned within ±10 px).
+             ums→reng: horizontal leg at y=716, the mid-
+             point of the 30 px T4/T5 gap (bottom=701,
+             top=731).  No label — avoids any text overlap.
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="e-mes-hsi"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="mes" target="hsi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-ns-reng"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="ns" target="reng">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ums → reng: horizontal leg at y=716 in the T4/T5 gap.
+             Leg spans x=780–1232; no node text in that band. -->
+        <mxCell id="e-ums-reng"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#666666;strokeWidth=1.5;
+                 exitX=0.5;exitY=1;exitDx=0;exitDy=0;
+                 entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="ums" target="reng">
+          <mxGeometry relative="1" as="geometry">
+            <!-- (1232,653)→(1232,716)→(780,716)→(780,762) -->
+            <Array as="points">
+              <mxPoint x="1232" y="716" />
+              <mxPoint x="780" y="716" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             EDGES — TIER 5 INTERNAL
+             Horizontal connections at cy=794.
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="e-hsi-reng"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#1a1a1a;strokeWidth=2;
+                 exitX=1;exitY=0.5;exitDx=0;exitDy=0;
+                 entryX=0;entryY=0.5;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="hsi" target="reng">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-reng-presp"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#1a1a1a;strokeWidth=2;
+                 exitX=1;exitY=0.5;exitDx=0;exitDy=0;
+                 entryX=0;entryY=0.5;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="reng" target="presp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ─────────────────────────────────────────────
+             FEEDBACK LOOP — Patient Response → User Memory
+             Orthogonal C-shape routed at x=1450 (far-right
+             margin, 90 px from tier right edge at 1540).
+             Tier labels are all at bottom-LEFT so they
+             are 1378 px away — zero overlap risk.
+             Label "Preference Learning" appears at the
+             mid-point of the vertical leg at ~(1450, 685),
+             which is inside T4's right margin, clear of
+             all node text.
+        ───────────────────────────────────────────── -->
+
+        <mxCell id="e-feedback" value="Preference Learning"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;
+                 strokeColor=#1a1a1a;strokeWidth=2;
+                 dashed=1;dashPattern=8 4;
+                 fontSize=11;fontStyle=1;fontColor=#1a1a1a;
+                 labelBackgroundColor=#FAFAFA;labelBorderColor=none;
+                 exitX=1;exitY=0.5;exitDx=0;exitDy=0;
+                 entryX=1;entryY=0.5;entryDx=0;entryDy=0;"
+          edge="1" parent="1" source="presp" target="ums">
+          <mxGeometry relative="1" as="geometry">
+            <!-- presp right (1340,794) → (1450,794) ↑ (1450,615) → ums right (1335,615) -->
+            <Array as="points">
+              <mxPoint x="1450" y="794" />
+              <mxPoint x="1450" y="615" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

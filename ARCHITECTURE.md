@@ -10,7 +10,15 @@ Related docs:
 - `docs/operations-runbook.md`
 
 ## Current system shape
-Dietary Guardian is a layered companion system with one codebase and clear ownership boundaries.
+Dietary Guardian is a feature-first modular monolith with one codebase and clear ownership boundaries.
+
+Canonical backend import surfaces:
+- `src/dietary_guardian/features/` for product behavior
+- `src/dietary_guardian/agent/` for bounded model-powered capabilities
+- `src/dietary_guardian/platform/` for infrastructure and runtime adapters
+- `src/dietary_guardian/core/` for tiny shared primitives
+
+Legacy layered packages under `application/`, `domain/`, `infrastructure/`, and `capabilities/` remain available as compatibility surfaces while migration continues, but they are no longer the preferred place to start.
 
 ### Interface layer
 - `apps/web` is the primary user-facing interface
@@ -20,64 +28,61 @@ Dietary Guardian is a layered companion system with one codebase and clear owner
 - `apps/api/dietary_api` owns HTTP transport, auth, policy checks, request validation, error mapping, and request/correlation IDs
 - routers stay thin and delegate behavior into services and application use cases
 
-### Application layer
-- `src/dietary_guardian/application` owns the core companion workflow:
-  - `case_snapshot`
+### Feature layer
+- `src/dietary_guardian/features` owns product behavior and the obvious business entrypoints
+- every feature should expose one clear `service.py` starting point
+- the companion care loop stays grouped under `features/companion/`:
+  - `core`
   - `personalization`
   - `engagement`
-  - `evidence`
   - `care_plans`
+  - `interactions`
   - `clinician_digest`
   - `impact`
-  - `interactions`
-  - `safety`
-- this layer builds typed longitudinal state and orchestrates guidance, digest, and impact behavior
+- feature services may call `agent/` and `platform/`, but apps should not bypass them for business actions
 
-### Domain layer
-- `src/dietary_guardian/domain` contains typed companion contracts and domain models
-- domain contracts should stay transport-agnostic and persistence-agnostic
-
-### Infrastructure layer
-- `src/dietary_guardian/infrastructure` owns persistence, auth, evidence, emotion runtime, cache, and coordination adapters
-- app-data persistence is SQLite-first for the hackathon branch, with one store-selection path for durable local prototyping
-- `infrastructure/cache/` hosts in-process memory services: ProfileMemoryService, ClinicalSnapshotMemoryService, EventTimelineService
-- `infrastructure/schedulers/` hosts the reminder scheduler
-
-### Agent and workflow layer
-- `src/dietary_guardian/agents` contains bounded model/provider logic
-- `src/dietary_guardian/orchestrators/workflow.py` and `apps/workers/run.py` coordinate workflows and async processing
+### Agent layer
+- `src/dietary_guardian/agent` contains bounded model/provider logic
 - agents help with bounded reasoning, but they do not own durable state or bypass deterministic safety
+
+### Platform layer
+- `src/dietary_guardian/platform` owns persistence, auth, messaging, scheduling, storage, observability, and cache adapters
+- app-data persistence is SQLite-first for the hackathon branch, with one store-selection path for durable local prototyping
+
+### Core layer
+- `src/dietary_guardian/core` contains tiny shared primitives only
+- keep IDs, base errors, config bootstrap, clock/time helpers, and domain-neutral events here
 
 ## Core request lifecycle
 1. A request enters through the web app or another client.
 2. FastAPI authenticates the session, checks policy, validates input, and attaches trace metadata.
-3. The application layer loads and fuses state into a `CaseSnapshot`.
-4. Personalization and engagement modules determine focus, barriers, and support mode.
-5. Evidence retrieval and care-plan generation build the response payload.
+3. A feature service loads and fuses state into a `CaseSnapshot`.
+4. Companion personalization and engagement modules determine focus, barriers, and support mode.
+5. Agent capabilities and deterministic feature rules build the proposal payload.
 6. Deterministic safety review approves, adjusts, or escalates the result.
 7. Clinician digest and impact summary are produced from the same state bundle when needed.
-8. The system records workflow events and persists durable outputs.
+8. Platform adapters persist durable outputs and emit follow-up work.
 9. Workers continue reminders, outbox processing, and related background tasks.
 
 ## Module ownership map
 
 ```text
-apps/api/dietary_api/      HTTP transport, auth, policy, response mapping
-apps/web/                  Next.js routes, components, typed API clients
-apps/workers/              external worker runtime
-src/dietary_guardian/domain/          typed domain contracts
-src/dietary_guardian/application/     use cases, policies, ports
-src/dietary_guardian/infrastructure/  persistence and external adapters
-src/dietary_guardian/agents/          bounded model/provider logic
-src/dietary_guardian/observability/   single logging and tracing entry point
+apps/api/dietary_api/                HTTP transport, auth, policy, response mapping
+apps/web/                            Next.js routes, components, typed API clients
+apps/workers/                        external worker runtime
+src/dietary_guardian/features/       product behavior and business entrypoints
+src/dietary_guardian/agent/          bounded model/provider logic
+src/dietary_guardian/platform/       persistence and external adapters
+src/dietary_guardian/core/           tiny shared primitives
+legacy layered packages/             compatibility surfaces during migration
 ```
 
 ## Key architectural rules
 - Keep route handlers transport-only.
-- Keep business logic in `application` or reusable services, not in routers or UI glue.
+- Keep business logic in feature `service.py` entrypoints or bounded supporting modules, not in routers or UI glue.
 - Keep deterministic logic as the source of truth for durable care state.
 - Treat agents as bounded helpers behind typed contracts.
-- Keep persistence and external integrations behind infrastructure adapters.
+- Keep persistence and external integrations behind platform adapters.
 - Make durable state transitions observable and testable.
 - Keep safety validation injectable via `SafetyPort` — agents must not instantiate concrete safety implementations directly.
 

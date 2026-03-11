@@ -36,6 +36,7 @@ Current hardening emphasis:
 - reduce opaque orchestration and broad service-locator patterns
 - strengthen runtime topology validation for the SQLite plus optional Redis path
 - improve observability and safety behavior on real request paths before adding more surface area
+- establish `features/`, `agent/`, `platform/`, and `core/` as the canonical backend import surfaces
 - completed architecture refactor: deleted services/, runtime/, and models lazy-export shim; consolidated observability; added SafetyPort and typed agent schema contracts
 
 ## Delivered phases
@@ -86,7 +87,7 @@ Delivered:
 - keep the modular monolith intact until runtime split is justified by real constraints
 
 ## Execution posture
-- fold new capabilities behind the existing modular-monolith boundaries instead of creating parallel systems
+- fold new capabilities behind the feature-first modular-monolith boundaries instead of creating parallel systems
 - prefer incremental migration of important flows over clean-slate rewrites
 - retire duplicate architecture or planning artifacts once their useful content has been absorbed into canonical docs and code
 
