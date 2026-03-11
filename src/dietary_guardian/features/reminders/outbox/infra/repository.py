@@ -1,3 +1,5 @@
+"""Unified SQLite repository for reminders, metric readings, and food records."""
+
 from __future__ import annotations
 
 import json

@@ -1,3 +1,5 @@
+"""Reminder service orchestrating scheduling, threshold evaluation, and outbox dispatch."""
+
 from __future__ import annotations
 
 import difflib

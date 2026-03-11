@@ -1,3 +1,5 @@
+"""SQLite-backed outbox repository for durable reminder event persistence and delivery."""
+
 from __future__ import annotations
 
 import sqlite3

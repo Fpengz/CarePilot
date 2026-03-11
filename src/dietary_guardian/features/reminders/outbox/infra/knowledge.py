@@ -1,3 +1,5 @@
+"""JSON-backed drug knowledge repository for loading medication reference data."""
+
 from __future__ import annotations
 
 import json

@@ -1,3 +1,5 @@
+"""Domain models and dataclasses for reminder events, readings, and dispatch results."""
+
 from __future__ import annotations
 
 import json

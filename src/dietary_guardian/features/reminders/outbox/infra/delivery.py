@@ -1,3 +1,5 @@
+"""Reminder delivery adapters, including Telegram and no-op implementations."""
+
 from __future__ import annotations
 
 import json
