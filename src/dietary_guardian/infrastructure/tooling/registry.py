@@ -11,8 +11,8 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from dietary_guardian.observability import get_logger
-from dietary_guardian.models.tooling import (
+from dietary_guardian.infrastructure.observability import get_logger
+from dietary_guardian.domain.tooling.models import (
     ToolErrorClass,
     ToolExecutionError,
     ToolExecutionResult,

@@ -17,7 +17,7 @@ from ..schemas import (
     ReminderNotificationPreferenceUpdateRequest,
     ScheduledReminderNotificationListResponse,
 )
-from ..services.reminder_notifications import (
+from dietary_guardian.application.notifications.reminder_materialization import (
     list_notification_endpoints,
     list_notification_preferences,
     list_reminder_notification_logs,
@@ -25,7 +25,7 @@ from ..services.reminder_notifications import (
     replace_notification_endpoints,
     replace_notification_preferences,
 )
-from ..services.reminders import (
+from dietary_guardian.application.notifications.reminders import (
     confirm_reminder_for_session,
     generate_reminders_for_session,
     get_mobility_settings_for_session,

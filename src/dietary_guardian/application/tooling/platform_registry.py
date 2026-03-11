@@ -13,7 +13,7 @@ from dietary_guardian.application.contracts.notifications import AlertRepository
 from dietary_guardian.application.notifications.alert_dispatch import trigger_alert
 from dietary_guardian.domain.alerts.models import AlertSeverity
 from dietary_guardian.infrastructure.tooling.registry import ToolRegistry
-from dietary_guardian.models.tooling import (
+from dietary_guardian.domain.tooling.models import (
     ToolPolicyContext,
     ToolSensitivity,
     ToolSideEffect,

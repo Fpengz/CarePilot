@@ -12,11 +12,11 @@ from ..schemas import (
     CompanionTodayResponse,
     ImpactSummaryResponse,
 )
-from ..services.companion import (
+from .._companion_orchestration import (
     get_clinician_digest,
     get_companion_today,
     get_impact_summary,
-    run_companion_interaction,
+    handle_companion_interaction,
 )
 
 router = APIRouter(tags=["companion"])
@@ -40,7 +40,7 @@ def companion_interactions(
     require_action(session, "companion.interactions.write")
     request_id = getattr(request.state, "request_id", None) or str(uuid4())
     correlation_id = getattr(request.state, "correlation_id", None) or str(uuid4())
-    return run_companion_interaction(
+    return handle_companion_interaction(
         context=get_context(request),
         session=session,
         payload=payload,

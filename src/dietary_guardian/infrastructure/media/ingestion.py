@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from dietary_guardian.models.contracts import CaptureEnvelope
-from dietary_guardian.models.meal import ImageInput
+from dietary_guardian.application.contracts.agent_envelopes import CaptureEnvelope
+from dietary_guardian.domain.meals.models import ImageInput
 
 
 def compute_content_sha256(payload: bytes) -> str:

@@ -1,6 +1,6 @@
 """Module for runtime validate."""
 
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.app import get_settings
 
 
 def validate_runtime_config() -> None:

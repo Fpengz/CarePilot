@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from dietary_guardian.domain.identity.models import MealSlot
 from dietary_guardian.domain.meals.models import PortionReference
-from dietary_guardian.models.meal import Nutrition
+from dietary_guardian.domain.meals.models import Nutrition
 
 InteractionEventType = Literal[
     "viewed",

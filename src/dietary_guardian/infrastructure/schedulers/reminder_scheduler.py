@@ -21,10 +21,10 @@ from dietary_guardian.application.contracts.notifications import ReminderSchedul
 from dietary_guardian.application.notifications.reminder_materialization import (
     dispatch_due_reminder_notifications,
 )
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.app import get_settings
 from dietary_guardian.infrastructure.notifications.alert_outbox import OutboxWorker
 from dietary_guardian.infrastructure.persistence import AppStoreBackend
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 from dietary_guardian.infrastructure.persistence.runtime_bootstrap import build_reminder_scheduler_repository
 
 logger = get_logger(__name__)

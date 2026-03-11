@@ -7,18 +7,18 @@ is rule-based — no LLM calls here.
 
 from dietary_guardian.domain.health.models import ClinicalProfileSnapshot
 from dietary_guardian.domain.identity.models import UserProfile
-from dietary_guardian.domain.nutrition.meal_record_accessors import (
+from dietary_guardian.domain.meals.meal_record_accessors import (
     meal_display_name,
     meal_ingredients,
     meal_nutrition,
 )
 from dietary_guardian.domain.recommendations.models import RecommendationOutput
-from dietary_guardian.observability import get_logger
-from dietary_guardian.models.meal import MealEvent
-from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.safety.engine import SafetyEngine, SafetyViolation
+import logging
+from dietary_guardian.domain.meals.models import MealEvent
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
+from dietary_guardian.domain.safety.engine import SafetyEngine, SafetyViolation
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 LOCAL_DISH_ALTERNATIVES = {
     "laksa": ["Try fish soup with brown rice", "Ask for less gravy and no extra sambal"],

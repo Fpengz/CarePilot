@@ -12,7 +12,7 @@ from typing import Protocol
 from uuid import uuid4
 
 from dietary_guardian.domain.workflows.models import WorkflowTimelineEvent
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 
 logger = get_logger(__name__)
 

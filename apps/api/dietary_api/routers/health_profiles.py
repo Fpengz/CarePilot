@@ -10,7 +10,7 @@ from ..schemas import (
     HealthProfileOnboardingPatchRequest,
     HealthProfileUpdateRequest,
 )
-from ..services.health_profiles import (
+from dietary_guardian.application.health_profiles.use_cases import (
     complete_profile_onboarding,
     get_daily_suggestions,
     get_profile,

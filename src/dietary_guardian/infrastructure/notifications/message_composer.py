@@ -8,7 +8,7 @@ per-channel capabilities.  Transport adapters call
 from pydantic import BaseModel
 
 from dietary_guardian.domain.alerts.models import AlertMessage
-from dietary_guardian.models.contracts import PresentationMessage
+from dietary_guardian.application.contracts.agent_envelopes import PresentationMessage
 
 
 class ChannelCapability(BaseModel):

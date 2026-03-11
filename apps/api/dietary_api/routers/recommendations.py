@@ -12,12 +12,12 @@ from ..schemas import (
     RecommendationSubstitutionRequest,
     RecommendationSubstitutionResponse,
 )
-from ..services.recommendation_agent import (
+from dietary_guardian.application.recommendations.use_cases import (
+    generate_recommendation_for_session,
     get_daily_agent_for_session,
     get_substitutions_for_session,
     record_interaction_for_session,
 )
-from ..services.recommendations import generate_recommendation_for_session
 
 router = APIRouter(tags=["recommendations"])
 

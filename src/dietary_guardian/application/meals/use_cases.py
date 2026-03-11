@@ -20,7 +20,7 @@ from dietary_guardian.domain.recommendations.canonical_food_matching import (
     normalize_text,
     rank_food_candidates,
 )
-from dietary_guardian.models.meal import (
+from dietary_guardian.domain.meals.models import (
     GlycemicIndexLevel,
     ImageInput,
     Ingredient,
@@ -30,7 +30,10 @@ from dietary_guardian.models.meal import (
     PortionSize,
     VisionResult,
 )
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
+
+# Phase 3 cleanup: decouple FastAPI Request/UploadFile from application layer.
+HawkerVisionModule = None  # resolved lazily in _build_hawker_vision_module
 
 _UNIT_GRAMS = {
     "bowl": 400.0,
@@ -414,3 +417,4 @@ def build_meal_record(
         analysis_version="v2",
         multi_item_count=multi_item_count,
     )
+

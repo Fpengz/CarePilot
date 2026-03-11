@@ -5,10 +5,10 @@ from datetime import datetime, timezone
 from urllib import error, request
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from dietary_guardian.config.settings import get_settings
+from dietary_guardian.config.app import get_settings
 from dietary_guardian.domain.notifications.models import ReminderEvent
 from dietary_guardian.infrastructure.notifications.channels.base import ChannelResult
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 
 logger = get_logger(__name__)
 

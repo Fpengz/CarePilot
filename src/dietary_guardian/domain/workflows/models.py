@@ -9,8 +9,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from dietary_guardian.domain.identity.models import AccountRole
-from dietary_guardian.models.contracts import AgentHandoff, AgentOutputEnvelope
-from dietary_guardian.models.tooling import ToolExecutionResult
+from dietary_guardian.application.contracts.agent_envelopes import AgentHandoff, AgentOutputEnvelope
 
 ToolPolicyEffect = Literal["allow", "deny"]
 
@@ -26,6 +25,9 @@ class ToolRolePolicyRecord(BaseModel):
     enabled: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+from dietary_guardian.domain.tooling.models import ToolExecutionResult  # noqa: E402
 
 
 class WorkflowName(StrEnum):

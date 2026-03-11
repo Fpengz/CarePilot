@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 
 from .deps import AppContext, build_app_context, close_app_context
 from .errors import (

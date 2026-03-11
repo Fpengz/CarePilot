@@ -15,9 +15,9 @@ from dietary_guardian.domain.health.models import (
     ClinicalProfileSnapshot,
     ReportInput,
 )
-from dietary_guardian.observability import get_logger
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 SUPPORTED_BIOMARKER_PATTERNS: dict[str, list[str]] = {
     "hba1c": [r"hba1c", r"glycated\s+hemoglobin"],

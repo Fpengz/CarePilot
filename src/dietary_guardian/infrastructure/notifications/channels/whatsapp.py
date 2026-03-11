@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from dietary_guardian.domain.notifications.models import ReminderEvent
 from dietary_guardian.infrastructure.notifications.channels.base import ChannelResult
-from dietary_guardian.observability import get_logger
+from dietary_guardian.infrastructure.observability import get_logger
 
 logger = get_logger(__name__)
 

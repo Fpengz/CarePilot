@@ -24,16 +24,16 @@ from dietary_guardian.domain.recommendations.models import (
     InteractionEventType,
     RecommendationOutput,
 )
-from dietary_guardian.models.analytics import EngagementMetrics
-from dietary_guardian.models.contracts import AgentOutputEnvelope
-from dietary_guardian.models.emotion import (
+from dietary_guardian.domain.health.analytics import EngagementMetrics
+from dietary_guardian.application.contracts.agent_envelopes import AgentOutputEnvelope
+from dietary_guardian.domain.health.emotion import (
     EmotionConfidenceBand,
     EmotionLabel,
     EmotionRuntimeHealth,
 )
-from dietary_guardian.models.meal import VisionResult
-from dietary_guardian.models.meal_record import MealRecognitionRecord
-from dietary_guardian.models.tooling import ToolExecutionResult
+from dietary_guardian.domain.meals.models import VisionResult
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
+from dietary_guardian.domain.tooling.models import ToolExecutionResult
 
 from .core import JsonValue
 

@@ -17,7 +17,7 @@ from ..schemas import (
     WorkflowSnapshotListResponse,
     WorkflowSnapshotWriteResponse,
 )
-from ..services.workflows import (
+from dietary_guardian.application.workflows.coordinator import (
     compare_runtime_contract_snapshots,
     create_runtime_contract_snapshot,
     create_tool_policy,

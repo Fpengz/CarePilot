@@ -26,11 +26,7 @@ from dietary_guardian.domain.recommendations.models import (
     CanonicalFoodRecord,
     MealCatalogItem,
 )
-from dietary_guardian.infrastructure.food.ingestion import (
-    load_open_food_facts_records,
-    load_usda_records,
-)
-from dietary_guardian.models.meal import Nutrition
+from dietary_guardian.domain.meals.models import Nutrition
 
 
 def normalize_text(value: str) -> str:
@@ -330,7 +326,15 @@ def _load_teammate_seed(path: Path) -> list[dict[str, object]]:
 
 
 def build_default_canonical_food_records() -> list[CanonicalFoodRecord]:
-    """Build the full canonical food record set from all seed sources."""
+    """Build the full canonical food record set from all seed sources.
+
+    NOTE: uses a lazy infra import for data loading (same pattern as domain/safety/engine.py).
+    A FoodRecordRepository port would fully decouple this in a future pass.
+    """
+    from dietary_guardian.infrastructure.food.ingestion import (  # noqa: PLC0415
+        load_open_food_facts_records,
+        load_usda_records,
+    )
     merged: dict[str, CanonicalFoodRecord] = {
         normalize_text(item.title): _from_meal_catalog_item(item) for item in DEFAULT_MEAL_CATALOG
     }

@@ -8,10 +8,10 @@ from uuid import uuid4
 
 from dietary_guardian.domain.identity.models import MealScheduleWindow, UserProfile
 from dietary_guardian.domain.notifications.models import MedicationRegimen, ReminderEvent
-from dietary_guardian.observability import get_logger
-from dietary_guardian.models.analytics import EngagementMetrics
+import logging
+from dietary_guardian.domain.health.analytics import EngagementMetrics
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 ASIA_SINGAPORE = "+08:00"
 

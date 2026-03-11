@@ -17,7 +17,7 @@ from ..schemas import (
     MedicationRegimenListResponse,
     MedicationRegimenPatchRequest,
 )
-from ..services.medications import (
+from dietary_guardian.application.medications.use_cases import (
     adherence_metrics_for_session,
     create_regimen_for_session,
     delete_regimen_for_session,

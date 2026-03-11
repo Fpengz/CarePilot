@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from dietary_guardian.models.meal import MealEvent
+from dietary_guardian.domain.meals.models import MealEvent
 
 
 class SafetyPort(Protocol):

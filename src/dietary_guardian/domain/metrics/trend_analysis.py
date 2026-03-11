@@ -11,8 +11,8 @@ from dietary_guardian.domain.health.models import (
     MetricPoint,
     MetricTrend,
 )
-from dietary_guardian.domain.nutrition.meal_record_accessors import meal_nutrition
-from dietary_guardian.models.meal_record import MealRecognitionRecord
+from dietary_guardian.domain.meals.meal_record_accessors import meal_nutrition
+from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
 
 
 def _sorted_points(points: list[MetricPoint]) -> list[MetricPoint]:

@@ -13,7 +13,12 @@ from ..schemas import (
     MealRecordsResponse,
     MealWeeklySummaryResponse,
 )
-from ..services.meals import analyze_meal, get_daily_summary, get_weekly_summary, list_meal_records
+from dietary_guardian.application.meals.api_service import (
+    analyze_meal,
+    get_daily_summary,
+    get_weekly_summary,
+    list_meal_records,
+)
 
 router = APIRouter(tags=["meals"])
 
