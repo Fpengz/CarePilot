@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dietary_guardian.features.companion.core.service import (  # noqa: F401
+from dietary_guardian.features.companion.core.use_cases import (  # noqa: F401
     build_companion_today_bundle as _build_companion_today_bundle,
     run_companion_interaction as _run_companion_interaction,
 )

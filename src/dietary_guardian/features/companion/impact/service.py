@@ -1,5 +1,0 @@
-"""Canonical companion impact service entrypoint."""
-
-from dietary_guardian.features.companion.impact.impact import build_impact_summary
-
-__all__ = ["build_impact_summary"]

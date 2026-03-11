@@ -16,13 +16,13 @@ def test_feature_first_backend_packages_exist() -> None:
         "src/dietary_guardian/core/types.py",
         "src/dietary_guardian/features/__init__.py",
         "src/dietary_guardian/features/companion/__init__.py",
-        "src/dietary_guardian/features/companion/core/service.py",
-        "src/dietary_guardian/features/companion/personalization/service.py",
-        "src/dietary_guardian/features/companion/engagement/service.py",
-        "src/dietary_guardian/features/companion/care_plans/service.py",
-        "src/dietary_guardian/features/companion/interactions/service.py",
-        "src/dietary_guardian/features/companion/clinician_digest/service.py",
-        "src/dietary_guardian/features/companion/impact/service.py",
+        "src/dietary_guardian/features/companion/core/__init__.py",
+        "src/dietary_guardian/features/companion/personalization/__init__.py",
+        "src/dietary_guardian/features/companion/engagement/__init__.py",
+        "src/dietary_guardian/features/companion/care_plans/__init__.py",
+        "src/dietary_guardian/features/companion/interactions/__init__.py",
+        "src/dietary_guardian/features/companion/clinician_digest/__init__.py",
+        "src/dietary_guardian/features/companion/impact/__init__.py",
         "src/dietary_guardian/features/meals/service.py",
         "src/dietary_guardian/features/recommendations/service.py",
         "src/dietary_guardian/features/reminders/service.py",
@@ -50,10 +50,10 @@ def test_feature_first_backend_packages_exist() -> None:
 def test_api_service_shims_delegate_to_feature_services() -> None:
     expected_imports = {
         "apps/api/dietary_api/services/companion.py": (
-            "from dietary_guardian.features.companion.core.service import"
+            "from dietary_guardian.features.companion.core.use_cases import"
         ),
         "apps/api/dietary_api/services/companion_context.py": (
-            "from dietary_guardian.features.companion.core.service import"
+            "from dietary_guardian.features.companion.core.use_cases import"
         ),
         "apps/api/dietary_api/services/meals.py": "from dietary_guardian.features.meals.service import",
         "apps/api/dietary_api/services/recommendations.py": (

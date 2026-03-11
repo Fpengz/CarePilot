@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dietary_guardian.platform.auth.session_context import build_user_profile_from_session
-from dietary_guardian.features.companion.core.service import (
+from dietary_guardian.features.companion.core.use_cases import (
     CompanionStateInputs,
     build_companion_today_bundle,
     run_companion_interaction,
