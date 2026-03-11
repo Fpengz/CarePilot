@@ -210,3 +210,8 @@ The following were reviewed and are clean:
 - `platform/cache/` — clean Redis/in-memory dual implementations
 - `platform/auth/ports.py`, `platform/auth/session_signer.py` — clean
 - `config/llm.py`, `config/app.py` — clean after today's refactor
+
+ 1. agent bases and setting designs
+  2. update scripts/
+  3. refactoring after merging with ervin's branch
+  4. merge with xiangqi's branch
