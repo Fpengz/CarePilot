@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Optional, Protocol
 
-from dietary_guardian.domain.reminders.enums import MetricType, ReminderChannel, ReminderState, ReminderType
-from dietary_guardian.domain.reminders.models import (
+from dietary_guardian.features.reminders.outbox.enums import MetricType, ReminderChannel, ReminderState, ReminderType
+from dietary_guardian.features.reminders.outbox.models import (
     DEFAULT_THRESHOLD_RULES,
     FoodRecord,
     MetricReading,

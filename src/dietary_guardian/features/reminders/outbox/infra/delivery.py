@@ -6,7 +6,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
-from dietary_guardian.domain.reminders.models import ReminderDispatchResult, ReminderEvent
+from dietary_guardian.features.reminders.outbox.models import ReminderDispatchResult, ReminderEvent
 
 logger = logging.getLogger(__name__)
 

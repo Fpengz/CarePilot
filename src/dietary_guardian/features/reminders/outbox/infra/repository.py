@@ -6,8 +6,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator, Optional
 
-from dietary_guardian.domain.reminders.enums import ReminderState, ReminderType
-from dietary_guardian.domain.reminders.models import FoodRecord, MetricReading, Reminder
+from dietary_guardian.features.reminders.outbox.enums import ReminderState, ReminderType
+from dietary_guardian.features.reminders.outbox.models import FoodRecord, MetricReading, Reminder
 
 
 class SQLiteReminderRepository:

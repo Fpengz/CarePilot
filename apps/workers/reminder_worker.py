@@ -9,14 +9,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from dietary_guardian.application.reminders.service import ReminderService
-from dietary_guardian.infrastructure.reminders.delivery import build_delivery_adapter
-from dietary_guardian.infrastructure.reminders.knowledge import (
+from dietary_guardian.features.reminders.outbox.service import ReminderService
+from dietary_guardian.features.reminders.outbox.infra.delivery import build_delivery_adapter
+from dietary_guardian.features.reminders.outbox.infra.knowledge import (
     EmptyDrugKnowledgeRepository,
     JsonDrugKnowledgeRepository,
 )
-from dietary_guardian.infrastructure.reminders.outbox_sqlite import SQLiteOutboxRepository
-from dietary_guardian.infrastructure.reminders.repository import SQLiteReminderRepository
+from dietary_guardian.features.reminders.outbox.infra.outbox_sqlite import SQLiteOutboxRepository
+from dietary_guardian.features.reminders.outbox.infra.repository import SQLiteReminderRepository
 
 logger = logging.getLogger(__name__)
 
