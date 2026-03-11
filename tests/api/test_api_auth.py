@@ -11,7 +11,7 @@ from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
 from dietary_guardian.config.app import AppSettings as Settings, get_settings
-from dietary_guardian.infrastructure.auth import InMemoryAuthStore, SessionSigner
+from dietary_guardian.platform.auth import InMemoryAuthStore, SessionSigner
 
 
 def _reset_settings_cache() -> None:

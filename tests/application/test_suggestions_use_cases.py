@@ -5,14 +5,14 @@ from typing import Any, cast
 
 import pytest
 
-from dietary_guardian.application.recommendations.ports import BuildUserProfileFn
-from dietary_guardian.application.recommendations.use_cases import (
+from dietary_guardian.features.recommendations.ports import BuildUserProfileFn
+from dietary_guardian.features.recommendations.use_cases import (
     MissingActiveHouseholdError,
     NoMealRecordsError,
     generate_suggestion_from_report,
     list_suggestions_for_session,
 )
-from dietary_guardian.domain.identity.models import (
+from dietary_guardian.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,

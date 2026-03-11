@@ -10,8 +10,7 @@ from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
 from dietary_guardian.config.app import get_settings
-from dietary_guardian.domain.meals.models import MealState, Nutrition
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
+from dietary_guardian.features.meals.models import NutritionRiskProfile
 
 
 def _reset_settings_cache() -> None:
@@ -34,29 +33,20 @@ def _login(client: TestClient, email: str = "member@example.com", password: str 
 
 
 def _seed_meal(app, *, meal_id: str, captured_at: datetime, calories: float, sugar_g: float, sodium_mg: float) -> None:
-    app.state.ctx.app_store.save_meal_record(
-        MealRecognitionRecord(
-            id=meal_id,
+    app.state.ctx.app_store.save_nutrition_risk_profile(
+        NutritionRiskProfile(
+            profile_id=meal_id,
+            event_id=meal_id,
             user_id="user_001",
             captured_at=captured_at,
-            source="upload",
-            meal_state=MealState(
-                dish_name=f"Meal {meal_id}",
-                confidence_score=0.9,
-                identification_method="AI_Flash",
-                ingredients=[],
-                nutrition=Nutrition(
-                    calories=calories,
-                    carbs_g=50,
-                    sugar_g=sugar_g,
-                    protein_g=20,
-                    fat_g=10,
-                    sodium_mg=sodium_mg,
-                    fiber_g=4,
-                ),
-            ),
-            analysis_version="test",
-            multi_item_count=1,
+            calories=calories,
+            carbs_g=50,
+            sugar_g=sugar_g,
+            protein_g=20,
+            fat_g=10,
+            sodium_mg=sodium_mg,
+            fiber_g=4,
+            risk_tags=["high_sodium"],
         )
     )
 

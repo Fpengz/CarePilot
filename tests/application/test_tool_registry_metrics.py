@@ -2,13 +2,13 @@
 
 from pydantic import BaseModel
 
-from dietary_guardian.domain.tooling.models import (
+from dietary_guardian.platform.observability.tooling.domain.models import (
     ToolPolicyContext,
     ToolSensitivity,
     ToolSideEffect,
     ToolSpec,
 )
-from dietary_guardian.infrastructure.tooling.registry import ToolRegistry
+from dietary_guardian.platform.observability.tooling.registry import ToolRegistry
 
 
 class PingInput(BaseModel):

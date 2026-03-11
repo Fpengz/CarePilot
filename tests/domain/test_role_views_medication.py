@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from apps.api.dietary_api.routers._companion_views import build_profile_mode_medication_view
-from dietary_guardian.domain.notifications.models import ReminderEvent
+from dietary_guardian.features.reminders.domain.models import ReminderEvent
 
 
 def test_profile_mode_medication_views() -> None:

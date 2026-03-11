@@ -6,14 +6,15 @@ import time
 
 import pytest
 
-from dietary_guardian.application.emotion.ports import (
+from dietary_guardian.features.companion.engagement.emotion.ports import (
     EmotionInferencePort,
     SpeechEmotionInput,
     TextEmotionInput,
 )
-from dietary_guardian.infrastructure.emotion import EmotionRuntimeConfig, InProcessEmotionRuntime
-from dietary_guardian.domain.health.emotion import EmotionInferenceResult, EmotionRuntimeHealth
-from dietary_guardian.capabilities.emotion import EmotionAgent
+from dietary_guardian.agent.emotion.infra.config import EmotionRuntimeConfig
+from dietary_guardian.agent.emotion.infra.inprocess_emotion_runtime import InProcessEmotionRuntime
+from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult, EmotionRuntimeHealth
+from dietary_guardian.agent.emotion import EmotionAgent
 
 
 def _runtime() -> InProcessEmotionRuntime:

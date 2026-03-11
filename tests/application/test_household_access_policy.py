@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from dietary_guardian.application.policies.household_access import (
+from dietary_guardian.features.households.policies import (
     HouseholdAccessForbiddenError,
     HouseholdAccessNotFoundError,
     ensure_household_member,

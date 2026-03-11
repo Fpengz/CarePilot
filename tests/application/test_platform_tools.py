@@ -1,8 +1,8 @@
 """Tests for platform tools."""
 
-from dietary_guardian.infrastructure.persistence import SQLiteRepository
-from dietary_guardian.domain.tooling.models import ToolPolicyContext
-from dietary_guardian.application.tooling.platform_registry import build_platform_tool_registry
+from dietary_guardian.platform.persistence import SQLiteRepository
+from dietary_guardian.platform.observability.tooling.domain.models import ToolPolicyContext
+from dietary_guardian.platform.observability.tooling.platform_registry import build_platform_tool_registry
 
 
 def test_trigger_alert_tool_allows_admin_scope(tmp_path) -> None:

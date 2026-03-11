@@ -34,7 +34,7 @@ def test_meal_records_endpoint_returns_saved_records() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["records"]
-    assert "meal_state" in body["records"][0]
+    assert "meal_name" in body["records"][0]
 
 
 def test_alert_timeline_endpoint_returns_outbox_rows() -> None:

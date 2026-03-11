@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 
 from dietary_guardian.config.app import AppSettings as Settings
-from dietary_guardian.infrastructure.auth import InMemoryAuthStore
+from dietary_guardian.platform.auth import InMemoryAuthStore
 
 
 def test_get_session_drops_expired_sessions() -> None:

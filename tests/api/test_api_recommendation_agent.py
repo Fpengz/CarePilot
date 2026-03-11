@@ -8,8 +8,8 @@ from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
 from dietary_guardian.config.app import get_settings
-from dietary_guardian.domain.meals.models import Ingredient, MealState, Nutrition
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
+from dietary_guardian.features.meals.domain.models import Ingredient, MealState, Nutrition
+from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
 
 
 def _reset_settings_cache() -> None:

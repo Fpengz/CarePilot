@@ -2,10 +2,10 @@
 
 from datetime import datetime
 
-from dietary_guardian.domain.meals import EnrichedMealEvent, MealNutritionProfile, MealPerception
-from dietary_guardian.infrastructure.persistence import SQLiteRepository
-from dietary_guardian.domain.meals.models import MealState, Nutrition
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
+from dietary_guardian.features.meals.domain import EnrichedMealEvent, MealNutritionProfile, MealPerception
+from dietary_guardian.platform.persistence import SQLiteRepository
+from dietary_guardian.features.meals.domain.models import MealState, Nutrition
+from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
 
 
 def test_meal_record_round_trip(tmp_path) -> None:

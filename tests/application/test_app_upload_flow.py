@@ -5,8 +5,8 @@ from io import BytesIO
 
 from PIL import Image
 
-from dietary_guardian.domain.meals.models import ImageInput
-from dietary_guardian.infrastructure.media.upload import build_image_input
+from dietary_guardian.features.meals.domain.models import ImageInput
+from dietary_guardian.platform.storage.media.upload import build_image_input
 
 
 @dataclass

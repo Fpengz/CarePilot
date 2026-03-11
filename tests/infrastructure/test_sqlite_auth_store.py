@@ -4,7 +4,7 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 
 from dietary_guardian.config.app import AppSettings as Settings
-from dietary_guardian.infrastructure.auth.sqlite_store import SQLiteAuthStore
+from dietary_guardian.platform.auth.sqlite_store import SQLiteAuthStore
 
 
 def test_sqlite_auth_store_persists_users_and_sessions_across_instances(tmp_path) -> None:

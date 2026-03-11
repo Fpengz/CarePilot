@@ -2,14 +2,14 @@
 
 from datetime import datetime, timezone
 
-from dietary_guardian.domain.identity.models import (
+from dietary_guardian.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.infrastructure.persistence import SQLiteRepository
-from dietary_guardian.application.contracts.agent_envelopes import CaptureEnvelope
-from dietary_guardian.domain.meals.models import (
+from dietary_guardian.platform.persistence import SQLiteRepository
+from dietary_guardian.core.contracts.agent_envelopes import CaptureEnvelope
+from dietary_guardian.features.meals.domain.models import (
     GlycemicIndexLevel,
     Ingredient,
     LocalizationDetails,
@@ -18,13 +18,13 @@ from dietary_guardian.domain.meals.models import (
     PortionSize,
     VisionResult,
 )
-from dietary_guardian.infrastructure.cache import (
+from dietary_guardian.platform.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,
 )
-from dietary_guardian.application.tooling.platform_registry import build_platform_tool_registry
-from dietary_guardian.application.workflows.coordinator import WorkflowCoordinator
+from dietary_guardian.platform.observability.tooling import build_platform_tool_registry
+from dietary_guardian.platform.observability.workflows import WorkflowCoordinator
 
 
 def _user() -> UserProfile:

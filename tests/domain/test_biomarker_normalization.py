@@ -1,7 +1,7 @@
 """Tests for biomarker normalization."""
 
-from dietary_guardian.domain.health.models import BiomarkerReading
-from dietary_guardian.domain.reports import build_clinical_snapshot
+from dietary_guardian.features.companion.core.health.models import BiomarkerReading
+from dietary_guardian.features.reports.domain import build_clinical_snapshot
 
 
 def test_build_snapshot_sets_risk_flags() -> None:

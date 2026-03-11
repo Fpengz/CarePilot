@@ -1,7 +1,7 @@
 """Tests for role views report advice."""
 
 from apps.api.dietary_api.routers._companion_views import build_profile_mode_report_advice_view
-from dietary_guardian.domain.recommendations.models import RecommendationOutput
+from dietary_guardian.features.recommendations.domain.models import RecommendationOutput
 
 
 def test_profile_mode_report_advice_views() -> None:

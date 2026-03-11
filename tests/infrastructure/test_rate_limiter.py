@@ -1,7 +1,7 @@
 """Tests for rate limiter."""
 
 from dietary_guardian.config.app import AppSettings as Settings
-from dietary_guardian.infrastructure.cache.rate_limiter import (
+from dietary_guardian.platform.cache.rate_limiter import (
     InMemoryRateLimiter,
     RedisRateLimiter,
     build_rate_limiter,

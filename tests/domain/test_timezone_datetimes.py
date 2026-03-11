@@ -2,10 +2,10 @@
 
 from datetime import timezone
 
-from dietary_guardian.domain.health.models import ReportInput
-from dietary_guardian.domain.meals.models import MealState, Nutrition
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
-from dietary_guardian.domain.reports import parse_report_input
+from dietary_guardian.features.companion.core.health.models import ReportInput
+from dietary_guardian.features.meals.domain.models import MealState, Nutrition
+from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
+from dietary_guardian.features.reports.domain import parse_report_input
 
 
 def _sample_meal_state() -> MealState:

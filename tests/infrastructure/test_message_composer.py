@@ -1,7 +1,7 @@
 """Tests for message composer."""
 
-from dietary_guardian.domain.alerts.models import AlertMessage
-from dietary_guardian.infrastructure.notifications.message_composer import CHANNEL_CAPABILITIES, compose_alert_message
+from dietary_guardian.features.safety.domain.alerts.models import AlertMessage
+from dietary_guardian.platform.messaging.message_composer import CHANNEL_CAPABILITIES, compose_alert_message
 
 
 def test_compose_manual_alert_message_uses_generic_title_not_medication_label() -> None:
@@ -26,4 +26,3 @@ def test_channel_capabilities_exposed_for_transport_layer() -> None:
     assert telegram.channel == "telegram"
     assert telegram.supports_text is True
     assert telegram.supports_images in {True, False}
-

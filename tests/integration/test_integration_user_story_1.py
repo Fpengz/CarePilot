@@ -2,19 +2,19 @@
 
 from datetime import date, datetime
 
-from dietary_guardian.domain.identity.models import (
+from dietary_guardian.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.domain.notifications.models import MedicationRegimen
-from dietary_guardian.infrastructure.persistence import SQLiteRepository
-from dietary_guardian.domain.medications import (
+from dietary_guardian.features.reminders.domain.models import MedicationRegimen
+from dietary_guardian.platform.persistence import SQLiteRepository
+from dietary_guardian.features.medications.domain import (
     compute_mcr,
     generate_daily_reminders,
     mark_meal_confirmation,
 )
-from dietary_guardian.application.notifications.alert_dispatch import dispatch_reminder
+from dietary_guardian.features.reminders.notifications.alert_dispatch import dispatch_reminder
 
 
 def test_user_story_1_schedule_notify_confirm(tmp_path) -> None:

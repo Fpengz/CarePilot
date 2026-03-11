@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from dietary_guardian.infrastructure.food.ingestion import (
+from dietary_guardian.platform.persistence.food.ingestion import (
     load_open_food_facts_records,
     load_usda_records,
 )

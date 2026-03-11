@@ -9,10 +9,10 @@ from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
 from dietary_guardian.config.app import get_settings
-from dietary_guardian.application.notifications.reminder_materialization import (
+from dietary_guardian.features.reminders.notifications.reminder_materialization import (
     dispatch_due_reminder_notifications,
 )
-from dietary_guardian.infrastructure.notifications.alert_outbox import OutboxWorker
+from dietary_guardian.platform.messaging.alert_outbox import OutboxWorker
 
 
 def _reset_settings_cache() -> None:

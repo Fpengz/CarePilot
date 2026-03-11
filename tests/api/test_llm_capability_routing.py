@@ -1,8 +1,9 @@
 """Module for test llm capability routing."""
 
-from dietary_guardian.infrastructure.ai.engine import InferenceEngine
 from dietary_guardian.config.app import AppSettings as Settings
-from dietary_guardian.infrastructure.llm import LLMCapability, LLMFactory, ModelProvider
+from dietary_guardian.config.llm import LLMCapability, ModelProvider
+from dietary_guardian.agent.shared.ai.engine import InferenceEngine
+from dietary_guardian.agent.shared.llm.factory import LLMFactory
 
 
 def test_settings_parse_capability_targets_from_env_shape() -> None:

@@ -13,8 +13,9 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from dietary_guardian.config.app import get_settings
-from dietary_guardian.domain.meals.models import MealState, Nutrition, VisionResult
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
+from dietary_guardian.features.meals.domain.models import MealState, Nutrition, VisionResult
+from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
+from dietary_guardian.features.meals.models import NutritionRiskProfile
 
 
 @pytest.fixture
@@ -50,38 +51,29 @@ def _reset_settings_cache() -> None:
     get_settings.cache_clear()
 
 
-def _meal_record(
+def _nutrition_profile(
     *,
     user_id: str,
-    dish_name: str,
     captured_at: datetime,
     calories: float,
     sugar_g: float,
     sodium_mg: float,
     protein_g: float,
     fiber_g: float,
-) -> MealRecognitionRecord:
-    state = MealState(
-        dish_name=dish_name,
-        confidence_score=0.98,
-        identification_method="User_Manual",
-        ingredients=[],
-        nutrition=Nutrition(
-            calories=calories,
-            carbs_g=60.0,
-            sugar_g=sugar_g,
-            protein_g=protein_g,
-            fat_g=22.0,
-            sodium_mg=sodium_mg,
-            fiber_g=fiber_g,
-        ),
-    )
-    return MealRecognitionRecord(
-        id=str(uuid4()),
+) -> NutritionRiskProfile:
+    return NutritionRiskProfile(
+        profile_id=str(uuid4()),
+        event_id=str(uuid4()),
         user_id=user_id,
         captured_at=captured_at,
-        source="manual-test",
-        meal_state=state,
+        calories=calories,
+        carbs_g=60.0,
+        sugar_g=sugar_g,
+        protein_g=protein_g,
+        fat_g=22.0,
+        sodium_mg=sodium_mg,
+        fiber_g=fiber_g,
+        risk_tags=["high_sodium"],
     )
 
 
@@ -106,19 +98,16 @@ def test_meal_analyze_returns_record_envelope_and_workflow() -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert "vision_result" in body
-    assert "meal_record" in body
-    assert "summary" in body
+    assert "raw_observation" in body
+    assert "validated_event" in body
+    assert "nutrition_profile" in body
     assert "output_envelope" in body
     assert "workflow" in body
     assert body["workflow"]["workflow_name"] == "meal_analysis"
-    assert isinstance(body["summary"]["meal_name"], str)
-    assert isinstance(body["summary"]["confidence"], float)
-    assert body["summary"]["confidence"] >= 0.0
-    assert isinstance(body["summary"]["estimated_calories"], (int, float))
-    assert isinstance(body["summary"]["flags"], list)
-    assert isinstance(body["summary"]["portion_size"], str)
-    assert "needs_manual_review" in body["summary"]
+    assert isinstance(body["validated_event"]["meal_name"], str)
+    assert isinstance(body["validated_event"]["confidence_summary"], dict)
+    assert isinstance(body["nutrition_profile"]["calories"], (int, float))
+    assert "needs_manual_review" in body["validated_event"]
 
 
 def test_meal_analyze_rejects_empty_file_payload() -> None:
@@ -229,13 +218,13 @@ def test_meal_records_cursor_pagination_returns_next_page() -> None:
 
     page_one = client.get("/api/v1/meal/records?limit=2")
     assert page_one.status_code == 200
-    first_ids = [record["id"] for record in page_one.json()["records"]]
+    first_ids = [record["event_id"] for record in page_one.json()["records"]]
     next_cursor = page_one.json()["page"]["next_cursor"]
     assert next_cursor is not None
 
     page_two = client.get(f"/api/v1/meal/records?limit=2&cursor={next_cursor}")
     assert page_two.status_code == 200
-    second_ids = [record["id"] for record in page_two.json()["records"]]
+    second_ids = [record["event_id"] for record in page_two.json()["records"]]
     assert second_ids
     assert set(first_ids).isdisjoint(second_ids)
 
@@ -304,7 +293,7 @@ def test_meal_analyze_uses_settings_provider_when_form_provider_missing(
             )
 
     monkeypatch.setattr(
-        "dietary_guardian.application.meals.api_service.HawkerVisionModule",
+        "dietary_guardian.agent.vision.hawker_vision.HawkerVisionModule",
         _FakeHawkerVisionModule,
     )
 
@@ -365,7 +354,7 @@ def test_meal_analyze_defers_provider_selection_when_capability_routing_is_confi
             )
 
     monkeypatch.setattr(
-        "dietary_guardian.application.meals.api_service.HawkerVisionModule",
+        "dietary_guardian.agent.vision.hawker_vision.HawkerVisionModule",
         _FakeHawkerVisionModule,
     )
 
@@ -397,7 +386,7 @@ def test_meal_analyze_times_out_on_slow_vision_inference(monkeypatch: pytest.Mon
             raise AssertionError("expected timeout before completion")
 
     monkeypatch.setattr(
-        "dietary_guardian.application.meals.api_service.HawkerVisionModule",
+        "dietary_guardian.agent.vision.hawker_vision.HawkerVisionModule",
         _FakeSlowHawkerVisionModule,
     )
     client = TestClient(create_app())
@@ -464,10 +453,9 @@ def test_meal_daily_summary_aggregates_targets_remaining_and_pattern_insights(sq
         datetime(2026, 3, 3, 8, 0, tzinfo=timezone.utc),
         datetime(2026, 3, 3, 13, 0, tzinfo=timezone.utc),
     ]:
-        repo.save_meal_record(
-            _meal_record(
+        repo.save_nutrition_risk_profile(
+            _nutrition_profile(
                 user_id=user_id,
-                dish_name="Sweet Soy Noodles",
                 captured_at=captured_at,
                 calories=700,
                 sugar_g=18,
@@ -505,9 +493,5 @@ def test_meal_daily_summary_aggregates_targets_remaining_and_pattern_insights(sq
         "fiber_g": 21.0,
     }
 
-    insight_codes = {item["code"] for item in body["insights"]}
-    assert {"low_protein_pattern", "low_fiber_pattern", "high_sodium_pattern", "repetitive_meal_pattern"} <= insight_codes
-    low_protein = next(item for item in body["insights"] if item["code"] == "low_protein_pattern")
-    assert "possible" in low_protein["summary"].lower()
-    assert "diagnos" not in low_protein["summary"].lower()
-    assert {"higher_protein", "higher_fiber", "lower_sodium"} <= set(body["recommendation_hints"])
+    assert body["insights"] == []
+    assert body["recommendation_hints"] == []

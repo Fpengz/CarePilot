@@ -1,9 +1,9 @@
 """Tests for meal normalization."""
 
-from dietary_guardian.application.meals.use_cases import normalize_vision_result
-from dietary_guardian.domain.meals import MealPerception
-from dietary_guardian.domain.recommendations.models import CanonicalFoodRecord
-from dietary_guardian.domain.meals.models import MealState, Nutrition, VisionResult
+from dietary_guardian.features.meals.use_cases import normalize_vision_result
+from dietary_guardian.features.meals.domain import MealPerception
+from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
+from dietary_guardian.features.meals.domain.models import MealState, Nutrition, VisionResult
 
 
 class _StubFoodStore:

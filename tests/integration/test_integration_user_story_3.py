@@ -2,16 +2,16 @@
 
 from datetime import datetime
 
-from dietary_guardian.domain.health.models import ReportInput
-from dietary_guardian.domain.identity.models import (
+from dietary_guardian.features.companion.core.health.models import ReportInput
+from dietary_guardian.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.domain.meals.models import MealState, Nutrition
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
-from dietary_guardian.domain.recommendations.meal_recommendations import generate_recommendation
-from dietary_guardian.domain.reports import (
+from dietary_guardian.features.meals.domain.models import MealState, Nutrition
+from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
+from dietary_guardian.features.recommendations.domain.meal_recommendations import generate_recommendation
+from dietary_guardian.features.reports.domain import (
     build_clinical_snapshot,
     parse_report_input,
 )

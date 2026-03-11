@@ -2,9 +2,9 @@
 
 from datetime import datetime, timezone
 
-from dietary_guardian.domain.notifications.models import ReminderEvent
-from dietary_guardian.infrastructure.persistence import SQLiteAppStore
-from dietary_guardian.application.notifications.reminder_materialization import (
+from dietary_guardian.features.reminders.domain import ReminderEvent
+from dietary_guardian.platform.persistence import SQLiteAppStore
+from dietary_guardian.features.reminders.notifications.reminder_materialization import (
     dispatch_due_reminder_notifications,
     materialize_reminder_notifications,
 )

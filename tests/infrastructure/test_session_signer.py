@@ -2,7 +2,7 @@
 
 import time
 
-from dietary_guardian.infrastructure.auth.session_signer import SessionSigner
+from dietary_guardian.platform.auth.session_signer import SessionSigner
 
 
 def test_session_signer_unsign_valid_token_within_max_age() -> None:

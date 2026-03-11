@@ -1,7 +1,7 @@
 """Tests for agent registry."""
 
-from dietary_guardian.capabilities.registry import build_default_agent_registry
-from dietary_guardian.domain.workflows.models import WorkflowName
+from dietary_guardian.agent.shared import build_default_agent_registry
+from dietary_guardian.platform.observability.workflows.domain.models import WorkflowName
 
 
 def test_default_agent_registry_exposes_core_workflow_contracts() -> None:

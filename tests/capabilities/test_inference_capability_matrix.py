@@ -1,7 +1,7 @@
 """Tests for inference capability matrix."""
 
-from dietary_guardian.infrastructure.ai.engine import InferenceEngine
-from dietary_guardian.infrastructure.ai.types import InferenceModality
+from dietary_guardian.agent.shared.ai.engine import InferenceEngine
+from dietary_guardian.agent.shared.ai.types import InferenceModality
 
 
 def test_test_provider_capability_matrix_disables_image() -> None:
@@ -13,4 +13,3 @@ def test_test_provider_capability_matrix_disables_image() -> None:
     assert profile.supports[InferenceModality.TEXT] is True
     assert profile.supports[InferenceModality.IMAGE] is False
     assert engine.supports(InferenceModality.IMAGE) is False
-

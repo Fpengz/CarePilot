@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dietary_guardian.domain.recommendations.models import CanonicalFoodRecord
-from dietary_guardian.domain.meals.models import Nutrition
-from dietary_guardian.domain.recommendations.canonical_food_matching import (
+from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
+from dietary_guardian.features.meals.domain.models import Nutrition
+from dietary_guardian.features.recommendations.domain.canonical_food_matching import (
     build_default_canonical_food_records,
     find_food_by_name,
     rank_food_candidates,

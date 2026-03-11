@@ -9,7 +9,6 @@ from apps.api.dietary_api.schemas import (
     ClinicalCardTrendResponse,
     CursorPageResponse,
     MealAnalyzeResponse,
-    MealAnalyzeSummaryResponse,
     MealRecordsResponse,
     RecommendationGenerateResponse,
     RecommendationInteractionItemResponse,
@@ -25,21 +24,20 @@ from apps.api.dietary_api.schemas import (
     WorkflowTimelineEventResponse,
 )
 
-from dietary_guardian.domain.notifications.models import ReminderEvent
-from dietary_guardian.domain.recommendations.models import RecommendationOutput
-from dietary_guardian.domain.health.analytics import EngagementMetrics
-from dietary_guardian.application.contracts.agent_envelopes import AgentOutputEnvelope
-from dietary_guardian.domain.meals.models import VisionResult
-from dietary_guardian.domain.meals.recognition import MealRecognitionRecord
+from dietary_guardian.features.reminders.domain import ReminderEvent
+from dietary_guardian.features.recommendations.domain import RecommendationOutput
+from dietary_guardian.features.companion.core.health.analytics import EngagementMetrics
+from dietary_guardian.core.contracts.agent_envelopes import AgentOutputEnvelope
+from dietary_guardian.features.meals.models import NutritionRiskProfile, RawObservationBundle, ValidatedMealEvent
 
 
 def test_meal_contract_responses_use_typed_models() -> None:
-    assert MealAnalyzeResponse.model_fields["summary"].annotation is MealAnalyzeSummaryResponse
-    assert MealAnalyzeResponse.model_fields["vision_result"].annotation is VisionResult
-    assert MealAnalyzeResponse.model_fields["meal_record"].annotation is MealRecognitionRecord
+    assert MealAnalyzeResponse.model_fields["raw_observation"].annotation is RawObservationBundle
+    assert MealAnalyzeResponse.model_fields["validated_event"].annotation is ValidatedMealEvent
+    assert MealAnalyzeResponse.model_fields["nutrition_profile"].annotation is NutritionRiskProfile
     assert MealAnalyzeResponse.model_fields["output_envelope"].annotation == AgentOutputEnvelope | None
     assert MealAnalyzeResponse.model_fields["workflow"].annotation is WorkflowResponse
-    assert MealRecordsResponse.model_fields["records"].annotation == list[MealRecognitionRecord]
+    assert MealRecordsResponse.model_fields["records"].annotation == list[ValidatedMealEvent]
     assert MealRecordsResponse.model_fields["page"].annotation == CursorPageResponse | None
 
 

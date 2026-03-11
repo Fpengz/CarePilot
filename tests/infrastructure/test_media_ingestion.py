@@ -2,8 +2,8 @@
 
 from datetime import datetime, timezone
 
-from dietary_guardian.domain.meals.models import ImageInput
-from dietary_guardian.infrastructure.media.ingestion import (
+from dietary_guardian.features.meals.domain.models import ImageInput
+from dietary_guardian.platform.storage.media.ingestion import (
     build_capture_envelope,
     should_suppress_duplicate_capture,
 )
@@ -60,4 +60,3 @@ def test_duplicate_capture_suppression_expires_after_window() -> None:
     suppress = should_suppress_duplicate_capture(session_state, envelope, window_seconds=1)
 
     assert suppress is False
-

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 
-from dietary_guardian.infrastructure.cache import redis_store as redis_cache_module
-from dietary_guardian.infrastructure.coordination import redis_coordination as redis_coord_module
+from dietary_guardian.platform.cache import redis_store as redis_cache_module
+from dietary_guardian.platform.scheduling.coordination import redis_coordination as redis_coord_module
 
 
 class _FakeRedisClient:
