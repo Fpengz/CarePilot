@@ -1392,7 +1392,9 @@ class SQLiteRepository:
     ) -> MealRecognitionRecord:
         confidence = 0.0
         if isinstance(event.confidence_summary, dict):
-            confidence = float(event.confidence_summary.get("vision_confidence", 0.0) or 0.0)
+            raw_value = event.confidence_summary.get("vision_confidence")
+            if isinstance(raw_value, (int, float, str)):
+                confidence = float(raw_value)
         nutrition = Nutrition(
             calories=profile.calories if profile is not None else 0.0,
             carbs_g=profile.carbs_g if profile is not None else 0.0,
