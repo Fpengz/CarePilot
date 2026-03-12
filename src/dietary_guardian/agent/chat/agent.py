@@ -14,7 +14,7 @@ from typing import AsyncIterator, Literal
 
 from dietary_guardian.agent.chat.memory import MemoryManager
 from dietary_guardian.agent.chat.routes.base import RouteResult
-from dietary_guardian.agent.chat.schemas import ChatInput, ChatOutput, ChatRouteLabel
+from dietary_guardian.agent.chat.schemas import ChatInput, ChatOutput, ChatRouteLabel, ChatStreamEvent
 from dietary_guardian.agent.chat.router import QueryRouter
 from dietary_guardian.agent.core.base import AgentContext, AgentResult, BaseAgent
 from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime
@@ -130,22 +130,23 @@ class ChatAgent(BaseAgent[ChatInput, ChatOutput]):
     # Streaming (async — FastAPI / SSE)
     # ------------------------------------------------------------------
 
-    async def stream(
+    async def stream_events(
         self,
         *,
         user_message: str,
         emotion_context: str | None = None,
         extra_context: str | None = None,
+        response_prefix: str | None = None,
         model_id: str | None = None,
-    ) -> AsyncIterator[str]:
+    ) -> AsyncIterator[ChatStreamEvent]:
         """Full pipeline: persist → route → build prompt → stream → persist reply."""
         model_id = model_id or self.model_id
         self.memory.add_message("user", user_message)
 
         if user_message.upper().startswith("[TRACK]"):
             self.memory.add_message("assistant", "Tracked.")
-            yield self._format_event("token", {"text": "Tracked."})
-            yield self._format_event("done", {"status": "tracked"})
+            yield ChatStreamEvent(event="token", data={"text": "Tracked."})
+            yield ChatStreamEvent(event="done", data={"status": "tracked"})
             return
 
         route_result = await self.route_async(user_message)
@@ -155,21 +156,43 @@ class ChatAgent(BaseAgent[ChatInput, ChatOutput]):
         api_messages = self.build_api_messages(combined_context, emotion_context)
 
         full_response = ""
+        if response_prefix:
+            full_response = response_prefix
+            yield ChatStreamEvent(event="token", data={"text": response_prefix})
         try:
             async for token in self._stream_runtime.stream(messages=api_messages, model_id=model_id):
                 full_response += token
-                yield self._format_event("token", {"text": token})
+                yield ChatStreamEvent(event="token", data={"text": token})
         except Exception as exc:  # noqa: BLE001
             self._logger.warning("chat_stream_failed error=%s", exc)
-            yield self._format_event(
-                "error",
-                {"message": str(exc), "phase": "stream", "retryable": False},
+            yield ChatStreamEvent(
+                event="error",
+                data={"message": str(exc), "phase": "stream", "retryable": False},
             )
         else:
             if full_response:
                 self.memory.add_message("assistant", full_response)
         finally:
-            yield self._format_event("done", {"status": "complete"})
+            yield ChatStreamEvent(event="done", data={"status": "complete"})
+
+    async def stream(
+        self,
+        *,
+        user_message: str,
+        emotion_context: str | None = None,
+        extra_context: str | None = None,
+        response_prefix: str | None = None,
+        model_id: str | None = None,
+    ) -> AsyncIterator[str]:
+        """Yield SSE-formatted chat events as strings."""
+        async for event in self.stream_events(
+            user_message=user_message,
+            emotion_context=emotion_context,
+            extra_context=extra_context,
+            response_prefix=response_prefix,
+            model_id=model_id,
+        ):
+            yield self._format_event(event.event, event.data)
 
     # ------------------------------------------------------------------
     # BaseAgent contract

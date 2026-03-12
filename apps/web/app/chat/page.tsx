@@ -13,6 +13,7 @@ type Message = {
   content: string;
   emotion?: { label: string; score: number };
   tag?: string;
+  mealProposal?: { proposalId: string; mealText: string };
 };
 
 const EMOTION_EMOJI: Record<string, string> = {
@@ -35,6 +36,7 @@ export default function ChatPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingMs, setRecordingMs] = useState(0);
   const [streamDraft, setStreamDraft] = useState("");
+  const [proposalLoadingId, setProposalLoadingId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -52,7 +54,8 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const behavior = streamDraft ? "auto" : "smooth";
+    bottomRef.current?.scrollIntoView({ behavior });
   }, [messages, streamDraft]);
 
   useEffect(() => {
@@ -121,6 +124,23 @@ export default function ChatPage() {
                   msgs[userIdx] = {
                     ...msgs[userIdx],
                     emotion: { label: data.emotion, score: data.score },
+                  };
+                }
+                return msgs;
+              });
+            }
+            if (event === "meal_proposed") {
+              setMessages((prev) => {
+                const msgs = [...prev];
+                const idx = msgs.length - 1;
+                if (idx >= 0 && msgs[idx].role === "assistant") {
+                  msgs[idx] = {
+                    ...msgs[idx],
+                    content: data.prompt ?? "I can log this meal. Confirm?",
+                    mealProposal: {
+                      proposalId: data.proposal_id,
+                      mealText: data.meal_text,
+                    },
                   };
                 }
                 return msgs;
@@ -197,6 +217,59 @@ export default function ChatPage() {
       }
       setLoading(false);
       inputRef.current?.focus();
+    }
+  };
+
+  const handleMealProposal = async (proposalId: string, action: "confirm" | "skip") => {
+    if (proposalLoadingId) return;
+    setProposalLoadingId(proposalId);
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/chat/meal/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposal_id: proposalId, action }),
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        throw new Error(body.detail || "Could not update meal proposal.");
+      }
+      setMessages((prev) => {
+        const msgs = [...prev];
+        const idx = msgs.findIndex((m) => m.mealProposal?.proposalId === proposalId);
+        if (idx >= 0) {
+          msgs[idx] = {
+            ...msgs[idx],
+            content:
+              action === "confirm"
+                ? body.message || "Meal logged."
+                : "Skipped logging this meal.",
+            mealProposal: undefined,
+          };
+        }
+        if (body.assistant_followup) {
+          msgs.push({
+            role: "assistant",
+            content: body.assistant_followup,
+          });
+        }
+        return msgs;
+      });
+    } catch {
+      setMessages((prev) => {
+        const msgs = [...prev];
+        const idx = msgs.findIndex((m) => m.mealProposal?.proposalId === proposalId);
+        if (idx >= 0) {
+          msgs[idx] = {
+            ...msgs[idx],
+            content: "⚠ Could not update the meal log. Please try again.",
+            tag: "error",
+            mealProposal: undefined,
+          };
+        }
+        return msgs;
+      });
+    } finally {
+      setProposalLoadingId(null);
     }
   };
 
@@ -431,14 +504,16 @@ export default function ChatPage() {
                 action below.
               </div>
             )}
-            {messages.map((m, i) => (
+            {messages.map((m, i) => {
+              const isStreamingMessage = m.role === "assistant" && i === messages.length - 1 && loading;
+              return (
               <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
                     m.role === "user"
                       ? "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-[0_10px_24px_rgba(16,92,182,0.22)]"
                       : "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
-                  } ${m.tag === "error" ? "bg-red-50 text-red-700" : ""}`}
+                  } ${m.tag === "error" ? "bg-red-50 text-red-700" : ""} ${isStreamingMessage ? "min-h-[2.75rem]" : ""}`}
                 >
                   {m.role === "assistant" ? (
                     m.content || streamDraft ? (
@@ -460,9 +535,28 @@ export default function ChatPage() {
                       <span className="opacity-60">({Math.round(m.emotion.score * 100)}%)</span>
                     </div>
                   )}
+                  {m.mealProposal && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        className="rounded-full bg-[color:var(--accent)] px-3 py-1.5 text-xs font-semibold text-[color:var(--accent-foreground)] disabled:opacity-60"
+                        onClick={() => handleMealProposal(m.mealProposal!.proposalId, "confirm")}
+                        disabled={proposalLoadingId === m.mealProposal.proposalId}
+                      >
+                        Log meal
+                      </button>
+                      <button
+                        className="rounded-full border border-[color:var(--border-soft)] px-3 py-1.5 text-xs font-semibold text-[color:var(--foreground)] disabled:opacity-60"
+                        onClick={() => handleMealProposal(m.mealProposal!.proposalId, "skip")}
+                        disabled={proposalLoadingId === m.mealProposal.proposalId}
+                      >
+                        Skip
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
+              );
+            })}
             <div ref={bottomRef} />
           </div>
 
