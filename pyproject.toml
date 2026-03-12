@@ -50,6 +50,7 @@ dependencies = [
     "sentence-transformers>=5.2.3",
     "e2b-code-interpreter>=2.4.1",
     "matplotlib>=3.10.8",
+    "mem0ai>=1.0.0",
 ]
 
 [project.urls]

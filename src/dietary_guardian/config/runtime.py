@@ -7,7 +7,7 @@ runtime configuration surface.
 
 from typing import Literal
 
-from pydantic import AnyHttpUrl, Field
+from pydantic import AnyHttpUrl, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # ---------------------------------------------------------------------------
@@ -165,3 +165,22 @@ class ObservabilitySettings(BaseSettings):
     api_dev_log_verbose: bool = False
     api_dev_log_headers: bool = False
     api_dev_log_response_headers: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Memory settings (Mem0)
+# ---------------------------------------------------------------------------
+
+class MemorySettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="MEM0_", extra="ignore", case_sensitive=False, populate_by_name=True)
+
+    enabled: bool | None = None
+    api_key: str | None = None
+    base_url: str | None = None
+    top_k: int = Field(default=5, ge=1, le=25)
+
+    @model_validator(mode="after")
+    def _default_enabled(self) -> "MemorySettings":
+        if self.enabled is None:
+            self.enabled = bool(self.api_key)
+        return self

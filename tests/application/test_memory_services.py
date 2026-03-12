@@ -33,6 +33,16 @@ def test_profile_memory_set_get() -> None:
     assert stored.name == "Mr Tan"
 
 
+def test_profile_memory_clear() -> None:
+    svc = ProfileMemoryService()
+    user = _user()
+    svc.put(user)
+
+    svc.clear("u1")
+
+    assert svc.get("u1") is None
+
+
 def test_clinical_snapshot_memory_set_get() -> None:
     svc = ClinicalSnapshotMemoryService()
     snap = ClinicalProfileSnapshot(biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"])
@@ -41,6 +51,16 @@ def test_clinical_snapshot_memory_set_get() -> None:
     stored = svc.get("u1")
     assert stored is not None
     assert stored.biomarkers["ldl"] == 4.2
+
+
+def test_clinical_snapshot_memory_clear() -> None:
+    svc = ClinicalSnapshotMemoryService()
+    snap = ClinicalProfileSnapshot(biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"])
+    svc.put("u1", snap)
+
+    svc.clear("u1")
+
+    assert svc.get("u1") is None
 
 
 def test_event_timeline_append_list_and_filter() -> None:

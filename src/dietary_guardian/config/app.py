@@ -20,6 +20,7 @@ from dietary_guardian.config.runtime import (
     ChatSettings,
     ChannelSettings,
     EmotionSettings,
+    MemorySettings,
     ObservabilitySettings,
     StorageSettings,
     WorkerSettings,
@@ -46,6 +47,7 @@ class AppSettings(BaseModel):
     channels: ChannelSettings = Field(default_factory=ChannelSettings)
     emotion: EmotionSettings = Field(default_factory=EmotionSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
+    memory: MemorySettings = Field(default_factory=MemorySettings)
     observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
     storage: StorageSettings = Field(default_factory=StorageSettings)
     workers: WorkerSettings = Field(default_factory=WorkerSettings)
@@ -95,6 +97,7 @@ class AppSettings(BaseModel):
             channels=ChannelSettings(),
             emotion=EmotionSettings(),
             llm=LLMSettings(),
+            memory=MemorySettings(),
             observability=ObservabilitySettings(),
             storage=StorageSettings(),
             workers=WorkerSettings(),

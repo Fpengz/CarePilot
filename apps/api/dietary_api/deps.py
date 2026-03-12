@@ -53,6 +53,7 @@ from dietary_guardian.platform.persistence.household import SQLiteHouseholdStore
 from dietary_guardian.platform.observability.tooling.registry import ToolRegistry
 from dietary_guardian.platform.observability.workflows.coordinator import WorkflowCoordinator
 from dietary_guardian.features.meals.deps import MealDeps  # noqa: F401
+from dietary_guardian.platform.memory import MemoryStore, build_memory_store
 
 from .services.notifications import NotificationReadStateStore
 
@@ -75,6 +76,7 @@ class AppContext:
     coordinator: WorkflowCoordinator
     auth_store: AuthStore
     session_signer: SessionSigner
+    memory_store: MemoryStore
     notification_reads: NotificationReadStateStore
     cache_store: CacheStore
     coordination_store: CoordinationStore
@@ -218,6 +220,7 @@ def build_app_context() -> AppContext:
         event_timeline=event_timeline,
     )
     auth_store = _build_auth_store(settings)
+    memory_store = build_memory_store(settings)
     session_signer = SessionSigner(settings.auth.session_secret)
     notification_reads = NotificationReadStateStore()
     cache_store = _build_cache_store(settings)
@@ -258,6 +261,7 @@ def build_app_context() -> AppContext:
         coordinator=coordinator,
         auth_store=auth_store,
         session_signer=session_signer,
+        memory_store=memory_store,
         notification_reads=notification_reads,
         cache_store=cache_store,
         coordination_store=coordination_store,
