@@ -10,17 +10,22 @@ Example:
 """
 
 import io
+
 import librosa
 import numpy as np
 import soundfile as sf
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
 
+from dietary_guardian.platform.observability import get_logger
+
 _PROMPT_TEMPLATE = (
     "Instruction: {query} \n"
     "Follow the text instruction based on the following audio: <SpeechHere>"
 )
 _TRANSCRIBE_PROMPT = "Please transcribe this speech."
+
+logger = get_logger(__name__)
 
 
 class AudioAgent:
@@ -42,7 +47,7 @@ class AudioAgent:
 
     def load_model(self) -> None:
         """Download & load the MERaLiON model onto the local device."""
-        print(f"[AudioAgent] Loading '{self.repo_id}' on '{self.device}'…")
+        logger.info("audio_agent_load_start repo_id=%s device=%s", self.repo_id, self.device)
         self.processor = AutoProcessor.from_pretrained(
             self.repo_id, trust_remote_code=True
         )
@@ -53,7 +58,7 @@ class AudioAgent:
             use_safetensors=True,
             trust_remote_code=True,
         ).to(self.device)
-        print("[AudioAgent] MERaLiON model loaded.")
+        logger.info("audio_agent_load_complete repo_id=%s", self.repo_id)
 
     def transcribe(self, audio_input: tuple) -> str:
         """Transcribe audio using the local MERaLiON model.
@@ -120,14 +125,14 @@ class AudioAgent:
         buf = io.BytesIO(raw_bytes)
         buf.name = filename
 
-        print(f"[AudioAgent] Sending {len(raw_bytes)} bytes ({filename}) to Groq Whisper…")
+        logger.info("audio_agent_groq_request bytes=%s filename=%s", len(raw_bytes), filename)
         result = Groq(api_key=api_key).audio.transcriptions.create(
             model="whisper-large-v3",
             file=buf,
             prompt="Singlish, Singapore English",
             language="en",
         )
-        print(f"[AudioAgent] Transcription: {result.text!r}")
+        logger.info("audio_agent_groq_response length=%s", len(result.text or ""))
         return result.text.strip()
 
     def transcribe_groq(self, audio_input: tuple) -> str:
@@ -163,7 +168,7 @@ class AudioAgent:
         buffer.seek(0)
         buffer.name = "audio.wav"  # required by Groq SDK
 
-        print("[AudioAgent] Sending audio to Groq Whisper…")
+        logger.info("audio_agent_groq_request buffered=True")
         client = Groq(api_key=api_key)
         result = client.audio.transcriptions.create(
             model="whisper-large-v3",
@@ -171,5 +176,5 @@ class AudioAgent:
             prompt="Singlish, Singapore English",
             language="en",
         )
-        print(f"[AudioAgent] Transcription: {result.text!r}")
+        logger.info("audio_agent_groq_response length=%s", len(result.text or ""))
         return result.text

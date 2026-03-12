@@ -8,19 +8,21 @@ health dashboard.
 
 from __future__ import annotations
 
-import json
+import asyncio
 import sqlite3
+import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import matplotlib
 matplotlib.use("Agg")          # headless — no display needed
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-if TYPE_CHECKING:
-    from openai import OpenAI
+from dietary_guardian.agent.chat.schemas import ChatMetricsOutput
+from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
+from dietary_guardian.platform.observability import get_logger
 
 # ---------------------------------------------------------------------------
 # Config
@@ -30,7 +32,7 @@ DB_PATH  = BASE_DIR / "data" / "runtime" / "chat_memory.db"
 
 _PARSE_PROMPT = """\
 The user sent a health-tracking message. Extract every numeric health metric \
-from the text and return a JSON array.
+from the text and return a list of metric entries in the `metrics` field.
 
 Each element must have:
   "metric_type" : one of:
@@ -47,9 +49,9 @@ Rules:
 - For blood pressure "140/90": emit TWO entries (systolic 140, diastolic 90).
 - For symptom_severity use the number the user gives (e.g. "7/10" → 7.0).
 - Omit any metric whose value cannot be a number.
-- If nothing numeric is found, return exactly: []
+- If nothing numeric is found, return an empty list.
 
-Reply with ONLY the JSON array, no markdown, no explanation.
+Return only the `metrics` field.
 """
 
 
@@ -66,17 +68,16 @@ class HealthTracker:
     def __init__(
         self,
         session_id: str,
-        client: "OpenAI",
-        model_id: str,
+        inference_engine: InferenceEngine,
         db_path: Path = DB_PATH,
     ) -> None:
         self._session_id = session_id
-        self._client     = client
-        self._model_id   = model_id
-        self._db_path    = db_path
+        self._engine = inference_engine
+        self._db_path = db_path
+        self._logger = get_logger(__name__)
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
-        print(f"[HealthTracker] Initialised — session={session_id!r}")
+        self._logger.info("chat_health_tracker_ready session=%s", session_id)
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -241,31 +242,29 @@ class HealthTracker:
                            (:message_id, :session_id, :metric_type, :value, :unit, :label, :recorded_at)""",
                     rows,
                 )
-            print(f"[HealthTracker] Cached {len(rows)} metric(s) for message {message_id}")
+            self._logger.info(
+                "chat_health_metrics_cached message_id=%s count=%s",
+                message_id,
+                len(rows),
+            )
 
         return rows
 
     def _call_llm(self, text: str) -> list[dict]:
         """Ask the LLM to extract metrics. Returns [] on failure."""
         try:
-            resp = self._client.chat.completions.create(
-                model=self._model_id,
-                messages=[
-                    {"role": "system", "content": _PARSE_PROMPT},
-                    {"role": "user",   "content": text},
-                ],
-                temperature=0,
-                max_tokens=300,
+            request = InferenceRequest(
+                request_id=str(uuid.uuid4()),
+                user_id=None,
+                modality=InferenceModality.TEXT,
+                payload={"prompt": text},
+                output_schema=ChatMetricsOutput,
+                system_prompt=_PARSE_PROMPT,
             )
-            raw_content = resp.choices[0].message.content or ""
-            raw = raw_content.strip()
-            result = json.loads(raw)
-            return result if isinstance(result, list) else []
-        except json.JSONDecodeError as exc:
-            print(f"[HealthTracker] JSON parse error: {exc}")
-            return []
-        except Exception as exc:
-            print(f"[HealthTracker] LLM error: {exc}")
+            response = asyncio.run(self._engine.infer(request))
+            return [metric.model_dump() for metric in response.structured_output.metrics]
+        except Exception as exc:  # noqa: BLE001
+            self._logger.warning("chat_health_metrics_failed error=%s", exc)
             return []
 
     # ------------------------------------------------------------------ #

@@ -6,12 +6,16 @@ sandbox, and returns the result as enrichment for the final response.
 """
 from __future__ import annotations
 
-from openai import OpenAI
-
+import asyncio
 import re
+import uuid
 
 from dietary_guardian.agent.chat.code_adapter import CodeAgent
 from dietary_guardian.agent.chat.routes.base import BaseRoute, RouteResult
+from dietary_guardian.agent.chat.schemas import ChatGeneratedCode, ChatRouteLabel
+from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
+from dietary_guardian.platform.observability import get_logger
 
 _CODE_GEN_PROMPT = (
     "You are a Python code generator.\n"
@@ -20,7 +24,7 @@ _CODE_GEN_PROMPT = (
     "prefer built-ins) that computes the answer and prints it to stdout.\n"
     "Print a clear, labelled result — e.g. `print(f'Total calories: {result}')`. \n"
     "Do NOT add explanations, markdown fences, or comments. "
-    "Reply with ONLY the raw Python code."
+    "Return the generated script in the `code` field only."
 )
 
 SYSTEM_PROMPT = (
@@ -35,10 +39,10 @@ SYSTEM_PROMPT = (
 class CodeRoute(BaseRoute):
     """Translates a math/calculation query to Python, runs it in E2B, returns context."""
 
-    def __init__(self, *, agent: CodeAgent, client: OpenAI, model_id: str) -> None:
+    def __init__(self, *, agent: CodeAgent, inference_engine: InferenceEngine) -> None:
         self._agent = agent
-        self._client = client
-        self._model = model_id
+        self._engine = inference_engine
+        self._logger = get_logger(__name__)
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -82,28 +86,21 @@ class CodeRoute(BaseRoute):
     def _generate_code(self, user_text: str) -> str:
         """Ask the LLM to produce a Python snippet for the user's calculation."""
         try:
-            resp = self._client.chat.completions.create(
-                model=self._model,
-                messages=[
-                    {"role": "system", "content": _CODE_GEN_PROMPT},
-                    {"role": "user",   "content": user_text},
-                ],
-                temperature=0,
-                max_tokens=512,
-                extra_body={
-                    "chat_template_kwargs": {
-                        "thinking_mode": "on"
-                    }
-                },
+            request = InferenceRequest(
+                request_id=str(uuid.uuid4()),
+                user_id=None,
+                modality=InferenceModality.TEXT,
+                payload={"prompt": user_text},
+                output_schema=ChatGeneratedCode,
+                system_prompt=_CODE_GEN_PROMPT,
             )
-            raw_content = resp.choices[0].message.content or ""
-            raw = raw_content.strip()
-            print(f"[CodeRoute] Raw LLM response:\n{raw}\n{'='*60}")
+            response = asyncio.run(self._engine.infer(request))
+            raw = response.structured_output.code.strip()
             code = self._extract_code(raw)
-            print(f"[CodeRoute] Generated code:\n{code}")
+            self._logger.info("chat_code_generated length=%s", len(code))
             return code
-        except Exception as exc:
-            print(f"[CodeRoute] Code-gen error: {exc}")
+        except Exception as exc:  # noqa: BLE001
+            self._logger.warning("chat_code_gen_failed error=%s", exc)
             return f"print('Could not generate code: {exc}')"
 
     # ------------------------------------------------------------------
@@ -113,7 +110,7 @@ class CodeRoute(BaseRoute):
     def enrich(self, text: str) -> RouteResult:
         code = self._generate_code(text)
         output = self._agent.run(code)
-        print(f"[CodeRoute] Sandbox output: {output!r}")
+        self._logger.info("chat_code_sandbox_output length=%s", len(output))
 
         context = "\n".join([
             SYSTEM_PROMPT,
@@ -126,7 +123,7 @@ class CodeRoute(BaseRoute):
         ])
 
         return RouteResult(
-            route_name="code",
+            route_name=ChatRouteLabel.CODE,
             context=context,
             metadata={"code": code, "output": output},
         )

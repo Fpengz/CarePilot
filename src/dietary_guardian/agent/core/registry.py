@@ -34,6 +34,7 @@ def build_default_agent_registry() -> AgentRegistry:
         AgentContract(agent_id="dietary_agent", capabilities=["nutrition_risk_assessment", "dietary_reasoning"], allowed_tools=[], output_contract="dietary_reasoning_response"),
         AgentContract(agent_id="recommendation_agent", capabilities=["daily_recommendation", "substitution_ranking"], allowed_tools=[], output_contract="daily_recommendation_bundle"),
         AgentContract(agent_id="emotion_agent", capabilities=["emotion_inference"], allowed_tools=[], output_contract="emotion_inference_result"),
+        AgentContract(agent_id="chat_agent", capabilities=["chat_response", "chat_stream"], allowed_tools=[], output_contract="chat_response"),
         AgentContract(agent_id="notification_agent", capabilities=["alert_emit", "timeline_emit"], allowed_tools=["trigger_alert"], output_contract="alert_or_timeline_event"),
     ]
     contracts = [

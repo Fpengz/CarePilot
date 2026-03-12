@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from ..deps import chat_deps
 from ..routes_shared import current_session, get_context, require_action
 from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult
+from dietary_guardian.agent.emotion import EmotionAgentDisabledError, EmotionSpeechDisabledError
 
 router = APIRouter(tags=["chat"])
 
@@ -76,12 +77,16 @@ async def chat_stream(
                 None, lambda: deps.emotion_agent.infer_text(text=user_message)
             )
             emotion_ctx = _format_emotion_context(inference)
-            yield f"data: {json.dumps({'emotion': inference.emotion, 'score': inference.score})}\n\n"
-        except Exception as exc:
-            print(f"[chat] Emotion analysis failed: {exc}")
+            yield _format_event("emotion", {"emotion": inference.emotion, "score": inference.score})
+        except EmotionAgentDisabledError:
+            # Emotion inference disabled; skip emitting error events.
+            pass
+        except Exception as exc:  # noqa: BLE001
+            yield _format_event("error", {"message": str(exc), "phase": "emotion", "retryable": False})
 
-        async for chunk in deps.chat_agent.stream_async(
-            user_message, deps.async_client, deps.model_id, emotion_context=emotion_ctx
+        async for chunk in deps.chat_agent.stream(
+            user_message=user_message,
+            emotion_context=emotion_ctx,
         ):
             yield chunk
 
@@ -116,7 +121,7 @@ async def chat_audio(
         raise HTTPException(status_code=422, detail="Transcription returned empty text")
 
     async def _stream():
-        yield f"data: {json.dumps({'transcribed': user_message})}\n\n"
+        yield _format_event("transcribed", {"text": user_message})
 
         loop = asyncio.get_running_loop()
         emotion_ctx: str | None = None
@@ -130,12 +135,15 @@ async def chat_audio(
                 ),
             )
             emotion_ctx = _format_emotion_context(inference)
-            yield f"data: {json.dumps({'emotion': inference.emotion, 'score': inference.score})}\n\n"
-        except Exception as exc:
-            print(f"[chat/audio] Emotion analysis failed: {exc}")
+            yield _format_event("emotion", {"emotion": inference.emotion, "score": inference.score})
+        except (EmotionAgentDisabledError, EmotionSpeechDisabledError):
+            pass
+        except Exception as exc:  # noqa: BLE001
+            yield _format_event("error", {"message": str(exc), "phase": "emotion", "retryable": False})
 
-        async for chunk in deps.chat_agent.stream_async(
-            user_message, deps.async_client, deps.model_id, emotion_context=emotion_ctx
+        async for chunk in deps.chat_agent.stream(
+            user_message=user_message,
+            emotion_context=emotion_ctx,
         ):
             yield chunk
 
@@ -144,3 +152,8 @@ async def chat_audio(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+def _format_event(event: str, data: dict) -> str:
+    payload = {"event": event, "data": data}
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"

@@ -5,10 +5,16 @@ This module enriches diet and meal questions with nutrition context and
 Singapore-specific food references.
 """
 from __future__ import annotations
-from openai import OpenAI
+
+import asyncio
+import uuid
 
 from dietary_guardian.agent.chat.search_adapter import SearchAgent, SearchResult
 from dietary_guardian.agent.chat.routes.base import BaseRoute, RouteResult
+from dietary_guardian.agent.chat.schemas import ChatSearchQueryOutput, ChatRouteLabel
+from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
+from dietary_guardian.platform.observability import get_logger
 from dietary_guardian.platform.persistence.food.local_retriever import FoodInfoRetriever
 
 _DISTILL_PROMPT = (
@@ -18,7 +24,7 @@ _DISTILL_PROMPT = (
     "calories, sodium, saturated fat), and 'Singapore' for local dishes/drinks. "
     "Examples: 'kopi c evaporated milk diabetes Singapore', "
     "'nasi lemak glycemic index diabetes', 'char kway teow sodium hypertension'. "
-    "Reply with ONLY the search phrase, no explanation."
+    "Return the distilled phrase in the `query` field only."
 )
 
 SYSTEM_PROMPT = (
@@ -37,54 +43,48 @@ SYSTEM_PROMPT = (
 class FoodRoute(BaseRoute):
     """Enriches food and nutrition queries with live web search results."""
 
-    def __init__(self, *, search_agent: SearchAgent, client: OpenAI, model_id: str) -> None:
+    def __init__(self, *, search_agent: SearchAgent, inference_engine: InferenceEngine) -> None:
         self._sa = search_agent
         self._retriever = FoodInfoRetriever(n_results=4)
-        self._client = client
-        self._model = model_id
+        self._engine = inference_engine
+        self._logger = get_logger(__name__)
 
     def _distill_query(self, text: str) -> str:
         """Use the LLM to extract a focused search term from the user's message."""
         try:
-            resp = self._client.chat.completions.create(
-                model=self._model,
-                messages=[
-                    {"role": "system", "content": _DISTILL_PROMPT},
-                    {"role": "user",   "content": text},
-                ],
-                temperature=0,
-                max_tokens=20,
+            request = InferenceRequest(
+                request_id=str(uuid.uuid4()),
+                user_id=None,
+                modality=InferenceModality.TEXT,
+                payload={"prompt": text},
+                output_schema=ChatSearchQueryOutput,
+                system_prompt=_DISTILL_PROMPT,
             )
-            raw_term = resp.choices[0].message.content or ""
-            term = raw_term.strip()
-            print(f"[FoodRoute] Distilled search term: {term!r}")
+            response = asyncio.run(self._engine.infer(request))
+            term = response.structured_output.query.strip()
+            self._logger.info("chat_food_distill_success term=%s", term)
             return term
-        except Exception as exc:
-            print(f"[FoodRoute] Distill error: {exc} — using raw query")
+        except Exception as exc:  # noqa: BLE001
+            self._logger.warning("chat_food_distill_failed error=%s", exc)
             return text
 
     def enrich(self, text: str) -> RouteResult:
-        print(f"[FoodRoute] Searching: {text!r}")
+        self._logger.info("chat_food_search_start text=%s", text)
         search_term = self._distill_query(text)
         results: list[SearchResult] = self._sa.search(search_term)
 
         # ── Local ChromaDB lookup ──────────────────────────────────────
         local_context = self._retriever.format_for_context(text)
         if local_context:
-            print(f"[FoodRoute] Local DB returned context ({len(local_context)} chars):")
-            print(local_context)
+            self._logger.info("chat_food_local_context chars=%s", len(local_context))
         else:
-            print("[FoodRoute] Local DB: no results")
+            self._logger.info("chat_food_local_context_empty")
 
         # ── Web search ────────────────────────────────────────────────
         if not results:
             web_context = None
         else:
-            print(f"[FoodRoute] {len(results)} web result(s):")
-            for i, r in enumerate(results, 1):
-                print(f"  [{i}] {r.title}")
-                print(f"       {r.url}")
-                print(f"       {r.body[:600].strip()!r}")
+            self._logger.info("chat_food_search_results hits=%s", len(results))
             web_lines = ["## Web Search Results"]
             for i, r in enumerate(results, 1):
                 web_lines += [
@@ -96,7 +96,7 @@ class FoodRoute(BaseRoute):
             web_context = "\n".join(web_lines)
 
         if not local_context and not web_context:
-            return RouteResult(route_name="food", context=None, metadata={"hits": 0})
+            return RouteResult(route_name=ChatRouteLabel.FOOD, context=None, metadata={"hits": 0})
 
         parts = [SYSTEM_PROMPT, ""]
         if local_context:
@@ -105,7 +105,7 @@ class FoodRoute(BaseRoute):
             parts.append(web_context)
 
         return RouteResult(
-            route_name="food",
+            route_name=ChatRouteLabel.FOOD,
             context="\n".join(parts),
             metadata={"hits": len(results), "sources": [r.url for r in results]},
         )

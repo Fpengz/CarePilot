@@ -11,6 +11,10 @@ from typing import NamedTuple
 
 from ddgs import DDGS
 
+from dietary_guardian.platform.observability import get_logger
+
+
+logger = get_logger(__name__)
 
 class SearchResult(NamedTuple):
     title: str
@@ -47,6 +51,6 @@ class SearchAgent:
                 )
                 for r in (raw or [])
             ]
-        except Exception as exc:
-            print(f"[SearchAgent] Search error: {exc}")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("chat_search_failed error=%s", exc)
             return []

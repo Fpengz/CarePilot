@@ -7,13 +7,16 @@ and builds prompt context for the chat agent runtime.
 
 from __future__ import annotations
 
+import asyncio
 import sqlite3
+import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from openai import OpenAI
+from dietary_guardian.agent.chat.schemas import ChatSummaryOutput
+from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
+from dietary_guardian.platform.observability import get_logger
 
 # ---------------------------------------------------------------------------
 # Config
@@ -29,7 +32,7 @@ You are a conversation summarizer. Given the previous rolling summary and a \
 batch of new messages, produce a concise updated summary that captures the \
 key topics, facts, and decisions discussed. Do not include greetings or filler. \
 Write in third-person ("The user asked…", "The assistant explained…"). \
-Reply with ONLY the summary text, no extra commentary.
+Return the summary in the `summary` field only.
 """
 
 
@@ -49,14 +52,13 @@ class MemoryManager:
     def __init__(
         self,
         session_id: str,
-        client: "OpenAI",
-        model_id: str,
+        inference_engine: InferenceEngine,
         db_path: Path = DB_PATH,
     ) -> None:
         self._session_id  = session_id
-        self._client      = client
-        self._model_id    = model_id
+        self._engine = inference_engine
         self._db_path     = db_path
+        self._logger = get_logger(__name__)
 
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
@@ -65,11 +67,13 @@ class MemoryManager:
         self._messages: list[dict]  = self._load_messages()
         self._rolling_summary: str  = self._load_summary()
         self._summarized_up_to: int = self._load_summarized_up_to()
+        self._summary_in_flight = False
 
-        print(
-            f"[MemoryManager] session={session_id!r} | "
-            f"loaded {len(self._messages)} messages | "
-            f"summarized_up_to={self._summarized_up_to}"
+        self._logger.info(
+            "chat_memory_ready session=%s messages=%s summarized_up_to=%s",
+            session_id,
+            len(self._messages),
+            self._summarized_up_to,
         )
 
     # ------------------------------------------------------------------ #
@@ -115,16 +119,35 @@ class MemoryManager:
         pending = eligible_boundary - self._summarized_up_to
 
         if pending >= SUMMARIZE_EVERY:
+            if self._summary_in_flight:
+                return
             batch = self._messages[self._summarized_up_to : eligible_boundary]
-            print(
-                f"[MemoryManager] Updating rolling summary "
-                f"(msgs {self._summarized_up_to}..{eligible_boundary})"
+            self._logger.info(
+                "chat_memory_summary_update msgs_start=%s msgs_end=%s",
+                self._summarized_up_to,
+                eligible_boundary,
             )
-            self._update_rolling_summary(batch)
+            self._summary_in_flight = True
+            self._schedule_summary_update(batch, eligible_boundary)
+
+    def _schedule_summary_update(self, new_messages: list[dict], eligible_boundary: int) -> None:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(self._update_and_persist_summary(new_messages, eligible_boundary))
+            return
+
+        loop.create_task(self._update_and_persist_summary(new_messages, eligible_boundary))
+
+    async def _update_and_persist_summary(self, new_messages: list[dict], eligible_boundary: int) -> None:
+        try:
+            await self._update_rolling_summary(new_messages)
+        finally:
             self._summarized_up_to = eligible_boundary
             self._save_summary()
+            self._summary_in_flight = False
 
-    def _update_rolling_summary(self, new_messages: list[dict]) -> None:
+    async def _update_rolling_summary(self, new_messages: list[dict]) -> None:
         """Call the LLM to merge new_messages into the rolling summary."""
         batch_text = "\n".join(
             f"{m['role'].capitalize()}: {m['content']}" for m in new_messages
@@ -135,21 +158,20 @@ class MemoryManager:
         user_content += f"New messages:\n{batch_text}"
 
         try:
-            resp = self._client.chat.completions.create(
-                model=self._model_id,
-                messages=[
-                    {"role": "system", "content": _SUMMARY_PROMPT},
-                    {"role": "user",   "content": user_content},
-                ],
-                temperature=0.3,
-                max_tokens=300,
+            request = InferenceRequest(
+                request_id=str(uuid.uuid4()),
+                user_id=None,
+                modality=InferenceModality.TEXT,
+                payload={"prompt": user_content},
+                output_schema=ChatSummaryOutput,
+                system_prompt=_SUMMARY_PROMPT,
             )
-            raw_content = resp.choices[0].message.content or ""
-            new_summary = raw_content.strip()
-            print(f"[MemoryManager] New rolling summary: {new_summary!r}")
+            response = await self._engine.infer(request)
+            new_summary = response.structured_output.summary.strip()
             self._rolling_summary = new_summary
-        except Exception as exc:
-            print(f"[MemoryManager] Summary LLM error: {exc} — keeping old summary")
+            self._logger.info("chat_memory_summary_updated length=%s", len(new_summary))
+        except Exception as exc:  # noqa: BLE001
+            self._logger.warning("chat_memory_summary_failed error=%s", exc)
 
     # ------------------------------------------------------------------ #
     # SQLite helpers

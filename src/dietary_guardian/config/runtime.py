@@ -117,6 +117,27 @@ class WorkerSettings(BaseSettings):
 
 
 # ---------------------------------------------------------------------------
+# Chat settings (from config/chat.py)
+# ---------------------------------------------------------------------------
+
+class ChatSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="", extra="ignore", case_sensitive=False, populate_by_name=True)
+
+    api_key: str | None = Field(default=None, validation_alias="SEALION_API")
+    base_url: str = Field(default="https://api.sea-lion.ai/v1", validation_alias="SEALION_BASE_URL")
+    model_id: str = Field(
+        default="aisingapore/Gemma-SEA-LION-v4-27B-IT",
+        validation_alias="CHAT_MODEL_ID",
+    )
+    reasoning_model_id: str = Field(
+        default="aisingapore/Llama-SEA-LION-v3.5-70B-R",
+        validation_alias="REASONING_MODEL_ID",
+    )
+    stream_max_retries: int = Field(default=2, ge=0, le=5, validation_alias="CHAT_STREAM_MAX_RETRIES")
+    stream_backoff_seconds: float = Field(default=0.5, ge=0.0, le=10.0, validation_alias="CHAT_STREAM_BACKOFF_SECONDS")
+
+
+# ---------------------------------------------------------------------------
 # Emotion settings (from config/emotion.py)
 # ---------------------------------------------------------------------------
 

@@ -80,6 +80,8 @@ Deployment guardrails:
 - `SEALION_BASE_URL` (default: `https://api.sea-lion.ai/v1`)
 - `CHAT_MODEL_ID` (default: `aisingapore/Gemma-SEA-LION-v4-27B-IT`)
 - `REASONING_MODEL_ID` (default: `aisingapore/Llama-SEA-LION-v3.5-70B-R`)
+- `CHAT_STREAM_MAX_RETRIES` (default: `2`)
+- `CHAT_STREAM_BACKOFF_SECONDS` (default: `0.5`)
 - `GROQ_API_KEY` — Whisper transcription for audio chat
 - `E2B_API_KEY` — sandboxed Python execution for dashboard trend calculations
 

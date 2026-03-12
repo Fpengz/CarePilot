@@ -64,7 +64,7 @@ Defines the canonical contract all companion agents must satisfy.
 | `AgentResult[OutputT]` | generic dataclass | Standard result envelope: `success`, `agent_name`, `output`, `confidence`, `rationale`, `warnings`, `errors`, `raw`. All agents return this. |
 | `BaseAgent[InputT, OutputT]` | abstract class | Abstract base. Subclasses must declare `name: str`, `input_schema`, `output_schema`, and implement `async run(input_data, context) → AgentResult`. |
 
-**Pattern:** All four canonical agents (`DietaryAgent`, `MealAnalysisAgent`, `RecommendationAgent`, `EmotionAgent`) inherit from `BaseAgent` and return `AgentResult`. The chat-layer agents (`ChatAgent`, etc.) do **not** inherit from `BaseAgent` — they pre-date the canonical contract.
+**Pattern:** All canonical agents (`DietaryAgent`, `MealAnalysisAgent`, `RecommendationAgent`, `EmotionAgent`, and `ChatAgent`) inherit from `BaseAgent` and return `AgentResult`. The chat subsystem exposes streaming helpers, but the core entrypoint is now a typed `ChatAgent.run()`.
 
 ---
 
@@ -96,6 +96,17 @@ Provider-agnostic inference execution engine. Sits between agents and the LLM cl
 | `ProviderStrategy` | Protocol: `supports(modality)`, `async run(request)`, `health()`. |
 
 **`InferenceEngine.infer(request)`** calls `asyncio.wait_for(strategy.run(request), timeout=wall_clock_timeout_seconds)`. Raises `ValueError` if the provider doesn't support the requested modality (e.g., `TestModel` cannot handle `IMAGE`).
+
+---
+
+### `runtime/chat_runtime.py`
+
+SEA-LION chat runtime adapters used by the chat subsystem.
+
+| Symbol | Purpose |
+|--------|---------|
+| `ChatStreamRuntime` | Owns the SEA-LION `AsyncOpenAI` client and streams tokens with retry/backoff. |
+| `build_chat_inference_engine(...)` | Builds an `InferenceEngine` wired to SEA-LION settings for structured chat tasks. |
 
 ---
 
@@ -276,15 +287,20 @@ Meal image perception and normalization module. Used by `MealAnalysisAgent`.
 
 ## `chat/` — SEA-LION conversational assistant
 
-The `chat/` sub-package is the integration point for Ervin's SEA-LION health chatbot. These modules do **not** inherit from `BaseAgent`, but they now follow the same dependency-injection and runtime wiring conventions as other agents.
+The `chat/` sub-package is the integration point for the SEA-LION health chatbot. Chat now follows the canonical agent contract and exposes a typed `ChatAgent.run()` entrypoint, plus a streaming helper for SSE.
 
 ### `chat/agent.py` — `ChatAgent`
 
 Manages conversation history and calls the SEA-LION OpenAI-compatible LLM endpoint.
 
-- Constructor: `client: OpenAI`, `model_id`, `router: QueryRouter | None`, `session_id`.
-- `stream_async(message, async_client, model_id)` → `AsyncIterator[str]`: streams SSE chunks via `AsyncOpenAI`.
+- Constructor: `stream_runtime`, `router: QueryRouter | None`, `memory: MemoryManager`, `model_id`.
+- `run(input: ChatInput, context)` → `AgentResult[ChatOutput]`: non-streaming agent contract.
+- `stream(user_message, emotion_context)` → `AsyncIterator[str]`: yields SSE envelopes `{"event": "...", "data": {...}}`.
 - Internally uses `MemoryManager` for history and `QueryRouter` for context enrichment.
+
+### `chat/schemas.py`
+
+Typed contracts for `ChatInput`, `ChatOutput`, route labels, and SSE event envelopes.
 
 ---
 
@@ -296,7 +312,7 @@ LLM-based intent classifier. Routes user queries to one of four handlers.
 
 **Flow:** calls SEA-LION with a classification prompt → receives a single label → dispatches to `DrugRoute.enrich()`, `FoodRoute.enrich()`, `CodeRoute.enrich()`, or returns no enrichment for `general`.
 
-Receives `OpenAI` client + model ids via dependency injection.
+Receives a chat `InferenceEngine` via dependency injection.
 
 ---
 
@@ -304,7 +320,7 @@ Receives `OpenAI` client + model ids via dependency injection.
 
 | Symbol | Purpose |
 |--------|---------|
-| `RouteResult` | Dataclass: `route_name: str`, `context: str \| None`, `metadata: dict`. Returned by all routes. |
+| `RouteResult` | Dataclass: `route_name: ChatRouteLabel`, `context: str \| None`, `metadata: dict`. Returned by all routes. |
 | `BaseRoute` | Abstract base with `enrich(text: str) → RouteResult`. All route handlers extend this. |
 
 ---
@@ -318,7 +334,7 @@ Handles medication queries (diabetes, hypertension, cardiovascular drugs).
 - Distills the top results into a concise medication fact summary using SEA-LION.
 - Returns `RouteResult(route_name="drug", context=<summary>)`.
 
-Uses the injected `OpenAI` client.
+Uses the injected chat `InferenceEngine`.
 
 ---
 
@@ -338,7 +354,7 @@ Handles calculation/computation queries via a secure sandbox.
 2. `CodeAgent` executes the script in an E2B cloud sandbox.
 3. Returns the sandbox stdout as enriched context for the final LLM reply.
 
-Uses injected `OpenAI` + `CodeAgent` instances.
+Uses injected `InferenceEngine` + `CodeAgent` instances.
 
 ---
 
@@ -407,13 +423,12 @@ Executes Python code in a secure E2B cloud sandbox (`e2b-code-interpreter`).
 - All accept dependency injection via constructor (`safety_port`, `runtime`, `food_store`, etc.).
 
 ### What's inconsistent (chat agents)
-- `ChatAgent`, `QueryRouter`, `DrugRoute`, `FoodRoute`, `CodeRoute` do **not** inherit `BaseAgent`.
-- Routes use injected `OpenAI` clients and runtime settings; no env reads in route bodies.
-- Settings are centralized in API wiring for `SEALION_API`, `CHAT_MODEL_ID`, `REASONING_MODEL_ID`, `GROQ_API_KEY`, `E2B_API_KEY`.
+- Chat now follows the `BaseAgent` contract, but streaming uses a bespoke SSE helper rather than `InferenceEngine`.
+- Route enrichment is synchronous and uses `asyncio.run` for inference, which is acceptable but could be made fully async in the future.
+- Settings remain centralized in API wiring for `SEALION_API`, `CHAT_MODEL_ID`, `REASONING_MODEL_ID`, `GROQ_API_KEY`, `E2B_API_KEY`.
 
 ### Refactor opportunities
-1. Wrap `ChatAgent`/routes in a `BaseAgent` subclass or at minimum an `LLMSettings`-aware factory.
-2. Keep route classes accepting injected `OpenAI` clients via constructor (done).
-3. Keep chat emotion using the canonical `agent/emotion/` runtime (done).
-4. `dietary/agent.py` logfire cast workaround (`cast(Any, logfire)`) should be removed once logfire typing is resolved.
-5. `AgentRegistry` currently stores only static `AgentContract` metadata — it does not hold live agent instances. Future: expose `get_agent(agent_id) → BaseAgent` for dynamic dispatch.
+1. Move sync route enrichment to an async interface to avoid `asyncio.run`.
+2. Keep chat emotion using the canonical `agent/emotion/` runtime (done).
+3. `dietary/agent.py` logfire cast workaround (`cast(Any, logfire)`) should be removed once logfire typing is resolved.
+4. `AgentRegistry` currently stores only static `AgentContract` metadata — it does not hold live agent instances. Future: expose `get_agent(agent_id) → BaseAgent` for dynamic dispatch.

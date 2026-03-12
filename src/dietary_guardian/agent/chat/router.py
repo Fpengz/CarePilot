@@ -6,7 +6,8 @@ This module uses an LLM classifier to map user queries to a route
 """
 from __future__ import annotations
 
-from openai import OpenAI
+import asyncio
+import uuid
 
 from dietary_guardian.agent.chat.search_adapter import SearchAgent
 from dietary_guardian.agent.chat.routes.base import RouteResult
@@ -14,6 +15,10 @@ from dietary_guardian.agent.chat.routes.drug_route import DrugRoute
 from dietary_guardian.agent.chat.routes.food_route import FoodRoute
 from dietary_guardian.agent.chat.routes.code_route import CodeRoute
 from dietary_guardian.agent.chat.code_adapter import CodeAgent
+from dietary_guardian.agent.chat.schemas import ChatClassificationOutput, ChatRouteLabel
+from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
+from dietary_guardian.platform.observability import get_logger
 
 _CLASSIFICATION_PROMPT = """\
 You are a query classifier for a Singapore health assistant app that supports
@@ -45,6 +50,7 @@ Classify the user's message into EXACTLY ONE of these four categories:
 
 Respond with ONLY the single word: drug, food, code, or general.
 Do not explain. Do not add punctuation.
+Return the label in the `label` field only.
 """
 
 
@@ -55,41 +61,35 @@ class QueryRouter:
         self,
         *,
         search_agent: SearchAgent,
-        client: OpenAI,
-        model_id: str,
+        inference_engine: InferenceEngine,
         code_agent: CodeAgent,
-        reasoning_model_id: str,
+        reasoning_engine: InferenceEngine,
     ) -> None:
-        self._drug_route = DrugRoute(search_agent=search_agent, client=client, model_id=model_id)
-        self._food_route = FoodRoute(search_agent=search_agent, client=client, model_id=model_id)
-        self._code_route = CodeRoute(agent=code_agent, client=client, model_id=reasoning_model_id)
-        self._client = client
-        self._model = model_id
+        self._drug_route = DrugRoute(search_agent=search_agent, inference_engine=inference_engine)
+        self._food_route = FoodRoute(search_agent=search_agent, inference_engine=inference_engine)
+        self._code_route = CodeRoute(agent=code_agent, inference_engine=reasoning_engine)
+        self._engine = inference_engine
+        self._logger = get_logger(__name__)
 
-    def _classify(self, user_message: str) -> str:
+    def _classify(self, user_message: str) -> ChatRouteLabel:
         """
         Ask the LLM to classify the query. Returns 'drug', 'food', or 'general'.
         Falls back to 'general' on any error.
         """
         try:
-            resp = self._client.chat.completions.create(
-                model=self._model,
-                messages=[
-                    {"role": "system", "content": _CLASSIFICATION_PROMPT},
-                    {"role": "user",   "content": user_message},
-                ],
-                temperature=0,
-                max_tokens=5,
+            request = InferenceRequest(
+                request_id=str(uuid.uuid4()),
+                user_id=None,
+                modality=InferenceModality.TEXT,
+                payload={"prompt": user_message},
+                output_schema=ChatClassificationOutput,
+                system_prompt=_CLASSIFICATION_PROMPT,
             )
-            raw_label = resp.choices[0].message.content or ""
-            label = raw_label.strip().lower()
-            if label not in ("drug", "food", "code", "general"):
-                print(f"[Router] Unexpected label {label!r} — falling back to general")
-                return "general"
-            return label
-        except Exception as exc:
-            print(f"[Router] Classification error: {exc} — falling back to general")
-            return "general"
+            response = asyncio.run(self._engine.infer(request))
+            return response.structured_output.label
+        except Exception as exc:  # noqa: BLE001
+            self._logger.warning("chat_router_classification_failed error=%s", exc)
+            return ChatRouteLabel.GENERAL
 
     def route(self, user_message: str) -> RouteResult:
         """
@@ -97,12 +97,12 @@ class QueryRouter:
         Returns a RouteResult with context=None for general queries.
         """
         label = self._classify(user_message)
-        print(f"[Router] → {label}")
+        self._logger.info("chat_router_route label=%s", label)
 
-        if label == "drug":
+        if label == ChatRouteLabel.DRUG:
             return self._drug_route.enrich(user_message)
-        if label == "food":
+        if label == ChatRouteLabel.FOOD:
             return self._food_route.enrich(user_message)
-        if label == "code":
+        if label == ChatRouteLabel.CODE:
             return self._code_route.enrich(user_message)
-        return RouteResult(route_name="general", context=None)
+        return RouteResult(route_name=ChatRouteLabel.GENERAL, context=None)

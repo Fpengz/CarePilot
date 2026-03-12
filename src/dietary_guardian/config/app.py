@@ -17,6 +17,7 @@ from dietary_guardian.config.llm import LLMSettings
 from dietary_guardian.config.runtime import (
     APISettings,
     AuthSettings,
+    ChatSettings,
     ChannelSettings,
     EmotionSettings,
     ObservabilitySettings,
@@ -41,6 +42,7 @@ class AppSettings(BaseModel):
     app: AppIdentitySettings = Field(default_factory=AppIdentitySettings)
     api: APISettings = Field(default_factory=APISettings)
     auth: AuthSettings = Field(default_factory=AuthSettings)
+    chat: ChatSettings = Field(default_factory=ChatSettings)
     channels: ChannelSettings = Field(default_factory=ChannelSettings)
     emotion: EmotionSettings = Field(default_factory=EmotionSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
@@ -89,6 +91,7 @@ class AppSettings(BaseModel):
             app=AppIdentitySettings(),
             api=APISettings(),
             auth=AuthSettings(),
+            chat=ChatSettings(),
             channels=ChannelSettings(),
             emotion=EmotionSettings(),
             llm=LLMSettings(),
