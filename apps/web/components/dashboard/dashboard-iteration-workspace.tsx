@@ -121,7 +121,7 @@ export function DashboardIterationWorkspace() {
           </div>
         </div>
         <div className="clinical-divider my-6" />
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="metric-card">
               <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Meals logged</div>
@@ -165,8 +165,8 @@ export function DashboardIterationWorkspace() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <Card>
+      <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <Card className="grain-overlay">
           <CardHeader>
             <CardTitle>AI Health Alerts</CardTitle>
             <CardDescription>Pattern-based cues to review with clinical judgement.</CardDescription>
@@ -185,13 +185,11 @@ export function DashboardIterationWorkspace() {
           </CardContent>
         </Card>
 
-        <div className="stack-grid">
-          <Card className="grain-overlay">
-            <CardHeader>
-              <CardTitle>Key Profile Signals</CardTitle>
-              <CardDescription>Clinical context readiness for personalization.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
+        <div className="section-stack">
+          <div className="clinical-card">
+            <div className="clinical-kicker">Profile signals</div>
+            <h4 className="mt-2 text-lg font-semibold">Clinical context readiness</h4>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="metric-card">
                 <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Profile state</div>
                 <div className="mt-1 text-sm font-semibold">{profile?.completeness.state ?? "loading"}</div>
@@ -210,8 +208,8 @@ export function DashboardIterationWorkspace() {
                     : "Profile is ready for personalized guidance."}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {showCaregiverCard ? (
             <Card>
