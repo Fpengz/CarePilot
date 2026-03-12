@@ -135,6 +135,7 @@ class ChatAgent(BaseAgent[ChatInput, ChatOutput]):
         *,
         user_message: str,
         emotion_context: str | None = None,
+        extra_context: str | None = None,
         model_id: str | None = None,
     ) -> AsyncIterator[str]:
         """Full pipeline: persist → route → build prompt → stream → persist reply."""
@@ -148,7 +149,10 @@ class ChatAgent(BaseAgent[ChatInput, ChatOutput]):
             return
 
         route_result = await self.route_async(user_message)
-        api_messages = self.build_api_messages(route_result.context, emotion_context)
+        combined_context = "\n\n".join(
+            part for part in (extra_context, route_result.context) if part
+        ) or None
+        api_messages = self.build_api_messages(combined_context, emotion_context)
 
         full_response = ""
         try:

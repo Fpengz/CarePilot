@@ -20,6 +20,9 @@ from ..routes_shared import current_session, get_context, require_action
 from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult
 from dietary_guardian.agent.emotion import EmotionAgentDisabledError, EmotionSpeechDisabledError
 from dietary_guardian.features.meals.use_cases import log_meal_from_text
+from dietary_guardian.features.companion.core.snapshot import build_case_snapshot
+from dietary_guardian.features.companion.core.chat_context import format_chat_context
+from apps.api.dietary_api.services.companion_context import load_companion_inputs
 
 router = APIRouter(tags=["chat"])
 
@@ -141,9 +144,23 @@ async def chat_stream(
         except Exception as exc:  # noqa: BLE001
             yield _format_event("error", {"message": str(exc), "phase": "emotion", "retryable": False})
 
+        inputs = load_companion_inputs(context=ctx, session=session)
+        snapshot = build_case_snapshot(
+            user_profile=inputs.user_profile,
+            health_profile=inputs.health_profile,
+            meals=inputs.meals,
+            reminders=inputs.reminders,
+            adherence_events=inputs.adherence_events,
+            symptoms=inputs.symptoms,
+            biomarker_readings=inputs.biomarker_readings,
+            clinical_snapshot=inputs.clinical_snapshot,
+        )
+        extra_context = format_chat_context(snapshot=snapshot, recent_meals=inputs.meals)
+
         async for chunk in deps.chat_agent.stream(
             user_message=user_message,
             emotion_context=emotion_ctx,
+            extra_context=extra_context,
         ):
             yield chunk
 
@@ -209,9 +226,23 @@ async def chat_audio(
         except Exception as exc:  # noqa: BLE001
             yield _format_event("error", {"message": str(exc), "phase": "emotion", "retryable": False})
 
+        inputs = load_companion_inputs(context=ctx, session=session)
+        snapshot = build_case_snapshot(
+            user_profile=inputs.user_profile,
+            health_profile=inputs.health_profile,
+            meals=inputs.meals,
+            reminders=inputs.reminders,
+            adherence_events=inputs.adherence_events,
+            symptoms=inputs.symptoms,
+            biomarker_readings=inputs.biomarker_readings,
+            clinical_snapshot=inputs.clinical_snapshot,
+        )
+        extra_context = format_chat_context(snapshot=snapshot, recent_meals=inputs.meals)
+
         async for chunk in deps.chat_agent.stream(
             user_message=user_message,
             emotion_context=emotion_ctx,
+            extra_context=extra_context,
         ):
             yield chunk
 
