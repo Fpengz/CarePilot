@@ -27,7 +27,7 @@ export default function StyleSamplesPage() {
           <Link
             key={item.href}
             href={item.href}
-            className="app-panel p-5 hover:shadow-[0_18px_50px_rgba(18,24,20,0.14)] transition-shadow"
+            className="app-panel p-5 hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition-shadow"
           >
             <div className="text-lg font-semibold">{item.title}</div>
             <p className="app-muted mt-2 text-sm">{item.desc}</p>

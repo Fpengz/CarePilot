@@ -26,16 +26,14 @@ export function AppSidebar() {
         <div className={cn("mb-6", isCollapsed ? "flex justify-center" : "space-y-2")}>
           <Link href="/dashboard" className="block">
             {isCollapsed ? (
-              <div className="rounded-xl bg-[color:var(--accent)] p-2.5 text-white shadow-lg shadow-[color:var(--accent)]/20">
+              <div className="rounded-lg bg-[color:var(--accent)] p-2.5 text-white shadow-[0_6px_16px_rgba(30,64,175,0.18)]">
                 <Salad className="h-6 w-6" />
               </div>
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-[1.6rem] font-semibold leading-[1.05] tracking-[-0.02em]">
-                    Dietary
-                    <br />
-                    Guardian
+                  <h1 className="text-[1.35rem] font-semibold leading-[1.2] tracking-[-0.02em]">
+                    Dietary Guardian
                   </h1>
                   <Badge variant="outline" className="self-start">
                     Foundation
@@ -76,7 +74,7 @@ export function AppSidebar() {
           <Button
             variant="ghost"
             onClick={toggleCollapsed}
-            className="h-8 w-8 p-0 rounded-lg text-[color:var(--muted-foreground)] hover:bg-[color:var(--accent)]/10 hover:text-[color:var(--accent)]"
+            className="h-8 w-8 p-0 rounded-lg text-[color:var(--muted-foreground)] hover:bg-[color:var(--muted)] hover:text-[color:var(--foreground)]"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}

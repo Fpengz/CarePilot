@@ -19,7 +19,7 @@ export function TopBar() {
   const { status, user } = useSession();
 
   return (
-    <header className="app-panel sticky top-2 z-20 mb-4 p-4 md:top-4 md:mb-6 md:p-5">
+    <header className="app-panel sticky top-2 z-20 mb-6 border border-[color:var(--border)] bg-[color:var(--panel)] p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted-foreground)]">
@@ -28,7 +28,7 @@ export function TopBar() {
             <span>{breadcrumb}</span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="truncate text-2xl font-semibold leading-tight md:text-[2.4rem]">
+            <h2 className="truncate text-2xl font-semibold leading-tight md:text-[2.2rem]">
               {pageTitle}
             </h2>
             {route?.group === "admin" ? <Badge variant="outline">Admin Area</Badge> : null}

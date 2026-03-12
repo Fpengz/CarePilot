@@ -413,7 +413,7 @@ export default function ChatPage() {
 
         <div className="flex-1 overflow-y-auto space-y-4 pb-4 min-h-0">
           {messages.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--muted-foreground)]">
+            <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--muted-foreground)]">
               Start with a health question or log metrics using the{" "}
               <span className="font-mono bg-[color:var(--accent)]/10 text-[color:var(--accent)] px-1 rounded">
                 [TRACK]
@@ -427,7 +427,7 @@ export default function ChatPage() {
               className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
+                className={`max-w-[80%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
                   m.role === "user"
                     ? "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] rounded-br-sm"
                     : "bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--foreground)] rounded-bl-sm shadow-sm"
@@ -465,7 +465,7 @@ export default function ChatPage() {
           <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
         )}
 
-        <div className="bg-[color:var(--panel)] border border-[color:var(--border)] rounded-2xl shadow-sm p-3 flex flex-col gap-2 shrink-0">
+        <div className="bg-[color:var(--panel)] border border-[color:var(--border)] rounded-xl shadow-[0_6px_18px_rgba(15,23,42,0.06)] p-3 flex flex-col gap-2 shrink-0">
           {showAudio && isRecording && (
             <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse inline-block" />
@@ -510,19 +510,19 @@ export default function ChatPage() {
             <div className="relative z-50">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="w-8 h-8 rounded-full border border-[color:var(--border)] text-[color:var(--muted-foreground)] text-lg flex items-center justify-center hover:bg-[color:var(--accent)]/10 transition-colors flex-shrink-0"
+                className="w-8 h-8 rounded-full border border-[color:var(--border)] text-[color:var(--muted-foreground)] text-lg flex items-center justify-center hover:bg-[color:var(--muted)] transition-colors flex-shrink-0"
                 title="More options"
               >
                 ＋
               </button>
               {menuOpen && (
-                <div className="absolute bottom-10 left-0 bg-[color:var(--panel)] border border-[color:var(--border)] rounded-2xl shadow-xl py-2 w-52 overflow-hidden">
+                <div className="absolute bottom-10 left-0 bg-[color:var(--panel)] border border-[color:var(--border)] rounded-xl shadow-[0_10px_30px_rgba(15,23,42,0.08)] py-2 w-52 overflow-hidden">
                   <button
                     onClick={() => {
                       setMenuOpen(false);
                       startRecording();
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[color:var(--foreground)] hover:bg-black/5 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[color:var(--foreground)] hover:bg-[color:var(--muted)] transition-colors text-left"
                   >
                     <span className="text-base">🎤</span>
                     <span>Record Audio</span>

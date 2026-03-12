@@ -66,7 +66,7 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
             accept="image/jpeg,image/png,image/webp"
             onChange={handleFileChange}
           />
-          <div className="rounded-2xl border border-dashed border-[color:var(--border)] bg-gradient-to-br from-white/80 to-white/45 p-4 dark:from-[color:var(--panel-soft)] dark:to-[color:var(--panel-soft)]/70">
+          <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] p-4">
             <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--accent)]/10 p-2.5 text-[color:var(--accent)] dark:bg-[color:var(--accent)]/15">

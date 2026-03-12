@@ -14,11 +14,11 @@ function NavItem({ route, active, isCollapsed }: { route: RouteMeta; active: boo
   const Icon = route.icon;
 
   const baseClass = cn(
-    "flex w-full items-center rounded-xl border px-3.5 py-3 text-[15px] font-medium transition",
+    "flex w-full items-center rounded-lg border px-3.5 py-3 text-[15px] font-medium transition",
     isCollapsed ? "justify-center px-0" : "justify-between"
   );
   const enabledClass = cn(
-    "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:-translate-y-px hover:bg-white/80",
+    "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:-translate-y-px hover:bg-[color:var(--panel-soft)]",
     active &&
       "border-[color:var(--accent)]/40 bg-[color:var(--accent)]/10 text-[color:var(--accent)]",
   );

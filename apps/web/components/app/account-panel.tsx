@@ -248,7 +248,7 @@ export function AccountPanel() {
         <div className="fixed inset-0 z-40">
           <button
             type="button"
-            className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+            className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
             aria-label="Close account panel"
             onClick={() => setOpen(false)}
           />
@@ -258,7 +258,7 @@ export function AccountPanel() {
             role="dialog"
             aria-modal="true"
             aria-label="Account settings"
-            className="absolute right-0 top-0 h-full w-full max-w-xl border-l border-[color:var(--border)] bg-[color:var(--background)] p-4 shadow-2xl sm:p-5"
+            className="absolute right-0 top-0 h-full w-full max-w-xl border-l border-[color:var(--border)] bg-[color:var(--background)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.2)] sm:p-5"
           >
             <div className="flex h-full flex-col gap-4">
               <div className="flex items-start justify-between gap-3">

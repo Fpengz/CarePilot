@@ -44,7 +44,7 @@ export function MobileNav() {
     <>
       <div className="lg:hidden">
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
-          <div className="pointer-events-auto app-panel mx-auto max-w-xl p-2.5 shadow-2xl backdrop-blur">
+          <div className="pointer-events-auto app-panel mx-auto max-w-xl p-2.5 shadow-[0_10px_30px_rgba(15,23,42,0.12)]">
             <nav aria-label="Mobile primary navigation" className="grid grid-cols-5 gap-1">
               {CORE_MOBILE_TABS.map((route) => {
                 const Icon = route.icon;
@@ -58,7 +58,7 @@ export function MobileNav() {
                       "flex min-h-[56px] flex-col items-center justify-center rounded-lg px-1 py-2 text-xs font-medium",
                       active
                         ? "bg-[color:var(--accent)]/12 text-[color:var(--accent)]"
-                        : "text-[color:var(--muted-foreground)] hover:bg-black/5",
+                        : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--muted)]",
                     )}
                   >
                     <Icon className="mb-1 h-4 w-4" aria-hidden />
@@ -77,7 +77,7 @@ export function MobileNav() {
                   "flex min-h-[56px] flex-col items-center justify-center rounded-lg px-1 py-2 text-xs font-medium",
                   moreActive
                     ? "bg-[color:var(--accent)]/12 text-[color:var(--accent)]"
-                    : "text-[color:var(--muted-foreground)] hover:bg-black/5",
+                    : "text-[color:var(--muted-foreground)] hover:bg-[color:var(--muted)]",
                 )}
               >
                 <Menu className="mb-1 h-4 w-4" aria-hidden />
@@ -90,14 +90,14 @@ export function MobileNav() {
 
       {open ? (
         <div className="lg:hidden">
-          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setOpen(false)} aria-hidden />
+          <div className="fixed inset-0 z-40 bg-black/35" onClick={() => setOpen(false)} aria-hidden />
           <div
             id="mobile-nav-drawer"
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="fixed inset-y-0 right-0 z-50 w-[min(92vw,22rem)] border-l border-[color:var(--border)] bg-[color:var(--background)] p-4 pb-[max(env(safe-area-inset-bottom),2rem)] pt-[max(env(safe-area-inset-top),1.25rem)] shadow-2xl"
+            className="fixed inset-y-0 right-0 z-50 w-[min(92vw,22rem)] border-l border-[color:var(--border)] bg-[color:var(--background)] p-4 pb-[max(env(safe-area-inset-bottom),2rem)] pt-[max(env(safe-area-inset-top),1.25rem)] shadow-[0_12px_30px_rgba(15,23,42,0.2)]"
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div className="text-center sm:text-left">
