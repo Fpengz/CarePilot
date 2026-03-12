@@ -30,7 +30,6 @@ from dietary_guardian.features.recommendations.domain.canonical_food_matching im
 from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
 from dietary_guardian.platform.persistence.food import (
     FoodInfoIngester,
-    load_canonical_food_records,
     load_default_canonical_food_records,
     load_open_food_facts_records,
     load_usda_records,
