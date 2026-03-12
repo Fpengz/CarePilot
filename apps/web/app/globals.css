@@ -142,7 +142,8 @@
   }
 
   .chat-markdown pre {
-    @apply app-code;
+    @apply max-h-[28rem] overflow-auto rounded-xl border border-white/10 bg-[#121310] p-4 text-sm text-[#e8eadf] dark:border-[color:var(--border)] dark:bg-[color:var(--code-bg)] dark:text-[color:var(--code-fg)];
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
   .chat-markdown blockquote {
