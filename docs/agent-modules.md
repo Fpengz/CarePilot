@@ -29,11 +29,18 @@ agent/
 │   ├── schemas.py               ← EmotionTextAgentInput, EmotionSpeechAgentInput, EmotionAgentOutput
 │   ├── audio_preprocessor.py
 │   ├── config.py                ← EmotionRuntimeConfig
-│   ├── engine.py                ← EmotionEngine (inference orchestrator)
-│   ├── runtime.py               ← InProcessEmotionRuntime
-│   ├── model_loader.py          ← EmotionModelLoader
-│   ├── speech_classifier.py     ← SpeechEmotionClassifier
-│   ├── text_classifier.py       ← TextEmotionClassifier
+│   ├── ports.py                 ← ASR/Text/Speech/Fusion ports
+│   ├── pipeline.py              ← EmotionPipeline (ASR → branches → fusion)
+│   ├── adapters/
+│   │   ├── asr_meralion.py       ← MERaLiON ASR adapter
+│   │   ├── text_hf.py            ← HF text emotion adapter
+│   │   ├── speech_hf.py          ← HF speech emotion adapter
+│   │   └── fusion_hf.py          ← HF fusion adapter
+│   ├── engine.py                ← Legacy heuristic engine
+│   ├── runtime.py               ← InProcessEmotionRuntime (pipeline-backed)
+│   ├── model_loader.py          ← Legacy model loader
+│   ├── speech_classifier.py     ← Legacy speech classifier
+│   ├── text_classifier.py       ← Legacy text classifier
 │   └── text_preprocessor.py
 └── chat/                        ← SEA-LION conversational assistant
     ├── agent.py                 ← ChatAgent (history + streaming)
@@ -240,8 +247,8 @@ Pure input/output contracts for the emotion agent. No infrastructure dependencie
 
 | Schema | Fields |
 |--------|--------|
-| `EmotionTextAgentInput` | `text: str`, `language: str \| None` |
-| `EmotionSpeechAgentInput` | `audio_bytes: bytes`, `filename`, `content_type`, `transcription`, `language` |
+| `EmotionTextAgentInput` | `text: str`, `language: str \| None`, `context: EmotionContextFeatures \| None` |
+| `EmotionSpeechAgentInput` | `audio_bytes: bytes`, `filename`, `content_type`, `transcription`, `language`, `context: EmotionContextFeatures \| None` |
 | `EmotionAgentOutput` | `inference: EmotionInferenceResult` |
 
 ---
@@ -250,14 +257,16 @@ Pure input/output contracts for the emotion agent. No infrastructure dependencie
 
 | Module | Purpose |
 |--------|---------|
-| `config.py` — `EmotionRuntimeConfig` | Pydantic settings for model names, thresholds, speech weight, timeout. |
-| `model_loader.py` — `EmotionModelLoader` | Loads HuggingFace `pipeline` for text emotion (`j-hartmann/emotion-english-distilroberta-base`). Lazy-loads on first use. |
-| `text_preprocessor.py` | Normalizes text: strips whitespace, lowercase, truncates to token limit. |
-| `text_classifier.py` — `TextEmotionClassifier` | Runs the HF text classification pipeline. Maps raw labels (`anger`, `disgust`, `fear`, `joy`, …) to unified `EmotionLabel` enum. |
-| `audio_preprocessor.py` | Decodes raw audio bytes → `float32` numpy array at target sample rate. |
-| `speech_classifier.py` — `SpeechEmotionClassifier` | Audio heuristic (energy + ZCR) as placeholder for MERaLiON speech emotion. Returns a score and label with a confidence band. |
-| `engine.py` — `EmotionEngine` | Orchestrates text + speech classifiers. Fuses speech (60%) + text (40%) for audio input; text-only path for text input. Returns `EmotionInferenceResult`. |
-| `runtime.py` | `InProcessEmotionRuntime` — implements `EmotionInferencePort` using the local `EmotionEngine`. Used as the default runtime in production. |
+| `config.py` — `EmotionRuntimeConfig` | Runtime settings for model IDs, device, history window, and source commit. |
+| `ports.py` | Protocols for ASR, text emotion, speech emotion, and fusion adapters. |
+| `pipeline.py` — `EmotionPipeline` | Orchestrates ASR → text/speech branches → context → fusion; emits full-trace `EmotionInferenceResult`. |
+| `audio_preprocessor.py` | Validates raw audio bytes and content type. |
+| `adapters/asr_meralion.py` | MERaLiON ASR adapter (audio bytes → transcript). |
+| `adapters/text_hf.py` | HF text emotion adapter using `pipeline("text-classification")`. |
+| `adapters/speech_hf.py` | HF speech emotion adapter using `pipeline("audio-classification")`. |
+| `adapters/fusion_hf.py` | HF fusion adapter that consumes structured features and returns `emotion_label` + `product_state`. |
+| `engine.py` — `EmotionEngine` | Legacy heuristic engine retained for fallback/testing only. |
+| `runtime.py` | `InProcessEmotionRuntime` — implements `EmotionInferencePort` using `EmotionPipeline`. |
 
 ---
 
