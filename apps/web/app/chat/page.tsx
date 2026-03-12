@@ -32,12 +32,15 @@ export default function ChatPage() {
   const [showAudio, setShowAudio] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingMs, setRecordingMs] = useState(0);
+  const [streamDraft, setStreamDraft] = useState("");
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamBufferRef = useRef("");
+  const streamFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/chat/history`)
@@ -48,7 +51,16 @@ export default function ChatPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, streamDraft]);
+
+  useEffect(() => {
+    return () => {
+      if (streamFlushRef.current) {
+        clearTimeout(streamFlushRef.current);
+        streamFlushRef.current = null;
+      }
+    };
+  }, []);
 
   const lastEmotion = useMemo(() => {
     const reversed = [...messages].reverse();
@@ -66,6 +78,8 @@ export default function ChatPage() {
 
     setInput("");
     setLoading(true);
+    setStreamDraft("");
+    streamBufferRef.current = "";
     setMessages((prev) => [
       ...prev,
       { role: "user", content: message },
@@ -82,6 +96,10 @@ export default function ChatPage() {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      const flushStream = () => {
+        setStreamDraft(streamBufferRef.current);
+        streamFlushRef.current = null;
+      };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -107,14 +125,10 @@ export default function ChatPage() {
               });
             }
             if (event === "token") {
-              setMessages((prev) => {
-                const msgs = [...prev];
-                msgs[msgs.length - 1] = {
-                  role: "assistant",
-                  content: msgs[msgs.length - 1].content + data.text,
-                };
-                return msgs;
-              });
+              streamBufferRef.current += data.text;
+              if (!streamFlushRef.current) {
+                streamFlushRef.current = setTimeout(flushStream, 80);
+              }
             }
             if (event === "error") {
               setMessages((prev) => {
@@ -126,6 +140,25 @@ export default function ChatPage() {
                 };
                 return msgs;
               });
+            }
+            if (event === "done") {
+              if (streamFlushRef.current) {
+                clearTimeout(streamFlushRef.current);
+                streamFlushRef.current = null;
+              }
+              if (streamBufferRef.current) {
+                const finalText = streamBufferRef.current;
+                streamBufferRef.current = "";
+                setMessages((prev) => {
+                  const msgs = [...prev];
+                  msgs[msgs.length - 1] = {
+                    role: "assistant",
+                    content: finalText,
+                  };
+                  return msgs;
+                });
+                setStreamDraft("");
+              }
             }
           } catch {
             // ignore incomplete chunk
@@ -143,6 +176,23 @@ export default function ChatPage() {
         return msgs;
       });
     } finally {
+      if (streamFlushRef.current) {
+        clearTimeout(streamFlushRef.current);
+        streamFlushRef.current = null;
+      }
+      if (streamBufferRef.current) {
+        const finalText = streamBufferRef.current;
+        streamBufferRef.current = "";
+        setMessages((prev) => {
+          const msgs = [...prev];
+          msgs[msgs.length - 1] = {
+            role: "assistant",
+            content: finalText,
+          };
+          return msgs;
+        });
+        setStreamDraft("");
+      }
       setLoading(false);
       inputRef.current?.focus();
     }
@@ -213,6 +263,8 @@ export default function ChatPage() {
     form.append("audio", blob, `recording.${ext}`);
     form.append("backend_name", "groq");
 
+    setStreamDraft("");
+    streamBufferRef.current = "";
     setMessages((prev) => [
       ...prev,
       { role: "user", content: "🎤 (audio)" },
@@ -227,6 +279,10 @@ export default function ChatPage() {
       if (!response.body) throw new Error("No body");
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      const flushStream = () => {
+        setStreamDraft(streamBufferRef.current);
+        streamFlushRef.current = null;
+      };
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -261,14 +317,10 @@ export default function ChatPage() {
               });
             }
             if (event === "token") {
-              setMessages((prev) => {
-                const msgs = [...prev];
-                msgs[msgs.length - 1] = {
-                  role: "assistant",
-                  content: msgs[msgs.length - 1].content + data.text,
-                };
-                return msgs;
-              });
+              streamBufferRef.current += data.text;
+              if (!streamFlushRef.current) {
+                streamFlushRef.current = setTimeout(flushStream, 80);
+              }
             }
             if (event === "error") {
               setMessages((prev) => {
@@ -280,6 +332,25 @@ export default function ChatPage() {
                 };
                 return msgs;
               });
+            }
+            if (event === "done") {
+              if (streamFlushRef.current) {
+                clearTimeout(streamFlushRef.current);
+                streamFlushRef.current = null;
+              }
+              if (streamBufferRef.current) {
+                const finalText = streamBufferRef.current;
+                streamBufferRef.current = "";
+                setMessages((prev) => {
+                  const msgs = [...prev];
+                  msgs[msgs.length - 1] = {
+                    role: "assistant",
+                    content: finalText,
+                  };
+                  return msgs;
+                });
+                setStreamDraft("");
+              }
             }
           } catch {
             // skip
@@ -297,6 +368,23 @@ export default function ChatPage() {
         return msgs;
       });
     } finally {
+      if (streamFlushRef.current) {
+        clearTimeout(streamFlushRef.current);
+        streamFlushRef.current = null;
+      }
+      if (streamBufferRef.current) {
+        const finalText = streamBufferRef.current;
+        streamBufferRef.current = "";
+        setMessages((prev) => {
+          const msgs = [...prev];
+          msgs[msgs.length - 1] = {
+            role: "assistant",
+            content: finalText,
+          };
+          return msgs;
+        });
+        setStreamDraft("");
+      }
       setLoading(false);
     }
   };
@@ -346,9 +434,9 @@ export default function ChatPage() {
                 } ${m.tag === "error" ? "border-red-400/40 bg-red-50 text-red-700" : ""}`}
               >
                 {m.role === "assistant" ? (
-                  m.content ? (
+                  m.content || streamDraft ? (
                     <ReactMarkdown className="chat-markdown" rehypePlugins={[rehypeSanitize]}>
-                      {m.content}
+                      {m.content || streamDraft}
                     </ReactMarkdown>
                   ) : loading ? (
                     <span className="animate-pulse text-[color:var(--muted-foreground)]">▋</span>
