@@ -19,9 +19,9 @@ export function CarePlanCard({ carePlan }: CarePlanCardProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           {carePlan?.recommended_actions?.length ? (
-            carePlan.recommended_actions.map((item: string) => (
+            carePlan.recommended_actions.map((item: string, index: number) => (
               <div
-                key={item}
+                key={`${item}-${index}`}
                 className="clinical-alert text-sm"
               >
                 {item}

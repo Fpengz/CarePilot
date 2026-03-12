@@ -105,8 +105,8 @@ export default function ClinicianDigestPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {digest?.what_changed?.length ? (
-                digest.what_changed.map((item) => (
-                  <div key={item} className="clinical-alert text-sm">
+                digest.what_changed.map((item, index) => (
+                  <div key={`${item}-${index}`} className="clinical-alert text-sm">
                     {item}
                   </div>
                 ))
@@ -123,8 +123,8 @@ export default function ClinicianDigestPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {digest?.interventions_attempted?.length ? (
-                digest.interventions_attempted.map((item) => (
-                  <div key={item} className="clinical-alert text-sm">
+                digest.interventions_attempted.map((item, index) => (
+                  <div key={`${item}-${index}`} className="clinical-alert text-sm">
                     {item}
                   </div>
                 ))

@@ -97,8 +97,8 @@ export default function ImpactPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {summary?.interventions_measured?.length ? (
-                summary.interventions_measured.map((item) => (
-                  <div key={item} className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 text-sm dark:bg-[color:var(--panel-soft)]">
+                summary.interventions_measured.map((item, index) => (
+                  <div key={`${item}-${index}`} className="clinical-alert text-sm">
                     {item}
                   </div>
                 ))
@@ -153,8 +153,8 @@ export default function ImpactPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {summary?.improvement_signals?.length ? (
-                summary.improvement_signals.map((item) => (
-                  <div key={item} className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 text-sm dark:bg-[color:var(--panel-soft)]">
+                summary.improvement_signals.map((item, index) => (
+                  <div key={`${item}-${index}`} className="clinical-alert text-sm">
                     {item}
                   </div>
                 ))

@@ -21,9 +21,9 @@ export function ClinicianDigestCard({ digest }: ClinicianDigestCardProps) {
           <div className="font-medium">{digest?.summary ?? "Run an interaction to preview the digest."}</div>
           <p className="app-muted mt-2">{digest?.why_now ?? "No clinician rationale yet."}</p>
         </div>
-        {digest?.what_changed?.slice(0, 3).map((item: string) => (
+        {digest?.what_changed?.slice(0, 3).map((item: string, index: number) => (
           <div
-            key={item}
+            key={`${item}-${index}`}
             className="clinical-alert"
           >
             {item}
