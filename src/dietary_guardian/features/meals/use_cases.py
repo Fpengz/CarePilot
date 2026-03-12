@@ -6,6 +6,7 @@ This module contains application-level workflows for meal capture and analysis.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
@@ -29,9 +30,11 @@ from dietary_guardian.features.meals.domain.models import (
     ImageInput,
     Ingredient,
     LocalizationDetails,
+    NutritionRiskProfile,
     MealState,
     Nutrition,
     PortionSize,
+    ValidatedMealEvent,
     VisionResult,
 )
 from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
@@ -50,6 +53,12 @@ _UNIT_GRAMS = {
     "serving": 300.0,
     "set": 450.0,
 }
+
+
+@dataclass(frozen=True)
+class ManualMealLogResult:
+    validated_event: ValidatedMealEvent
+    nutrition_profile: NutritionRiskProfile
 
 
 def _legacy_perception_from_state(state: MealState) -> MealPerception:
@@ -420,4 +429,119 @@ def build_meal_record(
         enriched_event=vision_result.enriched_event,
         analysis_version="v2",
         multi_item_count=multi_item_count,
+    )
+
+
+def _split_meal_labels(meal_text: str) -> list[str]:
+    cleaned = meal_text.strip()
+    if not cleaned:
+        return []
+    separators = [",", " and ", " & "]
+    labels = [cleaned]
+    for sep in separators:
+        next_labels: list[str] = []
+        for item in labels:
+            if sep in item:
+                next_labels.extend(part.strip() for part in item.split(sep) if part.strip())
+            else:
+                next_labels.append(item)
+        labels = next_labels
+    return labels
+
+
+def log_meal_from_text(
+    *,
+    user_id: str,
+    meal_text: str,
+    food_store: Any,
+    meals_store: Any,
+    captured_at: datetime | None = None,
+    locale: str = "en-SG",
+) -> ManualMealLogResult:
+    labels = _split_meal_labels(meal_text)
+    if not labels:
+        raise ValueError("meal_text is required")
+    perception_items = [
+        PerceivedMealItem(
+            label=label,
+            candidate_aliases=[label],
+            confidence=0.6,
+            portion_estimate=MealPortionEstimate(amount=1.0, unit="serving", confidence=0.6),
+        )
+        for label in labels
+    ]
+    perception = MealPerception(
+        meal_detected=True,
+        items=perception_items,
+        confidence_score=0.6,
+        image_quality="unknown",
+        uncertainties=[],
+    )
+    default_time = captured_at or datetime.now(timezone.utc)
+    primary_state = MealState(
+        dish_name=labels[0].title(),
+        confidence_score=0.6,
+        identification_method="User_Manual",
+        ingredients=[Ingredient(name=label) for label in labels[:8]],
+        nutrition=MealNutritionProfile().to_legacy(),
+        portion_size=PortionSize.STANDARD,
+        glycemic_index_estimate=GlycemicIndexLevel.UNKNOWN,
+        localization=LocalizationDetails(detected_components=labels[:8]),
+        visual_anomalies=[],
+        suggested_modifications=[],
+    )
+    vision_result = VisionResult(
+        primary_state=primary_state,
+        perception=perception,
+        raw_ai_output="",
+        needs_manual_review=False,
+        processing_latency_ms=0.0,
+        model_version="manual",
+    )
+    normalized = normalize_vision_result(
+        vision_result=vision_result,
+        food_store=food_store,
+        locale=locale,
+    )
+    enriched_event = normalized.enriched_event
+    if enriched_event is None:
+        raise ValueError("meal normalization failed")
+    unresolved = list(enriched_event.unresolved_items)
+    validated_event = ValidatedMealEvent(
+        user_id=user_id,
+        captured_at=default_time,
+        meal_name=enriched_event.meal_name,
+        canonical_items=list(enriched_event.normalized_items),
+        alternatives=list(enriched_event.unresolved_items),
+        confidence_summary={
+            "source": "chat",
+            "unresolved": unresolved,
+            "match_count": len(enriched_event.normalized_items),
+        },
+        provenance={"source": "chat", "input": meal_text},
+        needs_manual_review=bool(enriched_event.needs_manual_review or unresolved),
+    )
+    total = enriched_event.total_nutrition
+    uncertainty: dict[str, object] = {}
+    if unresolved:
+        uncertainty = {"calories_range": [max(total.calories * 0.8, 0.0), total.calories * 1.2]}
+    nutrition_profile = NutritionRiskProfile(
+        event_id=validated_event.event_id,
+        user_id=user_id,
+        captured_at=validated_event.captured_at,
+        calories=total.calories,
+        carbs_g=total.carbs_g,
+        sugar_g=total.sugar_g,
+        protein_g=total.protein_g,
+        fat_g=total.fat_g,
+        sodium_mg=total.sodium_mg,
+        fiber_g=total.fiber_g,
+        risk_tags=list(enriched_event.risk_tags),
+        uncertainty=uncertainty,
+    )
+    meals_store.save_validated_meal_event(validated_event)
+    meals_store.save_nutrition_risk_profile(nutrition_profile)
+    return ManualMealLogResult(
+        validated_event=validated_event,
+        nutrition_profile=nutrition_profile,
     )
