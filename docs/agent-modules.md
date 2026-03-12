@@ -9,16 +9,15 @@ A complete reference for every module under the agent layer.
 ```
 agent/
 ├── __init__.py
-├── shared/                      ← cross-agent infrastructure
+├── core/                        ← canonical agent contracts
 │   ├── base.py                  ← BaseAgent, AgentContext, AgentResult
-│   ├── registry.py              ← AgentRegistry, build_default_agent_registry
-│   ├── ai/
-│   │   ├── engine.py            ← InferenceEngine, strategy pattern
-│   │   └── types.py             ← InferenceRequest/Response/Health, InferenceModality
-│   └── llm/
-│       ├── factory.py           ← LLMFactory (multi-provider client builder)
-│       ├── routing.py           ← LLMCapabilityRouter (capability → runtime)
-│       └── types.py             ← ResolvedModelRuntime dataclass
+│   └── registry.py              ← AgentRegistry, build_default_agent_registry
+├── runtime/                     ← inference plumbing
+│   ├── inference_engine.py      ← InferenceEngine, strategy pattern
+│   ├── inference_types.py       ← InferenceRequest/Response/Health, InferenceModality
+│   ├── llm_factory.py           ← LLMFactory (multi-provider client builder)
+│   ├── llm_routing.py           ← LLMCapabilityRouter (capability → runtime)
+│   └── llm_types.py             ← ResolvedModelRuntime dataclass
 ├── dietary/
 │   └── agent.py                 ← DietaryAgent (meal safety + LLM reasoning)
 ├── meal_analysis/
@@ -27,39 +26,35 @@ agent/
 │   └── agent.py                 ← RecommendationAgent (daily plan synthesis)
 ├── emotion/
 │   ├── agent.py                 ← EmotionAgent (text + speech emotion)
-│   ├── domain/
-│   │   └── schemas.py           ← EmotionTextAgentInput, EmotionSpeechAgentInput, EmotionAgentOutput
-│   └── infra/
-│       ├── audio_preprocessor.py
-│       ├── config.py            ← EmotionRuntimeConfig
-│       ├── emotion_engine.py    ← EmotionEngine (inference orchestrator)
-│       ├── inprocess_emotion_runtime.py
-│       ├── model_loader.py      ← EmotionModelLoader
-│       ├── speech_emotion.py    ← SpeechEmotionClassifier
-│       ├── text_emotion.py      ← TextEmotionClassifier
-│       └── text_preprocessor.py
-├── vision/
-│   └── hawker_vision.py         ← HawkerVisionModule (image → MealPerception)
+│   ├── schemas.py               ← EmotionTextAgentInput, EmotionSpeechAgentInput, EmotionAgentOutput
+│   ├── audio_preprocessor.py
+│   ├── config.py                ← EmotionRuntimeConfig
+│   ├── engine.py                ← EmotionEngine (inference orchestrator)
+│   ├── runtime.py               ← InProcessEmotionRuntime
+│   ├── model_loader.py          ← EmotionModelLoader
+│   ├── speech_classifier.py     ← SpeechEmotionClassifier
+│   ├── text_classifier.py       ← TextEmotionClassifier
+│   └── text_preprocessor.py
 └── chat/                        ← SEA-LION conversational assistant
     ├── agent.py                 ← ChatAgent (history + streaming)
     ├── router.py                ← QueryRouter (LLM-based intent classification)
-    ├── routes_base.py           ← BaseRoute, RouteResult
-    ├── drug_route.py            ← DrugRoute (medication queries)
-    ├── food_route.py            ← FoodRoute (food/diet queries)
-    ├── code_route.py            ← CodeRoute (calculation via E2B sandbox)
-    ├── emotion.py               ← EmotionAgent (chat-layer emotion fusion)
-    ├── audio.py                 ← AudioAgent (Groq Whisper + MERaLiON transcription)
-    ├── search.py                ← SearchAgent (DuckDuckGo wrapper)
+    ├── routes/
+    │   ├── base.py              ← BaseRoute, RouteResult
+    │   ├── drug_route.py        ← DrugRoute (medication queries)
+    │   ├── food_route.py        ← FoodRoute (food/diet queries)
+    │   └── code_route.py        ← CodeRoute (calculation via E2B sandbox)
+    ├── audio_adapter.py         ← AudioAgent (Groq Whisper + MERaLiON transcription)
+    ├── search_adapter.py        ← SearchAgent (DuckDuckGo wrapper)
     ├── memory.py                ← MemoryManager (short-term + SQLite long-term)
     ├── health_tracker.py        ← HealthTracker ([TRACK] metric parsing + charts)
-    └── code.py                  ← CodeAgent (E2B sandbox execution)
+    └── code_adapter.py          ← CodeAgent (E2B sandbox execution)
 ```
 
 ---
 
-## `shared/` — Cross-agent infrastructure
+## `core/` — Agent contracts
 
-### `shared/base.py`
+### `core/base.py`
 
 Defines the canonical contract all companion agents must satisfy.
 
@@ -73,7 +68,7 @@ Defines the canonical contract all companion agents must satisfy.
 
 ---
 
-### `shared/registry.py`
+### `core/registry.py`
 
 Static registry mapping agent IDs and workflow names to runtime contracts.
 
@@ -86,7 +81,9 @@ Static registry mapping agent IDs and workflow names to runtime contracts.
 
 ---
 
-### `shared/ai/engine.py`
+## `runtime/` — Inference plumbing
+
+### `runtime/inference_engine.py`
 
 Provider-agnostic inference execution engine. Sits between agents and the LLM client layer.
 
@@ -102,7 +99,7 @@ Provider-agnostic inference execution engine. Sits between agents and the LLM cl
 
 ---
 
-### `shared/ai/types.py`
+### `runtime/inference_types.py`
 
 Pydantic models for the inference contract.
 
@@ -117,7 +114,7 @@ Pydantic models for the inference contract.
 
 ---
 
-### `shared/llm/factory.py` — `LLMFactory`
+### `runtime/llm_factory.py` — `LLMFactory`
 
 Static factory that builds concrete `pydantic_ai` model objects from settings.
 
@@ -134,7 +131,7 @@ Static factory that builds concrete `pydantic_ai` model objects from settings.
 
 ---
 
-### `shared/llm/routing.py` — `LLMCapabilityRouter`
+### `runtime/llm_routing.py` — `LLMCapabilityRouter`
 
 Maps a `LLMCapability` enum value to a `ResolvedModelRuntime` using `LLMSettings.capability_map`.
 
@@ -142,7 +139,7 @@ Maps a `LLMCapability` enum value to a `ResolvedModelRuntime` using `LLMSettings
 
 ---
 
-### `shared/llm/types.py`
+### `runtime/llm_types.py`
 
 | Symbol | Purpose |
 |--------|---------|
@@ -226,7 +223,7 @@ Canonical agent facade for text and speech emotion inference. **Not** a `BaseAge
 
 ---
 
-### `emotion/domain/schemas.py`
+### `emotion/schemas.py`
 
 Pure input/output contracts for the emotion agent. No infrastructure dependencies.
 
@@ -238,24 +235,24 @@ Pure input/output contracts for the emotion agent. No infrastructure dependencie
 
 ---
 
-### `emotion/infra/` — Emotion runtime infrastructure
+### `emotion/` — Emotion runtime infrastructure
 
 | Module | Purpose |
 |--------|---------|
 | `config.py` — `EmotionRuntimeConfig` | Pydantic settings for model names, thresholds, speech weight, timeout. |
 | `model_loader.py` — `EmotionModelLoader` | Loads HuggingFace `pipeline` for text emotion (`j-hartmann/emotion-english-distilroberta-base`). Lazy-loads on first use. |
 | `text_preprocessor.py` | Normalizes text: strips whitespace, lowercase, truncates to token limit. |
-| `text_emotion.py` — `TextEmotionClassifier` | Runs the HF text classification pipeline. Maps raw labels (`anger`, `disgust`, `fear`, `joy`, …) to unified `EmotionLabel` enum. |
+| `text_classifier.py` — `TextEmotionClassifier` | Runs the HF text classification pipeline. Maps raw labels (`anger`, `disgust`, `fear`, `joy`, …) to unified `EmotionLabel` enum. |
 | `audio_preprocessor.py` | Decodes raw audio bytes → `float32` numpy array at target sample rate. |
-| `speech_emotion.py` — `SpeechEmotionClassifier` | Audio heuristic (energy + ZCR) as placeholder for MERaLiON speech emotion. Returns a score and label with a confidence band. |
-| `emotion_engine.py` — `EmotionEngine` | Orchestrates `text_emotion` and `speech_emotion`. Fuses speech (60%) + text (40%) for audio input; text-only path for text input. Returns `EmotionInferenceResult`. |
-| `inprocess_emotion_runtime.py` | `InProcessEmotionRuntime` — implements `EmotionInferencePort` using the local `EmotionEngine`. Used as the default runtime in production. |
+| `speech_classifier.py` — `SpeechEmotionClassifier` | Audio heuristic (energy + ZCR) as placeholder for MERaLiON speech emotion. Returns a score and label with a confidence band. |
+| `engine.py` — `EmotionEngine` | Orchestrates text + speech classifiers. Fuses speech (60%) + text (40%) for audio input; text-only path for text input. Returns `EmotionInferenceResult`. |
+| `runtime.py` | `InProcessEmotionRuntime` — implements `EmotionInferencePort` using the local `EmotionEngine`. Used as the default runtime in production. |
 
 ---
 
-## `vision/` — Hawker food vision
+## `meal_analysis/` — Hawker food vision
 
-### `vision/hawker_vision.py` — `HawkerVisionModule`
+### `meal_analysis/vision_module.py` — `HawkerVisionModule`
 
 Meal image perception and normalization module. Used by `MealAnalysisAgent`.
 
@@ -279,13 +276,13 @@ Meal image perception and normalization module. Used by `MealAnalysisAgent`.
 
 ## `chat/` — SEA-LION conversational assistant
 
-The `chat/` sub-package is the integration point for Ervin's SEA-LION health chatbot. These modules do **not** inherit from `BaseAgent` — they follow the older direct-injection pattern brought in from the external branch.
+The `chat/` sub-package is the integration point for Ervin's SEA-LION health chatbot. These modules do **not** inherit from `BaseAgent`, but they now follow the same dependency-injection and runtime wiring conventions as other agents.
 
 ### `chat/agent.py` — `ChatAgent`
 
 Manages conversation history and calls the SEA-LION OpenAI-compatible LLM endpoint.
 
-- Constructor: `api_key`, `base_url` (SEA-LION endpoint), `model_id`, `router: QueryRouter | None`, `session_id`.
+- Constructor: `client: OpenAI`, `model_id`, `router: QueryRouter | None`, `session_id`.
 - `stream_async(message, async_client, model_id)` → `AsyncIterator[str]`: streams SSE chunks via `AsyncOpenAI`.
 - Internally uses `MemoryManager` for history and `QueryRouter` for context enrichment.
 
@@ -299,11 +296,11 @@ LLM-based intent classifier. Routes user queries to one of four handlers.
 
 **Flow:** calls SEA-LION with a classification prompt → receives a single label → dispatches to `DrugRoute.enrich()`, `FoodRoute.enrich()`, `CodeRoute.enrich()`, or returns no enrichment for `general`.
 
-Reads `SEALION_API` and `CHAT_MODEL_ID` from environment. Creates its own `OpenAI` client instance.
+Receives `OpenAI` client + model ids via dependency injection.
 
 ---
 
-### `chat/routes_base.py`
+### `chat/routes/base.py`
 
 | Symbol | Purpose |
 |--------|---------|
@@ -312,7 +309,7 @@ Reads `SEALION_API` and `CHAT_MODEL_ID` from environment. Creates its own `OpenA
 
 ---
 
-### `chat/drug_route.py` — `DrugRoute`
+### `chat/routes/drug_route.py` — `DrugRoute`
 
 Handles medication queries (diabetes, hypertension, cardiovascular drugs).
 
@@ -321,11 +318,11 @@ Handles medication queries (diabetes, hypertension, cardiovascular drugs).
 - Distills the top results into a concise medication fact summary using SEA-LION.
 - Returns `RouteResult(route_name="drug", context=<summary>)`.
 
-Creates its own `OpenAI` client from `SEALION_API` env var.
+Uses the injected `OpenAI` client.
 
 ---
 
-### `chat/food_route.py` — `FoodRoute`
+### `chat/routes/food_route.py` — `FoodRoute`
 
 Handles food, diet, and nutrition advisory queries with Singapore hawker context.
 
@@ -333,7 +330,7 @@ Same pipeline as `DrugRoute`: compress → DuckDuckGo search → distill → ret
 
 ---
 
-### `chat/code_route.py` — `CodeRoute`
+### `chat/routes/code_route.py` — `CodeRoute`
 
 Handles calculation/computation queries via a secure sandbox.
 
@@ -341,40 +338,28 @@ Handles calculation/computation queries via a secure sandbox.
 2. `CodeAgent` executes the script in an E2B cloud sandbox.
 3. Returns the sandbox stdout as enriched context for the final LLM reply.
 
-Creates its own `OpenAI` and `CodeAgent` instances.
+Uses injected `OpenAI` + `CodeAgent` instances.
 
 ---
 
-### `chat/emotion.py` — `EmotionAgent` (chat layer)
+### Emotion in chat
 
-Dual-path emotion analysis used to inject empathy context into the chatbot system prompt.
-
-**Pipeline (audio input):**
-1. Audio bytes → `float32` numpy array.
-2. Audio heuristic (energy + ZCR) → simulated speech emotion.
-3. `j-hartmann/emotion-english-distilroberta-base` → text emotion on transcription.
-4. Weighted fusion: speech × 0.60 + text × 0.40.
-
-**Pipeline (text input):** `j-hartmann` model only.
-
-`EmotionAgent.to_context_str()` produces a short snippet injected into the LLM system prompt so the assistant can respond with appropriate empathy.
-
-> **Note:** This is a separate implementation from `agent/emotion/agent.py`. The chat-layer version is simpler and uses the HF pipeline directly without the `EmotionInferencePort` abstraction.
+Chat uses the canonical `agent/emotion/` runtime via API wiring; there is no separate chat-layer emotion agent.
 
 ---
 
-### `chat/audio.py` — `AudioAgent`
+### `chat/audio_adapter.py` — `AudioAgent`
 
 Transcribes audio input into text.
 
 | Backend | When used |
 |---------|-----------|
-| Groq Whisper | Cloud-based, fast. Default. Uses `GROQ_API_KEY`. |
+| Groq Whisper | Cloud-based, fast. Default. Uses injected Groq API key. |
 | MERaLiON | Local model, Singapore-English focused. Requires `load_model()` call first. |
 
 ---
 
-### `chat/search.py` — `SearchAgent`
+### `chat/search_adapter.py` — `SearchAgent`
 
 Thin DuckDuckGo wrapper. Returns a list of `SearchResult(title, url, snippet)`. Used by all three route handlers. No routing logic here.
 
@@ -405,12 +390,12 @@ Parses `[TRACK]` prefixed messages from `chat_memory.db` and generates line-char
 
 ---
 
-### `chat/code.py` — `CodeAgent`
+### `chat/code_adapter.py` — `CodeAgent`
 
 Executes Python code in a secure E2B cloud sandbox (`e2b-code-interpreter`).
 
 - `run(code: str)` → stdout as string.
-- Reads `E2B_API_KEY` from environment at runtime (not constructor).
+- Uses injected E2B API key at runtime (wired in API deps).
 
 ---
 
@@ -418,18 +403,17 @@ Executes Python code in a secure E2B cloud sandbox (`e2b-code-interpreter`).
 
 ### What's consistent (canonical agents)
 - `DietaryAgent`, `MealAnalysisAgent`, `RecommendationAgent`, `EmotionAgent` all inherit `BaseAgent`, declare `name`/`input_schema`/`output_schema`, return `AgentResult`.
-- All use `InferenceEngine` + `LLMFactory` from `shared/ai/` and `shared/llm/`.
+- All canonical agents use `InferenceEngine` + `LLMFactory` from `runtime/`.
 - All accept dependency injection via constructor (`safety_port`, `runtime`, `food_store`, etc.).
 
 ### What's inconsistent (chat agents)
 - `ChatAgent`, `QueryRouter`, `DrugRoute`, `FoodRoute`, `CodeRoute` do **not** inherit `BaseAgent`.
-- Each route creates its **own** `OpenAI` client, reading `SEALION_API` from env directly — no injection, no factory.
-- Settings are not centralized: `SEALION_API`, `CHAT_MODEL_ID`, `REASONING_MODEL_ID`, `GROQ_API_KEY`, `E2B_API_KEY` are read independently in 8+ places.
-- `EmotionAgent` in `chat/emotion.py` duplicates part of `agent/emotion/` without sharing the `EmotionInferencePort` abstraction.
+- Routes use injected `OpenAI` clients and runtime settings; no env reads in route bodies.
+- Settings are centralized in API wiring for `SEALION_API`, `CHAT_MODEL_ID`, `REASONING_MODEL_ID`, `GROQ_API_KEY`, `E2B_API_KEY`.
 
 ### Refactor opportunities (tracked in REFACTOR_PLAN.md)
 1. Wrap `ChatAgent`/routes in a `BaseAgent` subclass or at minimum an `LLMSettings`-aware factory.
-2. Route classes should accept `client: OpenAI` via constructor — remove env reads from route bodies.
-3. Consolidate `chat/emotion.py` and `agent/emotion/` into a single implementation behind `EmotionInferencePort`.
+2. Keep route classes accepting injected `OpenAI` clients via constructor (done).
+3. Keep chat emotion using the canonical `agent/emotion/` runtime (done).
 4. `dietary/agent.py` logfire cast workaround (`cast(Any, logfire)`) should be removed once logfire typing is resolved.
 5. `AgentRegistry` currently stores only static `AgentContract` metadata — it does not hold live agent instances. Future: expose `get_agent(agent_id) → BaseAgent` for dynamic dispatch.

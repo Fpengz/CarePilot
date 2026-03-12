@@ -16,7 +16,7 @@ Each document was generated from a full read of every source file.
 | [features-meals-profiles-medications-symptoms.md](./features-meals-profiles-medications-symptoms.md) | `features/meals/`, `features/profiles/`, `features/medications/`, `features/symptoms/` | 781 |
 | [features-safety-reminders-reports-households-recommendations.md](./features-safety-reminders-reports-households-recommendations.md) | `features/safety/`, `features/reminders/`, `features/reports/`, `features/households/`, `features/recommendations/` | 739 |
 | [features-companion.md](./features-companion.md) | `features/companion/` (core, care_plans, clinician_digest, engagement, impact, personalization) | 676 |
-| [../agent-modules.md](../agent-modules.md) | `agent/` — all 45 agent modules across shared, dietary, meal_analysis, recommendation, emotion, vision, chat | 435 |
+| [../agent-modules.md](../agent-modules.md) | `agent/` — bounded agents + core/runtime plumbing + chat | 435 |
 
 **Total documented: ~5300 lines across 7 files**
 
@@ -32,12 +32,12 @@ src/dietary_guardian/
 ├── shared/          Timezone utilities
 │
 ├── agent/           LLM agent layer (documented in ../agent-modules.md)
-│   ├── shared/      BaseAgent, InferenceEngine, LLMFactory, LLMCapabilityRouter
+│   ├── core/        BaseAgent, AgentRegistry, AgentResult
+│   ├── runtime/     InferenceEngine, LLMFactory, LLMCapabilityRouter
 │   ├── dietary/     DietaryAgent — safety + LLM meal reasoning
 │   ├── meal_analysis/ MealAnalysisAgent — vision perception facade
 │   ├── recommendation/ RecommendationAgent — deterministic plan synthesis
 │   ├── emotion/     EmotionAgent + full HuggingFace inference infra
-│   ├── vision/      HawkerVisionModule — image → MealPerception
 │   └── chat/        SEA-LION conversational assistant (ChatAgent, QueryRouter, routes)
 │
 ├── features/        Business logic organized by domain

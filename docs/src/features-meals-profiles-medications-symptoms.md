@@ -48,7 +48,7 @@ The meals feature provides:
 | `list_meal_records` | `(deps, user_id, limit, cursor)` | `MealRecordsResponse` | Paginated list of validated meal events |
 | `get_daily_summary` | `(deps, user_id, summary_date)` | `MealDailySummaryResponse` | Daily nutrition totals vs. targets |
 | `get_weekly_summary` | `(deps, user_id, week_start)` | `MealWeeklySummaryResponse` | Weekly meal breakdown by day |
-| `_build_hawker_vision_module` | `(provider, food_store)` | HawkerVisionModule | Dynamically loads vision analysis module |
+| `_build_hawker_vision_module` | `(provider, food_store)` | HawkerVisionModule | Dynamically loads meal analysis vision module |
 | `_extract_dietary_claims` | `(text)` | `DietaryClaims` | Parses user text for food labels, portions, preparation |
 | `_context_snapshot` | `(session)` | `ContextSnapshot` | Extracts user context from session |
 | `_claim_perception` | `(labels, confidence)` | `MealPerception` | Converts dietary claims to perception structure |

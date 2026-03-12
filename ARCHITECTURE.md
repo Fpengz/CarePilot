@@ -78,13 +78,13 @@ src/dietary_guardian/
 
 | Sub-package | Agent |
 |-------------|-------|
-| `shared/llm/` | `LLMFactory`, `LLMCapabilityRouter`, `InferenceEngine` |
-| `shared/ai/` | `BaseAgent`, `AgentRegistry`, `AgentResult` envelope |
+| `runtime/` | `LLMFactory`, `LLMCapabilityRouter`, `InferenceEngine` |
+| `core/` | `BaseAgent`, `AgentRegistry`, `AgentResult` envelope |
 | `dietary/` | `DietaryAgent` — safety pre-screen + LLM meal reasoning |
 | `meal_analysis/` | `MealAnalysisAgent` — vision perception facade |
 | `recommendation/` | `RecommendationAgent` — deterministic plan synthesis |
 | `emotion/` | `EmotionAgent` + HuggingFace inference infra |
-| `vision/` | `HawkerVisionModule` — image → `MealPerception` |
+| `meal_analysis/` | `HawkerVisionModule` — image → `MealPerception` |
 | `chat/` | `ChatAgent`, `QueryRouter`, SSE streaming, audio, `[TRACK]` parsing |
 
 ### Platform layer — `src/dietary_guardian/platform/`
