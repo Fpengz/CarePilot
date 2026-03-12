@@ -73,7 +73,7 @@ src/dietary_guardian/
 
 ### Agent layer — `src/dietary_guardian/agent/`
 - Bounded reasoning helpers. Agents propose; they never authorize delivery or write durable state directly.
-- All agents inherit `BaseAgent[InputT, OutputT]` from `agent/shared/ai/` and return `AgentResult[OutputT]`.
+- All agents inherit `BaseAgent[InputT, OutputT]` from `agent/core/` and return `AgentResult[OutputT]`.
 - Retrieved by name from `AgentRegistry`; never instantiated ad-hoc in feature code.
 
 | Sub-package | Agent |
@@ -198,7 +198,7 @@ apps/workers/  ← process reminders, outbox, background tasks
 | Config — LLMSettings typed views | `config/llm.py` |
 | Safety engine — deterministic thresholds + drug interactions | `features/safety/domain/engine.py` |
 | CaseSnapshot — canonical patient read model | `features/companion/core/` |
-| Meal analysis — vision perception + food normalization | `features/meals/`, `agent/meal_analysis/`, `agent/vision/` |
+| Meal analysis — vision perception + food normalization | `features/meals/`, `agent/meal_analysis/` |
 | Recommendations — scoring + context + orchestration | `features/recommendations/domain/` |
 | Companion orchestration — personalization, engagement, clinician digest, impact | `features/companion/` |
 | Reminder scheduling + multi-channel outbox | `features/reminders/`, `platform/messaging/` |

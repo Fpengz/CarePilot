@@ -59,7 +59,7 @@ Image or text input
 ## Module Map
 
 ### Vision and perception
-- `src/dietary_guardian/agent/vision/hawker_vision.py`
+- `src/dietary_guardian/agent/meal_analysis/vision_module.py`
 
 ### Domain contracts
 - `src/dietary_guardian/features/meals/domain/models.py`
@@ -68,9 +68,9 @@ Image or text input
 - `src/dietary_guardian/features/meals/use_cases.py`
 
 ### Provider/runtime integration
-- `src/dietary_guardian/agent/shared/llm/factory.py`
-- `src/dietary_guardian/agent/shared/llm/routing.py`
-- `src/dietary_guardian/agent/shared/ai/engine.py`
+- `src/dietary_guardian/agent/runtime/llm_factory.py`
+- `src/dietary_guardian/agent/runtime/llm_routing.py`
+- `src/dietary_guardian/agent/runtime/inference_engine.py`
 
 ### Canonical food seed, ranking, and loading logic
 - `src/dietary_guardian/features/recommendations/domain/canonical_food_matching.py`
