@@ -62,6 +62,20 @@ test("settings page exposes guided health profile setup with advanced edit fallb
   await expect(page.getByLabel("Daily fiber target (g)")).toBeVisible();
 });
 
+test("reminder delivery settings live in settings, not the reminders page", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("member@example.com");
+  await page.getByLabel("Password").fill("member-pass");
+  await page.getByRole("button", { name: "Login" }).click();
+
+  await page.goto("/reminders");
+  await expect(page.locator("#main-content").getByRole("heading", { name: "Delivery Settings" })).toHaveCount(0);
+
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Reminder Settings" }).click();
+  await expect(page.getByRole("heading", { name: "Delivery Preferences" })).toBeVisible();
+});
+
 test("caregiver household page shows a read-only care panel", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("helper@example.com");

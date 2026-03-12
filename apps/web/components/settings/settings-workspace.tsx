@@ -12,7 +12,11 @@ import { useSession } from "@/components/app/session-provider";
 import { updateAuthProfile, logout } from "@/lib/api/auth-client";
 import {
   getMobilityReminderSettings,
+  listReminderNotificationEndpoints,
+  listReminderNotificationPreferences,
   updateMobilityReminderSettings,
+  updateReminderNotificationEndpoints,
+  updateReminderNotificationPreferences,
 } from "@/lib/api/reminder-client";
 import {
   completeHealthProfileOnboarding,
@@ -25,6 +29,8 @@ import type {
   HealthProfile,
   HealthProfileOnboardingResponse,
   MobilityReminderSettings,
+  ReminderNotificationEndpoint,
+  ReminderNotificationPreferenceRule,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -256,6 +262,19 @@ export function SettingsWorkspace() {
     active_end_time: "20:00",
   });
   const [savingMobility, setSavingMobility] = useState(false);
+  const [savingDelivery, setSavingDelivery] = useState(false);
+  const [preferences, setPreferences] = useState<ReminderNotificationPreferenceRule[]>([]);
+  const [endpoints, setEndpoints] = useState<ReminderNotificationEndpoint[]>([]);
+  const [emailDestination, setEmailDestination] = useState("");
+  const [smsDestination, setSmsDestination] = useState("");
+  const [emailVerified, setEmailVerified] = useState(true);
+  const [smsVerified, setSmsVerified] = useState(false);
+  const [inAppEnabled, setInAppEnabled] = useState(true);
+  const [inAppOffset, setInAppOffset] = useState(0);
+  const [emailEnabled, setEmailEnabled] = useState(false);
+  const [emailOffset, setEmailOffset] = useState(0);
+  const [smsEnabled, setSmsEnabled] = useState(false);
+  const [smsOffset, setSmsOffset] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -278,13 +297,34 @@ export function SettingsWorkspace() {
       setProfileBusy(true);
       setError(null);
       try {
-        const [onboardingResponse, mobilityResponse] = await Promise.all([
+        const [onboardingResponse, mobilityResponse, preferenceResponse, endpointResponse] = await Promise.all([
           getHealthProfileOnboarding(),
           getMobilityReminderSettings(),
+          listReminderNotificationPreferences(),
+          listReminderNotificationEndpoints(),
         ]);
         if (cancelled) return;
         applyOnboardingResponse(onboardingResponse);
         setMobilitySettings(mobilityResponse.settings);
+        setPreferences(preferenceResponse.preferences);
+        setEndpoints(endpointResponse.endpoints);
+
+        const inAppRule = preferenceResponse.preferences.find((item) => item.channel === "in_app");
+        const emailRule = preferenceResponse.preferences.find((item) => item.channel === "email");
+        const smsRule = preferenceResponse.preferences.find((item) => item.channel === "sms");
+        setInAppEnabled(Boolean(inAppRule?.enabled ?? true));
+        setInAppOffset(inAppRule?.offset_minutes ?? 0);
+        setEmailEnabled(Boolean(emailRule?.enabled));
+        setEmailOffset(emailRule?.offset_minutes ?? 0);
+        setSmsEnabled(Boolean(smsRule?.enabled));
+        setSmsOffset(smsRule?.offset_minutes ?? 0);
+
+        const emailEndpoint = endpointResponse.endpoints.find((item) => item.channel === "email");
+        const smsEndpoint = endpointResponse.endpoints.find((item) => item.channel === "sms");
+        setEmailDestination(emailEndpoint?.destination ?? "");
+        setEmailVerified(Boolean(emailEndpoint?.verified ?? true));
+        setSmsDestination(smsEndpoint?.destination ?? "");
+        setSmsVerified(Boolean(smsEndpoint?.verified));
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -388,6 +428,36 @@ export function SettingsWorkspace() {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setSavingMobility(false);
+    }
+  }
+
+  async function handleDeliverySave() {
+    setSavingDelivery(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const [nextPreferences, nextEndpoints] = await Promise.all([
+        updateReminderNotificationPreferences({
+          rules: [
+            { channel: "in_app", offset_minutes: inAppOffset, enabled: inAppEnabled },
+            { channel: "email", offset_minutes: emailOffset, enabled: emailEnabled },
+            { channel: "sms", offset_minutes: smsOffset, enabled: smsEnabled },
+          ],
+        }),
+        updateReminderNotificationEndpoints({
+          endpoints: [
+            ...(emailDestination ? [{ channel: "email", destination: emailDestination, verified: emailVerified }] : []),
+            ...(smsDestination ? [{ channel: "sms", destination: smsDestination, verified: smsVerified }] : []),
+          ],
+        }),
+      ]);
+      setPreferences(nextPreferences.preferences);
+      setEndpoints(nextEndpoints.endpoints);
+      setNotice("Delivery preferences saved.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSavingDelivery(false);
     }
   }
 
@@ -901,79 +971,167 @@ export function SettingsWorkspace() {
       ) : null}
 
       {activeTab === "reminders" ? (
-        <Card className="grain-overlay">
-          <CardHeader>
-            <CardTitle>Reminder Settings</CardTitle>
-            <CardDescription>Configure mobility reminders here. Delivery channels and reminder history stay on the Reminders page.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="mobility-enabled">Mobility reminders</Label>
-                <Select
-                  id="mobility-enabled"
-                  value={mobilitySettings.enabled ? "enabled" : "disabled"}
-                  onChange={(event) =>
-                    setMobilitySettings((current) => ({
-                      ...current,
-                      enabled: event.target.value === "enabled",
-                    }))
-                  }
-                >
-                  <option value="disabled">Disabled</option>
-                  <option value="enabled">Enabled</option>
-                </Select>
+        <div className="space-y-4">
+          <Card className="grain-overlay">
+            <CardHeader>
+              <CardTitle>Delivery Preferences</CardTitle>
+              <CardDescription>Per-account delivery rules and contact endpoints for reminder notifications.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">In-app</div>
+                  <Label className="mt-2 flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={inAppEnabled} onChange={(e) => setInAppEnabled(e.target.checked)} />
+                    Enabled
+                  </Label>
+                  <Label className="mt-2 block text-xs">Offset minutes</Label>
+                  <Input
+                    className="mt-1"
+                    type="number"
+                    max={0}
+                    value={String(inAppOffset)}
+                    onChange={(e) => setInAppOffset(Number(e.target.value))}
+                  />
+                </div>
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Email</div>
+                  <Label className="mt-2 flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={emailEnabled} onChange={(e) => setEmailEnabled(e.target.checked)} />
+                    Enabled
+                  </Label>
+                  <Label className="mt-2 block text-xs">Destination</Label>
+                  <Input
+                    className="mt-1"
+                    value={emailDestination}
+                    onChange={(e) => setEmailDestination(e.target.value)}
+                    placeholder="name@example.com"
+                  />
+                  <Label className="mt-2 flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={emailVerified} onChange={(e) => setEmailVerified(e.target.checked)} />
+                    Verified
+                  </Label>
+                  <Label className="mt-2 block text-xs">Offset minutes</Label>
+                  <Input
+                    className="mt-1"
+                    type="number"
+                    max={0}
+                    value={String(emailOffset)}
+                    onChange={(e) => setEmailOffset(Number(e.target.value))}
+                  />
+                </div>
+                <div className="metric-card md:col-span-2">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">SMS</div>
+                  <div className="grid gap-3 md:grid-cols-[auto,1fr,auto] md:items-center">
+                    <Label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={smsEnabled} onChange={(e) => setSmsEnabled(e.target.checked)} />
+                      Enabled
+                    </Label>
+                    <Input
+                      value={smsDestination}
+                      onChange={(e) => setSmsDestination(e.target.value)}
+                      placeholder="+15551234567"
+                    />
+                    <Input
+                      type="number"
+                      max={0}
+                      value={String(smsOffset)}
+                      onChange={(e) => setSmsOffset(Number(e.target.value))}
+                    />
+                  </div>
+                  <Label className="mt-2 flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={smsVerified} onChange={(e) => setSmsVerified(e.target.checked)} />
+                    Verified
+                  </Label>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="mobility-interval">Interval (minutes)</Label>
-                <Input
-                  id="mobility-interval"
-                  value={String(mobilitySettings.interval_minutes)}
-                  onChange={(event) =>
-                    setMobilitySettings((current) => ({
-                      ...current,
-                      interval_minutes: Number(event.target.value) || current.interval_minutes,
-                    }))
-                  }
-                />
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handleDeliverySave} disabled={status !== "authenticated" || savingDelivery}>
+                  <AsyncLabel active={savingDelivery} idle="Save Delivery Preferences" loading="Saving" />
+                </Button>
+                <Button asChild variant="secondary">
+                  <Link href="/reminders">Open Reminders</Link>
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="mobility-start">Active start time</Label>
-                <Input
-                  id="mobility-start"
-                  value={mobilitySettings.active_start_time}
-                  onChange={(event) =>
-                    setMobilitySettings((current) => ({
-                      ...current,
-                      active_start_time: event.target.value,
-                    }))
-                  }
-                />
+              <div className="app-muted text-xs">
+                Active rules: {preferences.length}. Configured endpoints: {endpoints.length}.
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="mobility-end">Active end time</Label>
-                <Input
-                  id="mobility-end"
-                  value={mobilitySettings.active_end_time}
-                  onChange={(event) =>
-                    setMobilitySettings((current) => ({
-                      ...current,
-                      active_end_time: event.target.value,
-                    }))
-                  }
-                />
+            </CardContent>
+          </Card>
+          <Card className="grain-overlay">
+            <CardHeader>
+              <CardTitle>Mobility Reminder Settings</CardTitle>
+              <CardDescription>Configure stand, stretch, or walk reminders within your active hours.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="mobility-enabled">Mobility reminders</Label>
+                  <Select
+                    id="mobility-enabled"
+                    value={mobilitySettings.enabled ? "enabled" : "disabled"}
+                    onChange={(event) =>
+                      setMobilitySettings((current) => ({
+                        ...current,
+                        enabled: event.target.value === "enabled",
+                      }))
+                    }
+                  >
+                    <option value="disabled">Disabled</option>
+                    <option value="enabled">Enabled</option>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mobility-interval">Interval (minutes)</Label>
+                  <Input
+                    id="mobility-interval"
+                    value={String(mobilitySettings.interval_minutes)}
+                    onChange={(event) =>
+                      setMobilitySettings((current) => ({
+                        ...current,
+                        interval_minutes: Number(event.target.value) || current.interval_minutes,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mobility-start">Active start time</Label>
+                  <Input
+                    id="mobility-start"
+                    value={mobilitySettings.active_start_time}
+                    onChange={(event) =>
+                      setMobilitySettings((current) => ({
+                        ...current,
+                        active_start_time: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mobility-end">Active end time</Label>
+                  <Input
+                    id="mobility-end"
+                    value={mobilitySettings.active_end_time}
+                    onChange={(event) =>
+                      setMobilitySettings((current) => ({
+                        ...current,
+                        active_end_time: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleMobilitySave} disabled={status !== "authenticated" || savingMobility}>
-                <AsyncLabel active={savingMobility} idle="Save Mobility Settings" loading="Saving" />
-              </Button>
-              <Button asChild variant="secondary">
-                <Link href="/reminders">Open Reminders</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handleMobilitySave} disabled={status !== "authenticated" || savingMobility}>
+                  <AsyncLabel active={savingMobility} idle="Save Mobility Settings" loading="Saving" />
+                </Button>
+                <Button asChild variant="secondary">
+                  <Link href="/reminders">Open Reminders</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
 
       {activeTab === "household" ? <HouseholdTab /> : null}

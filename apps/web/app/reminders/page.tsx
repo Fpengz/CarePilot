@@ -11,23 +11,14 @@ import { Label } from "@/components/ui/label";
 import {
   confirmReminder,
   generateReminders,
-  getMobilityReminderSettings,
-  listReminderNotificationEndpoints,
   listReminderNotificationLogs,
-  listReminderNotificationPreferences,
   listReminderNotificationSchedules,
   listReminders,
-  updateMobilityReminderSettings,
-  updateReminderNotificationEndpoints,
-  updateReminderNotificationPreferences,
 } from "@/lib/api/reminder-client";
 import type {
-  MobilityReminderSettings,
   ReminderEventView,
   ReminderMetrics,
-  ReminderNotificationEndpoint,
   ReminderNotificationLogItem,
-  ReminderNotificationPreferenceRule,
   ScheduledReminderNotificationItem,
 } from "@/lib/types";
 
@@ -67,27 +58,9 @@ export default function RemindersPage() {
   const [metrics, setMetrics] = useState<ReminderMetrics | null>(null);
   const [selectedId, setSelectedId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<"generate" | "list" | "yes" | "no" | "saveSettings" | null>(null);
-  const [preferences, setPreferences] = useState<ReminderNotificationPreferenceRule[]>([]);
-  const [endpoints, setEndpoints] = useState<ReminderNotificationEndpoint[]>([]);
+  const [loadingAction, setLoadingAction] = useState<"generate" | "list" | "yes" | "no" | null>(null);
   const [schedules, setSchedules] = useState<ScheduledReminderNotificationItem[]>([]);
   const [logs, setLogs] = useState<ReminderNotificationLogItem[]>([]);
-  const [emailDestination, setEmailDestination] = useState("");
-  const [smsDestination, setSmsDestination] = useState("");
-  const [emailVerified, setEmailVerified] = useState(true);
-  const [smsVerified, setSmsVerified] = useState(false);
-  const [inAppEnabled, setInAppEnabled] = useState(true);
-  const [inAppOffset, setInAppOffset] = useState(0);
-  const [emailEnabled, setEmailEnabled] = useState(false);
-  const [emailOffset, setEmailOffset] = useState(0);
-  const [smsEnabled, setSmsEnabled] = useState(false);
-  const [smsOffset, setSmsOffset] = useState(0);
-  const [mobilitySettings, setMobilitySettings] = useState<MobilityReminderSettings>({
-    enabled: false,
-    interval_minutes: 120,
-    active_start_time: "08:00",
-    active_end_time: "20:00",
-  });
 
   const selectableReminders = useMemo(
     () => reminders.filter((item) => item.status === "sent" && item.reminder_type === "medication"),
@@ -98,34 +71,6 @@ export default function RemindersPage() {
     [selectableReminders, selectedId],
   );
 
-  async function loadConfigurations() {
-    const [preferenceData, endpointData, mobilityData] = await Promise.all([
-      listReminderNotificationPreferences(),
-      listReminderNotificationEndpoints(),
-      getMobilityReminderSettings(),
-    ]);
-    setPreferences(preferenceData.preferences);
-    setEndpoints(endpointData.endpoints);
-    setMobilitySettings(mobilityData.settings);
-
-    const inAppRule = preferenceData.preferences.find((item) => item.channel === "in_app");
-    const emailRule = preferenceData.preferences.find((item) => item.channel === "email");
-    const smsRule = preferenceData.preferences.find((item) => item.channel === "sms");
-    setInAppEnabled(Boolean(inAppRule?.enabled ?? true));
-    setInAppOffset(inAppRule?.offset_minutes ?? 0);
-    setEmailEnabled(Boolean(emailRule?.enabled));
-    setEmailOffset(emailRule?.offset_minutes ?? 0);
-    setSmsEnabled(Boolean(smsRule?.enabled));
-    setSmsOffset(smsRule?.offset_minutes ?? 0);
-
-    const emailEndpoint = endpointData.endpoints.find((item) => item.channel === "email");
-    const smsEndpoint = endpointData.endpoints.find((item) => item.channel === "sms");
-    setEmailDestination(emailEndpoint?.destination ?? "");
-    setEmailVerified(Boolean(emailEndpoint?.verified ?? true));
-    setSmsDestination(smsEndpoint?.destination ?? "");
-    setSmsVerified(Boolean(smsEndpoint?.verified));
-  }
-
   async function loadReminderDeliveryDetails(reminderId: string) {
     const [scheduleData, logData] = await Promise.all([
       listReminderNotificationSchedules(reminderId),
@@ -134,10 +79,6 @@ export default function RemindersPage() {
     setSchedules(scheduleData.items);
     setLogs(logData.items);
   }
-
-  useEffect(() => {
-    void loadConfigurations().catch((e) => setError(e instanceof Error ? e.message : String(e)));
-  }, []);
 
   useEffect(() => {
     if (!selectedId) {
@@ -153,7 +94,7 @@ export default function RemindersPage() {
       <PageTitle
         eyebrow="Reminders"
         title="Reminders and Adherence Tracking"
-        description="Generate reminders, confirm adherence, and tune delivery channels without losing clinical context."
+        description="Generate reminders, confirm adherence, and review delivery activity. Update delivery preferences in Settings."
       />
 
       <div className="page-grid">
@@ -174,7 +115,6 @@ export default function RemindersPage() {
                     setReminders(data.reminders);
                     setMetrics(data.metrics);
                     if (data.reminders[0]) setSelectedId(data.reminders[0].id);
-                    await loadConfigurations();
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));
                   } finally {
@@ -195,7 +135,6 @@ export default function RemindersPage() {
                     setReminders(data.reminders);
                     setMetrics(data.metrics);
                     if (data.reminders[0]) setSelectedId(data.reminders[0].id);
-                    await loadConfigurations();
                   } catch (e) {
                     setError(e instanceof Error ? e.message : String(e));
                   } finally {
@@ -327,199 +266,6 @@ export default function RemindersPage() {
             </CardHeader>
             <CardContent>
               <MetricsCard metrics={metrics} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Delivery Settings</CardTitle>
-              <CardDescription>Persist channel rules and contact endpoints per user.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">In-app</div>
-                  <Label className="mt-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={inAppEnabled} onChange={(e) => setInAppEnabled(e.target.checked)} />
-                    Enabled
-                  </Label>
-                  <Label className="mt-2 block text-xs">Offset minutes</Label>
-                  <input
-                    className="mt-1 w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
-                    type="number"
-                    max={0}
-                    value={inAppOffset}
-                    onChange={(e) => setInAppOffset(Number(e.target.value))}
-                  />
-                </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Email</div>
-                  <Label className="mt-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={emailEnabled} onChange={(e) => setEmailEnabled(e.target.checked)} />
-                    Enabled
-                  </Label>
-                  <Label className="mt-2 block text-xs">Destination</Label>
-                  <input
-                    className="mt-1 w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
-                    value={emailDestination}
-                    onChange={(e) => setEmailDestination(e.target.value)}
-                    placeholder="name@example.com"
-                  />
-                  <Label className="mt-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={emailVerified} onChange={(e) => setEmailVerified(e.target.checked)} />
-                    Verified
-                  </Label>
-                  <Label className="mt-2 block text-xs">Offset minutes</Label>
-                  <input
-                    className="mt-1 w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
-                    type="number"
-                    max={0}
-                    value={emailOffset}
-                    onChange={(e) => setEmailOffset(Number(e.target.value))}
-                  />
-                </div>
-                <div className="metric-card md:col-span-2">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">SMS</div>
-                  <div className="grid gap-3 md:grid-cols-[auto,1fr,auto] md:items-center">
-                    <Label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={smsEnabled} onChange={(e) => setSmsEnabled(e.target.checked)} />
-                      Enabled
-                    </Label>
-                    <input
-                      className="w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
-                      value={smsDestination}
-                      onChange={(e) => setSmsDestination(e.target.value)}
-                      placeholder="+15551234567"
-                    />
-                    <input
-                      className="w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm md:w-28"
-                      type="number"
-                      max={0}
-                      value={smsOffset}
-                      onChange={(e) => setSmsOffset(Number(e.target.value))}
-                    />
-                  </div>
-                  <Label className="mt-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={smsVerified} onChange={(e) => setSmsVerified(e.target.checked)} />
-                    Verified
-                  </Label>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  disabled={loadingAction !== null}
-                  onClick={async () => {
-                    setError(null);
-                    setLoadingAction("saveSettings");
-                    try {
-                      await Promise.all([
-                        updateReminderNotificationPreferences({
-                          rules: [
-                            { channel: "in_app", offset_minutes: inAppOffset, enabled: inAppEnabled },
-                            { channel: "email", offset_minutes: emailOffset, enabled: emailEnabled },
-                            { channel: "sms", offset_minutes: smsOffset, enabled: smsEnabled },
-                          ],
-                        }),
-                        updateReminderNotificationEndpoints({
-                          endpoints: [
-                            ...(emailDestination ? [{ channel: "email", destination: emailDestination, verified: emailVerified }] : []),
-                            ...(smsDestination ? [{ channel: "sms", destination: smsDestination, verified: smsVerified }] : []),
-                          ],
-                        }),
-                      ]);
-                      await loadConfigurations();
-                      if (selectedId) {
-                        await loadReminderDeliveryDetails(selectedId);
-                      }
-                    } catch (e) {
-                      setError(e instanceof Error ? e.message : String(e));
-                    } finally {
-                      setLoadingAction(null);
-                    }
-                  }}
-                >
-                  <AsyncLabel active={loadingAction === "saveSettings"} loading="Saving" idle="Save Delivery Settings" />
-                </Button>
-              </div>
-              <div className="app-muted text-xs">
-                Active rules: {preferences.length}. Configured endpoints: {endpoints.length}.
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Mobility Reminder Settings</CardTitle>
-              <CardDescription>Opt into a regular stand, stretch, or walk reminder during your active hours.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Enabled</div>
-                  <Label className="mt-2 flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={mobilitySettings.enabled}
-                      onChange={(e) =>
-                        setMobilitySettings((current) => ({ ...current, enabled: e.target.checked }))
-                      }
-                    />
-                    Send mobility reminders
-                  </Label>
-                </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Interval minutes</div>
-                  <input
-                    className="mt-2 w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
-                    type="number"
-                    min={60}
-                    max={240}
-                    value={mobilitySettings.interval_minutes}
-                    onChange={(e) =>
-                      setMobilitySettings((current) => ({
-                        ...current,
-                        interval_minutes: Number(e.target.value) || current.interval_minutes,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Active start</div>
-                  <input
-                    className="mt-2 w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
-                    value={mobilitySettings.active_start_time}
-                    onChange={(e) =>
-                      setMobilitySettings((current) => ({ ...current, active_start_time: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Active end</div>
-                  <input
-                    className="mt-2 w-full rounded-lg border border-[color:var(--border)] bg-transparent px-3 py-2 text-sm"
-                    value={mobilitySettings.active_end_time}
-                    onChange={(e) =>
-                      setMobilitySettings((current) => ({ ...current, active_end_time: e.target.value }))
-                    }
-                  />
-                </div>
-              </div>
-              <Button
-                variant="secondary"
-                disabled={loadingAction !== null}
-                onClick={async () => {
-                  setError(null);
-                  setLoadingAction("saveSettings");
-                  try {
-                    const response = await updateMobilityReminderSettings(mobilitySettings);
-                    setMobilitySettings(response.settings);
-                  } catch (e) {
-                    setError(e instanceof Error ? e.message : String(e));
-                  } finally {
-                    setLoadingAction(null);
-                  }
-                }}
-              >
-                <AsyncLabel active={loadingAction === "saveSettings"} loading="Saving" idle="Save Mobility Settings" />
-              </Button>
             </CardContent>
           </Card>
           <Card>
