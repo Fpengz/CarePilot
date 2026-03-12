@@ -120,6 +120,35 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
+  .chat-markdown {
+    @apply space-y-3 text-sm leading-relaxed;
+  }
+
+  .chat-markdown a {
+    @apply underline decoration-[color:var(--accent)] decoration-2 underline-offset-2;
+  }
+
+  .chat-markdown ul {
+    @apply list-disc pl-5 space-y-2;
+  }
+
+  .chat-markdown ol {
+    @apply list-decimal pl-5 space-y-2;
+  }
+
+  .chat-markdown code {
+    @apply rounded-md bg-black/5 px-1.5 py-0.5 text-[0.85rem] dark:bg-white/10;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .chat-markdown pre {
+    @apply app-code;
+  }
+
+  .chat-markdown blockquote {
+    @apply border-l-2 border-[color:var(--border)] pl-4 text-[color:var(--muted-foreground)];
+  }
+
   .page-grid {
     @apply grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)];
   }

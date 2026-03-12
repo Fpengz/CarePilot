@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/backend";
 
@@ -343,12 +345,19 @@ export default function ChatPage() {
                     : "bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--foreground)] rounded-bl-sm shadow-sm"
                 } ${m.tag === "error" ? "border-red-400/40 bg-red-50 text-red-700" : ""}`}
               >
-                {m.content ||
-                  (m.role === "assistant" && loading ? (
+                {m.role === "assistant" ? (
+                  m.content ? (
+                    <ReactMarkdown className="chat-markdown" rehypePlugins={[rehypeSanitize]}>
+                      {m.content}
+                    </ReactMarkdown>
+                  ) : loading ? (
                     <span className="animate-pulse text-[color:var(--muted-foreground)]">▋</span>
                   ) : (
                     ""
-                  ))}{" "}
+                  )
+                ) : (
+                  m.content
+                )}{" "}
                 {m.emotion && (
                   <div className="mt-2 text-xs uppercase tracking-[0.16em] opacity-80 flex items-center gap-2">
                     <span>{EMOTION_EMOJI[m.emotion.label] ?? "🫥"}</span>
