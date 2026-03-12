@@ -15,6 +15,7 @@ import os
 import shutil
 import signal
 import socket
+import sqlite3
 import subprocess
 import sys
 import time
@@ -24,18 +25,28 @@ from typing import Annotated
 import typer
 from dotenv import dotenv_values
 
+from dietary_guardian.config.app import get_settings
+from dietary_guardian.features.recommendations.domain.canonical_food_matching import normalize_text
+from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
+from dietary_guardian.platform.persistence.food import FoodInfoIngester, load_open_food_facts_records, load_usda_records
+from dietary_guardian.platform.persistence.sqlite_repository import SQLiteRepository
+
 app = typer.Typer(help="Dietary Guardian unified developer CLI.")
 infra_app = typer.Typer(help="Manage local infra (Redis).")
 migrate_app = typer.Typer(help="Migration helpers.")
 test_app = typer.Typer(help="Run validation suites.")
 report_app = typer.Typer(help="Generate/locate reports.")
 web_app = typer.Typer(help="Web helper commands.")
+ingest_app = typer.Typer(help="Ingest food datasets into local stores.")
+ingest_app = typer.Typer(help="Ingest food datasets into local stores.")
 
 app.add_typer(infra_app, name="infra")
 app.add_typer(migrate_app, name="migrate")
 app.add_typer(test_app, name="test")
 app.add_typer(report_app, name="report")
 app.add_typer(web_app, name="web")
+app.add_typer(ingest_app, name="ingest")
+app.add_typer(ingest_app, name="ingest")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 COMPOSE_FILE = REPO_ROOT / "compose.dev.yml"
@@ -150,7 +161,7 @@ def ensure_docker_daemon() -> None:
     if run(["docker", "info"], check=False).returncode != 0:
         error(
             "Docker daemon is not running. Start Docker Desktop/daemon and retry. "
-            "For non-Docker environments, run: uv run python scripts/dg.py test comprehensive --skip-smoke"
+            "For non-Docker environments, run: uv run python scripts/cli.py test comprehensive --skip-smoke"
         )
         raise typer.Exit(1)
 
@@ -294,19 +305,88 @@ def execute_test_backend() -> None:
     run_step("pytest", ["uv", "run", "pytest", "-q"])
 
 
+def _resolve_app_db_path() -> str:
+    settings = get_settings()
+    return settings.storage.api_sqlite_db_path
+
+
+def _ensure_app_db(db_path: str) -> None:
+    SQLiteRepository(db_path)
+
+
+def _persist_canonical_food_records(
+    records: list[CanonicalFoodRecord],
+    *,
+    db_path: str,
+    reset: bool,
+) -> None:
+    _ensure_app_db(db_path)
+    with sqlite3.connect(db_path) as conn:
+        if reset:
+            conn.execute("DELETE FROM portion_reference")
+            conn.execute("DELETE FROM food_alias")
+            conn.execute("DELETE FROM canonical_foods")
+
+        canonical_rows: list[tuple[str, str, str, int, str]] = []
+        alias_rows: list[tuple[str, str, str, int]] = []
+        portion_rows: list[tuple[str, str, float, float]] = []
+
+        for item in records:
+            canonical_rows.append(
+                (
+                    item.food_id,
+                    item.locale,
+                    item.slot,
+                    1 if item.active else 0,
+                    item.model_dump_json(),
+                )
+            )
+            aliases = item.aliases_normalized or [normalize_text(item.title)]
+            for index, alias in enumerate(aliases, start=1):
+                alias_rows.append((alias, item.food_id, "canonical", index))
+            for portion in item.portion_references:
+                portion_rows.append((item.food_id, portion.unit, portion.grams, portion.confidence))
+
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO canonical_foods (food_id, locale, slot, active, payload_json)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            canonical_rows,
+        )
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO food_alias (alias, food_id, alias_type, priority)
+            VALUES (?, ?, ?, ?)
+            """,
+            alias_rows,
+        )
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO portion_reference (food_id, unit, grams, confidence)
+            VALUES (?, ?, ?, ?)
+            """,
+            portion_rows,
+        )
+        conn.commit()
+
+
 @app.command("help")
 def help_command() -> None:
     typer.echo(
         "\n".join(
             [
                 "Usage:",
-                "  uv run python scripts/dg.py dev [--no-api] [--no-web] [--no-scheduler]",
-                "  uv run python scripts/dg.py infra [up|down|restart|status|logs]",
-                "  uv run python scripts/dg.py readiness [base_url] [--strict-warnings]",
-                "  uv run python scripts/dg.py test [backend|web|comprehensive] [--skip-e2e] [--skip-smoke] [--no-infra-bootstrap]",
-                "  uv run python scripts/dg.py report nightly [date]",
-                "  uv run python scripts/dg.py web env -- <command...>",
-                "  uv run python scripts/dg.py help",
+                "  uv run python scripts/cli.py dev [--no-api] [--no-web] [--no-scheduler]",
+                "  uv run python scripts/cli.py infra [up|down|restart|status|logs]",
+                "  uv run python scripts/cli.py readiness [base_url] [--strict-warnings]",
+                "  uv run python scripts/cli.py test [backend|web|comprehensive] [--skip-e2e] [--skip-smoke] [--no-infra-bootstrap]",
+                "  uv run python scripts/cli.py ingest local",
+                "  uv run python scripts/cli.py ingest usda <path> [--reset]",
+                "  uv run python scripts/cli.py ingest off <path> [--reset]",
+                "  uv run python scripts/cli.py report nightly [date]",
+                "  uv run python scripts/cli.py web env -- <command...>",
+                "  uv run python scripts/cli.py help",
             ]
         )
     )
@@ -530,7 +610,7 @@ def command_readiness(
 
 @test_app.command("backend", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def test_backend(ctx: typer.Context) -> None:
-    assert_no_extra_args(ctx.args, "Usage: uv run python scripts/dg.py test backend")
+    assert_no_extra_args(ctx.args, "Usage: uv run python scripts/cli.py test backend")
     execute_test_backend()
 
 
@@ -599,6 +679,41 @@ def web_env(ctx: typer.Context) -> None:
     code = run(args, check=False, env=os.environ.copy()).returncode
     if code != 0:
         raise typer.Exit(code)
+
+
+@ingest_app.command("local")
+def ingest_local() -> None:
+    """Ingest hawker + drinks JSON into ChromaDB."""
+    load_root_env()
+    FoodInfoIngester().run()
+
+
+@ingest_app.command("usda")
+def ingest_usda(
+    path: Annotated[Path, typer.Argument(help="Path to USDA JSON export.")],
+    reset: Annotated[bool, typer.Option("--reset", help="Reset canonical food tables before ingest.")] = False,
+) -> None:
+    load_root_env()
+    if not path.exists():
+        error(f"Missing USDA file: {path}")
+        raise typer.Exit(1)
+    records = load_usda_records(path)
+    _persist_canonical_food_records(records, db_path=_resolve_app_db_path(), reset=reset)
+    info(f"Ingested {len(records)} USDA records into canonical foods.")
+
+
+@ingest_app.command("off")
+def ingest_open_food_facts(
+    path: Annotated[Path, typer.Argument(help="Path to Open Food Facts JSON export.")],
+    reset: Annotated[bool, typer.Option("--reset", help="Reset canonical food tables before ingest.")] = False,
+) -> None:
+    load_root_env()
+    if not path.exists():
+        error(f"Missing Open Food Facts file: {path}")
+        raise typer.Exit(1)
+    records = load_open_food_facts_records(path)
+    _persist_canonical_food_records(records, db_path=_resolve_app_db_path(), reset=reset)
+    info(f"Ingested {len(records)} Open Food Facts records into canonical foods.")
 
 
 def main() -> None:

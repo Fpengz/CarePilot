@@ -115,10 +115,13 @@ Deployment guardrails:
   - `degraded`: required checks passed with warnings
   - `not_ready`: required check failure (or warning treated as failure when strict mode is enabled)
 - Script gate:
-  - `uv run python scripts/dg.py readiness [base_url]`
+  - `uv run python scripts/cli.py readiness [base_url]`
   - Set `READINESS_FAIL_ON_WARNINGS=1` to fail the script on `degraded`.
 
 ## Unified CLI Operations
-- Comprehensive validation gate: `uv run python scripts/dg.py test comprehensive`
-- Backend-only validation gate: `uv run python scripts/dg.py test backend`
-- Web-only validation gate: `uv run python scripts/dg.py test web`
+- Comprehensive validation gate: `uv run python scripts/cli.py test comprehensive`
+- Backend-only validation gate: `uv run python scripts/cli.py test backend`
+- Web-only validation gate: `uv run python scripts/cli.py test web`
+- Ingest hawker/drinks into ChromaDB: `uv run python scripts/cli.py ingest local`
+- Ingest USDA JSON: `uv run python scripts/cli.py ingest usda <path> [--reset]`
+- Ingest Open Food Facts JSON: `uv run python scripts/cli.py ingest off <path> [--reset]`

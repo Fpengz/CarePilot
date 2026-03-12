@@ -9,7 +9,7 @@ See also:
 ### Lightweight local
 
 ```bash
-uv run python scripts/dg.py dev
+uv run python scripts/cli.py dev
 ```
 
 Use this for fast local development with default local backends.
@@ -17,7 +17,7 @@ Use this for fast local development with default local backends.
 ### Target-aligned local
 
 ```bash
-uv run python scripts/dg.py infra up
+uv run python scripts/cli.py infra up
 ```
 
 This is the supported production-aligned topology:
@@ -35,13 +35,13 @@ Endpoint:
 CLI gate:
 
 ```bash
-uv run python scripts/dg.py readiness http://127.0.0.1:8001
+uv run python scripts/cli.py readiness http://127.0.0.1:8001
 ```
 
 Strict mode:
 
 ```bash
-READINESS_FAIL_ON_WARNINGS=1 uv run python scripts/dg.py readiness http://127.0.0.1:8001
+READINESS_FAIL_ON_WARNINGS=1 uv run python scripts/cli.py readiness http://127.0.0.1:8001
 ```
 
 ## Validation gates
@@ -49,14 +49,19 @@ READINESS_FAIL_ON_WARNINGS=1 uv run python scripts/dg.py readiness http://127.0.
 Full:
 
 ```bash
-uv run python scripts/dg.py test comprehensive
+uv run python scripts/cli.py test comprehensive
+
+Ingestion:
+- `uv run python scripts/cli.py ingest local`
+- `uv run python scripts/cli.py ingest usda <path> [--reset]`
+- `uv run python scripts/cli.py ingest off <path> [--reset]`
 ```
 
 Scoped:
 
 ```bash
-uv run python scripts/dg.py test backend
-uv run python scripts/dg.py test web
+uv run python scripts/cli.py test backend
+uv run python scripts/cli.py test web
 ```
 
 ## Routine commands
@@ -64,9 +69,9 @@ uv run python scripts/dg.py test web
 Infra control:
 
 ```bash
-uv run python scripts/dg.py infra status
-uv run python scripts/dg.py infra logs
-uv run python scripts/dg.py infra down
+uv run python scripts/cli.py infra status
+uv run python scripts/cli.py infra logs
+uv run python scripts/cli.py infra down
 ```
 
 Migration:

@@ -64,21 +64,21 @@ cp .env.example .env
 Run the default local stack:
 
 ```bash
-uv run python scripts/dg.py dev
+uv run python scripts/cli.py dev
 ```
 
 Useful variants:
 
 ```bash
-uv run python scripts/dg.py dev --no-web
-uv run python scripts/dg.py dev --no-api
-uv run python scripts/dg.py dev --no-scheduler
+uv run python scripts/cli.py dev --no-web
+uv run python scripts/cli.py dev --no-api
+uv run python scripts/cli.py dev --no-scheduler
 ```
 
 Hackathon local stack:
 
 ```bash
-uv run python scripts/dg.py infra up
+uv run python scripts/cli.py infra up
 ```
 
 ## Validation
@@ -102,7 +102,12 @@ pnpm web:build
 Full stack:
 
 ```bash
-uv run python scripts/dg.py test comprehensive
+uv run python scripts/cli.py test comprehensive
+
+Ingestion:
+- ChromaDB hawker/drinks: `uv run python scripts/cli.py ingest local`
+- USDA JSON → SQLite: `uv run python scripts/cli.py ingest usda <path> [--reset]`
+- Open Food Facts JSON → SQLite: `uv run python scripts/cli.py ingest off <path> [--reset]`
 ```
 
 ## Canonical documentation

@@ -27,21 +27,21 @@ cp .env.example .env
 Default local stack:
 
 ```bash
-uv run python scripts/dg.py dev
+uv run python scripts/cli.py dev
 ```
 
 Useful variants:
 
 ```bash
-uv run python scripts/dg.py dev --no-web
-uv run python scripts/dg.py dev --no-api
-uv run python scripts/dg.py dev --no-scheduler
+uv run python scripts/cli.py dev --no-web
+uv run python scripts/cli.py dev --no-api
+uv run python scripts/cli.py dev --no-scheduler
 ```
 
 Target-aligned local stack:
 
 ```bash
-uv run python scripts/dg.py infra up
+uv run python scripts/cli.py infra up
 ```
 
 ## Repository map
@@ -80,14 +80,19 @@ uv run python scripts/dg.py infra up
 Recommended full gate:
 
 ```bash
-uv run python scripts/dg.py test comprehensive
+uv run python scripts/cli.py test comprehensive
 ```
 
 Focused gates:
 
 ```bash
-uv run python scripts/dg.py test backend
-uv run python scripts/dg.py test web
+uv run python scripts/cli.py test backend
+uv run python scripts/cli.py test web
+
+Ingestion:
+- `uv run python scripts/cli.py ingest local`
+- `uv run python scripts/cli.py ingest usda <path> [--reset]`
+- `uv run python scripts/cli.py ingest off <path> [--reset]`
 ```
 
 Direct gates:
