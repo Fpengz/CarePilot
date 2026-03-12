@@ -28,7 +28,13 @@ from dotenv import dotenv_values
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.features.recommendations.domain.canonical_food_matching import normalize_text
 from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
-from dietary_guardian.platform.persistence.food import FoodInfoIngester, load_open_food_facts_records, load_usda_records
+from dietary_guardian.platform.persistence.food import (
+    FoodInfoIngester,
+    load_canonical_food_records,
+    load_default_canonical_food_records,
+    load_open_food_facts_records,
+    load_usda_records,
+)
 from dietary_guardian.platform.persistence.sqlite_repository import SQLiteRepository
 
 app = typer.Typer(help="Dietary Guardian unified developer CLI.")
@@ -382,6 +388,7 @@ def help_command() -> None:
                 "  uv run python scripts/cli.py readiness [base_url] [--strict-warnings]",
                 "  uv run python scripts/cli.py test [backend|web|comprehensive] [--skip-e2e] [--skip-smoke] [--no-infra-bootstrap]",
                 "  uv run python scripts/cli.py ingest local",
+                "  uv run python scripts/cli.py ingest canonical [--reset]",
                 "  uv run python scripts/cli.py ingest usda <path> [--reset]",
                 "  uv run python scripts/cli.py ingest off <path> [--reset]",
                 "  uv run python scripts/cli.py report nightly [date]",
@@ -686,6 +693,20 @@ def ingest_local() -> None:
     """Ingest hawker + drinks JSON into ChromaDB."""
     load_root_env()
     FoodInfoIngester().run()
+
+
+@ingest_app.command("canonical")
+def ingest_canonical(
+    reset: Annotated[bool, typer.Option("--reset", help="Reset canonical food tables before ingest.")] = False,
+) -> None:
+    """Ingest canonical food JSON into SQLite."""
+    load_root_env()
+    records = load_default_canonical_food_records()
+    if not records:
+        warning("Canonical food seed is empty; nothing to ingest.")
+        return
+    _persist_canonical_food_records(records, db_path=_resolve_app_db_path(), reset=reset)
+    info(f"Ingested {len(records)} canonical food records into SQLite.")
 
 
 @ingest_app.command("usda")
