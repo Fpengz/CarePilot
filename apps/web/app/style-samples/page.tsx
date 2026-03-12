@@ -16,6 +16,7 @@ export default function StyleSamplesPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {[
+          { href: "/style-samples/clinical-calm", title: "Clinical Calm / Apple Health", desc: "Premium clinical clarity with measured hierarchy." },
           { href: "/style-samples/editorial", title: "Editorial / Magazine", desc: "Structured, literate, and grounded in typography." },
           { href: "/style-samples/organic", title: "Soft Organic / Natural", desc: "Warm gradients, rounded forms, calm rhythm." },
           { href: "/style-samples/industrial", title: "Industrial / Utilitarian", desc: "Sharp grids, mono accents, no-frills clarity." },
