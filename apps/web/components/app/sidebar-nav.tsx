@@ -18,12 +18,12 @@ function NavItem({ route, active, isCollapsed }: { route: RouteMeta; active: boo
     isCollapsed ? "justify-center px-0" : "justify-between"
   );
   const enabledClass = cn(
-    "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:-translate-y-px hover:bg-[color:var(--panel-soft)]",
+    "border-[color:var(--border-soft)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:-translate-y-px hover:bg-[color:var(--panel-soft)]",
     active &&
       "border-[color:var(--accent)]/35 bg-[color:var(--accent)]/10 text-[color:var(--accent)]",
   );
   const disabledClass =
-    "cursor-not-allowed border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--muted-foreground)] opacity-90";
+    "cursor-not-allowed border-[color:var(--border-soft)] bg-[color:var(--surface)] text-[color:var(--muted-foreground)] opacity-90";
 
   if (isDisabled) {
     return (

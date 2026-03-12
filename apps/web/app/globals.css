@@ -13,10 +13,11 @@
   --accent-foreground: oklch(0.985 0.01 230);
   --ring: oklch(0.62 0.085 230);
   --border: oklch(0.9 0.01 238);
+  --border-soft: oklch(0.93 0.008 238);
   --panel: oklch(0.985 0.01 240);
   --panel-soft: oklch(0.97 0.01 238);
   --surface: oklch(0.995 0.004 238);
-  --surface-raised: oklch(0.98 0.012 238);
+  --surface-raised: oklch(0.985 0.01 238);
   --code-bg: oklch(0.965 0.01 238);
   --code-fg: oklch(0.2 0.02 238);
   color-scheme: light;
@@ -33,6 +34,7 @@
   --accent-foreground: oklch(0.18 0.02 235);
   --ring: oklch(0.72 0.08 230);
   --border: oklch(0.32 0.02 240);
+  --border-soft: oklch(0.28 0.02 240);
   --panel: oklch(0.19 0.01 240);
   --panel-soft: oklch(0.22 0.01 240);
   --surface: oklch(0.18 0.01 240);
@@ -102,7 +104,7 @@
   }
 
   .app-panel {
-    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--panel)] shadow-[0_10px_30px_rgba(15,23,42,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.35)];
+    @apply rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] shadow-[0_14px_36px_rgba(15,23,42,0.06)] dark:shadow-[0_14px_36px_rgba(0,0,0,0.35)];
   }
 
   .app-toolbar-chip {
@@ -161,15 +163,15 @@
   }
 
   .metric-card {
-    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] dark:shadow-[0_10px_24px_rgba(0,0,0,0.3)];
+    @apply rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 shadow-[0_12px_26px_rgba(15,23,42,0.05)] dark:shadow-[0_12px_26px_rgba(0,0,0,0.3)];
   }
 
   .clinical-card {
-    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-raised)] p-5 shadow-[0_16px_32px_rgba(15,23,42,0.06)] dark:shadow-[0_16px_32px_rgba(0,0,0,0.35)];
+    @apply rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface-raised)] p-5 shadow-[0_18px_36px_rgba(15,23,42,0.06)] dark:shadow-[0_18px_36px_rgba(0,0,0,0.35)];
   }
 
   .clinical-panel {
-    @apply rounded-2xl border border-[color:var(--border)] bg-[color:var(--panel)] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.4)];
+    @apply rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] p-7 shadow-[0_20px_44px_rgba(15,23,42,0.08)] dark:shadow-[0_20px_44px_rgba(0,0,0,0.4)];
   }
 
   .clinical-kicker {
@@ -177,7 +179,7 @@
   }
 
   .clinical-title {
-    @apply text-2xl font-semibold leading-tight tracking-[-0.02em] md:text-[2.4rem];
+    @apply text-2xl font-semibold leading-tight tracking-[-0.02em] md:text-[2.6rem];
   }
 
   .clinical-body {
@@ -189,15 +191,23 @@
   }
 
   .clinical-alert {
-    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4;
+    @apply rounded-xl bg-[color:var(--surface)] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)] dark:shadow-[0_10px_24px_rgba(0,0,0,0.25)];
   }
 
   .clinical-divider {
-    @apply h-px w-full bg-[color:var(--border)];
+    @apply h-px w-full bg-[color:var(--border-soft)];
   }
 
   .clinical-chip {
-    @apply rounded-full border border-[color:var(--border)] px-3 py-1 text-xs font-medium text-[color:var(--muted-foreground)];
+    @apply rounded-full border border-[color:var(--border-soft)] px-3 py-1 text-xs font-medium text-[color:var(--muted-foreground)];
+  }
+
+  .soft-block {
+    @apply rounded-xl bg-[color:var(--surface)] p-4;
+  }
+
+  .section-stack {
+    @apply space-y-8;
   }
 
   .data-list {
@@ -205,7 +215,7 @@
   }
 
   .data-list-row {
-    @apply flex flex-col gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-3;
+    @apply flex flex-col gap-2 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-4 py-3;
   }
 
   .section-kicker {

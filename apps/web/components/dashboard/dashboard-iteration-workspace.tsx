@@ -148,12 +148,12 @@ export function DashboardIterationWorkspace() {
             <div className="clinical-kicker">Next guidance</div>
             <h4 className="mt-2 text-lg font-semibold">Immediate priorities</h4>
             <div className="mt-4 space-y-4">
-              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+              <div className="soft-block">
                 <div className="text-sm font-semibold">Next reminder</div>
                 <div className="app-muted mt-1 text-xs">{nextReminder?.title ?? "No pending reminder"}</div>
                 <div className="app-muted mt-2 text-xs">{formatWhen(nextReminder?.scheduled_at)}</div>
               </div>
-              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+              <div className="soft-block">
                 <div className="text-sm font-semibold">Suggested next meal</div>
                 <div className="app-muted mt-1 text-xs">{firstSuggestion?.title ?? "Waiting for suggestions"}</div>
                 <div className="app-muted mt-2 text-xs">

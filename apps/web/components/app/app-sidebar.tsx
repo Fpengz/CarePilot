@@ -74,7 +74,7 @@ export function AppSidebar() {
 
         <div
           className={cn(
-            "mt-4 flex border-t border-[color:var(--border)] pt-4",
+            "mt-4 flex border-t border-[color:var(--border-soft)] pt-4",
             isCollapsed ? "justify-center" : "justify-end"
           )}
         >

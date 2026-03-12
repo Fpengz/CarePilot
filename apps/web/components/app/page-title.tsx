@@ -12,7 +12,7 @@ export function PageTitle({
   tags?: string[];
 }) {
   return (
-    <section className="mb-6 rounded-2xl border border-[color:var(--border)] bg-[color:var(--panel)] p-7 shadow-[0_18px_36px_rgba(15,23,42,0.08)] dark:shadow-[0_18px_36px_rgba(0,0,0,0.4)]">
+    <section className="mb-7 rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] p-7 shadow-[0_20px_40px_rgba(15,23,42,0.08)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
       <div className="flex flex-wrap items-center gap-2">
         {eyebrow ? <Badge className="rounded-full px-3 py-1">{eyebrow}</Badge> : null}
         {tags.map((tag) => (
