@@ -10,20 +10,21 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+from typing import Literal, Mapping, TypedDict, cast
 from uuid import uuid4
-from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from ..deps import chat_deps, meal_deps
+from ..deps import AppContext, ChatDeps, chat_deps, meal_deps
 from ..routes_shared import current_session, get_context, require_action
 from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult
 from dietary_guardian.agent.emotion import EmotionAgentDisabledError, EmotionSpeechDisabledError
 from dietary_guardian.features.meals.use_cases import log_meal_from_text
 from dietary_guardian.features.companion.core.snapshot import build_case_snapshot
 from apps.api.dietary_api.services.companion_context import load_companion_inputs
+from dietary_guardian.platform.persistence import AppStores
 from apps.api.dietary_api.services.chat_meal_intent import (
     classify_meal_log_intent,
     heuristic_meal_log_intent,
@@ -60,6 +61,12 @@ class MealConfirmRequest(BaseModel):
     action: Literal["confirm", "skip"]
 
 
+class MealLogResult(TypedDict):
+    event_id: str
+    meal_name: str
+    message: str
+
+
 def _parse_meal_command(message: str) -> str | None:
     cleaned = message.strip()
     if not cleaned:
@@ -78,7 +85,7 @@ def _meal_proposal_prompt(meal_text: str) -> str:
     return f"I can log **{meal_text}** as a meal. Would you like me to save it?"
 
 
-def _build_extra_context(ctx: object, session: dict[str, object]) -> str:
+def _build_extra_context(ctx: AppContext, session: dict[str, object]) -> str:
     inputs = load_companion_inputs(context=ctx, session=session)
     snapshot = build_case_snapshot(
         user_profile=inputs.user_profile,
@@ -109,7 +116,7 @@ def _merge_context(base: str, memory_context: str | None) -> str:
 
 async def _collect_chat_followup(
     *,
-    deps: object,
+    deps: ChatDeps,
     user_message: str,
     extra_context: str | None,
     emotion_context: str | None = None,
@@ -133,9 +140,9 @@ def _log_meal_command(
     *,
     user_id: str,
     meal_text: str,
-    stores: object,
+    stores: AppStores,
     locale: str = "en-SG",
-) -> dict[str, object]:
+) -> MealLogResult:
     result = log_meal_from_text(
         user_id=user_id,
         meal_text=meal_text,
@@ -257,7 +264,7 @@ async def chat_stream(
             user_id = str(session.get("user_id", ""))
             meal_result = _log_meal_command(user_id=user_id, meal_text=meal_text, stores=meal_deps(ctx).stores)
             response_prefix = f"{meal_result['message']}\n\n"
-            yield _format_event("meal_logged", meal_result)
+            yield _format_event("meal_logged", cast(dict[str, object], meal_result))
 
         assistant_response = ""
         had_error = False
@@ -392,7 +399,7 @@ async def chat_audio(
             user_id = str(session.get("user_id", ""))
             meal_result = _log_meal_command(user_id=user_id, meal_text=meal_text, stores=meal_deps(ctx).stores)
             response_prefix = f"{meal_result['message']}\n\n"
-            yield _format_event("meal_logged", meal_result)
+            yield _format_event("meal_logged", cast(dict[str, object], meal_result))
 
         assistant_response = ""
         had_error = False
@@ -494,6 +501,6 @@ async def confirm_meal_log(
     }
 
 
-def _format_event(event: str, data: dict) -> str:
-    payload = {"event": event, "data": data}
+def _format_event(event: str, data: Mapping[str, object]) -> str:
+    payload = {"event": event, "data": dict(data)}
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"

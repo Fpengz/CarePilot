@@ -36,7 +36,7 @@ def dashboard_entries(
     session: dict[str, object] = Depends(current_session),
 ):
     require_action(session, "metrics.trends.read")
-    deps = chat_deps(get_context(request))
+    deps = chat_deps(get_context(request), session)
     raw = deps.health_tracker.get_raw_entries(start, end)
     return {
         "entries": [
@@ -57,7 +57,7 @@ def dashboard_chart_data(
     session: dict[str, object] = Depends(current_session),
 ):
     require_action(session, "metrics.trends.read")
-    deps = chat_deps(get_context(request))
+    deps = chat_deps(get_context(request), session)
     return deps.health_tracker.get_chart_data(start, end)
 
 
@@ -68,7 +68,7 @@ def dashboard_trend(
     session: dict[str, object] = Depends(current_session),
 ):
     require_action(session, "metrics.trends.read")
-    deps = chat_deps(get_context(request))
+    deps = chat_deps(get_context(request), session)
     if not payload.metrics:
         return {"trends": {}}
 

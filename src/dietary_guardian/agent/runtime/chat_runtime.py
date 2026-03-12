@@ -11,9 +11,10 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionMessageParam
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
@@ -92,20 +93,22 @@ class ChatStreamRuntime:
 
     async def complete(self, *, messages: list[dict[str, Any]], model_id: str | None = None) -> str:
         model = model_id or self._config.model_id
+        typed_messages = cast(list[ChatCompletionMessageParam], messages)
         response = await self._client.chat.completions.create(
             model=model,
-            messages=messages,
+            messages=typed_messages,
         )
         return (response.choices[0].message.content or "").strip()
 
     async def stream(self, *, messages: list[dict[str, Any]], model_id: str | None = None) -> AsyncIterator[str]:
         model = model_id or self._config.model_id
         attempts = self._config.stream_max_retries + 1
+        typed_messages = cast(list[ChatCompletionMessageParam], messages)
         for attempt in range(1, attempts + 1):
             try:
                 stream = await self._client.chat.completions.create(
                     model=model,
-                    messages=messages,
+                    messages=typed_messages,
                     stream=True,
                 )
                 async for chunk in stream:

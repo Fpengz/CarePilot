@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Callable, Literal, Tuple
+from typing import Callable, Literal, Tuple, cast
 
 from pydantic import BaseModel, Field
 
@@ -152,7 +152,7 @@ async def classify_meal_log_intent(message: str, *, engine: InferenceEngine) -> 
         system_prompt=_LLM_PROMPT,
     )
     response = await engine.infer(request)
-    output = response.structured_output
+    output = cast(MealLogIntentOutput, response.structured_output)
     meal_text = output.meal_text.strip() if isinstance(output.meal_text, str) else None
     return MealLogIntentResult(
         intent=bool(output.intent),

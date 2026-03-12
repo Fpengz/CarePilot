@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 from dietary_guardian.agent.chat.schemas import ChatMetricsOutput
-from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from dietary_guardian.agent.chat.memory import InferenceEngineProtocol
 from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
 from dietary_guardian.platform.observability import get_logger
 
@@ -69,7 +69,7 @@ class HealthTracker:
         self,
         user_id: str,
         session_id: str,
-        inference_engine: InferenceEngine,
+        inference_engine: InferenceEngineProtocol,
         db_path: Path = DB_PATH,
     ) -> None:
         self._user_id = user_id

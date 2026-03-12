@@ -9,7 +9,7 @@ details into feature or API layers.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol, cast
 
 from dietary_guardian.config.app import AppSettings
 from dietary_guardian.platform.observability import get_logger
@@ -75,17 +75,19 @@ class Mem0MemoryStore:
         except Exception as exc:  # noqa: BLE001
             raise RuntimeError("mem0ai dependency is missing") from exc
 
-        kwargs: dict[str, object] = {"api_key": api_key}
+        kwargs: dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["host"] = base_url
             kwargs["base_url"] = base_url
 
         try:
-            self._client = MemoryClient(**kwargs)
+            client_cls = cast(Any, MemoryClient)
+            self._client = client_cls(**kwargs)
         except TypeError:
             kwargs.pop("base_url", None)
             kwargs.pop("host", None)
-            self._client = MemoryClient(api_key=api_key)
+            client_cls = cast(Any, MemoryClient)
+            self._client = client_cls(api_key=api_key)
 
         self._base_url = base_url
 
@@ -106,16 +108,19 @@ class Mem0MemoryStore:
             items = list(result)
 
         snippets: list[MemorySnippet] = []
-        for item in items[:limit]:
+        for raw in items[:limit]:
+            item = cast(dict[str, object], raw)
             text = str(item.get("memory") or item.get("text") or "").strip()
             if not text:
                 continue
+            score = item.get("score")
+            metadata = item.get("metadata")
             snippets.append(
                 MemorySnippet(
                     text=text,
-                    score=float(item.get("score")) if item.get("score") is not None else None,
+                    score=float(score) if isinstance(score, (int, float, str)) else None,
                     memory_id=str(item.get("id")) if item.get("id") is not None else None,
-                    metadata=item.get("metadata") if isinstance(item.get("metadata"), dict) else None,
+                    metadata=cast(dict[str, object], metadata) if isinstance(metadata, dict) else None,
                 )
             )
         return snippets

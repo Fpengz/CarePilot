@@ -14,7 +14,8 @@ from datetime import datetime
 from pathlib import Path
 
 from dietary_guardian.agent.chat.schemas import ChatSummaryOutput
-from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from typing import Protocol, cast
+
 from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
 from dietary_guardian.platform.observability import get_logger
 
@@ -40,6 +41,10 @@ Return the summary in the `summary` field only.
 # MemoryManager
 # ---------------------------------------------------------------------------
 
+class InferenceEngineProtocol(Protocol):
+    async def infer(self, request: InferenceRequest): ...  # noqa: ANN001
+
+
 class MemoryManager:
     """
     Maintains long-term chat history in SQLite and a short-term window
@@ -53,7 +58,7 @@ class MemoryManager:
         self,
         user_id: str,
         session_id: str,
-        inference_engine: InferenceEngine,
+        inference_engine: InferenceEngineProtocol,
         db_path: Path = DB_PATH,
     ) -> None:
         self._user_id = user_id
@@ -170,7 +175,8 @@ class MemoryManager:
                 system_prompt=_SUMMARY_PROMPT,
             )
             response = await self._engine.infer(request)
-            new_summary = response.structured_output.summary.strip()
+            output = cast(ChatSummaryOutput, response.structured_output)
+            new_summary = output.summary.strip()
             self._rolling_summary = new_summary
             self._logger.info("chat_memory_summary_updated length=%s", len(new_summary))
         except Exception as exc:  # noqa: BLE001
