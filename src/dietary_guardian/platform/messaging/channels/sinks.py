@@ -224,7 +224,8 @@ class TelegramSink:
 
     def send(self, message: AlertMessage) -> AlertDeliveryResult:
         proxy = _alert_to_reminder(message)
-        result = self._channel.send(proxy)
+        destination = str(message.payload.get("destination", "")).strip() or None
+        result = self._channel.send(proxy, destination=destination)
         return AlertDeliveryResult(
             alert_id=message.alert_id,
             sink=self.name,

@@ -63,7 +63,7 @@ def test_dispatch_telegram_channel(monkeypatch) -> None:
 def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(monkeypatch, tmp_path) -> None:
     captured = {}
 
-    def fake_send(self, reminder_event):  # noqa: ANN001
+    def fake_send(self, reminder_event, destination=None):  # noqa: ANN001
         captured["scheduled_at"] = reminder_event.scheduled_at
         captured["dosage_text"] = reminder_event.dosage_text
         captured["medication_name"] = reminder_event.medication_name
@@ -195,7 +195,7 @@ def test_trigger_alert_drains_all_destinations_across_batches(monkeypatch, tmp_p
     monkeypatch.setenv("ALERT_WORKER_CONCURRENCY", "1")
     get_settings.cache_clear()
 
-    def fake_channel_send(self, reminder_event):  # noqa: ANN001
+    def fake_channel_send(self, reminder_event, destination=None):  # noqa: ANN001
         channel_name = self.__class__.__name__.replace("Channel", "").lower()
         return type(
             "Result",

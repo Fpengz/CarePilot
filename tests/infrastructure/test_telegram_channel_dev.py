@@ -61,7 +61,7 @@ def test_telegram_payload_formats_local_timezone(monkeypatch) -> None:
 
     channel = TelegramChannel()
     event = _event().model_copy(update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3, tzinfo=timezone.utc)})
-    payload = channel._build_payload(event)
+    payload = channel._build_payload(event, channel._resolve_chat_id(None))
 
     assert "+08:00" in payload["text"]
     assert "+00:00" not in payload["text"]
@@ -77,7 +77,7 @@ def test_telegram_payload_preserves_naive_local_wall_clock(monkeypatch) -> None:
 
     channel = TelegramChannel()
     event = _event().model_copy(update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3)})
-    payload = channel._build_payload(event)
+    payload = channel._build_payload(event, channel._resolve_chat_id(None))
 
     assert "09:48:03+08:00" in payload["text"]
     get_settings.cache_clear()

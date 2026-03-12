@@ -40,15 +40,24 @@ class TelegramChannel:
         local_dt = dt.astimezone(local_tz)
         return local_dt.isoformat(timespec="seconds")
 
-    def _build_payload(self, reminder_event: ReminderEvent) -> dict[str, str]:
+    def _resolve_chat_id(self, destination: str | None) -> str:
+        raw = (destination or "").strip()
+        if not raw:
+            return self.chat_id
+        if raw.startswith("telegram://"):
+            return raw[len("telegram://") :]
+        return raw
+
+    def _build_payload(self, reminder_event: ReminderEvent, chat_id: str) -> dict[str, str]:
         text = (
             f"Medication reminder: {reminder_event.medication_name} "
             f"{reminder_event.dosage_text} at {self._format_scheduled_at(reminder_event.scheduled_at)}"
         )
-        return {"chat_id": self.chat_id, "text": text}
+        return {"chat_id": chat_id, "text": text}
 
-    def send(self, reminder_event: ReminderEvent) -> ChannelResult:
-        if not self.bot_token or not self.chat_id:
+    def send(self, reminder_event: ReminderEvent, destination: str | None = None) -> ChannelResult:
+        chat_id = self._resolve_chat_id(destination)
+        if not self.bot_token or not chat_id:
             logger.warning("telegram_send_missing_config event_id=%s", reminder_event.id)
             return ChannelResult(
                 channel=self.name,
@@ -58,11 +67,11 @@ class TelegramChannel:
             )
 
         endpoint = self._build_endpoint()
-        payload = self._build_payload(reminder_event)
+        payload = self._build_payload(reminder_event, chat_id)
         logger.info(
             "telegram_send_start event_id=%s destination=%s dev_mode=%s",
             reminder_event.id,
-            endpoint,
+            destination or endpoint,
             self.dev_mode,
         )
 
@@ -72,7 +81,7 @@ class TelegramChannel:
                 channel=self.name,
                 success=True,
                 delivered_at=datetime.now(timezone.utc),
-                destination=endpoint,
+                destination=destination or endpoint,
             )
 
         body = json.dumps(payload).encode("utf-8")
@@ -90,19 +99,19 @@ class TelegramChannel:
                         channel=self.name,
                         success=False,
                         error=f"telegram http {resp.status}",
-                        destination=endpoint,
+                        destination=destination or endpoint,
                     )
-                return ChannelResult(
-                    channel=self.name,
-                    success=True,
-                    delivered_at=datetime.now(timezone.utc),
-                    destination=endpoint,
-                )
+            return ChannelResult(
+                channel=self.name,
+                success=True,
+                delivered_at=datetime.now(timezone.utc),
+                destination=destination or endpoint,
+            )
         except error.URLError as exc:
             logger.error("telegram_send_error event_id=%s error=%s", reminder_event.id, exc)
             return ChannelResult(
                 channel=self.name,
                 success=False,
                 error=str(exc),
-                destination=endpoint,
+                destination=destination or endpoint,
             )
