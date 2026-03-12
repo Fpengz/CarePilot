@@ -13,14 +13,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="app-shell">
       <div
         className={cn(
-          "grid gap-4 lg:gap-5 transition-all duration-300",
+          "grid gap-6 lg:gap-7 transition-all duration-300",
           isCollapsed ? "lg:grid-cols-[80px_minmax(0,1fr)]" : "lg:grid-cols-[280px_minmax(0,1fr)]"
         )}
       >
         <AppSidebar />
         <div className="min-w-0 pb-24 lg:pb-0">
           <TopBar />
-          <main id="main-content">{children}</main>
+          <main id="main-content" className="space-y-6">
+            {children}
+          </main>
         </div>
       </div>
       <MobileNav />

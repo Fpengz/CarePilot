@@ -19,21 +19,23 @@ export function TopBar() {
   const { status, user } = useSession();
 
   return (
-    <header className="app-panel sticky top-2 z-20 mb-3 p-3 md:top-4 md:mb-5 md:p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0 flex-1 text-center sm:text-left">
-          <div className="mb-1.5 hidden items-center gap-1.5 text-xs text-[color:var(--muted-foreground)] sm:flex">
+    <header className="app-panel sticky top-2 z-20 mb-4 p-4 md:top-4 md:mb-6 md:p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted-foreground)]">
             <span>Dietary Guardian</span>
             <ChevronRight className="h-3 w-3" aria-hidden />
             <span>{breadcrumb}</span>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-            <h2 className="truncate text-xl font-semibold leading-tight md:text-[2rem]">{pageTitle}</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="truncate text-2xl font-semibold leading-tight md:text-[2.4rem]">
+              {pageTitle}
+            </h2>
             {route?.group === "admin" ? <Badge variant="outline">Admin Area</Badge> : null}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-end md:gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           <div className="app-toolbar-chip hidden items-center gap-1.5 sm:flex">
             <Button
               type="button"

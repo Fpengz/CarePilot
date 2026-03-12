@@ -12,8 +12,8 @@ export function PageTitle({
   tags?: string[];
 }) {
   return (
-    <div className="mb-5 rounded-2xl border border-[color:var(--border)] bg-white/55 p-4 text-center shadow-[0_8px_24px_rgba(18,20,16,0.04)] backdrop-blur-sm dark:bg-[color:var(--panel-soft)] sm:text-left md:mb-6 md:p-5">
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+    <div className="mb-6 rounded-2xl border border-[color:var(--border)] bg-[color:var(--panel)] p-5 shadow-[0_18px_50px_rgba(18,24,20,0.08)]">
+      <div className="flex flex-wrap items-center gap-2">
         {eyebrow ? <Badge>{eyebrow}</Badge> : null}
         {tags.map((tag) => (
           <Badge key={tag} variant="outline">
@@ -21,13 +21,20 @@ export function PageTitle({
           </Badge>
         ))}
       </div>
-      <div className="mt-3">
-        <h2 className="text-[1.75rem] font-semibold leading-tight sm:text-3xl md:text-4xl">{title}</h2>
-        <p className="mx-auto mt-2 max-w-[72ch] text-sm leading-6 text-[color:var(--muted-foreground)] sm:mx-0 md:text-base">
-          {description}
-        </p>
+      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div>
+          <h2 className="text-[2rem] font-semibold leading-[1.05] tracking-[-0.02em] sm:text-4xl">
+            {title}
+          </h2>
+          <p className="mt-3 max-w-[72ch] text-sm leading-6 text-[color:var(--muted-foreground)] sm:text-base">
+            {description}
+          </p>
+        </div>
+        <div className="hidden lg:flex flex-col items-end gap-2 text-xs uppercase tracking-[0.18em] text-[color:var(--muted-foreground)]">
+          <span>Companion signal</span>
+          <span className="h-[2px] w-16 bg-[color:var(--accent)]/40" />
+        </div>
       </div>
-      <div className="mx-auto mt-4 h-px w-full bg-gradient-to-r from-[color:var(--border)] via-[color:var(--accent)]/20 to-transparent sm:mx-0" />
     </div>
   );
 }

@@ -36,6 +36,10 @@ async function proxy(request: NextRequest, path: string[]) {
 
   const responseHeaders = new Headers(upstream.headers);
   responseHeaders.delete("content-length");
+  if ((responseHeaders.get("content-type") || "").includes("text/event-stream")) {
+    responseHeaders.set("cache-control", "no-store");
+    responseHeaders.set("x-accel-buffering", "no");
+  }
   return new Response(upstream.body, {
     status: upstream.status,
     headers: responseHeaders,

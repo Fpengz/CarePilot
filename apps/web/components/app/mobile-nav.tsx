@@ -43,8 +43,8 @@ export function MobileNav() {
   return (
     <>
       <div className="lg:hidden">
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
-          <div className="pointer-events-auto app-panel mx-auto max-w-xl p-2.5 shadow-xl backdrop-blur">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+          <div className="pointer-events-auto app-panel mx-auto max-w-xl p-2.5 shadow-2xl backdrop-blur">
             <nav aria-label="Mobile primary navigation" className="grid grid-cols-5 gap-1">
               {CORE_MOBILE_TABS.map((route) => {
                 const Icon = route.icon;
@@ -57,8 +57,8 @@ export function MobileNav() {
                     className={cn(
                       "flex min-h-[56px] flex-col items-center justify-center rounded-lg px-1 py-2 text-xs font-medium",
                       active
-                        ? "bg-[color:var(--accent)]/14 text-[color:var(--accent)] dark:bg-[color:var(--accent)]/18 dark:text-[#b9efe4]"
-                        : "text-[color:var(--muted-foreground)] hover:bg-black/5 dark:hover:bg-white/5",
+                        ? "bg-[color:var(--accent)]/12 text-[color:var(--accent)]"
+                        : "text-[color:var(--muted-foreground)] hover:bg-black/5",
                     )}
                   >
                     <Icon className="mb-1 h-4 w-4" aria-hidden />
@@ -76,8 +76,8 @@ export function MobileNav() {
                 className={cn(
                   "flex min-h-[56px] flex-col items-center justify-center rounded-lg px-1 py-2 text-xs font-medium",
                   moreActive
-                    ? "bg-[color:var(--accent)]/14 text-[color:var(--accent)] dark:bg-[color:var(--accent)]/18 dark:text-[#b9efe4]"
-                    : "text-[color:var(--muted-foreground)] hover:bg-black/5 dark:hover:bg-white/5",
+                    ? "bg-[color:var(--accent)]/12 text-[color:var(--accent)]"
+                    : "text-[color:var(--muted-foreground)] hover:bg-black/5",
                 )}
               >
                 <Menu className="mb-1 h-4 w-4" aria-hidden />

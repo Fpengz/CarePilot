@@ -23,7 +23,7 @@ export function AppSidebar() {
         "app-panel sticky top-6 flex flex-col transition-all duration-300",
         isCollapsed ? "p-3 w-20" : "p-4 xl:p-5 w-full"
       )}>
-        <div className={cn("mb-5", isCollapsed ? "flex justify-center" : "space-y-2")}>
+        <div className={cn("mb-6", isCollapsed ? "flex justify-center" : "space-y-2")}>
           <Link href="/dashboard" className="block">
             {isCollapsed ? (
               <div className="rounded-xl bg-[color:var(--accent)] p-2.5 text-white shadow-lg shadow-[color:var(--accent)]/20">
@@ -32,7 +32,7 @@ export function AppSidebar() {
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-[1.75rem] font-semibold leading-[1.05] tracking-[-0.03em]">
+                  <h1 className="text-[1.6rem] font-semibold leading-[1.05] tracking-[-0.02em]">
                     Dietary
                     <br />
                     Guardian
@@ -41,8 +41,8 @@ export function AppSidebar() {
                     Foundation
                   </Badge>
                 </div>
-                <p className="app-muted mt-1 text-sm leading-5">
-                  Wellness + care support.
+                <p className="app-muted mt-2 text-sm leading-5">
+                  Clinical companion workspace.
                 </p>
               </>
             )}

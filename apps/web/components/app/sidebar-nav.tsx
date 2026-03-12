@@ -18,12 +18,12 @@ function NavItem({ route, active, isCollapsed }: { route: RouteMeta; active: boo
     isCollapsed ? "justify-center px-0" : "justify-between"
   );
   const enabledClass = cn(
-    "border-[color:var(--border)] bg-white/70 text-[color:var(--foreground)] hover:-translate-y-px hover:bg-white dark:bg-[color:var(--panel-soft)] dark:text-[#ece6d8] dark:hover:bg-[color:var(--card)]",
+    "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:-translate-y-px hover:bg-white/80",
     active &&
-      "border-[color:var(--accent)]/40 bg-[color:var(--accent)]/12 text-[color:var(--accent)] dark:border-[color:var(--accent)]/35 dark:bg-[color:var(--accent)]/18 dark:text-[#b9efe4]",
+      "border-[color:var(--accent)]/40 bg-[color:var(--accent)]/10 text-[color:var(--accent)]",
   );
   const disabledClass =
-    "cursor-not-allowed border-[color:var(--border)] bg-white/45 text-[color:var(--muted-foreground)] opacity-90 dark:bg-[color:var(--panel-soft)]/60 dark:text-[#aca89f]";
+    "cursor-not-allowed border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--muted-foreground)] opacity-90";
 
   if (isDisabled) {
     return (
@@ -76,10 +76,9 @@ export function SidebarNav({
       <div
         id={titleId}
         className={cn(
-          "flex items-center rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--muted-foreground)]",
+          "flex items-center rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted-foreground)]",
           isCollapsed ? "justify-center" : "justify-between",
-          groupActive &&
-            "bg-[color:var(--accent)]/8 text-[color:var(--accent)] dark:bg-[color:var(--accent)]/12 dark:text-[#b9efe4]",
+          groupActive && "bg-[color:var(--accent)]/8 text-[color:var(--accent)]",
         )}
       >
         {!isCollapsed && title}
