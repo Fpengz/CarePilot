@@ -47,7 +47,7 @@ export function NutritionProgress() {
             summary.insights.slice(0, 3).map((insight) => (
               <div
                 key={insight.code}
-                className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]"
+                className="clinical-alert"
               >
                 <div className="text-sm font-medium">{insight.title}</div>
                 <p className="app-muted mt-1 text-xs">{insight.summary}</p>

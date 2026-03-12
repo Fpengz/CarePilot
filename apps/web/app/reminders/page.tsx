@@ -152,9 +152,8 @@ export default function RemindersPage() {
     <div>
       <PageTitle
         eyebrow="Reminders"
-        title="Medication and Mobility Reminder Operations"
-        description="Generate daily reminders, tune delivery channels, and opt into periodic mobility nudges without mixing them into meal confirmation."
-
+        title="Reminders and Adherence Tracking"
+        description="Generate reminders, confirm adherence, and tune delivery channels without losing clinical context."
       />
 
       <div className="page-grid">

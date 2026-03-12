@@ -3,40 +3,42 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: oklch(0.985 0.01 245);
-  --foreground: oklch(0.22 0.02 245);
-  --card: oklch(0.99 0.01 245);
-  --card-foreground: oklch(0.22 0.02 245);
-  --muted: oklch(0.95 0.01 245);
-  --muted-foreground: oklch(0.46 0.03 245);
-  --accent: oklch(0.62 0.08 245);
-  --accent-foreground: oklch(0.98 0.01 245);
-  --ring: oklch(0.62 0.08 245);
-  --border: oklch(0.88 0.015 245);
-  --panel: oklch(0.985 0.01 245);
-  --panel-soft: oklch(0.97 0.01 245);
-  --surface: oklch(0.995 0.005 245);
-  --code-bg: oklch(0.96 0.01 245);
-  --code-fg: oklch(0.2 0.02 245);
+  --background: oklch(0.985 0.008 235);
+  --foreground: oklch(0.22 0.02 240);
+  --card: oklch(0.99 0.01 240);
+  --card-foreground: oklch(0.22 0.02 240);
+  --muted: oklch(0.95 0.012 238);
+  --muted-foreground: oklch(0.5 0.02 238);
+  --accent: oklch(0.62 0.085 230);
+  --accent-foreground: oklch(0.985 0.01 230);
+  --ring: oklch(0.62 0.085 230);
+  --border: oklch(0.9 0.01 238);
+  --panel: oklch(0.985 0.01 240);
+  --panel-soft: oklch(0.97 0.01 238);
+  --surface: oklch(0.995 0.004 238);
+  --surface-raised: oklch(0.98 0.012 238);
+  --code-bg: oklch(0.965 0.01 238);
+  --code-fg: oklch(0.2 0.02 238);
   color-scheme: light;
 }
 
 .dark {
-  --background: oklch(0.16 0.01 245);
-  --foreground: oklch(0.92 0.02 245);
-  --card: oklch(0.2 0.01 245);
-  --card-foreground: oklch(0.92 0.02 245);
-  --muted: oklch(0.24 0.01 245);
-  --muted-foreground: oklch(0.72 0.03 245);
-  --accent: oklch(0.72 0.08 245);
-  --accent-foreground: oklch(0.18 0.02 245);
-  --ring: oklch(0.72 0.08 245);
-  --border: oklch(0.32 0.02 245);
-  --panel: oklch(0.19 0.01 245);
-  --panel-soft: oklch(0.22 0.01 245);
-  --surface: oklch(0.18 0.01 245);
-  --code-bg: oklch(0.2 0.01 245);
-  --code-fg: oklch(0.92 0.02 245);
+  --background: oklch(0.16 0.01 240);
+  --foreground: oklch(0.92 0.02 240);
+  --card: oklch(0.2 0.01 240);
+  --card-foreground: oklch(0.92 0.02 240);
+  --muted: oklch(0.24 0.01 240);
+  --muted-foreground: oklch(0.72 0.02 240);
+  --accent: oklch(0.72 0.08 230);
+  --accent-foreground: oklch(0.18 0.02 235);
+  --ring: oklch(0.72 0.08 230);
+  --border: oklch(0.32 0.02 240);
+  --panel: oklch(0.19 0.01 240);
+  --panel-soft: oklch(0.22 0.01 240);
+  --surface: oklch(0.18 0.01 240);
+  --surface-raised: oklch(0.21 0.01 240);
+  --code-bg: oklch(0.2 0.01 240);
+  --code-fg: oklch(0.92 0.02 240);
   color-scheme: dark;
 }
 
@@ -96,11 +98,11 @@
 
 @layer components {
 .app-shell {
-    @apply mx-auto min-h-screen w-full max-w-[1280px] px-6 py-8 md:px-8 md:py-10;
+    @apply mx-auto min-h-screen w-full max-w-[1320px] px-6 py-8 md:px-8 md:py-10;
   }
 
   .app-panel {
-    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--panel)] shadow-[0_6px_18px_rgba(15,23,42,0.06)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)];
+    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--panel)] shadow-[0_10px_30px_rgba(15,23,42,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.35)];
   }
 
   .app-toolbar-chip {
@@ -159,7 +161,43 @@
   }
 
   .metric-card {
-    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-[0_4px_12px_rgba(15,23,42,0.04)];
+    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] dark:shadow-[0_10px_24px_rgba(0,0,0,0.3)];
+  }
+
+  .clinical-card {
+    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-raised)] p-5 shadow-[0_16px_32px_rgba(15,23,42,0.06)] dark:shadow-[0_16px_32px_rgba(0,0,0,0.35)];
+  }
+
+  .clinical-panel {
+    @apply rounded-2xl border border-[color:var(--border)] bg-[color:var(--panel)] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.4)];
+  }
+
+  .clinical-kicker {
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)];
+  }
+
+  .clinical-title {
+    @apply text-2xl font-semibold leading-tight tracking-[-0.02em] md:text-[2.4rem];
+  }
+
+  .clinical-body {
+    @apply text-sm leading-6 text-[color:var(--muted-foreground)];
+  }
+
+  .clinical-subtitle {
+    @apply text-sm font-semibold text-[color:var(--foreground)];
+  }
+
+  .clinical-alert {
+    @apply rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4;
+  }
+
+  .clinical-divider {
+    @apply h-px w-full bg-[color:var(--border)];
+  }
+
+  .clinical-chip {
+    @apply rounded-full border border-[color:var(--border)] px-3 py-1 text-xs font-medium text-[color:var(--muted-foreground)];
   }
 
   .data-list {

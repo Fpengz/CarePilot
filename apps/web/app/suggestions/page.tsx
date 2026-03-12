@@ -69,18 +69,17 @@ export default function SuggestionsPage() {
   return (
     <div>
       <PageTitle
-        eyebrow="Suggestions"
-        title="Report-to-Suggestion Workflow"
-        description="Generate structured suggestions from pasted report text and review saved history with scope-aware filters."
-
+        eyebrow="Insights"
+        title="Health Insights and Recommendations"
+        description="Generate structured recommendations from report text and review prior suggestions with safety context."
       />
 
       <div className="page-grid">
         <Card className="grain-overlay">
           <CardHeader>
-            <CardTitle>Generate Suggestion</CardTitle>
+            <CardTitle>Generate Insight</CardTitle>
             <CardDescription>
-              Uses `POST /api/v1/suggestions/generate-from-report` and stores a reusable suggestion snapshot.
+              Paste a report summary to generate a clinical recommendation snapshot with safety gates.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -88,7 +87,7 @@ export default function SuggestionsPage() {
               <Label htmlFor="suggestions-report-text">Report text</Label>
               <Textarea
                 id="suggestions-report-text"
-                className="app-code min-h-[180px] bg-[#161714] text-[#ece8dc] placeholder:text-[#b3b7ae]"
+                className="min-h-[180px]"
                 rows={7}
                 value={reportText}
                 onChange={(e) => setReportText(e.target.value)}
@@ -185,14 +184,14 @@ export default function SuggestionsPage() {
             </div>
 
             {selected ? (
-              <div className="metric-card">
-                <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Current Suggestion</div>
-                <div className="mt-1 text-sm font-medium">{selected.suggestion_id}</div>
+              <div className="clinical-card">
+                <div className="clinical-kicker">Current insight</div>
+                <div className="mt-2 text-sm font-semibold">{selected.suggestion_id}</div>
                 <p className="app-muted mt-2 text-xs">{selected.disclaimer}</p>
                 <p className="app-muted mt-2 text-xs">
                   Active history scope: <span className="font-medium">{scope}</span>
                 </p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {detail?.isPartial ? <Badge variant="outline">Partial Data</Badge> : <Badge>Complete</Badge>}
                   <Badge variant="outline">{selected.safety.decision}</Badge>
                 </div>
@@ -217,9 +216,9 @@ export default function SuggestionsPage() {
           {error ? <ErrorCard message={error} /> : null}
 
           <TimelineList
-            title="Suggestion History"
-            description="Recent saved suggestions for the current account and selected scope."
-            emptyLabel={listState === "loading" ? "Loading suggestions..." : "No suggestions yet for this scope/filter."}
+            title="Insight History"
+            description="Recent saved recommendations for the selected scope."
+            emptyLabel={listState === "loading" ? "Loading insights..." : "No insights yet for this scope/filter."}
             items={visibleItems.map((item) => ({
               id: item.id,
               title: item.id,

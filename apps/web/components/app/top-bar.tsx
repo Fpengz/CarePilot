@@ -28,7 +28,7 @@ export function TopBar() {
             <span>{breadcrumb}</span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="truncate text-2xl font-semibold leading-tight md:text-[2.2rem]">
+            <h2 className="truncate text-2xl font-semibold leading-tight tracking-[-0.02em] md:text-[2.1rem]">
               {pageTitle}
             </h2>
             {route?.group === "admin" ? <Badge variant="outline">Admin Area</Badge> : null}

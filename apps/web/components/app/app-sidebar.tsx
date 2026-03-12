@@ -19,14 +19,16 @@ export function AppSidebar() {
 
   return (
     <aside className="hidden lg:block">
-      <div className={cn(
-        "app-panel sticky top-6 flex flex-col transition-all duration-300",
-        isCollapsed ? "p-3 w-20" : "p-4 xl:p-5 w-full"
-      )}>
+      <div
+        className={cn(
+          "app-panel sticky top-6 flex flex-col transition-all duration-300",
+          isCollapsed ? "p-3 w-20" : "p-5 w-full"
+        )}
+      >
         <div className={cn("mb-6", isCollapsed ? "flex justify-center" : "space-y-2")}>
           <Link href="/dashboard" className="block">
             {isCollapsed ? (
-              <div className="rounded-lg bg-[color:var(--accent)] p-2.5 text-white shadow-[0_6px_16px_rgba(30,64,175,0.18)]">
+              <div className="rounded-xl bg-[color:var(--accent)] p-2.5 text-white shadow-[0_10px_22px_rgba(16,92,182,0.18)]">
                 <Salad className="h-6 w-6" />
               </div>
             ) : (
@@ -35,7 +37,7 @@ export function AppSidebar() {
                   <h1 className="text-[1.35rem] font-semibold leading-[1.2] tracking-[-0.02em]">
                     Dietary Guardian
                   </h1>
-                  <Badge variant="outline" className="self-start">
+                  <Badge variant="outline" className="self-start rounded-full px-3 py-1">
                     Foundation
                   </Badge>
                 </div>
@@ -70,7 +72,12 @@ export function AppSidebar() {
           ))}
         </div>
 
-        <div className={cn("mt-4 pt-4 border-t border-[color:var(--border)] flex", isCollapsed ? "justify-center" : "justify-end")}>
+        <div
+          className={cn(
+            "mt-4 flex border-t border-[color:var(--border)] pt-4",
+            isCollapsed ? "justify-center" : "justify-end"
+          )}
+        >
           <Button
             variant="ghost"
             onClick={toggleCollapsed}

@@ -44,8 +44,8 @@ export default function ClinicianDigestPage() {
     <div>
       <PageTitle
         eyebrow="Clinician"
-        title="Clinician Digest"
-        description="Compress longitudinal patient behavior into a low-burden summary with why-now context, attempted interventions, and supporting evidence."
+        title="Clinician Summary"
+        description="Compress longitudinal patient behavior into a clinician-ready summary with why-now context, attempted interventions, and supporting evidence."
         tags={["summary", "prioritization", "provenance"]}
       />
 
@@ -76,8 +76,8 @@ export default function ClinicianDigestPage() {
               {digest ? <Badge variant={digest.risk_level === "high" ? "default" : "outline"}>{digest.risk_level}</Badge> : null}
               {digest ? <Badge variant="outline">{digest.priority}</Badge> : null}
             </div>
-            <div className="rounded-xl border border-[color:var(--border)] bg-white/70 p-4 dark:bg-[color:var(--panel-soft)]">
-              <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Why Now</div>
+            <div className="clinical-card">
+              <div className="clinical-kicker">Why now</div>
               <p className="mt-2 text-sm">{digest?.why_now ?? "Loading clinician digest…"}</p>
               <p className="app-muted mt-2 text-xs">{digest?.time_window ?? "No time window yet."}</p>
             </div>
@@ -92,7 +92,7 @@ export default function ClinicianDigestPage() {
               <CardDescription>The core clinical takeaway the companion wants to surface.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 text-sm dark:bg-[color:var(--panel-soft)]">
+              <div className="clinical-alert text-sm">
                 {digest?.summary ?? "No digest summary yet."}
               </div>
             </CardContent>
@@ -106,7 +106,7 @@ export default function ClinicianDigestPage() {
             <CardContent className="space-y-3">
               {digest?.what_changed?.length ? (
                 digest.what_changed.map((item) => (
-                  <div key={item} className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 text-sm dark:bg-[color:var(--panel-soft)]">
+                  <div key={item} className="clinical-alert text-sm">
                     {item}
                   </div>
                 ))
@@ -124,7 +124,7 @@ export default function ClinicianDigestPage() {
             <CardContent className="space-y-3">
               {digest?.interventions_attempted?.length ? (
                 digest.interventions_attempted.map((item) => (
-                  <div key={item} className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 text-sm dark:bg-[color:var(--panel-soft)]">
+                  <div key={item} className="clinical-alert text-sm">
                     {item}
                   </div>
                 ))
@@ -142,7 +142,7 @@ export default function ClinicianDigestPage() {
             <CardContent className="space-y-3">
               {digest?.citations?.length ? (
                 digest.citations.map((item) => (
-                  <div key={`${item.title}-${item.relevance}`} className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]">
+                  <div key={`${item.title}-${item.relevance}`} className="clinical-alert">
                     <div className="font-medium">{item.title}</div>
                     <p className="app-muted mt-2 text-sm">{item.summary}</p>
                     <p className="mt-2 text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">{item.relevance}</p>

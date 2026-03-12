@@ -48,10 +48,10 @@ export default function MetricsPage() {
   return (
     <div>
       <PageTitle
-        eyebrow="Metrics"
-        title="Numerical Trend Analysis"
-        description="Inspect deterministic deltas and trend directions for nutrition, adherence, and biomarker metrics."
-        tags={["delta", "percent change", "trend direction"]}
+        eyebrow="Nutrition"
+        title="Daily Nutrition Overview"
+        description="Inspect daily nutrition trends, adherence patterns, and clinical biomarker deltas."
+        tags={["trends", "adherence", "biomarkers"]}
       />
 
       <div className="page-grid">

@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
+import Image from "next/image";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,13 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const mutation = useMutation({
     mutationFn: (formData: FormData) => analyzeMeal(formData),
@@ -51,9 +59,9 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
   return (
     <Card className="grain-overlay">
       <CardHeader>
-        <CardTitle>Analyze Meal</CardTitle>
+        <CardTitle>Meal Image Analysis</CardTitle>
         <CardDescription>
-          Upload an image to identify dishes, estimate nutrition, and log to your history.
+          Upload a meal image to identify dishes, estimate nutrition, and save a structured log.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -89,6 +97,11 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
                   </Button>
                 )}
               </div>
+              {previewUrl ? (
+                <div className="relative h-48 overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--panel-soft)]">
+                  <Image src={previewUrl} alt="Selected meal preview" fill className="object-cover" unoptimized />
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

@@ -35,7 +35,7 @@ export function DailyMealSuggestions() {
               return (
                 <div
                   key={slot}
-                  className="rounded-xl border border-[color:var(--border)] bg-white/60 p-4 dark:bg-[color:var(--panel-soft)]"
+                  className="clinical-alert"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="outline" className="capitalize">

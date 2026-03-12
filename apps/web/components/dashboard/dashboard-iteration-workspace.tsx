@@ -99,135 +99,141 @@ export function DashboardIterationWorkspace() {
       {status === "unauthenticated" ? <ErrorCard message="Sign in to view your daily dashboard." /> : null}
       {error ? <ErrorCard message={error} /> : null}
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Button asChild>
-          <Link href="/settings">Open Settings</Link>
-        </Button>
-        <Button asChild variant="secondary">
-          <Link href="/meals">Open Meals</Link>
-        </Button>
-        <Button asChild variant="secondary">
-          <Link href="/reminders">Open Reminders</Link>
-        </Button>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Card className="grain-overlay">
-          <CardHeader>
-            <CardTitle>Profile Readiness</CardTitle>
-            <CardDescription>Keep your structured health profile current so recommendations can stay targeted.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            <div className="metric-card">
-              <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Profile state</div>
-              <div className="mt-1 text-sm font-semibold">{profile?.completeness.state ?? "loading"}</div>
-            </div>
-            <div className="metric-card">
-              <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">BMI</div>
-              <div className="mt-1 text-sm font-semibold">
-                {profile?.bmi == null ? "Add height and weight in Settings" : profile.bmi.toFixed(1)}
-              </div>
-            </div>
-            <div className="metric-card sm:col-span-2">
-              <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Missing context</div>
-              <div className="mt-1 line-clamp-2 text-sm font-semibold">
-                {profile?.completeness.missing_fields.length
-                  ? profile.completeness.missing_fields.join(", ")
-                  : "Profile is ready for personalized guidance."}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Today’s Intake Snapshot</CardTitle>
-            <CardDescription>Calories and key macros remaining for today.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
+      <div className="clinical-panel">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="clinical-kicker">Daily summary</div>
+            <h3 className="mt-2 text-xl font-semibold leading-tight">Patient status at a glance</h3>
+            <p className="clinical-body mt-2 max-w-[64ch]">
+              Review today&apos;s nutrition progress, emerging risks, and the next actions for care continuity.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href="/meals">Log Meal</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/reminders">Review Reminders</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/settings">Update Profile</Link>
+            </Button>
+          </div>
+        </div>
+        <div className="clinical-divider my-6" />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="metric-card">
               <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Meals logged</div>
-              <div className="mt-1 text-sm font-semibold">{dailySummary?.meal_count ?? 0}</div>
+              <div className="mt-1 text-2xl font-semibold">{dailySummary?.meal_count ?? 0}</div>
+              <p className="app-muted mt-1 text-xs">Last entry {formatWhen(dailySummary?.last_logged_at)}</p>
             </div>
             <div className="metric-card">
               <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Remaining calories</div>
-              <div className="mt-1 text-sm font-semibold">{Math.round(dailySummary?.remaining.calories ?? 0)} kcal</div>
+              <div className="mt-1 text-2xl font-semibold">{Math.round(dailySummary?.remaining.calories ?? 0)} kcal</div>
+              <p className="app-muted mt-1 text-xs">Keep pace with your daily budget.</p>
             </div>
             <div className="metric-card">
               <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Protein remaining</div>
-              <div className="mt-1 text-sm font-semibold">{Math.round(dailySummary?.remaining.protein_g ?? 0)} g</div>
+              <div className="mt-1 text-2xl font-semibold">{Math.round(dailySummary?.remaining.protein_g ?? 0)} g</div>
+              <p className="app-muted mt-1 text-xs">Targeted toward muscle preservation.</p>
             </div>
             <div className="metric-card">
               <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Fiber remaining</div>
-              <div className="mt-1 text-sm font-semibold">{Math.round(dailySummary?.remaining.fiber_g ?? 0)} g</div>
+              <div className="mt-1 text-2xl font-semibold">{Math.round(dailySummary?.remaining.fiber_g ?? 0)} g</div>
+              <p className="app-muted mt-1 text-xs">Supports glycemic stability.</p>
             </div>
-            <div className="metric-card sm:col-span-2">
-              <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Most recent meal log</div>
-              <div className="mt-1 text-sm font-semibold">{formatWhen(dailySummary?.last_logged_at)}</div>
+          </div>
+          <div className="clinical-card">
+            <div className="clinical-kicker">Next guidance</div>
+            <h4 className="mt-2 text-lg font-semibold">Immediate priorities</h4>
+            <div className="mt-4 space-y-4">
+              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+                <div className="text-sm font-semibold">Next reminder</div>
+                <div className="app-muted mt-1 text-xs">{nextReminder?.title ?? "No pending reminder"}</div>
+                <div className="app-muted mt-2 text-xs">{formatWhen(nextReminder?.scheduled_at)}</div>
+              </div>
+              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+                <div className="text-sm font-semibold">Suggested next meal</div>
+                <div className="app-muted mt-1 text-xs">{firstSuggestion?.title ?? "Waiting for suggestions"}</div>
+                <div className="app-muted mt-2 text-xs">
+                  {firstSuggestion ? firstSuggestion.why_it_fits.join(" ") : "Complete your profile for sharper guidance."}
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
 
+      <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <Card>
           <CardHeader>
-            <CardTitle>Potential Gaps and Imbalances</CardTitle>
-            <CardDescription>Cautious pattern guidance based on recent logs, not diagnostic results.</CardDescription>
+            <CardTitle>AI Health Alerts</CardTitle>
+            <CardDescription>Pattern-based cues to review with clinical judgement.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {insightSummary.length > 0 ? (
               insightSummary.map((insight) => (
-                <div key={insight.code} className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]">
-                  <div className="text-sm font-semibold">{insight.title}</div>
+                <div key={insight.code} className="clinical-alert">
+                  <div className="clinical-subtitle">{insight.title}</div>
                   <p className="app-muted mt-1 text-sm">{insight.summary}</p>
                 </div>
               ))
             ) : (
-              <p className="app-muted text-sm">Log a few more meals across several days to unlock pattern-level guidance.</p>
+              <p className="app-muted text-sm">Log more meals across several days to unlock pattern-level guidance.</p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Next Guidance</CardTitle>
-            <CardDescription>What needs attention next across reminders and meal suggestions.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="metric-card">
-              <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Next reminder</div>
-              <div className="mt-1 truncate text-sm font-semibold">{nextReminder?.title ?? "No pending reminder"}</div>
-              <div className="app-muted mt-1 text-xs">{formatWhen(nextReminder?.scheduled_at)}</div>
-            </div>
-            <div className="metric-card">
-              <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Suggested next meal</div>
-              <div className="mt-1 truncate text-sm font-semibold">{firstSuggestion?.title ?? "Waiting for suggestions"}</div>
-              <div className="app-muted mt-1 line-clamp-2 text-xs">
-                {firstSuggestion ? firstSuggestion.why_it_fits.join(" ") : "Complete your profile and meal logging for sharper guidance."}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {showCaregiverCard ? (
-          <Card>
+        <div className="stack-grid">
+          <Card className="grain-overlay">
             <CardHeader>
-              <CardTitle>Caregiving View</CardTitle>
-              <CardDescription>Quick view of your active household member&apos;s status.</CardDescription>
+              <CardTitle>Key Profile Signals</CardTitle>
+              <CardDescription>Clinical context readiness for personalization.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="grid gap-3 sm:grid-cols-2">
               <div className="metric-card">
-                <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Household</div>
-                <div className="mt-1 text-sm font-semibold">{household?.household?.name ?? "No active household"}</div>
-                <div className="app-muted mt-1 text-xs">
-                  {household?.active_household_id ? "Session household selected for caregiving." : "Set an active household in Household to narrow the view."}
+                <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Profile state</div>
+                <div className="mt-1 text-sm font-semibold">{profile?.completeness.state ?? "loading"}</div>
+              </div>
+              <div className="metric-card">
+                <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">BMI</div>
+                <div className="mt-1 text-sm font-semibold">
+                  {profile?.bmi == null ? "Add height and weight in Settings" : profile.bmi.toFixed(1)}
                 </div>
               </div>
-              <Button asChild>
-                <Link href="/household">Open Household Monitoring</Link>
-              </Button>
+              <div className="metric-card sm:col-span-2">
+                <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Missing context</div>
+                <div className="mt-1 line-clamp-2 text-sm font-semibold">
+                  {profile?.completeness.missing_fields.length
+                    ? profile.completeness.missing_fields.join(", ")
+                    : "Profile is ready for personalized guidance."}
+                </div>
+              </div>
             </CardContent>
           </Card>
-        ) : null}
+
+          {showCaregiverCard ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Caregiving View</CardTitle>
+                <CardDescription>Quick view of your active household member&apos;s status.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="metric-card">
+                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Household</div>
+                  <div className="mt-1 text-sm font-semibold">{household?.household?.name ?? "No active household"}</div>
+                  <div className="app-muted mt-1 text-xs">
+                    {household?.active_household_id ? "Session household selected for caregiving." : "Set an active household in Household to narrow the view."}
+                  </div>
+                </div>
+                <Button asChild>
+                  <Link href="/household">Open Household Monitoring</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
       </div>
     </div>
   );

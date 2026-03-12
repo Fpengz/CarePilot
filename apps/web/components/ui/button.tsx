@@ -10,9 +10,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-[0_6px_16px_rgba(30,64,175,0.18)] hover:brightness-105",
+          "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-[0_8px_18px_rgba(16,92,182,0.2)] hover:brightness-105",
         secondary:
-          "bg-[color:var(--card)] text-[color:var(--foreground)] border border-[color:var(--border)] hover:bg-[color:var(--surface)]",
+          "bg-[color:var(--surface)] text-[color:var(--foreground)] border border-[color:var(--border)] hover:bg-[color:var(--panel-soft)]",
         ghost: "text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
       },
       size: {
