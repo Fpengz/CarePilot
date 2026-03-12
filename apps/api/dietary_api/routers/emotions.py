@@ -16,7 +16,7 @@ from ..schemas import (
     EmotionInferenceResponse,
     EmotionTextRequest,
 )
-from dietary_guardian.features.companion.engagement.emotion.session import (
+from apps.api.dietary_api.services.emotion_session import (
     get_emotion_health,
     infer_speech_for_session,
     infer_text_for_session,

@@ -1,10 +1,8 @@
-"""Session-scoped emotion inference use cases.
+"""
+Session-scoped emotion inference helpers for API routes.
 
-Provides the HTTP-facing helpers ``infer_text_for_session``,
-``infer_speech_for_session``, and ``get_emotion_health``.
-Kept separate from ``use_cases`` to avoid a circular import between
-``use_cases`` → ``apps.api.dietary_api.deps`` → ``capabilities.emotion``
-→ ``use_cases``.
+This module adapts the EmotionAgent to HTTP response contracts while
+preserving feature-layer boundaries.
 """
 
 from __future__ import annotations

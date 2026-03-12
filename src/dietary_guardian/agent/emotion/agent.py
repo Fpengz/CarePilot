@@ -117,8 +117,31 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
             timeout_seconds=self._request_timeout_seconds,
         )
 
+    @property
+    def inference_enabled(self) -> bool:
+        return self._inference_enabled
+
+    @property
+    def speech_enabled(self) -> bool:
+        return self._speech_enabled
+
     def health(self) -> EmotionRuntimeHealth:
-        return self._runtime.health()
+        health = self._runtime.health()
+        if not self._inference_enabled:
+            return EmotionRuntimeHealth(
+                status="disabled",
+                model_cache_ready=False,
+                source_commit=health.source_commit,
+                detail="emotion inference disabled",
+            )
+        if self._speech_enabled:
+            return health
+        return EmotionRuntimeHealth(
+            status=health.status,
+            model_cache_ready=health.model_cache_ready,
+            source_commit=health.source_commit,
+            detail="speech emotion inference disabled",
+        )
 
     @property
     def timeout_error_type(self) -> type[EmotionInferenceTimeoutError]:

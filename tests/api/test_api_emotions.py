@@ -112,3 +112,16 @@ def test_emotions_health_endpoint_is_public() -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] in {"ready", "degraded"}
+
+
+def test_emotions_health_returns_disabled_when_feature_flag_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("EMOTION_INFERENCE_ENABLED", "false")
+    _reset_settings_cache()
+    client = TestClient(create_app())
+
+    response = client.get("/api/v1/emotions/health")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "disabled"

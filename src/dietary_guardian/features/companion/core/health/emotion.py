@@ -48,7 +48,7 @@ class EmotionInferenceResult(BaseModel):
 
 
 class EmotionRuntimeHealth(BaseModel):
-    status: Literal["ready", "degraded"]
+    status: Literal["ready", "degraded", "disabled"]
     model_cache_ready: bool
     source_commit: str
     detail: str | None = None
