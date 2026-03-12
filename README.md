@@ -45,6 +45,13 @@ tests/        repository-level tests
 - `src/dietary_guardian/agent` stays bounded behind typed inputs and outputs; deterministic logic remains the source of truth for durable health state
 - chat-specific agents live under `src/dietary_guardian/agent/chat/`
 
+## Merge provenance
+This branch merges prior work from:
+- **Ervin branch**: chat pipeline, health dashboard, and API chat/dashboard routes
+- **Xiangqi branch**: hybrid food retrieval (vector + keyword rerank) and ingestion work
+
+See `CODEBASE_MAP.md` for the detailed mapping of merged components.
+
 ## Quickstart
 
 Requirements:
@@ -103,12 +110,12 @@ Full stack:
 
 ```bash
 uv run python scripts/cli.py test comprehensive
+```
 
 Ingestion:
 - ChromaDB hawker/drinks: `uv run python scripts/cli.py ingest local`
 - USDA JSON → SQLite: `uv run python scripts/cli.py ingest usda <path> [--reset]`
 - Open Food Facts JSON → SQLite: `uv run python scripts/cli.py ingest off <path> [--reset]`
-```
 
 ## Canonical documentation
 - `ARCHITECTURE.md`: system architecture, boundaries, and runtime model
