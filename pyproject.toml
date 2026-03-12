@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling>=1.27.0", "hatch-vcs>=0.4.0"]
+requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
 [project]
 name = "dietary-tools"
-dynamic = ["version"]
+version = "0.0.0"
 description = "Dietary Guardian: meal vision, medication reminders, and biomarker-grounded guidance"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -76,11 +76,6 @@ default-groups = ["dev"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/dietary_guardian"]
 
-[tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.build.hooks.vcs]
-version-file = "src/dietary_guardian/_version.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
