@@ -3,6 +3,23 @@
 > **Status**: Current (updated March 12, 2026)  
 > **Scope**: Feature-first modular monolith with thin apps/ entrypoints.
 
+## 0. Merge Provenance (Ervin + Xiangqi)
+
+This codebase is the result of merging two Healthcare-Agent branches into the
+feature-first architecture:
+
+- **ervin branch (`healthcare/ervin`)**
+  - Chat pipeline refactored into `src/dietary_guardian/agent/chat/`
+  - API entrypoints: `apps/api/dietary_api/routers/chat.py` and `dashboard.py`
+  - Web entrypoint: `apps/web/app/chat/`
+  - Food local retrieval ingester/retriever under `platform/persistence/food/`
+
+- **xiangqi branch (`healthcare/xiangqi`)**
+  - Hybrid food retrieval (vector + keyword rerank) refactored into
+    `src/dietary_guardian/platform/persistence/food/hybrid_search.py`
+  - Runtime artifacts (vectorstore/db) intentionally removed; they are now
+    expected under `data/vectorstore/` at runtime only
+
 ## 1. Top-Level Layout
 
 ```text
