@@ -9,17 +9,21 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from ..deps import chat_deps
+from ..deps import chat_deps, meal_deps
 from ..routes_shared import current_session, get_context, require_action
 from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult
 from dietary_guardian.agent.emotion import EmotionAgentDisabledError, EmotionSpeechDisabledError
+from dietary_guardian.features.meals.use_cases import log_meal_from_text
 
 router = APIRouter(tags=["chat"])
+
+_MEAL_PREFIX_RE = re.compile(r"^(?:log\s+meal|meal)\s*:\s*(.+)$", re.IGNORECASE)
 
 
 def _format_emotion_context(inference: EmotionInferenceResult) -> str:
@@ -34,6 +38,41 @@ def _format_emotion_context(inference: EmotionInferenceResult) -> str:
 class ChatRequest(BaseModel):
     message: str
     session_id: str = "default"
+
+
+def _parse_meal_command(message: str) -> str | None:
+    cleaned = message.strip()
+    if not cleaned:
+        return None
+    if cleaned.lower().startswith("[meal]"):
+        remainder = cleaned[6:].strip()
+        return remainder or None
+    match = _MEAL_PREFIX_RE.match(cleaned)
+    if match:
+        candidate = match.group(1).strip()
+        return candidate or None
+    return None
+
+
+def _log_meal_command(
+    *,
+    user_id: str,
+    meal_text: str,
+    stores: object,
+    locale: str = "en-SG",
+) -> dict[str, object]:
+    result = log_meal_from_text(
+        user_id=user_id,
+        meal_text=meal_text,
+        food_store=stores.foods,
+        meals_store=stores.meals,
+        locale=locale,
+    )
+    return {
+        "event_id": result.validated_event.event_id,
+        "meal_name": result.validated_event.meal_name,
+        "message": f"Logged meal: {meal_text.strip()}.",
+    }
 
 
 @router.get("/api/v1/chat/history")
@@ -64,10 +103,28 @@ async def chat_stream(
     session: dict[str, object] = Depends(current_session),
 ):
     require_action(session, "chat.messages.write")
-    deps = chat_deps(get_context(request), session)
+    ctx = get_context(request)
+    deps = chat_deps(ctx, session)
     user_message = payload.message.strip()
     if not user_message:
         raise HTTPException(status_code=400, detail="message is required")
+    meal_text = _parse_meal_command(user_message)
+    if meal_text:
+        user_id = str(session.get("user_id", ""))
+        meal_result = _log_meal_command(user_id=user_id, meal_text=meal_text, stores=meal_deps(ctx).stores)
+        deps.chat_agent.memory.add_message("user", user_message)
+        deps.chat_agent.memory.add_message("assistant", meal_result["message"])
+
+        async def _stream():
+            yield _format_event("meal_logged", meal_result)
+            yield _format_event("token", {"text": meal_result["message"]})
+            yield _format_event("done", {"status": "meal_logged"})
+
+        return StreamingResponse(
+            _stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     async def _stream():
         loop = asyncio.get_running_loop()
@@ -106,7 +163,8 @@ async def chat_audio(
 ):
     del backend_name
     require_action(session, "chat.messages.write")
-    deps = chat_deps(get_context(request), session)
+    ctx = get_context(request)
+    deps = chat_deps(ctx, session)
     raw_bytes = await audio.read()
     filename = audio.filename or "audio.webm"
 
@@ -122,6 +180,16 @@ async def chat_audio(
 
     async def _stream():
         yield _format_event("transcribed", {"text": user_message})
+        meal_text = _parse_meal_command(user_message)
+        if meal_text:
+            user_id = str(session.get("user_id", ""))
+            meal_result = _log_meal_command(user_id=user_id, meal_text=meal_text, stores=meal_deps(ctx).stores)
+            deps.chat_agent.memory.add_message("user", user_message)
+            deps.chat_agent.memory.add_message("assistant", meal_result["message"])
+            yield _format_event("meal_logged", meal_result)
+            yield _format_event("token", {"text": meal_result["message"]})
+            yield _format_event("done", {"status": "meal_logged"})
+            return
 
         loop = asyncio.get_running_loop()
         emotion_ctx: str | None = None
