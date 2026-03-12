@@ -76,9 +76,9 @@ class FoodHybridSearch:
             return []
 
         results: list[dict[str, Any]] = []
-        documents = rows.get("documents", [[]])
-        metadatas = rows.get("metadatas", [[]])
-        distances = rows.get("distances", [[]])
+        documents = rows.get("documents") or [[]]
+        metadatas = rows.get("metadatas") or [[]]
+        distances = rows.get("distances") or [[]]
 
         for idx in range(len(documents[0])):
             text = documents[0][idx]

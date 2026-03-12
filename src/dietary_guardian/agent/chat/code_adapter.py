@@ -52,7 +52,8 @@ class CodeAgent:
             # Fall back to last result value
             if execution.results:
                 last = execution.results[-1]
-                return str(last.text or last.raw or "")
+                raw_value = getattr(last, "raw", None)
+                return str(last.text or raw_value or "")
 
             if stderr:
                 return f"Stderr:\n{stderr}"

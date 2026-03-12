@@ -54,10 +54,13 @@ class FoodInfoRetriever:
         )
 
         hits: list[dict[str, Any]] = []
+        documents = (results.get("documents") or [[]])[0]
+        metadatas = (results.get("metadatas") or [[]])[0]
+        distances = (results.get("distances") or [[]])[0]
         for doc, meta, dist in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
+            documents,
+            metadatas,
+            distances,
         ):
             hits.append({"text": doc, "metadata": meta, "distance": dist})
 

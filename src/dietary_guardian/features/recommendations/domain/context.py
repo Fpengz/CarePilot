@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 from dietary_guardian.features.meals.domain import meal_display_name
 from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
+from dietary_guardian.features.profiles.domain.models import MealSlot
 from dietary_guardian.features.recommendations.domain.models import (
     PreferenceSnapshot,
     TemporalContext,
@@ -31,7 +32,7 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _current_slot(now: datetime | None = None) -> str:
+def _current_slot(now: datetime | None = None) -> MealSlot:
     return _infer_slot(now or _now())
 
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This documentation covers the core modules of the **Dietary Guardian** feature system at `/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/features/`. The system is organized into four main features:
+This documentation covers the core modules of the **Dietary Guardian** feature system at `src/dietary_guardian/features/`. The system is organized into four main features:
 - **Meals**: Meal recognition, nutrition analysis, and summaries
 - **Profiles**: Health profiles and onboarding workflows
 - **Medications**: Medication regimens and adherence tracking
