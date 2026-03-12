@@ -6,8 +6,6 @@ This is the canonical architecture reference for Dietary Guardian. It describes 
 Related docs:
 - `README.md`
 - `SYSTEM_ROADMAP.md`
-- `REFACTOR_PLAN.md`
-- `docs/src/README.md` — full module reference (268 files, 7 documents)
 - `docs/agent-modules.md` — agent layer deep-dive (45 files)
 
 ---

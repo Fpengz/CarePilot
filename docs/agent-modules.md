@@ -411,7 +411,7 @@ Executes Python code in a secure E2B cloud sandbox (`e2b-code-interpreter`).
 - Routes use injected `OpenAI` clients and runtime settings; no env reads in route bodies.
 - Settings are centralized in API wiring for `SEALION_API`, `CHAT_MODEL_ID`, `REASONING_MODEL_ID`, `GROQ_API_KEY`, `E2B_API_KEY`.
 
-### Refactor opportunities (tracked in REFACTOR_PLAN.md)
+### Refactor opportunities
 1. Wrap `ChatAgent`/routes in a `BaseAgent` subclass or at minimum an `LLMSettings`-aware factory.
 2. Keep route classes accepting injected `OpenAI` clients via constructor (done).
 3. Keep chat emotion using the canonical `agent/emotion/` runtime (done).

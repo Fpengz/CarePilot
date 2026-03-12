@@ -37,8 +37,9 @@ src/
     meal_analysis/
     recommendation/
     emotion/
-    vision/
-    shared/
+    chat/
+    core/
+    runtime/
   platform/
     persistence/
     auth/

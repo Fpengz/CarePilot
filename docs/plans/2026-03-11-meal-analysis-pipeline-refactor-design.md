@@ -7,7 +7,7 @@
 Refactor the meal-analysis pipeline into a staged, feature-first flow: multi‑modal perception (vision + dietary claims) → deterministic reconciliation with hybrid arbitration for unresolved conflicts → canonicalization → deterministic nutrition/risk derivation → layered persistence. Replace current meal endpoints with new schemas and write new data into new tables only (drop‑legacy, no backfill).
 
 ## Goals
-- Implement Stages 1–4 from `meal-analysis-refactor.md`.
+- Implement Stages 1–4 as defined in this plan and aligned with `docs/meal-analysis-agents.md`.
 - Introduce canonical objects: `RawObservationBundle`, `ValidatedMealEvent`, `NutritionRiskProfile`, and a result envelope returned by the API.
 - Make reconciliation deterministic-first with bounded arbitration.
 - Store raw observations, validated events, and derived nutrition/risk separately.

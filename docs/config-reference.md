@@ -1,6 +1,6 @@
 # Backend Config Reference
 
-Source of truth: `src/dietary_guardian/config/settings.py`
+Source of truth: `src/dietary_guardian/config/app.py` and `src/dietary_guardian/config/runtime.py`
 
 Related guides:
 - developer setup and extension: `docs/developer-guide.md`

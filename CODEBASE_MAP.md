@@ -70,15 +70,16 @@ Feature entrypoints are typically `service.py` or `use_cases.py` under each feat
 Location: `src/dietary_guardian/agent/`
 
 Modules:
+- **core/**: base agent contracts and registry
+- **runtime/**: inference engine, routing, model factory/types
 - **chat/**: companion chat pipeline
   - `agent.py` (ChatAgent), `router.py` (query routing)
-  - `audio.py`, `emotion.py`, `health_tracker.py`, `memory.py`
+  - `audio_adapter.py`, `search_adapter.py`, `code_adapter.py`
+  - `health_tracker.py`, `memory.py`, `routes/`
 - **meal_analysis/**: meal perception pipeline
 - **dietary/**: dietary claims extraction
-- **vision/**: hawker vision module
 - **emotion/**: canonical emotion inference runtime
 - **recommendation/**: recommendation agent
-- **shared/**: LLM/runtime abstractions
 
 Agents do not own durable state; they enrich or propose.
 

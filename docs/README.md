@@ -11,6 +11,10 @@ This directory contains focused documentation that supplements the three root ca
 - `docs/user-manual.md`
 - `docs/config-reference.md`
 
+## Codebase maps
+- `CODEBASE_MAP.md` — current structure overview
+- `CODEBASE_INDEX.md` — doc index across root and docs
+
 ## Auth and policy references
 - `docs/api-auth-contract.md`
 - `docs/rbac-matrix.md`
@@ -33,6 +37,9 @@ Runtime API discovery:
 - Route definitions under `apps/api/dietary_api/routers/` remain the code-level source of truth for current endpoints
 
 ## Supporting assets
+- `docs/architecture/architecture.drawio`
+- `docs/architecture/system-interaction-flow.drawio`
+- `docs/architecture/meal-analysis-architecture.drawio`
 - `docs/architecture/target-system-architecture.drawio`
 
 ## Maintenance rule
