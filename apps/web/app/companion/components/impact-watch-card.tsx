@@ -19,7 +19,7 @@ export function ImpactWatchCard({ impact }: ImpactWatchCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        <div className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]">
+        <div className="clinical-alert">
           <div className="font-medium">
             {`${impact?.baseline_window ?? "No baseline window yet"} -> ${impact?.comparison_window ?? "No follow-up window yet"}`}
           </div>

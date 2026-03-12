@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
+import { PageTitle } from "@/components/app/page-title";
+import { Button } from "@/components/ui/button";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/backend";
 
@@ -395,163 +397,165 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="page-grid">
-      <div className="flex flex-col min-h-[60vh]">
-        <div className="flex items-center justify-between py-3">
-          <div>
-            <div className="section-kicker">Companion chat</div>
-            <h1 className="text-3xl font-semibold tracking-[-0.02em]">SEA-LION Conversation</h1>
-            <p className="app-muted mt-1 text-sm">Ask about food, medications, or daily care decisions.</p>
+    <div className="section-stack">
+      <PageTitle
+        eyebrow="Companion"
+        title="SEA-LION Conversation"
+        description="Ask about food, medications, or daily care decisions with a calm clinical guidance flow."
+      />
+
+      <div className="page-grid">
+        <div className="clinical-panel flex min-h-[65vh] flex-col">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="clinical-kicker">Conversation workspace</div>
+              <h2 className="mt-2 text-xl font-semibold">Daily guidance session</h2>
+              <p className="clinical-body mt-2 max-w-[60ch]">
+                Keep the conversation focused on meals, symptoms, medications, and care decisions.
+              </p>
+            </div>
+            <Button variant="secondary" size="sm" onClick={clearHistory}>
+              Clear history
+            </Button>
           </div>
-          <button
-            onClick={clearHistory}
-            className="text-xs uppercase tracking-[0.2em] text-[color:var(--muted-foreground)] hover:text-red-500 transition-colors"
-          >
-            Clear history
-          </button>
-        </div>
 
-        <div className="flex-1 overflow-y-auto space-y-4 pb-4 min-h-0">
-          {messages.length === 0 && (
-            <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--muted-foreground)]">
-              Start with a health question or log metrics using the{" "}
-              <span className="font-mono bg-[color:var(--accent)]/10 text-[color:var(--accent)] px-1 rounded">
-                [TRACK]
-              </span>{" "}
-              action below.
-            </div>
-          )}
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[80%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
-                  m.role === "user"
-                    ? "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] rounded-br-sm"
-                    : "bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--foreground)] rounded-bl-sm shadow-sm"
-                } ${m.tag === "error" ? "border-red-400/40 bg-red-50 text-red-700" : ""}`}
-              >
-                {m.role === "assistant" ? (
-                  m.content || streamDraft ? (
-                    <ReactMarkdown className="chat-markdown" rehypePlugins={[rehypeSanitize]}>
-                      {m.content || streamDraft}
-                    </ReactMarkdown>
-                  ) : loading ? (
-                    <span className="animate-pulse text-[color:var(--muted-foreground)]">▋</span>
-                  ) : (
-                    ""
-                  )
-                ) : (
-                  m.content
-                )}{" "}
-                {m.emotion && (
-                  <div className="mt-2 text-xs uppercase tracking-[0.16em] opacity-80 flex items-center gap-2">
-                    <span>{EMOTION_EMOJI[m.emotion.label] ?? "🫥"}</span>
-                    <span className="capitalize">{m.emotion.label}</span>
-                    <span className="opacity-60">
-                      ({Math.round(m.emotion.score * 100)}%)
-                    </span>
-                  </div>
-                )}{" "}
+          <div className="clinical-divider my-6" />
+
+          <div className="flex-1 overflow-y-auto space-y-4 pb-4 min-h-0">
+            {messages.length === 0 && (
+              <div className="soft-block text-sm text-[color:var(--muted-foreground)]">
+                Start with a health question or log metrics using the{" "}
+                <span className="font-mono bg-[color:var(--accent)]/10 text-[color:var(--accent)] px-1 rounded">
+                  [TRACK]
+                </span>{" "}
+                action below.
               </div>
-            </div>
-          ))}
-          <div ref={bottomRef} />
-        </div>
-
-        {menuOpen && (
-          <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-        )}
-
-        <div className="bg-[color:var(--panel)] border border-[color:var(--border)] rounded-xl shadow-[0_6px_18px_rgba(15,23,42,0.06)] p-3 flex flex-col gap-2 shrink-0">
-          {showAudio && isRecording && (
-            <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse inline-block" />
-              <span className="text-sm text-red-600 font-mono">{fmtTime(recordingMs)}</span>
-              <span className="text-xs text-red-500 flex-1">Recording…</span>
-              <button
-                onClick={() => {
-                  const mr = mediaRecRef.current;
-                  if (mr) {
-                    if (timerRef.current) clearInterval(timerRef.current);
-                    mr.onstop = () => {
-                      mr.stream.getTracks().forEach((t) => t.stop());
-                    };
-                    mr.stop();
-                  }
-                  setIsRecording(false);
-                  setShowAudio(false);
-                }}
-                className="text-xs text-gray-400 hover:text-gray-600 px-2"
-              >
-                ✕
-              </button>
-              <button
-                onClick={stopAndSend}
-                className="text-xs px-3 py-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
-              >
-                ⏹ Stop &amp; Send
-              </button>
-            </div>
-          )}
-
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask anything… (Enter to send, Shift+Enter for new line)"
-            rows={2}
-            className="w-full resize-none border-none bg-transparent outline-none text-sm text-[color:var(--foreground)] placeholder-[color:var(--muted-foreground)]"
-          />
-          <div className="flex items-center gap-2">
-            <div className="relative z-50">
-              <button
-                onClick={() => setMenuOpen((v) => !v)}
-                className="w-8 h-8 rounded-full border border-[color:var(--border)] text-[color:var(--muted-foreground)] text-lg flex items-center justify-center hover:bg-[color:var(--muted)] transition-colors flex-shrink-0"
-                title="More options"
-              >
-                ＋
-              </button>
-              {menuOpen && (
-                <div className="absolute bottom-10 left-0 bg-[color:var(--panel)] border border-[color:var(--border)] rounded-xl shadow-[0_10px_30px_rgba(15,23,42,0.08)] py-2 w-52 overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      startRecording();
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[color:var(--foreground)] hover:bg-[color:var(--muted)] transition-colors text-left"
-                  >
-                    <span className="text-base">🎤</span>
-                    <span>Record Audio</span>
-                  </button>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
+                    m.role === "user"
+                      ? "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-[0_10px_24px_rgba(16,92,182,0.22)]"
+                      : "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+                  } ${m.tag === "error" ? "bg-red-50 text-red-700" : ""}`}
+                >
+                  {m.role === "assistant" ? (
+                    m.content || streamDraft ? (
+                      <ReactMarkdown className="chat-markdown" rehypePlugins={[rehypeSanitize]}>
+                        {m.content || streamDraft}
+                      </ReactMarkdown>
+                    ) : loading ? (
+                      <span className="animate-pulse text-[color:var(--muted-foreground)]">▋</span>
+                    ) : (
+                      ""
+                    )
+                  ) : (
+                    m.content
+                  )}
+                  {m.emotion && (
+                    <div className="mt-2 text-xs uppercase tracking-[0.16em] opacity-80 flex items-center gap-2">
+                      <span>{EMOTION_EMOJI[m.emotion.label] ?? "🫥"}</span>
+                      <span className="capitalize">{m.emotion.label}</span>
+                      <span className="opacity-60">({Math.round(m.emotion.score * 100)}%)</span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            ))}
+            <div ref={bottomRef} />
+          </div>
+
+          {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}
+
+          <div className="soft-block flex flex-col gap-2 shrink-0">
+            {showAudio && isRecording && (
+              <div className="flex items-center gap-3 rounded-xl bg-red-50 px-3 py-2 text-red-600">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse inline-block" />
+                <span className="text-sm font-mono">{fmtTime(recordingMs)}</span>
+                <span className="text-xs flex-1">Recording…</span>
+                <button
+                  onClick={() => {
+                    const mr = mediaRecRef.current;
+                    if (mr) {
+                      if (timerRef.current) clearInterval(timerRef.current);
+                      mr.onstop = () => {
+                        mr.stream.getTracks().forEach((t) => t.stop());
+                      };
+                      mr.stop();
+                    }
+                    setIsRecording(false);
+                    setShowAudio(false);
+                  }}
+                  className="text-xs text-red-300 hover:text-red-500 px-2"
+                >
+                  ✕
+                </button>
+                <button
+                  onClick={stopAndSend}
+                  className="text-xs px-3 py-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                >
+                  ⏹ Stop &amp; Send
+                </button>
+              </div>
+            )}
+
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask anything… (Enter to send, Shift+Enter for new line)"
+              rows={2}
+              className="w-full resize-none border-none bg-transparent outline-none text-sm text-[color:var(--foreground)] placeholder-[color:var(--muted-foreground)]"
+            />
+            <div className="flex items-center gap-2">
+              <div className="relative z-50">
+                <button
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="w-9 h-9 rounded-full border border-[color:var(--border-soft)] text-[color:var(--muted-foreground)] text-lg flex items-center justify-center hover:bg-[color:var(--muted)] transition-colors flex-shrink-0"
+                  title="More options"
+                >
+                  ＋
+                </button>
+                {menuOpen && (
+                  <div className="absolute bottom-12 left-0 bg-[color:var(--panel)] border border-[color:var(--border-soft)] rounded-xl shadow-[0_10px_30px_rgba(15,23,42,0.08)] py-2 w-52 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        startRecording();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[color:var(--foreground)] hover:bg-[color:var(--muted)] transition-colors text-left"
+                    >
+                      <span className="text-base">🎤</span>
+                      <span>Record Audio</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={prependTrack}
+                title="Prefix your message with [TRACK] to log a health metric"
+                className="text-xs px-3 py-1.5 rounded-full border border-[color:var(--accent)]/40 text-[color:var(--accent)] hover:bg-[color:var(--accent)]/10 transition-colors"
+              >
+                Add [TRACK]
+              </button>
+              <button
+                onClick={handleSend}
+                disabled={loading || !input.trim()}
+                className="ml-auto text-sm font-medium px-4 py-2 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-foreground)] hover:opacity-90 disabled:opacity-40 transition-colors"
+              >
+                {loading ? "Thinking…" : "Send"}
+              </button>
             </div>
-            <button
-              onClick={prependTrack}
-              title="Prefix your message with [TRACK] to log a health metric"
-              className="text-xs px-3 py-1.5 rounded-full border border-[color:var(--accent)]/40 text-[color:var(--accent)] hover:bg-[color:var(--accent)]/10 transition-colors"
-            >
-              Add [TRACK]
-            </button>
-            <button
-              onClick={handleSend}
-              disabled={loading || !input.trim()}
-              className="ml-auto text-sm font-medium px-4 py-2 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-foreground)] hover:opacity-90 disabled:opacity-40 transition-colors"
-            >
-              {loading ? "Thinking…" : "Send"}
-            </button>
           </div>
         </div>
       </div>
 
-      <aside className="space-y-4">
-        <div className="app-panel p-4">
-          <div className="section-kicker">Session signal</div>
-          <div className="mt-2 text-sm text-[color:var(--foreground)]">
+      <aside className="section-stack">
+        <div className="clinical-card">
+          <div className="clinical-kicker">Session signal</div>
+          <div className="mt-3 text-sm text-[color:var(--foreground)]">
             {lastEmotion ? (
               <div className="flex items-center gap-2">
                 <span className="text-base">{EMOTION_EMOJI[lastEmotion.label] ?? "🫥"}</span>
@@ -565,9 +569,9 @@ export default function ChatPage() {
             )}
           </div>
         </div>
-        <div className="app-panel p-4">
-          <div className="section-kicker">Last user intent</div>
-          <p className="mt-2 text-sm text-[color:var(--foreground)]">
+        <div className="clinical-card">
+          <div className="clinical-kicker">Last user intent</div>
+          <p className="mt-3 text-sm text-[color:var(--foreground)]">
             {lastUserMessage || "Awaiting the first question."}
           </p>
         </div>

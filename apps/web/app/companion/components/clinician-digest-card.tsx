@@ -17,14 +17,14 @@ export function ClinicianDigestCard({ digest }: ClinicianDigestCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        <div className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]">
+        <div className="clinical-alert">
           <div className="font-medium">{digest?.summary ?? "Run an interaction to preview the digest."}</div>
           <p className="app-muted mt-2">{digest?.why_now ?? "No clinician rationale yet."}</p>
         </div>
         {digest?.what_changed?.slice(0, 3).map((item: string) => (
           <div
             key={item}
-            className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]"
+            className="clinical-alert"
           >
             {item}
           </div>

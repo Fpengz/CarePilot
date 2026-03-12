@@ -9,7 +9,7 @@ interface CarePlanCardProps {
 
 export function CarePlanCard({ carePlan }: CarePlanCardProps) {
   return (
-    <div className="stack-grid">
+    <div className="section-stack">
       <Card>
         <CardHeader>
           <CardTitle>Recommended Next Step</CardTitle>
@@ -22,7 +22,7 @@ export function CarePlanCard({ carePlan }: CarePlanCardProps) {
             carePlan.recommended_actions.map((item: string) => (
               <div
                 key={item}
-                className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 text-sm dark:bg-[color:var(--panel-soft)]"
+                className="clinical-alert text-sm"
               >
                 {item}
               </div>
@@ -41,10 +41,10 @@ export function CarePlanCard({ carePlan }: CarePlanCardProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <div className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]">
+          <div className="clinical-alert">
             {carePlan?.why_now ?? "No why-now rationale yet."}
           </div>
-          <div className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]">
+          <div className="clinical-alert">
             {carePlan?.reasoning_summary ?? "No reasoning summary yet."}
           </div>
         </CardContent>

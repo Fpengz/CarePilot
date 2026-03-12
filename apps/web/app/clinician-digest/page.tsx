@@ -84,7 +84,7 @@ export default function ClinicianDigestPage() {
           </CardContent>
         </Card>
 
-        <div className="stack-grid">
+        <div className="section-stack">
           {error ? <ErrorCard message={error} /> : null}
           <Card>
             <CardHeader>

@@ -22,7 +22,7 @@ export function SupportingEvidenceCard({ citations }: SupportingEvidenceCardProp
           citations.map((item) => (
             <div
               key={`${item.title}-${item.relevance}`}
-              className="rounded-xl border border-[color:var(--border)] bg-white/60 p-3 dark:bg-[color:var(--panel-soft)]"
+              className="clinical-alert"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="font-medium">{item.title}</div>

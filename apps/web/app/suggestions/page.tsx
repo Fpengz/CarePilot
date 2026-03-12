@@ -212,7 +212,7 @@ export default function SuggestionsPage() {
           </CardContent>
         </Card>
 
-        <div className="stack-grid">
+        <div className="section-stack">
           {error ? <ErrorCard message={error} /> : null}
 
           <TimelineList
