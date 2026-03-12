@@ -1,148 +1,232 @@
 # Architecture
 
 ## Purpose
-This is the canonical architecture reference for Dietary Guardian. It describes the current modular-monolith baseline, the ownership boundaries that contributors should preserve, and the scale-later direction for the hackathon branch.
+This is the canonical architecture reference for Dietary Guardian. It describes the current modular-monolith structure, the ownership boundaries that contributors must preserve, and the forward direction for the hackathon branch.
 
 Related docs:
 - `README.md`
 - `SYSTEM_ROADMAP.md`
-- `docs/developer-guide.md`
-- `docs/operations-runbook.md`
+- `REFACTOR_PLAN.md`
+- `docs/src/README.md` — full module reference (268 files, 7 documents)
+- `docs/agent-modules.md` — agent layer deep-dive (45 files)
 
-## Current system shape
-Dietary Guardian is a feature-first modular monolith with one codebase and clear ownership boundaries.
+---
 
-Canonical backend import surfaces:
-- `src/dietary_guardian/features/` for product behavior
-- `src/dietary_guardian/agent/` for bounded model-powered capabilities
-- `src/dietary_guardian/platform/` for infrastructure and runtime adapters
-- `src/dietary_guardian/core/` for tiny shared primitives
+## System shape
 
-Legacy layered packages under `application/`, `domain/`, `infrastructure/`, and `capabilities/` have been removed. New work should only target the feature-first surfaces described below.
+Dietary Guardian is a **feature-first modular monolith**: one codebase, strict layer ownership, no shared mutable globals. The legacy layered packages (`application/`, `domain/`, `infrastructure/`, `capabilities/`) have been removed. All new work targets the four canonical surfaces below.
 
-### Interface layer
-- `apps/web` is the primary user-facing interface
-- future messaging channels should integrate through the same API and workflow contracts
-
-### API layer
-- `apps/api/dietary_api` owns HTTP transport, auth, policy checks, request validation, error mapping, and request/correlation IDs
-- routers stay thin and delegate behavior into services and application use cases
-
-### Feature layer
-- `src/dietary_guardian/features` owns product behavior and the obvious business entrypoints
-- every feature should expose one clear `service.py` starting point
-- the companion care loop stays grouped under `features/companion/`:
-  - `core`
-  - `personalization`
-  - `engagement`
-  - `care_plans`
-  - `interactions`
-  - `clinician_digest`
-  - `impact`
-- feature services may call `agent/` and `platform/`, but apps should not bypass them for business actions
-
-### Agent layer
-- `src/dietary_guardian/agent` contains bounded model/provider logic
-- agents help with bounded reasoning, but they do not own durable state or bypass deterministic safety
-- chat-specific agent wiring (routing, memory, emotion, audio, tracking) lives under `src/dietary_guardian/agent/chat/`
-
-### Platform layer
-- `src/dietary_guardian/platform` owns persistence, auth, messaging, scheduling, storage, observability, and cache adapters
-- app-data persistence is SQLite-first for the hackathon branch, with one store-selection path for durable local prototyping
-
-### Core layer
-- `src/dietary_guardian/core` contains tiny shared primitives only
-- keep IDs, base errors, config bootstrap, clock/time helpers, and domain-neutral events here
-
-## Core request lifecycle
-1. A request enters through the web app or another client.
-2. FastAPI authenticates the session, checks policy, validates input, and attaches trace metadata.
-3. A feature service loads and fuses state into a `CaseSnapshot`.
-4. Companion personalization and engagement modules determine focus, barriers, and support mode.
-5. Agent capabilities and deterministic feature rules build the proposal payload.
-6. Deterministic safety review approves, adjusts, or escalates the result.
-7. Clinician digest and impact summary are produced from the same state bundle when needed.
-8. Platform adapters persist durable outputs and emit follow-up work.
-9. Workers continue reminders, outbox processing, and related background tasks.
-
-## Module ownership map
-
-```text
-apps/api/dietary_api/                HTTP transport, auth, policy, response mapping
-apps/web/                            Next.js routes, components, typed API clients
-apps/workers/                        external worker runtime
-src/dietary_guardian/features/       product behavior and business entrypoints
-src/dietary_guardian/agent/          bounded model/provider logic
-src/dietary_guardian/platform/       persistence and external adapters
-src/dietary_guardian/core/           tiny shared primitives
+```
+src/dietary_guardian/
+├── features/      product behavior and business entrypoints
+├── agent/         bounded model-powered capabilities
+├── platform/      infrastructure and runtime adapters
+├── core/          tiny shared primitives
+└── config/        settings composition root
 ```
 
+---
+
+## Layers
+
+### Interface layer — `apps/web/`
+- Next.js 14 app router; typed API clients auto-generated from FastAPI schemas.
+- Future messaging channels (WhatsApp, Telegram) integrate through the same API and workflow contracts.
+
+### API layer — `apps/api/dietary_api/`
+- Owns HTTP transport, session auth, policy enforcement (`policy.py`), request validation, error mapping, and correlation IDs.
+- Route handlers are transport-only: they validate, check policy, extract a scoped deps dataclass, and call a feature use-case function.
+- **Never** put business logic in routers or router-level `Depends` chains.
+
+### Worker layer — `apps/workers/`
+- Independent process consuming the reminder scheduler and alert outbox.
+- Uses distributed locks from `platform/scheduling/coordination/` to prevent duplicate delivery.
+
+### Feature layer — `src/dietary_guardian/features/`
+- Owns all product behavior. Each sub-package contains `domain/` (pure types + rules) and `use_cases.py` (orchestration).
+- Feature code may call `agent/` and `platform/`, but `apps/` must not bypass feature use cases for business actions.
+
+| Sub-package | Responsibility |
+|-------------|----------------|
+| `meals/` | Meal recognition, nutrition, daily/weekly summaries |
+| `profiles/` | Health profiles, onboarding, role and social tools |
+| `medications/` | Medication regimen scheduling, mobility reminders |
+| `symptoms/` | Symptom check-in use cases |
+| `safety/` | Deterministic safety engine, drug interactions, triage thresholds |
+| `reminders/` | Reminder scheduling, notification materialization, multi-channel outbox |
+| `reports/` | Biomarker PDF parsing and ingestion |
+| `households/` | Multi-user household access policies |
+| `recommendations/` | Daily recommendation engine (scoring + context + orchestration) |
+| `companion/` | Patient engagement orchestration — see below |
+
+**Companion sub-packages** (`features/companion/`):
+
+| Sub-package | Responsibility |
+|-------------|----------------|
+| `core/` | `CaseSnapshot` read model, health analytics, emotion signal models |
+| `personalization/` | Preference-driven meal and lifestyle personalization |
+| `engagement/` | Emotion-aware engagement, session tracking |
+| `care_plans/` | Adaptive care plan generation |
+| `clinician_digest/` | Clinical summary cards for practitioners |
+| `impact/` | Health trend analysis and impact metrics |
+| `interactions/` | Patient–companion interaction history |
+
+### Agent layer — `src/dietary_guardian/agent/`
+- Bounded reasoning helpers. Agents propose; they never authorize delivery or write durable state directly.
+- All agents inherit `BaseAgent[InputT, OutputT]` from `agent/shared/ai/` and return `AgentResult[OutputT]`.
+- Retrieved by name from `AgentRegistry`; never instantiated ad-hoc in feature code.
+
+| Sub-package | Agent |
+|-------------|-------|
+| `shared/llm/` | `LLMFactory`, `LLMCapabilityRouter`, `InferenceEngine` |
+| `shared/ai/` | `BaseAgent`, `AgentRegistry`, `AgentResult` envelope |
+| `dietary/` | `DietaryAgent` — safety pre-screen + LLM meal reasoning |
+| `meal_analysis/` | `MealAnalysisAgent` — vision perception facade |
+| `recommendation/` | `RecommendationAgent` — deterministic plan synthesis |
+| `emotion/` | `EmotionAgent` + HuggingFace inference infra |
+| `vision/` | `HawkerVisionModule` — image → `MealPerception` |
+| `chat/` | `ChatAgent`, `QueryRouter`, SSE streaming, audio, `[TRACK]` parsing |
+
+### Platform layer — `src/dietary_guardian/platform/`
+- Infrastructure adapters. Feature code only touches platform through typed protocols or store interfaces.
+
+| Sub-package | Responsibility |
+|-------------|----------------|
+| `persistence/` | 7 domain SQLite repos + `SQLiteRepository` facade + typed protocols |
+| `auth/` | Session signing, `SQLiteAuthStore` / `InMemoryAuthStore` |
+| `cache/` | Redis + in-memory caches (profiles, snapshots, rate limits) |
+| `messaging/` | Alert outbox, sink adapters (Telegram, WhatsApp, WeChat, email) |
+| `scheduling/` | Distributed coordination locks (Redis + in-memory), reminder scheduler |
+| `observability/` | Structured logging, readiness probes, workflow contracts, tool policy registry |
+| `storage/` | Media upload pipeline + ingestion hooks |
+
+### Config layer — `src/dietary_guardian/config/`
+- Single composition root (`app.py` → `AppSettings`).
+- `LLMSettings` exposes four typed `@property` frozen-dataclass views: `.gemini`, `.openai`, `.local`, `.inference`.
+  Never read flat provider fields directly in agent or feature code.
+- `get_settings()` validates cross-field constraints (secrets required in prod, Redis required for external workers).
+
+### Core layer — `src/dietary_guardian/core/`
+- Pure primitives: IDs, base errors, domain-neutral events, clock/time helpers, config bootstrap shims.
+- **No I/O, no infrastructure imports.**
+
+---
+
+## Request lifecycle
+
+```
+Client
+  │
+  ▼
+apps/api/dietary_api/  ← authenticate session, check policy, validate input
+  │
+  ▼
+features/<feature>/use_cases.py  ← load CaseSnapshot, orchestrate domain logic
+  │              │
+  │              ▼
+  │        features/safety/  ← deterministic safety screen (runs before any LLM output is trusted)
+  │
+  ├──► agent/<agent>/  ← propose enriched output (never writes state)
+  │
+  ├──► features/companion/  ← personalization, engagement, clinician digest
+  │
+  ▼
+platform/persistence/  ← persist durable outputs
+platform/messaging/    ← emit follow-up work to outbox
+  │
+  ▼
+apps/workers/  ← process reminders, outbox, background tasks
+```
+
+---
+
 ## Key architectural rules
-- Keep route handlers transport-only.
-- Keep business logic in feature `service.py` entrypoints or bounded supporting modules, not in routers or UI glue.
-- Keep deterministic logic as the source of truth for durable care state.
-- Treat agents as bounded helpers behind typed contracts.
-- Keep persistence and external integrations behind platform adapters.
-- Make durable state transitions observable and testable.
-- Keep safety validation injectable via `SafetyPort` — agents must not instantiate concrete safety implementations directly.
+
+1. **Route handlers are transport-only.** Auth check → policy check → scoped deps → call use case.
+2. **Business logic lives in feature use cases**, not in routers, `Depends` chains, or UI glue.
+3. **Domain layer is pure.** `features/*/domain/` has no I/O and no infrastructure imports.
+4. **Agents are bounded helpers.** They receive typed input, return `AgentResult`, and never touch stores.
+5. **Safety is deterministic.** `features/safety/domain/engine.py` runs before any LLM output is accepted.
+6. **`CaseSnapshot` is the canonical read model.** New patient-facing data sources integrate through it.
+7. **Platform adapters are the only I/O boundary.** Feature code does not open connections directly.
+8. **`SafetyPort` is injected.** No agent or feature module instantiates a concrete safety implementation.
+9. **`LLMSettings` views are the only provider access path.** Use `.gemini`, `.openai`, `.local`, `.inference`.
+
+---
 
 ## Governing principles
-- Prefer policy-governed capabilities over agent-first decomposition.
+
 - Prefer deterministic scoring, retrieval, templates, and state machines before adding model reasoning.
+- Prefer policy-governed capabilities over agent-first decomposition.
 - Treat typed longitudinal state and event history as the system of record, not chat memory.
-- Keep safety independent from proposal generation so it can veto, downgrade, or escalate any high-impact response.
-- Keep replay, traceability, and explainability as runtime requirements rather than optional observability extras.
-- Keep the product culture-first and safety-always: local Singapore relevance should improve adherence, but it must never weaken the safety boundary.
+- Keep safety independent from proposal generation so it can veto, downgrade, or escalate any response.
+- Keep replay, traceability, and explainability as runtime requirements, not optional observability extras.
+- Keep the product culture-first and safety-always: Singapore-local relevance must never weaken the safety boundary.
+
+---
 
 ## Safety and orchestration model
-- Deterministic screening and policy checks run before any optional ambiguity-review agent behavior.
-- Agents may propose, summarize, or enrich, but they do not authorize delivery and they do not write durable state directly.
-- Every user-visible recommendation should remain traceable to the current state snapshot, evidence inputs, workflow events, and final safety decision.
-- Programmatic orchestration remains the default pattern; agent-to-agent delegation should stay limited to bounded synthesis subtasks.
-- The system is informational and care-support oriented, not a diagnosis or treatment authority.
-- The minimum hard-escalation class includes emergency or urgent red flags such as chest pain, trouble breathing, stroke-like symptoms, severe allergic reaction signs, loss of consciousness, severe confusion, severe bleeding, and self-harm risk when in scope.
-- User-visible recommendation flows should preserve structured safety outcomes such as allow, downgrade, clarification, refusal, or escalation.
 
-## Current runtime model
+- Deterministic screening and policy checks run before any optional LLM behavior.
+- Every user-visible recommendation is traceable to: current `CaseSnapshot`, evidence inputs, workflow events, and the final safety decision.
+- Programmatic orchestration is the default; agent-to-agent delegation is limited to bounded synthesis subtasks.
+- The system is informational and care-support oriented — not a diagnosis or treatment authority.
+- Hard-escalation triggers include: chest pain, breathing difficulty, stroke signs, severe allergic reaction, loss of consciousness, severe confusion or bleeding, and self-harm risk.
+- Safety outcomes preserved in recommendation flows: `allow`, `downgrade`, `clarification`, `refusal`, `escalation`.
 
-### Local default
-- SQLite for durable storage
-- optional in-memory ephemeral services
-- API and worker can share the same local app store
-- chat memory and local vector stores persist under `data/runtime/` and `data/vectorstore/`
+---
 
-### Target-aligned local and production path
+## Runtime model
+
+### Local (default)
+- SQLite for durable storage (`dietary_guardian.db`, `dietary_guardian_auth.db`, `clinical_safety.db`)
+- In-memory fallbacks for cache and coordination when Redis is absent
+- API and worker share the same local SQLite stores
+- Chat memory and vector stores persist under `data/runtime/` and `data/vectorstore/`
+
+### Production-aligned path
 - SQLite for durable state during the hackathon branch
-- Redis for optional ephemeral state, coordination, and worker signaling
-- external worker process for reminders, outbox processing, and future async workflows when needed
+- Redis for ephemeral state, distributed locks, and worker signaling
+- External worker process for reminders, outbox, and future async workflows
 
-## Important implemented subsystems
-- companion orchestration with case snapshot, personalization, engagement, evidence, safety, clinician digest, and impact
-- meal analysis with bounded perception plus deterministic canonical-food normalization
-- canonical agent modules now live under `src/dietary_guardian/agent/`, while shared provider/model integration lives under `src/dietary_guardian/agent/shared/llm/`
-- configuration is consolidated into focused settings modules with `src/dietary_guardian/config/` as the bootstrap surface
-- recommendation flows with persisted profile and interaction context
-- reminder scheduling and multi-channel delivery with worker support
-- emotion inference behind application and infrastructure boundaries
-- chat pipeline with SSE streaming, audio transcription, emotion context, and `[TRACK]` metric parsing
-- workflow traces, runtime contracts, and policy-governed tool access
+---
+
+## Implemented subsystems
+
+| Subsystem | Location |
+|-----------|----------|
+| Config — LLMSettings typed views | `config/llm.py` |
+| Safety engine — deterministic thresholds + drug interactions | `features/safety/domain/engine.py` |
+| CaseSnapshot — canonical patient read model | `features/companion/core/` |
+| Meal analysis — vision perception + food normalization | `features/meals/`, `agent/meal_analysis/`, `agent/vision/` |
+| Recommendations — scoring + context + orchestration | `features/recommendations/domain/` |
+| Companion orchestration — personalization, engagement, clinician digest, impact | `features/companion/` |
+| Reminder scheduling + multi-channel outbox | `features/reminders/`, `platform/messaging/` |
+| Emotion inference | `agent/emotion/` |
+| Chat pipeline — SSE streaming, audio, `[TRACK]` parsing | `agent/chat/` |
+| Persistence — 7 domain SQLite repos + facade + typed protocols | `platform/persistence/` |
+| Workflow traces + policy-governed tool access | `platform/observability/` |
+
+---
 
 ## Scale-later direction
-The target architecture is still a modular monolith, not an immediate distributed system. The intended next step is to harden the current boundaries rather than split the runtime prematurely.
 
-Expected future expansion:
-- stronger SQLite-first runtime boundaries with optional Redis coordination
-- richer retrieval and citation infrastructure behind the existing evidence boundary
-- more durable workflow state transitions when current orchestration limits become real
-- additional bounded agents only where deterministic logic is not enough
+The target is still a modular monolith. The next step is to harden boundaries rather than split the runtime.
 
-The preferred order of operations is:
-1. tighten contracts and capability boundaries
-2. migrate behavior behind those boundaries incrementally
-3. introduce heavier workflow/runtime infrastructure only when multi-day durability or human-in-the-loop semantics require it
+Preferred expansion order:
+1. Tighten typed contracts and capability boundaries.
+2. Migrate behavior behind those boundaries incrementally.
+3. Introduce heavier workflow or runtime infrastructure only when multi-day durability or human-in-the-loop semantics require it.
+
+Expected future growth areas:
+- Richer retrieval and citation infrastructure behind the evidence boundary.
+- More durable workflow state transitions when orchestration limits are hit.
+- Additional bounded agents only where deterministic logic is insufficient.
+
+---
 
 ## When to update this file
-- ownership boundaries change
-- a major subsystem is added or removed
-- default runtime topology changes
-- a new application-layer workflow becomes core to the product
+- Ownership boundaries change.
+- A major subsystem is added or removed.
+- Default runtime topology changes.
+- A new application-layer workflow becomes core to the product.
