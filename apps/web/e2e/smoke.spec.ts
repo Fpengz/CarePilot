@@ -39,7 +39,7 @@ test("dashboard stays summary-focused and links out to settings", async ({ page 
   await expect(page.getByRole("heading", { name: "Today at a Glance" })).toBeVisible();
   await expect(page.getByLabel("Height (cm)")).toBeHidden();
   await expect(page.getByLabel("Weight (kg)")).toBeHidden();
-  await expect(page.getByRole("link", { name: "Open Settings" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Update Profile" })).toBeVisible();
 });
 
 test("settings page exposes guided health profile setup with advanced edit fallback", async ({ page }) => {
@@ -94,7 +94,7 @@ test("meals page includes weekly summary insights", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/meals");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Meal Analysis and Record Review" })).toBeVisible();
+  await expect(page.locator("#main-content").getByRole("heading", { name: "Meal Analysis and Nutrition Review" })).toBeVisible();
   await page.getByRole("tab", { name: "Weekly" }).click();
   await expect(page.getByRole("heading", { name: "Weekly Pattern Summary" })).toBeVisible();
 });
@@ -130,6 +130,6 @@ test("symptoms, reports, clinical cards, and metrics pages are available", async
   await expect(page.getByRole("button", { name: "Generate Card" })).toBeVisible();
 
   await page.goto("/metrics");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Numerical Trend Analysis" })).toBeVisible();
+  await expect(page.locator("#main-content").getByRole("heading", { name: "Daily Nutrition Overview" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh Trends" })).toBeVisible();
 });
