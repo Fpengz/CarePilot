@@ -51,10 +51,12 @@ class MemoryManager:
 
     def __init__(
         self,
+        user_id: str,
         session_id: str,
         inference_engine: InferenceEngine,
         db_path: Path = DB_PATH,
     ) -> None:
+        self._user_id = user_id
         self._session_id  = session_id
         self._engine = inference_engine
         self._db_path     = db_path
@@ -70,7 +72,8 @@ class MemoryManager:
         self._summary_in_flight = False
 
         self._logger.info(
-            "chat_memory_ready session=%s messages=%s summarized_up_to=%s",
+            "chat_memory_ready user_id=%s session=%s messages=%s summarized_up_to=%s",
+            user_id,
             session_id,
             len(self._messages),
             self._summarized_up_to,
@@ -160,7 +163,7 @@ class MemoryManager:
         try:
             request = InferenceRequest(
                 request_id=str(uuid.uuid4()),
-                user_id=None,
+                user_id=self._user_id,
                 modality=InferenceModality.TEXT,
                 payload={"prompt": user_content},
                 output_schema=ChatSummaryOutput,
@@ -184,9 +187,14 @@ class MemoryManager:
 
     def _init_schema(self) -> None:
         with self._connect() as conn:
+            if not _table_has_column(conn, "chat_messages", "user_id"):
+                conn.execute("DROP TABLE IF EXISTS chat_messages")
+            if not _table_has_column(conn, "chat_summaries", "user_id"):
+                conn.execute("DROP TABLE IF EXISTS chat_summaries")
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS chat_messages (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id     TEXT    NOT NULL,
                     session_id  TEXT    NOT NULL,
                     role        TEXT    NOT NULL,
                     content     TEXT    NOT NULL,
@@ -195,10 +203,12 @@ class MemoryManager:
             """)
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS chat_summaries (
-                    session_id        TEXT PRIMARY KEY,
-                    summary           TEXT    NOT NULL DEFAULT '',
-                    summarized_up_to  INTEGER NOT NULL DEFAULT 0,
-                    updated_at        TEXT    NOT NULL
+                    user_id          TEXT    NOT NULL,
+                    session_id       TEXT    NOT NULL,
+                    summary          TEXT    NOT NULL DEFAULT '',
+                    summarized_up_to INTEGER NOT NULL DEFAULT 0,
+                    updated_at       TEXT    NOT NULL,
+                    PRIMARY KEY (user_id, session_id)
                 )
             """)
 
@@ -206,24 +216,24 @@ class MemoryManager:
         with self._connect() as conn:
             rows = conn.execute(
                 "SELECT role, content FROM chat_messages "
-                "WHERE session_id = ? ORDER BY id ASC",
-                (self._session_id,),
+                "WHERE user_id = ? AND session_id = ? ORDER BY id ASC",
+                (self._user_id, self._session_id),
             ).fetchall()
         return [{"role": r["role"], "content": r["content"]} for r in rows]
 
     def _load_summary(self) -> str:
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT summary FROM chat_summaries WHERE session_id = ?",
-                (self._session_id,),
+                "SELECT summary FROM chat_summaries WHERE user_id = ? AND session_id = ?",
+                (self._user_id, self._session_id),
             ).fetchone()
         return row["summary"] if row else ""
 
     def _load_summarized_up_to(self) -> int:
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT summarized_up_to FROM chat_summaries WHERE session_id = ?",
-                (self._session_id,),
+                "SELECT summarized_up_to FROM chat_summaries WHERE user_id = ? AND session_id = ?",
+                (self._user_id, self._session_id),
             ).fetchone()
         return row["summarized_up_to"] if row else 0
 
@@ -231,20 +241,25 @@ class MemoryManager:
         now = datetime.now().isoformat(timespec="seconds")
         with self._connect() as conn:
             conn.execute(
-                "INSERT INTO chat_messages (session_id, role, content, created_at) "
-                "VALUES (?, ?, ?, ?)",
-                (self._session_id, role, content, now),
+                "INSERT INTO chat_messages (user_id, session_id, role, content, created_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (self._user_id, self._session_id, role, content, now),
             )
 
     def _save_summary(self) -> None:
         now = datetime.now().isoformat(timespec="seconds")
         with self._connect() as conn:
             conn.execute(
-                """INSERT INTO chat_summaries (session_id, summary, summarized_up_to, updated_at)
-                   VALUES (?, ?, ?, ?)
-                   ON CONFLICT(session_id) DO UPDATE SET
+                """INSERT INTO chat_summaries (user_id, session_id, summary, summarized_up_to, updated_at)
+                   VALUES (?, ?, ?, ?, ?)
+                   ON CONFLICT(user_id, session_id) DO UPDATE SET
                        summary          = excluded.summary,
                        summarized_up_to = excluded.summarized_up_to,
                        updated_at       = excluded.updated_at""",
-                (self._session_id, self._rolling_summary, self._summarized_up_to, now),
+                (self._user_id, self._session_id, self._rolling_summary, self._summarized_up_to, now),
             )
+
+
+def _table_has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    return any(row[1] == column for row in rows)

@@ -67,17 +67,19 @@ class HealthTracker:
 
     def __init__(
         self,
+        user_id: str,
         session_id: str,
         inference_engine: InferenceEngine,
         db_path: Path = DB_PATH,
     ) -> None:
+        self._user_id = user_id
         self._session_id = session_id
         self._engine = inference_engine
         self._db_path = db_path
         self._logger = get_logger(__name__)
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
-        self._logger.info("chat_health_tracker_ready session=%s", session_id)
+        self._logger.info("chat_health_tracker_ready user_id=%s session=%s", user_id, session_id)
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -167,17 +169,20 @@ class HealthTracker:
 
     def _init_schema(self) -> None:
         with self._connect() as conn:
+            if not _table_has_column(conn, "health_parsed_metrics", "user_id"):
+                conn.execute("DROP TABLE IF EXISTS health_parsed_metrics")
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS health_parsed_metrics (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
                     message_id  INTEGER NOT NULL,
+                    user_id     TEXT    NOT NULL,
                     session_id  TEXT    NOT NULL,
                     metric_type TEXT    NOT NULL,
                     value       REAL    NOT NULL,
                     unit        TEXT,
                     label       TEXT,
                     recorded_at TEXT    NOT NULL,
-                    UNIQUE (message_id, metric_type)
+                    UNIQUE (message_id, metric_type, user_id)
                 )
             """)
 
@@ -187,12 +192,13 @@ class HealthTracker:
             rows = conn.execute(
                 """SELECT id, content, created_at
                    FROM chat_messages
-                   WHERE session_id = ?
+                   WHERE user_id = ?
+                     AND session_id = ?
                      AND role = 'user'
                      AND content LIKE '[TRACK]%'
                      AND DATE(created_at) BETWEEN ? AND ?
                    ORDER BY created_at ASC""",
-                (self._session_id, start_date, end_date),
+                (self._user_id, self._session_id, start_date, end_date),
             ).fetchall()
         return [dict(r) for r in rows]
 
@@ -206,8 +212,8 @@ class HealthTracker:
         """Return parsed metrics for a message, using cached DB results if available."""
         with self._connect() as conn:
             cached = conn.execute(
-                "SELECT * FROM health_parsed_metrics WHERE message_id = ?",
-                (message_id,),
+                "SELECT * FROM health_parsed_metrics WHERE message_id = ? AND user_id = ?",
+                (message_id, self._user_id),
             ).fetchall()
         if cached:
             return [dict(r) for r in cached]
@@ -225,6 +231,7 @@ class HealthTracker:
                 continue
             rows.append({
                 "message_id":  message_id,
+                "user_id":     self._user_id,
                 "session_id":  self._session_id,
                 "metric_type": str(m.get("metric_type", "unknown")).strip(),
                 "value":       float(val),
@@ -237,9 +244,9 @@ class HealthTracker:
             with self._connect() as conn:
                 conn.executemany(
                     """INSERT OR IGNORE INTO health_parsed_metrics
-                           (message_id, session_id, metric_type, value, unit, label, recorded_at)
+                           (message_id, user_id, session_id, metric_type, value, unit, label, recorded_at)
                        VALUES
-                           (:message_id, :session_id, :metric_type, :value, :unit, :label, :recorded_at)""",
+                           (:message_id, :user_id, :session_id, :metric_type, :value, :unit, :label, :recorded_at)""",
                     rows,
                 )
             self._logger.info(
@@ -255,7 +262,7 @@ class HealthTracker:
         try:
             request = InferenceRequest(
                 request_id=str(uuid.uuid4()),
-                user_id=None,
+                user_id=self._user_id,
                 modality=InferenceModality.TEXT,
                 payload={"prompt": text},
                 output_schema=ChatMetricsOutput,
@@ -347,3 +354,8 @@ class HealthTracker:
         ax.set_axis_off()
         plt.tight_layout()
         return fig
+
+
+def _table_has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    return any(row[1] == column for row in rows)

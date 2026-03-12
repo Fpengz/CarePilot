@@ -42,7 +42,7 @@ def chat_history(
     session: dict[str, object] = Depends(current_session),
 ) -> dict[str, object]:
     require_action(session, "chat.messages.read")
-    deps = chat_deps(get_context(request))
+    deps = chat_deps(get_context(request), session)
     return {"messages": deps.chat_agent.memory.all_messages()}
 
 
@@ -52,7 +52,7 @@ def chat_clear_history(
     session: dict[str, object] = Depends(current_session),
 ) -> dict[str, object]:
     require_action(session, "chat.messages.write")
-    deps = chat_deps(get_context(request))
+    deps = chat_deps(get_context(request), session)
     deps.chat_agent.clear_history()
     return {"cleared": True}
 
@@ -64,7 +64,7 @@ async def chat_stream(
     session: dict[str, object] = Depends(current_session),
 ):
     require_action(session, "chat.messages.write")
-    deps = chat_deps(get_context(request))
+    deps = chat_deps(get_context(request), session)
     user_message = payload.message.strip()
     if not user_message:
         raise HTTPException(status_code=400, detail="message is required")
@@ -106,7 +106,7 @@ async def chat_audio(
 ):
     del backend_name
     require_action(session, "chat.messages.write")
-    deps = chat_deps(get_context(request))
+    deps = chat_deps(get_context(request), session)
     raw_bytes = await audio.read()
     filename = audio.filename or "audio.webm"
 

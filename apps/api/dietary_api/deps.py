@@ -20,7 +20,13 @@ from dietary_guardian.agent.chat import (
 from dietary_guardian.agent.emotion import EmotionAgent
 from dietary_guardian.agent.recommendation import RecommendationAgent
 from dietary_guardian.agent.core import AgentRegistry, build_default_agent_registry
-from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime, build_chat_inference_engine, build_chat_runtime_config
+from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from dietary_guardian.agent.runtime.chat_runtime import (
+    ChatRuntimeConfig,
+    ChatStreamRuntime,
+    build_chat_inference_engine,
+    build_chat_runtime_config,
+)
 from dietary_guardian.platform.observability.tooling.platform_registry import build_platform_tool_registry
 from dietary_guardian.config.app import AppSettings as Settings, get_settings
 from dietary_guardian.platform.auth import InMemoryAuthStore, SessionSigner, SQLiteAuthStore
@@ -75,9 +81,11 @@ class AppContext:
     household_store: HouseholdStore
     emotion_agent: EmotionAgent
     recommendation_agent: RecommendationAgent
-    chat_agent: ChatAgent
+    chat_inference_engine: InferenceEngine
+    chat_router: QueryRouter
+    chat_runtime_config: ChatRuntimeConfig
+    chat_stream_runtime: ChatStreamRuntime
     chat_audio_agent: AudioAgent
-    chat_health_tracker: HealthTracker
     chat_code_agent: CodeAgent
 
 
@@ -233,24 +241,10 @@ def build_app_context() -> AppContext:
         code_agent=chat_code_agent,
         reasoning_engine=chat_reasoning_engine,
     )
-    chat_memory = MemoryManager(
-        session_id="default",
-        inference_engine=chat_inference_engine,
-    )
     chat_stream_runtime = ChatStreamRuntime(settings)
-    chat_agent = ChatAgent(
-        stream_runtime=chat_stream_runtime,
-        router=chat_router,
-        memory=chat_memory,
-        model_id=chat_runtime_config.model_id,
-    )
     chat_audio_agent = AudioAgent(
         repo_id=os.environ.get("TRANSCRIPTION_MODEL_ID"),
         groq_api_key=os.environ.get("GROQ_API_KEY"),
-    )
-    chat_health_tracker = HealthTracker(
-        session_id="default",
-        inference_engine=chat_inference_engine,
     )
     ctx = AppContext(
         settings=settings,
@@ -270,9 +264,11 @@ def build_app_context() -> AppContext:
         household_store=household_store,
         emotion_agent=emotion_agent,
         recommendation_agent=RecommendationAgent(),
-        chat_agent=chat_agent,
+        chat_inference_engine=chat_inference_engine,
+        chat_router=chat_router,
+        chat_runtime_config=chat_runtime_config,
+        chat_stream_runtime=chat_stream_runtime,
         chat_audio_agent=chat_audio_agent,
-        chat_health_tracker=chat_health_tracker,
         chat_code_agent=chat_code_agent,
     )
     from .services.workflows import ensure_runtime_contract_snapshot_bootstrap
@@ -303,12 +299,30 @@ def emotion_deps(ctx: AppContext) -> EmotionDeps:
     return EmotionDeps(settings=ctx.settings, emotion_agent=ctx.emotion_agent)
 
 
-def chat_deps(ctx: AppContext) -> ChatDeps:
+def chat_deps(ctx: AppContext, session: dict[str, object]) -> ChatDeps:
+    user_id = str(session.get("user_id"))
+    session_id = str(session.get("session_id"))
+    chat_memory = MemoryManager(
+        user_id=user_id,
+        session_id=session_id,
+        inference_engine=ctx.chat_inference_engine,
+    )
+    chat_agent = ChatAgent(
+        stream_runtime=ctx.chat_stream_runtime,
+        router=ctx.chat_router,
+        memory=chat_memory,
+        model_id=ctx.chat_runtime_config.model_id,
+    )
+    chat_health_tracker = HealthTracker(
+        user_id=user_id,
+        session_id=session_id,
+        inference_engine=ctx.chat_inference_engine,
+    )
     return ChatDeps(
-        chat_agent=ctx.chat_agent,
+        chat_agent=chat_agent,
         audio_agent=ctx.chat_audio_agent,
         emotion_agent=ctx.emotion_agent,
-        health_tracker=ctx.chat_health_tracker,
+        health_tracker=chat_health_tracker,
         code_agent=ctx.chat_code_agent,
     )
 
