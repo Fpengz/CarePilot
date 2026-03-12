@@ -41,6 +41,9 @@ def _package_root() -> Path:
 def _teammate_seed_path() -> Path:
     return _package_root() / "data" / "food" / "sg_hawker_food.json"
 
+def _canonical_seed_path() -> Path:
+    return _package_root() / "data" / "food" / "canonical_foods.json"
+
 
 def _usda_seed_path() -> Path:
     return _package_root() / "data" / "food" / "usda_foods.json"
@@ -332,12 +335,15 @@ def build_default_canonical_food_records() -> list[CanonicalFoodRecord]:
     A FoodRecordRepository port would fully decouple this in a future pass.
     """
     from dietary_guardian.platform.persistence.food.ingestion import (  # noqa: PLC0415
+        load_canonical_food_records,
         load_open_food_facts_records,
         load_usda_records,
     )
     merged: dict[str, CanonicalFoodRecord] = {
         normalize_text(item.title): _from_meal_catalog_item(item) for item in DEFAULT_MEAL_CATALOG
     }
+    for item in load_canonical_food_records(_canonical_seed_path()):
+        merged[normalize_text(item.title)] = item
     for item in load_usda_records(_usda_seed_path()):
         merged.setdefault(normalize_text(item.title), item)
     for item in load_open_food_facts_records(_open_food_facts_seed_path()):

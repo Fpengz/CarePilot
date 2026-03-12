@@ -55,6 +55,11 @@ def _read_json_array(path: Path) -> list[dict[str, Any]]:
     return [cast(dict[str, Any], item) for item in raw if isinstance(item, dict)]
 
 
+def load_canonical_food_records(path: Path) -> list[CanonicalFoodRecord]:
+    """Load canonical food records from a JSON array."""
+    return [CanonicalFoodRecord.model_validate(item) for item in _read_json_array(path)]
+
+
 def _portion(unit: str, grams: float) -> list[PortionReference]:
     return [PortionReference(unit=unit, grams=grams, confidence=0.6)]
 
@@ -166,3 +171,20 @@ def load_open_food_facts_records(path: Path) -> list[CanonicalFoodRecord]:
             )
         )
     return records
+
+
+def load_default_canonical_food_records() -> list[CanonicalFoodRecord]:
+    """Load the full canonical food set from bundled seed sources."""
+    from dietary_guardian.features.recommendations.domain.canonical_food_matching import (  # noqa: PLC0415
+        build_default_canonical_food_records,
+    )
+
+    return build_default_canonical_food_records()
+
+
+__all__ = [
+    "load_canonical_food_records",
+    "load_usda_records",
+    "load_open_food_facts_records",
+    "load_default_canonical_food_records",
+]
