@@ -20,6 +20,9 @@ export default function StyleSamplesPage() {
           { href: "/style-samples/organic", title: "Soft Organic / Natural", desc: "Warm gradients, rounded forms, calm rhythm." },
           { href: "/style-samples/industrial", title: "Industrial / Utilitarian", desc: "Sharp grids, mono accents, no-frills clarity." },
           { href: "/style-samples/retro-futurist", title: "Retro‑Futurist", desc: "Bold contrasts, geometric glow, optimistic sci‑tech." },
+          { href: "/style-samples/brutalist", title: "Brutalist / Raw", desc: "Hard blocks, loud labels, unapologetic contrast." },
+          { href: "/style-samples/art-deco", title: "Art Deco / Geometric", desc: "Symmetry, metallic accents, structured glamour." },
+          { href: "/style-samples/soft-pastel", title: "Soft Pastel / Minimal", desc: "Airy spacing, gentle palette, quiet clarity." },
         ].map((item) => (
           <Link
             key={item.href}
