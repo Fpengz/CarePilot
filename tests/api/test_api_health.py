@@ -16,8 +16,12 @@ def _reset_settings_cache() -> None:
 @pytest.fixture(autouse=True)
 def _isolated_health_env(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("LLM_PROVIDER", "test")
+    monkeypatch.setenv("REQUIRED_PROVIDER", "test")
     monkeypatch.setenv("APP_ENV", "dev")
     monkeypatch.setenv("EPHEMERAL_STATE_BACKEND", "in_memory")
+    monkeypatch.setenv("OBSERVABILITY_READINESS_FAIL_ON_WARNINGS", "0")
+    monkeypatch.setenv("AUTH_SEED_DEMO_USERS", "true")
+    monkeypatch.delenv("READINESS_FAIL_ON_WARNINGS", raising=False)
     _reset_settings_cache()
     yield
     _reset_settings_cache()

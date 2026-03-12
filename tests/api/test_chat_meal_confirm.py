@@ -56,7 +56,12 @@ def test_confirm_meal_proposal_logs_meal() -> None:
 
     before_count = len(ctx.stores.meals.list_validated_meal_events("user_001"))
 
-    async def _fake_stream(self, *, messages, model_id=None):  # type: ignore[no-untyped-def]
+    async def _fake_stream(
+        self,
+        *,
+        messages: list[dict[str, object]],
+        model_id: str | None = None,
+    ):
         del self, messages, model_id
         yield "Follow-up guidance."
 

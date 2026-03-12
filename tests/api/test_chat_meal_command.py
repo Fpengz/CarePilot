@@ -4,7 +4,7 @@ from pathlib import Path
 
 from apps.api.dietary_api.routers.chat import _parse_meal_command, _log_meal_command
 from dietary_guardian.platform.persistence.domain_stores import build_app_stores
-from dietary_guardian.platform.persistence.sqlite_repository import SQLiteRepository
+from dietary_guardian.platform.persistence.sqlite_app_store import SQLiteAppStore
 
 
 def test_parse_meal_command_accepts_bracket_prefix() -> None:
@@ -24,7 +24,7 @@ def test_parse_meal_command_ignores_regular_text() -> None:
 
 
 def test_log_meal_command_persists_event_and_profile(tmp_path: Path) -> None:
-    app_store = SQLiteRepository(str(tmp_path / "chat-meals.db"))
+    app_store = SQLiteAppStore(str(tmp_path / "chat-meals.db"))
     stores = build_app_stores(app_store)
 
     result = _log_meal_command(

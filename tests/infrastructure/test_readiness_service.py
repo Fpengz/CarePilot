@@ -1,11 +1,33 @@
 """Tests for readiness service."""
 
+import os
+
 from dietary_guardian.config.app import AppSettings as Settings
 from dietary_guardian.platform.observability.diagnostics.readiness import build_readiness_report
 
 
 def _build_settings(**overrides: object) -> Settings:
-    return Settings.model_validate(overrides)
+    cleared: dict[str, str] = {}
+    for key in (
+        "AUTH_SEED_DEMO_USERS",
+        "REQUIRED_PROVIDER",
+        "LLM_PROVIDER",
+        "OBSERVABILITY_READINESS_FAIL_ON_WARNINGS",
+        "READINESS_FAIL_ON_WARNINGS",
+        "EMAIL_DEV_MODE",
+        "EMAIL_SMTP_HOST",
+        "SMS_DEV_MODE",
+        "SMS_WEBHOOK_URL",
+        "TELEGRAM_DEV_MODE",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_CHAT_ID",
+    ):
+        if key in os.environ:
+            cleared[key] = os.environ.pop(key)
+    try:
+        return Settings.model_validate(overrides)
+    finally:
+        os.environ.update(cleared)
 
 
 def test_readiness_report_is_ready_for_default_dev_profile() -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Iterable, cast
 
 import pytest
 from fastapi.testclient import TestClient
@@ -75,7 +76,12 @@ def test_chat_uses_memory_and_records_turn(monkeypatch: pytest.MonkeyPatch) -> N
 
     captured: dict[str, object] = {}
 
-    async def _fake_stream(self, *, messages, model_id=None):  # type: ignore[no-untyped-def]
+    async def _fake_stream(
+        self,
+        *,
+        messages: list[dict[str, object]],
+        model_id: str | None = None,
+    ):
         del self, model_id
         captured["messages"] = messages
         yield "ok"
@@ -84,13 +90,13 @@ def test_chat_uses_memory_and_records_turn(monkeypatch: pytest.MonkeyPatch) -> N
 
     response = client.post("/api/v1/chat", json={"message": "I like salads"})
     assert response.status_code == 200
-    for line in response.iter_lines():
+    for line in cast(Iterable[str], response.iter_lines()):
         if line.startswith("data: "):
             _ = json.loads(line[6:])
 
     assert fake_store.search_calls
-    messages = captured["messages"]
-    user_message = [m["content"] for m in messages if m["role"] == "user"][-1]
+    messages = cast(list[dict[str, object]], captured["messages"])
+    user_message = [cast(str, m["content"]) for m in messages if m.get("role") == "user"][-1]
     assert "Relevant memories" in user_message
     assert "Allergic to peanuts" in user_message
     assert fake_store.add_calls

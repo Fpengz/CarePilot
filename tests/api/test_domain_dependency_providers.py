@@ -6,7 +6,7 @@ from apps.api.dietary_api import deps
 from apps.api.dietary_api.services import (
     alerts,
     clinical_cards,
-    emotions,
+    emotion_session,
     meals,
     recommendation_agent,
     recommendations,
@@ -37,4 +37,4 @@ def test_target_services_depend_on_scoped_providers() -> None:
     assert get_type_hints(alerts.trigger_alert, localns=_ns)["deps"] is deps.AlertDeps
     assert get_type_hints(clinical_cards.generate_clinical_card_for_session, localns=_ns)["deps"] is deps.ClinicalCardDeps
     assert get_type_hints(workflows.get_workflow, localns=_ns)["deps"] is deps.WorkflowDeps
-    assert get_type_hints(emotions.infer_text_for_session, localns=_ns)["deps"] is deps.EmotionDeps
+    assert get_type_hints(emotion_session.infer_text_for_session, localns=_ns)["deps"] is deps.EmotionDeps

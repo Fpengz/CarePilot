@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+from typing import cast
 
 from dietary_guardian.agent.chat.agent import ChatAgent
 from dietary_guardian.agent.chat.memory import MemoryManager
 from dietary_guardian.agent.chat.schemas import ChatStreamEvent
+from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime
 
 
 class _DummyInferenceEngine:
@@ -28,7 +30,12 @@ def test_stream_events_emits_token_and_done(tmp_path):
             inference_engine=_DummyInferenceEngine(),
             db_path=tmp_path / "chat_memory.db",
         )
-        agent = ChatAgent(stream_runtime=_DummyStreamRuntime(), router=None, memory=memory, model_id="test-model")
+        agent = ChatAgent(
+            stream_runtime=cast(ChatStreamRuntime, _DummyStreamRuntime()),
+            router=None,
+            memory=memory,
+            model_id="test-model",
+        )
 
         events: list[ChatStreamEvent] = []
         async for event in agent.stream_events(user_message="Hi"):
@@ -50,7 +57,12 @@ def test_stream_events_handles_track_shortcut(tmp_path):
             inference_engine=_DummyInferenceEngine(),
             db_path=tmp_path / "chat_memory.db",
         )
-        agent = ChatAgent(stream_runtime=_DummyStreamRuntime(), router=None, memory=memory, model_id="test-model")
+        agent = ChatAgent(
+            stream_runtime=cast(ChatStreamRuntime, _DummyStreamRuntime()),
+            router=None,
+            memory=memory,
+            model_id="test-model",
+        )
 
         events: list[ChatStreamEvent] = []
         async for event in agent.stream_events(user_message="[TRACK] weight 70kg"):

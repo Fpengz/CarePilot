@@ -38,7 +38,12 @@ def test_meal_command_stream_continues(monkeypatch: pytest.MonkeyPatch) -> None:
     client = TestClient(app)
     _login(client)
 
-    async def _fake_stream(self, *, messages, model_id=None):  # type: ignore[no-untyped-def]
+    async def _fake_stream(
+        self,
+        *,
+        messages: list[dict[str, object]],
+        model_id: str | None = None,
+    ):
         del self, messages, model_id
         yield "Next guidance."
 

@@ -1,5 +1,6 @@
 """Tests for settings."""
 
+import os
 import pytest
 from pydantic import ValidationError
 
@@ -7,7 +8,27 @@ from dietary_guardian.config.app import AppSettings as Settings, get_settings
 
 
 def _build_settings(**overrides: object) -> Settings:
-    return Settings.model_validate(overrides)
+    cleared: dict[str, str] = {}
+    for key in (
+        "AUTH_SEED_DEMO_USERS",
+        "REQUIRED_PROVIDER",
+        "LLM_PROVIDER",
+        "OBSERVABILITY_READINESS_FAIL_ON_WARNINGS",
+        "READINESS_FAIL_ON_WARNINGS",
+        "EMAIL_DEV_MODE",
+        "EMAIL_SMTP_HOST",
+        "SMS_DEV_MODE",
+        "SMS_WEBHOOK_URL",
+        "TELEGRAM_DEV_MODE",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_CHAT_ID",
+    ):
+        if key in os.environ:
+            cleared[key] = os.environ.pop(key)
+    try:
+        return Settings.model_validate(overrides)
+    finally:
+        os.environ.update(cleared)
 
 
 def test_settings_cache_returns_same_instance(monkeypatch) -> None:

@@ -5,14 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 
 from dietary_guardian.platform.persistence.domain_stores import build_app_stores
-from dietary_guardian.platform.persistence.sqlite_repository import SQLiteRepository
+from dietary_guardian.platform.persistence.sqlite_app_store import SQLiteAppStore
 
 from dietary_guardian.features.meals.use_cases import log_meal_from_text
 
 
 def test_log_meal_from_text_persists_event_and_profile(tmp_path: Path) -> None:
     db_path = tmp_path / "meals.db"
-    app_store = SQLiteRepository(str(db_path))
+    app_store = SQLiteAppStore(str(db_path))
     stores = build_app_stores(app_store)
 
     result = log_meal_from_text(

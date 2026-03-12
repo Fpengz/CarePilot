@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-DG = ROOT / "scripts" / "dg.py"
+DG = ROOT / "scripts" / "cli.py"
 
 
 def _run(*args: str) -> subprocess.CompletedProcess[str]:
