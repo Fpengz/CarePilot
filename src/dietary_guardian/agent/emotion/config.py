@@ -16,6 +16,9 @@ from dietary_guardian.config.app import AppSettings as Settings
 class EmotionRuntimeConfig:
     text_model_id: str
     speech_model_id: str
+    fusion_model_id: str | None
+    asr_model_id: str
+    history_window: int
     model_device: str
     source_commit: str
 
@@ -24,6 +27,9 @@ class EmotionRuntimeConfig:
         return cls(
             text_model_id=settings.emotion.text_model_id,
             speech_model_id=settings.emotion.speech_model_id,
+            fusion_model_id=settings.emotion.fusion_model_id,
+            asr_model_id=settings.emotion.asr_model_id,
+            history_window=settings.emotion.history_window,
             model_device=settings.emotion.model_device,
             source_commit=settings.emotion.source_commit,
         )

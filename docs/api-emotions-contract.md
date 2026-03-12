@@ -36,16 +36,23 @@
 {
   "observation": {
     "source_type": "text",
-    "emotion": "anxious",
-    "score": 0.76,
-    "confidence_band": "high",
-    "model_name": "ai_challenger_runtime",
-    "model_version": "heuristic-v1",
-    "evidence": [
-      {"label": "anxious", "score": 0.76},
-      {"label": "neutral", "score": 0.12}
-    ],
-    "transcription": null,
+    "text_branch": {
+      "transcript": "I feel anxious and overwhelmed.",
+      "model_name": "j-hartmann/emotion-english-distilroberta-base",
+      "model_version": "hf",
+      "scores": {"anxious": 0.76, "neutral": 0.12}
+    },
+    "speech_branch": null,
+    "context_features": {
+      "recent_labels": ["neutral", "anxious"],
+      "trend": "worsening"
+    },
+    "fusion": {
+      "emotion_label": "anxious",
+      "product_state": "needs_reassurance",
+      "confidence": 0.72,
+      "logits": {"anxious": 0.72, "neutral": 0.18}
+    },
     "created_at": "2026-03-08T00:00:00Z",
     "request_id": "...",
     "correlation_id": "..."

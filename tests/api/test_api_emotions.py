@@ -7,6 +7,19 @@ from apps.api.dietary_api.main import create_app
 from fastapi.testclient import TestClient
 
 from dietary_guardian.config.app import get_settings
+from apps.api.dietary_api.deps import build_app_context
+from dietary_guardian.agent.emotion import EmotionAgent
+from dietary_guardian.features.companion.engagement.emotion.ports import EmotionInferencePort, SpeechEmotionInput, TextEmotionInput
+from dietary_guardian.features.companion.core.health.emotion import (
+    EmotionContextFeatures,
+    EmotionFusionOutput,
+    EmotionInferenceResult,
+    EmotionLabel,
+    EmotionProductState,
+    EmotionRuntimeHealth,
+    EmotionSpeechBranch,
+    EmotionTextBranch,
+)
 
 
 def _reset_settings_cache() -> None:
@@ -31,8 +44,70 @@ def _login(client: TestClient) -> None:
     assert response.status_code == 200
 
 
+class _StubEmotionPort(EmotionInferencePort):
+    def infer_text(self, payload: TextEmotionInput) -> EmotionInferenceResult:
+        context = payload.context or EmotionContextFeatures(recent_labels=[], trend="stable")
+        return EmotionInferenceResult(
+            source_type="text",
+            text_branch=EmotionTextBranch(
+                transcript=payload.text,
+                model_name="stub-text",
+                model_version="1",
+                scores={EmotionLabel.NEUTRAL: 0.7},
+            ),
+            speech_branch=None,
+            context_features=context,
+            fusion=EmotionFusionOutput(
+                emotion_label=EmotionLabel.NEUTRAL,
+                product_state=EmotionProductState.STABLE,
+                confidence=0.7,
+                logits={EmotionLabel.NEUTRAL: 0.7},
+            ),
+        )
+
+    def infer_speech(self, payload: SpeechEmotionInput) -> EmotionInferenceResult:
+        context = payload.context or EmotionContextFeatures(recent_labels=[], trend="stable")
+        return EmotionInferenceResult(
+            source_type="mixed",
+            text_branch=EmotionTextBranch(
+                transcript=payload.transcription or "hello",
+                model_name="stub-text",
+                model_version="1",
+                scores={EmotionLabel.NEUTRAL: 0.7},
+            ),
+            speech_branch=EmotionSpeechBranch(
+                transcript="hello",
+                model_name="stub-speech",
+                model_version="1",
+                scores={EmotionLabel.NEUTRAL: 0.6},
+                acoustic_summary={"duration_sec": 1.0},
+            ),
+            context_features=context,
+            fusion=EmotionFusionOutput(
+                emotion_label=EmotionLabel.NEUTRAL,
+                product_state=EmotionProductState.STABLE,
+                confidence=0.7,
+                logits={EmotionLabel.NEUTRAL: 0.7},
+            ),
+        )
+
+    def health(self) -> EmotionRuntimeHealth:
+        return EmotionRuntimeHealth(status="ready", model_cache_ready=True, source_commit="sha")
+
+
+def _client(*, inference_enabled: bool = True, speech_enabled: bool = True) -> TestClient:
+    ctx = build_app_context()
+    ctx.emotion_agent = EmotionAgent(
+        runtime=_StubEmotionPort(),
+        inference_enabled=inference_enabled,
+        speech_enabled=speech_enabled,
+        request_timeout_seconds=1.0,
+    )
+    return TestClient(create_app(ctx))
+
+
 def test_emotions_text_requires_auth() -> None:
-    client = TestClient(create_app())
+    client = _client(inference_enabled=False, speech_enabled=False)
 
     response = client.post("/api/v1/emotions/text", json={"text": "I feel good"})
 
@@ -40,7 +115,7 @@ def test_emotions_text_requires_auth() -> None:
 
 
 def test_emotions_text_returns_observation() -> None:
-    client = TestClient(create_app())
+    client = _client()
     _login(client)
 
     response = client.post(
@@ -51,13 +126,12 @@ def test_emotions_text_returns_observation() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["observation"]["source_type"] == "text"
-    assert body["observation"]["emotion"] in {"happy", "neutral"}
-    assert body["observation"]["confidence_band"] in {"high", "medium", "low"}
-    assert isinstance(body["observation"]["evidence"], list)
+    assert body["observation"]["fusion"]["emotion_label"] in {"neutral", "happy"}
+    assert body["observation"]["fusion"]["product_state"] == "stable"
 
 
 def test_emotions_speech_returns_observation() -> None:
-    client = TestClient(create_app())
+    client = _client()
     _login(client)
 
     response = client.post(
@@ -67,17 +141,8 @@ def test_emotions_speech_returns_observation() -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert body["observation"]["source_type"] == "speech"
-    assert body["observation"]["emotion"] in {
-        "happy",
-        "sad",
-        "angry",
-        "frustrated",
-        "anxious",
-        "neutral",
-        "confused",
-        "fearful",
-    }
+    assert body["observation"]["source_type"] == "mixed"
+    assert body["observation"]["fusion"]["product_state"] == "stable"
 
 
 def test_emotions_text_returns_disabled_error_when_feature_flag_off(
@@ -85,7 +150,7 @@ def test_emotions_text_returns_disabled_error_when_feature_flag_off(
 ) -> None:
     monkeypatch.setenv("EMOTION_INFERENCE_ENABLED", "false")
     _reset_settings_cache()
-    client = TestClient(create_app())
+    client = _client(inference_enabled=False, speech_enabled=False)
     _login(client)
 
     response = client.post("/api/v1/emotions/text", json={"text": "I feel good"})
@@ -97,7 +162,7 @@ def test_emotions_text_returns_disabled_error_when_feature_flag_off(
 
 
 def test_emotion_legacy_route_is_removed() -> None:
-    client = TestClient(create_app())
+    client = _client()
     _login(client)
 
     response = client.post("/emotion/text", json={"text": "I feel anxious and worried"})
@@ -106,7 +171,7 @@ def test_emotion_legacy_route_is_removed() -> None:
 
 
 def test_emotions_health_endpoint_is_public() -> None:
-    client = TestClient(create_app())
+    client = _client()
 
     response = client.get("/api/v1/emotions/health")
 
@@ -119,7 +184,7 @@ def test_emotions_health_returns_disabled_when_feature_flag_off(
 ) -> None:
     monkeypatch.setenv("EMOTION_INFERENCE_ENABLED", "false")
     _reset_settings_cache()
-    client = TestClient(create_app())
+    client = _client(inference_enabled=False, speech_enabled=False)
 
     response = client.get("/api/v1/emotions/health")
 

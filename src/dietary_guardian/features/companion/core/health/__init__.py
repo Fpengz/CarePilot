@@ -4,10 +4,15 @@ from .analytics import EngagementMetrics
 from .clinical_card import ClinicalCardRecord, ClinicalCardFormat
 from .emotion import (
     EmotionConfidenceBand,
+    EmotionContextFeatures,
     EmotionEvidence,
+    EmotionFusionOutput,
     EmotionInferenceResult,
     EmotionLabel,
+    EmotionProductState,
     EmotionRuntimeHealth,
+    EmotionSpeechBranch,
+    EmotionTextBranch,
 )
 from .models import (
     BiomarkerReading,
@@ -31,10 +36,15 @@ __all__ = [
     "ClinicalCardRecord",
     "ClinicalProfileSnapshot",
     "EmotionConfidenceBand",
+    "EmotionContextFeatures",
     "EmotionEvidence",
+    "EmotionFusionOutput",
     "EmotionInferenceResult",
     "EmotionLabel",
+    "EmotionProductState",
     "EmotionRuntimeHealth",
+    "EmotionSpeechBranch",
+    "EmotionTextBranch",
     "EngagementMetrics",
     "HealthProfileOnboardingState",
     "HealthProfileRecord",

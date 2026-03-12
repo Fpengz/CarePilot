@@ -70,7 +70,7 @@ def _emotion_signal(context: AppContext, *, emotion_text: str | None) -> str | N
         if any(term in lowered for term in ("sad", "discouraged", "down", "frustrated")):
             return "sad"
         return None
-    return str(result.emotion)
+    return str(result.fusion.emotion_label)
 
 
 def load_companion_inputs(

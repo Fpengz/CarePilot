@@ -43,9 +43,9 @@ _MEAL_PREFIX_RE = re.compile(r"^(?:log\s+meal|meal)\s*:\s*(.+)$", re.IGNORECASE)
 
 
 def _format_emotion_context(inference: EmotionInferenceResult) -> str:
-    pct = int(inference.score * 100)
+    pct = int(inference.fusion.confidence * 100)
     return (
-        f"[Emotional context] The user appears to be feeling **{inference.emotion}** "
+        f"[Emotional context] The user appears to be feeling **{inference.fusion.emotion_label}** "
         f"(confidence {pct} %). Please respond with appropriate empathy and tailor "
         f"your advice to their current emotional state."
     )
@@ -201,7 +201,14 @@ async def chat_stream(
                     None, lambda: deps.emotion_agent.infer_text(text=user_message)
                 )
                 emotion_ctx = _format_emotion_context(inference)
-                yield _format_event("emotion", {"emotion": inference.emotion, "score": inference.score})
+                yield _format_event(
+                    "emotion",
+                    {
+                        "emotion": inference.fusion.emotion_label,
+                        "score": inference.fusion.confidence,
+                        "product_state": inference.fusion.product_state,
+                    },
+                )
             except EmotionAgentDisabledError:
                 # Emotion inference disabled; skip emitting error events.
                 pass
@@ -337,7 +344,14 @@ async def chat_audio(
                     ),
                 )
                 emotion_ctx = _format_emotion_context(inference)
-                yield _format_event("emotion", {"emotion": inference.emotion, "score": inference.score})
+                yield _format_event(
+                    "emotion",
+                    {
+                        "emotion": inference.fusion.emotion_label,
+                        "score": inference.fusion.confidence,
+                        "product_state": inference.fusion.product_state,
+                    },
+                )
             except (EmotionAgentDisabledError, EmotionSpeechDisabledError):
                 pass
             except Exception as exc:  # noqa: BLE001

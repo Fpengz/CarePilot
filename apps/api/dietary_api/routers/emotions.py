@@ -42,6 +42,7 @@ def emotions_text(
         payload=payload,
         request_id=getattr(request.state, "request_id", None),
         correlation_id=getattr(request.state, "correlation_id", None),
+        user_id=str(session.get("user_id", "")) or None,
     )
 
 
@@ -64,4 +65,5 @@ async def emotions_speech(
         language=language,
         request_id=getattr(request.state, "request_id", None),
         correlation_id=getattr(request.state, "correlation_id", None),
+        user_id=str(session.get("user_id", "")) or None,
     )

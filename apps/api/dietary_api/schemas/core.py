@@ -32,9 +32,12 @@ from dietary_guardian.features.recommendations.domain.models import (
 from dietary_guardian.features.companion.core.health.analytics import EngagementMetrics
 from dietary_guardian.core.contracts.agent_envelopes import AgentOutputEnvelope
 from dietary_guardian.features.companion.core.health.emotion import (
-    EmotionConfidenceBand,
+    EmotionContextFeatures,
+    EmotionFusionOutput,
     EmotionLabel,
     EmotionRuntimeHealth,
+    EmotionSpeechBranch,
+    EmotionTextBranch,
 )
 from dietary_guardian.features.meals.domain.models import VisionResult
 from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
@@ -127,13 +130,10 @@ class EmotionEvidenceResponse(BaseModel):
 
 class EmotionObservationResponse(BaseModel):
     source_type: Literal["text", "speech", "mixed"]
-    emotion: EmotionLabel
-    score: float = Field(ge=0.0, le=1.0)
-    confidence_band: EmotionConfidenceBand
-    model_name: str
-    model_version: str
-    evidence: list[EmotionEvidenceResponse] = Field(default_factory=list)
-    transcription: str | None = None
+    text_branch: EmotionTextBranch | None = None
+    speech_branch: EmotionSpeechBranch | None = None
+    context_features: EmotionContextFeatures
+    fusion: EmotionFusionOutput
     created_at: datetime
     request_id: str | None = None
     correlation_id: str | None = None

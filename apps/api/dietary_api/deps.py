@@ -117,6 +117,7 @@ class WorkflowDeps:
 class EmotionDeps:
     settings: Settings
     emotion_agent: EmotionAgent
+    event_timeline: EventTimelineService
 
 
 @dataclass(frozen=True)
@@ -300,7 +301,11 @@ def workflow_deps(ctx: AppContext) -> WorkflowDeps:
 
 
 def emotion_deps(ctx: AppContext) -> EmotionDeps:
-    return EmotionDeps(settings=ctx.settings, emotion_agent=ctx.emotion_agent)
+    return EmotionDeps(
+        settings=ctx.settings,
+        emotion_agent=ctx.emotion_agent,
+        event_timeline=ctx.event_timeline,
+    )
 
 
 def chat_deps(ctx: AppContext, session: dict[str, object]) -> ChatDeps:

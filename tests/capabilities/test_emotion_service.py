@@ -12,9 +12,48 @@ from dietary_guardian.features.companion.engagement.emotion.ports import (
     TextEmotionInput,
 )
 from dietary_guardian.agent.emotion.config import EmotionRuntimeConfig
+from dietary_guardian.agent.emotion.pipeline import EmotionPipeline
 from dietary_guardian.agent.emotion.runtime import InProcessEmotionRuntime
-from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult, EmotionRuntimeHealth
+from dietary_guardian.features.companion.core.health.emotion import (
+    EmotionContextFeatures,
+    EmotionInferenceResult,
+    EmotionLabel,
+    EmotionProductState,
+    EmotionRuntimeHealth,
+)
 from dietary_guardian.agent.emotion import EmotionAgent
+
+
+class _StubASR:
+    def transcribe(self, audio_bytes: bytes, *, filename: str | None, language: str | None) -> str:
+        del audio_bytes, filename, language
+        return "hello"
+
+
+class _StubText:
+    def predict(self, text: str, language: str | None) -> tuple[dict[EmotionLabel, float], str, str]:
+        del text, language
+        return {EmotionLabel.NEUTRAL: 0.7}, "text-model", "1"
+
+
+class _StubSpeech:
+    def predict(
+        self, audio_bytes: bytes, *, transcript: str | None
+    ) -> tuple[dict[EmotionLabel, float], dict[str, float], str, str]:
+        del audio_bytes, transcript
+        return {EmotionLabel.NEUTRAL: 0.6}, {"duration_sec": 1.2}, "speech-model", "1"
+
+
+class _StubFusion:
+    def predict(
+        self,
+        *,
+        text_scores: dict[EmotionLabel, float],
+        speech_scores: dict[EmotionLabel, float] | None,
+        context: EmotionContextFeatures,
+    ) -> tuple[EmotionLabel, EmotionProductState, float, dict[EmotionLabel, float]]:
+        del text_scores, speech_scores, context
+        return EmotionLabel.NEUTRAL, EmotionProductState.STABLE, 0.72, {EmotionLabel.NEUTRAL: 0.72}
 
 
 def _runtime() -> InProcessEmotionRuntime:
@@ -22,9 +61,18 @@ def _runtime() -> InProcessEmotionRuntime:
         EmotionRuntimeConfig(
             text_model_id="text-model",
             speech_model_id="speech-model",
+            fusion_model_id="fusion-model",
+            asr_model_id="MERaLiON/MERaLiON-2-3B",
+            history_window=5,
             model_device="cpu",
             source_commit="9afc3f1a3a3fec71a4e5920d8f4103710b337ecc",
-        )
+        ),
+        pipeline=EmotionPipeline(
+            asr=_StubASR(),
+            text=_StubText(),
+            speech=_StubSpeech(),
+            fusion=_StubFusion(),
+        ),
     )
 
 
@@ -33,8 +81,8 @@ def test_inprocess_emotion_runtime_text_inference() -> None:
     result = runtime.infer_text(TextEmotionInput(text="I am happy and calm"))
 
     assert result.source_type == "text"
-    assert result.emotion in {"happy", "neutral"}
-    assert len(result.evidence) >= 1
+    assert result.fusion.emotion_label == "neutral"
+    assert result.fusion.product_state == "stable"
 
 
 def test_inprocess_emotion_runtime_speech_inference() -> None:
@@ -43,19 +91,14 @@ def test_inprocess_emotion_runtime_speech_inference() -> None:
         SpeechEmotionInput(audio_bytes=b"fake-wave-data", content_type="audio/wav")
     )
 
-    assert result.source_type == "speech"
-    assert len(result.evidence) >= 1
+    assert result.source_type == "mixed"
+    assert result.fusion.product_state == "stable"
 
 
-def test_inprocess_runtime_health_transitions_after_inference() -> None:
+def test_inprocess_runtime_health_reports_ready_when_configured() -> None:
     runtime = _runtime()
-
-    before = runtime.health()
-    runtime.infer_text(TextEmotionInput(text="neutral"))
-    after = runtime.health()
-
-    assert before.status == "degraded"
-    assert after.status == "ready"
+    health = runtime.health()
+    assert health.status == "ready"
 
 class _SlowPort(EmotionInferencePort):
     def infer_text(self, payload: TextEmotionInput) -> EmotionInferenceResult:

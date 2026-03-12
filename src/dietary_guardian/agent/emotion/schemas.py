@@ -9,7 +9,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult
+from dietary_guardian.features.companion.core.health.emotion import (
+    EmotionContextFeatures,
+    EmotionInferenceResult,
+)
 
 
 class EmotionTextAgentInput(BaseModel):
@@ -17,6 +20,7 @@ class EmotionTextAgentInput(BaseModel):
 
     text: str
     language: str | None = None
+    context: EmotionContextFeatures | None = None
 
 
 class EmotionSpeechAgentInput(BaseModel):
@@ -27,6 +31,7 @@ class EmotionSpeechAgentInput(BaseModel):
     content_type: str | None = None
     transcription: str | None = None
     language: str | None = None
+    context: EmotionContextFeatures | None = None
 
 
 class EmotionAgentOutput(BaseModel):

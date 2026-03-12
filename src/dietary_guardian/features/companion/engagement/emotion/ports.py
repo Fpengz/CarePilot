@@ -10,13 +10,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult, EmotionRuntimeHealth
+from dietary_guardian.features.companion.core.health.emotion import (
+    EmotionContextFeatures,
+    EmotionInferenceResult,
+    EmotionRuntimeHealth,
+)
 
 
 @dataclass(frozen=True, slots=True)
 class TextEmotionInput:
     text: str
     language: str | None = None
+    context: EmotionContextFeatures | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +31,7 @@ class SpeechEmotionInput:
     content_type: str | None = None
     transcription: str | None = None
     language: str | None = None
+    context: EmotionContextFeatures | None = None
 
 
 class EmotionInferencePort(Protocol):

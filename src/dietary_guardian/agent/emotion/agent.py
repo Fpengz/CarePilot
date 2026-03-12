@@ -23,7 +23,10 @@ from dietary_guardian.features.companion.engagement.emotion.use_cases import (
     infer_speech_emotion,
     infer_text_emotion,
 )
-from dietary_guardian.features.companion.core.health.emotion import EmotionRuntimeHealth
+from dietary_guardian.features.companion.core.health.emotion import (
+    EmotionContextFeatures,
+    EmotionRuntimeHealth,
+)
 
 
 class EmotionAgentDisabledError(RuntimeError):
@@ -61,7 +64,11 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
     ) -> AgentResult[EmotionAgentOutput]:
         del context
         if isinstance(input_data, EmotionTextAgentInput):
-            inference = self.infer_text(text=input_data.text, language=input_data.language)
+            inference = self.infer_text(
+                text=input_data.text,
+                language=input_data.language,
+                context=input_data.context,
+            )
         else:
             inference = self.infer_speech(
                 audio_bytes=input_data.audio_bytes,
@@ -69,12 +76,13 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
                 content_type=input_data.content_type,
                 transcription=input_data.transcription,
                 language=input_data.language,
+                context=input_data.context,
             )
         return AgentResult(
             success=True,
             agent_name=self.name,
             output=EmotionAgentOutput(inference=inference),
-            confidence=float(inference.score),
+            confidence=float(inference.fusion.confidence),
             raw=inference.model_dump(mode="json"),
         )
 
@@ -83,12 +91,13 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
         *,
         text: str,
         language: str | None = None,
+        context: EmotionContextFeatures | None = None,
     ):
         if not self._inference_enabled:
             raise EmotionAgentDisabledError("emotion inference is disabled")
         return infer_text_emotion(
             port=self._runtime,
-            payload=TextEmotionInput(text=text, language=language),
+            payload=TextEmotionInput(text=text, language=language, context=context),
             timeout_seconds=self._request_timeout_seconds,
         )
 
@@ -100,6 +109,7 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
         content_type: str | None = None,
         transcription: str | None = None,
         language: str | None = None,
+        context: EmotionContextFeatures | None = None,
     ):
         if not self._inference_enabled:
             raise EmotionAgentDisabledError("emotion inference is disabled")
@@ -113,6 +123,7 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
                 content_type=content_type,
                 transcription=transcription,
                 language=language,
+                context=context,
             ),
             timeout_seconds=self._request_timeout_seconds,
         )

@@ -150,6 +150,9 @@ class EmotionSettings(BaseSettings):
     model_device: Literal["auto", "cpu", "cuda"] = "auto"
     text_model_id: str = "j-hartmann/emotion-english-distilroberta-base"
     speech_model_id: str = "meralion/speech-emotion-recognition"
+    fusion_model_id: str | None = "dynann/multimodal-emotion-speech-recognition"
+    asr_model_id: str = "MERaLiON/MERaLiON-2-3B"
+    history_window: int = Field(default=5, ge=1, le=20)
     source_commit: str = "9afc3f1a3a3fec71a4e5920d8f4103710b337ecc"
 
 
