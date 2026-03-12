@@ -5,31 +5,17 @@ CodeAgent — executes Python code in a secure E2B cloud sandbox.
 
 Requires:
     pip install e2b-code-interpreter
-    E2B_API_KEY in environment / .env
+    Provide an E2B API key via the runtime wiring.
 """
 from __future__ import annotations
 
-import os
-from dotenv import load_dotenv
 from e2b_code_interpreter import Sandbox
-
-load_dotenv()
-
-
-def _require_api_key() -> None:
-    api_key = os.environ.get("E2B_API_KEY", "")
-    if not api_key:
-        raise EnvironmentError(
-            "E2B_API_KEY is not set. "
-            "Get a free key at https://e2b.dev and add it to your .env file."
-        )
-
 
 class CodeAgent:
     """Runs arbitrary Python code in an E2B sandbox and returns the output."""
 
-    def __init__(self) -> None:
-        pass  # API key is picked up from E2B_API_KEY env var by the SDK
+    def __init__(self, api_key: str | None) -> None:
+        self._api_key = api_key
 
     def run(self, code: str, timeout: int = 60) -> str:
         """
@@ -38,7 +24,14 @@ class CodeAgent:
         Uses Sandbox.create() (the non-deprecated API) and always kills the
         sandbox on completion.
         """
-        _require_api_key()
+        if not self._api_key:
+            raise EnvironmentError(
+                "E2B_API_KEY is not configured. "
+                "Set it in the API runtime configuration before calling CodeAgent."
+            )
+        # Ensure the SDK can read the key if it relies on env-based lookup.
+        import os
+        os.environ.setdefault("E2B_API_KEY", self._api_key)
         sandbox = None
         try:
             sandbox = Sandbox.create(timeout=timeout)

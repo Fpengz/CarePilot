@@ -11,15 +11,10 @@ Activated by: LLM classification in router.py (not regex).
 Search: DuckDuckGo, Singapore-context biased toward clinical reference sites.
 """
 from __future__ import annotations
-import os
-
 from openai import OpenAI
-from dotenv import load_dotenv
 
-from dietary_guardian.agent.chat.search import SearchAgent, SearchResult
-from dietary_guardian.agent.chat.routes_base import BaseRoute, RouteResult
-
-load_dotenv()
+from dietary_guardian.agent.chat.search_adapter import SearchAgent, SearchResult
+from dietary_guardian.agent.chat.routes.base import BaseRoute, RouteResult
 
 _DISTILL_PROMPT = (
     "Convert the user's message into a short, search-engine-friendly phrase (3-6 words) "
@@ -44,13 +39,10 @@ SYSTEM_PROMPT = (
 class DrugRoute(BaseRoute):
     """Enriches drug / medication queries with live web search results."""
 
-    def __init__(self, search_agent: SearchAgent) -> None:
+    def __init__(self, *, search_agent: SearchAgent, client: OpenAI, model_id: str) -> None:
         self._sa = search_agent
-        self._client = OpenAI(
-            api_key=os.environ.get("SEALION_API", ""),
-            base_url="https://api.sea-lion.ai/v1",
-        )
-        self._model = os.environ.get("CHAT_MODEL_ID", "aisingapore/Gemma-SEA-LION-v4-27B-IT")
+        self._client = client
+        self._model = model_id
 
     def _distill_query(self, text: str) -> str:
         """Use the LLM to extract a focused search term from the user's message."""
@@ -64,7 +56,8 @@ class DrugRoute(BaseRoute):
                 temperature=0,
                 max_tokens=20,
             )
-            term = resp.choices[0].message.content.strip()
+            raw_term = resp.choices[0].message.content or ""
+            term = raw_term.strip()
             print(f"[DrugRoute] Distilled search term: {term!r}")
             return term
         except Exception as exc:

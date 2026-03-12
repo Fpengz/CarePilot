@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 
-from dietary_guardian.agent.emotion.infra.text_emotion import TextEmotionClassifier
+from dietary_guardian.agent.emotion.text_classifier import TextEmotionClassifier
 from dietary_guardian.features.companion.core.health.emotion import EmotionLabel
 
 

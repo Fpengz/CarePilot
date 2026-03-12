@@ -11,17 +11,12 @@ Activated by: LLM classification in router.py (label "code").
 """
 from __future__ import annotations
 
-import os
-
 from openai import OpenAI
-from dotenv import load_dotenv
 
 import re
 
-from dietary_guardian.agent.chat.code import CodeAgent
-from dietary_guardian.agent.chat.routes_base import BaseRoute, RouteResult
-
-load_dotenv()
+from dietary_guardian.agent.chat.code_adapter import CodeAgent
+from dietary_guardian.agent.chat.routes.base import BaseRoute, RouteResult
 
 _CODE_GEN_PROMPT = (
     "You are a Python code generator.\n"
@@ -45,15 +40,10 @@ SYSTEM_PROMPT = (
 class CodeRoute(BaseRoute):
     """Translates a math/calculation query to Python, runs it in E2B, returns context."""
 
-    def __init__(self) -> None:
-        self._agent = CodeAgent()   # reads E2B_API_KEY from env
-        self._client = OpenAI(
-            api_key=os.environ.get("SEALION_API", ""),
-            base_url="https://api.sea-lion.ai/v1",
-        )
-        self._model = os.environ.get(
-            "REASONING_MODEL_ID", "aisingapore/Llama-SEA-LION-v3.5-70B-R"
-        )
+    def __init__(self, *, agent: CodeAgent, client: OpenAI, model_id: str) -> None:
+        self._agent = agent
+        self._client = client
+        self._model = model_id
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -111,7 +101,8 @@ class CodeRoute(BaseRoute):
                     }
                 },
             )
-            raw = resp.choices[0].message.content.strip()
+            raw_content = resp.choices[0].message.content or ""
+            raw = raw_content.strip()
             print(f"[CodeRoute] Raw LLM response:\n{raw}\n{'='*60}")
             code = self._extract_code(raw)
             print(f"[CodeRoute] Generated code:\n{code}")
@@ -135,7 +126,7 @@ class CodeRoute(BaseRoute):
             "## Calculation Result",
             f"```\n{output}\n```",
             "",
-            f"## Python Code Used",
+            "## Python Code Used",
             f"```python\n{code}\n```",
         ])
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dietary_guardian.agent.emotion.infra.config import EmotionRuntimeConfig
+from dietary_guardian.agent.emotion.config import EmotionRuntimeConfig
 
 
 class EmotionModelLoader:

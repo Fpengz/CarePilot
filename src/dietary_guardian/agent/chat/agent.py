@@ -11,19 +11,15 @@ Usage (FastAPI / async):
 
 import asyncio
 import json
-import os
 import sqlite3
 from typing import AsyncIterator, TYPE_CHECKING
 
-from dotenv import load_dotenv
 from openai import OpenAI
 
 from dietary_guardian.agent.chat.memory import MemoryManager
 
 if TYPE_CHECKING:
     from dietary_guardian.agent.chat.router import QueryRouter
-
-load_dotenv()
 
 SYSTEM_PROMPT = (
     "You are SEA-LION, a helpful health assistant specialised in Singapore's food, "
@@ -38,17 +34,13 @@ class ChatAgent:
 
     def __init__(
         self,
-        api_key: str | None = None,
-        base_url: str = "https://api.sea-lion.ai/v1",
+        client: OpenAI,
         model_id: str | None = None,
         router: "QueryRouter | None" = None,
         session_id: str = "default",
     ) -> None:
-        self.api_key = api_key or os.environ.get("SEALION_API")
-        self.model_id = model_id or os.environ.get(
-            "CHAT_MODEL_ID", "aisingapore/Gemma-SEA-LION-v4-27B-IT"
-        )
-        self.client = OpenAI(api_key=self.api_key, base_url=base_url)
+        self.model_id = model_id or "aisingapore/Gemma-SEA-LION-v4-27B-IT"
+        self.client = client
         self.router = router
         self.memory = MemoryManager(
             session_id=session_id,

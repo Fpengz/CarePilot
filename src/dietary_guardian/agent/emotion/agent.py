@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from dietary_guardian.agent.emotion.domain.schemas import (
+from dietary_guardian.agent.emotion.schemas import (
     EmotionAgentOutput,
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,
 )
-from dietary_guardian.agent.shared.base import AgentContext, AgentResult, BaseAgent
+from dietary_guardian.agent.core import AgentContext, AgentResult, BaseAgent
 from dietary_guardian.features.companion.engagement.emotion.ports import (
     EmotionInferencePort,
     SpeechEmotionInput,

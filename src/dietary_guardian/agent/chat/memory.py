@@ -163,7 +163,8 @@ class MemoryManager:
                 temperature=0.3,
                 max_tokens=300,
             )
-            new_summary = resp.choices[0].message.content.strip()
+            raw_content = resp.choices[0].message.content or ""
+            new_summary = raw_content.strip()
             print(f"[MemoryManager] New rolling summary: {new_summary!r}")
             self._rolling_summary = new_summary
         except Exception as exc:

@@ -11,8 +11,8 @@ from dietary_guardian.features.companion.engagement.emotion.ports import (
     SpeechEmotionInput,
     TextEmotionInput,
 )
-from dietary_guardian.agent.emotion.infra.config import EmotionRuntimeConfig
-from dietary_guardian.agent.emotion.infra.inprocess_emotion_runtime import InProcessEmotionRuntime
+from dietary_guardian.agent.emotion.config import EmotionRuntimeConfig
+from dietary_guardian.agent.emotion.runtime import InProcessEmotionRuntime
 from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult, EmotionRuntimeHealth
 from dietary_guardian.agent.emotion import EmotionAgent
 

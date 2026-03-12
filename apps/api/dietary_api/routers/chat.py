@@ -11,9 +11,18 @@ from pydantic import BaseModel
 
 from ..deps import chat_deps
 from ..routes_shared import current_session, get_context, require_action
-from dietary_guardian.agent.chat.emotion import EmotionAgent as ChatEmotionAgent
+from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult
 
 router = APIRouter(tags=["chat"])
+
+
+def _format_emotion_context(inference: EmotionInferenceResult) -> str:
+    pct = int(inference.score * 100)
+    return (
+        f"[Emotional context] The user appears to be feeling **{inference.emotion}** "
+        f"(confidence {pct} %). Please respond with appropriate empathy and tailor "
+        f"your advice to their current emotional state."
+    )
 
 
 class ChatRequest(BaseModel):
@@ -58,11 +67,11 @@ async def chat_stream(
         loop = asyncio.get_running_loop()
         emotion_ctx: str | None = None
         try:
-            result = await loop.run_in_executor(
-                None, deps.emotion_agent.analyze_text, user_message
+            inference = await loop.run_in_executor(
+                None, lambda: deps.emotion_agent.infer_text(text=user_message)
             )
-            emotion_ctx = ChatEmotionAgent.to_context_str(result)
-            yield f"data: {json.dumps({'emotion': result.emotion, 'score': result.score})}\n\n"
+            emotion_ctx = _format_emotion_context(inference)
+            yield f"data: {json.dumps({'emotion': inference.emotion, 'score': inference.score})}\n\n"
         except Exception as exc:
             print(f"[chat] Emotion analysis failed: {exc}")
 
@@ -107,14 +116,16 @@ async def chat_audio(
         loop = asyncio.get_running_loop()
         emotion_ctx: str | None = None
         try:
-            result = await loop.run_in_executor(
+            inference = await loop.run_in_executor(
                 None,
-                lambda: deps.emotion_agent.analyze_audio(
-                    raw_bytes, filename, transcription=user_message
+                lambda: deps.emotion_agent.infer_speech(
+                    audio_bytes=raw_bytes,
+                    filename=filename,
+                    transcription=user_message,
                 ),
             )
-            emotion_ctx = ChatEmotionAgent.to_context_str(result)
-            yield f"data: {json.dumps({'emotion': result.emotion, 'score': result.score})}\n\n"
+            emotion_ctx = _format_emotion_context(inference)
+            yield f"data: {json.dumps({'emotion': inference.emotion, 'score': inference.score})}\n\n"
         except Exception as exc:
             print(f"[chat/audio] Emotion analysis failed: {exc}")
 

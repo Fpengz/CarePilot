@@ -38,7 +38,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -285,7 +285,8 @@ class HealthTracker:
                 temperature=0,
                 max_tokens=300,
             )
-            raw = resp.choices[0].message.content.strip()
+            raw_content = resp.choices[0].message.content or ""
+            raw = raw_content.strip()
             result = json.loads(raw)
             return result if isinstance(result, list) else []
         except json.JSONDecodeError as exc:

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Literal
 
-from dietary_guardian.agent.emotion.infra.audio_preprocessor import preprocess_audio
-from dietary_guardian.agent.emotion.infra.config import EmotionRuntimeConfig
-from dietary_guardian.agent.emotion.infra.model_loader import EmotionModelLoader
-from dietary_guardian.agent.emotion.infra.speech_emotion import SpeechEmotionClassifier
-from dietary_guardian.agent.emotion.infra.text_emotion import TextEmotionClassifier
-from dietary_guardian.agent.emotion.infra.text_preprocessor import normalize_text
+from dietary_guardian.agent.emotion.audio_preprocessor import preprocess_audio
+from dietary_guardian.agent.emotion.config import EmotionRuntimeConfig
+from dietary_guardian.agent.emotion.model_loader import EmotionModelLoader
+from dietary_guardian.agent.emotion.speech_classifier import SpeechEmotionClassifier
+from dietary_guardian.agent.emotion.text_classifier import TextEmotionClassifier
+from dietary_guardian.agent.emotion.text_preprocessor import normalize_text
 from dietary_guardian.features.companion.core.health.emotion import (
     EmotionConfidenceBand,
     EmotionEvidence,

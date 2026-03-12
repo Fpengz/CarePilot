@@ -15,16 +15,11 @@ Usage
 """
 
 import io
-import os
-
 import librosa
 import numpy as np
 import soundfile as sf
 import torch
-from dotenv import load_dotenv
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
-
-load_dotenv()
 
 _PROMPT_TEMPLATE = (
     "Instruction: {query} \n"
@@ -36,10 +31,9 @@ _TRANSCRIBE_PROMPT = "Please transcribe this speech."
 class AudioAgent:
     """Agent that transcribes audio to text using Groq Whisper or MERaLiON."""
 
-    def __init__(self, repo_id: str | None = None) -> None:
-        self.repo_id = repo_id or os.environ.get(
-            "TRANSCRIPTION_MODEL_ID", "MERaLiON/MERaLiON-2-3B"
-        )
+    def __init__(self, repo_id: str | None = None, groq_api_key: str | None = None) -> None:
+        self.repo_id = repo_id or "MERaLiON/MERaLiON-2-3B"
+        self._groq_api_key = groq_api_key
         self.device = "mps" if torch.backends.mps.is_available() else "cpu"
         self.torch_dtype = (
             torch.float16 if torch.backends.mps.is_available() else torch.float32
@@ -120,13 +114,13 @@ class AudioAgent:
             Transcribed text string.
 
         Raises:
-            ValueError: If GROQ_API_KEY is not set or transcription fails.
+            ValueError: If the Groq API key is not configured or transcription fails.
         """
         from groq import Groq
 
-        api_key = os.environ.get("GROQ_API_KEY")
+        api_key = self._groq_api_key
         if not api_key:
-            raise ValueError("GROQ_API_KEY not set in environment")
+            raise ValueError("GROQ_API_KEY not provided for audio transcription")
 
         buf = io.BytesIO(raw_bytes)
         buf.name = filename
@@ -155,9 +149,9 @@ class AudioAgent:
         """
         from groq import Groq
 
-        api_key = os.environ.get("GROQ_API_KEY")
+        api_key = self._groq_api_key
         if not api_key:
-            return "Error: GROQ_API_KEY not set in .env"
+            return "Error: GROQ_API_KEY not provided for audio transcription"
 
         if audio_input is None:
             return "Error: No audio provided."

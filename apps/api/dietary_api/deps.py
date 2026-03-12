@@ -3,20 +3,12 @@
 import os
 from dataclasses import dataclass
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, OpenAI
 
-from dietary_guardian.agent.chat import (
-    AudioAgent,
-    ChatAgent,
-    CodeAgent,
-    EmotionAgent as ChatEmotionAgent,
-    HealthTracker,
-    QueryRouter,
-    SearchAgent,
-)
+from dietary_guardian.agent.chat import AudioAgent, ChatAgent, CodeAgent, HealthTracker, QueryRouter, SearchAgent
 from dietary_guardian.agent.emotion import EmotionAgent
 from dietary_guardian.agent.recommendation import RecommendationAgent
-from dietary_guardian.agent.shared import AgentRegistry, build_default_agent_registry
+from dietary_guardian.agent.core import AgentRegistry, build_default_agent_registry
 from dietary_guardian.platform.observability.tooling.platform_registry import build_platform_tool_registry
 from dietary_guardian.config.app import AppSettings as Settings, get_settings
 from dietary_guardian.platform.auth import InMemoryAuthStore, SessionSigner, SQLiteAuthStore
@@ -37,8 +29,8 @@ from dietary_guardian.platform.scheduling.coordination import (
     InMemoryCoordinationStore,
     RedisCoordinationStore,
 )
-from dietary_guardian.agent.emotion.infra.config import EmotionRuntimeConfig
-from dietary_guardian.agent.emotion.infra.inprocess_emotion_runtime import InProcessEmotionRuntime
+from dietary_guardian.agent.emotion.config import EmotionRuntimeConfig
+from dietary_guardian.agent.emotion.runtime import InProcessEmotionRuntime
 from dietary_guardian.platform.persistence.household import SQLiteHouseholdStore
 from dietary_guardian.platform.observability.tooling.registry import ToolRegistry
 from dietary_guardian.platform.observability.workflows.coordinator import WorkflowCoordinator
@@ -73,7 +65,6 @@ class AppContext:
     recommendation_agent: RecommendationAgent
     chat_agent: ChatAgent
     chat_audio_agent: AudioAgent
-    chat_emotion_agent: ChatEmotionAgent
     chat_async_client: AsyncOpenAI
     chat_model_id: str
     chat_health_tracker: HealthTracker
@@ -112,7 +103,7 @@ class EmotionDeps:
 class ChatDeps:
     chat_agent: ChatAgent
     audio_agent: AudioAgent
-    emotion_agent: ChatEmotionAgent
+    emotion_agent: EmotionAgent
     async_client: AsyncOpenAI
     model_id: str
     health_tracker: HealthTracker
@@ -225,25 +216,34 @@ def build_app_context() -> AppContext:
         request_timeout_seconds=settings.emotion.request_timeout_seconds,
     )
     chat_model_id = os.environ.get("CHAT_MODEL_ID", "aisingapore/Gemma-SEA-LION-v4-27B-IT")
+    chat_reasoning_model_id = os.environ.get("REASONING_MODEL_ID", "aisingapore/Llama-SEA-LION-v3.5-70B-R")
     chat_base_url = os.environ.get("SEALION_BASE_URL", "https://api.sea-lion.ai/v1")
     chat_api_key = os.environ.get("SEALION_API") or settings.llm.openai.api_key or ""
     chat_search_agent = SearchAgent(max_results=3)
-    chat_router = QueryRouter(chat_search_agent)
+    chat_client = OpenAI(api_key=chat_api_key, base_url=chat_base_url)
+    chat_code_agent = CodeAgent(api_key=os.environ.get("E2B_API_KEY"))
+    chat_router = QueryRouter(
+        search_agent=chat_search_agent,
+        client=chat_client,
+        model_id=chat_model_id,
+        code_agent=chat_code_agent,
+        reasoning_model_id=chat_reasoning_model_id,
+    )
     chat_agent = ChatAgent(
+        client=chat_client,
         model_id=chat_model_id,
         router=chat_router,
-        api_key=chat_api_key or None,
-        base_url=chat_base_url,
     )
-    chat_audio_agent = AudioAgent()
-    chat_emotion_agent = ChatEmotionAgent()
+    chat_audio_agent = AudioAgent(
+        repo_id=os.environ.get("TRANSCRIPTION_MODEL_ID"),
+        groq_api_key=os.environ.get("GROQ_API_KEY"),
+    )
     chat_async_client = AsyncOpenAI(api_key=chat_api_key, base_url=chat_base_url)
     chat_health_tracker = HealthTracker(
         session_id="default",
-        client=chat_agent.client,
+        client=chat_client,
         model_id=chat_model_id,
     )
-    chat_code_agent = CodeAgent()
     ctx = AppContext(
         settings=settings,
         app_store=app_store,
@@ -264,7 +264,6 @@ def build_app_context() -> AppContext:
         recommendation_agent=RecommendationAgent(),
         chat_agent=chat_agent,
         chat_audio_agent=chat_audio_agent,
-        chat_emotion_agent=chat_emotion_agent,
         chat_async_client=chat_async_client,
         chat_model_id=chat_model_id,
         chat_health_tracker=chat_health_tracker,
@@ -302,7 +301,7 @@ def chat_deps(ctx: AppContext) -> ChatDeps:
     return ChatDeps(
         chat_agent=ctx.chat_agent,
         audio_agent=ctx.chat_audio_agent,
-        emotion_agent=ctx.chat_emotion_agent,
+        emotion_agent=ctx.emotion_agent,
         async_client=ctx.chat_async_client,
         model_id=ctx.chat_model_id,
         health_tracker=ctx.chat_health_tracker,

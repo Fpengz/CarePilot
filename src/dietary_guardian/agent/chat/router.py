@@ -21,18 +21,14 @@ Routes:
 """
 from __future__ import annotations
 
-import os
-
 from openai import OpenAI
-from dotenv import load_dotenv
 
-from dietary_guardian.agent.chat.search import SearchAgent
-from dietary_guardian.agent.chat.routes_base import RouteResult
-from dietary_guardian.agent.chat.drug_route import DrugRoute
-from dietary_guardian.agent.chat.food_route import FoodRoute
-from dietary_guardian.agent.chat.code_route import CodeRoute
-
-load_dotenv()
+from dietary_guardian.agent.chat.search_adapter import SearchAgent
+from dietary_guardian.agent.chat.routes.base import RouteResult
+from dietary_guardian.agent.chat.routes.drug_route import DrugRoute
+from dietary_guardian.agent.chat.routes.food_route import FoodRoute
+from dietary_guardian.agent.chat.routes.code_route import CodeRoute
+from dietary_guardian.agent.chat.code_adapter import CodeAgent
 
 _CLASSIFICATION_PROMPT = """\
 You are a query classifier for a Singapore health assistant app that supports
@@ -70,17 +66,20 @@ Do not explain. Do not add punctuation.
 class QueryRouter:
     """Classifies a query with the LLM and returns an enriched RouteResult."""
 
-    def __init__(self, search_agent: SearchAgent) -> None:
-        self._drug_route = DrugRoute(search_agent)
-        self._food_route = FoodRoute(search_agent)
-        self._code_route = CodeRoute()
-        self._client = OpenAI(
-            api_key=os.environ.get("SEALION_API", ""),
-            base_url="https://api.sea-lion.ai/v1",
-        )
-        self._model = os.environ.get(
-            "CHAT_MODEL_ID", "aisingapore/Gemma-SEA-LION-v4-27B-IT"
-        )
+    def __init__(
+        self,
+        *,
+        search_agent: SearchAgent,
+        client: OpenAI,
+        model_id: str,
+        code_agent: CodeAgent,
+        reasoning_model_id: str,
+    ) -> None:
+        self._drug_route = DrugRoute(search_agent=search_agent, client=client, model_id=model_id)
+        self._food_route = FoodRoute(search_agent=search_agent, client=client, model_id=model_id)
+        self._code_route = CodeRoute(agent=code_agent, client=client, model_id=reasoning_model_id)
+        self._client = client
+        self._model = model_id
 
     def _classify(self, user_message: str) -> str:
         """
@@ -97,7 +96,8 @@ class QueryRouter:
                 temperature=0,
                 max_tokens=5,
             )
-            label = resp.choices[0].message.content.strip().lower()
+            raw_label = resp.choices[0].message.content or ""
+            label = raw_label.strip().lower()
             if label not in ("drug", "food", "code", "general"):
                 print(f"[Router] Unexpected label {label!r} — falling back to general")
                 return "general"
