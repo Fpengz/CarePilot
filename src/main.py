@@ -13,7 +13,7 @@ from dietary_guardian.features.profiles.domain.models import (
     Medication,
     UserProfile,
 )
-from dietary_guardian.agent.shared.llm import LLMFactory
+from dietary_guardian.agent.runtime import LLMFactory
 from dietary_guardian.features.meals.domain.models import Ingredient, MealEvent, Nutrition
 
 console = Console()

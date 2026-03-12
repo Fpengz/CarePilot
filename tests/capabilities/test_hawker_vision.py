@@ -2,11 +2,11 @@
 
 import pytest
 
-from dietary_guardian.agent.vision import HawkerVisionModule
+from dietary_guardian.agent.meal_analysis import HawkerVisionModule
 from dietary_guardian.config.llm import LocalModelProfile
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.features.meals.domain import MealPerception
-from dietary_guardian.agent.shared.ai.types import InferenceResponse, ProviderMetadata
+from dietary_guardian.agent.runtime.inference_types import InferenceResponse, ProviderMetadata
 from dietary_guardian.features.meals.domain.models import ImageInput
 
 
@@ -102,8 +102,8 @@ def test_hawker_vision_uses_profile_built_model_for_inference_engine(monkeypatch
             del provider, model_name
             StubEngine.seen_model = model
 
-    monkeypatch.setattr("dietary_guardian.agent.vision.hawker_vision.LLMFactory.from_profile", lambda profile: FakeModel())
-    monkeypatch.setattr("dietary_guardian.agent.vision.hawker_vision.InferenceEngine", StubEngine)
+    monkeypatch.setattr("dietary_guardian.agent.meal_analysis.vision_module.LLMFactory.from_profile", lambda profile: FakeModel())
+    monkeypatch.setattr("dietary_guardian.agent.meal_analysis.vision_module.InferenceEngine", StubEngine)
 
     profile = LocalModelProfile(
         id="custom",

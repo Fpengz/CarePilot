@@ -5,9 +5,9 @@ import asyncio
 import pytest
 from pydantic import BaseModel
 
-from dietary_guardian.agent.shared.ai.engine import InferenceEngine
+from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
 from dietary_guardian.config.app import get_settings
-from dietary_guardian.agent.shared.ai.types import InferenceModality, InferenceRequest
+from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
 
 
 def test_inference_engine_strategy_selection_test_provider(monkeypatch) -> None:

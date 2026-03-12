@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from dietary_guardian.agent.shared import AgentContext, AgentResult, BaseAgent
-from dietary_guardian.agent.vision import HawkerVisionModule
+from dietary_guardian.agent.core import AgentContext, AgentResult, BaseAgent
+from dietary_guardian.agent.meal_analysis.vision_module import HawkerVisionModule
 from dietary_guardian.features.meals.domain.agent_schemas import MealAnalysisAgentInput, MealAnalysisAgentOutput
 
 

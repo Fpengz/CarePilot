@@ -5,10 +5,8 @@ from typing import Any, cast
 from pydantic import BaseModel
 
 import logfire
-from dietary_guardian.agent.shared.ai.engine import InferenceEngine
-from dietary_guardian.agent.shared.ai.types import InferenceModality, InferenceRequest
-from dietary_guardian.agent.shared.base import AgentContext, AgentResult, BaseAgent
-from dietary_guardian.agent.shared.llm import LLMFactory
+from dietary_guardian.agent.runtime import InferenceEngine, InferenceModality, InferenceRequest, LLMFactory
+from dietary_guardian.agent.core import AgentContext, AgentResult, BaseAgent
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.config.llm import LLMCapability
 from dietary_guardian.features.meals.domain.agent_schemas import DietaryAgentInput

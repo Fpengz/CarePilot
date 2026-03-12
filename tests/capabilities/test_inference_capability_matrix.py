@@ -1,7 +1,7 @@
 """Tests for inference capability matrix."""
 
-from dietary_guardian.agent.shared.ai.engine import InferenceEngine
-from dietary_guardian.agent.shared.ai.types import InferenceModality
+from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from dietary_guardian.agent.runtime.inference_types import InferenceModality
 
 
 def test_test_provider_capability_matrix_disables_image() -> None:

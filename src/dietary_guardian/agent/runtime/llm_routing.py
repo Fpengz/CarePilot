@@ -4,7 +4,7 @@ import os
 
 from dietary_guardian.config.app import AppSettings
 from dietary_guardian.config.llm import LLMCapability, LLMCapabilityTarget, ModelProvider
-from dietary_guardian.agent.shared.llm.types import ResolvedModelRuntime
+from dietary_guardian.agent.runtime.llm_types import ResolvedModelRuntime
 
 
 class LLMCapabilityRouter:

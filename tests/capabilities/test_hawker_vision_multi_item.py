@@ -2,7 +2,7 @@
 
 import pytest
 
-from dietary_guardian.agent.vision import HawkerVisionModule
+from dietary_guardian.agent.meal_analysis import HawkerVisionModule
 from dietary_guardian.features.meals.domain.models import ImageInput
 
 

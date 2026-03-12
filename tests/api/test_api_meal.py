@@ -293,7 +293,7 @@ def test_meal_analyze_uses_settings_provider_when_form_provider_missing(
             )
 
     monkeypatch.setattr(
-        "dietary_guardian.agent.vision.hawker_vision.HawkerVisionModule",
+        "dietary_guardian.agent.meal_analysis.vision_module.HawkerVisionModule",
         _FakeHawkerVisionModule,
     )
 
@@ -354,7 +354,7 @@ def test_meal_analyze_defers_provider_selection_when_capability_routing_is_confi
             )
 
     monkeypatch.setattr(
-        "dietary_guardian.agent.vision.hawker_vision.HawkerVisionModule",
+        "dietary_guardian.agent.meal_analysis.vision_module.HawkerVisionModule",
         _FakeHawkerVisionModule,
     )
 
@@ -386,7 +386,7 @@ def test_meal_analyze_times_out_on_slow_vision_inference(monkeypatch: pytest.Mon
             raise AssertionError("expected timeout before completion")
 
     monkeypatch.setattr(
-        "dietary_guardian.agent.vision.hawker_vision.HawkerVisionModule",
+        "dietary_guardian.agent.meal_analysis.vision_module.HawkerVisionModule",
         _FakeSlowHawkerVisionModule,
     )
     client = TestClient(create_app())

@@ -1,6 +1,6 @@
 """Tests for agent registry."""
 
-from dietary_guardian.agent.shared import build_default_agent_registry
+from dietary_guardian.agent.core import build_default_agent_registry
 from dietary_guardian.platform.observability.workflows.domain.models import WorkflowName
 
 

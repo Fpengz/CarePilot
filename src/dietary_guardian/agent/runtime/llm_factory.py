@@ -12,8 +12,8 @@ from pydantic_ai.providers.openai import OpenAIProvider
 
 from dietary_guardian.config.app import AppSettings, get_settings
 from dietary_guardian.config.llm import LLMCapability, LLMSettings, LocalModelProfile, ModelProvider
-from dietary_guardian.agent.shared.llm.routing import LLMCapabilityRouter
-from dietary_guardian.agent.shared.llm.types import ResolvedModelRuntime
+from dietary_guardian.agent.runtime.llm_routing import LLMCapabilityRouter
+from dietary_guardian.agent.runtime.llm_types import ResolvedModelRuntime
 from dietary_guardian.platform.observability import get_logger
 
 ModelType = GoogleModel | OpenAIChatModel | TestModel

@@ -7,9 +7,7 @@ from uuid import uuid4
 
 from pydantic_ai import Agent
 
-from dietary_guardian.agent.shared.ai.engine import InferenceEngine
-from dietary_guardian.agent.shared.ai.types import InferenceModality, InferenceRequest
-from dietary_guardian.agent.shared.llm import LLMFactory
+from dietary_guardian.agent.runtime import InferenceEngine, InferenceModality, InferenceRequest, LLMFactory
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.config.llm import LLMCapability, LocalModelProfile, ModelProvider
 from dietary_guardian.features.meals.domain import MealPerception, MealPortionEstimate, PerceivedMealItem
