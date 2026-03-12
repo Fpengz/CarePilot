@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import time
 from datetime import date
 from typing import TYPE_CHECKING, Any, cast
 
@@ -34,6 +35,11 @@ from dietary_guardian.features.meals.domain.agent_schemas import MealAnalysisAge
 from dietary_guardian.features.meals.domain.models import ImageInput
 from dietary_guardian.features.profiles.domain.health_profile import get_or_create_health_profile
 from dietary_guardian.features.meals.use_cases import normalize_vision_result
+from dietary_guardian.features.meals.logging import (
+    build_meal_analysis_log_payload,
+    log_meal_analysis_event,
+    resolve_meal_analysis_model_name,
+)
 from dietary_guardian.platform.auth.session_context import build_user_profile_from_session
 from dietary_guardian.platform.storage.media.ingestion import (
     build_capture_envelope,
@@ -217,6 +223,7 @@ async def analyze_meal(
             food_store=deps.stores.foods,
         ),
     )
+    analysis_started = time.perf_counter()
     try:
         if hasattr(agent, "run"):
             result = await asyncio.wait_for(
@@ -357,6 +364,25 @@ async def analyze_meal(
         user_profile=user_profile,
         meal_record_id=validated_event.event_id,
     )
+    latency_ms = (time.perf_counter() - analysis_started) * 1000
+    log_provider = vision_result.provider or routed_provider or str(deps.settings.llm.provider)
+    log_model = vision_result.model_version or resolve_meal_analysis_model_name(deps.settings.llm, log_provider)
+    log_payload = build_meal_analysis_log_payload(
+        user_id=user_profile.id,
+        request_id=capture.request_id,
+        correlation_id=capture.correlation_id,
+        provider=log_provider,
+        model_name=log_model,
+        observation_id=raw_observation.observation_id,
+        meal_id=validated_event.event_id,
+        meal_name=validated_event.meal_name,
+        manual_review=bool(validated_event.needs_manual_review),
+        latency_ms=latency_ms,
+        inference_latency_ms=vision_result.processing_latency_ms,
+        unresolved_count=len(unresolved),
+        risk_tags=nutrition_profile.risk_tags,
+    )
+    log_meal_analysis_event(log_payload)
     return MealAnalyzeResponse(
         raw_observation=raw_observation,
         validated_event=validated_event,

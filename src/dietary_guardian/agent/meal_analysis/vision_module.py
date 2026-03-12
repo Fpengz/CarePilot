@@ -245,6 +245,7 @@ class HawkerVisionModule:
                 needs_manual_review=needs_review,
                 processing_latency_ms=elapsed,
                 model_version=getattr(self.model, "model_name", "unknown"),
+                provider=self.provider,
             )
             self._log_response_summary(request_id=request_id, correlation_id=correlation_id, user_id=user_id, source=source, filename=filename, result=response_result, reason="inference_complete")
             return response_result

@@ -212,6 +212,7 @@ class VisionResult(BaseModel):
     needs_manual_review: bool = False
     processing_latency_ms: float = 0.0
     model_version: str = "gemini-flash-1.5"
+    provider: str | None = None
 
 
 class ImageInput(BaseModel):
