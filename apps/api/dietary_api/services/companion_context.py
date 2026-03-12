@@ -1,4 +1,9 @@
-"""Shared context-building helpers for companion API endpoints."""
+"""
+Build companion context used by API services.
+
+This module assembles clinical snapshots, evidence, and session context
+required to drive companion orchestration responses.
+"""
 
 from __future__ import annotations
 

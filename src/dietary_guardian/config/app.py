@@ -1,4 +1,9 @@
-"""Composed application settings and environment bootstrap entry points."""
+"""
+Compose application settings and environment bootstrap helpers.
+
+This module loads, validates, and exposes the top-level configuration
+used across the runtime.
+"""
 
 from __future__ import annotations
 

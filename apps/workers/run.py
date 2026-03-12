@@ -1,4 +1,9 @@
-"""Module for run."""
+"""
+Coordinate worker loops for reminders and outbox processing.
+
+This module runs the reminder scheduler and outbox worker in a shared
+async loop with coordination locking and retry handling.
+"""
 
 from __future__ import annotations
 

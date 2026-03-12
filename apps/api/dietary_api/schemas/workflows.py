@@ -1,4 +1,9 @@
-"""Workflow, alert timeline, companion, and governance API contracts."""
+"""
+Define workflow and governance API contracts.
+
+This module includes request/response schemas for workflow timelines,
+companion governance, and alert history.
+"""
 
 from __future__ import annotations
 

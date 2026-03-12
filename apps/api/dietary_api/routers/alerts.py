@@ -1,4 +1,9 @@
-"""API router for alerts endpoints."""
+"""
+Expose alert-related API endpoints.
+
+This router defines HTTP routes for alert reads and write actions and
+delegates to API service helpers for orchestration.
+"""
 
 from fastapi import APIRouter, Depends, Request
 

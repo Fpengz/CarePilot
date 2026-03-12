@@ -1,4 +1,9 @@
-"""Domain model definitions for the identity subdomain: accounts, users, and meal scheduling."""
+"""
+Define identity domain models.
+
+This module contains account, user, and meal scheduling models used by
+the profiles feature.
+"""
 
 from __future__ import annotations
 

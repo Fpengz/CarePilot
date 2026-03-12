@@ -1,4 +1,8 @@
-"""Shared identifier primitives."""
+"""
+Define shared identifier primitives.
+
+This module contains ID helpers and value objects used across domains.
+"""
 
 from __future__ import annotations
 

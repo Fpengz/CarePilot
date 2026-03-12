@@ -1,4 +1,9 @@
-"""Domain model definitions for the alerts subdomain: alert messages and outbox records."""
+"""
+Define safety alert domain models.
+
+This module contains alert message and outbox record models used by safety
+workflows.
+"""
 
 from __future__ import annotations
 

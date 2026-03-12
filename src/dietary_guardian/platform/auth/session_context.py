@@ -1,4 +1,9 @@
-"""Module for session profiles."""
+"""
+Build session-derived profile context.
+
+This module constructs profile context objects from authenticated sessions
+for downstream use cases.
+"""
 
 from typing import Any, cast
 

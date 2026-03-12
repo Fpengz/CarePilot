@@ -1,14 +1,8 @@
 """
-routes/drug_route.py
---------------------
-Handles queries about medications for patients with:
-  • Type 2 Diabetes (e.g. Metformin, SGLT2 inhibitors, GLP-1 agonists)
-  • Hypertension (e.g. ACE inhibitors, ARBs, calcium channel blockers)
-  • Cardiovascular disease (e.g. statins, antiplatelets, beta-blockers)
-  • Any general medication question (dosage, side effects, interactions)
+Handle medication and drug queries for the chat router.
 
-Activated by: LLM classification in router.py (not regex).
-Search: DuckDuckGo, Singapore-context biased toward clinical reference sites.
+This module enriches medication questions with targeted search results
+to improve responses for chronic disease management.
 """
 from __future__ import annotations
 from openai import OpenAI

@@ -1,4 +1,9 @@
-"""Agent I/O schemas for meal analysis and dietary reasoning — pure domain contracts."""
+"""
+Define meal analysis agent schemas.
+
+This module contains typed input/output contracts used by meal analysis and
+dietary reasoning agents.
+"""
 
 from __future__ import annotations
 

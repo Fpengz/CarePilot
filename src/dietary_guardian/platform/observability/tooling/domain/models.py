@@ -1,4 +1,8 @@
-"""Data models for tooling."""
+"""
+Define tooling domain models.
+
+This module contains data models used by the tooling registry.
+"""
 
 from datetime import datetime, timezone
 from enum import StrEnum

@@ -1,4 +1,9 @@
-"""Infrastructure support for config."""
+"""
+Define configuration for the emotion inference runtime.
+
+This module provides configuration defaults and settings used to wire
+emotion model loading and execution.
+"""
 
 from __future__ import annotations
 
@@ -22,4 +27,3 @@ class EmotionRuntimeConfig:
             model_device=settings.emotion.model_device,
             source_commit=settings.emotion.source_commit,
         )
-

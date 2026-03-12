@@ -1,4 +1,9 @@
-"""Core API schema primitives plus auth, emotion, profile, and household contracts."""
+"""
+Define core API schema primitives and shared contracts.
+
+This module collects the base request/response models used across auth,
+emotion, profile, and household endpoints.
+"""
 
 from __future__ import annotations
 
@@ -244,4 +249,3 @@ class CursorPageResponse(BaseModel):
     next_cursor: str | None = None
     has_more: bool
     returned: int
-

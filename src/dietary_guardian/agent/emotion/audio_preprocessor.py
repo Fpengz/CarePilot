@@ -1,4 +1,9 @@
-"""Infrastructure support for audio preprocessor."""
+"""
+Normalize audio inputs for emotion inference.
+
+This module validates and normalizes audio content types used by
+emotion classification pipelines.
+"""
 
 from __future__ import annotations
 
@@ -28,4 +33,3 @@ def preprocess_audio(
         if lowered and lowered not in SUPPORTED_AUDIO_CONTENT_TYPES:
             raise ValueError("unsupported audio format")
     return audio_bytes
-

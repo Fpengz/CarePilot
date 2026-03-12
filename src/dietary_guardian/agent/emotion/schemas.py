@@ -1,4 +1,9 @@
-"""Agent I/O schemas for emotion inference — pure domain contracts."""
+"""
+Define emotion agent input/output schemas.
+
+This module contains the typed request and response contracts used by
+emotion inference workflows.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,9 @@
-"""Meal feature Pydantic schemas shared between domain and API layers."""
+"""
+Define meal feature schemas.
+
+This module contains Pydantic schemas shared between meal domain and API
+layers.
+"""
 
 from __future__ import annotations
 

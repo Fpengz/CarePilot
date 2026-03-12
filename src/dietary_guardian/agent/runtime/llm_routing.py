@@ -1,4 +1,9 @@
-"""Capability-aware routing from settings to resolved LLM runtime targets."""
+"""
+Resolve model runtimes based on capability routing.
+
+This module maps capability requests to concrete LLM runtime targets using
+configuration profiles.
+"""
 
 import os
 

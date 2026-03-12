@@ -1,4 +1,9 @@
-"""Module for routes shared."""
+"""
+Share helper dependencies and guards across API routes.
+
+This module hosts common request context accessors and authorization helpers
+used by multiple routers.
+"""
 
 from typing import Annotated, Any, cast
 

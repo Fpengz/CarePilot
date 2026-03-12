@@ -1,4 +1,9 @@
-"""Application ports for evidence."""
+"""
+Define evidence retrieval ports.
+
+This module declares the interface used to fetch evidence for companion
+responses.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,9 @@
-"""Compatibility shim for companion orchestration."""
+"""
+Provide a compatibility shim for companion orchestration imports.
+
+This module re-exports orchestration helpers so legacy imports continue to
+resolve while API services are reorganized.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,9 @@
-"""SQLite persistence for meal records, observations, events, and nutrition profiles."""
+"""
+Persist meal records in SQLite.
+
+This module implements SQLite storage for meal records, observations,
+events, and nutrition profiles.
+"""
 
 import sqlite3
 from datetime import datetime
@@ -299,5 +304,4 @@ class SQLiteMealRepository:
         if row is None:
             return None
         return NutritionRiskProfile.model_validate_json(row[0])
-
 

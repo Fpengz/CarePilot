@@ -1,11 +1,12 @@
 """
-ChatAgent
----------
-Responsible for maintaining conversation history and generating responses
-via the SEA-LION API (OpenAI-compatible).
+Implement the companion chat agent.
 
-Usage (FastAPI / async):
-    async for sse_chunk in agent.stream_async(message, async_client, model_id):
+This module manages chat sessions, routes user queries, and calls the
+SEA-LION-compatible LLM runtime to generate responses.
+
+Example:
+    agent = ChatAgent(client, model_id="gpt-4.1-mini", router=router)
+    async for chunk in agent.stream_async(message, client, agent.model_id):
         ...
 """
 

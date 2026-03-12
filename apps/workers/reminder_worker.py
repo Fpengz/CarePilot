@@ -1,3 +1,11 @@
+"""
+Run the reminder outbox worker loop.
+
+This module wires the reminder outbox repositories, delivery adapter, and
+knowledge sources into a polling worker that dispatches due reminders.
+It is designed to run as a standalone worker process.
+"""
+
 from __future__ import annotations
 
 import logging

@@ -1,4 +1,9 @@
-"""Use cases for reminder generation, listing, confirmation, and mobility settings."""
+"""
+Implement reminder notification use cases.
+
+This module provides reminder generation, listing, confirmation, and mobility
+setting workflows.
+"""
 
 from __future__ import annotations
 

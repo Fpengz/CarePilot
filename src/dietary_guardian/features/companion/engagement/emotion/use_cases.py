@@ -1,4 +1,8 @@
-"""Application use cases for emotion."""
+"""
+Implement emotion engagement use cases.
+
+This module handles emotion inference flows used by engagement workflows.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Application use cases for lightweight metric-trend reads."""
+"""
+Implement metric trend read use cases.
+
+This module exposes lightweight metric trend queries for impact reporting.
+"""
 
 from __future__ import annotations
 

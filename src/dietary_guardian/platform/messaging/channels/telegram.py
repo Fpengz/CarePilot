@@ -1,4 +1,8 @@
-"""Telegram channel adapter for reminder notifications."""
+"""
+Send reminder notifications via Telegram.
+
+This module implements the Telegram channel adapter for reminder delivery.
+"""
 
 import json
 from datetime import datetime, timezone

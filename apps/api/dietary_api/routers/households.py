@@ -1,4 +1,9 @@
-"""API router for households endpoints."""
+"""
+Expose household API endpoints.
+
+This router defines household management routes and forwards requests to
+household services for access checks and aggregation.
+"""
 
 from datetime import date
 

@@ -1,4 +1,9 @@
-"""API router for companion endpoints."""
+"""
+Expose companion care-loop API endpoints.
+
+This router defines companion-facing routes for daily guidance, interactions,
+and clinician views, delegating orchestration to API services.
+"""
 
 from uuid import uuid4
 

@@ -1,4 +1,9 @@
-"""Module for observability."""
+"""
+Provide request-scoped observability helpers for the API.
+
+This module normalizes request identifiers and renders structured log context
+for API handlers and middleware.
+"""
 
 from __future__ import annotations
 

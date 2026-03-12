@@ -1,4 +1,8 @@
-"""Data models for role tools."""
+"""
+Define role tool data models.
+
+This module contains role tool models used by profile tooling workflows.
+"""
 
 from pydantic import BaseModel, Field
 

@@ -1,4 +1,9 @@
-"""API router for reports endpoints."""
+"""
+Expose clinical report API endpoints.
+
+This router defines report ingestion and summary routes and delegates to
+report services for orchestration.
+"""
 
 from fastapi import APIRouter, Depends, Request
 

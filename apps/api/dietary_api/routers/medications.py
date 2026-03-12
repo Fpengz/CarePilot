@@ -1,4 +1,9 @@
-"""API router for medications endpoints."""
+"""
+Expose medication API endpoints.
+
+This router defines medication regimen and adherence routes and delegates
+to medication services for orchestration.
+"""
 
 from __future__ import annotations
 

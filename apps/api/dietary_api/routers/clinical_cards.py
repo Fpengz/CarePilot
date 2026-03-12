@@ -1,4 +1,9 @@
-"""API router for clinical cards endpoints."""
+"""
+Expose clinical card API endpoints.
+
+This router defines clinician card routes and forwards requests to the
+clinical card API services for generation and retrieval.
+"""
 
 from __future__ import annotations
 

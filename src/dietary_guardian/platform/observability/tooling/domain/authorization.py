@@ -1,4 +1,8 @@
-"""Authorization helpers for account roles and scope checks."""
+"""
+Implement authorization helpers for tooling.
+
+This module defines role and scope checks used by the tooling registry.
+"""
 
 from dietary_guardian.features.profiles.domain.models import AccountRole, ProfileMode
 

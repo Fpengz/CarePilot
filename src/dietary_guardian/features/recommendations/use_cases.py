@@ -1,4 +1,8 @@
-"""Application use cases for recommendations."""
+"""
+Implement recommendation use cases.
+
+This module contains the application workflows for recommendations.
+"""
 
 from __future__ import annotations
 

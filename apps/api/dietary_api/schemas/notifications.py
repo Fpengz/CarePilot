@@ -1,4 +1,9 @@
-"""Alert trigger, notification, and reminder-notification API contracts."""
+"""
+Define alert and notification API contracts.
+
+This module includes request/response schemas for alert triggers,
+notification feeds, and reminder notifications.
+"""
 
 from __future__ import annotations
 

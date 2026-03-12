@@ -1,4 +1,8 @@
-"""Data models for analytics."""
+"""
+Define health analytics data models.
+
+This module provides analytic summary models for the companion health domain.
+"""
 
 from pydantic import BaseModel
 

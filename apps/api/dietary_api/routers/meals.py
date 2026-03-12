@@ -1,4 +1,9 @@
-"""API router for meals endpoints."""
+"""
+Expose meal API endpoints.
+
+This router defines meal capture, analysis, and reporting routes and delegates
+to meal API services for orchestration.
+"""
 
 from datetime import date
 from typing import Annotated

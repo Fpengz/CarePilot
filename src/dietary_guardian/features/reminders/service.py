@@ -1,4 +1,8 @@
-"""Canonical reminders service entrypoint."""
+"""
+Provide the reminders service entrypoint.
+
+This module exposes the main reminder workflows to callers.
+"""
 
 from dietary_guardian.features.reminders.notifications.reminders import (
     confirm_reminder_for_session,

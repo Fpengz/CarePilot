@@ -1,4 +1,9 @@
-"""Dependency wiring for API runtime stores, agents, and orchestrators."""
+"""
+Wire API dependencies for runtime stores, agents, and orchestration.
+
+This module assembles shared runtime services used by API route handlers,
+including agent registry, persistence, and platform adapters.
+"""
 
 import os
 from dataclasses import dataclass

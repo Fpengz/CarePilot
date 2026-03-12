@@ -1,4 +1,9 @@
-"""Application ports for emotion."""
+"""
+Define emotion engagement ports.
+
+This module declares the interfaces used to request emotion inference
+within engagement workflows.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,9 @@
-"""API router for auth endpoints."""
+"""
+Expose authentication and session API endpoints.
+
+This router defines login, session, and auth-related routes and relies on
+API services for policy enforcement and persistence.
+"""
 
 from datetime import datetime
 from typing import Annotated, Literal, cast

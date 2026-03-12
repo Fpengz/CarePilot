@@ -1,4 +1,9 @@
-"""Infrastructure support for text emotion."""
+"""
+Classify emotion from text inputs.
+
+This module provides the text emotion model wrappers used by the
+emotion inference engine.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Canonical safety service entrypoint."""
+"""
+Provide the safety service entrypoint.
+
+This module exposes safety evaluation workflows to callers.
+"""
 
 from dietary_guardian.features.safety.use_cases import apply_safety_decision, review_care_plan
 

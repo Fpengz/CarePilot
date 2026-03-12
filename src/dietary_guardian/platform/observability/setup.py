@@ -1,4 +1,9 @@
-"""Logging and logfire setup for the dietary guardian runtime."""
+"""
+Configure logging and tracing for the runtime.
+
+This module wires log formatting and optional tracing integrations used by
+the application.
+"""
 
 import logging
 import os

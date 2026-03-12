@@ -1,4 +1,8 @@
-"""WeChat channel adapter (stub — wire in WeChat API credentials to activate)."""
+"""
+Provide a WeChat reminder notification adapter stub.
+
+This module defines the WeChat channel adapter placeholder for future wiring.
+"""
 
 from datetime import datetime, timezone
 

@@ -1,4 +1,9 @@
-"""Shared runtime contract for all canonical companion agents."""
+"""
+Define base contracts for companion agents.
+
+This module provides the shared agent protocol used across the bounded
+agent packages.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Domain model for meal recognition records."""
+"""
+Define meal recognition records.
+
+This module contains domain models for meal recognition results.
+"""
 
 from datetime import datetime, timezone
 

@@ -1,4 +1,8 @@
-"""Infrastructure support for sqlite store."""
+"""
+Implement SQLite-backed auth persistence.
+
+This module provides auth storage backed by a SQLite database.
+"""
 
 import json
 import sqlite3

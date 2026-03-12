@@ -1,4 +1,9 @@
-"""Presentation helpers for companion router responses."""
+"""
+Shape companion router responses for the API layer.
+
+This module contains presentation helpers that normalize companion responses
+for the router output models.
+"""
 
 from dietary_guardian.features.reminders.domain.models import ReminderEvent
 from dietary_guardian.features.recommendations.domain.models import RecommendationOutput

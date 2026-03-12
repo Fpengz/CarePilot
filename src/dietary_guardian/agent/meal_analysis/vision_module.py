@@ -1,4 +1,9 @@
-"""Meal vision agent for meal perception, normalization, and safe fallbacks."""
+"""
+Run meal vision perception and normalization.
+
+This module analyzes meal images, normalizes detected foods, and applies
+safe fallbacks for missing or low-confidence predictions.
+"""
 
 import re
 import time

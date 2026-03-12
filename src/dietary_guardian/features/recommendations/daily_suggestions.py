@@ -1,4 +1,8 @@
-"""Application module for daily suggestions and session-scoped suggestion orchestration."""
+"""
+Orchestrate daily and session-scoped suggestions.
+
+This module coordinates daily suggestions and session suggestion workflows.
+"""
 
 from __future__ import annotations
 

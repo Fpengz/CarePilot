@@ -1,4 +1,8 @@
-"""Infrastructure support for sqlite bootstrap."""
+"""
+Bootstrap SQLite persistence for local environments.
+
+This module prepares the SQLite database and migrations for runtime use.
+"""
 
 from __future__ import annotations
 

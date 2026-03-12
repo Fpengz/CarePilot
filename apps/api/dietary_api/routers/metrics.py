@@ -1,4 +1,9 @@
-"""API router for metrics endpoints."""
+"""
+Expose metrics API endpoints.
+
+This router defines metrics trend routes and delegates to metrics services
+for query orchestration.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Domain model definitions for the recommendations subdomain: food catalog, preferences, and suggestion bundles."""
+"""
+Define recommendation domain models.
+
+This module contains food catalog, preference, and suggestion bundle models.
+"""
 
 from __future__ import annotations
 

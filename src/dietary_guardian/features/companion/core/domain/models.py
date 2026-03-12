@@ -1,4 +1,8 @@
-"""Domain models and helpers for models."""
+"""
+Define companion core domain models.
+
+This module contains core data models used by the companion care loop.
+"""
 
 from __future__ import annotations
 

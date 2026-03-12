@@ -1,4 +1,9 @@
-"""Canonical meal analysis agent layered on top of the hawker vision module."""
+"""
+Provide the canonical meal analysis agent.
+
+This module runs meal vision analysis and normalizes results for downstream
+dietary reasoning workflows.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Agent I/O schemas for recommendation synthesis — pure domain contracts."""
+"""
+Define recommendation agent schemas.
+
+This module provides typed I/O contracts for recommendation synthesis.
+"""
 
 from __future__ import annotations
 

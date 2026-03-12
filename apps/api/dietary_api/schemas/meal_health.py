@@ -1,4 +1,9 @@
-"""Meal, medication, symptom, clinical-card, and metric API contracts."""
+"""
+Define meal and health-adjacent API contracts.
+
+This module contains request/response schemas for meals, medications,
+symptoms, clinical cards, and health metrics endpoints.
+"""
 
 from __future__ import annotations
 

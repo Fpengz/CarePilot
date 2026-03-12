@@ -1,4 +1,8 @@
-"""Shared type aliases."""
+"""
+Define shared type aliases.
+
+This module hosts simple type aliases used across features and adapters.
+"""
 
 from __future__ import annotations
 

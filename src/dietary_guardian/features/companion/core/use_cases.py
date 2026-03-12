@@ -1,4 +1,8 @@
-"""Application use cases for interactions (companion orchestrator)."""
+"""
+Implement companion interaction orchestration.
+
+This module coordinates core companion workflows and interaction handling.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,9 @@
-"""JSON-backed drug knowledge repository for loading medication reference data."""
+"""
+Load medication reference data for reminders.
+
+This module provides JSON-backed drug knowledge repositories used by the
+reminder outbox service.
+"""
 
 from __future__ import annotations
 

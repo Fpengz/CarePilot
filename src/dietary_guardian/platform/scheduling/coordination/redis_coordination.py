@@ -1,4 +1,8 @@
-"""Infrastructure support for redis coordination."""
+"""
+Provide Redis-backed coordination locks.
+
+This module implements coordination primitives backed by Redis.
+"""
 
 from __future__ import annotations
 

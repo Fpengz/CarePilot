@@ -1,4 +1,8 @@
-"""Infrastructure support for sqlite app store."""
+"""
+Implement the SQLite application store.
+
+This module aggregates SQLite repositories into a shared application store.
+"""
 
 from .sqlite_repository import SQLiteRepository
 

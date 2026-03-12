@@ -1,4 +1,9 @@
-"""Reminder service orchestrating scheduling, threshold evaluation, and outbox dispatch."""
+"""
+Orchestrate reminder outbox scheduling and dispatch.
+
+This module coordinates reminder scheduling, threshold evaluation, and
+delivery dispatch via the outbox.
+"""
 
 from __future__ import annotations
 

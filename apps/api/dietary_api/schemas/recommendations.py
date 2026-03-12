@@ -1,4 +1,9 @@
-"""Recommendation, suggestion, report, and reminder generation API contracts."""
+"""
+Define recommendation and suggestion API contracts.
+
+This module contains request/response models for recommendations,
+suggestions, reports, and reminder generation endpoints.
+"""
 
 from __future__ import annotations
 

@@ -1,13 +1,8 @@
 """
-routes/code_route.py
---------------------
-Handles calculation / computation queries by:
-  1. Using the LLM to translate the user's natural-language question into
-     a short, self-contained Python script.
-  2. Running that script inside a secure E2B sandbox via CodeAgent.
-  3. Returning the sandbox output as enriched context for the final LLM reply.
+Handle computation queries for the chat router.
 
-Activated by: LLM classification in router.py (label "code").
+This module translates user math requests into Python, executes them in a
+sandbox, and returns the result as enrichment for the final response.
 """
 from __future__ import annotations
 

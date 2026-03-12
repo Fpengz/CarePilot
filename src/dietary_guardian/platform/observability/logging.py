@@ -1,4 +1,8 @@
-"""Observability support for logging."""
+"""
+Configure structured logging helpers.
+
+This module provides logging setup utilities used across the runtime.
+"""
 
 from __future__ import annotations
 

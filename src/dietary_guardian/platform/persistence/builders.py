@@ -1,4 +1,8 @@
-"""Infrastructure support for builders."""
+"""
+Build persistence-layer repositories and stores.
+
+This module provides factory helpers for constructing persistence adapters.
+"""
 
 from __future__ import annotations
 

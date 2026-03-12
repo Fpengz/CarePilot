@@ -1,4 +1,8 @@
-"""Application use cases for engagement."""
+"""
+Implement companion engagement use cases.
+
+This module drives engagement workflows built on top of companion signals.
+"""
 
 from __future__ import annotations
 

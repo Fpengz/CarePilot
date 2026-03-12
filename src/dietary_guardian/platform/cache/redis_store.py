@@ -1,4 +1,8 @@
-"""Infrastructure support for redis store."""
+"""
+Implement Redis-backed cache storage.
+
+This module provides a Redis cache adapter for runtime state and locks.
+"""
 
 from __future__ import annotations
 

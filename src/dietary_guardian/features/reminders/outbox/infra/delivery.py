@@ -1,4 +1,8 @@
-"""Reminder delivery adapters, including Telegram and no-op implementations."""
+"""
+Provide reminder delivery adapters.
+
+This module implements delivery adapters such as Telegram and no-op channels.
+"""
 
 from __future__ import annotations
 

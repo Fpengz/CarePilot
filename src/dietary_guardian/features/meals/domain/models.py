@@ -1,4 +1,8 @@
-"""Domain models and helpers for meals."""
+"""
+Define meal domain models.
+
+This module contains core meal data models and helpers.
+"""
 
 from __future__ import annotations
 

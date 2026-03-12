@@ -1,4 +1,9 @@
-"""Compatibility export hub for the split dietary API schema modules."""
+"""
+Re-export legacy API schema names for compatibility.
+
+This module provides a backwards-compatible import surface that forwards
+to the split schema modules.
+"""
 
 from .core import *  # noqa: F403
 from .meal_health import *  # noqa: F403

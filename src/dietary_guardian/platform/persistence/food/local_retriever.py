@@ -1,4 +1,8 @@
-"""Local Singapore food/drink ChromaDB retriever."""
+"""
+Retrieve local Singapore food embeddings.
+
+This module queries the local ChromaDB food collection for retrieval.
+"""
 
 from __future__ import annotations
 

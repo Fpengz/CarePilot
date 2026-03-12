@@ -1,4 +1,8 @@
-"""SQLite persistence for alert outbox records."""
+"""
+Persist alert outbox records in SQLite.
+
+This module implements SQLite persistence for alert outbox data.
+"""
 
 import json
 import sqlite3

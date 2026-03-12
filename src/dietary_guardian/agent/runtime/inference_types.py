@@ -1,4 +1,9 @@
-"""Data models for inference."""
+"""
+Define inference request/response data models.
+
+This module contains typed request/response contracts used by the agent
+runtime for model execution.
+"""
 
 from datetime import datetime, timezone
 from enum import StrEnum

@@ -1,4 +1,8 @@
-"""Infrastructure support for rate limiter."""
+"""
+Provide rate limiting helpers for the API.
+
+This module implements a simple rate limiter abstraction used by middleware.
+"""
 
 from __future__ import annotations
 

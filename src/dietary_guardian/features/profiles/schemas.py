@@ -1,4 +1,9 @@
-"""Health profile Pydantic schemas shared between domain and API layers."""
+"""
+Define health profile schemas.
+
+This module contains Pydantic schemas shared between profile domain and API
+layers.
+"""
 
 from __future__ import annotations
 

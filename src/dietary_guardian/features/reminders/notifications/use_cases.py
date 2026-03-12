@@ -1,4 +1,8 @@
-"""Use cases for workflow-derived notification feeds and read state."""
+"""
+Implement reminder notification feed use cases.
+
+This module handles notification feed reads and read-state updates.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Ingest Singapore hawker food/drink data into ChromaDB."""
+"""
+Ingest Singapore food data into the vector store.
+
+This module loads hawker food and drink data into ChromaDB for retrieval.
+"""
 
 from __future__ import annotations
 

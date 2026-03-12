@@ -1,4 +1,8 @@
-"""Infrastructure support for demo defaults."""
+"""
+Provide demo-mode auth defaults.
+
+This module supplies default users and settings for demo or local setups.
+"""
 
 from __future__ import annotations
 

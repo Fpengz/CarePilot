@@ -1,4 +1,9 @@
-"""API router for emotions endpoints."""
+"""
+Expose emotion inference API endpoints.
+
+This router defines emotion analysis routes and forwards requests to the
+emotion service and runtime health checks.
+"""
 
 from __future__ import annotations
 

@@ -1,23 +1,8 @@
 """
-routes/router.py
-----------------
-QueryRouter — uses the LLM to classify the user's query into one of three
-routes, then dispatches to the appropriate handler.
+Route chat queries to specialized handlers.
 
-The LLM is given plain-language descriptions of each route and returns a
-single label. This is more flexible than regex: it handles typos, mixed
-languages, implicit meaning, and novel drug/food names without any upkeep.
-
-Routes:
-  drug    — Any question about a specific medicine, dosage, side effects,
-              interactions, or general medication management for diabetes,
-              hypertension, or cardiovascular disease.
-  food    — Any question about food, drinks, diet, nutrition, or eating
-              habits — including Singapore hawker dishes and kopitiam drinks —
-              in relation to health or chronic disease management.
-  code    — Any request to calculate, compute, or run a mathematical formula
-              (e.g. calorie totals, BMI, unit conversions, dose arithmetic).
-  general — Everything else (no web search; LLM answers from training).
+This module uses an LLM classifier to map user queries to a route
+(drug, food, code, or general) and dispatches to the matching handler.
 """
 from __future__ import annotations
 

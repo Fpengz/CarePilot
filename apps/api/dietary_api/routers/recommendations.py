@@ -1,4 +1,9 @@
-"""API router for recommendations endpoints."""
+"""
+Expose recommendation API endpoints.
+
+This router defines recommendation generation routes and delegates to
+recommendation services for orchestration.
+"""
 
 from fastapi import APIRouter, Depends, Request
 

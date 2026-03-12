@@ -1,4 +1,9 @@
-"""Module for main."""
+"""
+Build the FastAPI application and lifecycle hooks.
+
+This module wires middleware, routes, and error handlers into the dietary API
+application and configures startup/shutdown behavior.
+"""
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager

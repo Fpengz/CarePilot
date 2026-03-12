@@ -1,4 +1,8 @@
-"""Application use cases for clinician digest."""
+"""
+Implement clinician digest use cases.
+
+This module assembles clinician-facing summaries for the companion system.
+"""
 
 from __future__ import annotations
 

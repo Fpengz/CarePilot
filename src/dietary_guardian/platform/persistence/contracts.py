@@ -1,4 +1,8 @@
-"""Infrastructure support for contracts."""
+"""
+Define persistence contract primitives.
+
+This module contains shared types for persistence adapters.
+"""
 
 from __future__ import annotations
 

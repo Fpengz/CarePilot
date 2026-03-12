@@ -1,4 +1,8 @@
-"""WhatsApp channel adapter (stub — wire in Twilio/Meta credentials to activate)."""
+"""
+Provide a WhatsApp reminder notification adapter stub.
+
+This module defines the WhatsApp channel adapter placeholder for future wiring.
+"""
 
 from datetime import datetime, timezone
 

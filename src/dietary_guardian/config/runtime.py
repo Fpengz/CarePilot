@@ -1,4 +1,9 @@
-"""Runtime config: merged settings from all config submodules for simplified imports."""
+"""
+Expose merged runtime configuration.
+
+This module aggregates settings from config submodules into a single
+runtime configuration surface.
+"""
 
 from typing import Literal
 

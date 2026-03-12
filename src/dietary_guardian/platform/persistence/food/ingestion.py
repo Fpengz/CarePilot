@@ -1,4 +1,8 @@
-"""Infrastructure support for ingestion."""
+"""
+Ingest food catalog data into the vector store.
+
+This module handles ingestion workflows for food records and embeddings.
+"""
 
 from __future__ import annotations
 

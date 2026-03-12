@@ -1,11 +1,8 @@
 """
-agents/code_agent.py
---------------------
-CodeAgent — executes Python code in a secure E2B cloud sandbox.
+Execute Python code snippets in a sandboxed runtime.
 
-Requires:
-    pip install e2b-code-interpreter
-    Provide an E2B API key via the runtime wiring.
+This module wraps the E2B code interpreter to run agent-generated Python
+snippets safely with a configurable timeout.
 """
 from __future__ import annotations
 

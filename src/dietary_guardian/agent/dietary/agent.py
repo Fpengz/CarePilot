@@ -1,4 +1,9 @@
-"""Dietary agent that wraps safety checks and LLM meal analysis."""
+"""
+Provide the dietary reasoning agent.
+
+This module orchestrates meal analysis requests, wraps safety checks,
+and delivers structured dietary guidance.
+"""
 
 from typing import Any, cast
 

@@ -1,4 +1,8 @@
-"""Canonical recommendations service entrypoint."""
+"""
+Provide the recommendations service entrypoint.
+
+This module exposes the main recommendation workflows to callers.
+"""
 
 from dietary_guardian.features.recommendations.suggestion_session import (
     generate_from_report,

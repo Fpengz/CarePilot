@@ -1,4 +1,9 @@
-"""API router for reminders endpoints."""
+"""
+Expose reminder API endpoints.
+
+This router defines reminder scheduling and confirmation routes and delegates
+to reminder services for orchestration.
+"""
 
 from fastapi import APIRouter, Depends, Request
 

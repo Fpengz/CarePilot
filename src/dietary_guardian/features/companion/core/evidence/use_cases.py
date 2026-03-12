@@ -1,4 +1,8 @@
-"""Application use cases for evidence."""
+"""
+Implement evidence retrieval use cases.
+
+This module fetches and prepares evidence snippets used by companion output.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,9 @@
-"""Deterministic trend analysis helpers for longitudinal health metrics."""
+"""
+Analyze trends for longitudinal health metrics.
+
+This module provides deterministic trend calculations for companion impact
+summaries.
+"""
 
 from __future__ import annotations
 

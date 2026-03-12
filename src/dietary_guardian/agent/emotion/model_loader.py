@@ -1,4 +1,8 @@
-"""Infrastructure support for model loader."""
+"""
+Load emotion inference models on demand.
+
+This module provides lazy-loading helpers for emotion text and speech models.
+"""
 
 from __future__ import annotations
 

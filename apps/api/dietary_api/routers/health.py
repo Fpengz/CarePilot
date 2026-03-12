@@ -1,4 +1,9 @@
-"""API router for health endpoints."""
+"""
+Expose health check and readiness API endpoints.
+
+This router provides basic health and readiness routes for deployment
+verification and diagnostics.
+"""
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 

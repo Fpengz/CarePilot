@@ -1,4 +1,9 @@
-"""Domain model definitions for the notifications subdomain: medication regimens, reminders, and mobility settings."""
+"""
+Define reminder domain models.
+
+This module contains models for medication regimens, reminders, and mobility
+settings.
+"""
 
 from __future__ import annotations
 

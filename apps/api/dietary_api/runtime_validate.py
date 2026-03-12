@@ -1,4 +1,9 @@
-"""Module for runtime validate."""
+"""
+Validate API runtime configuration at startup.
+
+This module triggers settings validation to catch misconfigured deployments
+early in startup or health checks.
+"""
 
 from dietary_guardian.config.app import get_settings
 

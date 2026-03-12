@@ -1,4 +1,8 @@
-"""Safety logic for exceptions."""
+"""
+Define safety domain exceptions.
+
+This module contains exception types raised by safety evaluations.
+"""
 
 from dietary_guardian.features.meals.domain.models import MealState
 

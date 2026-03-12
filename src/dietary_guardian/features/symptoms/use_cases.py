@@ -1,4 +1,8 @@
-"""Application use cases for symptom check-ins, listing, and symptom summaries."""
+"""
+Implement symptom use cases.
+
+This module provides workflows for symptom check-ins, listing, and summaries.
+"""
 
 from __future__ import annotations
 

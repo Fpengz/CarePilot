@@ -1,4 +1,8 @@
-"""Infrastructure support for in memory."""
+"""
+Provide an in-memory cache store.
+
+This module implements a simple in-process cache for local usage.
+"""
 
 from __future__ import annotations
 

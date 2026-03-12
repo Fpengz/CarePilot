@@ -1,4 +1,8 @@
-"""Data models for social."""
+"""
+Define social profile models.
+
+This module contains social profile data used by onboarding workflows.
+"""
 
 from pydantic import BaseModel
 

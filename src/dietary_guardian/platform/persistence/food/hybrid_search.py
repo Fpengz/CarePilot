@@ -1,4 +1,8 @@
-"""Hybrid food search with vector retrieval and keyword rerank."""
+"""
+Run hybrid food search using vector and keyword retrieval.
+
+This module combines vector retrieval with keyword reranking for food search.
+"""
 
 from __future__ import annotations
 

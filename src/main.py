@@ -1,4 +1,9 @@
-"""Module for main."""
+"""
+Provide a CLI-style entrypoint for local dietary analysis.
+
+This module boots configuration, wires the dietary agent runtime, and
+executes a sample meal analysis workflow for local testing.
+"""
 
 import asyncio
 

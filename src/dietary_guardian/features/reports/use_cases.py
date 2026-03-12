@@ -1,4 +1,8 @@
-"""Application orchestration for clinical report parsing and symptom-context enrichment."""
+"""
+Orchestrate clinical report parsing workflows.
+
+This module coordinates clinical report parsing and symptom-context enrichment.
+"""
 
 from __future__ import annotations
 

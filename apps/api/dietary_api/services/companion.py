@@ -1,4 +1,9 @@
-"""API orchestration entry points for companion, clinician digest, and impact views."""
+"""
+Expose companion orchestration entrypoints for API routes.
+
+This module provides high-level functions for companion interactions,
+clinician digest reads, and impact summary responses.
+"""
 
 from __future__ import annotations
 

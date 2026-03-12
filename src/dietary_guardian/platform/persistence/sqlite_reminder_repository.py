@@ -1,4 +1,9 @@
-"""SQLite persistence for reminders, scheduled notifications, and endpoints."""
+"""
+Persist reminder scheduling data in SQLite.
+
+This module implements SQLite storage for reminders, scheduled notifications,
+and endpoints.
+"""
 
 import json
 import sqlite3

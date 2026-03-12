@@ -1,4 +1,8 @@
-"""Infrastructure support for session signer."""
+"""
+Sign and verify session tokens.
+
+This module provides cryptographic helpers for session cookie signing.
+"""
 
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 

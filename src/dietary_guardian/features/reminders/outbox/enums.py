@@ -1,4 +1,8 @@
-"""Enumerations for reminder states, types, metrics, and delivery channels."""
+"""
+Define reminder outbox enumerations.
+
+This module contains enums for reminder states, metrics, and delivery channels.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Meals feature business entrypoint."""
+"""
+Provide the meals feature entrypoint.
+
+This module exposes the main business operations for meal workflows.
+"""
 
 from dietary_guardian.features.meals.api_service import (
     analyze_meal,

@@ -1,4 +1,9 @@
-"""Domain model definitions for the workflows subdomain: workflow contracts, agent definitions, tool policies, and timeline events."""
+"""
+Define workflow domain models.
+
+This module contains models for workflow contracts, agent definitions, tool
+policies, and timeline events.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,9 @@
-"""API router for notifications endpoints."""
+"""
+Expose notification API endpoints.
+
+This router defines notification feed and read-state routes and delegates
+to notification services for orchestration.
+"""
 
 from fastapi import APIRouter, Depends, Request
 

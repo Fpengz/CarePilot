@@ -1,4 +1,8 @@
-"""Application use cases for meals."""
+"""
+Implement meal use cases.
+
+This module contains application-level workflows for meal capture and analysis.
+"""
 
 from __future__ import annotations
 

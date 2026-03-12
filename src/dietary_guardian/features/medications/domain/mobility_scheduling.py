@@ -1,4 +1,8 @@
-"""Mobility reminder scheduling rules."""
+"""
+Define mobility scheduling rules.
+
+This module contains domain logic for mobility reminder scheduling.
+"""
 
 from __future__ import annotations
 

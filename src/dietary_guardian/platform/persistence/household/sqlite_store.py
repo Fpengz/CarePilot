@@ -1,4 +1,8 @@
-"""Infrastructure support for sqlite store."""
+"""
+Implement SQLite persistence for households.
+
+This module stores household records in the SQLite persistence layer.
+"""
 
 import secrets
 import sqlite3

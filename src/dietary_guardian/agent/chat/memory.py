@@ -1,27 +1,8 @@
 """
-agents/memory_manager.py
-------------------------
-Manages long-term and short-term conversation memory for ChatAgent.
+Manage chat memory for the companion agent.
 
-Long-term  : SQLite — every message persisted (data/runtime/chat_memory.db)
-Short-term : In-memory list — latest SHORT_TERM_SIZE messages for LLM prompt
-Summary    : Rolling summary of all messages before the short-term window,
-             stored in SQLite and updated every time SHORT_TERM_SIZE new
-             messages "fall out" of the window.
-
-Prompt template produced by build_prompt_context():
-    {
-        "rolling_summary": str | None,   # None if no summary yet
-        "short_term":      list[dict],   # last N {"role", "content"} messages
-    }
-
-Usage:
-    mem = MemoryManager(session_id="default", client=openai_client, model_id=...)
-    mem.add_message("user", "Hello!")
-    mem.add_message("assistant", "Hi there!")
-    ctx = mem.build_prompt_context()
-    # ctx["rolling_summary"] → str or None
-    # ctx["short_term"]      → list of last 5 dicts
+This module persists long-term chat history, maintains a short-term window,
+and builds prompt context for the chat agent runtime.
 """
 
 from __future__ import annotations

@@ -1,4 +1,8 @@
-"""Backward-compatibility shim — import from dietary_guardian.observability instead."""
+"""
+Provide a backward-compatibility logging shim.
+
+This module preserves legacy imports and forwards to the observability setup.
+"""
 # ruff: noqa: F401
 import sys
 import types

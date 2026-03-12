@@ -1,4 +1,9 @@
-"""API router for symptoms endpoints."""
+"""
+Expose symptom API endpoints.
+
+This router defines symptom check-in and summary routes and delegates to
+symptom services for orchestration.
+"""
 
 from __future__ import annotations
 

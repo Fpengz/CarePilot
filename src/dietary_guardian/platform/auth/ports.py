@@ -1,4 +1,9 @@
-"""Application ports for auth."""
+"""
+Define auth port protocols.
+
+This module contains protocol interfaces for authentication persistence
+and session management.
+"""
 
 from typing import Any, Protocol
 

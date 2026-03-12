@@ -1,4 +1,8 @@
-"""Infrastructure support for in memory."""
+"""
+Implement an in-memory auth store.
+
+This module provides a lightweight auth store for tests and local runs.
+"""
 
 import base64
 import hashlib

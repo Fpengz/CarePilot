@@ -1,4 +1,8 @@
-"""Port protocols for the safety domain."""
+"""
+Define safety domain ports.
+
+This module declares interfaces used by safety workflows.
+"""
 
 from __future__ import annotations
 

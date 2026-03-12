@@ -1,4 +1,8 @@
-"""Unified SQLite repository for reminders, metric readings, and food records."""
+"""
+Implement the unified SQLite reminder repository.
+
+This module stores reminders, metric readings, and food records in SQLite.
+"""
 
 from __future__ import annotations
 

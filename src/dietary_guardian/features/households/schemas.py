@@ -1,4 +1,9 @@
-"""Household feature Pydantic schemas shared between domain and API layers."""
+"""
+Define household feature schemas.
+
+This module contains Pydantic schemas shared between household domain and
+API layers.
+"""
 
 from __future__ import annotations
 

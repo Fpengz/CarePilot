@@ -1,4 +1,8 @@
-"""Application ports for suggestions."""
+"""
+Define suggestion ports.
+
+This module declares interfaces for suggestion generation and persistence.
+"""
 
 from collections.abc import Sequence
 from typing import Any, Protocol

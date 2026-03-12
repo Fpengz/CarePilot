@@ -1,37 +1,9 @@
 """
-agents/health_tracker.py
-------------------------
-Parses [TRACK] messages stored in chat_memory.db and builds line charts
-for the Health Dashboard tab.
+Extract and chart health metrics from tracked chat messages.
 
-Users prefix chat messages with [TRACK] to log numeric health metrics:
-    [TRACK] I weighed 80kg today
-    [TRACK] blood pressure 140/90 mmHg
-    [TRACK] fasting blood glucose 7.2 mmol/L
-    [TRACK] felt really fatigued, severity 7/10
-
-How it works
-------------
-1. Query chat_messages WHERE content LIKE '[TRACK]%' in the chosen date range.
-2. For each message, call the LLM to extract metric_type / value / unit.
-   Results are cached in health_parsed_metrics so no message is re-parsed.
-3. Group by metric_type and plot one subplot per metric as a line chart.
-
-Supported metric_type values (from LLM):
-    weight                   — kg / lbs
-    blood_pressure_systolic  — mmHg
-    blood_pressure_diastolic — mmHg
-    blood_glucose            — mmol/L / mg/dL
-    hba1c                    — %
-    heart_rate               — bpm
-    cholesterol_total        — mmol/L
-    cholesterol_ldl          — mmol/L
-    cholesterol_hdl          — mmol/L
-    symptom_severity         — 1–10
-
-Usage:
-    tracker = HealthTracker(session_id="default", client=openai_client, model_id=...)
-    fig = tracker.build_chart("2026-01-01", "2026-03-31")
+This module parses `[TRACK]` messages, extracts metric values (with LLM
+assistance), caches the results, and builds chart-ready series for the
+health dashboard.
 """
 
 from __future__ import annotations

@@ -1,4 +1,8 @@
-"""Application ports for household."""
+"""
+Define household feature ports.
+
+This module declares interfaces used by household application workflows.
+"""
 
 from typing import Any, Protocol
 
@@ -44,4 +48,3 @@ class HouseholdContext(Protocol):
 
     @property
     def auth_store(self) -> AuthStorePort: ...
-

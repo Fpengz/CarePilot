@@ -1,4 +1,8 @@
-"""Safety logic for triage."""
+"""
+Implement safety triage logic.
+
+This module performs triage evaluation for safety-related events.
+"""
 
 from dataclasses import dataclass, field
 

@@ -1,4 +1,9 @@
-"""Module for policy."""
+"""
+Define API policy helpers for scope-based access control.
+
+This module contains simple policy rules and enforcement helpers used by
+API routes to authorize requests.
+"""
 
 from __future__ import annotations
 

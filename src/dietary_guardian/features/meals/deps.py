@@ -1,4 +1,8 @@
-"""Dependency types for meal feature use cases."""
+"""
+Define dependencies for meal use cases.
+
+This module hosts dependency type hints used by the meals feature.
+"""
 
 from __future__ import annotations
 

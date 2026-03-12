@@ -1,4 +1,8 @@
-"""Infrastructure support for static retriever."""
+"""
+Retrieve static evidence snippets for the companion.
+
+This module loads fixed evidence references used by companion responses.
+"""
 
 from __future__ import annotations
 

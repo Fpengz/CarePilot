@@ -1,4 +1,8 @@
-"""Domain-neutral error primitives."""
+"""
+Define domain-neutral error primitives.
+
+This module provides lightweight error types shared across the system.
+"""
 
 from __future__ import annotations
 

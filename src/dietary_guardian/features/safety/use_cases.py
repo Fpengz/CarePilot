@@ -1,4 +1,8 @@
-"""Application use cases for safety."""
+"""
+Implement safety use cases.
+
+This module coordinates application-level safety workflows.
+"""
 
 from __future__ import annotations
 

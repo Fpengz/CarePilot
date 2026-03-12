@@ -1,4 +1,8 @@
-"""Application use cases for auth."""
+"""
+Implement authentication use cases.
+
+This module provides auth-related workflows used by API services.
+"""
 
 from dataclasses import dataclass
 from typing import Any

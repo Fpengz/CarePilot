@@ -1,4 +1,9 @@
-"""SQLite persistence for clinical data: biomarkers, symptoms, cards, and health profiles."""
+"""
+Persist clinical data in SQLite.
+
+This module implements SQLite persistence for biomarkers, symptoms, cards,
+and health profiles.
+"""
 
 import json
 import sqlite3

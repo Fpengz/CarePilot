@@ -1,14 +1,8 @@
 """
-routes/food_route.py
---------------------
-Handles food, diet, and nutrition advisory queries for patients managing:
-  - Type 2 Diabetes (glycemic index, carb content, blood sugar impact)
-  - Hypertension (sodium content, DASH diet, potassium-rich foods)
-  - Cardiovascular disease (saturated fat, cholesterol, heart-healthy choices)
+Handle food and nutrition queries for the chat router.
 
-Covers Singapore context: hawker dishes, kopitiam drinks, local cuisine.
-
-Activated by: LLM classification in router.py (not regex).
+This module enriches diet and meal questions with nutrition context and
+Singapore-specific food references.
 """
 from __future__ import annotations
 from openai import OpenAI

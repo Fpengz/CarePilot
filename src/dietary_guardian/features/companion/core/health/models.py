@@ -1,4 +1,9 @@
-"""Domain model definitions for the health subdomain: profiles, symptoms, biomarkers, and medication tracking."""
+"""
+Define companion health domain models.
+
+This module contains data models for profiles, symptoms, biomarkers, and
+medication tracking in the companion health subdomain.
+"""
 
 from __future__ import annotations
 

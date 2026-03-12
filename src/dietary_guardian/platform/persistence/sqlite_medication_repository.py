@@ -1,4 +1,8 @@
-"""SQLite persistence for medication regimens and adherence events."""
+"""
+Persist medication records in SQLite.
+
+This module implements SQLite storage for medication regimens and adherence events.
+"""
 
 import json
 import sqlite3

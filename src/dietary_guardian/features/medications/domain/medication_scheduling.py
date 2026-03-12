@@ -1,4 +1,9 @@
-"""Medication reminder scheduling and confirmation domain logic."""
+"""
+Define medication scheduling rules.
+
+This module contains domain logic for medication reminder scheduling and
+confirmation handling.
+"""
 
 from __future__ import annotations
 

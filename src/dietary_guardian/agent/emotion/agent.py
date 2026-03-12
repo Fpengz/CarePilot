@@ -1,4 +1,9 @@
-"""Canonical emotion agent built on the emotion inference runtime port."""
+"""
+Expose the canonical emotion agent facade.
+
+This module provides the emotion agent used by application workflows,
+wrapping the inference runtime port.
+"""
 
 from __future__ import annotations
 

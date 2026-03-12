@@ -1,4 +1,8 @@
-"""Application-layer presenter for meal analysis results."""
+"""
+Present meal analysis results for API responses.
+
+This module formats meal analysis outputs into response-friendly structures.
+"""
 
 from dietary_guardian.core.contracts.agent_envelopes import (
     AgentExecutionTrace,

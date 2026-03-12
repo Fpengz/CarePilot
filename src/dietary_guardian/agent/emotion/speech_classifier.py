@@ -1,4 +1,9 @@
-"""Infrastructure support for speech emotion."""
+"""
+Classify emotion from speech inputs.
+
+This module contains speech emotion model wrappers used by the
+emotion inference engine.
+"""
 
 from __future__ import annotations
 

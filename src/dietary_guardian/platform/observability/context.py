@@ -1,4 +1,8 @@
-"""Observability support for context."""
+"""
+Provide observability context helpers.
+
+This module defines helpers for building and propagating logging context.
+"""
 
 from __future__ import annotations
 

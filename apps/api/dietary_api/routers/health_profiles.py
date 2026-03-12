@@ -1,4 +1,9 @@
-"""API router for health profiles endpoints."""
+"""
+Expose health profile API endpoints.
+
+This router defines profile and onboarding routes and delegates to
+health profile API services.
+"""
 
 from fastapi import APIRouter, Depends, Request
 

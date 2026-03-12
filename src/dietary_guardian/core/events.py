@@ -1,4 +1,8 @@
-"""Minimal domain-neutral event shape."""
+"""
+Define domain-neutral event primitives.
+
+This module provides the minimal event structure used across features.
+"""
 
 from __future__ import annotations
 

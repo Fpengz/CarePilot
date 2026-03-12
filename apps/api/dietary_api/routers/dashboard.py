@@ -1,4 +1,9 @@
-"""API router for chat health dashboard endpoints."""
+"""
+Expose chat dashboard API endpoints.
+
+This router serves dashboard views and health metric summaries generated
+from chat and tracking workflows.
+"""
 
 from __future__ import annotations
 

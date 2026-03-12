@@ -1,4 +1,9 @@
-"""Domain models and dataclasses for reminder events, readings, and dispatch results."""
+"""
+Define reminder outbox domain models.
+
+This module contains dataclasses for reminder events, readings, and dispatch
+results.
+"""
 
 from __future__ import annotations
 

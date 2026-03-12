@@ -1,4 +1,9 @@
-"""API router for workflows endpoints."""
+"""
+Expose workflow API endpoints.
+
+This router defines workflow read and governance routes and delegates to
+workflow services for orchestration.
+"""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 

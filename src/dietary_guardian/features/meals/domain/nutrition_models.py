@@ -1,4 +1,8 @@
-"""Domain models for daily nutrition summaries (part of the meals domain)."""
+"""
+Define nutrition summary models for meals.
+
+This module contains domain models used for daily nutrition summaries.
+"""
 
 from pydantic import BaseModel, Field
 

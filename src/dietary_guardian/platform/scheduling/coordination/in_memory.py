@@ -1,4 +1,8 @@
-"""Infrastructure support for in memory."""
+"""
+Provide in-memory coordination locks.
+
+This module implements coordination primitives for local execution.
+"""
 
 from __future__ import annotations
 

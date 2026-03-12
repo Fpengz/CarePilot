@@ -1,4 +1,9 @@
-"""Application module for household access."""
+"""
+Define household access policies.
+
+This module implements access checks and policy helpers for household
+features.
+"""
 
 from __future__ import annotations
 

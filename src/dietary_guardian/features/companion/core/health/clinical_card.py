@@ -1,4 +1,8 @@
-"""Data models for clinical card."""
+"""
+Define clinical card domain models.
+
+This module contains the data models used to represent clinician cards.
+"""
 
 from __future__ import annotations
 

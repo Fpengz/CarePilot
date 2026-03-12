@@ -1,4 +1,9 @@
-"""Infrastructure support for emotion engine."""
+"""
+Execute emotion inference workflows.
+
+This module defines the core emotion inference engine that coordinates
+text and audio classification pipelines.
+"""
 
 from __future__ import annotations
 

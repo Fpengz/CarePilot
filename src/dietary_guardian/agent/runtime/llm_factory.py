@@ -1,4 +1,9 @@
-"""Provider factory for constructing concrete LLM clients and model runtimes."""
+"""
+Build LLM clients and runtime adapters.
+
+This module constructs provider-specific clients and runtime wrappers used
+by the agent inference engine.
+"""
 
 import os
 from contextlib import suppress

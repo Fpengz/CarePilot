@@ -1,4 +1,9 @@
-"""Shared dataclasses and re-exported typing primitives for LLM infrastructure."""
+"""
+Define LLM runtime dataclasses and typing helpers.
+
+This module contains shared dataclasses and type aliases used by the
+LLM runtime and routing layers.
+"""
 
 from dataclasses import dataclass
 

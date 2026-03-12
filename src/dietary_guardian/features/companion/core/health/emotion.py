@@ -1,4 +1,8 @@
-"""Data models for emotion."""
+"""
+Define emotion-related health models.
+
+This module contains data models for emotion signals in the companion domain.
+"""
 
 from __future__ import annotations
 

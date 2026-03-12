@@ -1,4 +1,8 @@
-"""SQLite-backed outbox repository for durable reminder event persistence and delivery."""
+"""
+Persist reminder outbox records in SQLite.
+
+This module implements the outbox repository used by the reminder service.
+"""
 
 from __future__ import annotations
 

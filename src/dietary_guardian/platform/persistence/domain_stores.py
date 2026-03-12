@@ -1,4 +1,8 @@
-"""Infrastructure support for domain stores."""
+"""
+Provide domain store wrappers for persistence.
+
+This module wires domain-specific repositories into a shared store container.
+"""
 
 from __future__ import annotations
 

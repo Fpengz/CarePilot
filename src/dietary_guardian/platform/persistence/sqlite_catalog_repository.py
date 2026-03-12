@@ -1,4 +1,9 @@
-"""SQLite persistence for meal catalog, canonical foods, recommendations, and suggestions."""
+"""
+Persist catalog and recommendation data in SQLite.
+
+This module implements SQLite persistence for meal catalogs, canonical foods,
+recommendations, and suggestions.
+"""
 
 import json
 import sqlite3
@@ -250,5 +255,4 @@ class SQLiteCatalogRepository:
         item = json.loads(cast(str, row[0]))
         logger.debug("get_suggestion_record_hit user_id=%s suggestion_id=%s", user_id, suggestion_id)
         return item
-
 

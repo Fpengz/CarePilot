@@ -1,17 +1,12 @@
 """
-AudioAgent
-----------
-Responsible for transcribing audio input into text.
+Transcribe audio inputs for the chat agent.
 
-Supported backends:
-  • Groq Whisper  – cloud-based, fast (default)
-  • MERaLiON     – local model, Singapore-English focused
+This module provides audio transcription helpers backed by Groq Whisper
+or a local MERaLiON model for Singapore-English speech.
 
-Usage
------
+Example:
     agent = AudioAgent()
-    text = agent.transcribe_groq(audio_input)   # (sample_rate, np.ndarray)
-    text = agent.transcribe(audio_input)         # MERaLiON (load_model() first)
+    text = agent.transcribe_groq(audio_input)
 """
 
 import io

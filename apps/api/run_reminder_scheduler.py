@@ -1,4 +1,9 @@
-"""Module for run reminder scheduler."""
+"""
+Run the reminder scheduler loop.
+
+This entrypoint executes the scheduling loop used to enqueue reminder
+notifications on a cadence.
+"""
 
 import asyncio
 

@@ -1,4 +1,9 @@
-"""Infrastructure support for inprocess emotion runtime."""
+"""
+Provide an in-process emotion inference runtime.
+
+This module executes emotion inference locally using the configured
+emotion engine and models.
+"""
 
 from __future__ import annotations
 

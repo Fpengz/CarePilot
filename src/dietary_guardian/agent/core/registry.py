@@ -1,4 +1,9 @@
-"""Static agent and workflow contract registry for the runtime layer."""
+"""
+Register agent contracts and workflow metadata.
+
+This module defines the registry that binds agent contracts to runtime
+metadata for lookup and validation.
+"""
 
 from dietary_guardian.platform.observability.workflows.domain.models import (
     AgentContract,

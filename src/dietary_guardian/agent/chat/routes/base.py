@@ -1,11 +1,8 @@
 """
-routes/base.py
---------------
-Shared types for all routes.
+Define shared route contracts for the chat router.
 
-Routing decisions are made by the LLM in router.py.
-Each route only needs to implement enrich() — the logic that
-fetches and formats context for the LLM given a matched query.
+This module contains the base route result model used by individual
+route handlers that enrich chat context.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field

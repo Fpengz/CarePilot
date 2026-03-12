@@ -1,4 +1,9 @@
-"""SQLite persistence for workflow tool policies, contract snapshots, and timeline events."""
+"""
+Persist workflow metadata in SQLite.
+
+This module implements SQLite storage for workflow tool policies, contract
+snapshots, and timeline events.
+"""
 
 import json
 import sqlite3

@@ -1,4 +1,8 @@
-"""Application module for personalization: use cases and profile tools."""
+"""
+Implement companion personalization workflows.
+
+This module contains use cases that tailor guidance using profile signals.
+"""
 
 from __future__ import annotations
 

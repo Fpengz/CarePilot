@@ -1,4 +1,9 @@
-"""API router for companion chat endpoints."""
+"""
+Expose companion chat API endpoints.
+
+This router defines chat interaction routes and delegates to companion
+services for orchestration and policy enforcement.
+"""
 
 from __future__ import annotations
 

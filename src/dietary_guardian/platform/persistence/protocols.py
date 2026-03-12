@@ -1,4 +1,8 @@
-"""Structural protocols for domain-specific persistence backends."""
+"""
+Define persistence backend protocols.
+
+This module provides structural protocols for domain-specific repositories.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,9 @@
-"""Use cases for medication regimens, adherence events, and adherence metrics."""
+"""
+Implement medication use cases.
+
+This module provides workflows for medication regimens, adherence events,
+and adherence metrics.
+"""
 
 from __future__ import annotations
 

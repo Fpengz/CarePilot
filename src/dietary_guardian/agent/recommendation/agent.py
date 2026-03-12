@@ -1,4 +1,9 @@
-"""Canonical recommendation agent for daily plan synthesis."""
+"""
+Provide the recommendation agent facade.
+
+This module wraps recommendation synthesis for daily plans and exposes
+typed inference entrypoints.
+"""
 
 from __future__ import annotations
 

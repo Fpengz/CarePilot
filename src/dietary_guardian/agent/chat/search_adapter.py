@@ -1,11 +1,8 @@
 """
-agents/search_agent.py
-----------------------
-Low-level DuckDuckGo search wrapper.
+Provide a thin search adapter for chat routes.
 
-Provides a single `search()` primitive used by the route handlers.
-Routing decisions (drug vs food vs general) are made by the LLM in
-chat/router.py — this module has no opinion on what the query is about.
+This module wraps DuckDuckGo search and returns normalized results for
+route handlers that enrich chat responses.
 """
 
 from __future__ import annotations

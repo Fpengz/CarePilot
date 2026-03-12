@@ -1,4 +1,8 @@
-"""Timezone conversion helpers reused by domain summary logic."""
+"""
+Provide timezone conversion helpers.
+
+This module contains time utilities used by domain summary logic.
+"""
 
 from __future__ import annotations
 

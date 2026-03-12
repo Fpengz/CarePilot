@@ -1,4 +1,9 @@
-"""Module for errors."""
+"""
+Map domain and validation failures into API error responses.
+
+This module centralizes HTTP exception handling and error payload shaping
+for the dietary API, ensuring consistent error envelopes and logging.
+"""
 
 from __future__ import annotations
 

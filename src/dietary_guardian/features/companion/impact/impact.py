@@ -1,4 +1,8 @@
-"""Application use cases for impact."""
+"""
+Implement companion impact use cases.
+
+This module assembles impact summaries and metrics for the companion.
+"""
 
 from __future__ import annotations
 

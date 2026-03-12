@@ -1,4 +1,8 @@
-"""Domain policy evaluation for agent tool authorization decisions."""
+"""
+Evaluate tool authorization policies.
+
+This module defines policy evaluation used to authorize agent tool access.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Application use cases for health profiles and onboarding workflows."""
+"""
+Implement profile and onboarding use cases.
+
+This module provides workflows for health profiles and onboarding steps.
+"""
 
 from __future__ import annotations
 

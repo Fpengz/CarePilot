@@ -1,4 +1,9 @@
-"""Module for run."""
+"""
+Launch the dietary API via Uvicorn.
+
+This entrypoint loads configuration and starts the FastAPI application
+using the runtime settings.
+"""
 
 import uvicorn
 
@@ -19,4 +24,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

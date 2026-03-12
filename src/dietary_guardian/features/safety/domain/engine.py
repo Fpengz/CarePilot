@@ -1,4 +1,8 @@
-"""Safety logic for engine."""
+"""
+Implement safety evaluation logic.
+
+This module contains the core safety engine used by companion workflows.
+"""
 
 from __future__ import annotations
 

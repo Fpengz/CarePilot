@@ -1,4 +1,8 @@
-"""Infrastructure support for sqlite repository."""
+"""
+Provide SQLite repository base helpers.
+
+This module contains shared helpers used by SQLite-backed repositories.
+"""
 
 import json
 import sqlite3

@@ -1,4 +1,9 @@
-"""Application use cases for care plans."""
+"""
+Implement companion care plan use cases.
+
+This module contains the application logic for creating and updating
+care plans within the companion care loop.
+"""
 
 from __future__ import annotations
 

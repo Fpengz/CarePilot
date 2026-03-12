@@ -1,4 +1,8 @@
-"""Safety logic for db."""
+"""
+Access drug interaction reference data.
+
+This module loads and queries drug interaction data for safety checks.
+"""
 
 import sqlite3
 from threading import Lock

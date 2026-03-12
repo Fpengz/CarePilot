@@ -1,4 +1,9 @@
-"""Use cases for clinician-facing card generation and retrieval."""
+"""
+Implement clinician card generation use cases.
+
+This module builds clinician-facing cards and manages retrieval workflows
+used by the digest view.
+"""
 
 from __future__ import annotations
 

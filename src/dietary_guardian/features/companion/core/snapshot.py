@@ -1,4 +1,9 @@
-"""Application use cases for case snapshot."""
+"""
+Implement case snapshot use cases.
+
+This module assembles the companion case snapshot used by downstream
+personalization and engagement workflows.
+"""
 
 from __future__ import annotations
 
