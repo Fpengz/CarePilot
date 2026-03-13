@@ -1,30 +1,112 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
+import { Fraunces, Source_Sans_3 } from "next/font/google";
 import { PageTitle } from "@/components/app/page-title";
 import { Button } from "@/components/ui/button";
+import { ChatRail } from "./components/chat-rail";
+import { ChatInput, type SuggestionChip } from "./components/chat-input";
+import { MessageCard } from "./components/message-card";
+import { type Message, type MessageView } from "./components/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/backend";
 
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-  emotion?: { label: string; score: number };
-  tag?: string;
-  mealProposal?: { proposalId: string; mealText: string };
-};
+const displayFont = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["400", "600", "700"],
+});
 
-const EMOTION_EMOJI: Record<string, string> = {
-  happy: "😊",
-  sad: "😢",
-  angry: "😤",
-  frustrated: "😩",
-  anxious: "😰",
-  neutral: "😐",
-  confused: "😕",
-  fearful: "😨",
+const bodyFont = Source_Sans_3({
+  subsets: ["latin"],
+  variable: "--font-body",
+  weight: ["400", "500", "600", "700"],
+});
+
+const SUGGESTIONS: SuggestionChip[] = [
+  { id: "sodium", label: "Review sodium trend", value: "Show my sodium trend this week." },
+  { id: "breakfast", label: "Log breakfast", value: "[TRACK] Breakfast: oatmeal, banana, latte" },
+  { id: "meds", label: "Medication plan", value: "Help me stay on schedule with my meds." },
+  { id: "symptoms", label: "Check symptoms", value: "I've felt lightheaded today. What should I do?" },
+  { id: "snack", label: "Low-sugar snack", value: "Recommend a low-sugar snack option." },
+];
+
+const makeId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+const normalizeMessage = (message: Partial<Message>, index: number): Message => ({
+  id: message.id ?? `${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
+  role: message.role ?? "assistant",
+  content: message.content ?? "",
+  emotion: message.emotion,
+  tag: message.tag,
+  mealProposal: message.mealProposal,
+  title: message.title,
+  explanation: message.explanation,
+  reasoning: message.reasoning,
+  confidence: message.confidence,
+});
+
+const deriveMessageView = (message: Message): MessageView => {
+  if (message.role === "user") {
+    return { ...message, kind: "plain" };
+  }
+
+  const lower = message.content.toLowerCase();
+  let kind: MessageView["kind"] = "plain";
+  let title: string | undefined;
+  let explanation: string | undefined;
+
+  if (message.tag === "error" || lower.startsWith("⚠")) {
+    kind = "proactive_alert";
+    title = "Attention needed";
+    explanation = "The companion hit an interruption and paused the response.";
+  } else if (
+    message.mealProposal ||
+    lower.includes("meal analysis") ||
+    lower.includes("macros") ||
+    lower.includes("calories")
+  ) {
+    kind = "meal_analysis";
+    title = "Meal analysis summary";
+    explanation = "Highlights from your latest meal entry and nutrition signals.";
+  } else if (
+    lower.includes("trend") ||
+    lower.includes("over time") ||
+    lower.includes("week") ||
+    lower.includes("pattern")
+  ) {
+    kind = "trend_insight";
+    title = "Trend insight";
+    explanation = "Comparing recent check-ins to your baseline for consistency.";
+  } else if (
+    lower.includes("recommend") ||
+    lower.includes("suggest") ||
+    lower.includes("consider")
+  ) {
+    kind = "recommendation";
+    title = "Recommended next step";
+    explanation = "A focused action aligned to your care priorities.";
+  } else if (
+    lower.includes("clarify") ||
+    lower.includes("follow up") ||
+    lower.trim().endsWith("?")
+  ) {
+    kind = "follow_up";
+    title = "Quick clarification";
+    explanation = "One detail helps keep guidance precise.";
+  }
+
+  return {
+    ...message,
+    kind,
+    title: message.title ?? title,
+    explanation: message.explanation ?? explanation,
+    reasoning: message.reasoning,
+    confidence: message.confidence,
+  };
 };
 
 export default function ChatPage() {
@@ -32,11 +114,12 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showAudio, setShowAudio] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingMs, setRecordingMs] = useState(0);
   const [streamDraft, setStreamDraft] = useState("");
   const [proposalLoadingId, setProposalLoadingId] = useState<string | null>(null);
+  const [streamNotice, setStreamNotice] = useState<string | null>(null);
+  const [audioNotice, setAudioNotice] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -49,7 +132,10 @@ export default function ChatPage() {
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/chat/history`)
       .then((r) => r.json())
-      .then((data) => setMessages(data.messages ?? []))
+      .then((data) => {
+        const history = Array.isArray(data.messages) ? data.messages : [];
+        setMessages(history.map((m: Partial<Message>, idx: number) => normalizeMessage(m, idx)));
+      })
       .catch(console.error);
   }, []);
 
@@ -77,25 +163,29 @@ export default function ChatPage() {
     return reversed.find((m) => m.role === "user")?.content ?? "";
   }, [messages]);
 
+  const messageViews = useMemo(() => messages.map((m) => deriveMessageView(m)), [messages]);
+
   const handleSend = async () => {
-    const message = input.trim();
-    if (!message || loading) return;
+    const messageText = input.trim();
+    if (!messageText || loading) return;
 
     setInput("");
     setLoading(true);
     setStreamDraft("");
+    setStreamNotice(null);
+    setAudioNotice(null);
     streamBufferRef.current = "";
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: message },
-      { role: "assistant", content: "" },
+      { id: makeId(), role: "user", content: messageText },
+      { id: makeId(), role: "assistant", content: "" },
     ]);
 
     try {
       const response = await fetch(`${API_BASE}/api/v1/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message: messageText }),
       });
       if (!response.body) throw new Error("No response body");
 
@@ -153,9 +243,11 @@ export default function ChatPage() {
               }
             }
             if (event === "error") {
+              setStreamNotice(data.message || "Streaming response interrupted.");
               setMessages((prev) => {
                 const msgs = [...prev];
                 msgs[msgs.length - 1] = {
+                  ...msgs[msgs.length - 1],
                   role: "assistant",
                   content: "⚠ " + (data.message || "Request failed."),
                   tag: "error",
@@ -174,7 +266,7 @@ export default function ChatPage() {
                 setMessages((prev) => {
                   const msgs = [...prev];
                   msgs[msgs.length - 1] = {
-                    role: "assistant",
+                    ...msgs[msgs.length - 1],
                     content: finalText,
                   };
                   return msgs;
@@ -188,9 +280,11 @@ export default function ChatPage() {
         }
       }
     } catch {
+      setStreamNotice("Unable to reach the server. Check backend status.");
       setMessages((prev) => {
         const msgs = [...prev];
         msgs[msgs.length - 1] = {
+          ...msgs[msgs.length - 1],
           role: "assistant",
           content: "⚠ Could not reach the server. Is the backend running?",
           tag: "error",
@@ -208,7 +302,7 @@ export default function ChatPage() {
         setMessages((prev) => {
           const msgs = [...prev];
           msgs[msgs.length - 1] = {
-            role: "assistant",
+            ...msgs[msgs.length - 1],
             content: finalText,
           };
           return msgs;
@@ -239,15 +333,13 @@ export default function ChatPage() {
         if (idx >= 0) {
           msgs[idx] = {
             ...msgs[idx],
-            content:
-              action === "confirm"
-                ? body.message || "Meal logged."
-                : "Skipped logging this meal.",
+            content: action === "confirm" ? body.message || "Meal logged." : "Skipped logging this meal.",
             mealProposal: undefined,
           };
         }
         if (body.assistant_followup) {
           msgs.push({
+            id: makeId(),
             role: "assistant",
             content: body.assistant_followup,
           });
@@ -273,9 +365,9 @@ export default function ChatPage() {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
       handleSend();
     }
   };
@@ -295,19 +387,29 @@ export default function ChatPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream);
       chunksRef.current = [];
-      mr.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
+      mr.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data);
       };
       mr.start();
       mediaRecRef.current = mr;
       setIsRecording(true);
       setRecordingMs(0);
-      setShowAudio(true);
+      setMenuOpen(false);
       timerRef.current = setInterval(() => setRecordingMs((ms) => ms + 100), 100);
     } catch {
-      alert("Microphone access denied.");
-      setShowAudio(false);
+      setAudioNotice("Microphone access denied.");
     }
+  };
+
+  const cancelRecording = () => {
+    const mr = mediaRecRef.current;
+    if (!mr) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+    mr.onstop = () => {
+      mr.stream.getTracks().forEach((t) => t.stop());
+    };
+    mr.stop();
+    setIsRecording(false);
   };
 
   const stopAndSend = () => {
@@ -320,7 +422,6 @@ export default function ChatPage() {
       });
       mr.stream.getTracks().forEach((t) => t.stop());
       setIsRecording(false);
-      setShowAudio(false);
       setMenuOpen(false);
       await sendAudio(blob, mr.mimeType);
     };
@@ -329,21 +430,20 @@ export default function ChatPage() {
 
   const sendAudio = async (blob: Blob, mimeType: string) => {
     setLoading(true);
-    const ext = mimeType.includes("ogg")
-      ? "ogg"
-      : mimeType.includes("mp4")
-        ? "mp4"
-        : "webm";
+    setStreamDraft("");
+    setStreamNotice(null);
+    setAudioNotice(null);
+    streamBufferRef.current = "";
+
+    const ext = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") ? "mp4" : "webm";
     const form = new FormData();
     form.append("audio", blob, `recording.${ext}`);
     form.append("backend_name", "groq");
 
-    setStreamDraft("");
-    streamBufferRef.current = "";
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: "🎤 (audio)" },
-      { role: "assistant", content: "" },
+      { id: makeId(), role: "user", content: "🎤 (audio)" },
+      { id: makeId(), role: "assistant", content: "" },
     ]);
 
     try {
@@ -398,9 +498,11 @@ export default function ChatPage() {
               }
             }
             if (event === "error") {
+              setAudioNotice(data.message || "Audio send failed.");
               setMessages((prev) => {
                 const msgs = [...prev];
                 msgs[msgs.length - 1] = {
+                  ...msgs[msgs.length - 1],
                   role: "assistant",
                   content: "⚠ " + (data.message || "Audio send failed."),
                   tag: "error",
@@ -419,7 +521,7 @@ export default function ChatPage() {
                 setMessages((prev) => {
                   const msgs = [...prev];
                   msgs[msgs.length - 1] = {
-                    role: "assistant",
+                    ...msgs[msgs.length - 1],
                     content: finalText,
                   };
                   return msgs;
@@ -433,9 +535,11 @@ export default function ChatPage() {
         }
       }
     } catch {
+      setAudioNotice("Audio send failed. Please try again.");
       setMessages((prev) => {
         const msgs = [...prev];
         msgs[msgs.length - 1] = {
+          ...msgs[msgs.length - 1],
           role: "assistant",
           content: "⚠ Audio send failed.",
           tag: "error",
@@ -453,7 +557,7 @@ export default function ChatPage() {
         setMessages((prev) => {
           const msgs = [...prev];
           msgs[msgs.length - 1] = {
-            role: "assistant",
+            ...msgs[msgs.length - 1],
             content: finalText,
           };
           return msgs;
@@ -470,91 +574,74 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="section-stack">
+    <div className={`section-stack ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
       <PageTitle
         eyebrow="Companion"
-        title="SEA-LION Conversation"
-        description="Ask about food, medications, or daily care decisions with a calm clinical guidance flow."
+        title="Care session"
+        description="A structured, clinical conversation to manage diet, medications, symptoms, and trends."
       />
 
-      <div className="page-grid">
-        <div className="clinical-panel flex min-h-[65vh] flex-col">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <ChatRail lastEmotion={lastEmotion} lastUserMessage={lastUserMessage} />
+
+        <section className="flex min-h-[70vh] flex-col rounded-[32px] border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-6 sm:p-8 shadow-[0_24px_48px_rgba(15,23,42,0.08)]">
+          <div className="flex flex-wrap items-start justify-between gap-6">
             <div>
-              <div className="clinical-kicker">Conversation workspace</div>
-              <h2 className="mt-2 text-xl font-semibold">Daily guidance session</h2>
-              <p className="clinical-body mt-2 max-w-[60ch]">
-                Keep the conversation focused on meals, symptoms, medications, and care decisions.
-              </p>
+              <h2 className="text-2xl font-semibold text-[color:var(--foreground)] font-[family:var(--font-display)]">
+                Daily guidance session
+              </h2>
             </div>
             <Button variant="secondary" size="sm" onClick={clearHistory}>
               Clear history
             </Button>
           </div>
 
-          <div className="clinical-divider my-6" />
+          <div className="my-6 h-px w-full bg-[color:var(--border-soft)]" />
 
-          <div className="flex-1 overflow-y-auto space-y-4 pb-4 min-h-0">
-            {messages.length === 0 && (
-              <div className="soft-block text-sm text-[color:var(--muted-foreground)]">
-                Start with a health question or log metrics using the{" "}
-                <span className="font-mono bg-[color:var(--accent)]/10 text-[color:var(--accent)] px-1 rounded">
+          <div className="flex-1 space-y-4 overflow-y-auto pb-4">
+            {(streamNotice || audioNotice) && (
+              <div className="space-y-2" role="status" aria-live="polite">
+                {streamNotice && (
+                  <div className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] px-4 py-3 text-sm text-[color:var(--foreground)]">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">
+                      Stream notice
+                    </span>
+                    <div className="mt-2">{streamNotice}</div>
+                  </div>
+                )}
+                {audioNotice && (
+                  <div className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] px-4 py-3 text-sm text-[color:var(--foreground)]">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">
+                      Audio notice
+                    </span>
+                    <div className="mt-2">{audioNotice}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {messageViews.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-[color:var(--border-soft)] bg-[color:var(--panel)] px-6 py-5 text-sm text-[color:var(--muted-foreground)]">
+                Start with a health question or log metrics using the {" "}
+                <span className="rounded bg-[color:var(--accent)]/10 px-1 font-mono text-[color:var(--accent)]">
                   [TRACK]
                 </span>{" "}
                 action below.
               </div>
             )}
-            {messages.map((m, i) => {
-              const isStreamingMessage = m.role === "assistant" && i === messages.length - 1 && loading;
+
+            {messageViews.map((message, index) => {
+              const isStreamingMessage =
+                message.role === "assistant" && index === messageViews.length - 1 && loading;
               return (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
-                    m.role === "user"
-                      ? "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-[0_10px_24px_rgba(16,92,182,0.22)]"
-                      : "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
-                  } ${m.tag === "error" ? "bg-red-50 text-red-700" : ""} ${isStreamingMessage ? "min-h-[2.75rem]" : ""}`}
-                >
-                  {m.role === "assistant" ? (
-                    m.content || streamDraft ? (
-                      <ReactMarkdown className="chat-markdown" rehypePlugins={[rehypeSanitize]}>
-                        {m.content || streamDraft}
-                      </ReactMarkdown>
-                    ) : loading ? (
-                      <span className="animate-pulse text-[color:var(--muted-foreground)]">▋</span>
-                    ) : (
-                      ""
-                    )
-                  ) : (
-                    m.content
-                  )}
-                  {m.emotion && (
-                    <div className="mt-2 text-xs uppercase tracking-[0.16em] opacity-80 flex items-center gap-2">
-                      <span>{EMOTION_EMOJI[m.emotion.label] ?? "🫥"}</span>
-                      <span className="capitalize">{m.emotion.label}</span>
-                      <span className="opacity-60">({Math.round(m.emotion.score * 100)}%)</span>
-                    </div>
-                  )}
-                  {m.mealProposal && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        className="rounded-full bg-[color:var(--accent)] px-3 py-1.5 text-xs font-semibold text-[color:var(--accent-foreground)] disabled:opacity-60"
-                        onClick={() => handleMealProposal(m.mealProposal!.proposalId, "confirm")}
-                        disabled={proposalLoadingId === m.mealProposal.proposalId}
-                      >
-                        Log meal
-                      </button>
-                      <button
-                        className="rounded-full border border-[color:var(--border-soft)] px-3 py-1.5 text-xs font-semibold text-[color:var(--foreground)] disabled:opacity-60"
-                        onClick={() => handleMealProposal(m.mealProposal!.proposalId, "skip")}
-                        disabled={proposalLoadingId === m.mealProposal.proposalId}
-                      >
-                        Skip
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+                <MessageCard
+                  key={message.id}
+                  message={message}
+                  isStreaming={isStreamingMessage}
+                  streamDraft={isStreamingMessage ? streamDraft : ""}
+                  onMealAction={handleMealProposal}
+                  proposalLoadingId={proposalLoadingId}
+                />
               );
             })}
             <div ref={bottomRef} />
@@ -562,114 +649,29 @@ export default function ChatPage() {
 
           {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}
 
-          <div className="soft-block flex flex-col gap-2 shrink-0">
-            {showAudio && isRecording && (
-              <div className="flex items-center gap-3 rounded-xl bg-red-50 px-3 py-2 text-red-600">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse inline-block" />
-                <span className="text-sm font-mono">{fmtTime(recordingMs)}</span>
-                <span className="text-xs flex-1">Recording…</span>
-                <button
-                  onClick={() => {
-                    const mr = mediaRecRef.current;
-                    if (mr) {
-                      if (timerRef.current) clearInterval(timerRef.current);
-                      mr.onstop = () => {
-                        mr.stream.getTracks().forEach((t) => t.stop());
-                      };
-                      mr.stop();
-                    }
-                    setIsRecording(false);
-                    setShowAudio(false);
-                  }}
-                  className="text-xs text-red-300 hover:text-red-500 px-2"
-                >
-                  ✕
-                </button>
-                <button
-                  onClick={stopAndSend}
-                  className="text-xs px-3 py-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
-                >
-                  ⏹ Stop &amp; Send
-                </button>
-              </div>
-            )}
-
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask anything… (Enter to send, Shift+Enter for new line)"
-              rows={2}
-              className="w-full resize-none border-none bg-transparent outline-none text-sm text-[color:var(--foreground)] placeholder-[color:var(--muted-foreground)]"
-            />
-            <div className="flex items-center gap-2">
-              <div className="relative z-50">
-                <button
-                  onClick={() => setMenuOpen((v) => !v)}
-                  className="w-9 h-9 rounded-full border border-[color:var(--border-soft)] text-[color:var(--muted-foreground)] text-lg flex items-center justify-center hover:bg-[color:var(--muted)] transition-colors flex-shrink-0"
-                  title="More options"
-                >
-                  ＋
-                </button>
-                {menuOpen && (
-                  <div className="absolute bottom-12 left-0 bg-[color:var(--panel)] border border-[color:var(--border-soft)] rounded-xl shadow-[0_10px_30px_rgba(15,23,42,0.08)] py-2 w-52 overflow-hidden">
-                    <button
-                      onClick={() => {
-                        setMenuOpen(false);
-                        startRecording();
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[color:var(--foreground)] hover:bg-[color:var(--muted)] transition-colors text-left"
-                    >
-                      <span className="text-base">🎤</span>
-                      <span>Record Audio</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={prependTrack}
-                title="Prefix your message with [TRACK] to log a health metric"
-                className="text-xs px-3 py-1.5 rounded-full border border-[color:var(--accent)]/40 text-[color:var(--accent)] hover:bg-[color:var(--accent)]/10 transition-colors"
-              >
-                Add [TRACK]
-              </button>
-              <button
-                onClick={handleSend}
-                disabled={loading || !input.trim()}
-                className="ml-auto text-sm font-medium px-4 py-2 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-foreground)] hover:opacity-90 disabled:opacity-40 transition-colors"
-              >
-                {loading ? "Thinking…" : "Send"}
-              </button>
-            </div>
-          </div>
-        </div>
+          <ChatInput
+            input={input}
+            inputRef={inputRef}
+            onInputChange={setInput}
+            onKeyDown={handleKeyDown}
+            onSend={handleSend}
+            loading={loading}
+            suggestions={SUGGESTIONS}
+            onSelectSuggestion={(value) => {
+              setInput(value);
+              inputRef.current?.focus();
+            }}
+            onPrependTrack={prependTrack}
+            menuOpen={menuOpen}
+            onToggleMenu={() => setMenuOpen((prev) => !prev)}
+            onStartRecording={startRecording}
+            isRecording={isRecording}
+            recordingLabel={fmtTime(recordingMs)}
+            onStopRecording={stopAndSend}
+            onCancelRecording={cancelRecording}
+          />
+        </section>
       </div>
-
-      <aside className="section-stack">
-        <div className="clinical-card">
-          <div className="clinical-kicker">Session signal</div>
-          <div className="mt-3 text-sm text-[color:var(--foreground)]">
-            {lastEmotion ? (
-              <div className="flex items-center gap-2">
-                <span className="text-base">{EMOTION_EMOJI[lastEmotion.label] ?? "🫥"}</span>
-                <span className="capitalize">{lastEmotion.label}</span>
-                <span className="text-xs text-[color:var(--muted-foreground)]">
-                  {Math.round(lastEmotion.score * 100)}%
-                </span>
-              </div>
-            ) : (
-              <p className="app-muted">No emotion signal captured yet.</p>
-            )}
-          </div>
-        </div>
-        <div className="clinical-card">
-          <div className="clinical-kicker">Last user intent</div>
-          <p className="mt-3 text-sm text-[color:var(--foreground)]">
-            {lastUserMessage || "Awaiting the first question."}
-          </p>
-        </div>
-      </aside>
     </div>
   );
 }
