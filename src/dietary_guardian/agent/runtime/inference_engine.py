@@ -87,6 +87,13 @@ class _BaseStrategy:
         prompt = request.payload.get("prompt", "")
         image_bytes = request.payload.get("image_bytes")
         image_mime_type = request.payload.get("image_mime_type") or "image/jpeg"
+        logger.debug(
+            "inference_engine_payload modality=%s mime_type=%s image_bytes=%s payload_keys=%s",
+            request.modality,
+            image_mime_type,
+            len(image_bytes) if image_bytes else 0,
+            sorted(request.payload.keys()),
+        )
         logger.info(
             "inference_run_start request_id=%s provider=%s model=%s endpoint=%s modality=%s output_retries=%s capability=%s",
             request.request_id,
@@ -202,6 +209,15 @@ class InferenceEngine:
 
     async def infer(self, request: InferenceRequest) -> InferenceResponse:
         timeout_seconds = get_settings().llm.inference.wall_clock_timeout_seconds
+        image_bytes = request.payload.get("image_bytes")
+        image_mime_type = request.payload.get("image_mime_type") or "image/jpeg"
+        logger.debug(
+            "inference_engine_payload modality=%s mime_type=%s image_bytes=%s payload_keys=%s",
+            request.modality,
+            image_mime_type,
+            len(image_bytes) if image_bytes else 0,
+            sorted(request.payload.keys()),
+        )
         if not self.strategy.supports(request.modality):
             raise ValueError(f"Provider {self.provider} does not support modality {request.modality}")
         return await asyncio.wait_for(self.strategy.run(request), timeout=timeout_seconds)

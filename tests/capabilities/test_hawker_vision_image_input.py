@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 from io import BytesIO
 
@@ -182,6 +182,70 @@ async def test_webp_input_converts_to_jpeg_for_inference_engine(
     assert request.payload.get("image_mime_type") == "image/jpeg"
     assert isinstance(request.payload.get("image_bytes"), (bytes, bytearray))
     assert request.payload.get("image_bytes", b"")[:3] == b"\xff\xd8\xff"
+
+    get_settings.cache_clear()
+
+
+@pytest.mark.anyio
+async def test_debug_logging_emits_inference_payload_details(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("LLM_USE_INFERENCE_ENGINE_V2", "true")
+    get_settings.cache_clear()
+
+    class StubStrategy:
+        async def run(self, request):  # noqa: ANN001
+            perception = MealPerception.model_validate(
+                {
+                    "meal_detected": True,
+                    "items": [
+                        {
+                            "label": "Char Kway Teow",
+                            "candidate_aliases": ["Char Kway Teow"],
+                            "portion_estimate": {"amount": 1.0, "unit": "plate", "confidence": 0.9},
+                            "preparation": "fried",
+                            "confidence": 0.9,
+                        }
+                    ],
+                    "uncertainties": [],
+                    "image_quality": "good",
+                    "confidence_score": 0.9,
+                }
+            )
+            return InferenceResponse(
+                request_id=request.request_id,
+                structured_output=perception,
+                confidence=perception.confidence_score,
+                latency_ms=1.0,
+                provider_metadata=ProviderMetadata(
+                    capability="meal_vision",
+                    provider="stub",
+                    model="stub-model",
+                    endpoint="http://stub",
+                ),
+            )
+
+        def supports(self, modality):  # noqa: ANN001
+            del modality
+            return True
+
+    caplog.set_level("DEBUG")
+    module = HawkerVisionModule(provider="qwen")
+    cast(Any, module.inference_engine).strategy = StubStrategy()
+    image_input = ImageInput(
+        source="upload",
+        filename="char_kway_teow.webp",
+        mime_type="image/webp",
+        content=b"\x00\x01\x02\x03",
+    )
+
+    await module.analyze_dish(image_input)
+
+    messages = [record.message for record in caplog.records]
+    assert any("hawker_vision_inference_payload" in msg for msg in messages)
+    assert any("inference_engine_payload" in msg for msg in messages)
 
     get_settings.cache_clear()
 

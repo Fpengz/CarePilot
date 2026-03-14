@@ -212,6 +212,13 @@ class HawkerVisionModule:
 
     async def analyze_dish(self, dish: str | ImageInput) -> VisionResult:
         prompt, modality, image_bytes, image_mime_type = self._build_prompt(dish)
+        logger.debug(
+            "hawker_vision_inference_payload modality=%s mime_type=%s image_bytes=%s prompt_preview=%s",
+            modality,
+            image_mime_type,
+            len(image_bytes) if image_bytes else 0,
+            prompt[:120],
+        )
 
         if self.provider == "test":
             perception = self._stub_test_perception(dish)
