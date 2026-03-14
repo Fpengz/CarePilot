@@ -1,235 +1,238 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Activity, AlertTriangle, RefreshCcw, Thermometer, Info } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
-import { PageTitle } from "@/components/app/page-title";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { createSymptomCheckIn, getSymptomSummary, listSymptomCheckIns } from "@/lib/api/meal-client";
 import type { SymptomCheckInApi, SymptomSummaryApiResponse } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
-type LoadingAction = "submit" | "refresh" | null;
-
-function parseSymptomCodes(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
+const COMMON_SYMPTOMS = ["Headache", "Fatigue", "Nausea", "Dizziness", "Bloating", "Thirst"];
 
 export default function SymptomsPage() {
-  const [severity, setSeverity] = useState("3");
-  const [codesInput, setCodesInput] = useState("headache,fatigue");
-  const [freeText, setFreeText] = useState("Mild headache after lunch");
+  const [severity, setSeverity] = useState(3);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+  const [freeText, setFreeText] = useState("");
   const [checkIns, setCheckIns] = useState<SymptomCheckInApi[]>([]);
   const [summary, setSummary] = useState<SymptomSummaryApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<LoadingAction>(null);
+  const [loading, setLoading] = useState(false);
 
   async function refreshData() {
-    const [checkinResponse, summaryResponse] = await Promise.all([
-      listSymptomCheckIns({ limit: 20 }),
-      getSymptomSummary(),
-    ]);
-    setCheckIns(checkinResponse.items);
-    setSummary(summaryResponse);
+    try {
+      const [checkinResponse, summaryResponse] = await Promise.all([
+        listSymptomCheckIns({ limit: 20 }),
+        getSymptomSummary(),
+      ]);
+      setCheckIns(checkinResponse.items);
+      setSummary(summaryResponse);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   }
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        setLoadingAction("refresh");
-        const [checkinResponse, summaryResponse] = await Promise.all([
-          listSymptomCheckIns({ limit: 20 }),
-          getSymptomSummary(),
-        ]);
-        if (cancelled) return;
-        setCheckIns(checkinResponse.items);
-        setSummary(summaryResponse);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        if (!cancelled) setLoadingAction(null);
-      }
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
+    void refreshData();
   }, []);
 
+  const handleSubmit = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await createSymptomCheckIn({
+        severity,
+        symptom_codes: selectedSymptoms.map(s => s.toLowerCase()),
+        free_text: freeText.trim() || undefined,
+        context: {},
+      });
+      setFreeText("");
+      setSelectedSymptoms([]);
+      setSeverity(3);
+      await refreshData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSymptom = (symptom: string) => {
+    setSelectedSymptoms(prev => 
+      prev.includes(symptom) ? prev.filter(s => s !== symptom) : [...prev, symptom]
+    );
+  };
+
   return (
-    <div>
-      <PageTitle
-        eyebrow="Symptoms"
-        title="Symptom Check-Ins and Safety Triage"
-        description="Log symptom severity and notes, then review safety decisions and symptom trends."
-        tags={["check-ins"]}
-      />
+    <div className="section-stack">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">Symptom Monitoring</h1>
+          <p className="text-[color:var(--muted-foreground)] leading-relaxed max-w-2xl text-sm">
+            Log physical signals to help your AI companion detect patterns and provide safer clinical guidance.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={refreshData} className="gap-2">
+          <RefreshCcw className="h-3.5 w-3.5" /> Sync Data
+        </Button>
+      </div>
 
-      <div className="page-grid">
-        <Card className="grain-overlay">
-          <CardHeader>
-            <CardTitle>Symptom Check-In</CardTitle>
-            <CardDescription>Creates `POST /api/v1/symptoms/check-ins` entries with automated safety triage.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="symptom-severity">Severity (1-5)</Label>
-                <Select id="symptom-severity" value={severity} onChange={(event) => setSeverity(event.target.value)}>
-                  <option value="1">1 - Very mild</option>
-                  <option value="2">2 - Mild</option>
-                  <option value="3">3 - Moderate</option>
-                  <option value="4">4 - Strong</option>
-                  <option value="5">5 - Severe</option>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="symptom-codes">Symptom codes (CSV)</Label>
-                <Textarea
-                  id="symptom-codes"
-                  rows={2}
-                  value={codesInput}
-                  onChange={(event) => setCodesInput(event.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="symptom-notes">Notes</Label>
-              <Textarea
-                id="symptom-notes"
-                rows={4}
-                value={freeText}
-                onChange={(event) => setFreeText(event.target.value)}
-              />
+      {error && <ErrorCard message={error} />}
+
+      <div className="page-grid items-start">
+        <div className="space-y-8">
+          <div className="clinical-card space-y-8">
+            <div className="space-y-1">
+              <h3 className="clinical-subtitle">Active Check-In</h3>
+              <p className="clinical-body">How are you feeling right now?</p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button
-                disabled={loadingAction !== null}
-                onClick={async () => {
-                  setError(null);
-                  setLoadingAction("submit");
-                  try {
-                    await createSymptomCheckIn({
-                      severity: Math.max(1, Math.min(5, Number(severity) || 3)),
-                      symptom_codes: parseSymptomCodes(codesInput),
-                      free_text: freeText.trim() || undefined,
-                      context: {},
-                    });
-                    await refreshData();
-                  } catch (e) {
-                    setError(e instanceof Error ? e.message : String(e));
-                  } finally {
-                    setLoadingAction(null);
-                  }
-                }}
-              >
-                <AsyncLabel active={loadingAction === "submit"} loading="Submitting" idle="Submit Check-In" />
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={loadingAction !== null}
-                onClick={async () => {
-                  setError(null);
-                  setLoadingAction("refresh");
-                  try {
-                    await refreshData();
-                  } catch (e) {
-                    setError(e instanceof Error ? e.message : String(e));
-                  } finally {
-                    setLoadingAction(null);
-                  }
-                }}
-              >
-                <AsyncLabel active={loadingAction === "refresh"} loading="Refreshing" idle="Refresh Summary" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="section-stack">
-          {error ? <ErrorCard message={error} /> : null}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Symptom Summary</CardTitle>
-              <CardDescription>Aggregated counts and severity from persisted check-ins.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Total check-ins</div>
-                  <div className="mt-1 text-xl font-semibold">{summary?.total_count ?? 0}</div>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest opacity-70">Intensity</Label>
+                  <span className={cn(
+                    "text-xs font-bold px-2 py-0.5 rounded-full",
+                    severity >= 4 ? "bg-rose-500/10 text-rose-600" : "bg-[color:var(--accent)]/10 text-[color:var(--accent)]"
+                  )}>Level {severity}</span>
                 </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Average severity</div>
-                  <div className="mt-1 text-xl font-semibold">{(summary?.average_severity ?? 0).toFixed(2)}</div>
-                </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Red-flag count</div>
-                  <div className="mt-1 text-xl font-semibold">{summary?.red_flag_count ?? 0}</div>
-                </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Latest record</div>
-                  <div className="mt-1 text-sm font-semibold">
-                    {summary?.latest_recorded_at ? new Date(summary.latest_recorded_at).toLocaleString() : "None"}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-sm font-semibold">Top symptoms</div>
-                {summary?.top_symptoms.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {summary.top_symptoms.map((item) => (
-                      <Badge key={item.code} variant="outline">
-                        {item.code} ({item.count})
-                      </Badge>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="app-muted text-sm">No symptom trends available yet.</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Recent Check-Ins</CardTitle>
-              <CardDescription>Latest records with safety decisions.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {checkIns.length > 0 ? (
-                <div className="data-list">
-                  {checkIns.slice(0, 10).map((item) => (
-                    <div key={item.id} className="data-list-row gap-2">
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-medium">Severity {item.severity}</div>
-                        <Badge variant={item.safety.decision === "escalate" ? "default" : "outline"}>
-                          {item.safety.decision}
-                        </Badge>
-                      </div>
-                      <div className="app-muted text-xs">{new Date(item.recorded_at).toLocaleString()}</div>
-                      <div className="app-muted text-xs">
-                        {item.symptom_codes.length ? item.symptom_codes.join(", ") : "No codes"}
-                      </div>
-                      {item.free_text ? <div className="text-sm">{item.free_text}</div> : null}
-                    </div>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((val) => (
+                    <button
+                      key={val}
+                      onClick={() => setSeverity(val)}
+                      className={cn(
+                        "flex-1 h-12 rounded-xl border-2 transition-all font-bold",
+                        severity === val 
+                          ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white shadow-sm" 
+                          : "border-[color:var(--border-soft)] bg-[color:var(--surface)] text-[color:var(--muted-foreground)] hover:border-[color:var(--border)]"
+                      )}
+                    >
+                      {val}
+                    </button>
                   ))}
                 </div>
-              ) : (
-                <p className="app-muted text-sm">No symptom check-ins yet.</p>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-70">Symptoms</Label>
+                <div className="flex flex-wrap gap-2">
+                  {COMMON_SYMPTOMS.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => toggleSymptom(s)}
+                      className={cn(
+                        "clinical-chip transition-all",
+                        selectedSymptoms.includes(s) 
+                          ? "bg-[color:var(--accent)] text-white border-[color:var(--accent)]" 
+                          : "hover:bg-[color:var(--muted)]"
+                      )}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-70">Clinical Notes</Label>
+                <Textarea
+                  placeholder="Describe timing, duration, or triggers..."
+                  value={freeText}
+                  onChange={(e) => setFreeText(e.target.value)}
+                  className="rounded-xl min-h-[100px]"
+                />
+              </div>
+
+              <Button 
+                className="w-full h-12 rounded-xl font-bold shadow-sm" 
+                onClick={handleSubmit}
+                disabled={loading}
+              >
+                <AsyncLabel active={loading} loading="Recording" idle="Log Symptom Check-In" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-[color:var(--muted-foreground)]" />
+              <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Recent Records</h4>
+            </div>
+            <div className="grid gap-3">
+              {checkIns.slice(0, 5).map((item) => (
+                <div key={item.id} className="data-list-row group">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-lg border",
+                        item.severity >= 4 ? "bg-rose-500/10 text-rose-600 border-rose-200" : "bg-emerald-500/10 text-emerald-600 border-emerald-200"
+                      )}>
+                        <Thermometer className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold tracking-tight">Severity {item.severity}</div>
+                        <div className="text-[10px] text-[color:var(--muted-foreground)] opacity-60">
+                          {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.recorded_at))}
+                        </div>
+                      </div>
+                    </div>
+                    <Badge variant={item.safety.decision === "escalate" ? "destructive" : "outline"} className="text-[10px] uppercase tracking-tighter">
+                      {item.safety.decision}
+                    </Badge>
+                  </div>
+                  {item.free_text && (
+                    <p className="mt-2 text-xs text-[color:var(--muted-foreground)] line-clamp-2 italic">"{item.free_text}"</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-8 lg:sticky lg:top-28">
+          <div className="clinical-card bg-[color:var(--accent)]/5 border-[color:var(--accent)]/10">
+            <div className="flex items-center gap-2 text-[color:var(--accent)] mb-4">
+              <Info className="h-4 w-4" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Aggregate Insights</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">Total Logs</div>
+                <div className="text-xl font-bold">{summary?.total_count ?? 0}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">Avg Intensity</div>
+                <div className="text-xl font-bold">{(summary?.average_severity ?? 0).toFixed(1)}</div>
+              </div>
+            </div>
+            {summary?.red_flag_count ? (
+              <div className="mt-6 rounded-lg bg-rose-50 p-3 border border-rose-100 flex items-center gap-3">
+                <AlertTriangle className="h-4 w-4 text-rose-600" />
+                <span className="text-xs font-bold text-rose-700">{summary.red_flag_count} Critical Red Flags Detected</span>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-[color:var(--muted-foreground)]" />
+              <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Prevalent Signals</h4>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {summary?.top_symptoms.map((s) => (
+                <div key={s.code} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] text-xs font-medium">
+                  <span className="capitalize">{s.code}</span>
+                  <span className="text-[10px] font-bold text-[color:var(--accent)] bg-[color:var(--accent)]/5 px-1.5 py-0.5 rounded-md">{s.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

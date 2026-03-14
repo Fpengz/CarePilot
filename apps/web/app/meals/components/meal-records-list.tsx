@@ -24,7 +24,7 @@ export function MealRecordsList() {
             <div className="space-y-3">
               {recordItems.map((record, index) => (
                 <div
-                  key={String(record.id ?? record.meal_name ?? index)}
+                  key={String(record.id ?? `${record.meal_name ?? 'unknown'}${index}`)}
                   className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-3"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
