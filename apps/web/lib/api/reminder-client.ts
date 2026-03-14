@@ -3,6 +3,8 @@ export {
   listReminders,
   confirmReminder,
   listReminderDefinitions,
+  createReminderDefinition,
+  patchReminderDefinition,
   listUpcomingReminderOccurrences,
   listReminderHistory,
   actOnReminderOccurrence,

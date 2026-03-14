@@ -54,7 +54,10 @@ import type {
   SuggestionGenerateApiResponse,
   SuggestionListApiResponse,
   ReminderConfirmApiResponse,
+  ReminderDefinitionCreateRequest,
+  ReminderDefinitionEnvelopeResponse,
   ReminderDefinitionListApiResponse,
+  ReminderDefinitionPatchRequest,
   ReminderNotificationEndpointListResponse,
   ReminderNotificationLogListResponse,
   ReminderNotificationPreferenceListResponse,
@@ -715,6 +718,25 @@ export async function confirmReminder(
 
 export async function listReminderDefinitions(): Promise<ReminderDefinitionListApiResponse> {
   return request<ReminderDefinitionListApiResponse>("/api/v1/reminders/definitions");
+}
+
+export async function createReminderDefinition(
+  payload: ReminderDefinitionCreateRequest,
+): Promise<ReminderDefinitionEnvelopeResponse> {
+  return request<ReminderDefinitionEnvelopeResponse>("/api/v1/reminders/definitions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function patchReminderDefinition(
+  reminderDefinitionId: string,
+  payload: ReminderDefinitionPatchRequest,
+): Promise<ReminderDefinitionEnvelopeResponse> {
+  return request<ReminderDefinitionEnvelopeResponse>(`/api/v1/reminders/definitions/${reminderDefinitionId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function listUpcomingReminderOccurrences(): Promise<ReminderOccurrenceListApiResponse> {

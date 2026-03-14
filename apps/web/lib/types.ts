@@ -694,6 +694,43 @@ export interface ReminderDefinitionListApiResponse {
   items: ReminderDefinitionApi[];
 }
 
+export interface ReminderDefinitionCreateRequest {
+  regimen_id?: string | null;
+  reminder_type?: "medication" | "mobility";
+  source?: "manual" | "plain_text" | "upload" | "clinician" | "admin" | "agent_suggested_confirmed";
+  title: string;
+  body?: string | null;
+  medication_name?: string;
+  dosage_text?: string;
+  route?: string | null;
+  instructions_text?: string | null;
+  special_notes?: string | null;
+  treatment_duration?: string | null;
+  channels?: ReminderNotificationChannel[];
+  timezone?: string;
+  schedule: ReminderScheduleRuleApi;
+  active?: boolean;
+}
+
+export interface ReminderDefinitionPatchRequest {
+  title?: string | null;
+  body?: string | null;
+  medication_name?: string | null;
+  dosage_text?: string | null;
+  route?: string | null;
+  instructions_text?: string | null;
+  special_notes?: string | null;
+  treatment_duration?: string | null;
+  channels?: ReminderNotificationChannel[] | null;
+  timezone?: string | null;
+  schedule?: ReminderScheduleRuleApi | null;
+  active?: boolean | null;
+}
+
+export interface ReminderDefinitionEnvelopeResponse {
+  item: ReminderDefinitionApi;
+}
+
 export interface ReminderOccurrenceApi {
   id: string;
   reminder_definition_id: string;
