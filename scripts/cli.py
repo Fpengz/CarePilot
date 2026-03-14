@@ -21,7 +21,7 @@ import sys
 import time
 from datetime import date
 from pathlib import Path
-from typing import Annotated, MutableMapping, cast
+from typing import Annotated, Mapping, MutableMapping, cast
 
 import typer
 from dotenv import dotenv_values
@@ -100,6 +100,17 @@ def load_web_env() -> None:
 
 def apply_dev_env_defaults(env: MutableMapping[str, str]) -> None:
     env.setdefault("DIETARY_GUARDIAN_LOG_LEVEL", "DEBUG")
+
+
+def emit_env_snapshot(env: Mapping[str, str]) -> None:
+    redacted_markers = ("KEY", "TOKEN", "SECRET", "PASSWORD")
+    lines = ["Runtime environment:"]
+    for key in sorted(env):
+        value = env[key]
+        if any(marker in key.upper() for marker in redacted_markers):
+            value = "<redacted>"
+        lines.append(f"{key}={value}")
+    typer.echo("\n".join(lines))
 
 
 def run(
@@ -457,6 +468,7 @@ def command_dev(
     os.environ.setdefault("NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE", "0")
     os.environ["START_REMINDER_SCHEDULER"] = start_scheduler
     os.environ["START_SQLITE_REMINDER_WORKER"] = start_sqlite_reminder_worker
+    emit_env_snapshot(os.environ)
 
     processes: list[subprocess.Popen[str]] = []
 
