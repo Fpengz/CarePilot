@@ -15,6 +15,17 @@ import { DailyMealSuggestions } from "./components/daily-meal-suggestions";
 
 export default function MealsPage() {
   const [lastAnalysis, setLastAnalysis] = useState<MealAnalyzeApiResponse | null>(null);
+  const validated = lastAnalysis?.validated_event as Record<string, unknown> | undefined;
+  const nutrition = lastAnalysis?.nutrition_profile as Record<string, unknown> | undefined;
+  const observation = lastAnalysis?.raw_observation as Record<string, unknown> | undefined;
+
+  const mealName = typeof validated?.meal_name === "string" ? validated.meal_name : "Meal";
+  const capturedAtRaw = typeof validated?.captured_at === "string" ? validated.captured_at : "";
+  const capturedAt =
+    capturedAtRaw && !Number.isNaN(Date.parse(capturedAtRaw)) ? new Date(capturedAtRaw).toLocaleString() : "—";
+  const caloriesText = typeof nutrition?.calories === "number" ? `${Math.round(nutrition.calories)} kcal` : "—";
+  const confidenceText =
+    typeof observation?.confidence_score === "number" ? `${Math.round(observation.confidence_score * 100)}%` : "—";
 
   return (
     <div>
@@ -58,23 +69,27 @@ export default function MealsPage() {
                 <CardDescription>Nutritional breakdown of the most recently analyzed meal image.</CardDescription>
               </CardHeader>
               <CardContent>
-                {lastAnalysis?.summary ? (
+                {lastAnalysis ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="metric-card">
                       <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Meal</div>
-                      <div className="mt-1 text-sm font-medium">{lastAnalysis.summary.meal_name}</div>
+                      <div className="mt-1 text-sm font-medium">{mealName}</div>
                     </div>
                     <div className="metric-card">
                       <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Confidence</div>
-                      <div className="mt-1 text-sm font-medium">{Math.round(lastAnalysis.summary.confidence * 100)}%</div>
+                      <div className="mt-1 text-sm font-medium">{confidenceText}</div>
                     </div>
                     <div className="metric-card">
                       <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Calories</div>
-                      <div className="mt-1 text-sm font-medium">{Math.round(lastAnalysis.summary.estimated_calories)} kcal</div>
+                      <div className="mt-1 text-sm font-medium">{caloriesText}</div>
                     </div>
                     <div className="metric-card">
                       <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Portion</div>
-                      <div className="mt-1 text-sm font-medium">{lastAnalysis.summary.portion_size}</div>
+                      <div className="mt-1 text-sm font-medium">—</div>
+                    </div>
+                    <div className="metric-card">
+                      <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Captured</div>
+                      <div className="mt-1 text-sm font-medium">{capturedAt}</div>
                     </div>
                   </div>
                 ) : (
