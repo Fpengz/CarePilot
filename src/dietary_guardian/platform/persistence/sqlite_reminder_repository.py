@@ -32,12 +32,13 @@ class SQLiteReminderRepository:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO reminder_events
-                (id, user_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, user_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     event.id,
                     event.user_id,
+                    event.regimen_id,
                     event.reminder_type,
                     event.title,
                     event.body,
@@ -63,7 +64,7 @@ class SQLiteReminderRepository:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
-                SELECT id, user_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
+                SELECT id, user_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
                 FROM reminder_events WHERE id = ?
                 """,
                 (event_id,),
@@ -75,24 +76,25 @@ class SQLiteReminderRepository:
         return ReminderEvent(
             id=row[0],
             user_id=row[1],
-            reminder_type=row[2],
-            title=row[3],
-            body=row[4],
-            medication_name=row[5],
-            scheduled_at=datetime.fromisoformat(row[6]),
-            slot=row[7],
-            dosage_text=row[8],
-            status=row[9],
-            meal_confirmation=row[10],
-            sent_at=datetime.fromisoformat(row[11]) if row[11] else None,
-            ack_at=datetime.fromisoformat(row[12]) if row[12] else None,
+            regimen_id=row[2],
+            reminder_type=row[3],
+            title=row[4],
+            body=row[5],
+            medication_name=row[6],
+            scheduled_at=datetime.fromisoformat(row[7]),
+            slot=row[8],
+            dosage_text=row[9],
+            status=row[10],
+            meal_confirmation=row[11],
+            sent_at=datetime.fromisoformat(row[12]) if row[12] else None,
+            ack_at=datetime.fromisoformat(row[13]) if row[13] else None,
         )
 
     def list_reminder_events(self, user_id: str) -> list[ReminderEvent]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
                 """
-                SELECT id, user_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
+                SELECT id, user_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
                 FROM reminder_events WHERE user_id = ? ORDER BY scheduled_at
                 """,
                 (user_id,),
@@ -101,17 +103,18 @@ class SQLiteReminderRepository:
             ReminderEvent(
                 id=r[0],
                 user_id=r[1],
-                reminder_type=r[2],
-                title=r[3],
-                body=r[4],
-                medication_name=r[5],
-                scheduled_at=datetime.fromisoformat(r[6]),
-                slot=r[7],
-                dosage_text=r[8],
-                status=r[9],
-                meal_confirmation=r[10],
-                sent_at=datetime.fromisoformat(r[11]) if r[11] else None,
-                ack_at=datetime.fromisoformat(r[12]) if r[12] else None,
+                regimen_id=r[2],
+                reminder_type=r[3],
+                title=r[4],
+                body=r[5],
+                medication_name=r[6],
+                scheduled_at=datetime.fromisoformat(r[7]),
+                slot=r[8],
+                dosage_text=r[9],
+                status=r[10],
+                meal_confirmation=r[11],
+                sent_at=datetime.fromisoformat(r[12]) if r[12] else None,
+                ack_at=datetime.fromisoformat(r[13]) if r[13] else None,
             )
             for r in rows
         ]

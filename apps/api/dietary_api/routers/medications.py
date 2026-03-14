@@ -9,13 +9,16 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
     MedicationAdherenceEventCreateRequest,
     MedicationAdherenceEventEnvelopeResponse,
     MedicationAdherenceMetricsResponse,
+    MedicationIntakeConfirmRequest,
+    MedicationIntakeResponse,
+    MedicationIntakeTextRequest,
     MedicationRegimenCreateRequest,
     MedicationRegimenDeleteResponse,
     MedicationRegimenEnvelopeResponse,
@@ -24,8 +27,11 @@ from ..schemas import (
 )
 from dietary_guardian.features.medications.use_cases import (
     adherence_metrics_for_session,
+    confirm_intake_for_session,
     create_regimen_for_session,
     delete_regimen_for_session,
+    intake_text_for_session,
+    intake_upload_for_session,
     list_regimens_for_session,
     patch_regimen_for_session,
     record_adherence_for_session,
@@ -51,6 +57,57 @@ def medications_regimens_create(
 ) -> MedicationRegimenEnvelopeResponse:
     require_action(session, "medications.regimens.write")
     return create_regimen_for_session(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        payload=payload,
+    )
+
+
+@router.post("/api/v1/medications/intake/text", response_model=MedicationIntakeResponse)
+async def medications_intake_text(
+    payload: MedicationIntakeTextRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> MedicationIntakeResponse:
+    require_action(session, "medications.regimens.write")
+    return await intake_text_for_session(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        payload=payload,
+        request_id=getattr(request.state, "request_id", None),
+        correlation_id=getattr(request.state, "correlation_id", None),
+    )
+
+
+@router.post("/api/v1/medications/intake/upload", response_model=MedicationIntakeResponse)
+async def medications_intake_upload(
+    request: Request,
+    file: UploadFile = File(...),
+    allow_ambiguous: bool = Form(default=False),
+    session: dict[str, object] = Depends(current_session),
+) -> MedicationIntakeResponse:
+    require_action(session, "medications.regimens.write")
+    content = await file.read()
+    return await intake_upload_for_session(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        filename=file.filename or "upload",
+        mime_type=file.content_type or "application/octet-stream",
+        content=content,
+        allow_ambiguous=allow_ambiguous,
+        request_id=getattr(request.state, "request_id", None),
+        correlation_id=getattr(request.state, "correlation_id", None),
+    )
+
+
+@router.post("/api/v1/medications/intake/confirm", response_model=MedicationIntakeResponse)
+def medications_intake_confirm(
+    payload: MedicationIntakeConfirmRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> MedicationIntakeResponse:
+    require_action(session, "medications.regimens.write")
+    return confirm_intake_for_session(
         context=get_context(request),
         user_id=str(session["user_id"]),
         payload=payload,

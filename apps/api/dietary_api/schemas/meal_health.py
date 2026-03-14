@@ -8,7 +8,7 @@ symptoms, clinical cards, and health metrics endpoints.
 from __future__ import annotations
 
 # ruff: noqa: F401
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, EmailStr, Field, RootModel
@@ -50,6 +50,7 @@ from dietary_guardian.features.meals.schemas import (  # noqa: F401
 from dietary_guardian.platform.observability.tooling.domain.models import ToolExecutionResult
 
 from .core import CursorPageResponse, HealthProfileResponseItem, HouseholdCareContextResponse
+from .notifications import ScheduledReminderNotificationItemResponse
 from .workflows import WorkflowResponse
 
 
@@ -87,33 +88,66 @@ class MedicationRegimenCreateRequest(BaseModel):
     medication_name: str
     dosage_text: str
     timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
+    canonical_name: str | None = None
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = "fixed_time"
+    frequency_times_per_day: int = Field(default=1, ge=1, le=8)
+    time_rules: list[dict[str, object]] = Field(default_factory=list)
     offset_minutes: int = 0
     slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
     fixed_time: str | None = None
     max_daily_doses: int = Field(default=1, ge=1, le=8)
+    instructions_text: str | None = None
+    source_type: Literal["manual", "plain_text", "upload"] = "manual"
+    source_filename: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    timezone: str = "Asia/Singapore"
+    parse_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     active: bool = True
 
 
 class MedicationRegimenPatchRequest(BaseModel):
     medication_name: str | None = None
+    canonical_name: str | None = None
     dosage_text: str | None = None
     timing_type: Literal["pre_meal", "post_meal", "fixed_time"] | None = None
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] | None = None
+    frequency_times_per_day: int | None = Field(default=None, ge=1, le=8)
+    time_rules: list[dict[str, object]] | None = None
     offset_minutes: int | None = None
     slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] | None = None
     fixed_time: str | None = None
     max_daily_doses: int | None = Field(default=None, ge=1, le=8)
+    instructions_text: str | None = None
+    source_type: Literal["manual", "plain_text", "upload"] | None = None
+    source_filename: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    timezone: str | None = None
+    parse_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     active: bool | None = None
 
 
 class MedicationRegimenResponse(BaseModel):
     id: str
     medication_name: str
+    canonical_name: str | None = None
     dosage_text: str
     timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = "fixed_time"
+    frequency_times_per_day: int = 1
+    time_rules: list[dict[str, object]] = Field(default_factory=list)
     offset_minutes: int
     slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
     fixed_time: str | None = None
     max_daily_doses: int
+    instructions_text: str | None = None
+    source_type: Literal["manual", "plain_text", "upload"] = "manual"
+    source_filename: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    timezone: str = "Asia/Singapore"
+    parse_confidence: float | None = None
     active: bool
 
 
@@ -167,6 +201,50 @@ class MedicationAdherenceTotalsResponse(BaseModel):
 class MedicationAdherenceMetricsResponse(BaseModel):
     totals: MedicationAdherenceTotalsResponse
     events: list[MedicationAdherenceEventResponse] = Field(default_factory=list)
+
+
+class MedicationIntakeTextRequest(BaseModel):
+    instructions_text: str = Field(min_length=1)
+    allow_ambiguous: bool = False
+
+
+class MedicationIntakeConfirmRequest(BaseModel):
+    draft_id: str = Field(min_length=1)
+
+
+class MedicationIntakeSourceResponse(BaseModel):
+    source_type: Literal["plain_text", "upload"]
+    extracted_text: str
+    filename: str | None = None
+    mime_type: str | None = None
+    source_hash: str
+
+
+class NormalizedMedicationInstructionResponse(BaseModel):
+    medication_name_raw: str
+    medication_name_canonical: str | None = None
+    dosage_text: str
+    timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = "fixed_time"
+    frequency_times_per_day: int = 1
+    offset_minutes: int = 0
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
+    fixed_time: str | None = None
+    time_rules: list[dict[str, object]] = Field(default_factory=list)
+    duration_days: int | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    confidence: float = 0.0
+    ambiguities: list[str] = Field(default_factory=list)
+
+
+class MedicationIntakeResponse(BaseModel):
+    draft_id: str
+    source: MedicationIntakeSourceResponse
+    normalized_instructions: list[NormalizedMedicationInstructionResponse] = Field(default_factory=list)
+    regimens: list[MedicationRegimenResponse] = Field(default_factory=list)
+    reminders: list[ReminderEvent] = Field(default_factory=list)
+    scheduled_notifications: list[ScheduledReminderNotificationItemResponse] = Field(default_factory=list)
 
 
 class SymptomCheckInRequest(BaseModel):

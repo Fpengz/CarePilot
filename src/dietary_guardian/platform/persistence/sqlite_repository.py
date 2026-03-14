@@ -48,12 +48,24 @@ class SQLiteRepository:
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
                     medication_name TEXT NOT NULL,
+                    canonical_name TEXT,
                     dosage_text TEXT NOT NULL,
                     timing_type TEXT NOT NULL,
+                    frequency_type TEXT NOT NULL DEFAULT 'fixed_time',
+                    frequency_times_per_day INTEGER NOT NULL DEFAULT 1,
+                    time_rules_json TEXT NOT NULL DEFAULT '[]',
                     offset_minutes INTEGER NOT NULL,
                     slot_scope_json TEXT NOT NULL,
                     fixed_time TEXT,
                     max_daily_doses INTEGER NOT NULL,
+                    instructions_text TEXT,
+                    source_type TEXT NOT NULL DEFAULT 'manual',
+                    source_filename TEXT,
+                    source_hash TEXT,
+                    start_date TEXT,
+                    end_date TEXT,
+                    timezone TEXT NOT NULL DEFAULT 'Asia/Singapore',
+                    parse_confidence REAL,
                     active INTEGER NOT NULL
                 )
                 """
@@ -63,6 +75,7 @@ class SQLiteRepository:
                 CREATE TABLE IF NOT EXISTS reminder_events (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
+                    regimen_id TEXT,
                     reminder_type TEXT NOT NULL DEFAULT 'medication',
                     title TEXT NOT NULL DEFAULT 'Medication Reminder',
                     body TEXT,
@@ -447,6 +460,19 @@ class SQLiteRepository:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_timeline_user_created ON workflow_timeline_events(user_id, created_at)")
             self._ensure_sqlite_column(cur, "meal_records", "meal_perception_json", "TEXT")
             self._ensure_sqlite_column(cur, "meal_records", "enriched_event_json", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "canonical_name", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "frequency_type", "TEXT NOT NULL DEFAULT 'fixed_time'")
+            self._ensure_sqlite_column(cur, "medication_regimens", "frequency_times_per_day", "INTEGER NOT NULL DEFAULT 1")
+            self._ensure_sqlite_column(cur, "medication_regimens", "time_rules_json", "TEXT NOT NULL DEFAULT '[]'")
+            self._ensure_sqlite_column(cur, "medication_regimens", "instructions_text", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "source_type", "TEXT NOT NULL DEFAULT 'manual'")
+            self._ensure_sqlite_column(cur, "medication_regimens", "source_filename", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "source_hash", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "start_date", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "end_date", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "timezone", "TEXT NOT NULL DEFAULT 'Asia/Singapore'")
+            self._ensure_sqlite_column(cur, "medication_regimens", "parse_confidence", "REAL")
+            self._ensure_sqlite_column(cur, "reminder_events", "regimen_id", "TEXT")
             conn.commit()
         self._seed_meal_catalog()
         self._seed_canonical_foods()

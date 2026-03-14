@@ -8,6 +8,7 @@ setting workflows.
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+from uuid import uuid4
 
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.errors import build_api_error
@@ -30,6 +31,7 @@ from dietary_guardian.features.medications.domain import (
     parse_hhmm,
 )
 from dietary_guardian.features.reminders.domain.models import MobilityReminderSettings
+from dietary_guardian.features.companion.core.health.models import MedicationAdherenceEvent
 from dietary_guardian.features.reminders.notifications.reminder_materialization import (
     cancel_reminder_notifications,
     materialize_reminder_notifications,
@@ -106,6 +108,19 @@ def confirm_reminder_for_session(
         datetime.now(timezone.utc),
         context.stores.reminders,
     )
+    if updated.regimen_id is not None:
+        adherence = MedicationAdherenceEvent(
+            id=str(uuid4()),
+            user_id=user_id,
+            regimen_id=updated.regimen_id,
+            reminder_id=updated.id,
+            status="taken" if confirmed else "skipped",
+            scheduled_at=updated.scheduled_at,
+            taken_at=updated.ack_at if confirmed else None,
+            source="reminder_confirm",
+            metadata={"meal_confirmation": updated.meal_confirmation},
+        )
+        context.stores.medications.save_medication_adherence_event(adherence)
     cancel_reminder_notifications(repository=context.stores.reminders, reminder_id=event_id)
     metrics = compute_mcr(context.stores.reminders.list_reminder_events(user_id))
     return ReminderConfirmResponse(

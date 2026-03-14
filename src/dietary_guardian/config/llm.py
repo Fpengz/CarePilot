@@ -31,6 +31,7 @@ class LLMCapability(StrEnum):
     CHATBOT = "chatbot"
     MEAL_VISION = "meal_vision"
     DIETARY_REASONING = "dietary_reasoning"
+    MEDICATION_PARSE = "medication_parse"
     REPORT_PARSE = "report_parse"
     CLINICAL_SUMMARY = "clinical_summary"
     FALLBACK = "fallback"

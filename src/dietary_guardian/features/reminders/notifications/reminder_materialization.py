@@ -138,6 +138,7 @@ def materialize_reminder_notifications(
             next_attempt_at=trigger_at,
             payload={
                 "reminder_id": reminder_event.id,
+                "regimen_id": reminder_event.regimen_id,
                 "reminder_type": reminder_event.reminder_type,
                 "title": reminder_event.title,
                 "body": reminder_event.body,
@@ -216,6 +217,9 @@ def dispatch_due_reminder_notifications(
             correlation_id=item.id,
             created_at=dispatch_at,
         )
+        regimen_id = item.payload.get("regimen_id")
+        if regimen_id:
+            message.payload["regimen_id"] = str(regimen_id)
         repository.enqueue_alert(message)
         repository.append_notification_log(
             ReminderNotificationLogEntry(

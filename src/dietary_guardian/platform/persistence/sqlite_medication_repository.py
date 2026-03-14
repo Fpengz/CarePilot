@@ -6,7 +6,7 @@ This module implements SQLite storage for medication regimens and adherence even
 
 import json
 import sqlite3
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, cast
 
 from dietary_guardian.features.companion.core.health.models import MedicationAdherenceEvent
@@ -26,19 +26,36 @@ class SQLiteMedicationRepository:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO medication_regimens
-                (id, user_id, medication_name, dosage_text, timing_type, offset_minutes, slot_scope_json, fixed_time, max_daily_doses, active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (
+                    id, user_id, medication_name, canonical_name, dosage_text, timing_type,
+                    frequency_type, frequency_times_per_day, time_rules_json, offset_minutes,
+                    slot_scope_json, fixed_time, max_daily_doses, instructions_text, source_type,
+                    source_filename, source_hash, start_date, end_date, timezone, parse_confidence, active
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     regimen.id,
                     regimen.user_id,
                     regimen.medication_name,
+                    regimen.canonical_name,
                     regimen.dosage_text,
                     regimen.timing_type,
+                    regimen.frequency_type,
+                    regimen.frequency_times_per_day,
+                    json.dumps(regimen.time_rules),
                     regimen.offset_minutes,
                     json.dumps(regimen.slot_scope),
                     regimen.fixed_time,
                     regimen.max_daily_doses,
+                    regimen.instructions_text,
+                    regimen.source_type,
+                    regimen.source_filename,
+                    regimen.source_hash,
+                    regimen.start_date.isoformat() if regimen.start_date else None,
+                    regimen.end_date.isoformat() if regimen.end_date else None,
+                    regimen.timezone,
+                    regimen.parse_confidence,
                     int(regimen.active),
                 ),
             )
@@ -47,8 +64,10 @@ class SQLiteMedicationRepository:
 
     def list_medication_regimens(self, user_id: str, *, active_only: bool = False) -> list[MedicationRegimen]:
         query = (
-            "SELECT id, user_id, medication_name, dosage_text, timing_type, offset_minutes, slot_scope_json, "
-            "fixed_time, max_daily_doses, active FROM medication_regimens WHERE user_id = ?"
+            "SELECT id, user_id, medication_name, canonical_name, dosage_text, timing_type, frequency_type, "
+            "frequency_times_per_day, time_rules_json, offset_minutes, slot_scope_json, fixed_time, max_daily_doses, "
+            "instructions_text, source_type, source_filename, source_hash, start_date, end_date, timezone, parse_confidence, active "
+            "FROM medication_regimens WHERE user_id = ?"
         )
         params: list[Any] = [user_id]
         if active_only:
@@ -61,13 +80,25 @@ class SQLiteMedicationRepository:
                 id=row[0],
                 user_id=row[1],
                 medication_name=row[2],
-                dosage_text=row[3],
-                timing_type=row[4],
-                offset_minutes=int(row[5]),
-                slot_scope=cast(list[MealSlot], json.loads(cast(str, row[6]))),
-                fixed_time=row[7],
-                max_daily_doses=int(row[8]),
-                active=bool(row[9]),
+                canonical_name=row[3],
+                dosage_text=row[4],
+                timing_type=row[5],
+                frequency_type=row[6],
+                frequency_times_per_day=int(row[7]),
+                time_rules=cast(list[dict[str, object]], json.loads(cast(str, row[8]) or "[]")),
+                offset_minutes=int(row[9]),
+                slot_scope=cast(list[MealSlot], json.loads(cast(str, row[10]))),
+                fixed_time=row[11],
+                max_daily_doses=int(row[12]),
+                instructions_text=row[13],
+                source_type=row[14],
+                source_filename=row[15],
+                source_hash=row[16],
+                start_date=date.fromisoformat(row[17]) if row[17] else None,
+                end_date=date.fromisoformat(row[18]) if row[18] else None,
+                timezone=row[19],
+                parse_confidence=float(row[20]) if row[20] is not None else None,
+                active=bool(row[21]),
             )
             for row in rows
         ]
@@ -76,7 +107,10 @@ class SQLiteMedicationRepository:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
-                SELECT id, user_id, medication_name, dosage_text, timing_type, offset_minutes, slot_scope_json, fixed_time, max_daily_doses, active
+                SELECT id, user_id, medication_name, canonical_name, dosage_text, timing_type, frequency_type,
+                       frequency_times_per_day, time_rules_json, offset_minutes, slot_scope_json, fixed_time,
+                       max_daily_doses, instructions_text, source_type, source_filename, source_hash, start_date, end_date,
+                       timezone, parse_confidence, active
                 FROM medication_regimens
                 WHERE user_id = ? AND id = ?
                 """,
@@ -88,13 +122,25 @@ class SQLiteMedicationRepository:
             id=row[0],
             user_id=row[1],
             medication_name=row[2],
-            dosage_text=row[3],
-            timing_type=row[4],
-            offset_minutes=int(row[5]),
-            slot_scope=cast(list[MealSlot], json.loads(cast(str, row[6]))),
-            fixed_time=row[7],
-            max_daily_doses=int(row[8]),
-            active=bool(row[9]),
+            canonical_name=row[3],
+            dosage_text=row[4],
+            timing_type=row[5],
+            frequency_type=row[6],
+            frequency_times_per_day=int(row[7]),
+            time_rules=cast(list[dict[str, object]], json.loads(cast(str, row[8]) or "[]")),
+            offset_minutes=int(row[9]),
+            slot_scope=cast(list[MealSlot], json.loads(cast(str, row[10]))),
+            fixed_time=row[11],
+            max_daily_doses=int(row[12]),
+            instructions_text=row[13],
+            source_type=row[14],
+            source_filename=row[15],
+            source_hash=row[16],
+            start_date=date.fromisoformat(row[17]) if row[17] else None,
+            end_date=date.fromisoformat(row[18]) if row[18] else None,
+            timezone=row[19],
+            parse_confidence=float(row[20]) if row[20] is not None else None,
+            active=bool(row[21]),
         )
 
     def delete_medication_regimen(self, *, user_id: str, regimen_id: str) -> bool:

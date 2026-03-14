@@ -7,7 +7,7 @@ settings.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -117,27 +117,42 @@ class ReminderNotificationLogEntry(BaseModel):
 
 
 TimingType = Literal["pre_meal", "post_meal", "fixed_time"]
+FrequencyType = Literal["times_per_day", "fixed_slots", "fixed_time"]
 ReminderStatus = Literal["sent", "acknowledged", "missed"]
 MealConfirmation = Literal["yes", "no", "unknown"]
 ReminderType = Literal["medication", "mobility"]
+MedicationSourceType = Literal["manual", "plain_text", "upload"]
 
 
 class MedicationRegimen(BaseModel):
     id: str
     user_id: str
     medication_name: str
+    canonical_name: str | None = None
     dosage_text: str
     timing_type: TimingType
+    frequency_type: FrequencyType = "fixed_time"
+    frequency_times_per_day: int = 1
+    time_rules: list[dict[str, object]] = Field(default_factory=list)
     offset_minutes: int = 0
     slot_scope: list[MealSlot] = Field(default_factory=list)
     fixed_time: str | None = None
     max_daily_doses: int = 1
+    instructions_text: str | None = None
+    source_type: MedicationSourceType = "manual"
+    source_filename: str | None = None
+    source_hash: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    timezone: str = "Asia/Singapore"
+    parse_confidence: float | None = None
     active: bool = True
 
 
 class ReminderEvent(BaseModel):
     id: str
     user_id: str
+    regimen_id: str | None = None
     reminder_type: ReminderType = "medication"
     title: str = "Medication Reminder"
     body: str | None = None

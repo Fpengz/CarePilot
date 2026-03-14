@@ -59,6 +59,10 @@ def generate_daily_reminders(
     for regimen in regimens:
         if not regimen.active:
             continue
+        if regimen.start_date and target_date < regimen.start_date:
+            continue
+        if regimen.end_date and target_date > regimen.end_date:
+            continue
 
         if regimen.timing_type == "fixed_time":
             if not regimen.fixed_time:
@@ -72,6 +76,7 @@ def generate_daily_reminders(
                 ReminderEvent(
                     id=str(uuid4()),
                     user_id=user.id,
+                    regimen_id=regimen.id,
                     reminder_type="medication",
                     title="Medication Reminder",
                     body=f"{regimen.medication_name} {regimen.dosage_text}".strip(),
@@ -103,6 +108,7 @@ def generate_daily_reminders(
                 ReminderEvent(
                     id=str(uuid4()),
                     user_id=user.id,
+                    regimen_id=regimen.id,
                     reminder_type="medication",
                     title="Medication Reminder",
                     body=f"{regimen.medication_name} {regimen.dosage_text}".strip(),
