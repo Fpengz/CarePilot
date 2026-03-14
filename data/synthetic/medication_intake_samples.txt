@@ -1,0 +1,39 @@
+Medication Intake Synthetic Samples
+Generated: 2026-03-14
+Format: free-text instructions (one per line unless noted)
+
+Paracetamol 500mg, three times a day after meals for 5 days
+Take Metformin 500mg twice daily before meals for 5 days
+Amlodipine 5mg every morning
+Lisinopril 10mg at 09:00 daily
+Atorvastatin 20mg every night
+Insulin 12 units before breakfast for 14 days
+Omeprazole 20mg before meals
+Amoxicillin 250mg three times daily for 7 days
+Vitamin D3 1000 IU every morning for 30 days
+Ibuprofen 200mg after meals
+Metformin 850mg twice daily
+Losartan 50mg every evening
+Simvastatin 10mg at bedtime
+Doxycycline 100mg twice a day for 10 days
+Furosemide 40mg every morning
+Spironolactone 25mg every morning
+Gliclazide 80mg before breakfast and dinner
+Prednisone 5mg every morning for 7 days
+Levothyroxine 75mcg every morning before meals
+Clopidogrel 75mg daily
+Metoprolol 50mg twice daily at 08:00 and 20:00
+Gabapentin 300mg three times a day
+Allopurinol 100mg every morning
+Hydrochlorothiazide 25mg every morning
+Warfarin 5mg at 18:00 daily
+
+# Ambiguous / edge cases (should surface ambiguities)
+Please remind me about my tablets
+Take the blue pill after food
+Use inhaler as needed
+Pain meds twice daily
+Take meds before meals
+
+# Multi-line example
+Take Metformin 500mg twice daily before meals for 5 days; Amlodipine 5mg every morning
