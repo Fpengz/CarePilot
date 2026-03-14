@@ -126,6 +126,8 @@ Manual schedule types supported in the UI:
 - every X hours
 - specific weekdays + time
 
+Channel selection is hidden on the reminders page and uses reminder settings defaults.
+
 Supporting web client/type changes:
 - `apps/web/lib/api/core.ts`
 - `apps/web/lib/api/reminder-client.ts`
