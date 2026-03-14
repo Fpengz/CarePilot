@@ -83,11 +83,13 @@ test("reminders page shows structured reminder sections", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/reminders");
-  await page.getByRole("button", { name: "Generate Today Reminders" }).click();
+  await page.getByRole("button", { name: /Create today/i }).click();
 
-  await expect(page.getByRole("heading", { name: "Active Reminders" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Upcoming Queue" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Recent History" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create reminder" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Planned reminders" })).toBeVisible();
+  await page.getByText("Upcoming & history").click();
+  await expect(page.getByRole("heading", { name: "Upcoming reminders" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Recent history" })).toBeVisible();
 });
 
 test("caregiver household page shows a read-only care panel", async ({ page }) => {

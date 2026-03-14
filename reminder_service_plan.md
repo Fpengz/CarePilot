@@ -109,15 +109,22 @@ Still open:
 Status: `implemented`
 
 Implemented in `apps/web/app/reminders/page.tsx`:
-- Active Reminders section
-- Upcoming Queue section
-- Recent History section
+- Create reminder panel with manual schedule inputs
+- Planned reminders list with next trigger and pause/activate
+- Upcoming & history collapsed section
+- Delivery logs available per-occurrence
 - occurrence action controls:
   - Taken
   - Skipped
   - Snooze 10m
   - Snooze 30m
 - legacy reminder metrics and delivery details retained during migration
+
+Manual schedule types supported in the UI:
+- one-time date + time
+- daily fixed times
+- every X hours
+- specific weekdays + time
 
 Supporting web client/type changes:
 - `apps/web/lib/api/core.ts`
