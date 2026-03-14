@@ -83,8 +83,6 @@ test("reminders page shows structured reminder sections", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/reminders");
-  await page.getByRole("button", { name: /Create today/i }).click();
-
   await expect(page.getByRole("heading", { name: "Create reminder" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Planned reminders" })).toBeVisible();
   await page.getByText("Upcoming & history").click();

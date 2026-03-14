@@ -13,25 +13,16 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  actOnReminderOccurrence,
   createReminderDefinition,
-  generateReminders,
   listReminderDefinitions,
   listReminderHistory,
-  listReminderNotificationLogs,
-  listReminderNotificationSchedules,
-  listReminders,
   listUpcomingReminderOccurrences,
   patchReminderDefinition,
 } from "@/lib/api/reminder-client";
 import type {
   ReminderDefinitionApi,
-  ReminderEventView,
-  ReminderMetrics,
-  ReminderNotificationLogItem,
   ReminderOccurrenceApi,
   ReminderScheduleRuleApi,
-  ScheduledReminderNotificationItem,
 } from "@/lib/types";
 
 const timestampFormatter = new Intl.DateTimeFormat(undefined, {
@@ -40,32 +31,6 @@ const timestampFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-function MetricsCard({ metrics }: { metrics: ReminderMetrics | null }) {
-  if (!metrics) {
-    return <p className="app-muted text-sm">Create today’s reminders to see adherence metrics.</p>;
-  }
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <div className="metric-card">
-        <div className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted-foreground)]">Reminders Sent</div>
-        <div className="mt-2 text-2xl font-semibold">{metrics.reminders_sent}</div>
-      </div>
-      <div className="metric-card">
-        <div className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted-foreground)]">Confirmation Rate</div>
-        <div className="mt-2 text-2xl font-semibold">{(metrics.meal_confirmation_rate * 100).toFixed(1)}%</div>
-      </div>
-      <div className="metric-card">
-        <div className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted-foreground)]">Taken / Yes</div>
-        <div className="mt-2 text-2xl font-semibold">{metrics.meal_confirmed_yes}</div>
-      </div>
-      <div className="metric-card">
-        <div className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted-foreground)]">Skipped / No</div>
-        <div className="mt-2 text-2xl font-semibold">{metrics.meal_confirmed_no}</div>
-      </div>
-    </div>
-  );
-}
 
 function scheduleSummary(definition: ReminderDefinitionApi) {
   const { schedule } = definition;
@@ -118,13 +83,7 @@ export default function RemindersPage() {
   const [definitions, setDefinitions] = useState<ReminderDefinitionApi[]>([]);
   const [upcoming, setUpcoming] = useState<ReminderOccurrenceApi[]>([]);
   const [history, setHistory] = useState<ReminderOccurrenceApi[]>([]);
-  const [reminders, setReminders] = useState<ReminderEventView[]>([]);
-  const [metrics, setMetrics] = useState<ReminderMetrics | null>(null);
-  const [selectedOccurrenceId, setSelectedOccurrenceId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<"generate" | "refresh" | "taken" | "skipped" | "snooze10" | "snooze30" | null>(null);
-  const [schedules, setSchedules] = useState<ScheduledReminderNotificationItem[]>([]);
-  const [logs, setLogs] = useState<ReminderNotificationLogItem[]>([]);
   const [createLoading, setCreateLoading] = useState(false);
   const [toggleLoadingId, setToggleLoadingId] = useState<string | null>(null);
 
@@ -153,35 +112,15 @@ export default function RemindersPage() {
     }
     return map;
   }, [upcoming]);
-  const selectedOccurrence = useMemo(
-    () => [...upcoming, ...history].find((item) => item.id === selectedOccurrenceId) ?? null,
-    [history, selectedOccurrenceId, upcoming],
-  );
-  const selectedDefinition = selectedOccurrence ? definitionMap.get(selectedOccurrence.reminder_definition_id) ?? null : null;
-
   async function loadStructuredData() {
-    const [definitionData, upcomingData, historyData, reminderData] = await Promise.all([
+    const [definitionData, upcomingData, historyData] = await Promise.all([
       listReminderDefinitions(),
       listUpcomingReminderOccurrences(),
       listReminderHistory(),
-      listReminders(),
     ]);
     setDefinitions(definitionData.items);
     setUpcoming(upcomingData.items);
     setHistory(historyData.items);
-    setReminders(reminderData.reminders);
-    setMetrics(reminderData.metrics);
-    const nextSelected = selectedOccurrenceId || upcomingData.items[0]?.id || historyData.items[0]?.id || "";
-    setSelectedOccurrenceId(nextSelected);
-  }
-
-  async function loadReminderDeliveryDetails(reminderId: string) {
-    const [scheduleData, logData] = await Promise.all([
-      listReminderNotificationSchedules(reminderId),
-      listReminderNotificationLogs(reminderId),
-    ]);
-    setSchedules(scheduleData.items);
-    setLogs(logData.items);
   }
 
   function buildScheduleRule(): ReminderScheduleRuleApi | null {
@@ -263,15 +202,6 @@ export default function RemindersPage() {
   }
 
   useEffect(() => {
-    if (!selectedOccurrenceId) {
-      setSchedules([]);
-      setLogs([]);
-      return;
-    }
-    void loadReminderDeliveryDetails(selectedOccurrenceId).catch((e) => setError(e instanceof Error ? e.message : String(e)));
-  }, [selectedOccurrenceId]);
-
-  useEffect(() => {
     void loadStructuredData().catch((e) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
@@ -307,29 +237,6 @@ export default function RemindersPage() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setCreateLoading(false);
-    }
-  }
-
-  async function runOccurrenceAction(
-    action: "taken" | "skipped" | "snooze",
-    loadingState: "taken" | "skipped" | "snooze10" | "snooze30",
-    snoozeMinutes?: number,
-  ) {
-    if (!selectedOccurrenceId) return;
-    setError(null);
-    setLoadingAction(loadingState);
-    try {
-      await actOnReminderOccurrence({
-        occurrenceId: selectedOccurrenceId,
-        action,
-        snooze_minutes: snoozeMinutes,
-      });
-      await loadStructuredData();
-      await loadReminderDeliveryDetails(selectedOccurrenceId);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoadingAction(null);
     }
   }
 
@@ -602,36 +509,23 @@ export default function RemindersPage() {
                 <CardContent>
                   {upcoming.length > 0 ? (
                     <div className="data-list">
-                      {upcoming.map((occurrence) => {
-                        const active = selectedOccurrenceId === occurrence.id;
+                  {upcoming.map((occurrence) => {
                         const definition = definitionMap.get(occurrence.reminder_definition_id);
                         return (
-                          <button
-                            key={occurrence.id}
-                            type="button"
-                            onClick={() => setSelectedOccurrenceId(occurrence.id)}
-                            className={[
-                              "w-full rounded-[1rem] border px-3 py-3 text-left transition",
-                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)] focus-visible:ring-offset-2",
-                              "focus-visible:ring-offset-[color:var(--background)]",
-                              active ? "border-[color:var(--accent)] bg-[color:var(--accent)]/10" : "border-[color:var(--border)] bg-white/60 hover:bg-white/80 dark:bg-[color:var(--panel-soft)] dark:hover:bg-[color:var(--card)]",
-                            ].join(" ")}
-                          >
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <div className="min-w-0 space-y-1">
-                                <div className="text-sm font-medium">{definition?.title ?? "Reminder occurrence"}</div>
-                                <div className="text-xs text-[color:var(--muted-foreground)]">
-                                  {definition?.body ?? definition?.instructions_text ?? "Structured occurrence"}
-                                </div>
-                                <div className="text-xs text-[color:var(--muted-foreground)]">
-                                  {timestampFormatter.format(new Date(occurrence.trigger_at))}
-                                </div>
+                          <div key={occurrence.id} className="data-list-row gap-3">
+                            <div className="min-w-0 space-y-1">
+                              <div className="text-sm font-medium">{definition?.title ?? "Reminder occurrence"}</div>
+                              <div className="text-xs text-[color:var(--muted-foreground)]">
+                                {definition?.body ?? definition?.instructions_text ?? "Structured occurrence"}
                               </div>
-                              <span className={`rounded-full px-2 py-1 text-xs font-medium ${statusTone(occurrence.status)}`}>
-                                {occurrence.status}
-                              </span>
+                              <div className="text-xs text-[color:var(--muted-foreground)]">
+                                {timestampFormatter.format(new Date(occurrence.trigger_at))}
+                              </div>
                             </div>
-                          </button>
+                            <span className={`rounded-full px-2 py-1 text-xs font-medium ${statusTone(occurrence.status)}`}>
+                              {occurrence.status}
+                            </span>
+                          </div>
                         );
                       })}
                     </div>
@@ -673,183 +567,8 @@ export default function RemindersPage() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Legacy reminder events</CardTitle>
-                  <CardDescription>Compatibility projection retained during the structured reminder migration.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {reminders.length > 0 ? (
-                    <div className="data-list">
-                      {reminders.map((reminder) => (
-                        <div key={reminder.id} className="data-list-row sm:flex-row sm:items-center sm:justify-between">
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium">{reminder.title}</div>
-                            <div className="text-xs text-[color:var(--muted-foreground)]">
-                              {reminder.body ?? "Reminder"} · {timestampFormatter.format(new Date(reminder.scheduled_at))}
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2 text-xs">
-                            <span className="rounded-full border border-[color:var(--border)] px-2 py-1">{reminder.reminder_type}</span>
-                            <span className="rounded-full border border-[color:var(--border)] px-2 py-1">{reminder.status}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="app-muted text-sm">No legacy reminder events loaded yet.</p>
-                  )}
-                </CardContent>
-              </Card>
             </div>
           </details>
-        </div>
-
-        <div className="section-stack">
-          <Card className="grain-overlay border-[color:var(--border)] bg-[color:var(--card)]">
-            <CardHeader>
-              <CardTitle>Today’s reminders</CardTitle>
-              <CardDescription>Create today’s reminders from planned schedules, then act on what’s due.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  disabled={loadingAction !== null}
-                  onClick={async () => {
-                    setError(null);
-                    setLoadingAction("generate");
-                    try {
-                      const generated = await generateReminders();
-                      setReminders(generated.reminders);
-                      setMetrics(generated.metrics);
-                      await loadStructuredData();
-                    } catch (e) {
-                      setError(e instanceof Error ? e.message : String(e));
-                    } finally {
-                      setLoadingAction(null);
-                    }
-                  }}
-                >
-                  <AsyncLabel active={loadingAction === "generate"} loading="Creating" idle="Create today’s reminders" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  disabled={loadingAction !== null}
-                  onClick={async () => {
-                    setError(null);
-                    setLoadingAction("refresh");
-                    try {
-                      await loadStructuredData();
-                    } catch (e) {
-                      setError(e instanceof Error ? e.message : String(e));
-                    } finally {
-                      setLoadingAction(null);
-                    }
-                  }}
-                >
-                  <AsyncLabel active={loadingAction === "refresh"} loading="Refreshing" idle="Reload reminders" />
-                </Button>
-              </div>
-
-              {selectedOccurrence ? (
-                <div className="rounded-[1.25rem] border border-[color:var(--border)] bg-[linear-gradient(145deg,color-mix(in_oklab,var(--accent)_12%,white),transparent)] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-2">
-                      <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-foreground)]">Selected reminder</div>
-                      <div className="text-lg font-semibold">{selectedDefinition?.title ?? "Reminder"}</div>
-                      <div className="text-sm text-[color:var(--muted-foreground)]">
-                        {selectedDefinition?.body ?? selectedDefinition?.instructions_text ?? "Details not available."}
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-[color:var(--muted-foreground)]">
-                        <span>{timestampFormatter.format(new Date(selectedOccurrence.trigger_at))}</span>
-                        <span>Grace {selectedOccurrence.grace_window_minutes}m</span>
-                        <span>{selectedDefinition ? scheduleSummary(selectedDefinition) : "Reminder schedule"}</span>
-                      </div>
-                    </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusTone(selectedOccurrence.status)}`}>
-                      {selectedOccurrence.status}
-                    </span>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button disabled={loadingAction !== null} onClick={() => void runOccurrenceAction("taken", "taken")}>
-                      <AsyncLabel active={loadingAction === "taken"} loading="Saving" idle="Taken" />
-                    </Button>
-                    <Button variant="secondary" disabled={loadingAction !== null} onClick={() => void runOccurrenceAction("skipped", "skipped")}>
-                      <AsyncLabel active={loadingAction === "skipped"} loading="Saving" idle="Skipped" />
-                    </Button>
-                    <Button variant="secondary" disabled={loadingAction !== null} onClick={() => void runOccurrenceAction("snooze", "snooze10", 10)}>
-                      <AsyncLabel active={loadingAction === "snooze10"} loading="Snoozing" idle="Snooze 10m" />
-                    </Button>
-                    <Button variant="secondary" disabled={loadingAction !== null} onClick={() => void runOccurrenceAction("snooze", "snooze30", 30)}>
-                      <AsyncLabel active={loadingAction === "snooze30"} loading="Snoozing" idle="Snooze 30m" />
-                    </Button>
-                  </div>
-
-                  <details className="mt-4 rounded-[1rem] border border-[color:var(--border)] bg-[color:var(--card)]/70 p-3">
-                    <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--muted-foreground)]">
-                      Delivery details
-                    </summary>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <div className="mb-2 text-xs uppercase tracking-[0.24em] text-[color:var(--muted-foreground)]">Scheduled notifications</div>
-                        {schedules.length > 0 ? (
-                          <div className="data-list">
-                            {schedules.map((item) => (
-                              <div key={item.id} className="data-list-row sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                  <div className="text-sm font-medium">{item.channel}</div>
-                                  <div className="text-xs text-[color:var(--muted-foreground)]">
-                                    {timestampFormatter.format(new Date(item.trigger_at))}
-                                  </div>
-                                </div>
-                                <span className="rounded-full border border-[color:var(--border)] px-2 py-1 text-xs">{item.status}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="app-muted text-sm">No delivery rows for the selected occurrence.</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <div className="mb-2 text-xs uppercase tracking-[0.24em] text-[color:var(--muted-foreground)]">Notification log</div>
-                        {logs.length > 0 ? (
-                          <div className="data-list">
-                            {logs.map((log) => (
-                              <div key={log.id} className="data-list-row sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                  <div className="text-sm font-medium">{log.event_type}</div>
-                                  <div className="text-xs text-[color:var(--muted-foreground)]">
-                                    {log.channel} · {timestampFormatter.format(new Date(log.created_at))}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="app-muted text-sm">No notification log rows for the selected occurrence.</p>
-                        )}
-                      </div>
-                    </div>
-                  </details>
-                </div>
-              ) : (
-                <div className="rounded-[1.25rem] border border-dashed border-[color:var(--border)] bg-[color:var(--card)]/60 p-4 text-sm text-[color:var(--muted-foreground)]">
-                  Create today’s reminders to see what’s due.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Metrics</CardTitle>
-              <CardDescription>Legacy reminder metrics remain visible while the structured flow rolls out.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <MetricsCard metrics={metrics} />
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
