@@ -19,13 +19,15 @@ import sqlite3
 import subprocess
 import sys
 import time
+from datetime import date
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 
 import typer
 from dotenv import dotenv_values
 
 from dietary_guardian.config.app import get_settings
+from dietary_guardian.dev.synthetic_data import SyntheticProfile, seed_synthetic_data
 from dietary_guardian.features.recommendations.domain.canonical_food_matching import normalize_text
 from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
 from dietary_guardian.platform.persistence.food import (
@@ -44,6 +46,7 @@ report_app = typer.Typer(help="Generate/locate reports.")
 web_app = typer.Typer(help="Web helper commands.")
 ingest_app = typer.Typer(help="Ingest food datasets into local stores.")
 ingest_app = typer.Typer(help="Ingest food datasets into local stores.")
+seed_app = typer.Typer(help="Seed developer synthetic data.")
 
 app.add_typer(infra_app, name="infra")
 app.add_typer(migrate_app, name="migrate")
@@ -52,6 +55,7 @@ app.add_typer(report_app, name="report")
 app.add_typer(web_app, name="web")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(ingest_app, name="ingest")
+app.add_typer(seed_app, name="seed")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 COMPOSE_FILE = REPO_ROOT / "compose.dev.yml"
@@ -734,6 +738,60 @@ def ingest_open_food_facts(
     records = load_open_food_facts_records(path)
     _persist_canonical_food_records(records, db_path=_resolve_app_db_path(), reset=reset)
     info(f"Ingested {len(records)} Open Food Facts records into canonical foods.")
+
+
+@seed_app.command("synthetic")
+def seed_synthetic(
+    user_id: Annotated[str, typer.Option("--user-id", help="Target user ID to seed.")] = "user_001",
+    days: Annotated[int, typer.Option("--days", min=1, help="Number of days to generate.")] = 90,
+    seed: Annotated[int, typer.Option("--seed", help="Deterministic random seed.")] = 17,
+    profile: Annotated[
+        str,
+        typer.Option("--profile", help="Pattern profile: stable, improving, or volatile."),
+    ] = "stable",
+    start_date: Annotated[
+        str | None,
+        typer.Option("--start-date", help="Optional inclusive start date (YYYY-MM-DD)."),
+    ] = None,
+    reset: Annotated[bool, typer.Option("--reset", help="Delete existing target-user data before seeding.")] = False,
+    append: Annotated[bool, typer.Option("--append", help="Append synthetic data after the latest generated day.")] = False,
+) -> None:
+    load_root_env()
+    if reset == append:
+        error("choose exactly one of --reset or --append")
+        raise typer.Exit(2)
+
+    if profile not in {"stable", "improving", "volatile"}:
+        error("profile must be one of: stable, improving, volatile")
+        raise typer.Exit(2)
+    parsed_start_date: date | None = None
+    if start_date:
+        try:
+            parsed_start_date = date.fromisoformat(start_date)
+        except ValueError:
+            error("start-date must use YYYY-MM-DD")
+            raise typer.Exit(2) from None
+
+    summary = seed_synthetic_data(
+        db_path=_resolve_app_db_path(),
+        user_id=user_id,
+        days=days,
+        seed=seed,
+        profile=cast(SyntheticProfile, profile),
+        reset=reset,
+        append=append,
+        start_date=parsed_start_date,
+    )
+    typer.echo("seed.synthetic.complete")
+    typer.echo(f"db_path={summary.db_path}")
+    typer.echo(f"user_id={summary.user_id}")
+    typer.echo(f"date_range={summary.start_date.isoformat()}..{summary.end_date.isoformat()}")
+    typer.echo(f"meals={summary.meals}")
+    typer.echo(f"nutrition_profiles={summary.nutrition_profiles}")
+    typer.echo(f"biomarkers={summary.biomarkers}")
+    typer.echo(f"adherence_events={summary.adherence_events}")
+    typer.echo(f"reminders={summary.reminders}")
+    typer.echo(f"regimens={summary.regimens}")
 
 
 def main() -> None:
