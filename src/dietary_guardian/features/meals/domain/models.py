@@ -167,6 +167,22 @@ class PerceivedMealItem(BaseModel):
     preparation: str | None = None
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
 
+    @field_validator("candidate_aliases", "detected_components", mode="before")
+    @classmethod
+    def _coerce_string_list(cls, value):  # noqa: ANN001
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [value]
+        return value
+
+    @field_validator("portion_estimate", mode="before")
+    @classmethod
+    def _coerce_portion_estimate(cls, value):  # noqa: ANN001
+        if value is None:
+            return MealPortionEstimate()
+        return value
+
 
 class MealPerception(BaseModel):
     meal_detected: bool = True
@@ -174,6 +190,27 @@ class MealPerception(BaseModel):
     uncertainties: list[str] = Field(default_factory=list)
     image_quality: ImageQuality = "unknown"
     confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    @field_validator("items", mode="before")
+    @classmethod
+    def _coerce_items(cls, value):  # noqa: ANN001
+        if value is None:
+            return []
+        if isinstance(value, dict):
+            return [value]
+        return value
+
+    @field_validator("confidence_score", mode="before")
+    @classmethod
+    def _coerce_confidence_score(cls, value):  # noqa: ANN001
+        if value is None:
+            return 0.0
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except ValueError:
+                return 0.0
+        return value
 
     @field_validator("image_quality", mode="before")
     @classmethod

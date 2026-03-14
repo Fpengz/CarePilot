@@ -12,7 +12,13 @@ from typing import Any, Protocol, cast
 
 from pydantic import BaseModel
 from pydantic_ai import Agent
-from pydantic_ai.messages import BinaryImage
+from pydantic_ai.messages import (
+    BinaryImage,
+    PartDeltaEvent,
+    PartEndEvent,
+    TextPart,
+    TextPartDelta,
+)
 
 from dietary_guardian.config.app import AppSettings, get_settings
 from dietary_guardian.config.llm import LLMCapability, ModelProvider
@@ -29,6 +35,16 @@ from dietary_guardian.agent.runtime.inference_types import (
 
 logger = get_logger(__name__)
 QWEN_PROVIDER = getattr(ModelProvider, "QWEN", ModelProvider.OPENAI)
+
+
+def _collect_text_from_events(events: list[object]) -> str:
+    chunks: list[str] = []
+    for event in events:
+        if isinstance(event, PartDeltaEvent) and isinstance(event.delta, TextPartDelta):
+            chunks.append(event.delta.content_delta)
+        elif isinstance(event, PartEndEvent) and isinstance(event.part, TextPart):
+            chunks.append(event.part.content)
+    return "".join(chunks)
 
 
 class ProviderStrategy(Protocol):
@@ -104,11 +120,22 @@ class _BaseStrategy:
             output_retries,
             self.capability or "none",
         )
+        raw_chunks: list[str] = []
+
+        async def _event_stream_handler(_ctx, events):  # noqa: ANN001
+            async for event in events:
+                raw = _collect_text_from_events([event])
+                if raw:
+                    raw_chunks.append(raw)
+
         try:
             if request.modality in {InferenceModality.IMAGE, InferenceModality.MIXED} and image_bytes:
-                result = await agent.run([prompt, BinaryImage(image_bytes, media_type=image_mime_type)])
+                result = await agent.run(
+                    [prompt, BinaryImage(image_bytes, media_type=image_mime_type)],
+                    event_stream_handler=_event_stream_handler,
+                )
             else:
-                result = await agent.run(prompt)
+                result = await agent.run(prompt, event_stream_handler=_event_stream_handler)
         except Exception as exc:  # noqa: BLE001
             latency_ms = (time.perf_counter() - started) * 1000.0
             if "Exceeded maximum retries" in str(exc):
@@ -119,6 +146,9 @@ class _BaseStrategy:
                     max(output_retries + 1, 1),
                     self.capability or "none",
                 )
+            if raw_chunks:
+                raw_preview = "".join(raw_chunks)[-1200:]
+                logger.debug("inference_engine_raw_response_preview=%s", raw_preview)
             logger.exception(
                 "inference_run_failed request_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f error=%s capability=%s",
                 request.request_id,
