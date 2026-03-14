@@ -12,6 +12,7 @@ from typing import Any, Protocol, cast
 
 from pydantic import BaseModel
 from pydantic_ai import Agent
+from pydantic_ai.messages import BinaryImage
 
 from dietary_guardian.config.app import AppSettings, get_settings
 from dietary_guardian.config.llm import LLMCapability, ModelProvider
@@ -27,6 +28,7 @@ from dietary_guardian.agent.runtime.inference_types import (
 )
 
 logger = get_logger(__name__)
+QWEN_PROVIDER = getattr(ModelProvider, "QWEN", ModelProvider.OPENAI)
 
 
 class ProviderStrategy(Protocol):
@@ -62,7 +64,12 @@ class _BaseStrategy:
 
     def _output_retry_budget(self) -> int:
         settings = get_settings()
-        if self.provider_name in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, ModelProvider.CODEX.value}:
+        if self.provider_name in {
+            ModelProvider.GEMINI.value,
+            ModelProvider.OPENAI.value,
+            QWEN_PROVIDER.value,
+            ModelProvider.CODEX.value,
+        }:
             return settings.llm.inference.cloud_output_validation_retries
         if self.provider_name in {ModelProvider.OLLAMA.value, ModelProvider.VLLM.value}:
             return settings.llm.inference.local_output_validation_retries
@@ -78,6 +85,8 @@ class _BaseStrategy:
             output_retries=output_retries,
         )
         prompt = request.payload.get("prompt", "")
+        image_bytes = request.payload.get("image_bytes")
+        image_mime_type = request.payload.get("image_mime_type") or "image/jpeg"
         logger.info(
             "inference_run_start request_id=%s provider=%s model=%s endpoint=%s modality=%s output_retries=%s capability=%s",
             request.request_id,
@@ -89,7 +98,10 @@ class _BaseStrategy:
             self.capability or "none",
         )
         try:
-            result = await agent.run(prompt)
+            if request.modality in {InferenceModality.IMAGE, InferenceModality.MIXED} and image_bytes:
+                result = await agent.run([prompt, BinaryImage(image_bytes, media_type=image_mime_type)])
+            else:
+                result = await agent.run(prompt)
         except Exception as exc:  # noqa: BLE001
             latency_ms = (time.perf_counter() - started) * 1000.0
             if "Exceeded maximum retries" in str(exc):
@@ -176,7 +188,12 @@ class InferenceEngine:
             settings=runtime_settings,
             capability=self.capability,
         )
-        if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, ModelProvider.CODEX.value}:
+        if self.provider in {
+            ModelProvider.GEMINI.value,
+            ModelProvider.OPENAI.value,
+            QWEN_PROVIDER.value,
+            ModelProvider.CODEX.value,
+        }:
             self.strategy: ProviderStrategy = CloudStrategy(self.capability, self.provider, self.model)
         elif self.provider in {ModelProvider.OLLAMA.value, ModelProvider.VLLM.value}:
             self.strategy = LocalStrategy(self.capability, self.provider, self.model)
@@ -198,9 +215,15 @@ class InferenceEngine:
     def capability_profile(self) -> ModalityCapabilityProfile:
         health = self.health()
         expected_latency_ms = {
-            InferenceModality.TEXT: 1000 if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value} else 3000,
-            InferenceModality.IMAGE: 1500 if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value} else 12000,
-            InferenceModality.MIXED: 2000 if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value} else 15000,
+            InferenceModality.TEXT: 1000
+            if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, QWEN_PROVIDER.value}
+            else 3000,
+            InferenceModality.IMAGE: 1500
+            if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, QWEN_PROVIDER.value}
+            else 12000,
+            InferenceModality.MIXED: 2000
+            if self.provider in {ModelProvider.GEMINI.value, ModelProvider.OPENAI.value, QWEN_PROVIDER.value}
+            else 15000,
         }
         return ModalityCapabilityProfile(
             capability=health.capability,

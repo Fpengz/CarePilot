@@ -140,12 +140,12 @@ class HawkerVisionModule:
     def _use_inference_engine_v2(self) -> bool:
         return bool(get_settings().llm.inference.use_engine_v2)
 
-    def _build_prompt(self, dish: str | ImageInput) -> tuple[str, InferenceModality, bytes | None]:
+    def _build_prompt(self, dish: str | ImageInput) -> tuple[str, InferenceModality, bytes | None, str | None]:
         if isinstance(dish, ImageInput):
             label_hint = Path(dish.filename or "meal").stem or "meal"
             prompt = f"Identify the meal in this image. Filename hint: {label_hint}."
-            return prompt, InferenceModality.IMAGE, dish.content
-        return f"Identify the meal described here: {dish}", InferenceModality.TEXT, None
+            return prompt, InferenceModality.IMAGE, dish.content, dish.mime_type
+        return f"Identify the meal described here: {dish}", InferenceModality.TEXT, None, None
 
     def _stub_test_perception(self, dish: str | ImageInput) -> MealPerception:
         if isinstance(dish, ImageInput):
@@ -197,7 +197,7 @@ class HawkerVisionModule:
         )
 
     async def analyze_dish(self, dish: str | ImageInput) -> VisionResult:
-        prompt, modality, _image_bytes = self._build_prompt(dish)
+        prompt, modality, image_bytes, image_mime_type = self._build_prompt(dish)
 
         if self.provider == "test":
             perception = self._stub_test_perception(dish)
@@ -237,7 +237,11 @@ class HawkerVisionModule:
                 request_id=str(uuid4()),
                 user_id=None,
                 modality=modality,
-                payload={"prompt": prompt},
+                payload={
+                    "prompt": prompt,
+                    "image_bytes": image_bytes,
+                    "image_mime_type": image_mime_type,
+                },
                 output_schema=MealPerception,
                 system_prompt=SYSTEM_PROMPT,
             )
@@ -247,7 +251,14 @@ class HawkerVisionModule:
             latency_ms = response.latency_ms
             model_version = response.provider_metadata.model
         else:
-            result = await self.agent.run(prompt)
+            if modality == InferenceModality.IMAGE and image_bytes is not None:
+                from pydantic_ai.messages import BinaryImage
+
+                result = await self.agent.run(
+                    [prompt, BinaryImage(image_bytes, media_type=image_mime_type or "image/jpeg")]
+                )
+            else:
+                result = await self.agent.run(prompt)
             perception = cast(MealPerception, getattr(result, "output"))
             raw = perception.model_dump_json()
 
