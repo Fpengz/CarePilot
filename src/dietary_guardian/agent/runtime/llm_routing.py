@@ -47,6 +47,8 @@ class LLMCapabilityRouter:
             return self._settings.llm.gemini.model
         if target.provider == ModelProvider.OPENAI.value:
             return self._settings.llm.openai.model
+        if target.provider == ModelProvider.QWEN.value:
+            return self._settings.llm.qwen.model
         return self._settings.llm.local.model
 
     def _resolve_base_url(self, provider: str, target: LLMCapabilityTarget) -> str | None:
@@ -54,6 +56,8 @@ class LLMCapabilityRouter:
             return str(target.base_url)
         if provider == ModelProvider.OPENAI.value:
             return self._settings.llm.openai.base_url
+        if provider == ModelProvider.QWEN.value:
+            return self._settings.llm.qwen.base_url
         if provider in {ModelProvider.OLLAMA.value, ModelProvider.VLLM.value}:
             return self._settings.llm.local.base_url
         return None
@@ -69,6 +73,8 @@ class LLMCapabilityRouter:
             return self._settings.llm.effective_google_api_key
         if provider == ModelProvider.OPENAI.value:
             return self._settings.llm.openai.api_key
+        if provider == ModelProvider.QWEN.value:
+            return self._settings.llm.qwen.api_key
         if provider in {ModelProvider.OLLAMA.value, ModelProvider.VLLM.value}:
             return self._settings.llm.local.api_key
         return None

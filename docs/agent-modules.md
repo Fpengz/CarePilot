@@ -152,7 +152,7 @@ Static factory that builds concrete `pydantic_ai` model objects from settings.
 | `_build_openai_provider(api_key, base_url)` | Same pattern for OpenAI. |
 | `describe_model_destination(model)` | Returns a human-readable string like `model=gemini-1.5-flash endpoint=default` for logging. |
 
-**Supported providers:** `gemini`, `openai`, `ollama`, `vllm`, `codex`, `test`
+**Supported providers:** `gemini`, `openai`, `qwen`, `ollama`, `vllm`, `codex`, `test`
 
 ---
 

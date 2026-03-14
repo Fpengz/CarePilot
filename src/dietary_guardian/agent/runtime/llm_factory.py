@@ -237,6 +237,24 @@ class LLMFactory:
                 api_key=(runtime_settings.llm.openai.api_key if runtime_settings is not None else None)
                 or os.getenv("OPENAI_API_KEY"),
             )
+        if target_provider == ModelProvider.QWEN.value:
+            return ResolvedModelRuntime(
+                provider=ModelProvider.QWEN.value,
+                model_name=model_name
+                or (
+                    runtime_settings.llm.qwen.model
+                    if runtime_settings is not None
+                    else str(LLMFactory._settings_default("qwen_model", "qwen-vl-cheapest"))
+                ),
+                capability=capability.value if isinstance(capability, LLMCapability) else capability,
+                base_url=(
+                    runtime_settings.llm.qwen.base_url
+                    if runtime_settings is not None and runtime_settings.llm.qwen.base_url
+                    else os.getenv("QWEN_BASE_URL")
+                ),
+                api_key=(runtime_settings.llm.qwen.api_key if runtime_settings is not None else None)
+                or os.getenv("QWEN_API_KEY"),
+            )
         if target_provider in (ModelProvider.OLLAMA.value, ModelProvider.VLLM.value):
             return ResolvedModelRuntime(
                 provider=target_provider,
@@ -303,6 +321,20 @@ class LLMFactory:
             model = OpenAIChatModel(runtime.model_name, provider=provider_obj)
             logger.info(
                 "provider_selected provider=openai model=%s base_url=%s capability=%s",
+                runtime.model_name,
+                runtime.base_url or "default",
+                runtime.capability or "none",
+            )
+            return LLMFactory._attach_model_name(model, runtime.model_name)
+        if runtime.provider == ModelProvider.QWEN.value:
+            api_key = runtime.api_key
+            if not api_key:
+                logger.warning("provider_qwen_missing_api_key fallback=test")
+                return LLMFactory._attach_model_name(TestModel(), "test-model")
+            provider_obj = LLMFactory._build_openai_provider(api_key=api_key, base_url=runtime.base_url)
+            model = OpenAIChatModel(runtime.model_name, provider=provider_obj)
+            logger.info(
+                "provider_selected provider=qwen model=%s base_url=%s capability=%s",
                 runtime.model_name,
                 runtime.base_url or "default",
                 runtime.capability or "none",

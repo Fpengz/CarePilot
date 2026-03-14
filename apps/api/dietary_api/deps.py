@@ -26,6 +26,7 @@ from dietary_guardian.agent.runtime.chat_runtime import (
     build_chat_inference_engine,
     build_chat_runtime_config,
 )
+from dietary_guardian.config.llm import LLMCapability
 from dietary_guardian.platform.observability.tooling.platform_registry import build_platform_tool_registry
 from dietary_guardian.config.app import AppSettings as Settings, get_settings
 from dietary_guardian.platform.auth import InMemoryAuthStore, SessionSigner, SQLiteAuthStore
@@ -81,6 +82,7 @@ class AppContext:
     emotion_agent: EmotionAgent
     recommendation_agent: RecommendationAgent
     chat_inference_engine: InferenceEngine
+    medication_inference_engine: InferenceEngine
     chat_router: QueryRouter
     chat_runtime_config: ChatRuntimeConfig
     chat_stream_runtime: ChatStreamRuntime
@@ -250,6 +252,11 @@ def build_app_context() -> AppContext:
     chat_code_agent = CodeAgent(api_key=os.environ.get("E2B_API_KEY"))
     chat_inference_engine = build_chat_inference_engine(settings, model_id=chat_runtime_config.model_id)
     chat_reasoning_engine = build_chat_inference_engine(settings, model_id=chat_runtime_config.reasoning_model_id)
+    medication_inference_engine = InferenceEngine(
+        settings=settings,
+        provider=settings.llm.provider,
+        capability=LLMCapability.MEDICATION_PARSE,
+    )
     chat_router = QueryRouter(
         search_agent=chat_search_agent,
         inference_engine=chat_inference_engine,
@@ -280,6 +287,7 @@ def build_app_context() -> AppContext:
         emotion_agent=emotion_agent,
         recommendation_agent=RecommendationAgent(),
         chat_inference_engine=chat_inference_engine,
+        medication_inference_engine=medication_inference_engine,
         chat_router=chat_router,
         chat_runtime_config=chat_runtime_config,
         chat_stream_runtime=chat_stream_runtime,

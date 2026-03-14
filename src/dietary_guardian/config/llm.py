@@ -21,6 +21,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class ModelProvider(StrEnum):
     GEMINI = "gemini"
     OPENAI = "openai"
+    QWEN = "qwen"
     OLLAMA = "ollama"
     VLLM = "vllm"
     CODEX = "codex"
@@ -121,6 +122,15 @@ class OpenAIConfig:
 
 
 @dataclass(frozen=True)
+class QwenConfig:
+    """Qwen OpenAI-compatible credentials, model defaults, and network parameters."""
+
+    api_key: str | None
+    model: str
+    base_url: str | None
+
+
+@dataclass(frozen=True)
 class LocalLLMConfig:
     """Local LLM (Ollama/vLLM) credentials, model defaults, network parameters, and named profiles."""
 
@@ -152,6 +162,7 @@ class LLMSettings(BaseSettings):
       LLM_PROVIDER, LLM_DEFAULT_CAPABILITY, LLM_CAPABILITY_TARGETS,
       REQUIRED_PROVIDER, GEMINI_API_KEY, GOOGLE_API_KEY, GEMINI_MODEL,
       OPENAI_API_KEY, OPENAI_MODEL, OPENAI_BASE_URL,
+      QWEN_API_KEY, QWEN_MODEL, QWEN_BASE_URL,
       OPENAI_REQUEST_TIMEOUT_SECONDS, OPENAI_TRANSPORT_MAX_RETRIES,
       LOCAL_LLM_BASE_URL, LOCAL_LLM_API_KEY, LOCAL_LLM_MODEL,
       LOCAL_LLM_REQUEST_TIMEOUT_SECONDS, LOCAL_LLM_TRANSPORT_MAX_RETRIES,
@@ -183,6 +194,11 @@ class LLMSettings(BaseSettings):
     openai_base_url: AnyHttpUrl | str | None = None
     openai_request_timeout_seconds: float = Field(default=120.0, ge=1.0, le=7200.0)
     openai_transport_max_retries: int = Field(default=2, ge=0, le=10)
+
+    # --- Qwen (OpenAI-compatible) ---
+    qwen_api_key: str | None = None
+    qwen_model: str = "qwen-vl-cheapest"
+    qwen_base_url: AnyHttpUrl | str | None = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
 
     # --- Local LLM (Ollama / vLLM) ---
     local_llm_base_url: AnyHttpUrl | str | None = "http://localhost:11434/v1"
@@ -230,6 +246,15 @@ class LLMSettings(BaseSettings):
         )
 
     @property
+    def qwen(self) -> QwenConfig:
+        """Structured view of Qwen credentials and model defaults."""
+        return QwenConfig(
+            api_key=self.qwen_api_key,
+            model=self.qwen_model,
+            base_url=str(self.qwen_base_url) if self.qwen_base_url else None,
+        )
+
+    @property
     def local(self) -> LocalLLMConfig:
         """Structured view of local LLM credentials, network settings, and profiles."""
         return LocalLLMConfig(
@@ -263,6 +288,8 @@ class LLMSettings(BaseSettings):
             raise ValueError("Gemini provider selected but GEMINI_API_KEY/GOOGLE_API_KEY is not set")
         if self.provider == ModelProvider.OPENAI and not self.openai.api_key:
             raise ValueError("OpenAI provider selected but OPENAI_API_KEY is not set")
+        if self.provider == ModelProvider.QWEN and not self.qwen.api_key:
+            raise ValueError("Qwen provider selected but QWEN_API_KEY is not set")
         if self.provider == ModelProvider.CODEX:
             raise ValueError("Codex provider routing is reserved but not implemented yet")
         if self.provider in {ModelProvider.OLLAMA, ModelProvider.VLLM} and not self.local.base_url:

@@ -29,7 +29,7 @@ Environment loading conventions:
 - `REDIS_LOCK_TTL_SECONDS` (default: `30`)
 - `REDIS_WORKER_SIGNAL_CHANNEL` (default: `workers.ready`)
 - `READINESS_FAIL_ON_WARNINGS` (default: profile-derived; `false` in `dev`, `true` in `staging`/`prod`)
-- `REQUIRED_PROVIDER` (optional) — expected provider (`gemini`, `openai`, `ollama`, `vllm`, `test`) for readiness checks
+- `REQUIRED_PROVIDER` (optional) — expected provider (`gemini`, `openai`, `qwen`, `ollama`, `vllm`, `test`) for readiness checks
 - `AUTH_SESSION_TTL_SECONDS` (default: `86400`)
 - `AUTH_LOGIN_MAX_FAILED_ATTEMPTS` (default: `5`)
 - `AUTH_LOGIN_FAILURE_WINDOW_SECONDS` (default: `300`)
@@ -61,7 +61,7 @@ Deployment guardrails:
 - `NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE` (default: `false`)
 
 ## LLM Provider
-- `LLM_PROVIDER` (default: `test`) — `gemini`, `openai`, `ollama`, `vllm`, `test`
+- `LLM_PROVIDER` (default: `test`) — `gemini`, `openai`, `qwen`, `ollama`, `vllm`, `test`
 - `GEMINI_API_KEY` / `GOOGLE_API_KEY`
 - `GEMINI_MODEL`
 - `OPENAI_API_KEY`
@@ -69,6 +69,9 @@ Deployment guardrails:
 - `OPENAI_BASE_URL`
 - `OPENAI_REQUEST_TIMEOUT_SECONDS`
 - `OPENAI_TRANSPORT_MAX_RETRIES`
+- `QWEN_API_KEY`
+- `QWEN_MODEL`
+- `QWEN_BASE_URL`
 - `LOCAL_LLM_BASE_URL`
 - `LOCAL_LLM_API_KEY`
 - `LOCAL_LLM_MODEL`

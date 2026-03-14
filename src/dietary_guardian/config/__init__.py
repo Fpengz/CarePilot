@@ -11,6 +11,7 @@ from dietary_guardian.config.llm import (
     LocalModelProfile,
     ModelProvider,
     OpenAIConfig,
+    QwenConfig,
 )
 from dietary_guardian.config.runtime import (
     APISettings,
@@ -39,6 +40,7 @@ __all__ = [
     "ModelProvider",
     "GeminiConfig",
     "OpenAIConfig",
+    "QwenConfig",
     "LocalLLMConfig",
     "LocalModelProfile",
     "InferenceConfig",
