@@ -50,6 +50,7 @@ POLICY_RULES: dict[str, PolicyRule] = {
     "clinical_cards.read": PolicyRule(required_scopes=frozenset({"report:read"})),
     "clinical_cards.generate": PolicyRule(required_scopes=frozenset({"report:read", "recommendation:generate"})),
     "metrics.trends.read": PolicyRule(required_scopes=frozenset({"report:read"})),
+    "dashboard.read": PolicyRule(required_scopes=frozenset({"meal:read", "reminder:read", "report:read"})),
     "companion.today.read": PolicyRule(required_scopes=frozenset({"meal:read", "reminder:read", "report:read"})),
     "companion.interactions.write": PolicyRule(required_scopes=frozenset({"recommendation:generate", "report:read"})),
     "clinician.digest.read": PolicyRule(required_scopes=frozenset({"report:read", "recommendation:generate"})),

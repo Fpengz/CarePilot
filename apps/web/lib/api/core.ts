@@ -23,6 +23,7 @@ import type {
   AuthSessionRevokeOthersResponse,
   AuthSessionRevokeResponse,
   DailySuggestionsResponse,
+  DashboardOverviewApiResponse,
   HealthProfileResponse,
   HealthProfileOnboardingResponse,
   MealAnalyzeApiResponse,
@@ -891,6 +892,19 @@ export async function listMetricTrends(metric?: string[]): Promise<MetricTrendLi
   for (const item of metric ?? []) query.append("metric", item);
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return request<MetricTrendListApiResponse>(`/api/v1/metrics/trends${suffix}`);
+}
+
+export async function getDashboardOverview(params?: {
+  range?: "today" | "7d" | "30d" | "3m" | "1y" | "custom";
+  from?: string;
+  to?: string;
+}): Promise<DashboardOverviewApiResponse> {
+  const query = new URLSearchParams();
+  if (params?.range) query.set("range", params.range);
+  if (params?.from) query.set("from", params.from);
+  if (params?.to) query.set("to", params.to);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<DashboardOverviewApiResponse>(`/api/v1/dashboard${suffix}`);
 }
 
 export async function getCompanionToday(): Promise<CompanionTodayApiResponse> {

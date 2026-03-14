@@ -274,5 +274,113 @@ class MetricTrendListResponse(BaseModel):
     items: list[MetricTrendResponse] = Field(default_factory=list)
 
 
+DashboardBucket: TypeAlias = Literal["hour", "day", "week"]
+
+
+class DashboardRangeResponse(BaseModel):
+    key: str
+    label: str
+    from_date: date = Field(alias="from")
+    to: date
+    bucket: DashboardBucket
+    days: int
+
+
+class DashboardSummaryMetricResponse(BaseModel):
+    label: str
+    value: float
+    unit: str = ""
+    delta: float = 0.0
+    direction: Literal["up", "down", "flat"] = "flat"
+    status: str | None = None
+    detail: str | None = None
+
+
+class DashboardAlertResponse(BaseModel):
+    id: str
+    severity: Literal["info", "warning", "critical"]
+    title: str
+    detail: str
+    href: str | None = None
+
+
+class DashboardSeriesPointResponse(BaseModel):
+    bucket_start: datetime
+    bucket_end: datetime
+    label: str
+    value: float
+    target: float | None = None
+
+
+class DashboardMacroPointResponse(BaseModel):
+    bucket_start: datetime
+    bucket_end: datetime
+    label: str
+    protein_g: float = 0.0
+    carbs_g: float = 0.0
+    fat_g: float = 0.0
+    calories: float = 0.0
+
+
+class DashboardMealTimingBinResponse(BaseModel):
+    hour: int
+    label: str
+    count: int
+
+
+class DashboardMetricChartResponse(BaseModel):
+    title: str
+    bucket: DashboardBucket
+    points: list[DashboardSeriesPointResponse] = Field(default_factory=list)
+
+
+class DashboardMacroChartResponse(BaseModel):
+    title: str
+    bucket: DashboardBucket
+    points: list[DashboardMacroPointResponse] = Field(default_factory=list)
+
+
+class DashboardMealTimingChartResponse(BaseModel):
+    title: str
+    bins: list[DashboardMealTimingBinResponse] = Field(default_factory=list)
+
+
+class DashboardChartsResponse(BaseModel):
+    calories: DashboardMetricChartResponse
+    macros: DashboardMacroChartResponse
+    glycemic_risk: DashboardMetricChartResponse
+    adherence: DashboardMetricChartResponse
+    meal_timing: DashboardMealTimingChartResponse
+
+
+class DashboardInsightsResponse(BaseModel):
+    recommendations: list[str] = Field(default_factory=list)
+    key_drivers: list[str] = Field(default_factory=list)
+
+
+class DashboardLinksResponse(BaseModel):
+    meals: str = "/meals"
+    medications: str = "/medications"
+    reminders: str = "/reminders"
+    metrics: str = "/metrics"
+
+
+class DashboardSummaryResponse(BaseModel):
+    nutrition_goal_score: DashboardSummaryMetricResponse
+    adherence_score: DashboardSummaryMetricResponse
+    glycemic_risk: DashboardSummaryMetricResponse
+    stability_index: DashboardSummaryMetricResponse
+
+
+class DashboardOverviewResponse(BaseModel):
+    range: DashboardRangeResponse
+    comparison_range: DashboardRangeResponse
+    summary: DashboardSummaryResponse
+    alerts: list[DashboardAlertResponse] = Field(default_factory=list)
+    charts: DashboardChartsResponse
+    insights: DashboardInsightsResponse
+    links: DashboardLinksResponse = Field(default_factory=DashboardLinksResponse)
+
+
 
 MealAnalyzeResponse.model_rebuild(_types_namespace={"WorkflowResponse": WorkflowResponse})

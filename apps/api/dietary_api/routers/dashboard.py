@@ -8,14 +8,35 @@ from chat and tracking workflows.
 from __future__ import annotations
 
 import json
+from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 
+from ..schemas import DashboardOverviewResponse
+from ..services.dashboard import get_dashboard_overview
 from ..deps import chat_deps
 from ..routes_shared import current_session, get_context, require_action
 
 router = APIRouter(tags=["dashboard"])
+
+
+@router.get("/api/v1/dashboard", response_model=DashboardOverviewResponse)
+def dashboard_overview(
+    request: Request,
+    range: str = Query(default="30d"),
+    from_date: str | None = Query(default=None, alias="from"),
+    to_date: str | None = Query(default=None, alias="to"),
+    session: dict[str, object] = Depends(current_session),
+) -> DashboardOverviewResponse:
+    require_action(session, "dashboard.read")
+    return get_dashboard_overview(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        range_key=range,
+        from_date=None if from_date is None else date.fromisoformat(from_date),
+        to_date=None if to_date is None else date.fromisoformat(to_date),
+    )
 
 
 class MetricBound(BaseModel):

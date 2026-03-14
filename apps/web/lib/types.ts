@@ -802,6 +802,113 @@ export interface MetricTrendListApiResponse {
   items: MetricTrendApi[];
 }
 
+export type DashboardBucket = "hour" | "day" | "week";
+
+export interface DashboardRangeApi {
+  key: string;
+  label: string;
+  from: string;
+  to: string;
+  bucket: DashboardBucket;
+  days: number;
+}
+
+export interface DashboardSummaryMetricApi {
+  label: string;
+  value: number;
+  unit: string;
+  delta: number;
+  direction: "up" | "down" | "flat";
+  status?: string | null;
+  detail?: string | null;
+}
+
+export interface DashboardAlertApi {
+  id: string;
+  severity: "info" | "warning" | "critical";
+  title: string;
+  detail: string;
+  href?: string | null;
+}
+
+export interface DashboardSeriesPointApi {
+  bucket_start: string;
+  bucket_end: string;
+  label: string;
+  value: number;
+  target?: number | null;
+}
+
+export interface DashboardMacroPointApi {
+  bucket_start: string;
+  bucket_end: string;
+  label: string;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  calories: number;
+}
+
+export interface DashboardMealTimingBinApi {
+  hour: number;
+  label: string;
+  count: number;
+}
+
+export interface DashboardMetricChartApi {
+  title: string;
+  bucket: DashboardBucket;
+  points: DashboardSeriesPointApi[];
+}
+
+export interface DashboardMacroChartApi {
+  title: string;
+  bucket: DashboardBucket;
+  points: DashboardMacroPointApi[];
+}
+
+export interface DashboardMealTimingChartApi {
+  title: string;
+  bins: DashboardMealTimingBinApi[];
+}
+
+export interface DashboardChartsApi {
+  calories: DashboardMetricChartApi;
+  macros: DashboardMacroChartApi;
+  glycemic_risk: DashboardMetricChartApi;
+  adherence: DashboardMetricChartApi;
+  meal_timing: DashboardMealTimingChartApi;
+}
+
+export interface DashboardSummaryApi {
+  nutrition_goal_score: DashboardSummaryMetricApi;
+  adherence_score: DashboardSummaryMetricApi;
+  glycemic_risk: DashboardSummaryMetricApi;
+  stability_index: DashboardSummaryMetricApi;
+}
+
+export interface DashboardInsightsApi {
+  recommendations: string[];
+  key_drivers: string[];
+}
+
+export interface DashboardLinksApi {
+  meals: string;
+  medications: string;
+  reminders: string;
+  metrics: string;
+}
+
+export interface DashboardOverviewApiResponse {
+  range: DashboardRangeApi;
+  comparison_range: DashboardRangeApi;
+  summary: DashboardSummaryApi;
+  alerts: DashboardAlertApi[];
+  charts: DashboardChartsApi;
+  insights: DashboardInsightsApi;
+  links: DashboardLinksApi;
+}
+
 export interface CompanionSnapshotApi {
   user_id: string;
   profile_name: string;
