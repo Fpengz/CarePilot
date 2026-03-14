@@ -16,6 +16,8 @@ from ..schemas import (
     MedicationAdherenceEventCreateRequest,
     MedicationAdherenceEventEnvelopeResponse,
     MedicationAdherenceMetricsResponse,
+    MedicationDraftDeleteResponse,
+    MedicationDraftInstructionUpdateRequest,
     MedicationIntakeConfirmRequest,
     MedicationIntakeResponse,
     MedicationIntakeTextRequest,
@@ -27,13 +29,16 @@ from ..schemas import (
 )
 from dietary_guardian.features.medications.use_cases import (
     adherence_metrics_for_session,
+    cancel_intake_draft_for_session,
     confirm_intake_for_session,
     create_regimen_for_session,
     delete_regimen_for_session,
+    delete_draft_instruction_for_session,
     intake_text_for_session,
     intake_upload_for_session,
     list_regimens_for_session,
     patch_regimen_for_session,
+    update_draft_instruction_for_session,
     record_adherence_for_session,
 )
 
@@ -111,6 +116,54 @@ def medications_intake_confirm(
         context=get_context(request),
         user_id=str(session["user_id"]),
         payload=payload,
+    )
+
+
+@router.patch("/api/v1/medications/intake/drafts/{draft_id}/instructions/{instruction_index}", response_model=MedicationIntakeResponse)
+def medications_intake_draft_instruction_patch(
+    draft_id: str,
+    instruction_index: int,
+    payload: MedicationDraftInstructionUpdateRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> MedicationIntakeResponse:
+    require_action(session, "medications.regimens.write")
+    return update_draft_instruction_for_session(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        draft_id=draft_id,
+        instruction_index=instruction_index,
+        payload=payload,
+    )
+
+
+@router.delete("/api/v1/medications/intake/drafts/{draft_id}/instructions/{instruction_index}", response_model=MedicationIntakeResponse)
+def medications_intake_draft_instruction_delete(
+    draft_id: str,
+    instruction_index: int,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> MedicationIntakeResponse:
+    require_action(session, "medications.regimens.write")
+    return delete_draft_instruction_for_session(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        draft_id=draft_id,
+        instruction_index=instruction_index,
+    )
+
+
+@router.delete("/api/v1/medications/intake/drafts/{draft_id}", response_model=MedicationDraftDeleteResponse)
+def medications_intake_draft_delete(
+    draft_id: str,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> MedicationDraftDeleteResponse:
+    require_action(session, "medications.regimens.write")
+    return cancel_intake_draft_for_session(
+        context=get_context(request),
+        user_id=str(session["user_id"]),
+        draft_id=draft_id,
     )
 
 

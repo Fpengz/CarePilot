@@ -21,6 +21,8 @@ from apps.api.dietary_api.schemas import (
     MedicationAdherenceEventCreateRequest,
     MedicationAdherenceEventEnvelopeResponse,
     MedicationAdherenceEventResponse,
+    MedicationDraftDeleteResponse,
+    MedicationDraftInstructionUpdateRequest,
     MedicationIntakeConfirmRequest,
     MedicationAdherenceMetricsResponse,
     MedicationAdherenceTotalsResponse,
@@ -63,7 +65,7 @@ from dietary_guardian.platform.auth.session_context import build_user_profile_fr
 from dietary_guardian.features.profiles.domain.models import MealSlot
 from dietary_guardian.features.reminders.domain.models import ReminderEvent
 
-_DOSAGE_TEXT_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml)\b", re.IGNORECASE)
+_DOSAGE_TEXT_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|iu|unit|units)\b", re.IGNORECASE)
 _GENERIC_MEDICATION_NAMES = {"tablet", "tablets", "medicine", "medication", "pill", "pills"}
 _DRAFT_TTL_SECONDS = 3600
 
@@ -273,9 +275,30 @@ def _validate_intake_parse_result(
 def _instruction_is_actionable(instruction: NormalizedMedicationInstruction) -> bool:
     if not instruction.dosage_text or not _DOSAGE_TEXT_RE.search(instruction.dosage_text):
         return False
+    if instruction.ambiguities:
+        return False
     if instruction.confidence < 0.75:
         return False
+    if instruction.timing_type == "fixed_time" and not instruction.fixed_time:
+        return False
+    if instruction.timing_type in {"pre_meal", "post_meal"} and not instruction.slot_scope:
+        return False
     return instruction.medication_name_raw.strip().lower() not in _GENERIC_MEDICATION_NAMES
+
+
+def _apply_user_confirmation(instruction: NormalizedMedicationInstruction) -> NormalizedMedicationInstruction:
+    if not instruction.medication_name_raw.strip() or not instruction.dosage_text:
+        return instruction
+    if instruction.timing_type == "fixed_time" and not instruction.fixed_time:
+        return instruction
+    if instruction.timing_type in {"pre_meal", "post_meal"} and not instruction.slot_scope:
+        return instruction
+    return instruction.model_copy(
+        update={
+            "ambiguities": [],
+            "confidence": max(instruction.confidence, 0.9),
+        }
+    )
 
 
 def _draft_cache_key(*, user_id: str, draft_id: str) -> str:
@@ -326,6 +349,15 @@ def _delete_intake_draft(*, context: AppContext, user_id: str, draft_id: str) ->
     context.cache_store.delete(_draft_cache_key(user_id=user_id, draft_id=draft_id))
 
 
+def _save_intake_draft(*, context: AppContext, draft: MedicationIntakeDraft) -> MedicationIntakeDraft:
+    context.cache_store.set_json(
+        _draft_cache_key(user_id=draft.user_id, draft_id=draft.draft_id),
+        draft.model_dump(mode="json"),
+        ttl_seconds=_DRAFT_TTL_SECONDS,
+    )
+    return draft
+
+
 def _build_preview_response(*, draft: MedicationIntakeDraft) -> MedicationIntakeResponse:
     return MedicationIntakeResponse(
         draft_id=draft.draft_id,
@@ -335,6 +367,15 @@ def _build_preview_response(*, draft: MedicationIntakeDraft) -> MedicationIntake
         reminders=[],
         scheduled_notifications=[],
     )
+
+
+def _draft_instruction_at(*, draft: MedicationIntakeDraft, instruction_index: int) -> None:
+    if instruction_index < 0 or instruction_index >= len(draft.instructions):
+        raise build_api_error(
+            status_code=404,
+            code="medications.intake_instruction_not_found",
+            message="medication draft instruction not found",
+        )
 
 
 def _run_parsed_intake(
@@ -605,7 +646,7 @@ async def intake_text_for_session(
             source=source,
             today=today,
             timezone_name=timezone_name,
-            inference_engine=cast("MedicationInferenceEngineProtocol", context.chat_inference_engine),
+            inference_engine=cast("MedicationInferenceEngineProtocol", context.medication_inference_engine),
         )
         _validate_intake_parse_result(parse_result=parse_result, allow_ambiguous=payload.allow_ambiguous)
         draft = _store_intake_draft(
@@ -676,7 +717,7 @@ async def intake_upload_for_session(
             source=source,
             today=today,
             timezone_name=timezone_name,
-            inference_engine=cast("MedicationInferenceEngineProtocol", context.chat_inference_engine),
+            inference_engine=cast("MedicationInferenceEngineProtocol", context.medication_inference_engine),
         )
         _validate_intake_parse_result(parse_result=parse_result, allow_ambiguous=allow_ambiguous)
         draft = _store_intake_draft(
@@ -718,6 +759,16 @@ def confirm_intake_for_session(
     payload: MedicationIntakeConfirmRequest,
 ) -> MedicationIntakeResponse:
     draft = _load_intake_draft(context=context, user_id=user_id, draft_id=payload.draft_id)
+    if any(not _instruction_is_actionable(item) for item in draft.instructions):
+        raise build_api_error(
+            status_code=422,
+            code="medications.intake_review_required",
+            message="medication instructions require review before activation",
+            details={
+                "source_hash": draft.source.source_hash,
+                "ambiguities": [item.ambiguities for item in draft.instructions if item.ambiguities],
+            },
+        )
     parse_result = MedicationIntakeParseResult(source=draft.source, instructions=draft.instructions)
     today = _today_for_timezone(draft.timezone_name)
     response = _run_parsed_intake(
@@ -730,3 +781,44 @@ def confirm_intake_for_session(
     )
     _delete_intake_draft(context=context, user_id=user_id, draft_id=draft.draft_id)
     return response
+
+
+def update_draft_instruction_for_session(
+    *,
+    context: AppContext,
+    user_id: str,
+    draft_id: str,
+    instruction_index: int,
+    payload: MedicationDraftInstructionUpdateRequest,
+) -> MedicationIntakeResponse:
+    draft = _load_intake_draft(context=context, user_id=user_id, draft_id=draft_id)
+    _draft_instruction_at(draft=draft, instruction_index=instruction_index)
+    updated = NormalizedMedicationInstruction.model_validate(payload.model_dump(mode="json"))
+    draft.instructions[instruction_index] = _apply_user_confirmation(updated)
+    saved = _save_intake_draft(context=context, draft=draft)
+    return _build_preview_response(draft=saved)
+
+
+def delete_draft_instruction_for_session(
+    *,
+    context: AppContext,
+    user_id: str,
+    draft_id: str,
+    instruction_index: int,
+) -> MedicationIntakeResponse:
+    draft = _load_intake_draft(context=context, user_id=user_id, draft_id=draft_id)
+    _draft_instruction_at(draft=draft, instruction_index=instruction_index)
+    remaining = [item for index, item in enumerate(draft.instructions) if index != instruction_index]
+    saved = _save_intake_draft(context=context, draft=draft.model_copy(update={"instructions": remaining}))
+    return _build_preview_response(draft=saved)
+
+
+def cancel_intake_draft_for_session(
+    *,
+    context: AppContext,
+    user_id: str,
+    draft_id: str,
+) -> MedicationDraftDeleteResponse:
+    _load_intake_draft(context=context, user_id=user_id, draft_id=draft_id)
+    _delete_intake_draft(context=context, user_id=user_id, draft_id=draft_id)
+    return MedicationDraftDeleteResponse()
