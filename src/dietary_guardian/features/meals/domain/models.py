@@ -7,11 +7,12 @@ This module contains core meal data models and helpers.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import re
 from enum import StrEnum
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 ImageQuality = Literal["poor", "fair", "good", "unknown"]
 MatchStrategy = Literal["exact_alias", "partial_alias", "fuzzy_alias", "fallback_label", "unmatched"]
@@ -166,6 +167,31 @@ class PerceivedMealItem(BaseModel):
     portion_estimate: MealPortionEstimate = Field(default_factory=MealPortionEstimate)
     preparation: str | None = None
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_label_and_portion(cls, value):  # noqa: ANN001
+        if not isinstance(value, dict):
+            return value
+        if not value.get("label"):
+            for key in ("name", "dish_name", "food_name"):
+                if value.get(key):
+                    value = {**value, "label": value[key]}
+                    break
+        portion = value.get("portion_estimate")
+        if isinstance(portion, dict) and "amount" not in portion:
+            quantity = portion.get("quantity") or portion.get("servings") or portion.get("portion") or portion.get("qty")
+            amount = None
+            if isinstance(quantity, (int, float)):
+                amount = float(quantity)
+            elif isinstance(quantity, str):
+                numbers = [float(match) for match in re.findall(r"\d+(?:\.\d+)?", quantity)]
+                if numbers:
+                    amount = sum(numbers[:2]) / 2 if len(numbers) > 1 else numbers[0]
+            if amount is not None:
+                portion = {**portion, "amount": amount}
+                value = {**value, "portion_estimate": portion}
+        return value
 
     @field_validator("candidate_aliases", "detected_components", mode="before")
     @classmethod
