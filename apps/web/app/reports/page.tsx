@@ -1,18 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { FileText, Activity, AlertCircle, Calendar, Microscope, ShieldCheck } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
-import { JsonViewer } from "@/components/app/json-viewer";
-import { PageTitle } from "@/components/app/page-title";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { parseReport } from "@/lib/api/meal-client";
 import type { ReportParseApiResponse } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_REPORT_TEXT = "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95";
 
@@ -22,127 +21,135 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleParse = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const response = await parseReport({
+        source: "pasted_text",
+        text: text.trim(),
+      });
+      setResult(response);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div>
-      <PageTitle
-        eyebrow="Reports"
-        title="Clinical Report Parser"
-        description="Paste a clinical report to extract biomarkers and generate targeted health recommendations."
-        tags={["biomarkers"]}
-      />
+    <div className="section-stack">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">Clinical Intelligence</h1>
+        <p className="text-[color:var(--muted-foreground)] leading-relaxed max-w-2xl text-sm">
+          Ingest clinical reports, lab results, and diagnostic notes to align your AI companion with your formal medical records.
+        </p>
+      </div>
 
-      <div className="page-grid">
-        <Card className="grain-overlay">
-          <CardHeader>
-            <CardTitle>Parse Report Text</CardTitle>
-            <CardDescription>Extracts biomarkers, risk flags, and symptom context from pasted lab or clinical text.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="report-text">Report text</Label>
-              <Textarea
-                id="report-text"
-                rows={8}
-                value={text}
-                onChange={(event) => setText(event.target.value)}
-                placeholder="Paste report text here..."
-              />
+      {error && <ErrorCard message={error} />}
+
+      <div className="page-grid items-start">
+        <div className="space-y-8">
+          <div className="clinical-card space-y-8">
+            <div className="space-y-1">
+              <h3 className="clinical-subtitle">Report Intake</h3>
+              <p className="clinical-body">Paste clinical text or lab results for normalization.</p>
             </div>
-            <Button
-              disabled={loading || !text.trim()}
-              onClick={async () => {
-                setError(null);
-                setLoading(true);
-                try {
-                  const response = await parseReport({
-                    source: "pasted_text",
-                    text: text.trim(),
-                  });
-                  setResult(response);
-                } catch (e) {
-                  setError(e instanceof Error ? e.message : String(e));
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            >
-              <AsyncLabel active={loading} loading="Parsing" idle="Parse Report" />
-            </Button>
-          </CardContent>
-        </Card>
 
-        <div className="section-stack">
-          {error ? <ErrorCard message={error} /> : null}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Parsed Biomarkers</CardTitle>
-              <CardDescription>Numeric biomarkers extracted from the report payload.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {result && Object.keys(result.snapshot.biomarkers).length > 0 ? (
-                <div className="data-list">
-                  {Object.entries(result.snapshot.biomarkers).map(([name, value]) => (
-                    <div key={name} className="data-list-row sm:flex-row sm:items-center sm:justify-between">
-                      <div className="text-sm font-medium">{name}</div>
-                      <div className="text-sm">{value}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="app-muted text-sm">Parse a report to view extracted biomarkers.</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Risk and Symptom Summary</CardTitle>
-              <CardDescription>Current risk flags and symptom check-in aggregate for the report window.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <div className="text-sm font-semibold">Risk flags</div>
-                {result?.snapshot.risk_flags.length ? (
+                <Label htmlFor="report-text" className="text-[10px] font-bold uppercase tracking-widest opacity-70">Lab Data / Clinical Notes</Label>
+                <Textarea
+                  id="report-text"
+                  rows={8}
+                  value={text}
+                  onChange={(event) => setText(event.target.value)}
+                  placeholder="HbA1c, Blood Pressure, Lipid Profile data..."
+                  className="rounded-xl border-2 border-[color:var(--border-soft)] focus:border-[color:var(--accent)]"
+                />
+              </div>
+              <Button
+                className="w-full h-12 rounded-xl font-bold shadow-sm"
+                disabled={loading || !text.trim()}
+                onClick={handleParse}
+              >
+                <AsyncLabel active={loading} loading="Analyzing" idle="Process Medical Record" />
+              </Button>
+            </div>
+          </div>
+
+          {result && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center gap-2">
+                <Microscope className="h-4 w-4 text-[color:var(--muted-foreground)]" />
+                <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Extracted Snapshot</h4>
+              </div>
+              
+              <div className="grid gap-4 sm:grid-cols-2">
+                {Object.entries(result.snapshot.biomarkers).map(([name, value]) => (
+                  <div key={name} className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 flex items-center justify-between shadow-sm">
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">{name}</div>
+                      <div className="text-lg font-bold">{String(value)}</div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-[color:var(--accent)]/5 flex items-center justify-center text-[color:var(--accent)]">
+                      <Activity className="h-5 w-5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {result.snapshot.risk_flags.length > 0 && (
+                <div className="space-y-3">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-rose-600 opacity-70">Identified Risk Flags</div>
                   <div className="flex flex-wrap gap-2">
                     {result.snapshot.risk_flags.map((flag) => (
-                      <Badge key={flag} variant="outline">
+                      <Badge key={flag} variant="destructive" className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-tighter">
                         {flag}
                       </Badge>
                     ))}
                   </div>
-                ) : (
-                  <p className="app-muted text-sm">No risk flags detected.</p>
-                )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-8 lg:sticky lg:top-28">
+          <div className="clinical-card bg-emerald-500/[0.03] border-emerald-500/10">
+            <div className="flex items-center gap-2 text-emerald-600 mb-4">
+              <ShieldCheck className="h-4 w-4" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Trust & Provenance</span>
+            </div>
+            <p className="text-xs leading-relaxed text-emerald-800/70">
+              Biomarkers are extracted using our validated clinical parser. These signals directly inform your AI assistant's risk modeling and dietary recommendations.
+            </p>
+          </div>
+
+          {result && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-[color:var(--muted-foreground)]" />
+                <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Report Context</h4>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Symptom count</div>
-                  <div className="mt-1 text-xl font-semibold">{result?.symptom_summary.total_count ?? 0}</div>
+              <div className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-5 space-y-4">
+                <div className="space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">Symptom Window</div>
+                  <div className="text-xs font-medium">{result.symptom_window.from} — {result.symptom_window.to}</div>
                 </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Red flags</div>
-                  <div className="mt-1 text-xl font-semibold">{result?.symptom_summary.red_flag_count ?? 0}</div>
-                </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Average severity</div>
-                  <div className="mt-1 text-xl font-semibold">{(result?.symptom_summary.average_severity ?? 0).toFixed(2)}</div>
-                </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Window</div>
-                  <div className="mt-1 text-sm font-semibold">
-                    {result ? `${result.symptom_window.from} to ${result.symptom_window.to}` : "No window"}
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">Check-ins</div>
+                    <div className="text-lg font-bold">{result.symptom_summary.total_count}</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-rose-600 opacity-70">Red Flags</div>
+                    <div className="text-lg font-bold text-rose-600">{result.symptom_summary.red_flag_count}</div>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <JsonViewer
-            title="Parse Response"
-            description="Raw response payload returned by the reports endpoint."
-            data={result}
-            emptyLabel="Parse a report to inspect payload details."
-          />
+            </div>
+          )}
         </div>
       </div>
     </div>

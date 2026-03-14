@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
+import { useEffect, useState, useDeferredValue } from "react";
+import { LogOut, User, Heart, Bell, Users, Lightbulb, Shield, ChevronRight } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
-import { PageTitle } from "@/components/app/page-title";
 import { useSession } from "@/components/app/session-provider";
 import { updateAuthProfile, logout } from "@/lib/api/auth-client";
 import {
@@ -38,6 +37,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 import { HouseholdTab } from "./tabs/household-tab";
 import { ClinicalSuggestionsTab } from "./tabs/clinical-suggestions-tab";
@@ -208,11 +209,6 @@ function buildGuidedStepPayload(stepId: string, draft: HealthProfileDraft) {
 function stepIndex(stepId: string): number {
   const index = GUIDED_STEP_ORDER.indexOf(stepId as (typeof GUIDED_STEP_ORDER)[number]);
   return index >= 0 ? index : 0;
-}
-
-function stepButtonVariant(currentStepId: string, activeStepId: string): "default" | "secondary" {
-  if (currentStepId === activeStepId) return "default";
-  return "secondary";
 }
 
 export function SettingsWorkspace() {
@@ -462,680 +458,278 @@ export function SettingsWorkspace() {
   }
 
   return (
-    <div>
-      <PageTitle
-        eyebrow="Account"
-        title="Settings"
-        description="Manage account preferences, guided profile setup, and reminder defaults without crowding the dashboard."
-
-      />
-
-      {error ? <ErrorCard message={error} /> : null}
-      {notice ? (
-        <Card className="mb-4 border-emerald-300/70 bg-emerald-50/70 dark:border-emerald-900/60 dark:bg-emerald-950/20">
-          <CardContent className="py-4 text-sm">{notice}</CardContent>
-        </Card>
-      ) : null}
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Button variant={activeTab === "account" ? "default" : "secondary"} onClick={() => setActiveTab("account")}>
-          Identity
-        </Button>
-        <Button variant={activeTab === "health" ? "default" : "secondary"} onClick={() => setActiveTab("health")}>
-          Health Profile
-        </Button>
-        <Button variant={activeTab === "reminders" ? "default" : "secondary"} onClick={() => setActiveTab("reminders")}>
-          Reminder Settings
-        </Button>
-        <Button variant={activeTab === "household" ? "default" : "secondary"} onClick={() => setActiveTab("household")}>
-          Household
-        </Button>
-        <Button variant={activeTab === "clinical_suggestions" ? "default" : "secondary"} onClick={() => setActiveTab("clinical_suggestions")}>
-          Clinical Suggestions
-        </Button>
+    <div className="section-stack">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">Configuration</h1>
+        <p className="text-[color:var(--muted-foreground)] leading-relaxed max-w-2xl text-sm">
+          Fine-tune your health profile, manage care circle members, and configure reminder delivery channels.
+        </p>
       </div>
 
-      {activeTab === "account" ? (
-        <Card className="grain-overlay">
-          <CardHeader>
-            <CardTitle>Account Settings</CardTitle>
-            <CardDescription>Keep your basic account context here. Password and session controls remain in the account drawer.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="settings-display-name">Display name</Label>
-                <Input
-                  id="settings-display-name"
-                  value={displayNameInput}
-                  onChange={(event) => setDisplayNameInput(event.target.value)}
-                  disabled={status !== "authenticated"}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="settings-profile-mode">Usage mode</Label>
-                <Select
-                  id="settings-profile-mode"
-                  value={profileModeInput}
-                  onChange={(event) => setProfileModeInput(event.target.value as "self" | "caregiver")}
-                  disabled={status !== "authenticated"}
-                >
-                  <option value="self">For yourself</option>
-                  <option value="caregiver">Helping someone else</option>
-                </Select>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleAccountSave} disabled={status !== "authenticated" || savingAccount}>
-                <AsyncLabel active={savingAccount} idle="Save Account" loading="Saving" />
-              </Button>
-              <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleLogout} disabled={loggingOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <AsyncLabel active={loggingOut} idle="Sign Out" loading="Signing out" />
-              </Button>
-              <Button asChild variant="secondary">
-                <Link href="/dashboard">Back to Dashboard</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {activeTab === "health" ? (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Health Profile Workspace</CardTitle>
-              <CardDescription>
-                Guided setup is the default path. Advanced edit stays available for fast bulk changes.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-sm">
-                <div className="font-medium">
-                  {guidedComplete
-                    ? "Guided setup complete"
-                    : `${guidedCompletedSteps.length} of ${guidedSteps.length || 5} steps completed`}
-                </div>
-                <div className="app-muted">
-                  {guidedComplete
-                    ? "You can revisit any step or use advanced edit for direct changes."
-                    : "Progress autosaves one step at a time."}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={healthViewMode === "guided" ? "default" : "secondary"}
-                  onClick={() => setHealthViewMode("guided")}
-                >
-                  Guided Setup
-                </Button>
-                <Button
-                  variant={healthViewMode === "advanced" ? "default" : "secondary"}
-                  onClick={() => setHealthViewMode("advanced")}
-                >
-                  Advanced Edit
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {healthViewMode === "guided" ? (
-            <Card className="grain-overlay">
-              <CardHeader>
-                <CardTitle>Guided Health Setup</CardTitle>
-                <CardDescription>
-                  {activeGuidedStep?.description ?? "Complete one structured step at a time."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm font-medium">Step {activeStepIndex + 1} of {guidedSteps.length || 5}</div>
-                <div className="flex flex-wrap gap-2">
-                  {guidedSteps.map((step) => (
-                    <Button
-                      key={step.id}
-                      variant={stepButtonVariant(step.id, activeGuidedStepId)}
-                      onClick={() => setGuidedCurrentStep(step.id)}
-                    >
-                      {step.title}
-                    </Button>
-                  ))}
-                </div>
-
-                {activeGuidedStepId === "basic_identity" ? (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="guided-age">Age</Label>
-                      <Input
-                        id="guided-age"
-                        value={draft.age}
-                        onChange={(event) => setDraft((current) => ({ ...current, age: event.target.value }))}
-                        placeholder="54"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="guided-locale">Locale</Label>
-                      <Input
-                        id="guided-locale"
-                        value={draft.locale}
-                        onChange={(event) => setDraft((current) => ({ ...current, locale: event.target.value }))}
-                        placeholder="en-SG"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="guided-height">Height (cm)</Label>
-                      <Input
-                        id="guided-height"
-                        value={draft.height_cm}
-                        onChange={(event) => setDraft((current) => ({ ...current, height_cm: event.target.value }))}
-                        placeholder="168"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="guided-weight">Weight (kg)</Label>
-                      <Input
-                        id="guided-weight"
-                        value={draft.weight_kg}
-                        onChange={(event) => setDraft((current) => ({ ...current, weight_kg: event.target.value }))}
-                        placeholder="72"
-                      />
-                    </div>
-                  </div>
-                ) : null}
-
-                {activeGuidedStepId === "health_context" ? (
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="guided-conditions">Conditions</Label>
-                      <Textarea
-                        id="guided-conditions"
-                        value={draft.conditions}
-                        onChange={(event) => setDraft((current) => ({ ...current, conditions: event.target.value }))}
-                        rows={4}
-                        placeholder="Type 2 Diabetes:High"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="guided-medications">Medications</Label>
-                      <Textarea
-                        id="guided-medications"
-                        value={draft.medications}
-                        onChange={(event) => setDraft((current) => ({ ...current, medications: event.target.value }))}
-                        rows={4}
-                        placeholder="Metformin:500mg"
-                      />
-                    </div>
-                  </div>
-                ) : null}
-
-                {activeGuidedStepId === "nutrition_targets" ? (
-                  <div className="space-y-3">
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-sodium">Daily sodium limit (mg)</Label>
-                        <Input
-                          id="guided-sodium"
-                          value={draft.daily_sodium_limit_mg}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, daily_sodium_limit_mg: event.target.value }))
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-sugar">Daily sugar limit (g)</Label>
-                        <Input
-                          id="guided-sugar"
-                          value={draft.daily_sugar_limit_g}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, daily_sugar_limit_g: event.target.value }))
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-protein">Daily protein target (g)</Label>
-                        <Input
-                          id="guided-protein"
-                          value={draft.daily_protein_target_g}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, daily_protein_target_g: event.target.value }))
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-fiber">Daily fiber target (g)</Label>
-                        <Input
-                          id="guided-fiber"
-                          value={draft.daily_fiber_target_g}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, daily_fiber_target_g: event.target.value }))
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-calories">Target calories / day</Label>
-                        <Input
-                          id="guided-calories"
-                          value={draft.target_calories_per_day}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, target_calories_per_day: event.target.value }))
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-macro-focus">Macro focus</Label>
-                        <Input
-                          id="guided-macro-focus"
-                          value={draft.macro_focus}
-                          onChange={(event) => setDraft((current) => ({ ...current, macro_focus: event.target.value }))}
-                          placeholder="higher_protein, lower_sugar"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-goals">Nutrition goals</Label>
-                        <Input
-                          id="guided-goals"
-                          value={draft.nutrition_goals}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, nutrition_goals: event.target.value }))
-                          }
-                          placeholder="lower_sugar, heart_health"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {activeGuidedStepId === "preferences" ? (
-                  <div className="space-y-3">
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-cuisines">Preferred cuisines</Label>
-                        <Input
-                          id="guided-cuisines"
-                          value={draft.preferred_cuisines}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, preferred_cuisines: event.target.value }))
-                          }
-                          placeholder="teochew, local"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-budget">Budget</Label>
-                        <Select
-                          id="guided-budget"
-                          value={draft.budget_tier}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              budget_tier: event.target.value as HealthProfileDraft["budget_tier"],
-                            }))
-                          }
-                        >
-                          <option value="budget">Budget</option>
-                          <option value="moderate">Moderate</option>
-                          <option value="flexible">Flexible</option>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-allergies">Allergies</Label>
-                        <Input
-                          id="guided-allergies"
-                          value={draft.allergies}
-                          onChange={(event) => setDraft((current) => ({ ...current, allergies: event.target.value }))}
-                          placeholder="shellfish, peanuts"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="guided-dislikes">Disliked ingredients</Label>
-                        <Input
-                          id="guided-dislikes"
-                          value={draft.disliked_ingredients}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, disliked_ingredients: event.target.value }))
-                          }
-                          placeholder="lard, organ meat"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {activeGuidedStepId === "review" ? (
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="metric-card">
-                      <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Basics</div>
-                      <div className="mt-1 text-sm font-medium">
-                        {draft.age || "Age not set"} / {draft.locale || "Locale not set"}
-                      </div>
-                      <div className="app-muted mt-1 text-xs">
-                        {draft.height_cm || "?"} cm / {draft.weight_kg || "?"} kg
-                      </div>
-                    </div>
-                    <div className="metric-card">
-                      <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Targets</div>
-                      <div className="mt-1 text-sm font-medium">
-                        {draft.daily_protein_target_g}g protein / {draft.daily_fiber_target_g}g fiber
-                      </div>
-                      <div className="app-muted mt-1 text-xs">
-                        {draft.daily_sodium_limit_mg}mg sodium / {draft.daily_sugar_limit_g}g sugar
-                      </div>
-                    </div>
-                    <div className="metric-card">
-                      <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Health context</div>
-                      <div className="mt-1 text-sm font-medium">{draft.conditions || "No conditions recorded"}</div>
-                      <div className="app-muted mt-1 text-xs">{draft.medications || "No medications recorded"}</div>
-                    </div>
-                    <div className="metric-card">
-                      <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Preferences</div>
-                      <div className="mt-1 text-sm font-medium">{draft.preferred_cuisines || "No cuisines recorded"}</div>
-                      <div className="app-muted mt-1 text-xs">
-                        {draft.allergies || "No allergies"} / {draft.budget_tier}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={handleGuidedBack}
-                    disabled={profileBusy || activeStepIndex === 0}
-                  >
-                    Back
-                  </Button>
-                  <Button onClick={handleGuidedNext} disabled={status !== "authenticated" || profileBusy}>
-                    <AsyncLabel
-                      active={profileBusy}
-                      idle={activeGuidedStepId === "review" ? "Save and Finish" : "Save and Continue"}
-                      loading="Saving"
-                    />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {healthViewMode === "advanced" ? (
-            <Card className="grain-overlay">
-              <CardHeader>
-                <CardTitle>Advanced Health Profile</CardTitle>
-                <CardDescription>Direct form editing for power users who want to update the entire profile at once.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-age">Age</Label>
-                    <Input id="profile-age" value={draft.age} onChange={(event) => setDraft((current) => ({ ...current, age: event.target.value }))} placeholder="54" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-locale">Locale</Label>
-                    <Input id="profile-locale" value={draft.locale} onChange={(event) => setDraft((current) => ({ ...current, locale: event.target.value }))} placeholder="en-SG" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-height-cm">Height (cm)</Label>
-                    <Input id="profile-height-cm" value={draft.height_cm} onChange={(event) => setDraft((current) => ({ ...current, height_cm: event.target.value }))} placeholder="168" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-weight-kg">Weight (kg)</Label>
-                    <Input id="profile-weight-kg" value={draft.weight_kg} onChange={(event) => setDraft((current) => ({ ...current, weight_kg: event.target.value }))} placeholder="79" />
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-sodium-limit">Daily sodium limit (mg)</Label>
-                    <Input id="profile-sodium-limit" value={draft.daily_sodium_limit_mg} onChange={(event) => setDraft((current) => ({ ...current, daily_sodium_limit_mg: event.target.value }))} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-sugar-limit">Daily sugar limit (g)</Label>
-                    <Input id="profile-sugar-limit" value={draft.daily_sugar_limit_g} onChange={(event) => setDraft((current) => ({ ...current, daily_sugar_limit_g: event.target.value }))} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-protein-target">Daily protein target (g)</Label>
-                    <Input id="profile-protein-target" value={draft.daily_protein_target_g} onChange={(event) => setDraft((current) => ({ ...current, daily_protein_target_g: event.target.value }))} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-fiber-target">Daily fiber target (g)</Label>
-                    <Input id="profile-fiber-target" value={draft.daily_fiber_target_g} onChange={(event) => setDraft((current) => ({ ...current, daily_fiber_target_g: event.target.value }))} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-target-calories">Target calories / day</Label>
-                    <Input id="profile-target-calories" value={draft.target_calories_per_day} onChange={(event) => setDraft((current) => ({ ...current, target_calories_per_day: event.target.value }))} />
-                  </div>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-macro-focus">Macro focus</Label>
-                    <Input id="profile-macro-focus" value={draft.macro_focus} onChange={(event) => setDraft((current) => ({ ...current, macro_focus: event.target.value }))} placeholder="higher_protein, lower_sugar" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-goals">Nutrition goals</Label>
-                    <Input id="profile-goals" value={draft.nutrition_goals} onChange={(event) => setDraft((current) => ({ ...current, nutrition_goals: event.target.value }))} placeholder="lower_sugar, heart_health" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-cuisines">Preferred cuisines</Label>
-                    <Input id="profile-cuisines" value={draft.preferred_cuisines} onChange={(event) => setDraft((current) => ({ ...current, preferred_cuisines: event.target.value }))} placeholder="teochew, local" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-budget">Budget</Label>
-                    <Select id="profile-budget" value={draft.budget_tier} onChange={(event) => setDraft((current) => ({ ...current, budget_tier: event.target.value as HealthProfileDraft["budget_tier"] }))}>
-                      <option value="budget">Budget</option>
-                      <option value="moderate">Moderate</option>
-                      <option value="flexible">Flexible</option>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-allergies">Allergies</Label>
-                    <Input id="profile-allergies" value={draft.allergies} onChange={(event) => setDraft((current) => ({ ...current, allergies: event.target.value }))} placeholder="shellfish, peanuts" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-dislikes">Disliked ingredients</Label>
-                    <Input id="profile-dislikes" value={draft.disliked_ingredients} onChange={(event) => setDraft((current) => ({ ...current, disliked_ingredients: event.target.value }))} placeholder="lard, organ meat" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-notification-channel">Preferred notification channel</Label>
-                    <Select id="profile-notification-channel" value={draft.preferred_notification_channel} onChange={(event) => setDraft((current) => ({ ...current, preferred_notification_channel: event.target.value }))}>
-                      <option value="in_app">In-App</option>
-                      <option value="push">Push Notification</option>
-                      <option value="email">Email</option>
-                      <option value="sms">SMS</option>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-meal-schedule">Meal schedule (slot:HH:MM-HH:MM)</Label>
-                    <Input id="profile-meal-schedule" value={draft.meal_schedule} onChange={(event) => setDraft((current) => ({ ...current, meal_schedule: event.target.value }))} placeholder="breakfast:07:00-09:00, lunch:12:00-14:00" />
-                  </div>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-conditions">Conditions</Label>
-                    <Textarea id="profile-conditions" value={draft.conditions} onChange={(event) => setDraft((current) => ({ ...current, conditions: event.target.value }))} rows={4} placeholder="Type 2 Diabetes:High" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-medications">Medications</Label>
-                    <Textarea id="profile-medications" value={draft.medications} onChange={(event) => setDraft((current) => ({ ...current, medications: event.target.value }))} rows={4} placeholder="Metformin:500mg" />
-                  </div>
-                </div>
-                <Button onClick={handleHealthProfileSave} disabled={status !== "authenticated" || profileBusy}>
-                  <AsyncLabel active={profileBusy} idle="Save Advanced Profile" loading="Saving" />
-                </Button>
-              </CardContent>
-            </Card>
-          ) : null}
+      {error && <ErrorCard message={error} />}
+      {notice && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 animate-in fade-in slide-in-from-top-2">
+          {notice}
         </div>
-      ) : null}
+      )}
 
-      {activeTab === "reminders" ? (
-        <div className="space-y-4">
-          <Card className="grain-overlay">
-            <CardHeader>
-              <CardTitle>Delivery Preferences</CardTitle>
-              <CardDescription>Per-account delivery rules and contact endpoints for reminder notifications.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">In-app</div>
-                  <Label className="mt-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={inAppEnabled} onChange={(e) => setInAppEnabled(e.target.checked)} />
-                    Enabled
-                  </Label>
-                  <Label className="mt-2 block text-xs">Offset minutes</Label>
-                  <Input
-                    className="mt-1"
-                    type="number"
-                    max={0}
-                    value={String(inAppOffset)}
-                    onChange={(e) => setInAppOffset(Number(e.target.value))}
-                  />
-                </div>
-                <div className="metric-card">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Email</div>
-                  <Label className="mt-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={emailEnabled} onChange={(e) => setEmailEnabled(e.target.checked)} />
-                    Enabled
-                  </Label>
-                  <Label className="mt-2 block text-xs">Destination</Label>
-                  <Input
-                    className="mt-1"
-                    value={emailDestination}
-                    onChange={(e) => setEmailDestination(e.target.value)}
-                    placeholder="name@example.com"
-                  />
-                  <Label className="mt-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={emailVerified} onChange={(e) => setEmailVerified(e.target.checked)} />
-                    Verified
-                  </Label>
-                  <Label className="mt-2 block text-xs">Offset minutes</Label>
-                  <Input
-                    className="mt-1"
-                    type="number"
-                    max={0}
-                    value={String(emailOffset)}
-                    onChange={(e) => setEmailOffset(Number(e.target.value))}
-                  />
-                </div>
-                <div className="metric-card md:col-span-2">
-                  <div className="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">SMS</div>
-                  <div className="grid gap-3 md:grid-cols-[auto,1fr,auto] md:items-center">
-                    <Label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={smsEnabled} onChange={(e) => setSmsEnabled(e.target.checked)} />
-                      Enabled
-                    </Label>
-                    <Input
-                      value={smsDestination}
-                      onChange={(e) => setSmsDestination(e.target.value)}
-                      placeholder="+15551234567"
-                    />
-                    <Input
-                      type="number"
-                      max={0}
-                      value={String(smsOffset)}
-                      onChange={(e) => setSmsOffset(Number(e.target.value))}
-                    />
-                  </div>
-                  <Label className="mt-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={smsVerified} onChange={(e) => setSmsVerified(e.target.checked)} />
-                    Verified
-                  </Label>
-                </div>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as SettingsTab)} className="w-full space-y-8">
+        <div className="border-b border-[color:var(--border-soft)]">
+          <TabsList className="bg-transparent h-auto p-0 gap-8">
+            <TabsTrigger value="account" className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:text-[color:var(--foreground)] shadow-none">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span>Identity</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={handleDeliverySave} disabled={status !== "authenticated" || savingDelivery}>
-                  <AsyncLabel active={savingDelivery} idle="Save Delivery Preferences" loading="Saving" />
-                </Button>
-                <Button asChild variant="secondary">
-                  <Link href="/reminders">Open Reminders</Link>
-                </Button>
+            </TabsTrigger>
+            <TabsTrigger value="health" className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:text-[color:var(--foreground)] shadow-none">
+              <div className="flex items-center gap-2">
+                <Heart className="h-4 w-4" />
+                <span>Health Profile</span>
               </div>
-              <div className="app-muted text-xs">
-                Active rules: {preferences.length}. Configured endpoints: {endpoints.length}.
+            </TabsTrigger>
+            <TabsTrigger value="reminders" className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:text-[color:var(--foreground)] shadow-none">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                <span>Delivery</span>
               </div>
-            </CardContent>
-          </Card>
-          <Card className="grain-overlay">
-            <CardHeader>
-              <CardTitle>Mobility Reminder Settings</CardTitle>
-              <CardDescription>Configure stand, stretch, or walk reminders within your active hours.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2">
+            </TabsTrigger>
+            <TabsTrigger value="household" className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:text-[color:var(--foreground)] shadow-none">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span>Household</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="clinical_suggestions" className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:text-[color:var(--foreground)] shadow-none">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="h-4 w-4" />
+                <span>Suggestions</span>
+              </div>
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="account" className="mt-0 focus-visible:outline-none">
+          <div className="page-grid items-start">
+            <div className="clinical-card space-y-8">
+              <div className="space-y-1">
+                <h3 className="clinical-subtitle">Account Context</h3>
+                <p className="clinical-body">Basic identity and usage mode for the application.</p>
+              </div>
+              <div className="grid gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="mobility-enabled">Mobility reminders</Label>
+                  <Label htmlFor="settings-display-name">Display Name</Label>
+                  <Input
+                    id="settings-display-name"
+                    value={displayNameInput}
+                    onChange={(event) => setDisplayNameInput(event.target.value)}
+                    disabled={status !== "authenticated"}
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="settings-profile-mode">Clinical Role</Label>
                   <Select
-                    id="mobility-enabled"
-                    value={mobilitySettings.enabled ? "enabled" : "disabled"}
-                    onChange={(event) =>
-                      setMobilitySettings((current) => ({
-                        ...current,
-                        enabled: event.target.value === "enabled",
-                      }))
-                    }
+                    id="settings-profile-mode"
+                    value={profileModeInput}
+                    onChange={(event) => setProfileModeInput(event.target.value as "self" | "caregiver")}
+                    disabled={status !== "authenticated"}
                   >
-                    <option value="disabled">Disabled</option>
-                    <option value="enabled">Enabled</option>
+                    <option value="self">Managing for myself</option>
+                    <option value="caregiver">Caregiver role (Managing for someone else)</option>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="mobility-interval">Interval (minutes)</Label>
-                  <Input
-                    id="mobility-interval"
-                    value={String(mobilitySettings.interval_minutes)}
-                    onChange={(event) =>
-                      setMobilitySettings((current) => ({
-                        ...current,
-                        interval_minutes: Number(event.target.value) || current.interval_minutes,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="mobility-start">Active start time</Label>
-                  <Input
-                    id="mobility-start"
-                    value={mobilitySettings.active_start_time}
-                    onChange={(event) =>
-                      setMobilitySettings((current) => ({
-                        ...current,
-                        active_start_time: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="mobility-end">Active end time</Label>
-                  <Input
-                    id="mobility-end"
-                    value={mobilitySettings.active_end_time}
-                    onChange={(event) =>
-                      setMobilitySettings((current) => ({
-                        ...current,
-                        active_end_time: event.target.value,
-                      }))
-                    }
-                  />
+                <div className="pt-4 border-t border-[color:var(--border-soft)] flex flex-wrap gap-3">
+                  <Button onClick={handleAccountSave} disabled={status !== "authenticated" || savingAccount} className="h-11 px-8 rounded-xl shadow-sm">
+                    <AsyncLabel active={savingAccount} idle="Update Account" loading="Saving" />
+                  </Button>
+                  <Button variant="ghost" className="h-11 px-6 rounded-xl text-rose-600 hover:text-rose-700 hover:bg-rose-50" onClick={handleLogout} disabled={loggingOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <AsyncLabel active={loggingOut} idle="Sign Out" loading="Signing out" />
+                  </Button>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={handleMobilitySave} disabled={status !== "authenticated" || savingMobility}>
+            </div>
+
+            <div className="space-y-8">
+              <div className="clinical-card bg-[color:var(--accent)]/5 border-[color:var(--accent)]/10">
+                <div className="flex items-center gap-2 text-[color:var(--accent)] mb-4">
+                  <Shield className="h-4 w-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Privacy & Security</span>
+                </div>
+                <p className="text-xs leading-relaxed text-[color:var(--muted-foreground)]">
+                  Your data is encrypted at rest and in transit. We prioritize clinical privacy and patient autonomy in all assistant interactions.
+                </p>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="health" className="mt-0 focus-visible:outline-none">
+          <div className="section-stack">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-6">
+              <div className="space-y-1">
+                <div className="text-sm font-bold">{guidedComplete ? "Health setup complete" : "Continue guided setup"}</div>
+                <div className="text-xs text-[color:var(--muted-foreground)]">
+                  {guidedCompletedSteps.length} of {guidedSteps.length || 5} clinical benchmarks established.
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant={healthViewMode === "guided" ? "default" : "secondary"} size="sm" onClick={() => setHealthViewMode("guided")} className="rounded-lg">Guided</Button>
+                <Button variant={healthViewMode === "advanced" ? "default" : "secondary"} size="sm" onClick={() => setHealthViewMode("advanced")} className="rounded-lg">Advanced</Button>
+              </div>
+            </div>
+
+            {healthViewMode === "guided" ? (
+              <div className="clinical-card space-y-8 animate-in fade-in slide-in-from-bottom-2">
+                <div className="space-y-1">
+                  <h3 className="clinical-subtitle">{activeGuidedStep?.title ?? "Guided Setup"}</h3>
+                  <p className="clinical-body">{activeGuidedStep?.description ?? "Establishing your clinical baseline."}</p>
+                </div>
+
+                <div className="grid gap-8">
+                  {activeGuidedStepId === "basic_identity" && (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="guided-age">Age</Label>
+                        <Input id="guided-age" value={draft.age} onChange={(e) => setDraft(d => ({ ...d, age: e.target.value }))} className="h-11 rounded-xl" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guided-height">Height (cm)</Label>
+                        <Input id="guided-height" value={draft.height_cm} onChange={(e) => setDraft(d => ({ ...d, height_cm: e.target.value }))} className="h-11 rounded-xl" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guided-weight">Weight (kg)</Label>
+                        <Input id="guided-weight" value={draft.weight_kg} onChange={(e) => setDraft(d => ({ ...d, weight_kg: e.target.value }))} className="h-11 rounded-xl" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guided-locale">Locale</Label>
+                        <Input id="guided-locale" value={draft.locale} onChange={(e) => setDraft(d => ({ ...d, locale: e.target.value }))} className="h-11 rounded-xl" />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeGuidedStepId === "health_context" && (
+                    <div className="grid gap-6 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="guided-conditions">Conditions</Label>
+                        <Textarea id="guided-conditions" value={draft.conditions} onChange={(e) => setDraft(d => ({ ...d, conditions: e.target.value }))} rows={4} placeholder="Type 2 Diabetes:High" className="rounded-xl" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guided-medications">Medications</Label>
+                        <Textarea id="guided-medications" value={draft.medications} onChange={(e) => setDraft(d => ({ ...d, medications: e.target.value }))} rows={4} placeholder="Metformin:500mg" className="rounded-xl" />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeGuidedStepId === "nutrition_targets" && (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="guided-sodium">Sodium Limit (mg)</Label>
+                        <Input id="guided-sodium" value={draft.daily_sodium_limit_mg} onChange={(e) => setDraft(d => ({ ...d, daily_sodium_limit_mg: e.target.value }))} className="h-11 rounded-xl" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guided-sugar">Sugar Limit (g)</Label>
+                        <Input id="guided-sugar" value={draft.daily_sugar_limit_g} onChange={(e) => setDraft(d => ({ ...d, daily_sugar_limit_g: e.target.value }))} className="h-11 rounded-xl" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guided-calories">Calories Target</Label>
+                        <Input id="guided-calories" value={draft.target_calories_per_day} onChange={(e) => setDraft(d => ({ ...d, target_calories_per_day: e.target.value }))} className="h-11 rounded-xl" />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-6 border-t border-[color:var(--border-soft)]">
+                    <Button variant="ghost" onClick={handleGuidedBack} disabled={profileBusy || activeStepIndex === 0} className="h-11 px-6 rounded-xl">Back</Button>
+                    <Button onClick={handleGuidedNext} disabled={status !== "authenticated" || profileBusy} className="h-11 px-8 rounded-xl shadow-sm">
+                      <AsyncLabel active={profileBusy} idle={activeGuidedStepId === "review" ? "Save and Finish" : "Continue"} loading="Saving" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="clinical-card space-y-8 animate-in fade-in slide-in-from-bottom-2">
+                <div className="space-y-1">
+                  <h3 className="clinical-subtitle">Clinical Profile</h3>
+                  <p className="clinical-body">Direct management of nutritional limits and care parameters.</p>
+                </div>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                   {/* Compact advanced fields */}
+                   <div className="space-y-2">
+                    <Label>Sodium Limit (mg)</Label>
+                    <Input value={draft.daily_sodium_limit_mg} onChange={(e) => setDraft(d => ({ ...d, daily_sodium_limit_mg: e.target.value }))} className="h-11 rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sugar Limit (g)</Label>
+                    <Input value={draft.daily_sugar_limit_g} onChange={(e) => setDraft(d => ({ ...d, daily_sugar_limit_g: e.target.value }))} className="h-11 rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Calories Target</Label>
+                    <Input value={draft.target_calories_per_day} onChange={(e) => setDraft(d => ({ ...d, target_calories_per_day: e.target.value }))} className="h-11 rounded-xl" />
+                  </div>
+                </div>
+                <Button onClick={handleHealthProfileSave} disabled={status !== "authenticated" || profileBusy} className="h-11 px-8 rounded-xl shadow-sm">
+                  <AsyncLabel active={profileBusy} idle="Save Profile Changes" loading="Saving" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="reminders" className="mt-0 focus-visible:outline-none">
+          <div className="page-grid items-start">
+            <div className="clinical-card space-y-8">
+              <div className="space-y-1">
+                <h3 className="clinical-subtitle">Notification Channels</h3>
+                <p className="clinical-body">Configure how the assistant delivers timely care alerts.</p>
+              </div>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)]">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold">In-App Notifications</Label>
+                    <p className="text-xs text-[color:var(--muted-foreground)]">Receive alerts while using the platform.</p>
+                  </div>
+                  <input type="checkbox" checked={inAppEnabled} onChange={(e) => setInAppEnabled(e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-[color:var(--accent)] focus:ring-[color:var(--accent)]" />
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)]">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold">Email Digest</Label>
+                    <p className="text-xs text-[color:var(--muted-foreground)]">Morning summary of care tasks.</p>
+                  </div>
+                  <input type="checkbox" checked={emailEnabled} onChange={(e) => setEmailEnabled(e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-[color:var(--accent)] focus:ring-[color:var(--accent)]" />
+                </div>
+                <Button onClick={handleDeliverySave} disabled={status !== "authenticated" || savingDelivery} className="h-11 w-full rounded-xl shadow-sm">
+                  <AsyncLabel active={savingDelivery} idle="Save Delivery Rules" loading="Saving" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="clinical-card space-y-8">
+              <div className="space-y-1">
+                <h3 className="clinical-subtitle">Mobility Alerts</h3>
+                <p className="clinical-body">Timely prompts for stretching and physical movement.</p>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Interval (Minutes)</Label>
+                  <Input value={String(mobilitySettings.interval_minutes)} onChange={(e) => setMobilitySettings(s => ({ ...s, interval_minutes: Number(e.target.value) || 120 }))} className="h-11 rounded-xl" />
+                </div>
+                <Button onClick={handleMobilitySave} disabled={status !== "authenticated" || savingMobility} className="h-11 w-full rounded-xl shadow-sm">
                   <AsyncLabel active={savingMobility} idle="Save Mobility Settings" loading="Saving" />
                 </Button>
-                <Button asChild variant="secondary">
-                  <Link href="/reminders">Open Reminders</Link>
-                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+            </div>
+          </div>
+        </TabsContent>
 
-      {activeTab === "household" ? <HouseholdTab /> : null}
-      {activeTab === "clinical_suggestions" ? <ClinicalSuggestionsTab /> : null}
+        <TabsContent value="household" className="mt-0 focus-visible:outline-none">
+          <HouseholdTab />
+        </TabsContent>
+
+        <TabsContent value="clinical_suggestions" className="mt-0 focus-visible:outline-none">
+          <ClinicalSuggestionsTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
