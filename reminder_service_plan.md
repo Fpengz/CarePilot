@@ -112,13 +112,7 @@ Implemented in `apps/web/app/reminders/page.tsx`:
 - Create reminder panel with manual schedule inputs
 - Planned reminders list with next trigger and pause/activate
 - Upcoming & history collapsed section
-- Delivery logs available per-occurrence
-- occurrence action controls:
-  - Taken
-  - Skipped
-  - Snooze 10m
-  - Snooze 30m
-- legacy reminder metrics and delivery details retained during migration
+- Upcoming/history are read-only lists (no inline actions yet)
 
 Manual schedule types supported in the UI:
 - one-time date + time
@@ -127,6 +121,9 @@ Manual schedule types supported in the UI:
 - specific weekdays + time
 
 Channel selection is hidden on the reminders page and uses reminder settings defaults.
+
+Still open:
+- surface occurrence actions (taken/skipped/snooze) in the reminders UI
 
 Supporting web client/type changes:
 - `apps/web/lib/api/core.ts`
