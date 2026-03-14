@@ -212,6 +212,28 @@ class MedicationIntakeConfirmRequest(BaseModel):
     draft_id: str = Field(min_length=1)
 
 
+class MedicationDraftInstructionUpdateRequest(BaseModel):
+    medication_name_raw: str
+    medication_name_canonical: str | None = None
+    dosage_text: str
+    timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = "fixed_time"
+    frequency_times_per_day: int = Field(default=1, ge=1, le=8)
+    offset_minutes: int = 0
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
+    fixed_time: str | None = None
+    time_rules: list[dict[str, object]] = Field(default_factory=list)
+    duration_days: int | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    ambiguities: list[str] = Field(default_factory=list)
+
+
+class MedicationDraftDeleteResponse(BaseModel):
+    ok: bool = True
+
+
 class MedicationIntakeSourceResponse(BaseModel):
     source_type: Literal["plain_text", "upload"]
     extracted_text: str

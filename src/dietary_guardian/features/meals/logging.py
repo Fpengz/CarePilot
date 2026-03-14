@@ -66,6 +66,8 @@ def resolve_meal_analysis_model_name(settings: LLMSettings, provider: str | None
         return settings.gemini.model
     if provider_enum == ModelProvider.OPENAI:
         return settings.openai.model
+    if provider_enum == ModelProvider.QWEN:
+        return settings.qwen.model
     if provider_enum in {ModelProvider.OLLAMA, ModelProvider.VLLM}:
         return settings.local.model
     return None

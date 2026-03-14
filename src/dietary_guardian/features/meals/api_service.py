@@ -195,6 +195,7 @@ def list_meal_records(
     cursor: str | None = None,
 ) -> MealRecordsResponse:
     records = deps.stores.meals.list_validated_meal_events(user_id)
+    records.sort(key=lambda record: record.captured_at, reverse=True)
     start = _parse_cursor(cursor)
     end = start + limit
     page_items = records[start:end]
