@@ -637,7 +637,88 @@ export interface MobilityReminderSettingsEnvelopeResponse {
   settings: MobilityReminderSettings;
 }
 
-export type ReminderNotificationChannel = "in_app" | "email" | "sms" | "push" | "telegram" | "whatsapp" | "wechat";
+export type ReminderNotificationChannel = "in_app" | "chat" | "email" | "sms" | "push" | "telegram" | "whatsapp" | "wechat";
+
+export interface ReminderScheduleRuleApi {
+  pattern:
+    | "one_time"
+    | "daily_fixed_times"
+    | "multiple_times_per_day"
+    | "every_x_hours"
+    | "specific_weekdays"
+    | "meal_relative"
+    | "bedtime"
+    | "prn"
+    | "temporary_course";
+  times: string[];
+  interval_hours?: number | null;
+  weekdays: number[];
+  meal_slot?: "breakfast" | "lunch" | "dinner" | "snack" | null;
+  relative_direction?: "before" | "after" | null;
+  offset_minutes: number;
+  timezone: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  duration_days?: number | null;
+  max_daily_occurrences?: number | null;
+  as_needed: boolean;
+  quiet_hours_start?: string | null;
+  quiet_hours_end?: string | null;
+  pause_until?: string | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface ReminderDefinitionApi {
+  id: string;
+  user_id: string;
+  regimen_id?: string | null;
+  reminder_type: "medication" | "mobility";
+  source: "manual" | "plain_text" | "upload" | "clinician" | "admin" | "agent_suggested_confirmed";
+  title: string;
+  body?: string | null;
+  medication_name: string;
+  dosage_text: string;
+  route?: string | null;
+  instructions_text?: string | null;
+  special_notes?: string | null;
+  treatment_duration?: string | null;
+  channels: ReminderNotificationChannel[];
+  timezone: string;
+  schedule: ReminderScheduleRuleApi;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReminderDefinitionListApiResponse {
+  items: ReminderDefinitionApi[];
+}
+
+export interface ReminderOccurrenceApi {
+  id: string;
+  reminder_definition_id: string;
+  user_id: string;
+  scheduled_for: string;
+  trigger_at: string;
+  status: "scheduled" | "queued" | "processing" | "completed" | "skipped" | "snoozed" | "missed" | "cancelled";
+  action?: "taken" | "skipped" | "snooze" | "view_details" | "ignored" | "expired" | null;
+  action_outcome?: "on_time" | "late" | "missed" | "info" | null;
+  acted_at?: string | null;
+  grace_window_minutes: number;
+  retry_count: number;
+  last_delivery_status?: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReminderOccurrenceListApiResponse {
+  items: ReminderOccurrenceApi[];
+}
+
+export interface ReminderOccurrenceActionApiResponse {
+  occurrence: ReminderOccurrenceApi;
+}
 
 export interface ReminderNotificationPreferenceRule {
   id: string;

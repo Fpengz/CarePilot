@@ -76,6 +76,20 @@ test("reminder delivery settings live in settings, not the reminders page", asyn
   await expect(page.getByRole("heading", { name: "Delivery Preferences" })).toBeVisible();
 });
 
+test("reminders page shows structured reminder sections", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("member@example.com");
+  await page.getByLabel("Password").fill("member-pass");
+  await page.getByRole("button", { name: "Login" }).click();
+
+  await page.goto("/reminders");
+  await page.getByRole("button", { name: "Generate Today Reminders" }).click();
+
+  await expect(page.getByRole("heading", { name: "Active Reminders" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Upcoming Queue" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Recent History" })).toBeVisible();
+});
+
 test("caregiver household page shows a read-only care panel", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("helper@example.com");

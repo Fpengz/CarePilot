@@ -54,11 +54,14 @@ import type {
   SuggestionGenerateApiResponse,
   SuggestionListApiResponse,
   ReminderConfirmApiResponse,
+  ReminderDefinitionListApiResponse,
   ReminderNotificationEndpointListResponse,
   ReminderNotificationLogListResponse,
   ReminderNotificationPreferenceListResponse,
   ReminderGenerateApiResponse,
   ReminderListApiResponse,
+  ReminderOccurrenceActionApiResponse,
+  ReminderOccurrenceListApiResponse,
   ScheduledReminderNotificationListResponse,
   ReportParseApiResponse,
   SessionUser,
@@ -707,6 +710,32 @@ export async function confirmReminder(
   return request<ReminderConfirmApiResponse>(`/api/v1/reminders/${eventId}/confirm`, {
     method: "POST",
     body: JSON.stringify({ confirmed }),
+  });
+}
+
+export async function listReminderDefinitions(): Promise<ReminderDefinitionListApiResponse> {
+  return request<ReminderDefinitionListApiResponse>("/api/v1/reminders/definitions");
+}
+
+export async function listUpcomingReminderOccurrences(): Promise<ReminderOccurrenceListApiResponse> {
+  return request<ReminderOccurrenceListApiResponse>("/api/v1/reminders/upcoming");
+}
+
+export async function listReminderHistory(): Promise<ReminderOccurrenceListApiResponse> {
+  return request<ReminderOccurrenceListApiResponse>("/api/v1/reminders/history");
+}
+
+export async function actOnReminderOccurrence(payload: {
+  occurrenceId: string;
+  action: "taken" | "skipped" | "snooze" | "view_details" | "ignored" | "expired";
+  snooze_minutes?: number;
+}): Promise<ReminderOccurrenceActionApiResponse> {
+  return request<ReminderOccurrenceActionApiResponse>(`/api/v1/reminders/occurrences/${payload.occurrenceId}/actions`, {
+    method: "POST",
+    body: JSON.stringify({
+      action: payload.action,
+      snooze_minutes: payload.snooze_minutes,
+    }),
   });
 }
 
