@@ -7,7 +7,7 @@ resolve while API services are reorganized.
 
 from __future__ import annotations
 
-from apps.api.dietary_api.services.companion_context import (  # noqa: F401
+from dietary_guardian.features.companion.core.context_loader import (  # noqa: F401
     build_workflow_response,
     get_clinician_digest,
     get_companion_today,

@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from apps.api.dietary_api.main import create_app
-from apps.api.dietary_api.services.chat_meal_intent import meal_proposal_cache_key
+from dietary_guardian.features.companion.chat.meal_intent import meal_proposal_cache_key
 from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime
 from dietary_guardian.config.app import get_settings
 

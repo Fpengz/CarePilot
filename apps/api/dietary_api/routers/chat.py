@@ -23,14 +23,14 @@ from dietary_guardian.agent.emotion.schemas import EmotionInferenceResult
 from dietary_guardian.agent.emotion import EmotionAgentDisabledError, EmotionSpeechDisabledError
 from dietary_guardian.features.meals.use_cases import log_meal_from_text
 from dietary_guardian.features.companion.core.snapshot import build_case_snapshot
-from apps.api.dietary_api.services.companion_context import load_companion_inputs
+from dietary_guardian.features.companion.core.context_loader import load_companion_inputs
 from dietary_guardian.platform.persistence import AppStores
-from apps.api.dietary_api.services.chat_meal_intent import (
+from dietary_guardian.features.companion.chat.meal_intent import (
     classify_meal_log_intent,
     heuristic_meal_log_intent,
     meal_proposal_cache_key,
 )
-from apps.api.dietary_api.services.chat_memory import (
+from dietary_guardian.features.companion.chat.memory_store import (
     build_memory_context,
     fetch_memory_snippets,
     record_chat_turn,
