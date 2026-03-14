@@ -31,6 +31,7 @@ import type {
   MealRecordsApiResponse,
   MealWeeklySummaryApiResponse,
   MedicationAdherenceMetricsApiResponse,
+  MedicationIntakeApiResponse,
   MedicationRegimenEnvelopeApiResponse,
   MedicationRegimenListApiResponse,
   MetricTrendListApiResponse,
@@ -767,12 +768,23 @@ export async function listMedicationRegimens(): Promise<MedicationRegimenListApi
 
 export async function createMedicationRegimen(payload: {
   medication_name: string;
+  canonical_name?: string | null;
   dosage_text: string;
   timing_type: "pre_meal" | "post_meal" | "fixed_time";
+  frequency_type?: "times_per_day" | "fixed_slots" | "fixed_time";
+  frequency_times_per_day?: number;
+  time_rules?: Array<Record<string, unknown>>;
   offset_minutes?: number;
   slot_scope?: Array<"breakfast" | "lunch" | "dinner" | "snack">;
   fixed_time?: string | null;
   max_daily_doses?: number;
+  instructions_text?: string | null;
+  source_type?: "manual" | "plain_text" | "upload";
+  source_filename?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  timezone?: string;
+  parse_confidence?: number | null;
   active?: boolean;
 }): Promise<MedicationRegimenEnvelopeApiResponse> {
   return request<MedicationRegimenEnvelopeApiResponse>("/api/v1/medications/regimens", {
@@ -785,12 +797,23 @@ export async function updateMedicationRegimen(
   regimenId: string,
   payload: {
     medication_name?: string;
+    canonical_name?: string | null;
     dosage_text?: string;
     timing_type?: "pre_meal" | "post_meal" | "fixed_time";
+    frequency_type?: "times_per_day" | "fixed_slots" | "fixed_time";
+    frequency_times_per_day?: number;
+    time_rules?: Array<Record<string, unknown>>;
     offset_minutes?: number;
     slot_scope?: Array<"breakfast" | "lunch" | "dinner" | "snack">;
     fixed_time?: string | null;
     max_daily_doses?: number;
+    instructions_text?: string | null;
+    source_type?: "manual" | "plain_text" | "upload";
+    source_filename?: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
+    timezone?: string;
+    parse_confidence?: number | null;
     active?: boolean;
   },
 ): Promise<MedicationRegimenEnvelopeApiResponse> {
@@ -830,6 +853,70 @@ export async function getMedicationAdherenceMetrics(params?: {
   if (params?.to) query.set("to", params.to);
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return request<MedicationAdherenceMetricsApiResponse>(`/api/v1/medications/adherence-metrics${suffix}`);
+}
+
+export async function intakeMedicationFromText(payload: {
+  instructions_text: string;
+}): Promise<MedicationIntakeApiResponse> {
+  return request<MedicationIntakeApiResponse>("/api/v1/medications/intake/text", {
+    method: "POST",
+    body: JSON.stringify({ ...payload, allow_ambiguous: true }),
+  });
+}
+
+export async function intakeMedicationFromUpload(file: File): Promise<MedicationIntakeApiResponse> {
+  const startedAt = performance.now();
+  const path = "/api/v1/medications/intake/upload";
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("allow_ambiguous", "true");
+  logFrontendApi("request.start", {
+    method: "POST",
+    path,
+    filename: file.name,
+    mime_type: file.type,
+  });
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    const error = buildApiRequestError(response, text);
+    logFrontendApi("request.error", {
+      method: "POST",
+      path,
+      status: response.status,
+      duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
+      response: FRONTEND_API_LOG_VERBOSE ? redactSensitive(parseJsonMaybe(text)) : text.slice(0, 200),
+      request_id: error.requestId,
+      correlation_id: error.correlationId,
+      error_code: error.error.code,
+    });
+    throw error;
+  }
+  const json = (await response.json()) as MedicationIntakeApiResponse;
+  logFrontendApi("request.success", {
+    method: "POST",
+    path,
+    status: response.status,
+    duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
+    request_id: response.headers.get("x-request-id"),
+    correlation_id: response.headers.get("x-correlation-id"),
+    response: FRONTEND_API_LOG_VERBOSE ? json : undefined,
+  });
+  return json;
+}
+
+export async function confirmMedicationIntake(payload: {
+  draft_id: string;
+}): Promise<MedicationIntakeApiResponse> {
+  return request<MedicationIntakeApiResponse>("/api/v1/medications/intake/confirm", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function createSymptomCheckIn(payload: {

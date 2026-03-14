@@ -4,5 +4,8 @@ export {
   updateMedicationRegimen,
   deleteMedicationRegimen,
   createMedicationAdherenceEvent,
+  confirmMedicationIntake,
   getMedicationAdherenceMetrics,
+  intakeMedicationFromText,
+  intakeMedicationFromUpload,
 } from "./core";

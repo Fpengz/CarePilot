@@ -595,6 +595,7 @@ export interface SuggestionDetailApiResponse {
 }
 
 export interface ReminderEventView {
+  regimen_id?: string | null;
   reminder_type: "medication" | "mobility";
   title: string;
   body: string | null;
@@ -698,12 +699,23 @@ export interface ReminderNotificationLogListResponse {
 export interface MedicationRegimenApi {
   id: string;
   medication_name: string;
+  canonical_name?: string | null;
   dosage_text: string;
   timing_type: "pre_meal" | "post_meal" | "fixed_time";
+  frequency_type: "times_per_day" | "fixed_slots" | "fixed_time";
+  frequency_times_per_day: number;
+  time_rules: Array<Record<string, unknown>>;
   offset_minutes: number;
   slot_scope: Array<"breakfast" | "lunch" | "dinner" | "snack">;
   fixed_time?: string | null;
   max_daily_doses: number;
+  instructions_text?: string | null;
+  source_type: "manual" | "plain_text" | "upload";
+  source_filename?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  timezone: string;
+  parse_confidence?: number | null;
   active: boolean;
 }
 
@@ -736,6 +748,41 @@ export interface MedicationAdherenceMetricsApiResponse {
     adherence_rate: number;
   };
   events: MedicationAdherenceEventApi[];
+}
+
+export interface NormalizedMedicationInstructionApi {
+  medication_name_raw: string;
+  medication_name_canonical?: string | null;
+  dosage_text: string;
+  timing_type: "pre_meal" | "post_meal" | "fixed_time";
+  frequency_type: "times_per_day" | "fixed_slots" | "fixed_time";
+  frequency_times_per_day: number;
+  offset_minutes: number;
+  slot_scope: Array<"breakfast" | "lunch" | "dinner" | "snack">;
+  fixed_time?: string | null;
+  time_rules: Array<Record<string, unknown>>;
+  duration_days?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  confidence: number;
+  ambiguities: string[];
+}
+
+export interface MedicationIntakeSourceApi {
+  source_type: "plain_text" | "upload";
+  extracted_text: string;
+  filename?: string | null;
+  mime_type?: string | null;
+  source_hash: string;
+}
+
+export interface MedicationIntakeApiResponse {
+  draft_id: string;
+  source: MedicationIntakeSourceApi;
+  normalized_instructions: NormalizedMedicationInstructionApi[];
+  regimens: MedicationRegimenApi[];
+  reminders: ReminderEventView[];
+  scheduled_notifications: ScheduledReminderNotificationItem[];
 }
 
 export interface SymptomCheckInApi {
