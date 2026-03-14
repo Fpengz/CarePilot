@@ -19,34 +19,33 @@ export function TopBar() {
   const { status, user } = useSession();
 
   return (
-    <header className="app-panel sticky top-2 z-20 mb-6 border border-[color:var(--border)] bg-[color:var(--panel)] p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <header className="sticky top-0 z-20 mb-10 flex h-20 items-center border-b border-[color:var(--border-soft)] bg-[color:var(--background)]/80 backdrop-blur-md">
+      <div className="flex w-full items-center justify-between">
         <div className="min-w-0">
-          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted-foreground)]">
+          <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)] opacity-70">
             <span>Dietary Guardian</span>
-            <ChevronRight className="h-3 w-3" aria-hidden />
+            <ChevronRight className="h-2.5 w-2.5 opacity-40" aria-hidden />
             <span>{breadcrumb}</span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="truncate text-2xl font-semibold leading-tight tracking-[-0.02em] md:text-[2.1rem]">
+            <h2 className="truncate text-xl font-bold tracking-tight md:text-2xl">
               {pageTitle}
             </h2>
-            {route?.group === "admin" ? <Badge variant="outline">Admin Area</Badge> : null}
+            {route?.group === "admin" ? <Badge variant="outline" className="text-[10px]">Admin Area</Badge> : null}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <div className="app-toolbar-chip hidden items-center gap-1.5 sm:flex">
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-1 sm:flex">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               aria-disabled="true"
               title="Search coming soon"
-              className="h-9 gap-2 px-3"
+              className="h-9 px-3 text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"
             >
               <Search className="h-4 w-4" aria-hidden />
-              <span className="hidden sm:inline">Search</span>
             </Button>
             <Button
               type="button"
@@ -54,29 +53,26 @@ export function TopBar() {
               size="sm"
               aria-disabled="true"
               title="Notifications coming soon"
-              className="h-9 px-2.5"
+              className="h-9 px-3 text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"
             >
               <Bell className="h-4 w-4" aria-hidden />
-              <span className="sr-only">Notifications (coming soon)</span>
             </Button>
           </div>
-          <div className="app-toolbar-chip">
-            <ThemeToggle />
-          </div>
+          <div className="h-4 w-px bg-[color:var(--border-soft)] hidden sm:block" />
+          <ThemeToggle />
+          <div className="h-4 w-px bg-[color:var(--border-soft)]" />
           {status === "loading" ? (
-            <Badge variant="outline">Session loading</Badge>
+            <div className="h-8 w-8 animate-pulse rounded-full bg-[color:var(--muted)]" />
           ) : status === "unauthenticated" || !user ? (
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="hidden sm:inline-flex">Not signed in</Badge>
-              <Button asChild size="sm">
-                <Link href="/login">Sign in</Link>
-              </Button>
-            </div>
+            <Button asChild size="sm" className="rounded-full px-5">
+              <Link href="/login">Sign in</Link>
+            </Button>
           ) : (
             <AccountPanel />
           )}
         </div>
       </div>
     </header>
+
   );
 }

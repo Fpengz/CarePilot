@@ -21,35 +21,37 @@ export function AppSidebar() {
     <aside className="hidden lg:block">
       <div
         className={cn(
-          "app-panel sticky top-6 flex flex-col transition-all duration-300",
-          isCollapsed ? "p-3 w-20" : "p-5 w-full"
+          "sticky top-8 flex flex-col transition-all duration-300 border-r border-[color:var(--border-soft)] h-[calc(100vh-4rem)]",
+          isCollapsed ? "px-2 w-20" : "px-6 w-full"
         )}
       >
-        <div className={cn("mb-6", isCollapsed ? "flex justify-center" : "space-y-2")}>
-          <Link href="/dashboard" className="block">
+        <div className={cn("mb-10", isCollapsed ? "flex justify-center" : "space-y-3")}>
+          <Link href="/dashboard" className="group block">
             {isCollapsed ? (
-              <div className="rounded-xl bg-[color:var(--accent)] p-2.5 text-white shadow-[0_10px_22px_rgba(16,92,182,0.18)]">
+              <div className="rounded-xl bg-[color:var(--accent)] p-2.5 text-white shadow-sm transition-transform group-hover:scale-105">
                 <Salad className="h-6 w-6" />
               </div>
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-[1.35rem] font-semibold leading-[1.2] tracking-[-0.02em]">
-                    Dietary Guardian
+                  <div className="rounded-lg bg-[color:var(--accent)] p-1.5 text-white shadow-sm">
+                    <Salad className="h-4 w-4" />
+                  </div>
+                  <h1 className="text-lg font-bold leading-tight tracking-tight">
+                    Guardian
                   </h1>
-                  <Badge variant="outline" className="self-start rounded-full px-3 py-1">
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge variant="outline" className="rounded-full px-2 py-0 text-[10px] font-bold uppercase tracking-wider opacity-60">
                     Foundation
                   </Badge>
                 </div>
-                <p className="app-muted mt-2 text-sm leading-5">
-                  Personalized nutrition workspace.
-                </p>
               </>
             )}
           </Link>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto pr-1">
+        <div className="flex-1 space-y-8 overflow-y-auto pr-2 scrollbar-hide">
           {mainSections.map((section) => (
             <SidebarNav
               key={section.id}
@@ -74,10 +76,15 @@ export function AppSidebar() {
 
         <div
           className={cn(
-            "mt-4 flex border-t border-[color:var(--border-soft)] pt-4",
-            isCollapsed ? "justify-center" : "justify-end"
+            "mt-6 flex border-t border-[color:var(--border-soft)] py-6",
+            isCollapsed ? "justify-center" : "justify-between items-center"
           )}
         >
+          {!isCollapsed && (
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)] opacity-50">
+              v0.1.0
+            </span>
+          )}
           <Button
             variant="ghost"
             onClick={toggleCollapsed}
@@ -89,5 +96,6 @@ export function AppSidebar() {
         </div>
       </div>
     </aside>
+
   );
 }
