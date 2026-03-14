@@ -2,24 +2,16 @@
 
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
-import { MessageView } from "./types";
+import type { MessageView } from "@/app/chat/components/types";
+import { AssistantMeta } from "@/components/chat/assistant-meta";
 
 const KIND_LABELS: Record<MessageView["kind"], string> = {
-  proactive_alert: "Proactive alert",
+  proactive_alert: "Alert",
   meal_analysis: "Meal analysis",
   recommendation: "Recommendation",
   follow_up: "Follow-up",
   trend_insight: "Trend insight",
-  plain: "Assistant",
-};
-
-const KIND_TONES: Record<MessageView["kind"], string> = {
-  proactive_alert: "text-rose-700 bg-rose-50 border-rose-100",
-  meal_analysis: "text-emerald-700 bg-emerald-50 border-emerald-100",
-  recommendation: "text-slate-700 bg-slate-50 border-slate-100",
-  follow_up: "text-amber-700 bg-amber-50 border-amber-100",
-  trend_insight: "text-indigo-700 bg-indigo-50 border-indigo-100",
-  plain: "text-slate-700 bg-slate-50 border-slate-100",
+  plain: "",
 };
 
 const EMOJI: Record<string, string> = {
@@ -33,38 +25,7 @@ const EMOJI: Record<string, string> = {
   fearful: "😨",
 };
 
-function MessageKindBadge({ kind }: { kind: MessageView["kind"] }) {
-  const tone = KIND_TONES[kind];
-  return (
-    <div
-      className={`rounded-full border px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.2em] ${tone}`}
-      aria-label={`Message type: ${KIND_LABELS[kind]}`}
-    >
-      {KIND_LABELS[kind]}
-    </div>
-  );
-}
-
-function ConfidenceMeter({ value }: { value?: number }) {
-  if (value === undefined) return null;
-  const pct = Math.round(value * 100);
-  return (
-    <div
-      className="flex items-center gap-3 text-xs text-[color:var(--muted-foreground)]"
-      aria-label={`Confidence ${pct}%`}
-    >
-      <div className="h-1.5 w-24 rounded-full bg-[color:var(--border-soft)] overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[color:var(--accent)]"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="tabular-nums">{pct}% confidence</span>
-    </div>
-  );
-}
-
-export function MessageCard({
+export function MessageItem({
   message,
   isStreaming,
   streamDraft,
@@ -78,21 +39,20 @@ export function MessageCard({
   proposalLoadingId: string | null;
 }) {
   const isUser = message.role === "user";
-  const reasoning = message.reasoning;
   const content = message.content || (isStreaming ? streamDraft : "");
 
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[78%] rounded-2xl bg-[color:var(--accent)] px-5 py-4 text-sm text-[color:var(--accent-foreground)] shadow-[0_18px_36px_rgba(15,23,42,0.12)]">
+        <div className="max-w-[78%] rounded-2xl bg-[color:var(--accent)] px-5 py-4 text-sm text-[color:var(--accent-foreground)] shadow-[0_12px_24px_rgba(15,23,42,0.1)]">
           <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
-          {message.emotion && (
+          {message.emotion ? (
             <div className="mt-3 flex items-center gap-2 text-xs uppercase tracking-[0.16em] opacity-80">
               <span>{EMOJI[message.emotion.label] ?? "🫥"}</span>
               <span className="capitalize">{message.emotion.label}</span>
               <span className="opacity-60">({Math.round(message.emotion.score * 100)}%)</span>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     );
@@ -100,22 +60,22 @@ export function MessageCard({
 
   return (
     <div className="flex justify-start">
-      <div className="max-w-[82%] rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-6 py-5 shadow-[0_16px_32px_rgba(15,23,42,0.06)]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <MessageKindBadge kind={message.kind} />
-          <ConfidenceMeter value={message.confidence} />
-        </div>
+      <div className="max-w-[82%] rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-6 py-5">
+        <AssistantMeta
+          kindLabel={KIND_LABELS[message.kind] || undefined}
+          confidence={message.confidence}
+        />
 
-        {message.title && (
-          <h4 className="mt-4 text-base font-semibold text-[color:var(--foreground)]">
+        {message.title ? (
+          <h4 className="mt-3 text-base font-semibold text-[color:var(--foreground)]">
             {message.title}
           </h4>
-        )}
-        {message.explanation && (
+        ) : null}
+        {message.explanation ? (
           <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
             {message.explanation}
           </p>
-        )}
+        ) : null}
 
         {content ? (
           <ReactMarkdown className="chat-markdown mt-4" rehypePlugins={[rehypeSanitize]}>
@@ -125,16 +85,16 @@ export function MessageCard({
           <div className="mt-4 text-sm text-[color:var(--muted-foreground)] animate-pulse">▋</div>
         ) : null}
 
-        {reasoning && (
+        {message.reasoning ? (
           <div className="mt-4 rounded-xl bg-[color:var(--panel-soft)] px-4 py-3">
             <div className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">
               Reasoning
             </div>
-            <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">{reasoning}</p>
+            <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">{message.reasoning}</p>
           </div>
-        )}
+        ) : null}
 
-        {message.mealProposal && (
+        {message.mealProposal ? (
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               className="min-h-[44px] rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-[color:var(--accent-foreground)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]/40"
@@ -151,7 +111,7 @@ export function MessageCard({
               Skip
             </button>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
-import { PageTitle } from "@/components/app/page-title";
-import { Button } from "@/components/ui/button";
-import { ChatRail } from "./components/chat-rail";
-import { ChatInput, type SuggestionChip } from "./components/chat-input";
-import { MessageCard } from "./components/message-card";
+import { ChatSidebar } from "./components/chat-sidebar";
+import { ChatHeader } from "@/components/chat/chat-header";
+import { MessageList } from "@/components/chat/message-list";
+import { StickyComposer } from "@/components/chat/sticky-composer";
 import { type Message, type MessageView } from "./components/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/backend";
@@ -22,14 +21,6 @@ const bodyFont = Source_Sans_3({
   variable: "--font-body",
   weight: ["400", "500", "600", "700"],
 });
-
-const SUGGESTIONS: SuggestionChip[] = [
-  { id: "sodium", label: "Review sodium trend", value: "Show my sodium trend this week." },
-  { id: "breakfast", label: "Log breakfast", value: "[TRACK] Breakfast: oatmeal, banana, latte" },
-  { id: "meds", label: "Medication plan", value: "Help me stay on schedule with my meds." },
-  { id: "symptoms", label: "Check symptoms", value: "I've felt lightheaded today. What should I do?" },
-  { id: "snack", label: "Low-sugar snack", value: "Recommend a low-sugar snack option." },
-];
 
 const makeId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -152,16 +143,6 @@ export default function ChatPage() {
       }
     };
   }, []);
-
-  const lastEmotion = useMemo(() => {
-    const reversed = [...messages].reverse();
-    return reversed.find((m) => m.emotion)?.emotion ?? null;
-  }, [messages]);
-
-  const lastUserMessage = useMemo(() => {
-    const reversed = [...messages].reverse();
-    return reversed.find((m) => m.role === "user")?.content ?? "";
-  }, [messages]);
 
   const messageViews = useMemo(() => messages.map((m) => deriveMessageView(m)), [messages]);
 
@@ -574,104 +555,51 @@ export default function ChatPage() {
   };
 
   return (
-    <div className={`section-stack ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
-      <PageTitle
-        eyebrow="Companion"
-        title="Care session"
-        description="A structured, clinical conversation to manage diet, medications, symptoms, and trends."
-      />
+    <div className={`flex flex-col gap-8 lg:flex-row lg:items-start ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
+      <section className="flex flex-1 min-h-[75vh] flex-col rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-6 shadow-[0_8px_32px_rgba(15,23,42,0.03)] sm:p-8">
+        <ChatHeader onClear={clearHistory} />
 
-      <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <ChatRail lastEmotion={lastEmotion} lastUserMessage={lastUserMessage} />
+        <div className="my-6 h-px w-full bg-[color:var(--border-soft)] opacity-60" />
 
-        <section className="flex min-h-[70vh] flex-col rounded-[32px] border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-6 sm:p-8 shadow-[0_24px_48px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div>
-              <h2 className="text-2xl font-semibold text-[color:var(--foreground)] font-[family:var(--font-display)]">
-                Daily guidance session
-              </h2>
-            </div>
-            <Button variant="secondary" size="sm" onClick={clearHistory}>
-              Clear history
-            </Button>
+        {messageViews.length === 0 && (
+          <div className="rounded-xl border border-dashed border-[color:var(--border-soft)] bg-[color:var(--panel)] px-6 py-8 text-center text-sm text-[color:var(--muted-foreground)]">
+            <p>Start a conversation with your health companion.</p>
+            <p className="mt-2 text-xs opacity-60">Log meals, ask about nutrition, or check your adherence status.</p>
           </div>
+        )}
 
-          <div className="my-6 h-px w-full bg-[color:var(--border-soft)]" />
+        <MessageList
+          messages={messageViews}
+          streamDraft={streamDraft}
+          loading={loading}
+          streamNotice={streamNotice}
+          audioNotice={audioNotice}
+          onMealAction={handleMealProposal}
+          proposalLoadingId={proposalLoadingId}
+          bottomRef={bottomRef}
+        />
 
-          <div className="flex-1 space-y-4 overflow-y-auto pb-4">
-            {(streamNotice || audioNotice) && (
-              <div className="space-y-2" role="status" aria-live="polite">
-                {streamNotice && (
-                  <div className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] px-4 py-3 text-sm text-[color:var(--foreground)]">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">
-                      Stream notice
-                    </span>
-                    <div className="mt-2">{streamNotice}</div>
-                  </div>
-                )}
-                {audioNotice && (
-                  <div className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] px-4 py-3 text-sm text-[color:var(--foreground)]">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">
-                      Audio notice
-                    </span>
-                    <div className="mt-2">{audioNotice}</div>
-                  </div>
-                )}
-              </div>
-            )}
+        {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}
 
-            {messageViews.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-[color:var(--border-soft)] bg-[color:var(--panel)] px-6 py-5 text-sm text-[color:var(--muted-foreground)]">
-                Start with a health question or log metrics using the {" "}
-                <span className="rounded bg-[color:var(--accent)]/10 px-1 font-mono text-[color:var(--accent)]">
-                  [TRACK]
-                </span>{" "}
-                action below.
-              </div>
-            )}
+        <StickyComposer
+          input={input}
+          inputRef={inputRef}
+          onInputChange={setInput}
+          onKeyDown={handleKeyDown}
+          onSend={handleSend}
+          loading={loading}
+          onPrependTrack={prependTrack}
+          menuOpen={menuOpen}
+          onToggleMenu={() => setMenuOpen((prev) => !prev)}
+          onStartRecording={startRecording}
+          isRecording={isRecording}
+          recordingLabel={fmtTime(recordingMs)}
+          onStopRecording={stopAndSend}
+          onCancelRecording={cancelRecording}
+        />
+      </section>
 
-            {messageViews.map((message, index) => {
-              const isStreamingMessage =
-                message.role === "assistant" && index === messageViews.length - 1 && loading;
-              return (
-                <MessageCard
-                  key={message.id}
-                  message={message}
-                  isStreaming={isStreamingMessage}
-                  streamDraft={isStreamingMessage ? streamDraft : ""}
-                  onMealAction={handleMealProposal}
-                  proposalLoadingId={proposalLoadingId}
-                />
-              );
-            })}
-            <div ref={bottomRef} />
-          </div>
-
-          {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}
-
-          <ChatInput
-            input={input}
-            inputRef={inputRef}
-            onInputChange={setInput}
-            onKeyDown={handleKeyDown}
-            onSend={handleSend}
-            loading={loading}
-            suggestions={SUGGESTIONS}
-            onSelectSuggestion={(value) => {
-              setInput(value);
-              inputRef.current?.focus();
-            }}
-            onPrependTrack={prependTrack}
-            menuOpen={menuOpen}
-            onToggleMenu={() => setMenuOpen((prev) => !prev)}
-            onStartRecording={startRecording}
-            isRecording={isRecording}
-            recordingLabel={fmtTime(recordingMs)}
-            onStopRecording={stopAndSend}
-            onCancelRecording={cancelRecording}
-          />
-        </section>
-      </div>
+      <ChatSidebar />
     </div>
   );
 }
