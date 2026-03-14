@@ -351,7 +351,7 @@ def generate_recommendation_for_session(
 # Agent-based daily plan flows
 # ---------------------------------------------------------------------------
 
-def get_daily_agent_for_session(
+async def get_daily_agent_for_session(
     *,
     deps: RecommendationAgentDeps,
     session: dict[str, object],
@@ -362,7 +362,7 @@ def get_daily_agent_for_session(
     health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
     meal_history = deps.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
-    output = deps.recommendation_agent.generate(
+    output = await deps.recommendation_agent.generate(
         RecommendationAgentInput(
             user_id=user_id,
             health_profile=health_profile,

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dietary_guardian.agent.chat.health_tracker import HealthTracker
-from dietary_guardian.agent.chat.memory import MemoryManager
+from dietary_guardian.features.companion.chat.health_tracker import HealthTracker
+from dietary_guardian.features.companion.chat.memory import MemoryManager
 
 
 class _DummyInferenceEngine:

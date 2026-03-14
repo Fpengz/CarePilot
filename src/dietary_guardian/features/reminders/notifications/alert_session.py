@@ -10,6 +10,7 @@ Kept separate from ``alert_dispatch`` to avoid a circular import between
 from __future__ import annotations
 
 from typing import cast
+from uuid import uuid4
 
 from apps.api.dietary_api.deps import AlertDeps
 from apps.api.dietary_api.errors import build_api_error
@@ -19,6 +20,9 @@ from apps.api.dietary_api.schemas import (
     AlertTriggerResponse,
 )
 from dietary_guardian.platform.auth.session_context import build_user_profile_from_session
+from dietary_guardian.platform.observability.tooling.domain.models import ToolPolicyContext
+from dietary_guardian.core.contracts.agent_envelopes import AgentHandoff
+from dietary_guardian.platform.observability.workflows.domain.models import WorkflowExecutionResult, WorkflowName
 
 
 def trigger_alert_for_session(
@@ -30,17 +34,59 @@ def trigger_alert_for_session(
     correlation_id: str | None = None,
 ) -> AlertTriggerResponse:
     user_profile = build_user_profile_from_session(session, deps.stores.profiles)
-    workflow = deps.coordinator.run_alert_workflow(
-        user_profile=user_profile,
-        alert_type=payload.alert_type,
-        severity=payload.severity,
-        message=payload.message,
-        destinations=payload.destinations,
-        request_id=request_id,
-        correlation_id=correlation_id,
-        account_role=str(session["account_role"]),
-        scopes=cast(list[str], session["scopes"]),
-        environment="prod",
+    issued_request_id = request_id or str(uuid4())
+    issued_correlation_id = correlation_id or str(uuid4())
+    deps.event_timeline.append(
+        event_type="workflow_started",
+        workflow_name=WorkflowName.ALERT_ONLY.value,
+        correlation_id=issued_correlation_id,
+        request_id=issued_request_id,
+        user_id=user_profile.id,
+        payload={"alert_type": payload.alert_type, "destinations": payload.destinations},
+    )
+    tool_result = deps.tool_registry.execute(
+        "trigger_alert",
+        {
+            "alert_type": payload.alert_type,
+            "severity": payload.severity,
+            "message": payload.message,
+            "destinations": payload.destinations,
+        },
+        ToolPolicyContext(
+            account_role=str(session["account_role"]),
+            scopes=cast(list[str], session["scopes"]),
+            environment="prod",
+            user_id=user_profile.id,
+            correlation_id=issued_correlation_id,
+        ),
+    )
+    handoffs = [
+        AgentHandoff(
+            from_agent="care_orchestrator",
+            to_agent="notification_agent",
+            request_id=issued_request_id,
+            correlation_id=issued_correlation_id,
+            confidence=1.0 if tool_result.success else 0.0,
+            obligations=["deliver_alert_via_channels"],
+            payload={"alert_type": payload.alert_type, "destinations": payload.destinations},
+        )
+    ]
+    deps.event_timeline.append(
+        event_type="workflow_completed",
+        workflow_name=WorkflowName.ALERT_ONLY.value,
+        correlation_id=issued_correlation_id,
+        request_id=issued_request_id,
+        user_id=user_profile.id,
+        payload={"tool_success": tool_result.success, "tool_name": tool_result.tool_name},
+    )
+    workflow = WorkflowExecutionResult(
+        workflow_name=WorkflowName.ALERT_ONLY,
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_profile.id,
+        handoffs=handoffs,
+        tool_results=[tool_result],
+        timeline_events=deps.event_timeline.get_events(correlation_id=issued_correlation_id),
     )
     tool_result = workflow.tool_results[0] if workflow.tool_results else None
     if tool_result is None:

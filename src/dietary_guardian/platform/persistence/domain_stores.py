@@ -300,19 +300,18 @@ class WorkflowStore:
     def get_tool_role_policy(self, policy_id: str) -> Any | None:
         return self._store.get_tool_role_policy(policy_id)
 
-    def save_workflow_contract_snapshot(self, snapshot: Any) -> Any:
-        return self._store.save_workflow_contract_snapshot(snapshot)
+    def save_workflow_timeline_event(self, event: Any) -> Any:
+        return self._store.save_workflow_timeline_event(event)
 
-    def list_workflow_contract_snapshots(self, *, limit: int = 50) -> list[Any]:
-        return self._store.list_workflow_contract_snapshots(limit=limit)
-
-    def get_workflow_contract_snapshot(self, *, version: int) -> Any | None:
-        return self._store.get_workflow_contract_snapshot(version=version)
-
-    def supports_contract_snapshots(self) -> bool:
-        return hasattr(self._store, "list_workflow_contract_snapshots") and hasattr(
-            self._store,
-            "save_workflow_contract_snapshot",
+    def list_workflow_timeline_events(
+        self,
+        *,
+        correlation_id: str | None = None,
+        user_id: str | None = None,
+    ) -> list[Any]:
+        return self._store.list_workflow_timeline_events(
+            correlation_id=correlation_id,
+            user_id=user_id,
         )
 
 

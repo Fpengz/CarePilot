@@ -6,19 +6,19 @@ import time
 
 import pytest
 
-from dietary_guardian.features.companion.engagement.emotion.ports import (
+from dietary_guardian.features.companion.emotion.ports import (
     EmotionInferencePort,
-    SpeechEmotionInput,
-    TextEmotionInput,
 )
-from dietary_guardian.agent.emotion.config import EmotionRuntimeConfig
-from dietary_guardian.agent.emotion.pipeline import EmotionPipeline
-from dietary_guardian.agent.emotion.runtime import InProcessEmotionRuntime
-from dietary_guardian.features.companion.core.health.emotion import (
+from dietary_guardian.features.companion.emotion.config import EmotionRuntimeConfig
+from dietary_guardian.features.companion.emotion.pipeline import EmotionPipeline
+from dietary_guardian.features.companion.emotion.runtime import InProcessEmotionRuntime
+from dietary_guardian.agent.emotion.schemas import (
     EmotionContextFeatures,
     EmotionInferenceResult,
     EmotionLabel,
     EmotionProductState,
+    EmotionSpeechAgentInput,
+    EmotionTextAgentInput,
     EmotionRuntimeHealth,
 )
 from dietary_guardian.agent.emotion import EmotionAgent
@@ -78,7 +78,7 @@ def _runtime() -> InProcessEmotionRuntime:
 
 def test_inprocess_emotion_runtime_text_inference() -> None:
     runtime = _runtime()
-    result = runtime.infer_text(TextEmotionInput(text="I am happy and calm"))
+    result = runtime.infer_text(EmotionTextAgentInput(text="I am happy and calm"))
 
     assert result.source_type == "text"
     assert result.fusion.emotion_label == "neutral"
@@ -88,7 +88,7 @@ def test_inprocess_emotion_runtime_text_inference() -> None:
 def test_inprocess_emotion_runtime_speech_inference() -> None:
     runtime = _runtime()
     result = runtime.infer_speech(
-        SpeechEmotionInput(audio_bytes=b"fake-wave-data", content_type="audio/wav")
+        EmotionSpeechAgentInput(audio_bytes=b"fake-wave-data", content_type="audio/wav")
     )
 
     assert result.source_type == "mixed"
@@ -101,15 +101,15 @@ def test_inprocess_runtime_health_reports_ready_when_configured() -> None:
     assert health.status == "ready"
 
 class _SlowPort(EmotionInferencePort):
-    def infer_text(self, payload: TextEmotionInput) -> EmotionInferenceResult:
+    def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
         del payload
         time.sleep(0.05)
-        return _runtime().infer_text(TextEmotionInput(text="neutral"))
+        return _runtime().infer_text(EmotionTextAgentInput(text="neutral"))
 
-    def infer_speech(self, payload: SpeechEmotionInput) -> EmotionInferenceResult:
+    def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
         del payload
         return _runtime().infer_speech(
-            SpeechEmotionInput(audio_bytes=b"fake", content_type="audio/wav")
+            EmotionSpeechAgentInput(audio_bytes=b"fake", content_type="audio/wav")
         )
 
     def health(self) -> EmotionRuntimeHealth:

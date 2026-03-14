@@ -31,7 +31,7 @@ from dietary_guardian.features.recommendations.domain.models import (
 )
 from dietary_guardian.features.companion.core.health.analytics import EngagementMetrics
 from dietary_guardian.core.contracts.agent_envelopes import AgentOutputEnvelope
-from dietary_guardian.features.companion.core.health.emotion import (
+from dietary_guardian.agent.emotion.schemas import (
     EmotionConfidenceBand,
     EmotionLabel,
     EmotionRuntimeHealth,

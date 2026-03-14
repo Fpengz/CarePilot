@@ -1,51 +1,63 @@
-"""Public workflow API service facade.
-
-Thin re-export shim. Most logic lives in
-``dietary_guardian.platform.observability.workflows.coordinator``.
-get_workflow / list_workflows re-declared here so get_type_hints() resolves
-WorkflowDeps at runtime (coordinator uses TYPE_CHECKING to avoid a cycle).
-"""
+"""Workflow trace query services (API layer)."""
 
 from __future__ import annotations
 
-from typing import Any
-
 from apps.api.dietary_api.deps import WorkflowDeps
-from dietary_guardian.platform.observability.workflows.coordinator import (  # noqa: F401
-    compare_runtime_contract_snapshots,
-    create_runtime_contract_snapshot,
-    create_tool_policy,
-    ensure_runtime_contract_snapshot_bootstrap,
-    evaluate_tool_policy_for_runtime,
-    get_runtime_contract,
-    get_workflow as _get_workflow,
-    list_runtime_contract_snapshots,
-    list_tool_policies,
-    list_workflows as _list_workflows,
-    patch_tool_policy,
+from apps.api.dietary_api.schemas.workflows import (
+    WorkflowListItem,
+    WorkflowListResponse,
+    WorkflowResponse,
+    WorkflowTimelineEventPayloadResponse,
+    WorkflowTimelineEventResponse,
 )
+from dietary_guardian.features.workflows.query_service import (
+    list_workflow_runs,
+    replay_workflow,
+)
+from dietary_guardian.platform.observability.workflows.domain.models import WorkflowTimelineEvent
 
 
-# Thin wrappers re-annotate deps so get_type_hints() resolves WorkflowDeps at runtime.
-# coordinator.py hides WorkflowDeps under TYPE_CHECKING to avoid an import cycle.
-def get_workflow(*, deps: WorkflowDeps, correlation_id: str) -> Any:
-    return _get_workflow(deps=deps, correlation_id=correlation_id)
+def _timeline_event_response(event: WorkflowTimelineEvent) -> WorkflowTimelineEventResponse:
+    payload = event.model_dump(mode="json")
+    return WorkflowTimelineEventResponse(
+        event_id=str(payload["event_id"]),
+        event_type=str(payload["event_type"]),
+        workflow_name=str(payload["workflow_name"]) if payload.get("workflow_name") is not None else None,
+        request_id=str(payload["request_id"]) if payload.get("request_id") is not None else None,
+        correlation_id=str(payload["correlation_id"]),
+        user_id=str(payload["user_id"]) if payload.get("user_id") is not None else None,
+        payload=WorkflowTimelineEventPayloadResponse.model_validate(dict(payload.get("payload") or {})),
+        created_at=payload["created_at"],
+    )
 
 
-def list_workflows(*, deps: WorkflowDeps) -> Any:
-    return _list_workflows(deps=deps)
+def list_workflows(*, deps: WorkflowDeps) -> WorkflowListResponse:
+    summaries = list_workflow_runs(event_timeline=deps.event_timeline)
+    return WorkflowListResponse(
+        items=[
+            WorkflowListItem(
+                correlation_id=item.correlation_id,
+                request_id=item.request_id,
+                user_id=item.user_id,
+                workflow_name=item.workflow_name,
+                created_at=item.created_at,
+                latest_event_at=item.latest_event_at,
+                event_count=item.event_count,
+            )
+            for item in summaries
+        ]
+    )
 
 
-__all__ = [
-    "compare_runtime_contract_snapshots",
-    "create_runtime_contract_snapshot",
-    "create_tool_policy",
-    "ensure_runtime_contract_snapshot_bootstrap",
-    "evaluate_tool_policy_for_runtime",
-    "get_runtime_contract",
-    "get_workflow",
-    "list_runtime_contract_snapshots",
-    "list_tool_policies",
-    "list_workflows",
-    "patch_tool_policy",
-]
+def get_workflow(*, deps: WorkflowDeps, correlation_id: str) -> WorkflowResponse:
+    workflow = replay_workflow(event_timeline=deps.event_timeline, correlation_id=correlation_id)
+    return WorkflowResponse(
+        workflow_name=str(workflow.workflow_name),
+        request_id=workflow.request_id,
+        correlation_id=workflow.correlation_id,
+        replayed=workflow.replayed,
+        timeline_events=[_timeline_event_response(event) for event in workflow.timeline_events],
+    )
+
+
+__all__ = ["get_workflow", "list_workflows"]

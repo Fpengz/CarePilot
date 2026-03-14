@@ -1,77 +1,49 @@
 """Tests for regressions inference and alerting."""
 
-from datetime import datetime
-
 import pytest
 
-from dietary_guardian.agent.dietary.agent import AgentResponse, process_meal_request
+from dietary_guardian.agent.dietary.agent import analyze_dietary_request
+from dietary_guardian.agent.dietary.schemas import DietaryAgentInput, DietaryAgentOutput
 from dietary_guardian.config.llm import LLMCapability
 from dietary_guardian.features.safety.domain.alerts.models import AlertDeliveryResult, AlertMessage
-from dietary_guardian.features.profiles.domain.models import MedicalCondition, UserProfile
 from dietary_guardian.platform.persistence import SQLiteRepository
-from dietary_guardian.features.meals.domain.models import Ingredient, MealEvent, Nutrition
 from dietary_guardian.platform.messaging.alert_outbox import AlertPublisher, OutboxWorker
 
 
 @pytest.mark.anyio
-async def test_process_meal_request_does_not_force_gemini_model_for_test_provider(monkeypatch) -> None:
-    class StubEngine:
-        init_args: tuple[str | None, str | None, str | None] | None = None
+async def test_analyze_dietary_request_uses_correct_capability(monkeypatch) -> None:
+    captured_capability = None
 
-        def __init__(
-            self,
-            provider: str | None = None,
-            model_name: str | None = None,
-            capability: str | None = None,
-        ) -> None:
-            StubEngine.init_args = (provider, model_name, capability)
+    class MockModel:
+        pass
 
-        def health(self):
-            class Health:
-                endpoint = "default"
-                provider = "test"
+    def mock_get_model(capability=None):
+        nonlocal captured_capability
+        captured_capability = capability
+        return MockModel()
 
-            return Health()
+    class MockResult:
+        output = DietaryAgentOutput(analysis="ok", advice="ok", is_safe=True)
 
-        async def infer(self, request):
-            del request
-            return type(
-                "Result",
-                (),
-                {
-                    "structured_output": AgentResponse(
-                        analysis="ok",
-                        advice="ok",
-                        is_safe=True,
-                    )
-                },
-            )()
+    class MockAgent:
+        def __init__(self, model, output_type, system_prompt):
+            pass
+        async def run(self, prompt, **kwargs):
+            return MockResult()
 
-    monkeypatch.setenv("LLM_PROVIDER", "test")
-    monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-pro")
-    from dietary_guardian.config.app import get_settings
+    monkeypatch.setattr("dietary_guardian.agent.runtime.LLMFactory.get_model", mock_get_model)
+    monkeypatch.setattr("dietary_guardian.agent.dietary.agent.Agent", MockAgent)
 
-    get_settings.cache_clear()
-    monkeypatch.setattr("dietary_guardian.agent.dietary.agent.InferenceEngine", StubEngine)
-
-    user = UserProfile(
-        id="u1",
-        name="Mr Tan",
-        age=68,
-        conditions=[MedicalCondition(name="Hypertension", severity="Medium")],
-        medications=[],
-    )
-    meal = MealEvent(
-        name="Soup",
-        ingredients=[Ingredient(name="Tofu")],
-        nutrition=Nutrition(calories=100, carbs_g=8, sugar_g=2, protein_g=6, fat_g=3, sodium_mg=120),
-        timestamp=datetime(2026, 2, 25, 9, 0),
+    input_data = DietaryAgentInput(
+        user_name="Mr Tan",
+        meal_name="Soup",
+        ingredients=["Tofu"],
+        is_safe=True,
     )
 
-    await process_meal_request(user, meal)
+    await analyze_dietary_request(input_data)
 
-    assert StubEngine.init_args == ("test", None, LLMCapability.DIETARY_REASONING.value)
-    get_settings.cache_clear()
+    assert captured_capability == LLMCapability.DIETARY_REASONING
 
 
 def test_outbox_worker_preserves_original_alert_message_payload(tmp_path) -> None:

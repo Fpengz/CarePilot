@@ -16,7 +16,6 @@ MIGRATED_CALLERS = [
     "tests/infrastructure/test_medication_scheduler.py",
     "tests/infrastructure/test_regressions_inference_and_alerting.py",
     "tests/infrastructure/test_reminder_scheduler.py",
-    "tests/application/test_workflow_coordinator.py",
     "tests/integration/test_integration_user_story_1.py",
     "tests/integration/test_integration_user_story_2.py",
 ]

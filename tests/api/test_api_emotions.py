@@ -9,8 +9,9 @@ from fastapi.testclient import TestClient
 from dietary_guardian.config.app import get_settings
 from apps.api.dietary_api.deps import build_app_context
 from dietary_guardian.agent.emotion import EmotionAgent
-from dietary_guardian.features.companion.engagement.emotion.ports import EmotionInferencePort, SpeechEmotionInput, TextEmotionInput
-from dietary_guardian.features.companion.core.health.emotion import (
+from dietary_guardian.features.companion.emotion.ports import EmotionInferencePort
+from dietary_guardian.agent.emotion.schemas import SpeechEmotionInput, TextEmotionInput
+from dietary_guardian.agent.emotion.schemas import (
     EmotionContextFeatures,
     EmotionFusionOutput,
     EmotionInferenceResult,

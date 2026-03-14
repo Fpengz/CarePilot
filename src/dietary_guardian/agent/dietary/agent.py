@@ -1,129 +1,57 @@
 """
 Provide the dietary reasoning agent.
 
-This module orchestrates meal analysis requests, wraps safety checks,
-and delivers structured dietary guidance.
+This agent delivers structured dietary guidance based on generic inputs.
 """
+
+from __future__ import annotations
 
 from typing import Any, cast
 
-from pydantic import BaseModel
-
 import logfire
-from dietary_guardian.agent.runtime import InferenceEngine, InferenceModality, InferenceRequest, LLMFactory
-from dietary_guardian.agent.core import AgentContext, AgentResult, BaseAgent
-from dietary_guardian.config.app import get_settings
+from pydantic_ai import Agent
+
+from dietary_guardian.agent.dietary.schemas import DietaryAgentInput, DietaryAgentOutput
+from dietary_guardian.agent.runtime import LLMFactory
 from dietary_guardian.config.llm import LLMCapability
-from dietary_guardian.features.meals.domain.agent_schemas import DietaryAgentInput
-from dietary_guardian.features.meals.domain.models import MealEvent
-from dietary_guardian.features.profiles.domain.models import UserProfile
-from dietary_guardian.features.safety.domain.engine import SafetyEngine, SafetyViolation
-from dietary_guardian.features.safety.domain.ports import SafetyPort
-from dietary_guardian.platform.observability import get_logger
 
 logfire.configure(send_to_logfire=False)
-logfire_api = cast(Any, logfire)
-logger = get_logger(__name__)
 
 SYSTEM_PROMPT = (
     "You are 'The Dietary Guardian', but everyone calls you 'Uncle Guardian'. "
     "You are a retired hawker who now helps other seniors stay healthy. "
     "Your tone is warm, empathetic, and uses Singaporean English (Singlish) naturally. "
     "Use words like 'Aiyah', 'Can lah', 'Don't play play', 'Uncle/Auntie' appropriately. "
-    "If the food is dangerous (SafetyViolation), drop the humor and be firm but kind. "
+    "If the food is dangerous (is_safe=False), drop the humor and be firm but kind. "
     "Always encourage the 'Kampong Spirit'—remind them they are doing this for their family and neighbors."
 )
 
 
-def get_model():
+def get_dietary_agent() -> Agent[None, DietaryAgentOutput]:
+    """Build the pydantic_ai dietary reasoning agent."""
     model = LLMFactory.get_model(capability=LLMCapability.DIETARY_REASONING)
-    logger.info("dietary_agent_model_destination %s", LLMFactory.describe_model_destination(model))
-    return model
-
-
-class AgentResponse(BaseModel):
-    analysis: str
-    advice: str
-    is_safe: bool
-    warnings: list[str] = []
-
-
-class _DietaryAgentContract:
-    _system_prompts = [SYSTEM_PROMPT]
-
-
-class DietaryAgent(BaseAgent[DietaryAgentInput, AgentResponse]):
-    """Canonical dietary reasoning agent with explicit safety enforcement."""
-
-    name = "dietary_agent"
-    input_schema = DietaryAgentInput
-    output_schema = AgentResponse
-    _system_prompts = [SYSTEM_PROMPT]
-
-    def __init__(self, safety_port: SafetyPort | None = None) -> None:
-        self._safety_port = safety_port
-
-    async def run(self, input_data: DietaryAgentInput, context: AgentContext) -> AgentResult[AgentResponse]:
-        with logfire_api.span("process_meal_request", user_id=input_data.user.id, meal_name=input_data.meal.name):
-            safety: SafetyPort = self._safety_port if self._safety_port is not None else SafetyEngine(input_data.user)
-            engine = InferenceEngine(provider=get_settings().llm.provider, capability=LLMCapability.DIETARY_REASONING)
-            try:
-                warnings = safety.validate_meal(input_data.meal)
-                logger.info("dietary_agent_request user_id=%s meal=%s destination=%s request_id=%s", input_data.user.id, input_data.meal.name, engine.health().endpoint, context.request_id)
-                request = InferenceRequest(
-                    request_id=context.request_id or f"dietary-{input_data.user.id}-{input_data.meal.timestamp.isoformat()}",
-                    user_id=input_data.user.id,
-                    modality=InferenceModality.TEXT,
-                    payload={"prompt": f"Analyze this meal for {input_data.user.name}: {input_data.meal.model_dump_json()}"},
-                    safety_context={"warnings": warnings},
-                    runtime_profile={"provider": engine.health().provider, "capability": LLMCapability.DIETARY_REASONING.value},
-                    trace_context={
-                        key: value
-                        for key, value in {
-                            "meal_name": input_data.meal.name,
-                            "correlation_id": context.correlation_id,
-                        }.items()
-                        if value is not None
-                    },
-                    output_schema=AgentResponse,
-                    system_prompt=SYSTEM_PROMPT,
-                )
-                result = await engine.infer(request)
-                response = cast(AgentResponse, result.structured_output)
-                response.warnings.extend(warnings)
-                return AgentResult(
-                    success=True,
-                    agent_name=self.name,
-                    output=response,
-                    confidence=getattr(result, "confidence", None),
-                    warnings=list(response.warnings),
-                    raw=response.model_dump(mode="json"),
-                )
-            except SafetyViolation as exc:
-                response = AgentResponse(
-                    analysis="CRITICAL SAFETY TRIGGERED",
-                    advice=exc.message,
-                    is_safe=False,
-                    warnings=[exc.message],
-                )
-                return AgentResult(
-                    success=False,
-                    agent_name=self.name,
-                    output=response,
-                    warnings=[exc.message],
-                    errors=[exc.message],
-                    raw=response.model_dump(mode="json"),
-                )
-
-
-dietary_agent = DietaryAgent()
-
-
-async def process_meal_request(user: UserProfile, meal: MealEvent) -> AgentResponse:
-    result = await dietary_agent.run(
-        DietaryAgentInput(user=user, meal=meal),
-        AgentContext(user_id=user.id, request_id=f"dietary-{user.id}-{meal.timestamp.isoformat()}"),
+    return cast(
+        Any,
+        Agent(
+            model,
+            output_type=DietaryAgentOutput,
+            system_prompt=SYSTEM_PROMPT,
+        ),
     )
-    if result.output is None:
-        raise RuntimeError("dietary agent completed without output")
+
+
+async def analyze_dietary_request(input_data: DietaryAgentInput) -> DietaryAgentOutput:
+    """Run dietary reasoning against generic input."""
+    agent = get_dietary_agent()
+    prompt = (
+        f"Analyze this meal for {input_data.user_name}:\n"
+        f"Meal: {input_data.meal_name}\n"
+        f"Ingredients: {', '.join(input_data.ingredients)}\n"
+        f"Portion: {input_data.portion_size or 'Standard'}\n"
+        f"Health Goals: {', '.join(input_data.health_goals)}\n"
+        f"Dietary Restrictions: {', '.join(input_data.dietary_restrictions)}\n"
+        f"Safety Status: {'Safe' if input_data.is_safe else 'UNSAFE'}\n"
+        f"Safety Warnings: {', '.join(input_data.safety_warnings)}"
+    )
+    result = await agent.run(prompt)
     return result.output

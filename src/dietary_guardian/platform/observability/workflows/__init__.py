@@ -1,33 +1,28 @@
-"""Canonical workflow coordinators for companion interactions."""
+"""Workflow domain exports.
+
+The previous central coordinator abstraction has been removed. Workflows are
+now composed in feature-owned code paths, and traced via `EventTimelineService`
+(with a thin emitter helper).
+"""
 
 from __future__ import annotations
 
-from typing import Any
+from dietary_guardian.platform.observability.workflows.domain.models import (
+    AgentContract,
+    ToolRolePolicyRecord,
+    WorkflowExecutionResult,
+    WorkflowName,
+    WorkflowRuntimeContract,
+    WorkflowRuntimeStep,
+    WorkflowTimelineEvent,
+)
 
 __all__ = [
-    "WORKFLOW_DEFINITIONS",
-    "WorkflowCoordinator",
-    "compare_runtime_contract_snapshots",
-    "create_runtime_contract_snapshot",
-    "create_tool_policy",
-    "ensure_runtime_contract_snapshot_bootstrap",
-    "evaluate_tool_policy_for_runtime",
-    "get_runtime_contract",
-    "get_workflow",
-    "list_runtime_contract_snapshots",
-    "list_tool_policies",
-    "list_workflows",
-    "patch_tool_policy",
-    "policy_item_response",
-    "runtime_contract_hash",
-    "snapshot_item_response",
-    "timeline_event_response",
+    "AgentContract",
+    "ToolRolePolicyRecord",
+    "WorkflowExecutionResult",
+    "WorkflowName",
+    "WorkflowRuntimeContract",
+    "WorkflowRuntimeStep",
+    "WorkflowTimelineEvent",
 ]
-
-
-def __getattr__(name: str) -> Any:
-    if name not in __all__:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    from dietary_guardian.platform.observability.workflows import coordinator
-
-    return getattr(coordinator, name)

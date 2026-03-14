@@ -59,6 +59,9 @@ Do not put new business logic primarily in route handlers.
 - Agents must use typed input/output contracts.
 - Agents must not write durable state directly.
 - Safety and policy checks remain outside prompts.
+- **Inference standard:** model-powered agents use `pydantic_ai` via `src/dietary_guardian/agent/runtime/*` (no direct `pydantic_ai.Agent` usage outside `src/dietary_guardian/agent/**`).
+- **Workflow standard:** declared multi-step product journeys use `pydantic-graph` (typed workflow state + explicit steps). Keep domain rules/persistence/scheduling deterministic in `features/**/domain`.
+- **LangGraph policy:** reserved for future workflows that require first-class checkpointed persistence, interrupts, or long-lived thread state. Do not introduce it by default.
 
 ## Data Source Extension Rules
 New data sources should integrate through the case snapshot and personalization layers.

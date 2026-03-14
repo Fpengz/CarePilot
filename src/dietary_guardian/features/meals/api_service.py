@@ -7,14 +7,11 @@ Phase 3 cleanup: decouple FastAPI Request/UploadFile from the application layer.
 from __future__ import annotations
 
 import asyncio
-import inspect
 import time
 from datetime import date
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from fastapi import Request, UploadFile
-from pydantic import BaseModel, Field
-from pydantic_ai import Agent
 
 from dietary_guardian.features.meals.deps import MealDeps
 from apps.api.dietary_api.errors import build_api_error
@@ -28,13 +25,8 @@ from apps.api.dietary_api.schemas import (
     MealWeeklySummaryResponse,
     WorkflowResponse,
 )
-from dietary_guardian.agent.core import AgentContext
-from dietary_guardian.agent.runtime import LLMFactory
-from dietary_guardian.features.meals.domain import MealPerception, MealPortionEstimate, PerceivedMealItem
-from dietary_guardian.features.meals.domain.agent_schemas import MealAnalysisAgentInput
 from dietary_guardian.features.meals.domain.models import ImageInput
 from dietary_guardian.features.profiles.domain.health_profile import get_or_create_health_profile
-from dietary_guardian.features.meals.use_cases import normalize_vision_result
 from dietary_guardian.features.meals.logging import (
     build_meal_analysis_log_payload,
     log_meal_analysis_event,
@@ -48,57 +40,11 @@ from dietary_guardian.platform.storage.media.ingestion import (
 from dietary_guardian.platform.storage.media.upload import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
 from dietary_guardian.features.meals.domain.models import (
     ContextSnapshot,
-    DietaryClaim,
-    DietaryClaims,
     NutritionRiskProfile,
-    RawObservationBundle,
-    ValidatedMealEvent,
 )
+from dietary_guardian.features.meals.workflows.meal_upload_graph import MealUploadDeps, run_meal_upload_workflow
+from dietary_guardian.features.meals.workflows.meal_upload_state import MealUploadState
 from dietary_guardian.shared.time import local_date_for
-
-if TYPE_CHECKING:
-    from dietary_guardian.agent.meal_analysis.vision_module import HawkerVisionModule as HawkerVisionModuleType
-
-class _ArbitrationDecision(BaseModel):
-    chosen_label: str
-    confidence: float = Field(default=0.5, ge=0.0, le=1.0)
-    rationale: str | None = None
-
-
-def _build_hawker_vision_module(*, provider: str | None, food_store: Any) -> "HawkerVisionModuleType":
-    from dietary_guardian.agent.meal_analysis import vision_module  # noqa: PLC0415
-
-    HawkerVisionModule = cast("type[HawkerVisionModuleType]", vision_module.HawkerVisionModule)
-    params = inspect.signature(HawkerVisionModule).parameters
-    if "food_store" in params:
-        return HawkerVisionModule(provider=provider, food_store=food_store)
-    return HawkerVisionModule(provider=provider)
-
-
-def _extract_dietary_claims(*, text: str | None) -> DietaryClaims:
-    if not text:
-        return DietaryClaims()
-    lowered = text.lower()
-    claims: list[DietaryClaim] = []
-    for token in ("rice", "chicken", "fish", "noodles", "milo", "tea", "coffee"):
-        if token in lowered:
-            claims.append(DietaryClaim(label=token, confidence=0.65))
-    consumption_fraction = 1.0
-    if "half" in lowered or "1/2" in lowered:
-        consumption_fraction = 0.5
-    if "quarter" in lowered or "1/4" in lowered:
-        consumption_fraction = 0.25
-    return DietaryClaims(
-        claimed_items=claims,
-        consumption_fraction=consumption_fraction,
-        meal_time_label="breakfast" if "breakfast" in lowered else "lunch" if "lunch" in lowered else None,
-        vendor_or_source=None,
-        preparation_override="no sugar" if "no sugar" in lowered else None,
-        dietary_constraints=[item for item in ("no sugar", "less salt") if item in lowered],
-        goal_context=None,
-        certainty_level="high" if claims else "low",
-        ambiguity_notes=[],
-    )
 
 
 def _context_snapshot(*, session: dict[str, object]) -> ContextSnapshot:
@@ -108,51 +54,6 @@ def _context_snapshot(*, session: dict[str, object]) -> ContextSnapshot:
             "display_name": str(session.get("display_name", "")),
         }
     )
-
-
-def _claim_perception(labels: list[str], confidence: float) -> MealPerception:
-    items = [
-        PerceivedMealItem(
-            label=label,
-            candidate_aliases=[label],
-            portion_estimate=MealPortionEstimate(amount=1.0, unit="serving", confidence=confidence),
-            confidence=confidence,
-        )
-        for label in labels
-        if label
-    ]
-    return MealPerception(items=items, confidence_score=confidence, image_quality="unknown")
-
-
-async def _arbitrate_label(
-    *,
-    vision_labels: list[str],
-    claim_labels: list[str],
-    user_text: str | None,
-    provider: str | None,
-) -> _ArbitrationDecision | None:
-    if not user_text or not vision_labels or not claim_labels:
-        return None
-    model = LLMFactory.get_model(provider=provider)
-    agent = Agent(
-        model,
-        output_type=_ArbitrationDecision,
-        system_prompt=(
-            "You are a reconciliation arbiter. Choose the most plausible food label based on evidence. "
-            "Return strict JSON with chosen_label, confidence, rationale."
-        ),
-    )
-    prompt = (
-        f"Vision labels: {vision_labels}\n"
-        f"User claims: {claim_labels}\n"
-        f"User text: {user_text}\n"
-        "Select the best single label. If uncertain, choose the most specific plausible label."
-    )
-    try:
-        result = await agent.run(prompt)
-    except Exception:
-        return None
-    return result.output if isinstance(result.output, _ArbitrationDecision) else None
 
 
 async def analyze_meal(
@@ -216,57 +117,25 @@ async def analyze_meal(
         if selected_provider
         else (None if deps.settings.llm.capability_map else deps.settings.llm.provider)
     )
-    agent = cast(
-        Any,
-        _build_hawker_vision_module(
-            provider=routed_provider,
-            food_store=deps.stores.foods,
-        ),
-    )
     analysis_started = time.perf_counter()
     try:
-        if hasattr(agent, "run"):
-            result = await asyncio.wait_for(
-                agent.run(
-                    MealAnalysisAgentInput(
-                        image_input=image_input,
-                        user_id=user_profile.id,
-                        request_id=capture.request_id,
-                        correlation_id=capture.correlation_id,
-                        persist_record=True,
-                    ),
-                    AgentContext(
-                        user_id=user_profile.id,
-                        request_id=capture.request_id,
-                        correlation_id=capture.correlation_id,
-                    ),
-                ),
-                timeout=deps.settings.llm.inference.wall_clock_timeout_seconds,
-            )
-        else:
-            vision_result, meal_record = await asyncio.wait_for(
-                agent.analyze_and_record(
-                    image_input,
-                    user_profile.id,
+        workflow_output = await asyncio.wait_for(
+            run_meal_upload_workflow(
+                deps=MealUploadDeps(stores=deps.stores, event_timeline=deps.event_timeline),
+                state=MealUploadState(
                     request_id=capture.request_id,
                     correlation_id=capture.correlation_id,
+                    user_id=user_profile.id,
+                    profile_mode=user_profile.profile_mode,
+                    capture=capture,
+                    image_input=image_input,
+                    provider=routed_provider,
+                    meal_text=meal_text,
+                    context=_context_snapshot(session=session),
                 ),
-                timeout=deps.settings.llm.inference.wall_clock_timeout_seconds,
-            )
-            result = type(
-                "_LegacyMealAnalysisResult",
-                (),
-                {
-                    "output": type(
-                        "_LegacyMealAnalysisOutput",
-                        (),
-                        {
-                            "vision_result": vision_result,
-                            "meal_record": meal_record,
-                        },
-                    )(),
-                },
-            )()
+            ),
+            timeout=deps.settings.llm.inference.wall_clock_timeout_seconds,
+        )
     except asyncio.TimeoutError as exc:
         raise build_api_error(
             status_code=504,
@@ -274,97 +143,9 @@ async def analyze_meal(
             message="meal analysis timed out",
             details={"timeout_seconds": deps.settings.llm.inference.wall_clock_timeout_seconds},
         ) from exc
-    if result.output is None or result.output.meal_record is None:
-        raise build_api_error(
-            status_code=500,
-            code="meal.agent_failed",
-            message="meal analysis agent returned no meal record",
-        )
-    vision_result = result.output.vision_result
-    claims = _extract_dietary_claims(text=meal_text)
-    unresolved: list[str] = []
-    perception = vision_result.perception or MealPerception()
-    claim_labels = [item.label for item in claims.claimed_items]
-    vision_labels = [item.label for item in perception.items]
-    if claim_labels and vision_labels and set(claim_labels) != set(vision_labels):
-        unresolved.append("claim_vs_vision_conflict")
-        decision = await _arbitrate_label(
-            vision_labels=vision_labels,
-            claim_labels=claim_labels,
-            user_text=meal_text,
-            provider=deps.settings.llm.provider,
-        )
-        if decision and decision.chosen_label:
-            claim_labels = [decision.chosen_label]
-            unresolved = []
-    reconciled_perception = _claim_perception(claim_labels, confidence=0.6) if claim_labels else perception
-    reconciled = normalize_vision_result(
-        vision_result=vision_result.model_copy(update={"perception": reconciled_perception}),
-        food_store=deps.stores.foods,
-    )
-    raw_observation = RawObservationBundle(
-        user_id=user_profile.id,
-        source=image_input.source,
-        vision_result=vision_result,
-        dietary_claims=claims,
-        context=_context_snapshot(session=session),
-        image_quality=getattr(reconciled.perception, "image_quality", None) if reconciled.perception else None,
-        confidence_score=getattr(reconciled.perception, "confidence_score", 0.0) if reconciled.perception else 0.0,
-        unresolved_conflicts=unresolved,
-    )
-    enriched_event = reconciled.enriched_event
-    if enriched_event is None:
-        raise build_api_error(
-            status_code=500,
-            code="meal.analysis_failed",
-            message="meal analysis produced no canonical event",
-        )
-    validated_event = ValidatedMealEvent(
-        user_id=user_profile.id,
-        captured_at=raw_observation.captured_at,
-        meal_name=enriched_event.meal_name,
-        consumption_fraction=claims.consumption_fraction,
-        canonical_items=list(enriched_event.normalized_items),
-        alternatives=list(enriched_event.unresolved_items),
-        confidence_summary={
-            "vision_confidence": getattr(reconciled.perception, "confidence_score", 0.0) if reconciled.perception else 0.0,
-            "claim_count": len(claims.claimed_items),
-            "unresolved": list(unresolved),
-        },
-        provenance={
-            "observation_id": raw_observation.observation_id,
-            "source": raw_observation.source,
-        },
-        needs_manual_review=bool(enriched_event.needs_manual_review or unresolved),
-    )
-    total = enriched_event.total_nutrition
-    uncertainty = {}
-    if enriched_event.unresolved_items:
-        uncertainty = {"calories_range": [max(total.calories * 0.8, 0.0), total.calories * 1.2]}
-    nutrition_profile = NutritionRiskProfile(
-        event_id=validated_event.event_id,
-        user_id=user_profile.id,
-        captured_at=validated_event.captured_at,
-        calories=total.calories,
-        carbs_g=total.carbs_g,
-        sugar_g=total.sugar_g,
-        protein_g=total.protein_g,
-        fat_g=total.fat_g,
-        sodium_mg=total.sodium_mg,
-        fiber_g=total.fiber_g,
-        risk_tags=list(enriched_event.risk_tags),
-        uncertainty=uncertainty,
-    )
-    deps.stores.meals.save_meal_observation(raw_observation)
-    deps.stores.meals.save_validated_meal_event(validated_event)
-    deps.stores.meals.save_nutrition_risk_profile(nutrition_profile)
-    workflow = deps.coordinator.run_meal_analysis_workflow(
-        capture=capture,
-        vision_result=vision_result,
-        user_profile=user_profile,
-        meal_record_id=validated_event.event_id,
-    )
+
     latency_ms = (time.perf_counter() - analysis_started) * 1000
+    vision_result = workflow_output.raw_observation.vision_result
     log_provider = vision_result.provider or routed_provider or str(deps.settings.llm.provider)
     log_model = vision_result.model_version or resolve_meal_analysis_model_name(deps.settings.llm, log_provider)
     log_payload = build_meal_analysis_log_payload(
@@ -373,22 +154,22 @@ async def analyze_meal(
         correlation_id=capture.correlation_id,
         provider=log_provider,
         model_name=log_model,
-        observation_id=raw_observation.observation_id,
-        meal_id=validated_event.event_id,
-        meal_name=validated_event.meal_name,
-        manual_review=bool(validated_event.needs_manual_review),
+        observation_id=workflow_output.raw_observation.observation_id,
+        meal_id=workflow_output.validated_event.event_id,
+        meal_name=workflow_output.validated_event.meal_name,
+        manual_review=bool(workflow_output.validated_event.needs_manual_review),
         latency_ms=latency_ms,
         inference_latency_ms=vision_result.processing_latency_ms,
-        unresolved_count=len(unresolved),
-        risk_tags=nutrition_profile.risk_tags,
+        unresolved_count=len(workflow_output.raw_observation.unresolved_conflicts),
+        risk_tags=workflow_output.nutrition_profile.risk_tags,
     )
     log_meal_analysis_event(log_payload)
     return MealAnalyzeResponse(
-        raw_observation=raw_observation,
-        validated_event=validated_event,
-        nutrition_profile=nutrition_profile,
-        output_envelope=workflow.output_envelope,
-        workflow=WorkflowResponse.model_validate(workflow.model_dump(mode="json")),
+        raw_observation=workflow_output.raw_observation,
+        validated_event=workflow_output.validated_event,
+        nutrition_profile=workflow_output.nutrition_profile,
+        output_envelope=workflow_output.output_envelope,
+        workflow=WorkflowResponse.model_validate(workflow_output.workflow.model_dump(mode="json")),
     )
 
 

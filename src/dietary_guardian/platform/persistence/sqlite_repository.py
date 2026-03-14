@@ -404,20 +404,6 @@ class SQLiteRepository:
             )
             cur.execute(
                 """
-                CREATE TABLE IF NOT EXISTS workflow_contract_snapshots (
-                    id TEXT PRIMARY KEY,
-                    version INTEGER NOT NULL UNIQUE,
-                    contract_hash TEXT NOT NULL,
-                    source TEXT NOT NULL,
-                    workflows_json TEXT NOT NULL,
-                    agents_json TEXT NOT NULL,
-                    created_by TEXT,
-                    created_at TEXT NOT NULL
-                )
-                """
-            )
-            cur.execute(
-                """
                 CREATE TABLE IF NOT EXISTS workflow_timeline_events (
                     event_id TEXT PRIMARY KEY,
                     event_type TEXT NOT NULL,
@@ -457,8 +443,6 @@ class SQLiteRepository:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_symptom_checkins_user_time ON symptom_checkins(user_id, recorded_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_clinical_cards_user_created ON clinical_cards(user_id, created_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_tool_role_policies_lookup ON tool_role_policies(role, agent_id, tool_name, enabled, priority DESC)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_created ON workflow_contract_snapshots(created_at DESC)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_contract_snapshots_hash ON workflow_contract_snapshots(contract_hash)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_timeline_corr_created ON workflow_timeline_events(correlation_id, created_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_workflow_timeline_user_created ON workflow_timeline_events(user_id, created_at)")
             self._ensure_sqlite_column(cur, "meal_records", "meal_perception_json", "TEXT")
@@ -772,15 +756,6 @@ class SQLiteRepository:
 
     def get_tool_role_policy(self, *args: Any, **kwargs: Any) -> Any:
         return self.workflows.get_tool_role_policy(*args, **kwargs)
-
-    def save_workflow_contract_snapshot(self, *args: Any, **kwargs: Any) -> Any:
-        return self.workflows.save_workflow_contract_snapshot(*args, **kwargs)
-
-    def list_workflow_contract_snapshots(self, *args: Any, **kwargs: Any) -> Any:
-        return self.workflows.list_workflow_contract_snapshots(*args, **kwargs)
-
-    def get_workflow_contract_snapshot(self, *args: Any, **kwargs: Any) -> Any:
-        return self.workflows.get_workflow_contract_snapshot(*args, **kwargs)
 
     def save_workflow_timeline_event(self, *args: Any, **kwargs: Any) -> Any:
         return self.workflows.save_workflow_timeline_event(*args, **kwargs)

@@ -17,9 +17,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from ..deps import AppContext, ChatDeps, chat_deps, meal_deps
+from ..deps import AppContext, chat_deps, meal_deps
 from ..routes_shared import current_session, get_context, require_action
-from dietary_guardian.features.companion.core.health.emotion import EmotionInferenceResult
+from dietary_guardian.agent.emotion.schemas import EmotionInferenceResult
 from dietary_guardian.agent.emotion import EmotionAgentDisabledError, EmotionSpeechDisabledError
 from dietary_guardian.features.meals.use_cases import log_meal_from_text
 from dietary_guardian.features.companion.core.snapshot import build_case_snapshot
@@ -36,6 +36,7 @@ from apps.api.dietary_api.services.chat_memory import (
     record_chat_turn,
 )
 from dietary_guardian.features.companion.core.chat_context import format_chat_context
+from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime
 
 router = APIRouter(tags=["chat"])
 
@@ -116,21 +117,22 @@ def _merge_context(base: str, memory_context: str | None) -> str:
 
 async def _collect_chat_followup(
     *,
-    deps: ChatDeps,
+    runtime: ChatStreamRuntime,
     user_message: str,
     extra_context: str | None,
     emotion_context: str | None = None,
     response_prefix: str | None = None,
 ) -> str:
-    response = ""
-    async for event in deps.chat_agent.stream_events(
-        user_message=user_message,
-        emotion_context=emotion_context,
-        extra_context=extra_context,
-        response_prefix=response_prefix,
-    ):
-        if event.event == "token":
-            response += event.data.get("text", "")
+    messages: list[dict[str, object]] = []
+    if extra_context:
+        messages.append({"role": "system", "content": extra_context})
+    if emotion_context:
+        messages.append({"role": "system", "content": emotion_context})
+    messages.append({"role": "user", "content": user_message})
+
+    response = response_prefix or ""
+    async for token in runtime.stream(messages=messages):
+        response += token
     return response
 
 
@@ -254,7 +256,7 @@ async def chat_stream(
                 yield _format_event("done", {"status": "meal_proposed"})
                 return
 
-        extra_context = _build_extra_context(ctx, session)
+        system_context = _build_extra_context(ctx, session)
         memory_context = None
         if ctx.memory_store.enabled:
             snippets = await fetch_memory_snippets(
@@ -265,7 +267,9 @@ async def chat_stream(
             )
             if snippets:
                 memory_context = build_memory_context(snippets)
-        extra_context = _merge_context(extra_context, memory_context)
+        user_prompt = user_message
+        if memory_context:
+            user_prompt = f"{user_message}\n\n{memory_context}"
         response_prefix = None
         if meal_text:
             user_id = str(session.get("user_id", ""))
@@ -275,17 +279,25 @@ async def chat_stream(
 
         assistant_response = ""
         had_error = False
-        async for event in deps.chat_agent.stream_events(
-            user_message=user_message,
-            emotion_context=emotion_ctx,
-            extra_context=extra_context,
-            response_prefix=response_prefix,
-        ):
-            if event.event == "token":
-                assistant_response += event.data.get("text", "")
-            if event.event == "error":
-                had_error = True
-            yield _format_event(event.event, event.data)
+        if response_prefix:
+            assistant_response += response_prefix
+            yield _format_event("token", {"text": response_prefix})
+
+        messages: list[dict[str, object]] = []
+        if system_context:
+            messages.append({"role": "system", "content": system_context})
+        if emotion_ctx:
+            messages.append({"role": "system", "content": emotion_ctx})
+        messages.append({"role": "user", "content": user_prompt})
+
+        try:
+            async for token in ctx.chat_stream_runtime.stream(messages=messages):
+                assistant_response += token
+                yield _format_event("token", {"text": token})
+        except Exception as exc:  # noqa: BLE001
+            had_error = True
+            yield _format_event("error", {"message": str(exc), "phase": "stream", "retryable": False})
+        yield _format_event("done", {"status": "complete"})
         if assistant_response and not had_error:
             await record_chat_turn(
                 memory_store=ctx.memory_store,
@@ -472,7 +484,6 @@ async def confirm_meal_log(
     if not meal_text:
         raise HTTPException(status_code=400, detail="meal proposal missing meal_text")
     meal_result = _log_meal_command(user_id=user_id, meal_text=meal_text, stores=meal_deps(ctx).stores)
-    deps = chat_deps(ctx, session)
     extra_context = _build_extra_context(ctx, session)
     memory_context = None
     if ctx.memory_store.enabled:
@@ -488,7 +499,7 @@ async def confirm_meal_log(
     confirm_message = f"I confirmed logging this meal: {meal_text}."
     response_prefix = f"{meal_result['message']}\n\n"
     assistant_response = await _collect_chat_followup(
-        deps=deps,
+        runtime=ctx.chat_stream_runtime,
         user_message=confirm_message,
         extra_context=extra_context,
         response_prefix=response_prefix,

@@ -38,6 +38,7 @@ from dietary_guardian.features.profiles.domain.health_profile import (
     compute_profile_completeness,
     get_or_create_health_profile,
 )
+from dietary_guardian.platform.cache import EventTimelineService
 
 from .ports import HouseholdContext, HouseholdStorePort
 
@@ -606,7 +607,7 @@ def get_household_care_member_daily_summary(
         deps=MealDeps(
             settings=context.settings,
             stores=context.stores,
-            coordinator=context.coordinator,
+            event_timeline=EventTimelineService(),
         ),
         user_id=subject_user_id,
         summary_date=summary_date,

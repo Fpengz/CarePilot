@@ -2,7 +2,7 @@
 Persist workflow metadata in SQLite.
 
 This module implements SQLite storage for workflow tool policies, contract
-snapshots, and timeline events.
+policies and timeline events.
 """
 
 import json
@@ -13,7 +13,6 @@ from typing import Any, cast
 from dietary_guardian.platform.observability.setup import get_logger
 from dietary_guardian.platform.observability.workflows.domain.models import (
     ToolRolePolicyRecord,
-    WorkflowContractSnapshotRecord,
     WorkflowTimelineEvent,
 )
 
@@ -123,88 +122,6 @@ class SQLiteWorkflowRepository:
             enabled=bool(row[7]),
             created_at=datetime.fromisoformat(row[8]),
             updated_at=datetime.fromisoformat(row[9]),
-        )
-
-    def save_workflow_contract_snapshot(
-        self,
-        snapshot: WorkflowContractSnapshotRecord,
-    ) -> WorkflowContractSnapshotRecord:
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                """
-                INSERT INTO workflow_contract_snapshots
-                (id, version, contract_hash, source, workflows_json, agents_json, created_by, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (id) DO UPDATE SET
-                    version = excluded.version,
-                    contract_hash = excluded.contract_hash,
-                    source = excluded.source,
-                    workflows_json = excluded.workflows_json,
-                    agents_json = excluded.agents_json,
-                    created_by = excluded.created_by,
-                    created_at = excluded.created_at
-                """,
-                (
-                    snapshot.id,
-                    snapshot.version,
-                    snapshot.contract_hash,
-                    snapshot.source,
-                    json.dumps([item.model_dump(mode="json") for item in snapshot.workflows]),
-                    json.dumps([item.model_dump(mode="json") for item in snapshot.agents]),
-                    snapshot.created_by,
-                    snapshot.created_at.isoformat(),
-                ),
-            )
-            conn.commit()
-        return snapshot
-
-    def list_workflow_contract_snapshots(self, *, limit: int = 50) -> list[WorkflowContractSnapshotRecord]:
-        bounded_limit = max(1, min(limit, 200))
-        with sqlite3.connect(self.db_path) as conn:
-            rows = conn.execute(
-                """
-                SELECT id, version, contract_hash, source, workflows_json, agents_json, created_by, created_at
-                FROM workflow_contract_snapshots
-                ORDER BY version DESC
-                LIMIT ?
-                """,
-                (bounded_limit,),
-            ).fetchall()
-        return [
-            WorkflowContractSnapshotRecord(
-                id=row[0],
-                version=int(row[1]),
-                contract_hash=row[2],
-                source=row[3],
-                workflows=json.loads(row[4]),
-                agents=json.loads(row[5]),
-                created_by=row[6],
-                created_at=datetime.fromisoformat(row[7]),
-            )
-            for row in rows
-        ]
-
-    def get_workflow_contract_snapshot(self, *, version: int) -> WorkflowContractSnapshotRecord | None:
-        with sqlite3.connect(self.db_path) as conn:
-            row = conn.execute(
-                """
-                SELECT id, version, contract_hash, source, workflows_json, agents_json, created_by, created_at
-                FROM workflow_contract_snapshots
-                WHERE version = ?
-                """,
-                (version,),
-            ).fetchone()
-        if row is None:
-            return None
-        return WorkflowContractSnapshotRecord(
-            id=row[0],
-            version=int(row[1]),
-            contract_hash=row[2],
-            source=row[3],
-            workflows=json.loads(row[4]),
-            agents=json.loads(row[5]),
-            created_by=row[6],
-            created_at=datetime.fromisoformat(row[7]),
         )
 
     def save_workflow_timeline_event(self, event: WorkflowTimelineEvent) -> WorkflowTimelineEvent:

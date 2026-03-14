@@ -10,6 +10,7 @@ This directory contains focused documentation that supplements the three root ca
 - `docs/operations-runbook.md`
 - `docs/user-manual.md`
 - `docs/config-reference.md`
+- `docs/workflows.md` — orchestration standard (`pydantic-graph`) + LangGraph deferral policy
 
 ## Codebase maps
 - `CODEBASE_MAP.md` — current structure overview
@@ -21,6 +22,8 @@ This directory contains focused documentation that supplements the three root ca
 
 ## Focused subsystem notes
 - `docs/meal-analysis-agents.md`
+- `docs/agent-modules.md` — agent layer module reference + standards
+- `docs/plans/2026-03-14-agent-layer-audit-refactor-spec.md` — agent layer boundaries + checklist
 
 ## Product and pitch notes
 - `docs/hackathon-answer.md`

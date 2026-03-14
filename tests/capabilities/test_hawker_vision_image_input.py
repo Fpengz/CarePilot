@@ -31,7 +31,7 @@ async def test_binary_image_input_keeps_safe_clarification_when_inference_v2_dis
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     get_settings.cache_clear()
-    monkeypatch.setenv("USE_INFERENCE_ENGINE_V2", "false")
+    monkeypatch.setenv("LLM_USE_INFERENCE_ENGINE_V2", "false")
     get_settings.cache_clear()
 
     module = HawkerVisionModule(provider="test")

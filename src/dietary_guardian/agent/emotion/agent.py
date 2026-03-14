@@ -7,26 +7,24 @@ wrapping the inference runtime port.
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
+from typing import Callable, TypeVar
+
 from dietary_guardian.agent.emotion.schemas import (
-    EmotionAgentOutput,
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,
-)
-from dietary_guardian.agent.core import AgentContext, AgentResult, BaseAgent
-from dietary_guardian.features.companion.engagement.emotion.ports import (
-    EmotionInferencePort,
-    SpeechEmotionInput,
-    TextEmotionInput,
-)
-from dietary_guardian.features.companion.engagement.emotion.use_cases import (
-    EmotionInferenceTimeoutError,
-    infer_speech_emotion,
-    infer_text_emotion,
-)
-from dietary_guardian.features.companion.core.health.emotion import (
     EmotionContextFeatures,
     EmotionRuntimeHealth,
+    EmotionInferenceResult,
 )
+from dietary_guardian.features.companion.emotion.ports import EmotionInferencePort
+
+T = TypeVar("T")
+
+
+class EmotionInferenceTimeoutError(RuntimeError):
+    """Raised when inference exceeds configured wall-clock time."""
 
 
 class EmotionAgentDisabledError(RuntimeError):
@@ -37,12 +35,37 @@ class EmotionSpeechDisabledError(RuntimeError):
     """Raised when speech emotion inference is disabled via feature flag."""
 
 
-class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, EmotionAgentOutput]):
+def _run_with_timeout(action: Callable[[], T], timeout_seconds: float) -> T:
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(action)
+        try:
+            return future.result(timeout=timeout_seconds)
+        except FutureTimeoutError as exc:
+            raise EmotionInferenceTimeoutError("emotion inference timed out") from exc
+
+
+def infer_text_emotion(
+    *,
+    port: EmotionInferencePort,
+    payload: EmotionTextAgentInput,
+    timeout_seconds: float,
+) -> EmotionInferenceResult:
+    return _run_with_timeout(lambda: port.infer_text(payload), timeout_seconds)
+
+
+def infer_speech_emotion(
+    *,
+    port: EmotionInferencePort,
+    payload: EmotionSpeechAgentInput,
+    timeout_seconds: float,
+) -> EmotionInferenceResult:
+    return _run_with_timeout(lambda: port.infer_speech(payload), timeout_seconds)
+
+
+class EmotionAgent:
     """Canonical agent facade for text and speech emotion inference."""
 
     name = "emotion_agent"
-    input_schema = (EmotionTextAgentInput, EmotionSpeechAgentInput)
-    output_schema = EmotionAgentOutput
 
     def __init__(
         self,
@@ -57,35 +80,6 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
         self._speech_enabled = speech_enabled
         self._request_timeout_seconds = request_timeout_seconds
 
-    async def run(
-        self,
-        input_data: EmotionTextAgentInput | EmotionSpeechAgentInput,
-        context: AgentContext,
-    ) -> AgentResult[EmotionAgentOutput]:
-        del context
-        if isinstance(input_data, EmotionTextAgentInput):
-            inference = self.infer_text(
-                text=input_data.text,
-                language=input_data.language,
-                context=input_data.context,
-            )
-        else:
-            inference = self.infer_speech(
-                audio_bytes=input_data.audio_bytes,
-                filename=input_data.filename,
-                content_type=input_data.content_type,
-                transcription=input_data.transcription,
-                language=input_data.language,
-                context=input_data.context,
-            )
-        return AgentResult(
-            success=True,
-            agent_name=self.name,
-            output=EmotionAgentOutput(inference=inference),
-            confidence=float(inference.fusion.confidence),
-            raw=inference.model_dump(mode="json"),
-        )
-
     def infer_text(
         self,
         *,
@@ -97,7 +91,7 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
             raise EmotionAgentDisabledError("emotion inference is disabled")
         return infer_text_emotion(
             port=self._runtime,
-            payload=TextEmotionInput(text=text, language=language, context=context),
+            payload=EmotionTextAgentInput(text=text, language=language, context=context),
             timeout_seconds=self._request_timeout_seconds,
         )
 
@@ -117,7 +111,7 @@ class EmotionAgent(BaseAgent[EmotionTextAgentInput | EmotionSpeechAgentInput, Em
             raise EmotionSpeechDisabledError("speech emotion inference is disabled")
         return infer_speech_emotion(
             port=self._runtime,
-            payload=SpeechEmotionInput(
+            payload=EmotionSpeechAgentInput(
                 audio_bytes=audio_bytes,
                 filename=filename,
                 content_type=content_type,

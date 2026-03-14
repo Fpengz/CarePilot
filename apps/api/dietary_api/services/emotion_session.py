@@ -19,7 +19,7 @@ from dietary_guardian.agent.emotion import (
     EmotionAgentDisabledError,
     EmotionSpeechDisabledError,
 )
-from dietary_guardian.features.companion.core.health.emotion import (
+from dietary_guardian.agent.emotion.schemas import (
     EmotionContextFeatures,
     EmotionInferenceResult,
     EmotionLabel,

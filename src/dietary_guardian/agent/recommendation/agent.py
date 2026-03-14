@@ -1,34 +1,31 @@
 """
-Provide the recommendation agent facade.
+Provide the recommendation agent.
 
-This module wraps recommendation synthesis for daily plans and exposes
-typed inference entrypoints.
+This module provides recommendation synthesis.
 """
 
 from __future__ import annotations
 
-from dietary_guardian.agent.core import AgentContext, AgentResult, BaseAgent
-from dietary_guardian.features.recommendations.domain.schemas import RecommendationAgentInput, RecommendationAgentOutput
 from dietary_guardian.features.recommendations.domain.engine import (
     generate_daily_agent_recommendation,
 )
+from dietary_guardian.features.recommendations.domain.schemas import (
+    RecommendationAgentInput,
+    RecommendationAgentOutput,
+)
 
 
-class RecommendationAgent(BaseAgent[RecommendationAgentInput, RecommendationAgentOutput]):
-    """Agent facade over daily recommendation synthesis logic."""
+class RecommendationAgent:
+    """Agent facade for recommendation synthesis."""
 
     name = "recommendation_agent"
-    input_schema = RecommendationAgentInput
-    output_schema = RecommendationAgentOutput
 
-    def generate(
+    async def generate(
         self,
         input_data: RecommendationAgentInput,
-        *,
         repository,
     ) -> RecommendationAgentOutput:
-        """Synchronously synthesize a daily recommendation bundle."""
-
+        """Synthesize a daily recommendation bundle."""
         recommendation = generate_daily_agent_recommendation(
             repository=repository,
             user_id=input_data.user_id,
@@ -39,23 +36,11 @@ class RecommendationAgent(BaseAgent[RecommendationAgentInput, RecommendationAgen
         )
         return RecommendationAgentOutput(recommendation=recommendation)
 
-    async def run(
-        self,
-        input_data: RecommendationAgentInput,
-        context: AgentContext,
-    ) -> AgentResult[RecommendationAgentOutput]:
-        output = self.generate(input_data, repository=context.metadata["repository"])
-        recommendation = output.recommendation
-        confidences = [
-            card.confidence
-            for card in recommendation.recommendations.values()
-            if card.confidence is not None
-        ]
-        confidence = round(sum(confidences) / len(confidences), 4) if confidences else None
-        return AgentResult(
-            success=True,
-            agent_name=self.name,
-            output=output,
-            confidence=confidence,
-            raw=recommendation.model_dump(mode="json"),
-        )
+
+async def generate_recommendations(
+    input_data: RecommendationAgentInput,
+    repository,
+) -> RecommendationAgentOutput:
+    """Synthesize a daily recommendation bundle (functional entrypoint)."""
+    agent = RecommendationAgent()
+    return await agent.generate(input_data, repository)

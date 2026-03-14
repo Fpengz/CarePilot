@@ -8,17 +8,16 @@ including agent registry, persistence, and platform adapters.
 import os
 from dataclasses import dataclass
 
-from dietary_guardian.agent.chat import (
-    AudioAgent,
-    ChatAgent,
-    CodeAgent,
-    HealthTracker,
-    MemoryManager,
-    QueryRouter,
-    SearchAgent,
-)
-from dietary_guardian.agent.emotion import EmotionAgent
-from dietary_guardian.agent.recommendation import RecommendationAgent
+from dietary_guardian.features.companion.chat.memory import MemoryManager
+from dietary_guardian.features.companion.chat.router import QueryRouter
+from dietary_guardian.features.companion.chat.orchestrator import ChatOrchestrator
+from dietary_guardian.features.companion.chat.audio_adapter import AudioAgent
+from dietary_guardian.features.companion.chat.code_adapter import CodeAgent
+from dietary_guardian.features.companion.chat.search_adapter import SearchAgent
+from dietary_guardian.features.companion.chat.health_tracker import HealthTracker
+from dietary_guardian.agent.emotion.agent import EmotionAgent
+from dietary_guardian.agent.emotion.schemas import EmotionInferenceResult, EmotionRuntimeHealth
+from dietary_guardian.agent.recommendation.agent import RecommendationAgent
 from dietary_guardian.agent.core import AgentRegistry, build_default_agent_registry
 from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
 from dietary_guardian.agent.runtime.chat_runtime import (
@@ -47,11 +46,10 @@ from dietary_guardian.platform.scheduling.coordination import (
     InMemoryCoordinationStore,
     RedisCoordinationStore,
 )
-from dietary_guardian.agent.emotion.config import EmotionRuntimeConfig
-from dietary_guardian.agent.emotion.runtime import InProcessEmotionRuntime
+from dietary_guardian.features.companion.emotion.config import EmotionRuntimeConfig
+from dietary_guardian.features.companion.emotion.runtime import InProcessEmotionRuntime
 from dietary_guardian.platform.persistence.household import SQLiteHouseholdStore
 from dietary_guardian.platform.observability.tooling.registry import ToolRegistry
-from dietary_guardian.platform.observability.workflows.coordinator import WorkflowCoordinator
 from dietary_guardian.features.meals.deps import MealDeps  # noqa: F401
 from dietary_guardian.platform.memory import MemoryStore, build_memory_store
 
@@ -73,7 +71,6 @@ class AppContext:
     event_timeline: EventTimelineService
     tool_registry: ToolRegistry
     agent_registry: AgentRegistry
-    coordinator: WorkflowCoordinator
     auth_store: AuthStore
     session_signer: SessionSigner
     memory_store: MemoryStore
@@ -109,8 +106,6 @@ class WorkflowDeps:
     settings: Settings
     stores: AppStores
     event_timeline: EventTimelineService
-    agent_registry: AgentRegistry
-    coordinator: WorkflowCoordinator
 
 
 @dataclass(frozen=True)
@@ -122,17 +117,19 @@ class EmotionDeps:
 
 @dataclass(frozen=True)
 class ChatDeps:
-    chat_agent: ChatAgent
+    chat_agent: ChatOrchestrator
     audio_agent: AudioAgent
     emotion_agent: EmotionAgent
     health_tracker: HealthTracker
     code_agent: CodeAgent
+    event_timeline: EventTimelineService
 
 
 @dataclass(frozen=True)
 class AlertDeps:
     stores: AppStores
-    coordinator: WorkflowCoordinator
+    tool_registry: ToolRegistry
+    event_timeline: EventTimelineService
 
 
 @dataclass(frozen=True)
@@ -214,12 +211,6 @@ def build_app_context() -> AppContext:
     )
     tool_registry = build_platform_tool_registry(app_store)
     agent_registry = build_default_agent_registry()
-    coordinator = WorkflowCoordinator(
-        tool_registry=tool_registry,
-        profile_memory=profile_memory,
-        clinical_memory=clinical_memory,
-        event_timeline=event_timeline,
-    )
     auth_store = _build_auth_store(settings)
     memory_store = build_memory_store(settings)
     session_signer = SessionSigner(settings.auth.session_secret)
@@ -227,7 +218,27 @@ def build_app_context() -> AppContext:
     cache_store = _build_cache_store(settings)
     coordination_store = _build_coordination_store(settings)
     household_store = _build_household_store(settings)
-    emotion_runtime = InProcessEmotionRuntime(EmotionRuntimeConfig.from_settings(settings))
+    if settings.emotion.inference_enabled or settings.emotion.speech_enabled:
+        emotion_runtime = InProcessEmotionRuntime(EmotionRuntimeConfig.from_settings(settings))
+    else:
+        class _DisabledEmotionRuntime:
+            def infer_text(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
+                del payload
+                raise RuntimeError("emotion runtime disabled")
+
+            def infer_speech(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
+                del payload
+                raise RuntimeError("emotion runtime disabled")
+
+            def health(self) -> EmotionRuntimeHealth:
+                return EmotionRuntimeHealth(
+                    status="disabled",
+                    model_cache_ready=False,
+                    source_commit=settings.emotion.source_commit,
+                    detail="emotion inference disabled",
+                )
+
+        emotion_runtime = _DisabledEmotionRuntime()
     emotion_agent = EmotionAgent(
         runtime=emotion_runtime,
         inference_enabled=settings.emotion.inference_enabled,
@@ -259,7 +270,6 @@ def build_app_context() -> AppContext:
         event_timeline=event_timeline,
         tool_registry=tool_registry,
         agent_registry=agent_registry,
-        coordinator=coordinator,
         auth_store=auth_store,
         session_signer=session_signer,
         memory_store=memory_store,
@@ -276,14 +286,11 @@ def build_app_context() -> AppContext:
         chat_audio_agent=chat_audio_agent,
         chat_code_agent=chat_code_agent,
     )
-    from .services.workflows import ensure_runtime_contract_snapshot_bootstrap
-
-    ensure_runtime_contract_snapshot_bootstrap(context=ctx)
     return ctx
 
 
 def meal_deps(ctx: AppContext) -> MealDeps:
-    return MealDeps(settings=ctx.settings, stores=ctx.stores, coordinator=ctx.coordinator)
+    return MealDeps(settings=ctx.settings, stores=ctx.stores, event_timeline=ctx.event_timeline)
 
 
 def recommendation_deps(ctx: AppContext) -> RecommendationDeps:
@@ -295,8 +302,6 @@ def workflow_deps(ctx: AppContext) -> WorkflowDeps:
         settings=ctx.settings,
         stores=ctx.stores,
         event_timeline=ctx.event_timeline,
-        agent_registry=ctx.agent_registry,
-        coordinator=ctx.coordinator,
     )
 
 
@@ -316,11 +321,9 @@ def chat_deps(ctx: AppContext, session: dict[str, object]) -> ChatDeps:
         session_id=session_id,
         inference_engine=ctx.chat_inference_engine,
     )
-    chat_agent = ChatAgent(
-        stream_runtime=ctx.chat_stream_runtime,
+    chat_orchestrator = ChatOrchestrator(
         router=ctx.chat_router,
         memory=chat_memory,
-        model_id=ctx.chat_runtime_config.model_id,
     )
     chat_health_tracker = HealthTracker(
         user_id=user_id,
@@ -328,11 +331,12 @@ def chat_deps(ctx: AppContext, session: dict[str, object]) -> ChatDeps:
         inference_engine=ctx.chat_inference_engine,
     )
     return ChatDeps(
-        chat_agent=chat_agent,
+        chat_agent=chat_orchestrator,
         audio_agent=ctx.chat_audio_agent,
         emotion_agent=ctx.emotion_agent,
         health_tracker=chat_health_tracker,
         code_agent=ctx.chat_code_agent,
+        event_timeline=ctx.event_timeline,
     )
 
 
@@ -345,7 +349,11 @@ def recommendation_agent_deps(ctx: AppContext) -> RecommendationAgentDeps:
 
 
 def alert_deps(ctx: AppContext) -> AlertDeps:
-    return AlertDeps(stores=ctx.stores, coordinator=ctx.coordinator)
+    return AlertDeps(
+        stores=ctx.stores,
+        tool_registry=ctx.tool_registry,
+        event_timeline=ctx.event_timeline,
+    )
 
 
 def clinical_card_deps(ctx: AppContext) -> ClinicalCardDeps:

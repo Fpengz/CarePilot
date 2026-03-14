@@ -1,274 +1,310 @@
-"""
-Run meal vision perception and normalization.
+"""Meal analysis facade used by API shims and capability tests.
 
-This module analyzes meal images, normalizes detected foods, and applies
-safe fallbacks for missing or low-confidence predictions.
+This module provides a small wrapper around the current meal perception agent
+and deterministic normalization logic. It is intentionally narrow: it does not
+persist durable state and does not orchestrate multi-feature workflows.
 """
 
-import re
-import time
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
 
 from pydantic_ai import Agent
 
-from dietary_guardian.agent.runtime import InferenceEngine, InferenceModality, InferenceRequest, LLMFactory
+from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
+from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest, InferenceResponse
+from dietary_guardian.agent.runtime.llm_factory import LLMFactory
 from dietary_guardian.config.app import get_settings
-from dietary_guardian.config.llm import LLMCapability, LocalModelProfile, ModelProvider
-from dietary_guardian.features.meals.domain import MealPerception, MealPortionEstimate, PerceivedMealItem
-from dietary_guardian.features.meals.use_cases import build_meal_record, normalize_vision_result
-from dietary_guardian.features.recommendations.domain.canonical_food_matching import (
-    build_default_canonical_food_records,
-    find_food_by_name,
-)
-from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
-from dietary_guardian.platform.observability import get_logger
-from dietary_guardian.features.meals.domain.models import (
-    GlycemicIndexLevel,
-    ImageInput,
-    Ingredient,
-    MealState,
-    Nutrition,
-    PortionSize,
-    VisionResult,
-)
+from dietary_guardian.config.llm import LLMCapability, LocalModelProfile
+from dietary_guardian.features.meals.domain.models import ImageInput, MealPerception, VisionResult
+from dietary_guardian.features.meals.domain.normalization import build_clarification_response, perception_to_meal_state
 from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
+from dietary_guardian.features.meals.use_cases import build_meal_record, normalize_vision_result
+from dietary_guardian.features.recommendations.domain.canonical_food_matching import build_default_canonical_food_records
+from dietary_guardian.platform.observability import get_logger
 
 logger = get_logger(__name__)
-SLOW_INFERENCE_WARNING_MS = 10_000.0
 
 
-class _SeededFoodStore:
+class _InMemoryCanonicalFoodStore:
     def __init__(self) -> None:
         self._records = build_default_canonical_food_records()
 
-    def list_canonical_foods(self, *, locale: str, slot: str | None = None, limit: int = 100) -> list[CanonicalFoodRecord]:
-        records = [item for item in self._records if item.locale == locale and item.active]
-        if slot is not None:
-            records = [item for item in records if item.slot == slot]
-        return records[:limit]
+    def list_canonical_foods(self, *, locale: str, limit: int = 500) -> list[Any]:
+        items = [item for item in self._records if getattr(item, "locale", None) == locale and getattr(item, "active", True)]
+        return items[:limit]
 
-    def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
-        return find_food_by_name(self._records, name, locale=locale)
+    def find_food_by_name(self, *, locale: str, name: str) -> Any | None:
+        target = name.strip().lower()
+        if not target:
+            return None
+        for item in self._records:
+            if getattr(item, "locale", None) != locale or not getattr(item, "active", True):
+                continue
+            title = str(getattr(item, "title", "")).strip().lower()
+            if title == target:
+                return item
+        return None
 
 
-class _LazyMealPerceptionAgent:
-    def __init__(self, model: Any, system_prompt: str) -> None:
-        self._model = model
-        self._system_prompt = system_prompt
-        self._agent: Agent | None = None
+@dataclass(frozen=True)
+class HawkerVisionResult:
+    primary_state: Any
+    perception: MealPerception | None
+    enriched_event: Any | None
+    raw_ai_output: str
+    needs_manual_review: bool
+    processing_latency_ms: float
+    model_version: str
+    provider: str | None = None
 
-    def _get_agent(self) -> Agent:
-        if self._agent is None:
-            settings = get_settings()
-            provider_name = getattr(getattr(self._model, "provider", None), "__class__", type(None)).__name__.lower()
-            local_like = "ollama" in provider_name or "openai" in provider_name
-            output_retries = settings.llm.inference.local_output_validation_retries if local_like else settings.llm.inference.cloud_output_validation_retries
-            self._agent = Agent(self._model, output_type=MealPerception, system_prompt=self._system_prompt, output_retries=output_retries)
-        return self._agent
+    @classmethod
+    def from_vision_result(cls, result: VisionResult) -> HawkerVisionResult:
+        return cls(
+            primary_state=result.primary_state,
+            perception=result.perception,
+            enriched_event=result.enriched_event,
+            raw_ai_output=result.raw_ai_output,
+            needs_manual_review=result.needs_manual_review,
+            processing_latency_ms=result.processing_latency_ms,
+            model_version=result.model_version,
+            provider=result.provider,
+        )
 
-    async def run(self, prompt: str):
-        return await self._get_agent().run(prompt)
+    def to_vision_result(self) -> VisionResult:
+        return VisionResult(
+            primary_state=self.primary_state,
+            perception=self.perception,
+            enriched_event=self.enriched_event,
+            raw_ai_output=self.raw_ai_output,
+            needs_manual_review=self.needs_manual_review,
+            processing_latency_ms=self.processing_latency_ms,
+            model_version=self.model_version,
+            provider=self.provider,
+        )
+
+
+SYSTEM_PROMPT = (
+    "You are the 'Hawker Vision' Expert, a specialized AI for Singaporean cuisine. "
+    "Your role is perception only. Return strict JSON matching the MealPerception schema. "
+    "Detect likely foods, component count, candidate aliases, coarse portion estimates, "
+    "visible preparation cues, image quality, confidence, and uncertainty."
+)
 
 
 class HawkerVisionModule:
-    def __init__(self, provider: str | None = None, model_name: str | None = None, local_profile: LocalModelProfile | None = None, food_store: Any | None = None):
-        self.food_store = food_store or _SeededFoodStore()
+    """Facade for perception + deterministic normalization helpers."""
+
+    def __init__(
+        self,
+        *,
+        provider: str | None = None,
+        local_profile: LocalModelProfile | None = None,
+    ) -> None:
+        requested_provider = str(provider) if provider is not None else None
+        self.requested_provider = requested_provider
+        self._food_store = _InMemoryCanonicalFoodStore()
+
         if local_profile is not None:
-            self.model = LLMFactory.from_profile(local_profile)
-            self.provider = local_profile.provider
-            self.inference_engine = InferenceEngine(provider=self.provider, model_name=getattr(self.model, "model_name", None), model=self.model)
-        elif provider is not None:
-            self.provider = provider
-            self.model = LLMFactory.get_model(self.provider, model_name)
-            self.inference_engine = InferenceEngine(provider=self.provider, model_name=getattr(self.model, "model_name", None), model=self.model)
+            model = LLMFactory.from_profile(local_profile)
+            self.inference_engine = InferenceEngine(model=model)
+            agent_model = model
         else:
-            self.inference_engine = InferenceEngine(capability=LLMCapability.MEAL_VISION, model_name=model_name)
-            self.model = self.inference_engine.model
-            self.provider = self.inference_engine.provider
-        self.system_prompt = (
-            "You are the 'Hawker Vision' Expert, a specialized AI for Singaporean cuisine. "
-            "Your role is perception only. Return strict JSON matching the MealPerception schema. "
-            "Detect likely foods, component count, candidate aliases, coarse portion estimates, visible preparation cues, image quality, confidence, and uncertainty. "
-            "Do not estimate nutrition, do not produce risk tags, and do not give advice."
-        )
-        self.agent = _LazyMealPerceptionAgent(self.model, self.system_prompt)
+            self.inference_engine = InferenceEngine(provider=requested_provider)
+            agent_model = LLMFactory.get_model(provider=requested_provider, capability=LLMCapability.MEAL_VISION)
 
-    def _endpoint(self) -> str:
-        provider_obj = getattr(self.model, "provider", getattr(self.model, "_provider", None))
-        return cast(str, getattr(provider_obj, "base_url", "default"))
+        self.provider = getattr(self.inference_engine, "provider", requested_provider) or "unknown"
 
-    @staticmethod
-    def _format_latency_ms(latency_ms: float) -> str:
-        return f"{latency_ms / 1000.0:.2f}s" if latency_ms >= 1000.0 else f"{latency_ms:.0f}ms"
-
-    def _log_response_summary(self, *, request_id: str, correlation_id: str | None, user_id: str | None, source: str | None, filename: str | None, result: VisionResult, reason: str) -> None:
-        logger.info(
-            "hawker_vision_response_summary request_id=%s correlation_id=%s user_id=%s source=%s filename=%s provider=%s model=%s endpoint=%s destination=%s confidence=%.3f manual_review=%s latency_ms=%.2f reason=%s",
-            request_id,
-            correlation_id,
-            user_id,
-            source,
-            filename,
-            self.provider,
-            getattr(self.model, "model_name", "unknown"),
-            self._endpoint(),
-            LLMFactory.describe_model_destination(self.model),
-            result.primary_state.confidence_score,
-            result.needs_manual_review,
-            result.processing_latency_ms,
-            reason,
-        )
-
-    def _build_clarification_response(self, reason: str, confidence_score: float = 0.0, source: str | None = None, filename: str | None = None, latency_ms: float = 0.0) -> VisionResult:
-        details = " | ".join(part for part in [f"Source: {source}" if source else "", f"Filename: {filename}" if filename else ""] if part)
-        message = f"{reason}. {details}".strip()
-        state = MealState(
-            dish_name="Clarification Required",
-            confidence_score=confidence_score,
-            identification_method="User_Manual",
-            ingredients=[],
-            nutrition=Nutrition(calories=0, carbs_g=0, sugar_g=0, protein_g=0, fat_g=0, sodium_mg=0),
-            visual_anomalies=["Image uncertainty"],
-            suggested_modifications=[
-                "Clarification needed: please retake the photo with better lighting.",
-                "Clarification needed: capture the whole dish from top-down angle.",
-            ],
-        )
-        return VisionResult(
-            primary_state=state,
-            perception=MealPerception(meal_detected=False, items=[], uncertainties=[reason], image_quality="poor", confidence_score=confidence_score),
-            raw_ai_output=message,
-            needs_manual_review=True,
-            processing_latency_ms=latency_ms,
-            model_version=getattr(self.model, "model_name", "unknown"),
-        )
-
-    def _build_prompt(self, image_input: Any) -> tuple[str, str | None, str | None]:
-        prompt = "Analyze the provided input and generate a MealPerception."
-        if isinstance(image_input, str):
-            return f"{prompt} Context: {image_input}", None, None
-        if isinstance(image_input, ImageInput):
-            context = f"Image metadata: source={image_input.source}, filename={image_input.filename}, mime_type={image_input.mime_type}, bytes={len(image_input.content)}"
-            return f"{prompt} {context}", image_input.source, image_input.filename
-        return prompt, None, None
-
-    def _perception_to_meal_state(self, perception: MealPerception) -> MealState:
-        primary_item = perception.items[0] if perception.items else None
-        amount = primary_item.portion_estimate.amount if primary_item is not None else 1.0
-        portion_size = PortionSize.SMALL if amount <= 0.75 else PortionSize.LARGE if amount >= 1.5 else PortionSize.STANDARD
-        return MealState(
-            dish_name=primary_item.label if primary_item is not None else "Unidentified meal",
-            confidence_score=perception.confidence_score,
-            identification_method="AI_Flash",
-            ingredients=[Ingredient(name=item.label) for item in perception.items[:8]],
-            nutrition=Nutrition(calories=0, carbs_g=0, sugar_g=0, protein_g=0, fat_g=0, sodium_mg=0),
-            portion_size=portion_size,
-            glycemic_index_estimate=GlycemicIndexLevel.UNKNOWN,
-            visual_anomalies=list(perception.uncertainties),
-        )
-
-    def _test_perception(self, image_input: Any) -> MealPerception:
-        tokens = [token for token in re.split(r"[^a-zA-Z0-9]+", image_input if isinstance(image_input, str) else (getattr(image_input, "filename", "") or "")) if token]
-        filtered = [token.replace("-", " ") for token in tokens if len(token) > 2 and token.lower() not in {"jpg", "jpeg", "png", "heic"}]
-        labels = filtered[:3] or ["laksa"]
-        items = [
-            PerceivedMealItem(label=label, candidate_aliases=[label], portion_estimate=MealPortionEstimate(amount=1.0, unit="serving", confidence=0.8), preparation="observed", confidence=max(0.6, 0.9 - index * 0.1))
-            for index, label in enumerate(labels)
-        ]
-        image_quality = "fair" if len(items) > 1 else "good"
-        confidence = 0.72 if len(items) > 1 else 0.9
-        return MealPerception(
-            meal_detected=True,
-            items=items,
-            uncertainties=["Multiple visible components may need deterministic normalization."] if len(items) > 1 else [],
-            image_quality=image_quality,
-            confidence_score=confidence,
-        )
-
-    async def analyze_dish(self, image_input: Any, user_id: str | None = None, request_id: str | None = None, correlation_id: str | None = None) -> VisionResult:
-        started = time.perf_counter()
-        request_id = request_id or str(uuid4())
         try:
-            prompt, source, filename = self._build_prompt(image_input)
-            requested_modality = InferenceModality.IMAGE if isinstance(image_input, ImageInput) else InferenceModality.TEXT
-            if self.provider == ModelProvider.TEST.value:
-                perception = self._test_perception(image_input)
-            elif requested_modality != InferenceModality.TEXT and not self.inference_engine.supports(requested_modality):
-                clarification = self._build_clarification_response(
-                    reason="Selected runtime cannot process raw image bytes in this mode",
-                    source=getattr(image_input, "source", None),
-                    filename=getattr(image_input, "filename", None),
-                    latency_ms=(time.perf_counter() - started) * 1000.0,
-                )
-                self._log_response_summary(request_id=request_id, correlation_id=correlation_id, user_id=user_id, source=source, filename=filename, result=clarification, reason="unsupported_modality")
-                return clarification
-            elif get_settings().llm.inference.use_engine_v2:
-                inference = await self.inference_engine.infer(
-                    InferenceRequest(
-                        request_id=request_id,
-                        user_id=user_id,
-                        modality=requested_modality,
-                        payload={"prompt": prompt},
-                        runtime_profile={"provider": self.provider, "capability": LLMCapability.MEAL_VISION.value, "model": str(getattr(self.model, "model_name", "unknown"))},
-                        trace_context={"source": source or "unknown", "filename": filename or "unknown"},
-                        output_schema=MealPerception,
-                        system_prompt=self.system_prompt,
-                    )
-                )
-                perception = cast(MealPerception, inference.structured_output)
-            else:
-                result = await self.agent.run(prompt)
-                if not isinstance(result.output, MealPerception):
-                    raise TypeError("Model output is not a MealPerception payload.")
-                perception = cast(MealPerception, result.output)
-            meal_state = self._perception_to_meal_state(perception)
-            if (not perception.meal_detected) or perception.confidence_score < 0.4:
-                clarification = self._build_clarification_response(
-                    reason="Clarification required due to low confidence or image ambiguity",
-                    confidence_score=perception.confidence_score,
-                    source=source,
-                    filename=filename,
-                    latency_ms=(time.perf_counter() - started) * 1000.0,
-                )
-                self._log_response_summary(request_id=request_id, correlation_id=correlation_id, user_id=user_id, source=source, filename=filename, result=clarification, reason="low_confidence_clarification")
-                return clarification
-            needs_review = False
-            if perception.confidence_score < 0.75 or perception.image_quality != "good" or len(perception.items) > 1:
-                meal_state.suggested_modifications.append("Ask for clarification: request a clearer image or alternate angle.")
-                needs_review = True
-            elapsed = (time.perf_counter() - started) * 1000.0
-            response_result = VisionResult(
+            self.agent = cast(
+                Any,
+                Agent(
+                    cast(Any, agent_model),
+                    output_type=MealPerception,
+                    system_prompt=SYSTEM_PROMPT,
+                ),
+            )
+        except Exception:  # noqa: BLE001
+            self.agent = cast(
+                Any,
+                Agent(
+                    "test",
+                    output_type=MealPerception,
+                    system_prompt=SYSTEM_PROMPT,
+                ),
+            )
+
+    def _use_inference_engine_v2(self) -> bool:
+        return bool(get_settings().llm.inference.use_engine_v2)
+
+    def _build_prompt(self, dish: str | ImageInput) -> tuple[str, InferenceModality, bytes | None]:
+        if isinstance(dish, ImageInput):
+            label_hint = Path(dish.filename or "meal").stem or "meal"
+            prompt = f"Identify the meal in this image. Filename hint: {label_hint}."
+            return prompt, InferenceModality.IMAGE, dish.content
+        return f"Identify the meal described here: {dish}", InferenceModality.TEXT, None
+
+    def _stub_test_perception(self, dish: str | ImageInput) -> MealPerception:
+        if isinstance(dish, ImageInput):
+            stem = Path(dish.filename or "hawker").stem or "hawker"
+            count = 1
+            raw = dish.metadata.get("multi_item_count")
+            if raw:
+                try:
+                    count = max(1, int(raw))
+                except ValueError:
+                    count = 1
+            items = [
+                {
+                    "label": stem if idx == 0 else f"{stem}_{idx + 1}",
+                    "candidate_aliases": [stem],
+                    "portion_estimate": {"amount": 1.0, "unit": "serving", "confidence": 0.9},
+                    "preparation": "unknown",
+                    "confidence": 0.9 if count == 1 else 0.7,
+                }
+                for idx in range(count)
+            ]
+            return MealPerception.model_validate(
+                {
+                    "meal_detected": True,
+                    "items": items,
+                    "uncertainties": [],
+                    "image_quality": "good",
+                    "confidence_score": 0.95 if count == 1 else 0.72,
+                }
+            )
+        lowered = dish.lower()
+        label = "Laksa" if "laksa" in lowered else "Mee Rebus" if "mee" in lowered else "Meal"
+        return MealPerception.model_validate(
+            {
+                "meal_detected": True,
+                "items": [
+                    {
+                        "label": label,
+                        "candidate_aliases": [label],
+                        "portion_estimate": {"amount": 1.0, "unit": "bowl", "confidence": 0.9},
+                        "preparation": "soup" if "laksa" in lowered else None,
+                        "confidence": 0.92,
+                    }
+                ],
+                "uncertainties": [],
+                "image_quality": "good",
+                "confidence_score": 0.92,
+            }
+        )
+
+    async def analyze_dish(self, dish: str | ImageInput) -> VisionResult:
+        prompt, modality, _image_bytes = self._build_prompt(dish)
+
+        if self.provider == "test":
+            perception = self._stub_test_perception(dish)
+            meal_state = perception_to_meal_state(perception)
+            needs_review = len(perception.items) > 1 or perception.confidence_score < 0.75 or perception.image_quality != "good"
+            destination = "unknown"
+            try:
+                destination = LLMFactory.describe_model_destination(getattr(self.inference_engine, "model"))
+            except Exception:  # noqa: BLE001
+                destination = "unknown"
+            logger.info(
+                "hawker_vision_response_summary provider=%s destination=%s confidence=%.2f items=%s latency_ms=%.2f",
+                self.provider,
+                destination,
+                perception.confidence_score,
+                len(perception.items),
+                0.0,
+            )
+            return VisionResult(
                 primary_state=meal_state,
                 perception=perception,
-                raw_ai_output=f"Processed via {self.provider}:{getattr(self.model, 'model_name', 'unknown')}",
+                enriched_event=None,
+                raw_ai_output="test-stub",
                 needs_manual_review=needs_review,
-                processing_latency_ms=elapsed,
-                model_version=getattr(self.model, "model_name", "unknown"),
+                processing_latency_ms=0.0,
+                model_version="test",
                 provider=self.provider,
             )
-            self._log_response_summary(request_id=request_id, correlation_id=correlation_id, user_id=user_id, source=source, filename=filename, result=response_result, reason="inference_complete")
-            return response_result
-        except Exception as exc:  # noqa: BLE001
-            clarification = self._build_clarification_response(
-                reason=f"Vision pipeline failed: {exc}",
-                source=getattr(image_input, "source", None),
-                filename=getattr(image_input, "filename", None),
-                latency_ms=(time.perf_counter() - started) * 1000.0,
-            )
-            self._log_response_summary(
-                request_id=request_id,
-                correlation_id=correlation_id,
-                user_id=user_id,
-                source=getattr(image_input, "source", None),
-                filename=getattr(image_input, "filename", None),
-                result=clarification,
-                reason="pipeline_exception",
-            )
-            return clarification
 
-    async def analyze_and_record(self, image_input: Any, user_id: str, request_id: str | None = None, correlation_id: str | None = None) -> tuple[VisionResult, MealRecognitionRecord]:
-        result = await self.analyze_dish(image_input, user_id=user_id, request_id=request_id, correlation_id=correlation_id)
-        result = normalize_vision_result(vision_result=result, food_store=self.food_store)
-        record = build_meal_record(image_input=image_input, user_id=user_id, vision_result=result, request_id=request_id)
-        return result, record
+        perception: MealPerception
+        raw: str
+        latency_ms = 0.0
+        model_version = "unknown"
+
+        if self._use_inference_engine_v2():
+            request = InferenceRequest(
+                request_id=str(uuid4()),
+                user_id=None,
+                modality=modality,
+                payload={"prompt": prompt},
+                output_schema=MealPerception,
+                system_prompt=SYSTEM_PROMPT,
+            )
+            response = cast(InferenceResponse, await self.inference_engine.infer(request))
+            perception = cast(MealPerception, response.structured_output)
+            raw = response.structured_output.model_dump_json()
+            latency_ms = response.latency_ms
+            model_version = response.provider_metadata.model
+        else:
+            result = await self.agent.run(prompt)
+            perception = cast(MealPerception, getattr(result, "output"))
+            raw = perception.model_dump_json()
+
+        destination = "unknown"
+        try:
+            destination = LLMFactory.describe_model_destination(getattr(self.inference_engine, "model"))
+        except Exception:  # noqa: BLE001
+            destination = "unknown"
+        logger.info(
+            "hawker_vision_response_summary provider=%s destination=%s confidence=%.2f items=%s latency_ms=%.2f",
+            self.provider,
+            destination,
+            perception.confidence_score,
+            len(perception.items),
+            latency_ms,
+        )
+
+        if not perception.meal_detected or perception.confidence_score < 0.4:
+            return build_clarification_response(
+                reason="Clarification required due to low confidence",
+                confidence_score=perception.confidence_score,
+                latency_ms=latency_ms,
+                model_version=model_version,
+            ).model_copy(update={"perception": perception, "provider": self.provider})
+
+        meal_state = perception_to_meal_state(perception)
+        needs_review = (
+            perception.confidence_score < 0.75
+            or perception.image_quality != "good"
+            or len(perception.items) > 1
+        )
+        return VisionResult(
+            primary_state=meal_state,
+            perception=perception,
+            enriched_event=None,
+            raw_ai_output=raw,
+            needs_manual_review=needs_review,
+            processing_latency_ms=latency_ms,
+            model_version=model_version,
+            provider=self.provider,
+        )
+
+    async def analyze_and_record(
+        self,
+        image_input: ImageInput,
+        *,
+        user_id: str,
+        locale: str = "en-SG",
+    ) -> tuple[VisionResult, MealRecognitionRecord]:
+        vision_result = await self.analyze_dish(image_input)
+        normalized = normalize_vision_result(
+            vision_result=vision_result,
+            food_store=self._food_store,
+            locale=locale,
+        )
+        record = build_meal_record(image_input=image_input, user_id=user_id, vision_result=normalized)
+        return normalized, record
+
+
+__all__ = ["HawkerVisionModule", "HawkerVisionResult"]

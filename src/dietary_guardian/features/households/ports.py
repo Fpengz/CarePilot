@@ -7,7 +7,6 @@ This module declares interfaces used by household application workflows.
 from typing import Any, Protocol
 
 from dietary_guardian.config.app import AppSettings as Settings
-from dietary_guardian.platform.observability.workflows.coordinator import WorkflowCoordinator
 from dietary_guardian.platform.persistence import AppStores
 
 
@@ -39,9 +38,6 @@ class HouseholdContext(Protocol):
 
     @property
     def stores(self) -> AppStores: ...
-
-    @property
-    def coordinator(self) -> WorkflowCoordinator: ...
 
     @property
     def household_store(self) -> HouseholdStorePort: ...

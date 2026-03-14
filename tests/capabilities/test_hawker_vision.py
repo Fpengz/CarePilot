@@ -121,7 +121,7 @@ def test_hawker_vision_uses_profile_built_model_for_inference_engine(monkeypatch
 @pytest.mark.anyio
 async def test_hawker_vision_feature_flag_disables_inference_engine_v2(monkeypatch: pytest.MonkeyPatch) -> None:
     get_settings.cache_clear()
-    monkeypatch.setenv("USE_INFERENCE_ENGINE_V2", "false")
+    monkeypatch.setenv("LLM_USE_INFERENCE_ENGINE_V2", "false")
     get_settings.cache_clear()
 
     module = HawkerVisionModule(provider="test")

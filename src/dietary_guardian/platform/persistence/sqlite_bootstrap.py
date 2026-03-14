@@ -296,13 +296,6 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     )
     """,
     """
-    CREATE TABLE IF NOT EXISTS workflow_contract_snapshots (
-        version INTEGER PRIMARY KEY,
-        created_at TEXT NOT NULL,
-        payload_json TEXT NOT NULL
-    )
-    """,
-    """
     CREATE TABLE IF NOT EXISTS workflow_timeline_events (
         event_id TEXT PRIMARY KEY,
         event_type TEXT NOT NULL,

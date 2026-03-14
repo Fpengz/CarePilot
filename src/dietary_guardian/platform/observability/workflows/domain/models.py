@@ -1,9 +1,4 @@
-"""
-Define workflow domain models.
-
-This module contains models for workflow contracts, agent definitions, tool
-policies, and timeline events.
-"""
+"""Workflow execution + trace domain models."""
 
 from __future__ import annotations
 
@@ -39,6 +34,7 @@ class WorkflowName(StrEnum):
     MEAL_ANALYSIS = "meal_analysis"
     ALERT_ONLY = "alert_only"
     REPORT_PARSE = "report_parse"
+    PRESCRIPTION_INGEST = "prescription_ingest"
     REPLAY = "replay"
 
 
@@ -85,15 +81,13 @@ class WorkflowRuntimeContract(BaseModel):
     steps: list[WorkflowRuntimeStep] = Field(default_factory=list)
 
 
-WorkflowContractSnapshotSource = Literal["startup_bootstrap", "manual_api"]
-
-
-class WorkflowContractSnapshotRecord(BaseModel):
-    id: str
-    version: int
-    contract_hash: str
-    source: WorkflowContractSnapshotSource
-    workflows: list[WorkflowRuntimeContract] = Field(default_factory=list)
-    agents: list[AgentContract] = Field(default_factory=list)
-    created_by: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+__all__ = [
+    "ToolPolicyEffect",
+    "ToolRolePolicyRecord",
+    "AgentContract",
+    "WorkflowRuntimeContract",
+    "WorkflowRuntimeStep",
+    "WorkflowExecutionResult",
+    "WorkflowName",
+    "WorkflowTimelineEvent",
+]

@@ -21,6 +21,7 @@ from dietary_guardian.features.reports.domain import (
     build_clinical_snapshot,
     parse_report_input,
 )
+from dietary_guardian.platform.observability.workflows.domain.models import WorkflowName
 
 
 def parse_report_for_session(
@@ -50,18 +51,29 @@ def parse_report_for_session(
         to_date=end_date,
     )
 
-    context.coordinator.run_report_parse_workflow(
-        user_id=user_id,
-        request_id=issued_request_id,
+    context.event_timeline.append(
+        event_type="workflow_started",
+        workflow_name=WorkflowName.REPORT_PARSE.value,
         correlation_id=issued_correlation_id,
-        source=payload.source,
-        reading_count=len(readings),
-        symptom_checkin_count=symptom_summary.total_count,
-        red_flag_count=symptom_summary.red_flag_count,
-        window={
-            "from": start_date.isoformat(),
-            "to": end_date.isoformat(),
-            "limit": symptom_limit,
+        request_id=issued_request_id,
+        user_id=user_id,
+        payload={"source": payload.source},
+    )
+    context.event_timeline.append(
+        event_type="workflow_completed",
+        workflow_name=WorkflowName.REPORT_PARSE.value,
+        correlation_id=issued_correlation_id,
+        request_id=issued_request_id,
+        user_id=user_id,
+        payload={
+            "reading_count": len(readings),
+            "symptom_checkin_count": symptom_summary.total_count,
+            "red_flag_count": symptom_summary.red_flag_count,
+            "window": {
+                "from": start_date.isoformat(),
+                "to": end_date.isoformat(),
+                "limit": symptom_limit,
+            },
         },
     )
 

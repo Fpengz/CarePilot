@@ -42,12 +42,12 @@ def recommendations_generate(
 
 
 @router.get("/api/v1/recommendations/daily-agent", response_model=RecommendationAgentResponse)
-def recommendations_daily_agent(
+async def recommendations_daily_agent(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> RecommendationAgentResponse:
     require_action(session, "recommendations.daily_agent.read")
-    return get_daily_agent_for_session(
+    return await get_daily_agent_for_session(
         deps=recommendation_agent_deps(get_context(request)),
         session=session,
         request_id=getattr(request.state, "request_id", None),
