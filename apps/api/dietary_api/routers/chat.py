@@ -37,8 +37,10 @@ from dietary_guardian.features.companion.chat.memory_store import (
 )
 from dietary_guardian.features.companion.core.chat_context import format_chat_context
 from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime
+from dietary_guardian.platform.observability import get_logger
 
 router = APIRouter(tags=["chat"])
+logger = get_logger(__name__)
 
 _MEAL_PREFIX_RE = re.compile(r"^(?:log\s+meal|meal)\s*:\s*(.+)$", re.IGNORECASE)
 
@@ -113,6 +115,21 @@ def _merge_context(base: str, memory_context: str | None) -> str:
     if base:
         return f"{base}\n\n{memory_context}"
     return memory_context
+
+
+def _log_suppressed_emotion_failure(
+    *,
+    request: Request,
+    phase: Literal["emotion", "speech_emotion"],
+    exc: Exception,
+) -> None:
+    logger.warning(
+        "chat_emotion_inference_suppressed phase=%s request_id=%s correlation_id=%s error=%s",
+        phase,
+        getattr(request.state, "request_id", None),
+        getattr(request.state, "correlation_id", None),
+        exc,
+    )
 
 
 async def _collect_chat_followup(
@@ -215,7 +232,7 @@ async def chat_stream(
                 # Emotion inference disabled; skip emitting error events.
                 pass
             except Exception as exc:  # noqa: BLE001
-                yield _format_event("error", {"message": str(exc), "phase": "emotion", "retryable": False})
+                _log_suppressed_emotion_failure(request=request, phase="emotion", exc=exc)
 
         if not meal_text:
             intent_result, needs_llm = heuristic_meal_log_intent(user_message)
@@ -367,7 +384,7 @@ async def chat_audio(
             except (EmotionAgentDisabledError, EmotionSpeechDisabledError):
                 pass
             except Exception as exc:  # noqa: BLE001
-                yield _format_event("error", {"message": str(exc), "phase": "emotion", "retryable": False})
+                _log_suppressed_emotion_failure(request=request, phase="speech_emotion", exc=exc)
 
         if not meal_text:
             intent_result, needs_llm = heuristic_meal_log_intent(user_message)
