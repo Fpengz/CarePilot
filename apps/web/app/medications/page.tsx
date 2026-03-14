@@ -123,7 +123,7 @@ export default function MedicationsPage() {
 
       {error && <ErrorCard message={error} />}
 
-      <div className="page-grid items-start">
+      <div className="page-grid items-start gap-6 lg:gap-8">
         <div className="space-y-8">
           <MedicationIntakeWizard 
             onTextIntake={(text) => intakeTextMutation.mutate(text)}

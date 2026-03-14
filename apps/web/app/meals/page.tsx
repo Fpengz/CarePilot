@@ -20,7 +20,7 @@ export default function MealsPage() {
         </p>
       </div>
 
-      <div className="page-grid items-start">
+      <div className="page-grid items-start gap-6 lg:gap-8">
         <div className="space-y-8">
           <MealAnalyzer onSuccess={setLastAnalysis} />
           <MealRecordsList />

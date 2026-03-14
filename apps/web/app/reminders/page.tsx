@@ -85,12 +85,12 @@ export default function RemindersPage() {
 
       {error && <ErrorCard message={error} />}
 
-      <Tabs defaultValue="today" className="w-full space-y-8">
-        <div className="flex flex-col gap-4 border-b border-[color:var(--border-soft)] pb-1 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList className="bg-transparent h-auto p-0 gap-8">
+      <Tabs defaultValue="today" className="w-full space-y-6 md:space-y-8">
+        <div className="flex flex-col gap-4 border-b border-[color:var(--border-soft)] pb-1 lg:flex-row lg:items-center lg:justify-between">
+          <TabsList className="bg-transparent h-auto p-0 gap-4 md:gap-8 overflow-x-auto scrollbar-hide flex-nowrap justify-start">
             <TabsTrigger 
               value="today" 
-              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:bg-transparent data-[state=active]:text-[color:var(--foreground)] shadow-none"
+              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:bg-transparent data-[state=active]:text-[color:var(--foreground)] shadow-none shrink-0"
             >
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
@@ -102,7 +102,7 @@ export default function RemindersPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="planned" 
-              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:bg-transparent data-[state=active]:text-[color:var(--foreground)] shadow-none"
+              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:bg-transparent data-[state=active]:text-[color:var(--foreground)] shadow-none shrink-0"
             >
               <div className="flex items-center gap-2">
                 <ListTodo className="h-4 w-4" />
@@ -111,7 +111,7 @@ export default function RemindersPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="history" 
-              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:bg-transparent data-[state=active]:text-[color:var(--foreground)] shadow-none"
+              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:bg-transparent data-[state=active]:text-[color:var(--foreground)] shadow-none shrink-0"
             >
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4" />
@@ -120,14 +120,14 @@ export default function RemindersPage() {
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex items-center gap-2 w-full lg:w-auto pb-2 lg:pb-0">
+            <div className="relative w-full lg:w-64">
               <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[color:var(--muted-foreground)] opacity-50" />
               <input 
                 type="text" 
                 placeholder="Search schedule..."
                 aria-label="Search schedule"
-                className="h-9 w-64 rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] pl-9 pr-4 text-xs focus:border-[color:var(--accent)] focus:outline-none"
+                className="h-9 w-full rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] pl-9 pr-4 text-xs focus:border-[color:var(--accent)] focus:outline-none"
               />
             </div>
           </div>

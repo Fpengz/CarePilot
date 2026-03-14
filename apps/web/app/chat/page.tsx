@@ -555,8 +555,8 @@ export default function ChatPage() {
   };
 
   return (
-    <div className={`flex flex-col gap-8 lg:flex-row lg:items-start ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
-      <section className="flex flex-1 min-h-[75vh] flex-col rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-6 shadow-[0_8px_32px_rgba(15,23,42,0.03)] sm:p-8">
+    <div className={`flex flex-col gap-6 lg:flex-row lg:items-start ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
+      <section className="flex flex-1 min-h-[calc(100vh-14rem)] lg:min-h-[75vh] flex-col rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 sm:p-8 shadow-[0_8px_32px_rgba(15,23,42,0.03)]">
         <ChatHeader onClear={clearHistory} />
 
         <div className="my-6 h-px w-full bg-[color:var(--border-soft)] opacity-60" />
