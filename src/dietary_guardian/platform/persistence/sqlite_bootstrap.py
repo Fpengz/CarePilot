@@ -47,6 +47,8 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     CREATE TABLE IF NOT EXISTS reminder_events (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
+        reminder_definition_id TEXT,
+        occurrence_id TEXT,
         regimen_id TEXT,
         reminder_type TEXT NOT NULL DEFAULT 'medication',
         title TEXT NOT NULL DEFAULT 'Medication Reminder',
@@ -59,6 +61,60 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         meal_confirmation TEXT NOT NULL,
         sent_at TEXT,
         ack_at TEXT
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS reminder_definitions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        regimen_id TEXT,
+        reminder_type TEXT NOT NULL,
+        source TEXT NOT NULL,
+        title TEXT NOT NULL,
+        body TEXT,
+        medication_name TEXT NOT NULL,
+        dosage_text TEXT NOT NULL,
+        route TEXT,
+        instructions_text TEXT,
+        special_notes TEXT,
+        treatment_duration TEXT,
+        channels_json TEXT NOT NULL,
+        timezone TEXT NOT NULL,
+        schedule_json TEXT NOT NULL,
+        active INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS reminder_occurrences (
+        id TEXT PRIMARY KEY,
+        reminder_definition_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        scheduled_for TEXT NOT NULL,
+        trigger_at TEXT NOT NULL,
+        status TEXT NOT NULL,
+        action TEXT,
+        action_outcome TEXT,
+        acted_at TEXT,
+        grace_window_minutes INTEGER NOT NULL,
+        retry_count INTEGER NOT NULL,
+        last_delivery_status TEXT,
+        metadata_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS reminder_actions (
+        id TEXT PRIMARY KEY,
+        occurrence_id TEXT NOT NULL,
+        reminder_definition_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        action TEXT NOT NULL,
+        acted_at TEXT NOT NULL,
+        snooze_minutes INTEGER,
+        metadata_json TEXT NOT NULL
     )
     """,
     """
@@ -359,9 +415,13 @@ COLUMN_MIGRATIONS: tuple[tuple[str, str, str], ...] = (
     ("medication_regimens", "timezone", "TEXT NOT NULL DEFAULT 'Asia/Singapore'"),
     ("medication_regimens", "parse_confidence", "REAL"),
     ("reminder_events", "reminder_type", "TEXT NOT NULL DEFAULT 'medication'"),
+    ("reminder_events", "reminder_definition_id", "TEXT"),
+    ("reminder_events", "occurrence_id", "TEXT"),
     ("reminder_events", "regimen_id", "TEXT"),
     ("reminder_events", "title", "TEXT NOT NULL DEFAULT 'Medication Reminder'"),
     ("reminder_events", "body", "TEXT"),
+    ("scheduled_notifications", "occurrence_id", "TEXT"),
+    ("notification_logs", "occurrence_id", "TEXT"),
 )
 
 

@@ -75,6 +75,8 @@ class SQLiteRepository:
                 CREATE TABLE IF NOT EXISTS reminder_events (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
+                    reminder_definition_id TEXT,
+                    occurrence_id TEXT,
                     regimen_id TEXT,
                     reminder_type TEXT NOT NULL DEFAULT 'medication',
                     title TEXT NOT NULL DEFAULT 'Medication Reminder',
@@ -87,6 +89,66 @@ class SQLiteRepository:
                     meal_confirmation TEXT NOT NULL,
                     sent_at TEXT,
                     ack_at TEXT
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS reminder_definitions (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    regimen_id TEXT,
+                    reminder_type TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    body TEXT,
+                    medication_name TEXT NOT NULL,
+                    dosage_text TEXT NOT NULL,
+                    route TEXT,
+                    instructions_text TEXT,
+                    special_notes TEXT,
+                    treatment_duration TEXT,
+                    channels_json TEXT NOT NULL,
+                    timezone TEXT NOT NULL,
+                    schedule_json TEXT NOT NULL,
+                    active INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS reminder_occurrences (
+                    id TEXT PRIMARY KEY,
+                    reminder_definition_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    scheduled_for TEXT NOT NULL,
+                    trigger_at TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    action TEXT,
+                    action_outcome TEXT,
+                    acted_at TEXT,
+                    grace_window_minutes INTEGER NOT NULL,
+                    retry_count INTEGER NOT NULL,
+                    last_delivery_status TEXT,
+                    metadata_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS reminder_actions (
+                    id TEXT PRIMARY KEY,
+                    occurrence_id TEXT NOT NULL,
+                    reminder_definition_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    acted_at TEXT NOT NULL,
+                    snooze_minutes INTEGER,
+                    metadata_json TEXT NOT NULL
                 )
                 """
             )
@@ -299,6 +361,7 @@ class SQLiteRepository:
                 CREATE TABLE IF NOT EXISTS scheduled_notifications (
                     id TEXT PRIMARY KEY,
                     reminder_id TEXT NOT NULL,
+                    occurrence_id TEXT,
                     user_id TEXT NOT NULL,
                     channel TEXT NOT NULL,
                     trigger_at TEXT NOT NULL,
@@ -323,6 +386,7 @@ class SQLiteRepository:
                     id TEXT PRIMARY KEY,
                     scheduled_notification_id TEXT NOT NULL,
                     reminder_id TEXT NOT NULL,
+                    occurrence_id TEXT,
                     user_id TEXT NOT NULL,
                     channel TEXT NOT NULL,
                     attempt_number INTEGER NOT NULL,
@@ -430,6 +494,15 @@ class SQLiteRepository:
                 """
             )
             cur.execute("CREATE INDEX IF NOT EXISTS idx_reminders_user_time ON reminder_events(user_id, scheduled_at)")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_reminder_definitions_user_active ON reminder_definitions(user_id, active, updated_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_reminder_occurrences_user_status_time ON reminder_occurrences(user_id, status, trigger_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_reminder_actions_occurrence_time ON reminder_actions(occurrence_id, acted_at)"
+            )
             cur.execute("CREATE INDEX IF NOT EXISTS idx_meals_user_time ON meal_records(user_id, captured_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_meal_observations_user_time ON meal_observations(user_id, captured_at)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_meal_events_user_time ON meal_validated_events(user_id, captured_at)")
@@ -472,7 +545,11 @@ class SQLiteRepository:
             self._ensure_sqlite_column(cur, "medication_regimens", "end_date", "TEXT")
             self._ensure_sqlite_column(cur, "medication_regimens", "timezone", "TEXT NOT NULL DEFAULT 'Asia/Singapore'")
             self._ensure_sqlite_column(cur, "medication_regimens", "parse_confidence", "REAL")
+            self._ensure_sqlite_column(cur, "reminder_events", "reminder_definition_id", "TEXT")
+            self._ensure_sqlite_column(cur, "reminder_events", "occurrence_id", "TEXT")
             self._ensure_sqlite_column(cur, "reminder_events", "regimen_id", "TEXT")
+            self._ensure_sqlite_column(cur, "scheduled_notifications", "occurrence_id", "TEXT")
+            self._ensure_sqlite_column(cur, "notification_logs", "occurrence_id", "TEXT")
             conn.commit()
         self._seed_meal_catalog()
         self._seed_canonical_foods()
@@ -574,6 +651,33 @@ class SQLiteRepository:
         return self.medication.list_medication_adherence_events(*args, **kwargs)
 
     # --- Reminders ---
+
+    def save_reminder_definition(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.save_reminder_definition(*args, **kwargs)
+
+    def get_reminder_definition(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.get_reminder_definition(*args, **kwargs)
+
+    def list_reminder_definitions(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_reminder_definitions(*args, **kwargs)
+
+    def save_reminder_occurrence(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.save_reminder_occurrence(*args, **kwargs)
+
+    def get_reminder_occurrence(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.get_reminder_occurrence(*args, **kwargs)
+
+    def list_reminder_occurrences(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_reminder_occurrences(*args, **kwargs)
+
+    def append_reminder_action(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.append_reminder_action(*args, **kwargs)
+
+    def list_reminder_actions(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_reminder_actions(*args, **kwargs)
+
+    def update_reminder_occurrence_status(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.update_reminder_occurrence_status(*args, **kwargs)
 
     def save_reminder_event(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.save_reminder_event(*args, **kwargs)

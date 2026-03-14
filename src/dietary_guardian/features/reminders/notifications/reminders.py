@@ -12,7 +12,6 @@ from uuid import uuid4
 
 from apps.api.dietary_api.deps import AppContext
 from apps.api.dietary_api.errors import build_api_error
-from apps.api.dietary_api.routes_shared import default_demo_regimens
 from apps.api.dietary_api.schemas import (
     MobilityReminderSettingsEnvelopeResponse,
     MobilityReminderSettingsRequest,
@@ -25,55 +24,50 @@ from dietary_guardian.platform.auth.session_context import build_user_profile_fr
 from dietary_guardian.features.medications.domain import (
     compute_mcr,
     default_mobility_settings,
-    generate_daily_reminders,
     generate_mobility_reminders,
     mark_meal_confirmation,
     parse_hhmm,
 )
 from dietary_guardian.features.reminders.domain.models import MobilityReminderSettings
+from dietary_guardian.features.companion.core.health.analytics import EngagementMetrics
 from dietary_guardian.features.companion.core.health.models import MedicationAdherenceEvent
 from dietary_guardian.features.reminders.notifications.reminder_materialization import (
     cancel_reminder_notifications,
     materialize_reminder_notifications,
 )
+from dietary_guardian.features.reminders.use_cases.structured import (
+    apply_occurrence_action_for_session,
+    generate_structured_reminders_for_session,
+)
+
+
+def _sort_at(item) -> datetime:  # noqa: ANN001
+    value = item.scheduled_at
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
 
 
 def generate_reminders_for_session(*, context: AppContext, session: dict[str, object]) -> ReminderGenerateResponse:
     user_profile = build_user_profile_from_session(session, context.stores.profiles)
-    regimens = context.stores.medications.list_medication_regimens(user_profile.id, active_only=True)
-    if not regimens:
-        regimens = default_demo_regimens(user_profile.id)
-        for item in regimens:
-            context.stores.medications.save_medication_regimen(item)
-    reminders = generate_daily_reminders(
-        user_profile,
-        regimens,
-        date.today(),
-    )
+    generated_reminders, metrics = generate_structured_reminders_for_session(context=context, session=session)
     mobility_settings = context.stores.reminders.get_mobility_reminder_settings(user_profile.id) or default_mobility_settings(user_profile.id)
-    reminders.extend(
-        generate_mobility_reminders(
-            user_id=user_profile.id,
-            target_date=date.today(),
-            settings=mobility_settings,
-        )
+    mobility_reminders = generate_mobility_reminders(
+        user_id=user_profile.id,
+        target_date=date.today(),
+        settings=mobility_settings,
     )
-    reminders = sorted(reminders, key=lambda item: item.scheduled_at)
-    for reminder in reminders:
+    for reminder in mobility_reminders:
         context.stores.reminders.save_reminder_event(reminder)
         materialize_reminder_notifications(
             repository=context.stores.reminders,
             reminder_event=reminder,
             reminder_type=reminder.reminder_type,
         )
-    signal_payload = {"user_id": user_profile.id, "reminder_count": len(reminders)}
-    context.coordination_store.publish_signal(context.settings.storage.redis_worker_signal_channel, signal_payload)
-    context.coordination_store.publish_signal("reminders.ready", signal_payload)
-    current_events = context.stores.reminders.list_reminder_events(user_profile.id)
-    metrics = compute_mcr(current_events)
+    reminders = sorted(context.stores.reminders.list_reminder_events(user_profile.id), key=_sort_at)
     return ReminderGenerateResponse(
         reminders=reminders,
-        metrics=metrics,
+        metrics=metrics if isinstance(metrics, EngagementMetrics) else compute_mcr(reminders),
     )
 
 
@@ -96,6 +90,22 @@ def confirm_reminder_for_session(
     event = context.stores.reminders.get_reminder_event(event_id)
     if event is None or event.user_id != user_id:
         raise build_api_error(status_code=404, code="reminders.not_found", message="reminder not found")
+    if event.occurrence_id:
+        try:
+            updated_occurrence = apply_occurrence_action_for_session(
+                context=context,
+                user_id=user_id,
+                occurrence_id=event.occurrence_id,
+                action="taken" if confirmed else "skipped",
+            )
+        except KeyError as exc:
+            raise build_api_error(status_code=404, code="reminders.not_found", message="reminder not found") from exc
+        updated_event = context.stores.reminders.get_reminder_event(updated_occurrence.id)
+        metrics = compute_mcr(context.stores.reminders.list_reminder_events(user_id))
+        return ReminderConfirmResponse(
+            event=updated_event or event,
+            metrics=metrics,
+        )
     if event.reminder_type != "medication":
         raise build_api_error(
             status_code=400,

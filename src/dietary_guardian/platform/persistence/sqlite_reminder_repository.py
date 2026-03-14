@@ -12,7 +12,11 @@ from typing import Any, cast
 
 from dietary_guardian.features.reminders.domain.models import (
     MobilityReminderSettings,
+    ReminderActionRecord,
+    ReminderDefinition,
     ReminderEvent,
+    ReminderOccurrence,
+    ReminderScheduleRule,
     ReminderNotificationEndpoint,
     ReminderNotificationLogEntry,
     ReminderNotificationPreference,
@@ -27,17 +31,338 @@ class SQLiteReminderRepository:
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
+    def save_reminder_definition(self, definition: ReminderDefinition) -> ReminderDefinition:
+        payload = definition.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO reminder_definitions (
+                    id, user_id, regimen_id, reminder_type, source, title, body,
+                    medication_name, dosage_text, route, instructions_text, special_notes,
+                    treatment_duration, channels_json, timezone, schedule_json, active,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    definition.id,
+                    definition.user_id,
+                    definition.regimen_id,
+                    definition.reminder_type,
+                    definition.source,
+                    definition.title,
+                    definition.body,
+                    definition.medication_name,
+                    definition.dosage_text,
+                    definition.route,
+                    definition.instructions_text,
+                    definition.special_notes,
+                    definition.treatment_duration,
+                    json.dumps(payload["channels"]),
+                    definition.timezone,
+                    json.dumps(payload["schedule"]),
+                    int(definition.active),
+                    definition.created_at.isoformat(),
+                    definition.updated_at.isoformat(),
+                ),
+            )
+            conn.commit()
+        saved = self.get_reminder_definition(definition.id)
+        if saved is None:
+            raise RuntimeError(f"failed to persist reminder definition {definition.id}")
+        return saved
+
+    def get_reminder_definition(self, reminder_definition_id: str) -> ReminderDefinition | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT id, user_id, regimen_id, reminder_type, source, title, body,
+                       medication_name, dosage_text, route, instructions_text, special_notes,
+                       treatment_duration, channels_json, timezone, schedule_json, active,
+                       created_at, updated_at
+                FROM reminder_definitions
+                WHERE id = ?
+                """,
+                (reminder_definition_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return ReminderDefinition(
+            id=row[0],
+            user_id=row[1],
+            regimen_id=row[2],
+            reminder_type=row[3],
+            source=row[4],
+            title=row[5],
+            body=row[6],
+            medication_name=row[7],
+            dosage_text=row[8],
+            route=row[9],
+            instructions_text=row[10],
+            special_notes=row[11],
+            treatment_duration=row[12],
+            channels=json.loads(cast(str, row[13])),
+            timezone=row[14],
+            schedule=ReminderScheduleRule.model_validate(json.loads(cast(str, row[15]))),
+            active=bool(row[16]),
+            created_at=datetime.fromisoformat(row[17]),
+            updated_at=datetime.fromisoformat(row[18]),
+        )
+
+    def list_reminder_definitions(self, user_id: str, *, active_only: bool = False) -> list[ReminderDefinition]:
+        query = (
+            "SELECT id, user_id, regimen_id, reminder_type, source, title, body, medication_name, dosage_text, "
+            "route, instructions_text, special_notes, treatment_duration, channels_json, timezone, schedule_json, "
+            "active, created_at, updated_at FROM reminder_definitions WHERE user_id = ?"
+        )
+        params: list[Any] = [user_id]
+        if active_only:
+            query += " AND active = 1"
+        query += " ORDER BY updated_at DESC, title"
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [
+            ReminderDefinition(
+                id=row[0],
+                user_id=row[1],
+                regimen_id=row[2],
+                reminder_type=row[3],
+                source=row[4],
+                title=row[5],
+                body=row[6],
+                medication_name=row[7],
+                dosage_text=row[8],
+                route=row[9],
+                instructions_text=row[10],
+                special_notes=row[11],
+                treatment_duration=row[12],
+                channels=json.loads(cast(str, row[13])),
+                timezone=row[14],
+                schedule=ReminderScheduleRule.model_validate(json.loads(cast(str, row[15]))),
+                active=bool(row[16]),
+                created_at=datetime.fromisoformat(row[17]),
+                updated_at=datetime.fromisoformat(row[18]),
+            )
+            for row in rows
+        ]
+
+    def save_reminder_occurrence(self, occurrence: ReminderOccurrence) -> ReminderOccurrence:
+        payload = occurrence.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO reminder_occurrences (
+                    id, reminder_definition_id, user_id, scheduled_for, trigger_at, status, action,
+                    action_outcome, acted_at, grace_window_minutes, retry_count, last_delivery_status,
+                    metadata_json, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    occurrence.id,
+                    occurrence.reminder_definition_id,
+                    occurrence.user_id,
+                    occurrence.scheduled_for.isoformat(),
+                    occurrence.trigger_at.isoformat(),
+                    occurrence.status,
+                    occurrence.action,
+                    occurrence.action_outcome,
+                    occurrence.acted_at.isoformat() if occurrence.acted_at else None,
+                    occurrence.grace_window_minutes,
+                    occurrence.retry_count,
+                    occurrence.last_delivery_status,
+                    json.dumps(payload["metadata"]),
+                    occurrence.created_at.isoformat(),
+                    occurrence.updated_at.isoformat(),
+                ),
+            )
+            conn.commit()
+        saved = self.get_reminder_occurrence(occurrence.id)
+        if saved is None:
+            raise RuntimeError(f"failed to persist reminder occurrence {occurrence.id}")
+        return saved
+
+    def get_reminder_occurrence(self, occurrence_id: str) -> ReminderOccurrence | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT id, reminder_definition_id, user_id, scheduled_for, trigger_at, status, action,
+                       action_outcome, acted_at, grace_window_minutes, retry_count, last_delivery_status,
+                       metadata_json, created_at, updated_at
+                FROM reminder_occurrences
+                WHERE id = ?
+                """,
+                (occurrence_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return ReminderOccurrence(
+            id=row[0],
+            reminder_definition_id=row[1],
+            user_id=row[2],
+            scheduled_for=datetime.fromisoformat(row[3]),
+            trigger_at=datetime.fromisoformat(row[4]),
+            status=row[5],
+            action=row[6],
+            action_outcome=row[7],
+            acted_at=datetime.fromisoformat(row[8]) if row[8] else None,
+            grace_window_minutes=row[9],
+            retry_count=row[10],
+            last_delivery_status=row[11],
+            metadata=json.loads(cast(str, row[12])),
+            created_at=datetime.fromisoformat(row[13]),
+            updated_at=datetime.fromisoformat(row[14]),
+        )
+
+    def list_reminder_occurrences(
+        self,
+        *,
+        user_id: str,
+        reminder_definition_id: str | None = None,
+        status: str | None = None,
+        limit: int = 200,
+    ) -> list[ReminderOccurrence]:
+        query = (
+            "SELECT id, reminder_definition_id, user_id, scheduled_for, trigger_at, status, action, action_outcome, "
+            "acted_at, grace_window_minutes, retry_count, last_delivery_status, metadata_json, created_at, updated_at "
+            "FROM reminder_occurrences WHERE user_id = ?"
+        )
+        params: list[Any] = [user_id]
+        if reminder_definition_id is not None:
+            query += " AND reminder_definition_id = ?"
+            params.append(reminder_definition_id)
+        if status is not None:
+            query += " AND status = ?"
+            params.append(status)
+        query += " ORDER BY trigger_at LIMIT ?"
+        params.append(limit)
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [
+            ReminderOccurrence(
+                id=row[0],
+                reminder_definition_id=row[1],
+                user_id=row[2],
+                scheduled_for=datetime.fromisoformat(row[3]),
+                trigger_at=datetime.fromisoformat(row[4]),
+                status=row[5],
+                action=row[6],
+                action_outcome=row[7],
+                acted_at=datetime.fromisoformat(row[8]) if row[8] else None,
+                grace_window_minutes=row[9],
+                retry_count=row[10],
+                last_delivery_status=row[11],
+                metadata=json.loads(cast(str, row[12])),
+                created_at=datetime.fromisoformat(row[13]),
+                updated_at=datetime.fromisoformat(row[14]),
+            )
+            for row in rows
+        ]
+
+    def append_reminder_action(self, action: ReminderActionRecord) -> ReminderActionRecord:
+        payload = action.model_dump(mode="json")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT INTO reminder_actions
+                (id, occurrence_id, reminder_definition_id, user_id, action, acted_at, snooze_minutes, metadata_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    action.id,
+                    action.occurrence_id,
+                    action.reminder_definition_id,
+                    action.user_id,
+                    action.action,
+                    action.acted_at.isoformat(),
+                    action.snooze_minutes,
+                    json.dumps(payload["metadata"]),
+                ),
+            )
+            conn.commit()
+        return action
+
+    def list_reminder_actions(
+        self,
+        *,
+        occurrence_id: str | None = None,
+        reminder_definition_id: str | None = None,
+        limit: int = 200,
+    ) -> list[ReminderActionRecord]:
+        query = (
+            "SELECT id, occurrence_id, reminder_definition_id, user_id, action, acted_at, snooze_minutes, metadata_json "
+            "FROM reminder_actions WHERE 1=1"
+        )
+        params: list[Any] = []
+        if occurrence_id is not None:
+            query += " AND occurrence_id = ?"
+            params.append(occurrence_id)
+        if reminder_definition_id is not None:
+            query += " AND reminder_definition_id = ?"
+            params.append(reminder_definition_id)
+        query += " ORDER BY acted_at LIMIT ?"
+        params.append(limit)
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [
+            ReminderActionRecord(
+                id=row[0],
+                occurrence_id=row[1],
+                reminder_definition_id=row[2],
+                user_id=row[3],
+                action=row[4],
+                acted_at=datetime.fromisoformat(row[5]),
+                snooze_minutes=row[6],
+                metadata=json.loads(cast(str, row[7])),
+            )
+            for row in rows
+        ]
+
+    def update_reminder_occurrence_status(
+        self,
+        *,
+        occurrence_id: str,
+        status: str,
+        acted_at: datetime | None = None,
+        action: str | None = None,
+        action_outcome: str | None = None,
+        trigger_at: datetime | None = None,
+    ) -> ReminderOccurrence | None:
+        now = datetime.now(timezone.utc)
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                UPDATE reminder_occurrences
+                SET status = ?, acted_at = COALESCE(?, acted_at), action = COALESCE(?, action),
+                    action_outcome = COALESCE(?, action_outcome), trigger_at = COALESCE(?, trigger_at), updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    status,
+                    acted_at.isoformat() if acted_at else None,
+                    action,
+                    action_outcome,
+                    trigger_at.isoformat() if trigger_at else None,
+                    now.isoformat(),
+                    occurrence_id,
+                ),
+            )
+            conn.commit()
+        return self.get_reminder_occurrence(occurrence_id)
+
     def save_reminder_event(self, event: ReminderEvent) -> None:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO reminder_events
-                (id, user_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, user_id, reminder_definition_id, occurrence_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     event.id,
                     event.user_id,
+                    event.reminder_definition_id,
+                    event.occurrence_id,
                     event.regimen_id,
                     event.reminder_type,
                     event.title,
@@ -64,7 +389,7 @@ class SQLiteReminderRepository:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
-                SELECT id, user_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
+                SELECT id, user_id, reminder_definition_id, occurrence_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
                 FROM reminder_events WHERE id = ?
                 """,
                 (event_id,),
@@ -76,25 +401,27 @@ class SQLiteReminderRepository:
         return ReminderEvent(
             id=row[0],
             user_id=row[1],
-            regimen_id=row[2],
-            reminder_type=row[3],
-            title=row[4],
-            body=row[5],
-            medication_name=row[6],
-            scheduled_at=datetime.fromisoformat(row[7]),
-            slot=row[8],
-            dosage_text=row[9],
-            status=row[10],
-            meal_confirmation=row[11],
-            sent_at=datetime.fromisoformat(row[12]) if row[12] else None,
-            ack_at=datetime.fromisoformat(row[13]) if row[13] else None,
+            reminder_definition_id=row[2],
+            occurrence_id=row[3],
+            regimen_id=row[4],
+            reminder_type=row[5],
+            title=row[6],
+            body=row[7],
+            medication_name=row[8],
+            scheduled_at=datetime.fromisoformat(row[9]),
+            slot=row[10],
+            dosage_text=row[11],
+            status=row[12],
+            meal_confirmation=row[13],
+            sent_at=datetime.fromisoformat(row[14]) if row[14] else None,
+            ack_at=datetime.fromisoformat(row[15]) if row[15] else None,
         )
 
     def list_reminder_events(self, user_id: str) -> list[ReminderEvent]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
                 """
-                SELECT id, user_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
+                SELECT id, user_id, reminder_definition_id, occurrence_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
                 FROM reminder_events WHERE user_id = ? ORDER BY scheduled_at
                 """,
                 (user_id,),
@@ -103,18 +430,20 @@ class SQLiteReminderRepository:
             ReminderEvent(
                 id=r[0],
                 user_id=r[1],
-                regimen_id=r[2],
-                reminder_type=r[3],
-                title=r[4],
-                body=r[5],
-                medication_name=r[6],
-                scheduled_at=datetime.fromisoformat(r[7]),
-                slot=r[8],
-                dosage_text=r[9],
-                status=r[10],
-                meal_confirmation=r[11],
-                sent_at=datetime.fromisoformat(r[12]) if r[12] else None,
-                ack_at=datetime.fromisoformat(r[13]) if r[13] else None,
+                reminder_definition_id=r[2],
+                occurrence_id=r[3],
+                regimen_id=r[4],
+                reminder_type=r[5],
+                title=r[6],
+                body=r[7],
+                medication_name=r[8],
+                scheduled_at=datetime.fromisoformat(r[9]),
+                slot=r[10],
+                dosage_text=r[11],
+                status=r[12],
+                meal_confirmation=r[13],
+                sent_at=datetime.fromisoformat(r[14]) if r[14] else None,
+                ack_at=datetime.fromisoformat(r[15]) if r[15] else None,
             )
             for r in rows
         ]

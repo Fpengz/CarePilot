@@ -138,6 +138,8 @@ def materialize_reminder_notifications(
             next_attempt_at=trigger_at,
             payload={
                 "reminder_id": reminder_event.id,
+                "occurrence_id": reminder_event.occurrence_id,
+                "reminder_definition_id": reminder_event.reminder_definition_id,
                 "regimen_id": reminder_event.regimen_id,
                 "reminder_type": reminder_event.reminder_type,
                 "title": reminder_event.title,
@@ -201,6 +203,8 @@ def dispatch_due_reminder_notifications(
             payload={
                 "scheduled_notification_id": item.id,
                 "reminder_id": item.reminder_id,
+                "occurrence_id": str(item.payload.get("occurrence_id", "")),
+                "reminder_definition_id": str(item.payload.get("reminder_definition_id", "")),
                 "user_id": item.user_id,
                 "channel": item.channel,
                 "reminder_type": str(item.payload.get("reminder_type", "medication")),

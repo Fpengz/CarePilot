@@ -155,6 +155,71 @@ class MedicationStore:
 class ReminderStore:
     _store: ReminderRepositoryProtocol
 
+    def save_reminder_definition(self, definition: Any) -> Any:
+        return self._store.save_reminder_definition(definition)
+
+    def get_reminder_definition(self, reminder_definition_id: str) -> Any | None:
+        return self._store.get_reminder_definition(reminder_definition_id)
+
+    def list_reminder_definitions(self, user_id: str, *, active_only: bool = False) -> list[Any]:
+        return self._store.list_reminder_definitions(user_id, active_only=active_only)
+
+    def save_reminder_occurrence(self, occurrence: Any) -> Any:
+        return self._store.save_reminder_occurrence(occurrence)
+
+    def get_reminder_occurrence(self, occurrence_id: str) -> Any | None:
+        return self._store.get_reminder_occurrence(occurrence_id)
+
+    def list_reminder_occurrences(
+        self,
+        *,
+        user_id: str,
+        reminder_definition_id: str | None = None,
+        status: str | None = None,
+        limit: int = 200,
+    ) -> list[Any]:
+        return self._store.list_reminder_occurrences(
+            user_id=user_id,
+            reminder_definition_id=reminder_definition_id,
+            status=status,
+            limit=limit,
+        )
+
+    def append_reminder_action(self, action: Any) -> Any:
+        return self._store.append_reminder_action(action)
+
+    def list_reminder_actions(
+        self,
+        *,
+        occurrence_id: str | None = None,
+        reminder_definition_id: str | None = None,
+        limit: int = 200,
+    ) -> list[Any]:
+        return self._store.list_reminder_actions(
+            occurrence_id=occurrence_id,
+            reminder_definition_id=reminder_definition_id,
+            limit=limit,
+        )
+
+    def update_reminder_occurrence_status(
+        self,
+        *,
+        occurrence_id: str,
+        status: str,
+        acted_at: Any | None = None,
+        action: str | None = None,
+        action_outcome: str | None = None,
+        trigger_at: Any | None = None,
+    ) -> Any:
+        return self._store.update_reminder_occurrence_status(
+            occurrence_id=occurrence_id,
+            status=status,
+            acted_at=acted_at,
+            action=action,
+            action_outcome=action_outcome,
+            trigger_at=trigger_at,
+        )
+
     def save_reminder_event(self, event: Any) -> None:
         self._store.save_reminder_event(event)
 

@@ -1,9 +1,4 @@
-"""
-Define reminder domain models.
-
-This module contains models for medication regimens, reminders, and mobility
-settings.
-"""
+"""Define reminder domain models."""
 
 from __future__ import annotations
 
@@ -26,6 +21,7 @@ class MobilityReminderSettings(BaseModel):
 
 ReminderNotificationChannel = Literal[
     "in_app",
+    "chat",
     "email",
     "sms",
     "push",
@@ -122,6 +118,128 @@ ReminderStatus = Literal["sent", "acknowledged", "missed"]
 MealConfirmation = Literal["yes", "no", "unknown"]
 ReminderType = Literal["medication", "mobility"]
 MedicationSourceType = Literal["manual", "plain_text", "upload"]
+ReminderSourceType = Literal[
+    "manual",
+    "plain_text",
+    "upload",
+    "clinician",
+    "admin",
+    "agent_suggested_confirmed",
+]
+ReminderSchedulePattern = Literal[
+    "one_time",
+    "daily_fixed_times",
+    "multiple_times_per_day",
+    "every_x_hours",
+    "specific_weekdays",
+    "meal_relative",
+    "bedtime",
+    "prn",
+    "temporary_course",
+]
+ReminderOccurrenceStatus = Literal[
+    "scheduled",
+    "queued",
+    "processing",
+    "completed",
+    "skipped",
+    "snoozed",
+    "missed",
+    "cancelled",
+]
+ReminderActionType = Literal[
+    "taken",
+    "skipped",
+    "snooze",
+    "view_details",
+    "ignored",
+    "expired",
+]
+ReminderActionOutcome = Literal["on_time", "late", "missed", "info"]
+
+
+class ReminderScheduleRule(BaseModel):
+    pattern: ReminderSchedulePattern
+    times: list[str] = Field(default_factory=list)
+    interval_hours: int | None = None
+    weekdays: list[int] = Field(default_factory=list)
+    meal_slot: MealSlot | None = None
+    relative_direction: Literal["before", "after"] | None = None
+    offset_minutes: int = 0
+    timezone: str = "Asia/Singapore"
+    start_date: date | None = None
+    end_date: date | None = None
+    duration_days: int | None = None
+    max_daily_occurrences: int | None = None
+    as_needed: bool = False
+    quiet_hours_start: str | None = None
+    quiet_hours_end: str | None = None
+    pause_until: datetime | None = None
+    metadata: dict[str, object] = Field(default_factory=dict)
+
+
+class ReminderDefinition(BaseModel):
+    id: str
+    user_id: str
+    regimen_id: str | None = None
+    reminder_type: ReminderType = "medication"
+    source: ReminderSourceType = "manual"
+    title: str
+    body: str | None = None
+    medication_name: str = ""
+    dosage_text: str = ""
+    route: str | None = None
+    instructions_text: str | None = None
+    special_notes: str | None = None
+    treatment_duration: str | None = None
+    channels: list[ReminderNotificationChannel] = Field(default_factory=lambda: ["in_app"])
+    timezone: str = "Asia/Singapore"
+    schedule: ReminderScheduleRule
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ReminderOccurrence(BaseModel):
+    id: str
+    reminder_definition_id: str
+    user_id: str
+    scheduled_for: datetime
+    trigger_at: datetime
+    status: ReminderOccurrenceStatus = "scheduled"
+    action: ReminderActionType | None = None
+    action_outcome: ReminderActionOutcome | None = None
+    acted_at: datetime | None = None
+    grace_window_minutes: int = 60
+    retry_count: int = 0
+    last_delivery_status: str | None = None
+    metadata: dict[str, object] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ReminderActionRecord(BaseModel):
+    id: str
+    occurrence_id: str
+    reminder_definition_id: str
+    user_id: str
+    action: ReminderActionType
+    acted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    snooze_minutes: int | None = None
+    metadata: dict[str, object] = Field(default_factory=dict)
+
+
+class ReminderDeliveryAttempt(BaseModel):
+    id: str
+    occurrence_id: str
+    reminder_definition_id: str
+    user_id: str
+    channel: ReminderNotificationChannel
+    scheduled_for: datetime
+    triggered_at: datetime
+    delivery_status: ScheduledNotificationStatus
+    error_message: str | None = None
+    metadata: dict[str, object] = Field(default_factory=dict)
 
 
 class MedicationRegimen(BaseModel):
@@ -152,6 +270,8 @@ class MedicationRegimen(BaseModel):
 class ReminderEvent(BaseModel):
     id: str
     user_id: str
+    reminder_definition_id: str | None = None
+    occurrence_id: str | None = None
     regimen_id: str | None = None
     reminder_type: ReminderType = "medication"
     title: str = "Medication Reminder"

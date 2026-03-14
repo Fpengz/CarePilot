@@ -8,7 +8,7 @@ suggestions, reports, and reminder generation endpoints.
 from __future__ import annotations
 
 # ruff: noqa: F401
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, EmailStr, Field, RootModel
@@ -24,7 +24,12 @@ from dietary_guardian.features.profiles.domain.models import (
     MealSlot,
     ProfileMode,
 )
-from dietary_guardian.features.reminders.domain.models import ReminderEvent
+from dietary_guardian.features.reminders.domain.models import (
+    ReminderDefinition,
+    ReminderEvent,
+    ReminderOccurrence,
+    ReminderScheduleRule,
+)
 from dietary_guardian.features.recommendations.domain.models import (
     InteractionEventType,
     RecommendationOutput,
@@ -277,6 +282,64 @@ class ReminderConfirmRequest(BaseModel):
 class ReminderConfirmResponse(BaseModel):
     event: ReminderEvent
     metrics: EngagementMetrics
+
+
+class ReminderOccurrenceActionRequest(BaseModel):
+    action: Literal["taken", "skipped", "snooze", "view_details", "ignored", "expired"]
+    snooze_minutes: int | None = Field(default=None, ge=1, le=120)
+
+
+class ReminderDefinitionCreateRequest(BaseModel):
+    regimen_id: str | None = None
+    reminder_type: Literal["medication", "mobility"] = "medication"
+    source: Literal["manual", "plain_text", "upload", "clinician", "admin", "agent_suggested_confirmed"] = "manual"
+    title: str = Field(min_length=1)
+    body: str | None = None
+    medication_name: str = ""
+    dosage_text: str = ""
+    route: str | None = None
+    instructions_text: str | None = None
+    special_notes: str | None = None
+    treatment_duration: str | None = None
+    channels: list[
+        Literal["in_app", "chat", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
+    ] = Field(default_factory=lambda: ["in_app"])
+    timezone: str = "Asia/Singapore"
+    schedule: ReminderScheduleRule
+    active: bool = True
+
+
+class ReminderDefinitionPatchRequest(BaseModel):
+    title: str | None = None
+    body: str | None = None
+    medication_name: str | None = None
+    dosage_text: str | None = None
+    route: str | None = None
+    instructions_text: str | None = None
+    special_notes: str | None = None
+    treatment_duration: str | None = None
+    channels: list[
+        Literal["in_app", "chat", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
+    ] | None = None
+    timezone: str | None = None
+    schedule: ReminderScheduleRule | None = None
+    active: bool | None = None
+
+
+class ReminderDefinitionEnvelopeResponse(BaseModel):
+    item: ReminderDefinition
+
+
+class ReminderDefinitionListResponse(BaseModel):
+    items: list[ReminderDefinition] = Field(default_factory=list)
+
+
+class ReminderOccurrenceListResponse(BaseModel):
+    items: list[ReminderOccurrence] = Field(default_factory=list)
+
+
+class ReminderOccurrenceActionResponse(BaseModel):
+    occurrence: ReminderOccurrence
 
 
 class MobilityReminderSettingsRequest(BaseModel):
