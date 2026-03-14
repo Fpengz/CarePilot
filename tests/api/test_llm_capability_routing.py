@@ -1,7 +1,11 @@
 """Module for test llm capability routing."""
 
 from dietary_guardian.config.app import AppSettings as Settings
+import json
+
 from dietary_guardian.config.llm import LLMCapability, ModelProvider
+from dietary_guardian.config.app import get_settings
+from apps.api.dietary_api.deps import build_app_context, close_app_context
 from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
 from dietary_guardian.agent.runtime.llm_factory import LLMFactory
 
@@ -81,5 +85,34 @@ def test_unmapped_capability_falls_back_to_legacy_global_settings() -> None:
 
     assert getattr(model, "model_name", None) == "gpt-4o-mini"
     assert "endpoint=default" in LLMFactory.describe_model_destination(model)
+
+
+def test_app_context_medication_parse_uses_base_provider(monkeypatch) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setenv(
+        "LLM_CAPABILITY_TARGETS",
+        json.dumps(
+            {
+                "medication_parse": {
+                    "provider": "vllm",
+                    "model": "med-parse-v1",
+                    "base_url": "http://med.local/v1",
+                    "api_key": "local-test-key",
+                }
+            }
+        ),
+    )
+
+    ctx = build_app_context()
+    try:
+        health = ctx.medication_inference_engine.health()
+    finally:
+        close_app_context(ctx)
+
+    assert health.capability == LLMCapability.MEDICATION_PARSE.value
+    assert health.provider == ModelProvider.OPENAI.value
+    assert health.model == "gpt-4o-mini"
 def _build_settings(**overrides: object) -> Settings:
     return Settings.model_validate(overrides)

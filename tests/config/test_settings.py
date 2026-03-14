@@ -86,6 +86,16 @@ def test_openai_provider_allows_with_key() -> None:
     assert settings.llm.provider == "openai"
 
 
+def test_qwen_provider_requires_key() -> None:
+    with pytest.raises(ValidationError):
+        _build_settings(llm={"provider": "qwen", "qwen_api_key": None})
+
+
+def test_qwen_provider_allows_with_key() -> None:
+    settings = _build_settings(llm={"provider": "qwen", "qwen_api_key": "test-qwen-key"})
+    assert settings.llm.provider == "qwen"
+
+
 def test_runtime_backend_settings_support_sqlite_and_optional_redis() -> None:
     settings = _build_settings(
         llm={"provider": "test"},

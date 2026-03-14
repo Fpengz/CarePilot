@@ -254,6 +254,102 @@ def test_confirm_requires_valid_draft(sqlite_medications_env: None) -> None:
     assert response.json()["error"]["code"] == "medications.intake_draft_not_found"
 
 
+def test_confirm_rejects_ambiguous_draft(sqlite_medications_env: None) -> None:
+    client = TestClient(create_app())
+    _login(client)
+
+    preview = client.post(
+        "/api/v1/medications/intake/text",
+        json={"instructions_text": "Clopidogrel 75mg daily", "allow_ambiguous": True},
+    )
+    assert preview.status_code == 200
+    draft_id = preview.json()["draft_id"]
+
+    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft_id})
+    assert confirm.status_code == 422
+    assert confirm.json()["error"]["code"] == "medications.intake_review_required"
+
+
+def test_editing_draft_updates_confirmed_regimen(sqlite_medications_env: None) -> None:
+    client = TestClient(create_app())
+    _login(client)
+
+    preview = client.post(
+        "/api/v1/medications/intake/text",
+        json={"instructions_text": "Amlodipine 5mg every morning"},
+    )
+    assert preview.status_code == 200
+    draft = preview.json()
+
+    updated = client.patch(
+        f"/api/v1/medications/intake/drafts/{draft['draft_id']}/instructions/0",
+        json={
+            "medication_name_raw": "Losartan",
+            "medication_name_canonical": "losartan",
+            "dosage_text": "50mg",
+            "timing_type": "fixed_time",
+            "frequency_type": "fixed_time",
+            "frequency_times_per_day": 1,
+            "offset_minutes": 0,
+            "slot_scope": [],
+            "fixed_time": "09:00",
+            "time_rules": [{"kind": "fixed_time", "time_local": "09:00"}],
+            "duration_days": None,
+            "start_date": "2026-03-15",
+            "end_date": None,
+            "confidence": 1.0,
+            "ambiguities": [],
+        },
+    )
+
+    assert updated.status_code == 200
+    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft["draft_id"]})
+    assert confirm.status_code == 200
+    assert confirm.json()["regimens"][0]["medication_name"] == "Losartan"
+    assert confirm.json()["regimens"][0]["dosage_text"] == "50mg"
+
+
+def test_deleting_draft_instruction_removes_it_from_confirmation(sqlite_medications_env: None) -> None:
+    client = TestClient(create_app())
+    _login(client)
+
+    preview = client.post(
+        "/api/v1/medications/intake/text",
+        json={"instructions_text": "Amlodipine 5mg every morning; Metformin 500mg twice daily before meals"},
+    )
+    assert preview.status_code == 200
+    draft = preview.json()
+    assert len(draft["normalized_instructions"]) == 2
+
+    deleted = client.delete(f"/api/v1/medications/intake/drafts/{draft['draft_id']}/instructions/0")
+    assert deleted.status_code == 200
+    assert len(deleted.json()["normalized_instructions"]) == 1
+
+    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft["draft_id"]})
+    assert confirm.status_code == 200
+    assert len(confirm.json()["regimens"]) == 1
+
+
+def test_canceling_draft_prevents_confirmation(sqlite_medications_env: None) -> None:
+    client = TestClient(create_app())
+    _login(client)
+
+    preview = client.post(
+        "/api/v1/medications/intake/text",
+        json={"instructions_text": "Amlodipine 5mg every morning"},
+    )
+    assert preview.status_code == 200
+    draft_id = preview.json()["draft_id"]
+
+    cancelled = client.delete(f"/api/v1/medications/intake/drafts/{draft_id}")
+    assert cancelled.status_code == 200
+    assert cancelled.json()["ok"] is True
+
+    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft_id})
+    assert confirm.status_code == 404
+    assert confirm.json()["error"]["code"] == "medications.intake_draft_not_found"
+
+
 def test_duplicate_manual_regimen_create_returns_conflict(sqlite_medications_env: None) -> None:
     client = TestClient(create_app())
     _login(client)

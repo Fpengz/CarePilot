@@ -226,3 +226,42 @@ def test_get_model_explicit_openai_provider_uses_openai_settings(monkeypatch) ->
     assert kwargs["timeout"] == 90.0
     assert kwargs["max_retries"] == 2
     get_settings.cache_clear()
+
+
+def test_get_model_explicit_qwen_provider_uses_openai_network_settings(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeAsyncOpenAI:
+        def __init__(self, **kwargs):  # noqa: ANN003
+            captured["async_openai_kwargs"] = kwargs
+
+    class FakeProvider:
+        def __init__(self, *, openai_client=None, **kwargs):  # noqa: ANN003
+            captured["openai_client"] = openai_client
+            captured["provider_kwargs"] = kwargs
+            self.base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+
+    class FakeModel:
+        def __init__(self, model_name: str, provider: FakeProvider) -> None:
+            self.model_name = model_name
+            self.provider = provider
+
+    monkeypatch.setattr("dietary_guardian.agent.runtime.llm_factory.AsyncOpenAI", FakeAsyncOpenAI)
+    monkeypatch.setattr("dietary_guardian.agent.runtime.llm_factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("dietary_guardian.agent.runtime.llm_factory.OpenAIChatModel", FakeModel)
+    monkeypatch.setenv("QWEN_API_KEY", "qwen-key")
+    monkeypatch.setenv("QWEN_MODEL", "qwen-vl-cheapest")
+    monkeypatch.setenv("QWEN_BASE_URL", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
+    monkeypatch.setenv("OPENAI_REQUEST_TIMEOUT_SECONDS", "90")
+    monkeypatch.setenv("OPENAI_TRANSPORT_MAX_RETRIES", "2")
+    get_settings.cache_clear()
+
+    model = LLMFactory.get_model(provider="qwen")
+
+    assert getattr(model, "model_name", None) == "qwen-vl-cheapest"
+    kwargs = cast(dict[str, object], captured["async_openai_kwargs"])
+    assert kwargs["api_key"] == "qwen-key"
+    assert kwargs["base_url"] == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    assert kwargs["timeout"] == 90.0
+    assert kwargs["max_retries"] == 2
+    get_settings.cache_clear()
