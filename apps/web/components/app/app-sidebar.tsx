@@ -42,7 +42,7 @@ export function AppSidebar() {
                   </Badge>
                 </div>
                 <p className="app-muted mt-2 text-sm leading-5">
-                  Clinical companion workspace.
+                  Personalized nutrition workspace.
                 </p>
               </>
             )}
