@@ -970,6 +970,38 @@ export async function confirmMedicationIntake(payload: {
   });
 }
 
+export async function updateMedicationDraftInstruction(
+  draftId: string,
+  instructionIndex: number,
+  payload: MedicationIntakeApiResponse["normalized_instructions"][number],
+): Promise<MedicationIntakeApiResponse> {
+  return request<MedicationIntakeApiResponse>(
+    `/api/v1/medications/intake/drafts/${draftId}/instructions/${instructionIndex}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function deleteMedicationDraftInstruction(
+  draftId: string,
+  instructionIndex: number,
+): Promise<MedicationIntakeApiResponse> {
+  return request<MedicationIntakeApiResponse>(
+    `/api/v1/medications/intake/drafts/${draftId}/instructions/${instructionIndex}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export async function cancelMedicationDraft(draftId: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/v1/medications/intake/drafts/${draftId}`, {
+    method: "DELETE",
+  });
+}
+
 export async function createSymptomCheckIn(payload: {
   severity: number;
   symptom_codes?: string[];
