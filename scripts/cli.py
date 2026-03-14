@@ -21,7 +21,7 @@ import sys
 import time
 from datetime import date
 from pathlib import Path
-from typing import Annotated, cast
+from typing import Annotated, MutableMapping, cast
 
 import typer
 from dotenv import dotenv_values
@@ -96,6 +96,10 @@ def load_root_env() -> None:
 
 def load_web_env() -> None:
     load_env(REPO_ROOT / "apps" / "web" / ".env")
+
+
+def apply_dev_env_defaults(env: MutableMapping[str, str]) -> None:
+    env.setdefault("DIETARY_GUARDIAN_LOG_LEVEL", "DEBUG")
 
 
 def run(
@@ -421,6 +425,7 @@ def command_dev(
     load_root_env()
     require_cmd("uv")
     require_cmd("pnpm")
+    apply_dev_env_defaults(os.environ)
 
     start_scheduler = os.environ.get("START_REMINDER_SCHEDULER", "1")
     if no_scheduler:
