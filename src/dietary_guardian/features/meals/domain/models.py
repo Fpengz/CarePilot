@@ -11,7 +11,7 @@ from enum import StrEnum
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 ImageQuality = Literal["poor", "fair", "good", "unknown"]
 MatchStrategy = Literal["exact_alias", "partial_alias", "fuzzy_alias", "fallback_label", "unmatched"]
@@ -174,6 +174,22 @@ class MealPerception(BaseModel):
     uncertainties: list[str] = Field(default_factory=list)
     image_quality: ImageQuality = "unknown"
     confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    @field_validator("image_quality", mode="before")
+    @classmethod
+    def _coerce_image_quality(cls, value):  # noqa: ANN001
+        if isinstance(value, str):
+            return value
+        if isinstance(value, dict):
+            raw_values = [str(item).lower() for item in value.values() if item is not None]
+            if any(item == "poor" for item in raw_values):
+                return "poor"
+            if any(item == "fair" for item in raw_values):
+                return "fair"
+            if any(item == "good" for item in raw_values):
+                return "good"
+            return "unknown"
+        return value
 
 
 class NormalizedMealItem(BaseModel):
