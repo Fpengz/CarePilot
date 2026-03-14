@@ -8,11 +8,13 @@ persist durable state and does not orchestrate multi-feature workflows.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
 
 from pydantic_ai import Agent
+from PIL import Image, UnidentifiedImageError
 
 from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
 from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest, InferenceResponse
@@ -144,7 +146,19 @@ class HawkerVisionModule:
         if isinstance(dish, ImageInput):
             label_hint = Path(dish.filename or "meal").stem or "meal"
             prompt = f"Identify the meal in this image. Filename hint: {label_hint}."
-            return prompt, InferenceModality.IMAGE, dish.content, dish.mime_type
+            image_bytes = dish.content
+            image_mime_type = dish.mime_type
+            if dish.mime_type == "image/webp":
+                try:
+                    with Image.open(BytesIO(dish.content)) as img:
+                        converted = img.convert("RGB")
+                        buffer = BytesIO()
+                        converted.save(buffer, format="JPEG")
+                        image_bytes = buffer.getvalue()
+                        image_mime_type = "image/jpeg"
+                except (UnidentifiedImageError, OSError, ValueError):  # noqa: BLE001
+                    logger.info("hawker_vision_webp_conversion_failed filename=%s", dish.filename)
+            return prompt, InferenceModality.IMAGE, image_bytes, image_mime_type
         return f"Identify the meal described here: {dish}", InferenceModality.TEXT, None, None
 
     def _stub_test_perception(self, dish: str | ImageInput) -> MealPerception:
