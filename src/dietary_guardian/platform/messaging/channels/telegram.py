@@ -65,6 +65,12 @@ class TelegramChannel:
                 error="missing telegram config",
                 destination="telegram://unconfigured",
             )
+        if not destination:
+            logger.info(
+                "telegram_send_default_destination event_id=%s chat_id=%s",
+                reminder_event.id,
+                chat_id,
+            )
 
         endpoint = self._build_endpoint()
         payload = self._build_payload(reminder_event, chat_id)
@@ -77,12 +83,19 @@ class TelegramChannel:
 
         if self.dev_mode:
             logger.info("telegram_send_dev_mode_skip_network event_id=%s", reminder_event.id)
-            return ChannelResult(
+            result = ChannelResult(
                 channel=self.name,
                 success=True,
                 delivered_at=datetime.now(timezone.utc),
                 destination=destination or endpoint,
             )
+            logger.info(
+                "telegram_send_complete event_id=%s success=%s error=%s",
+                reminder_event.id,
+                result.success,
+                result.error or "",
+            )
+            return result
 
         body = json.dumps(payload).encode("utf-8")
         req = request.Request(
@@ -95,23 +108,44 @@ class TelegramChannel:
             with request.urlopen(req, timeout=self.request_timeout_seconds) as resp:  # noqa: S310
                 ok = 200 <= resp.status < 300
                 if not ok:
-                    return ChannelResult(
+                    result = ChannelResult(
                         channel=self.name,
                         success=False,
                         error=f"telegram http {resp.status}",
                         destination=destination or endpoint,
                     )
-            return ChannelResult(
+                    logger.warning(
+                        "telegram_send_complete event_id=%s success=%s error=%s",
+                        reminder_event.id,
+                        result.success,
+                        result.error or "",
+                    )
+                    return result
+            result = ChannelResult(
                 channel=self.name,
                 success=True,
                 delivered_at=datetime.now(timezone.utc),
                 destination=destination or endpoint,
             )
+            logger.info(
+                "telegram_send_complete event_id=%s success=%s error=%s",
+                reminder_event.id,
+                result.success,
+                result.error or "",
+            )
+            return result
         except error.URLError as exc:
             logger.error("telegram_send_error event_id=%s error=%s", reminder_event.id, exc)
-            return ChannelResult(
+            result = ChannelResult(
                 channel=self.name,
                 success=False,
                 error=str(exc),
                 destination=destination or endpoint,
             )
+            logger.warning(
+                "telegram_send_complete event_id=%s success=%s error=%s",
+                reminder_event.id,
+                result.success,
+                result.error or "",
+            )
+            return result

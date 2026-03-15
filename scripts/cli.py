@@ -704,6 +704,90 @@ def command_reminders_dispatch() -> None:
     info(f"reminders.dispatch queued={result.queued_count} deliveries={result.delivery_attempts}")
 
 
+@app.command("reminders-diagnose")
+def command_reminders_diagnose(
+    limit: Annotated[int, typer.Option("--limit", help="How many recent scheduled notifications to inspect.")] = 10,
+) -> None:
+    """Show a compact reminder delivery pipeline snapshot."""
+    load_root_env()
+    settings = get_settings()
+    db_path = settings.storage.api_sqlite_db_path
+
+    def _mask_token(value: str | None) -> str:
+        if not value:
+            return "missing"
+        return f"***{value[-4:]}" if len(value) >= 4 else "***"
+
+    typer.echo(f"db_path={db_path}")
+    typer.echo(
+        "telegram_config token=%s chat_id=%s dev_mode=%s"
+        % (
+            _mask_token(settings.channels.telegram_bot_token),
+            "present" if settings.channels.telegram_chat_id else "missing",
+            settings.channels.telegram_dev_mode,
+        )
+    )
+
+    try:
+        conn = sqlite3.connect(db_path)
+    except sqlite3.Error as exc:
+        error(f"Failed to open db: {exc}")
+        raise typer.Exit(1)
+
+    with conn:
+        cur = conn.cursor()
+
+        typer.echo("scheduled_notifications_status_counts:")
+        try:
+            rows = cur.execute(
+                "SELECT status, COUNT(*) FROM scheduled_notifications GROUP BY status ORDER BY status"
+            ).fetchall()
+            if not rows:
+                typer.echo("  (none)")
+            for status, count in rows:
+                typer.echo(f"  {status}: {count}")
+        except sqlite3.Error as exc:
+            typer.echo(f"  error: {exc}")
+
+        typer.echo("alert_outbox_state_counts:")
+        try:
+            rows = cur.execute(
+                "SELECT state, sink, COUNT(*) FROM alert_outbox GROUP BY state, sink ORDER BY state, sink"
+            ).fetchall()
+            if not rows:
+                typer.echo("  (none)")
+            for state, sink, count in rows:
+                typer.echo(f"  {state} | {sink}: {count}")
+        except sqlite3.Error as exc:
+            typer.echo(f"  error: {exc}")
+
+        typer.echo("notification_logs_recent:")
+        try:
+            recent_ids = cur.execute(
+                "SELECT id FROM scheduled_notifications ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            ids = [row[0] for row in recent_ids]
+            if not ids:
+                typer.echo("  (none)")
+            else:
+                placeholders = ",".join("?" for _ in ids)
+                query = (
+                    "SELECT scheduled_notification_id, event_type, COUNT(*) "
+                    "FROM notification_logs "
+                    f"WHERE scheduled_notification_id IN ({placeholders}) "
+                    "GROUP BY scheduled_notification_id, event_type "
+                    "ORDER BY scheduled_notification_id, event_type"
+                )
+                rows = cur.execute(query, ids).fetchall()
+                if not rows:
+                    typer.echo("  (none)")
+                for scheduled_id, event_type, count in rows:
+                    typer.echo(f"  {scheduled_id} | {event_type}: {count}")
+        except sqlite3.Error as exc:
+            typer.echo(f"  error: {exc}")
+
+
 @test_app.command("backend", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def test_backend(ctx: typer.Context) -> None:
     assert_no_extra_args(ctx.args, "Usage: uv run python scripts/cli.py test backend")

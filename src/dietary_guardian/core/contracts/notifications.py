@@ -99,6 +99,14 @@ class ReminderNotificationRepository(Protocol):
         user_id: str | None = None,
     ) -> list[ScheduledReminderNotification]: ...
 
+    def mark_scheduled_notification_dead_letter(
+        self,
+        notification_id: str,
+        *,
+        attempt_count: int,
+        error: str,
+    ) -> None: ...
+
 
 class ReminderSchedulerRepository(ReminderNotificationRepository, AlertRepositoryProtocol, Protocol):
     """Combined port required by the reminder scheduler runtime loop."""

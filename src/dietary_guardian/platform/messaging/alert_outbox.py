@@ -90,6 +90,11 @@ class OutboxWorker:
         )
         if not leased:
             return []
+        logger.info(
+            "alert_outbox_leased count=%s alert_id_filter=%s",
+            len(leased),
+            alert_id or "none",
+        )
 
         tasks = [self._deliver_record(record) for record in leased]
         return await asyncio.gather(*tasks)
@@ -123,6 +128,12 @@ class OutboxWorker:
         )
         attempt = record.attempt_count + 1
         self._sync_reminder_notification_processing(record=record, attempt=attempt)
+        logger.info(
+            "alert_delivery_attempt alert_id=%s sink=%s attempt=%s",
+            record.alert_id,
+            record.sink,
+            attempt,
+        )
         try:
             result = sink.send(message)
         except Exception as exc:
@@ -144,6 +155,12 @@ class OutboxWorker:
         if result.success:
             self._repository.mark_alert_delivered(record.alert_id, record.sink, attempt_count=attempt)
             self._sync_reminder_notification_delivered(record=record, attempt=attempt)
+            logger.info(
+                "alert_delivery_success alert_id=%s sink=%s attempt=%s",
+                record.alert_id,
+                record.sink,
+                attempt,
+            )
             return result.model_copy(update={"attempt": attempt})
 
         if attempt >= self._max_attempts:
@@ -157,6 +174,13 @@ class OutboxWorker:
                 record.sink,
                 result.error or "delivery failed",
                 attempt_count=attempt,
+            )
+            logger.warning(
+                "alert_delivery_dead_letter alert_id=%s sink=%s attempt=%s error=%s",
+                record.alert_id,
+                record.sink,
+                attempt,
+                result.error or "delivery failed",
             )
             return result.model_copy(update={"attempt": attempt})
 
@@ -174,6 +198,14 @@ class OutboxWorker:
             next_attempt_at=next_attempt,
             attempt_count=attempt,
             error=result.error or "delivery failed",
+        )
+        logger.warning(
+            "alert_delivery_retry alert_id=%s sink=%s attempt=%s next_attempt_at=%s error=%s",
+            record.alert_id,
+            record.sink,
+            attempt,
+            next_attempt.isoformat(),
+            result.error or "delivery failed",
         )
         return result.model_copy(update={"attempt": attempt})
 

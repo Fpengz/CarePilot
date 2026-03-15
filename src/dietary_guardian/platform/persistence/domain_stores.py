@@ -294,6 +294,19 @@ class ReminderStore:
     def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int:
         return self._store.cancel_scheduled_notifications_for_reminder(reminder_id)
 
+    def mark_scheduled_notification_dead_letter(
+        self,
+        notification_id: str,
+        *,
+        attempt_count: int,
+        error: str,
+    ) -> None:
+        return self._store.mark_scheduled_notification_dead_letter(
+            notification_id,
+            attempt_count=attempt_count,
+            error=error,
+        )
+
     def enqueue_alert(self, message: Any) -> list[Any]:
         return self._store.enqueue_alert(message)
 

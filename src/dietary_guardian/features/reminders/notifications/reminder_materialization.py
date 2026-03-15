@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeAlias, cast
 from uuid import uuid4
 
 from dietary_guardian.core.contracts.notifications import ReminderNotificationRepository
@@ -36,6 +36,7 @@ from dietary_guardian.features.reminders.domain.models import (
     ScheduledReminderNotification,
 )
 from dietary_guardian.platform.persistence import AppStoreBackend
+from dietary_guardian.platform.persistence.domain_stores import ReminderStore
 from dietary_guardian.platform.observability import get_logger
 
 if TYPE_CHECKING:
@@ -60,10 +61,12 @@ logger = get_logger(__name__)
 SYSTEM_DEFAULT_CHANNEL = "in_app"
 SYSTEM_DEFAULT_OFFSET_MINUTES = 0
 
+ReminderNotificationRepo: TypeAlias = ReminderNotificationRepository | AppStoreBackend | ReminderStore
+
 
 def resolve_notification_preferences(
     *,
-    repository: ReminderNotificationRepository | AppStoreBackend,
+    repository: ReminderNotificationRepo,
     user_id: str,
     reminder_type: str,
 ) -> list[ReminderNotificationPreference]:
@@ -111,7 +114,7 @@ def _build_idempotency_key(*, reminder_id: str, channel: str, trigger_at: dateti
 
 def materialize_reminder_notifications(
     *,
-    repository: ReminderNotificationRepository | AppStoreBackend,
+    repository: ReminderNotificationRepo,
     reminder_event: ReminderEvent,
     reminder_type: str,
 ) -> list[ScheduledReminderNotification]:
@@ -183,9 +186,10 @@ def materialize_reminder_notifications(
 
 def dispatch_due_reminder_notifications(
     *,
-    repository: ReminderNotificationRepository | AppStoreBackend,
+    repository: ReminderNotificationRepo,
     now: datetime | None = None,
     limit: int = 100,
+    max_late_minutes: int | None = None,
 ) -> list[QueuedReminderNotification]:
     """Lease due scheduled notifications and enqueue them into the alert outbox."""
     dispatch_at = now or datetime.now(timezone.utc)
@@ -195,7 +199,43 @@ def dispatch_due_reminder_notifications(
 
     queued: list[QueuedReminderNotification] = []
     for item in due_items:
+        if max_late_minutes is not None and max_late_minutes >= 0:
+            deadline = item.trigger_at + timedelta(minutes=max_late_minutes)
+            if dispatch_at > deadline:
+                logger.info(
+                    "reminder_notification_late_drop scheduled_notification_id=%s reminder_id=%s channel=%s trigger_at=%s deadline=%s",
+                    item.id,
+                    item.reminder_id,
+                    item.channel,
+                    item.trigger_at.isoformat(),
+                    deadline.isoformat(),
+                )
+                repository.mark_scheduled_notification_dead_letter(
+                    item.id,
+                    attempt_count=item.attempt_count,
+                    error="late_delivery_window_exceeded",
+                )
+                repository.append_notification_log(
+                    ReminderNotificationLogEntry(
+                        id=str(uuid4()),
+                        scheduled_notification_id=item.id,
+                        reminder_id=item.reminder_id,
+                        user_id=item.user_id,
+                        channel=item.channel,
+                        attempt_number=item.attempt_count,
+                        event_type="dead_lettered",
+                        error_message="late_delivery_window_exceeded",
+                        metadata={"trigger_at": item.trigger_at.isoformat(), "deadline": deadline.isoformat()},
+                    )
+                )
+                continue
         endpoint = repository.get_reminder_notification_endpoint(user_id=item.user_id, channel=item.channel)
+        if endpoint is None or not endpoint.destination:
+            logger.info(
+                "reminder_notification_destination_missing scheduled_notification_id=%s channel=%s",
+                item.id,
+                item.channel,
+            )
         message = AlertMessage(
             alert_id=item.id,
             type="reminder_notification",
@@ -225,6 +265,13 @@ def dispatch_due_reminder_notifications(
         if regimen_id:
             message.payload["regimen_id"] = str(regimen_id)
         repository.enqueue_alert(message)
+        logger.info(
+            "reminder_notification_queued scheduled_notification_id=%s reminder_id=%s channel=%s destination_present=%s",
+            item.id,
+            item.reminder_id,
+            item.channel,
+            "true" if endpoint and endpoint.destination else "false",
+        )
         repository.append_notification_log(
             ReminderNotificationLogEntry(
                 id=str(uuid4()),
@@ -250,7 +297,7 @@ def dispatch_due_reminder_notifications(
 
 def cancel_reminder_notifications(
     *,
-    repository: ReminderNotificationRepository | AppStoreBackend,
+    repository: ReminderNotificationRepo,
     reminder_id: str,
 ) -> int:
     """Cancel all pending scheduled notifications for a reminder and log the event."""
