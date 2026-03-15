@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 type ViewMode = "all" | "protein" | "carbs" | "fat";
 
 const FUEL_COLORS = {
-  protein: "#C0392B", // Terra Cotta
-  carbs: "#E67E22",   // Amber
-  fat: "#27AE60",     // Sage Green
+  protein: "#D2C4B4", // Soft Clay
+  carbs: "#F3E3D0",   // Warm Cream
+  fat: "#AACDDC",     // Soft Sky
 };
 
 export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi }) {
