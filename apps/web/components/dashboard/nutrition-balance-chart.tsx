@@ -1,12 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Label } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Label, Legend } from "recharts";
 import { DashboardMacroChartApi } from "@/lib/types";
 import { CHART_COLORS, COMMON_AXIS_PROPS, ClinicalTooltip } from "./chart-utils";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "all" | "protein" | "carbs" | "fat";
+
+const FUEL_COLORS = {
+  protein: "#C0392B", // Terra Cotta
+  carbs: "#E67E22",   // Amber
+  fat: "#27AE60",     // Sage Green
+};
 
 export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi }) {
   const [view, setView] = useState<ViewMode>("all");
@@ -14,9 +20,9 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
 
   const modes: { id: ViewMode; label: string; color: string }[] = [
     { id: "all", label: "All", color: "var(--foreground)" },
-    { id: "protein", label: "Protein", color: CHART_COLORS.protein },
-    { id: "carbs", label: "Carbs", color: CHART_COLORS.carbs },
-    { id: "fat", label: "Fat", color: CHART_COLORS.fat },
+    { id: "protein", label: "Protein", color: FUEL_COLORS.protein },
+    { id: "carbs", label: "Carbs", color: FUEL_COLORS.carbs },
+    { id: "fat", label: "Fat", color: FUEL_COLORS.fat },
   ];
 
   return (
@@ -44,7 +50,7 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
 
       <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
+          <BarChart data={data} margin={{ top: 0, right: 0, left: 10, bottom: 20 }}>
             <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeOpacity={0.5} />
             <XAxis dataKey="label" {...COMMON_AXIS_PROPS} tickMargin={10} />
             <YAxis {...COMMON_AXIS_PROPS} width={40}>
@@ -56,15 +62,52 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
               />
             </YAxis>
             <Tooltip content={<ClinicalTooltip />} cursor={{ fill: "var(--chart-grid)", fillOpacity: 0.1 }} />
+            <Legend 
+              verticalAlign="bottom" 
+              align="center" 
+              content={({ payload }) => (
+                <div className="flex justify-center gap-6 mt-4">
+                  {payload?.map((entry: any, index: number) => (
+                    <div key={`item-${index}`} className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)]">
+                        {entry.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            />
             
             {(view === "all" || view === "protein") && (
-              <Bar dataKey="protein_g" name="Protein" fill={CHART_COLORS.protein} stackId="a" radius={view === "protein" ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+              <Bar 
+                dataKey="protein_g" 
+                name="Protein" 
+                fill={FUEL_COLORS.protein} 
+                fillOpacity={0.9}
+                stackId="a" 
+                radius={view === "protein" ? [4, 4, 0, 0] : [0, 0, 0, 0]} 
+              />
             )}
             {(view === "all" || view === "carbs") && (
-              <Bar dataKey="carbs_g" name="Carbs" fill={CHART_COLORS.carbs} stackId="a" radius={view === "carbs" ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+              <Bar 
+                dataKey="carbs_g" 
+                name="Carbs" 
+                fill={FUEL_COLORS.carbs} 
+                fillOpacity={0.9}
+                stackId="a" 
+                radius={view === "carbs" ? [4, 4, 0, 0] : [0, 0, 0, 0]} 
+              />
             )}
             {(view === "all" || view === "fat") && (
-              <Bar dataKey="fat_g" name="Fat" fill={CHART_COLORS.fat} stackId="a" radius={[4, 4, 0, 0]} />
+              <Bar 
+                dataKey="fat_g" 
+                name="Fat" 
+                fill={FUEL_COLORS.fat} 
+                fillOpacity={0.9}
+                stackId="a" 
+                radius={[4, 4, 0, 0]} 
+              />
             )}
           </BarChart>
         </ResponsiveContainer>

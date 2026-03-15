@@ -23,6 +23,7 @@ class _FakeInferenceEngine:
         assert "instructions" in lowered_prompt
         assert "confidence_score" in lowered_prompt
         assert "warnings" in lowered_prompt
+        assert "markdown" in lowered_prompt
         assert request.output_schema is MedicationParseOutput
         assert self.output is not None
         return InferenceResponse(

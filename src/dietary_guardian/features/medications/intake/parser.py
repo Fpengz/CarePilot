@@ -35,6 +35,8 @@ Return JSON only using this wrapper schema:
   "warnings": ["..."]
 }
 
+Do not include markdown fences or any explanations.
+
 Each instruction object must contain:
 - medication_name_raw
 - medication_name_canonical (snake_case generic name when known, else normalized lowercase token)

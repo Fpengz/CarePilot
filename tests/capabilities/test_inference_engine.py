@@ -39,6 +39,12 @@ class _RecoveryOutput(BaseModel):
     value: int
 
 
+class _ListRecoveryOutput(BaseModel):
+    instructions: list[dict[str, int]]
+    confidence_score: float = 0.0
+    warnings: list[str] = []
+
+
 def test_inference_engine_recovers_json_on_validation_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LLM_PROVIDER", "test")
@@ -73,6 +79,43 @@ def test_inference_engine_recovers_json_on_validation_failure(monkeypatch: pytes
     response = asyncio.run(engine.infer(request))
     assert response.structured_output.value == 42
     assert response.warnings
+    get_settings.cache_clear()
+
+
+def test_inference_engine_recovers_list_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("LLM_PROVIDER", "test")
+
+    class _FakeAgent:
+        def __init__(self, model, output_type, system_prompt, output_retries):  # noqa: ANN001, ARG002
+            self.output_type = output_type
+
+        async def run(self, prompt, event_stream_handler=None):  # noqa: ANN001
+            async def _events():
+                yield PartEndEvent(index=0, part=TextPart(content='```json\n[{\"dose\": 1}]\n```'))
+
+            if event_stream_handler is not None:
+                await event_stream_handler(None, _events())
+            raise ValueError("Output validation failed")
+
+    monkeypatch.setattr(
+        "dietary_guardian.agent.runtime.inference_engine.Agent",
+        _FakeAgent,
+    )
+
+    engine = InferenceEngine()
+    request = InferenceRequest(
+        request_id="recovery-list",
+        user_id="user_002",
+        modality=InferenceModality.TEXT,
+        payload={"prompt": "test"},
+        output_schema=_ListRecoveryOutput,
+        system_prompt="test",
+    )
+
+    response = asyncio.run(engine.infer(request))
+    assert response.structured_output.instructions == [{"dose": 1}]
+    assert response.structured_output.warnings
     get_settings.cache_clear()
 
 

@@ -7,6 +7,7 @@ for agent runtime execution.
 
 import asyncio
 import json
+import re
 import time
 from dataclasses import dataclass
 from typing import Any, Protocol, cast
@@ -55,28 +56,66 @@ def _is_output_validation_failure(exc: Exception) -> bool:
     return "validation" in message and "output" in message
 
 
-def _extract_json_payload(raw_text: str) -> str | None:
+_JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(?P<body>[\s\S]*?)\s*```", re.IGNORECASE)
+
+
+def _extract_json_candidates(raw_text: str) -> list[str]:
+    candidates: list[str] = []
+    for match in _JSON_FENCE_RE.finditer(raw_text):
+        body = match.group("body").strip()
+        if body:
+            candidates.append(body)
     trimmed = raw_text.strip()
-    if trimmed.startswith("{") and trimmed.endswith("}"):
-        return trimmed
-    start = trimmed.find("{")
-    end = trimmed.rfind("}")
-    if start == -1 or end == -1 or end <= start:
-        return None
-    return trimmed[start : end + 1]
+    if trimmed:
+        candidates.append(trimmed)
+    return candidates
+
+
+def _extract_json_snippets(text: str) -> list[str]:
+    snippets: list[str] = []
+    if "{" in text and "}" in text:
+        start = text.find("{")
+        end = text.rfind("}")
+        if end > start:
+            snippets.append(text[start : end + 1].strip())
+    if "[" in text and "]" in text:
+        start = text.find("[")
+        end = text.rfind("]")
+        if end > start:
+            snippets.append(text[start : end + 1].strip())
+    return snippets
+
+
+def _coerce_output(schema: type[BaseModel], parsed: object) -> BaseModel | None:
+    if isinstance(parsed, dict):
+        try:
+            return schema.model_validate(parsed)
+        except ValidationError:
+            return None
+    if isinstance(parsed, list) and "instructions" in schema.model_fields:
+        payload: dict[str, object] = {"instructions": parsed}
+        if "confidence_score" in schema.model_fields:
+            payload["confidence_score"] = 0.0
+        if "warnings" in schema.model_fields:
+            payload["warnings"] = ["Recovered from list output."]
+        try:
+            return schema.model_validate(payload)
+        except ValidationError:
+            return None
+    return None
 
 
 def _recover_output_from_text(raw_text: str, schema: type[BaseModel]) -> BaseModel | None:
-    candidate = _extract_json_payload(raw_text)
-    if not candidate:
-        return None
-    try:
-        return schema.model_validate_json(candidate)
-    except Exception:
-        try:
-            return schema.model_validate(json.loads(candidate))
-        except Exception:
-            return None
+    for candidate in _extract_json_candidates(raw_text):
+        for snippet in _extract_json_snippets(candidate):
+            try:
+                parsed = json.loads(snippet)
+            except json.JSONDecodeError:
+                continue
+            recovered = _coerce_output(schema, parsed)
+            if recovered is not None:
+                return recovered
+    return None
 
 
 class ProviderStrategy(Protocol):
