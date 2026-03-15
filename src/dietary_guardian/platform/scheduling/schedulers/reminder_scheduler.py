@@ -57,7 +57,9 @@ async def run_reminder_scheduler_once(
         max_attempts=settings.workers.alert_worker_max_attempts,
         concurrency=max(settings.workers.alert_worker_concurrency, len(queued)),
     )
-    results = await worker.process_once()
+    results = []
+    for item in queued:
+        results.extend(await worker.process_once(alert_id=item.scheduled_notification_id))
     logger.info(
         "reminder_scheduler_run_complete queued_count=%s delivery_attempts=%s",
         len(queued),
