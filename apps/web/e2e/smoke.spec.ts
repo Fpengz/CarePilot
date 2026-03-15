@@ -125,6 +125,70 @@ test("medications page exposes regimen and adherence tooling", async ({ page }) 
   await expect(page.getByRole("tab", { name: "Regimens" })).toBeVisible();
 });
 
+test("medication normalization review hides after confirm", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("member@example.com");
+  await page.getByLabel("Password").fill("member-pass");
+  await page.getByRole("button", { name: "Login" }).click();
+
+  await page.route("**/api/v1/medications/intake/text", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        draft_id: "draft-1",
+        source: { source_type: "plain_text", extracted_text: "Metformin 500mg", source_hash: "hash-1" },
+        normalized_instructions: [
+          {
+            medication_name_raw: "Metformin",
+            medication_name_canonical: "metformin",
+            dosage_text: "500mg",
+            timing_type: "fixed_time",
+            frequency_type: "fixed_time",
+            frequency_times_per_day: 1,
+            offset_minutes: 0,
+            slot_scope: [],
+            fixed_time: "08:00",
+            time_rules: [],
+            duration_days: null,
+            start_date: "2026-03-15",
+            end_date: null,
+            confidence: 0.95,
+            ambiguities: [],
+          },
+        ],
+        regimens: [],
+        reminders: [],
+        scheduled_notifications: [],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/medications/intake/confirm", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        draft_id: "draft-1",
+        source: { source_type: "plain_text", extracted_text: "Metformin 500mg", source_hash: "hash-1" },
+        normalized_instructions: [],
+        regimens: [],
+        reminders: [],
+        scheduled_notifications: [],
+      }),
+    });
+  });
+
+  await page.goto("/medications");
+  await page.getByRole("button", { name: "Paste Text" }).click();
+  await page.getByLabel("Instructions").fill("Metformin 500mg daily");
+  await page.getByRole("button", { name: "Analyze Instructions" }).click();
+
+  await expect(page.getByRole("heading", { name: "Normalization Review" })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm & Create Reminders" }).click();
+  await expect(page.getByRole("heading", { name: "Normalization Review" })).toHaveCount(0);
+});
+
 test("symptoms, reports, clinical cards, and metrics pages are available", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("member@example.com");

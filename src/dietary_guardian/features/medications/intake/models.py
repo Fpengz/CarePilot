@@ -41,6 +41,24 @@ class NormalizedMedicationInstruction(BaseModel):
     ambiguities: list[str] = Field(default_factory=list)
 
 
+class LLMNormalizedMedicationInstruction(BaseModel):
+    medication_name_raw: str
+    medication_name_canonical: str | None = None
+    dosage_text: str
+    timing_type: str | None = None
+    frequency_type: str | None = None
+    frequency_times_per_day: int | None = None
+    offset_minutes: int | None = None
+    slot_scope: list[MealSlot] | None = None
+    fixed_time: str | None = None
+    time_rules: list[dict[str, object]] | None = None
+    duration_days: int | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    confidence: float | None = None
+    ambiguities: list[str] | None = None
+
+
 class MedicationIntakeParseResult(BaseModel):
     source: MedicationIntakeSource
     instructions: list[NormalizedMedicationInstruction] = Field(default_factory=list)
@@ -56,6 +74,12 @@ class MedicationIntakeDraft(BaseModel):
 
 class MedicationParseOutput(BaseModel):
     instructions: list[NormalizedMedicationInstruction] = Field(default_factory=list)
+    confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class MedicationParseOutputLoose(BaseModel):
+    instructions: list[LLMNormalizedMedicationInstruction] = Field(default_factory=list)
     confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
     warnings: list[str] = Field(default_factory=list)
 

@@ -2,11 +2,13 @@
 
 from .document import build_plain_text_source, extract_upload_source
 from .models import (
+    LLMNormalizedMedicationInstruction,
     MedicationIntakeDraft,
     MedicationInferenceEngineProtocol,
     MedicationIntakeParseResult,
     MedicationIntakeSource,
     MedicationParseOutput,
+    MedicationParseOutputLoose,
     NormalizedMedicationInstruction,
 )
 from .parser import parse_medication_instructions
@@ -17,6 +19,8 @@ __all__ = [
     "MedicationIntakeParseResult",
     "MedicationIntakeSource",
     "MedicationParseOutput",
+    "MedicationParseOutputLoose",
+    "LLMNormalizedMedicationInstruction",
     "NormalizedMedicationInstruction",
     "build_plain_text_source",
     "extract_upload_source",

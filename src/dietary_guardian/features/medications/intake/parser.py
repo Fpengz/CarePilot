@@ -12,10 +12,12 @@ from dietary_guardian.config.llm import LLMCapability
 from dietary_guardian.features.profiles.domain.models import MealSlot
 
 from .models import (
+    LLMNormalizedMedicationInstruction,
     MedicationInferenceEngineProtocol,
     MedicationIntakeParseResult,
     MedicationIntakeSource,
     MedicationParseOutput,
+    MedicationParseOutputLoose,
     NormalizedMedicationInstruction,
 )
 
@@ -153,6 +155,62 @@ def _normalize_instruction_dates(instruction: NormalizedMedicationInstruction, *
     )
 
 
+def _coerce_llm_instruction(
+    instruction: LLMNormalizedMedicationInstruction,
+    *,
+    default_confidence: float,
+) -> NormalizedMedicationInstruction:
+    ambiguities = list(instruction.ambiguities or [])
+    slot_scope = list(instruction.slot_scope or [])
+    time_rules = list(instruction.time_rules or [])
+    confidence = instruction.confidence if instruction.confidence is not None else default_confidence
+    timing_type = instruction.timing_type or "fixed_time"
+    frequency_type = instruction.frequency_type or "fixed_time"
+    frequency_times_per_day = instruction.frequency_times_per_day
+
+    if timing_type not in {"pre_meal", "post_meal", "fixed_time"}:
+        ambiguities.append("Timing type was invalid; defaulted to fixed_time.")
+        timing_type = "fixed_time"
+
+    if frequency_type not in {"times_per_day", "fixed_slots", "fixed_time"}:
+        if slot_scope:
+            frequency_type = "fixed_slots"
+            ambiguities.append("Frequency type inferred from slot scope.")
+        elif frequency_times_per_day and frequency_times_per_day > 1:
+            frequency_type = "times_per_day"
+            ambiguities.append("Frequency type inferred from times per day.")
+        else:
+            frequency_type = "fixed_time"
+            ambiguities.append("Frequency type defaulted to fixed_time.")
+
+    if frequency_times_per_day is None:
+        if frequency_type == "fixed_slots":
+            frequency_times_per_day = max(1, len(slot_scope))
+        elif frequency_type == "times_per_day":
+            frequency_times_per_day = 2
+            ambiguities.append("Frequency times per day defaulted to 2.")
+        else:
+            frequency_times_per_day = 1
+
+    return NormalizedMedicationInstruction(
+        medication_name_raw=instruction.medication_name_raw,
+        medication_name_canonical=instruction.medication_name_canonical,
+        dosage_text=instruction.dosage_text,
+        timing_type=timing_type,
+        frequency_type=frequency_type,
+        frequency_times_per_day=frequency_times_per_day,
+        offset_minutes=instruction.offset_minutes or 0,
+        slot_scope=slot_scope,
+        fixed_time=instruction.fixed_time,
+        time_rules=time_rules,
+        duration_days=instruction.duration_days,
+        start_date=instruction.start_date,
+        end_date=instruction.end_date,
+        confidence=confidence,
+        ambiguities=ambiguities,
+    )
+
+
 def _build_instruction(statement: str, today: date) -> NormalizedMedicationInstruction:
     dosage_match = _DOSAGE_RE.search(statement)
     ambiguities: list[str] = []
@@ -286,12 +344,18 @@ async def _parse_with_llm(
         safety_context={"contains_healthcare_data": True},
         runtime_profile={"capability": LLMCapability.MEDICATION_PARSE.value},
         trace_context={"source_hash": source.source_hash, "source_type": source.source_type},
-        output_schema=MedicationParseOutput,
+        output_schema=MedicationParseOutputLoose,
         system_prompt=_SYSTEM_PROMPT,
     )
     response = cast(InferenceResponse, await inference_engine.infer(request))
-    output = cast(MedicationParseOutput, response.structured_output)
-    normalized = [_normalize_instruction_dates(item, today=today) for item in output.instructions]
+    output = cast(MedicationParseOutputLoose, response.structured_output)
+    normalized = [
+        _normalize_instruction_dates(
+            _coerce_llm_instruction(item, default_confidence=output.confidence_score),
+            today=today,
+        )
+        for item in output.instructions
+    ]
     return MedicationIntakeParseResult(source=source, instructions=normalized)
 
 
