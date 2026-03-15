@@ -55,9 +55,7 @@ from care_pilot.platform.observability import get_logger
 router = APIRouter(tags=["chat"])
 logger = get_logger(__name__)
 
-_MEAL_PREFIX_RE = re.compile(
-    r"^(?:log\s+meal|meal)\s*:\s*(.+)$", re.IGNORECASE
-)
+_MEAL_PREFIX_RE = re.compile(r"^(?:log\s+meal|meal)\s*:\s*(.+)$", re.IGNORECASE)
 
 
 def _format_emotion_context(inference: EmotionInferenceResult) -> str:
@@ -100,9 +98,7 @@ def _parse_meal_command(message: str) -> str | None:
 
 
 def _meal_proposal_prompt(meal_text: str) -> str:
-    return (
-        f"I can log **{meal_text}** as a meal. Would you like me to save it?"
-    )
+    return f"I can log **{meal_text}** as a meal. Would you like me to save it?"
 
 
 def _build_extra_context(ctx: AppContext, session: dict[str, object]) -> str:
@@ -122,9 +118,7 @@ def _build_extra_context(ctx: AppContext, session: dict[str, object]) -> str:
         recent_meals=inputs.meals,
         health_profile=inputs.health_profile,
         tool_specs=ctx.tool_registry.list_specs(),
-        recent_events=ctx.event_timeline.get_events(
-            user_id=str(session.get("user_id"))
-        ),
+        recent_events=ctx.event_timeline.get_events(user_id=str(session.get("user_id"))),
     )
 
 
@@ -257,9 +251,7 @@ async def chat_stream(
                 # Emotion inference disabled; skip emitting error events.
                 pass
             except Exception as exc:  # noqa: BLE001
-                _log_suppressed_emotion_failure(
-                    request=request, phase="emotion", exc=exc
-                )
+                _log_suppressed_emotion_failure(request=request, phase="emotion", exc=exc)
 
         if not meal_text:
             intent_result, needs_llm = heuristic_meal_log_intent(user_message)
@@ -325,9 +317,7 @@ async def chat_stream(
                 stores=meal_deps(ctx).stores,
             )
             response_prefix = f"{meal_result['message']}\n\n"
-            yield _format_event(
-                "meal_logged", cast(dict[str, object], meal_result)
-            )
+            yield _format_event("meal_logged", cast(dict[str, object], meal_result))
 
         assistant_response = ""
         had_error = False
@@ -347,9 +337,7 @@ async def chat_stream(
                 "chat_stream_start request_id=%s",
                 getattr(request.state, "request_id", None),
             )
-            async for token in ctx.chat_stream_runtime.stream(
-                messages=messages
-            ):
+            async for token in ctx.chat_stream_runtime.stream(messages=messages):
                 assistant_response += token
                 yield _format_event("token", {"text": token})
             logger.info(
@@ -400,14 +388,10 @@ async def chat_audio(
     except ValueError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(
-            status_code=422, detail=f"Transcription failed: {exc}"
-        )
+        raise HTTPException(status_code=422, detail=f"Transcription failed: {exc}")
 
     if not user_message:
-        raise HTTPException(
-            status_code=422, detail="Transcription returned empty text"
-        )
+        raise HTTPException(status_code=422, detail="Transcription returned empty text")
 
     async def _stream():
         yield _format_event("transcribed", {"text": user_message})
@@ -415,10 +399,7 @@ async def chat_audio(
 
         loop = asyncio.get_running_loop()
         emotion_ctx: str | None = None
-        if (
-            deps.emotion_agent.inference_enabled
-            and deps.emotion_agent.speech_enabled
-        ):
+        if deps.emotion_agent.inference_enabled and deps.emotion_agent.speech_enabled:
             try:
                 inference = await loop.run_in_executor(
                     None,
@@ -440,9 +421,7 @@ async def chat_audio(
             except (EmotionAgentDisabledError, EmotionSpeechDisabledError):
                 pass
             except Exception as exc:  # noqa: BLE001
-                _log_suppressed_emotion_failure(
-                    request=request, phase="speech_emotion", exc=exc
-                )
+                _log_suppressed_emotion_failure(request=request, phase="speech_emotion", exc=exc)
 
         if not meal_text:
             intent_result, needs_llm = heuristic_meal_log_intent(user_message)
@@ -506,9 +485,7 @@ async def chat_audio(
                 stores=meal_deps(ctx).stores,
             )
             response_prefix = f"{meal_result['message']}\n\n"
-            yield _format_event(
-                "meal_logged", cast(dict[str, object], meal_result)
-            )
+            yield _format_event("meal_logged", cast(dict[str, object], meal_result))
 
         assistant_response = ""
         had_error = False
@@ -565,14 +542,10 @@ async def confirm_meal_log(
         str(proposal.get("user_id", "")) != user_id
         or str(proposal.get("session_id", "")) != session_id
     ):
-        raise HTTPException(
-            status_code=403, detail="meal proposal not valid for this session"
-        )
+        raise HTTPException(status_code=403, detail="meal proposal not valid for this session")
     meal_text = str(proposal.get("meal_text", "")).strip()
     if not meal_text:
-        raise HTTPException(
-            status_code=400, detail="meal proposal missing meal_text"
-        )
+        raise HTTPException(status_code=400, detail="meal proposal missing meal_text")
     meal_result = _log_meal_command(
         user_id=user_id, meal_text=meal_text, stores=meal_deps(ctx).stores
     )
@@ -598,9 +571,7 @@ async def confirm_meal_log(
     )
     display_response = assistant_response
     if display_response.startswith(meal_result["message"]):
-        display_response = display_response[
-            len(meal_result["message"]) :
-        ].lstrip()
+        display_response = display_response[len(meal_result["message"]) :].lstrip()
     if assistant_response:
         await record_chat_turn(
             memory_store=ctx.memory_store,

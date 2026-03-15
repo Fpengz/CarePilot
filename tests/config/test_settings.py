@@ -88,9 +88,7 @@ def test_openai_provider_requires_key() -> None:
 
 
 def test_openai_provider_allows_with_key() -> None:
-    settings = _build_settings(
-        llm={"provider": "openai", "openai_api_key": "test-openai-key"}
-    )
+    settings = _build_settings(llm={"provider": "openai", "openai_api_key": "test-openai-key"})
     assert settings.llm.provider == "openai"
 
 
@@ -100,9 +98,7 @@ def test_qwen_provider_requires_key() -> None:
 
 
 def test_qwen_provider_allows_with_key() -> None:
-    settings = _build_settings(
-        llm={"provider": "qwen", "qwen_api_key": "test-qwen-key"}
-    )
+    settings = _build_settings(llm={"provider": "qwen", "qwen_api_key": "test-qwen-key"})
     assert settings.llm.provider == "qwen"
 
 
@@ -121,9 +117,7 @@ def test_runtime_backend_settings_support_sqlite_and_optional_redis() -> None:
 
 
 def test_app_env_defaults_readiness_strictness_by_profile() -> None:
-    dev_settings = _build_settings(
-        llm={"provider": "test"}, app={"env": "dev"}
-    )
+    dev_settings = _build_settings(llm={"provider": "test"}, app={"env": "dev"})
     prod_settings = _build_settings(
         llm={"provider": "test"},
         app={"env": "prod"},
@@ -184,9 +178,7 @@ def test_cookie_samesite_none_requires_secure_cookie() -> None:
 
 
 def test_auth_seed_demo_users_default_and_non_dev_guardrails() -> None:
-    dev_settings = _build_settings(
-        llm={"provider": "test"}, app={"env": "dev"}
-    )
+    dev_settings = _build_settings(llm={"provider": "test"}, app={"env": "dev"})
     assert dev_settings.auth.seed_demo_users is True
 
     prod_settings = _build_settings(
@@ -221,13 +213,9 @@ def test_prod_normalizes_tool_policy_mode_to_enforce() -> None:
 def test_legacy_postgres_backend_settings_are_removed() -> None:
     assert "postgres_dsn" not in Settings.model_fields
     with pytest.raises(ValidationError):
-        _build_settings(
-            llm={"provider": "test"}, storage={"app_data_backend": "postgres"}
-        )
+        _build_settings(llm={"provider": "test"}, storage={"app_data_backend": "postgres"})
     with pytest.raises(ValidationError):
-        _build_settings(
-            llm={"provider": "test"}, auth={"store_backend": "postgres"}
-        )
+        _build_settings(llm={"provider": "test"}, auth={"store_backend": "postgres"})
     with pytest.raises(ValidationError):
         _build_settings(
             llm={"provider": "test"},

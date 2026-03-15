@@ -49,8 +49,6 @@ def test_safety_override_blocks_recommendation() -> None:
             ),
         ),
     )
-    rec = generate_recommendation(
-        record, ClinicalProfileSnapshot(biomarkers={"ldl": 3.8}), user
-    )
+    rec = generate_recommendation(record, ClinicalProfileSnapshot(biomarkers={"ldl": 3.8}), user)
     assert rec.safe is False
     assert rec.blocked_reason is not None

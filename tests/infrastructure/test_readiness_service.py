@@ -59,9 +59,7 @@ def test_readiness_report_is_degraded_for_optional_channel_warnings() -> None:
     )
 
 
-def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> (
-    None
-):
+def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> None:
     settings = _build_settings(
         llm={"provider": "test"},
         app={"env": "dev"},

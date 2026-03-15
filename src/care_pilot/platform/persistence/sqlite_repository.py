@@ -475,9 +475,7 @@ class SQLiteRepository:
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_canonical_foods_locale_slot ON canonical_foods(locale, slot)"
             )
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_food_alias_lookup ON food_alias(alias)"
-            )
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_food_alias_lookup ON food_alias(alias)")
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_portion_reference_food ON portion_reference(food_id)"
             )
@@ -523,15 +521,9 @@ class SQLiteRepository:
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_workflow_timeline_user_created ON workflow_timeline_events(user_id, created_at)"
             )
-            self._ensure_sqlite_column(
-                cur, "meal_records", "meal_perception_json", "TEXT"
-            )
-            self._ensure_sqlite_column(
-                cur, "meal_records", "enriched_event_json", "TEXT"
-            )
-            self._ensure_sqlite_column(
-                cur, "medication_regimens", "canonical_name", "TEXT"
-            )
+            self._ensure_sqlite_column(cur, "meal_records", "meal_perception_json", "TEXT")
+            self._ensure_sqlite_column(cur, "meal_records", "enriched_event_json", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "canonical_name", "TEXT")
             self._ensure_sqlite_column(
                 cur,
                 "medication_regimens",
@@ -550,51 +542,29 @@ class SQLiteRepository:
                 "time_rules_json",
                 "TEXT NOT NULL DEFAULT '[]'",
             )
-            self._ensure_sqlite_column(
-                cur, "medication_regimens", "instructions_text", "TEXT"
-            )
+            self._ensure_sqlite_column(cur, "medication_regimens", "instructions_text", "TEXT")
             self._ensure_sqlite_column(
                 cur,
                 "medication_regimens",
                 "source_type",
                 "TEXT NOT NULL DEFAULT 'manual'",
             )
-            self._ensure_sqlite_column(
-                cur, "medication_regimens", "source_filename", "TEXT"
-            )
-            self._ensure_sqlite_column(
-                cur, "medication_regimens", "source_hash", "TEXT"
-            )
-            self._ensure_sqlite_column(
-                cur, "medication_regimens", "start_date", "TEXT"
-            )
-            self._ensure_sqlite_column(
-                cur, "medication_regimens", "end_date", "TEXT"
-            )
+            self._ensure_sqlite_column(cur, "medication_regimens", "source_filename", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "source_hash", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "start_date", "TEXT")
+            self._ensure_sqlite_column(cur, "medication_regimens", "end_date", "TEXT")
             self._ensure_sqlite_column(
                 cur,
                 "medication_regimens",
                 "timezone",
                 "TEXT NOT NULL DEFAULT 'Asia/Singapore'",
             )
-            self._ensure_sqlite_column(
-                cur, "medication_regimens", "parse_confidence", "REAL"
-            )
-            self._ensure_sqlite_column(
-                cur, "reminder_events", "reminder_definition_id", "TEXT"
-            )
-            self._ensure_sqlite_column(
-                cur, "reminder_events", "occurrence_id", "TEXT"
-            )
-            self._ensure_sqlite_column(
-                cur, "reminder_events", "regimen_id", "TEXT"
-            )
-            self._ensure_sqlite_column(
-                cur, "scheduled_notifications", "occurrence_id", "TEXT"
-            )
-            self._ensure_sqlite_column(
-                cur, "notification_logs", "occurrence_id", "TEXT"
-            )
+            self._ensure_sqlite_column(cur, "medication_regimens", "parse_confidence", "REAL")
+            self._ensure_sqlite_column(cur, "reminder_events", "reminder_definition_id", "TEXT")
+            self._ensure_sqlite_column(cur, "reminder_events", "occurrence_id", "TEXT")
+            self._ensure_sqlite_column(cur, "reminder_events", "regimen_id", "TEXT")
+            self._ensure_sqlite_column(cur, "scheduled_notifications", "occurrence_id", "TEXT")
+            self._ensure_sqlite_column(cur, "notification_logs", "occurrence_id", "TEXT")
             conn.commit()
         self._seed_meal_catalog()
         self._seed_canonical_foods()
@@ -607,15 +577,11 @@ class SQLiteRepository:
         rows = cur.execute(f"PRAGMA table_info({table})").fetchall()
         existing = {str(row[1]) for row in rows}
         if column not in existing:
-            cur.execute(
-                f"ALTER TABLE {table} ADD COLUMN {column} {definition}"
-            )
+            cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def _seed_meal_catalog(self) -> None:
         with sqlite3.connect(self.db_path) as conn:
-            existing = conn.execute(
-                "SELECT COUNT(*) FROM meal_catalog"
-            ).fetchone()
+            existing = conn.execute("SELECT COUNT(*) FROM meal_catalog").fetchone()
             if existing is not None and int(existing[0]) > 0:
                 return
             for item in DEFAULT_MEAL_CATALOG:
@@ -638,9 +604,7 @@ class SQLiteRepository:
     def _seed_canonical_foods(self) -> None:
         with sqlite3.connect(self.db_path) as conn:
             records = build_default_canonical_food_records()
-            existing = conn.execute(
-                "SELECT COUNT(*) FROM canonical_foods"
-            ).fetchone()
+            existing = conn.execute("SELECT COUNT(*) FROM canonical_foods").fetchone()
             if not existing or int(cast(int, existing[0])) == 0:
                 conn.executemany(
                     """
@@ -658,9 +622,7 @@ class SQLiteRepository:
                         for item in records
                     ],
                 )
-            alias_existing = conn.execute(
-                "SELECT COUNT(*) FROM food_alias"
-            ).fetchone()
+            alias_existing = conn.execute("SELECT COUNT(*) FROM food_alias").fetchone()
             if not alias_existing or int(cast(int, alias_existing[0])) == 0:
                 conn.executemany(
                     """
@@ -671,19 +633,13 @@ class SQLiteRepository:
                         (alias, item.food_id, "canonical", index)
                         for item in records
                         for index, alias in enumerate(
-                            item.aliases_normalized
-                            or [normalize_text(item.title)],
+                            item.aliases_normalized or [normalize_text(item.title)],
                             start=1,
                         )
                     ],
                 )
-            portion_existing = conn.execute(
-                "SELECT COUNT(*) FROM portion_reference"
-            ).fetchone()
-            if (
-                not portion_existing
-                or int(cast(int, portion_existing[0])) == 0
-            ):
+            portion_existing = conn.execute("SELECT COUNT(*) FROM portion_reference").fetchone()
+            if not portion_existing or int(cast(int, portion_existing[0])) == 0:
                 conn.executemany(
                     """
                     INSERT INTO portion_reference (food_id, unit, grams, confidence)
@@ -719,17 +675,11 @@ class SQLiteRepository:
     def delete_medication_regimen(self, *args: Any, **kwargs: Any) -> Any:
         return self.medication.delete_medication_regimen(*args, **kwargs)
 
-    def save_medication_adherence_event(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
+    def save_medication_adherence_event(self, *args: Any, **kwargs: Any) -> Any:
         return self.medication.save_medication_adherence_event(*args, **kwargs)
 
-    def list_medication_adherence_events(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.medication.list_medication_adherence_events(
-            *args, **kwargs
-        )
+    def list_medication_adherence_events(self, *args: Any, **kwargs: Any) -> Any:
+        return self.medication.list_medication_adherence_events(*args, **kwargs)
 
     # --- Reminders ---
 
@@ -757,12 +707,8 @@ class SQLiteRepository:
     def list_reminder_actions(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.list_reminder_actions(*args, **kwargs)
 
-    def update_reminder_occurrence_status(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.update_reminder_occurrence_status(
-            *args, **kwargs
-        )
+    def update_reminder_occurrence_status(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.update_reminder_occurrence_status(*args, **kwargs)
 
     def save_reminder_event(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.save_reminder_event(*args, **kwargs)
@@ -773,19 +719,11 @@ class SQLiteRepository:
     def list_reminder_events(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.list_reminder_events(*args, **kwargs)
 
-    def replace_reminder_notification_preferences(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.replace_reminder_notification_preferences(
-            *args, **kwargs
-        )
+    def replace_reminder_notification_preferences(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.replace_reminder_notification_preferences(*args, **kwargs)
 
-    def list_reminder_notification_preferences(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.list_reminder_notification_preferences(
-            *args, **kwargs
-        )
+    def list_reminder_notification_preferences(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_reminder_notification_preferences(*args, **kwargs)
 
     def save_scheduled_notification(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.save_scheduled_notification(*args, **kwargs)
@@ -796,78 +734,38 @@ class SQLiteRepository:
     def list_scheduled_notifications(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.list_scheduled_notifications(*args, **kwargs)
 
-    def lease_due_scheduled_notifications(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.lease_due_scheduled_notifications(
-            *args, **kwargs
-        )
+    def lease_due_scheduled_notifications(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.lease_due_scheduled_notifications(*args, **kwargs)
 
-    def set_scheduled_notification_trigger_at(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.set_scheduled_notification_trigger_at(
-            *args, **kwargs
-        )
+    def set_scheduled_notification_trigger_at(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.set_scheduled_notification_trigger_at(*args, **kwargs)
 
-    def mark_scheduled_notification_processing(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.mark_scheduled_notification_processing(
-            *args, **kwargs
-        )
+    def mark_scheduled_notification_processing(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.mark_scheduled_notification_processing(*args, **kwargs)
 
-    def mark_scheduled_notification_delivered(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.mark_scheduled_notification_delivered(
-            *args, **kwargs
-        )
+    def mark_scheduled_notification_delivered(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.mark_scheduled_notification_delivered(*args, **kwargs)
 
-    def reschedule_scheduled_notification(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.reschedule_scheduled_notification(
-            *args, **kwargs
-        )
+    def reschedule_scheduled_notification(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.reschedule_scheduled_notification(*args, **kwargs)
 
-    def mark_scheduled_notification_dead_letter(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.mark_scheduled_notification_dead_letter(
-            *args, **kwargs
-        )
+    def mark_scheduled_notification_dead_letter(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.mark_scheduled_notification_dead_letter(*args, **kwargs)
 
-    def cancel_scheduled_notifications_for_reminder(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.cancel_scheduled_notifications_for_reminder(
-            *args, **kwargs
-        )
+    def cancel_scheduled_notifications_for_reminder(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.cancel_scheduled_notifications_for_reminder(*args, **kwargs)
 
     def append_notification_log(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.append_notification_log(*args, **kwargs)
 
-    def replace_reminder_notification_endpoints(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.replace_reminder_notification_endpoints(
-            *args, **kwargs
-        )
+    def replace_reminder_notification_endpoints(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.replace_reminder_notification_endpoints(*args, **kwargs)
 
-    def list_reminder_notification_endpoints(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.list_reminder_notification_endpoints(
-            *args, **kwargs
-        )
+    def list_reminder_notification_endpoints(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_reminder_notification_endpoints(*args, **kwargs)
 
-    def get_reminder_notification_endpoint(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.reminders.get_reminder_notification_endpoint(
-            *args, **kwargs
-        )
+    def get_reminder_notification_endpoint(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.get_reminder_notification_endpoint(*args, **kwargs)
 
     def list_notification_logs(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.list_notification_logs(*args, **kwargs)
@@ -875,9 +773,7 @@ class SQLiteRepository:
     def get_mobility_reminder_settings(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.get_mobility_reminder_settings(*args, **kwargs)
 
-    def save_mobility_reminder_settings(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
+    def save_mobility_reminder_settings(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.save_mobility_reminder_settings(*args, **kwargs)
 
     # --- Meals ---
@@ -944,19 +840,11 @@ class SQLiteRepository:
     def save_health_profile(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.save_health_profile(*args, **kwargs)
 
-    def get_health_profile_onboarding_state(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.clinical.get_health_profile_onboarding_state(
-            *args, **kwargs
-        )
+    def get_health_profile_onboarding_state(self, *args: Any, **kwargs: Any) -> Any:
+        return self.clinical.get_health_profile_onboarding_state(*args, **kwargs)
 
-    def save_health_profile_onboarding_state(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
-        return self.clinical.save_health_profile_onboarding_state(
-            *args, **kwargs
-        )
+    def save_health_profile_onboarding_state(self, *args: Any, **kwargs: Any) -> Any:
+        return self.clinical.save_health_profile_onboarding_state(*args, **kwargs)
 
     # --- Catalog ---
 
@@ -978,14 +866,10 @@ class SQLiteRepository:
     def find_food_by_name(self, *args: Any, **kwargs: Any) -> Any:
         return self.catalog.find_food_by_name(*args, **kwargs)
 
-    def save_recommendation_interaction(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
+    def save_recommendation_interaction(self, *args: Any, **kwargs: Any) -> Any:
         return self.catalog.save_recommendation_interaction(*args, **kwargs)
 
-    def list_recommendation_interactions(
-        self, *args: Any, **kwargs: Any
-    ) -> Any:
+    def list_recommendation_interactions(self, *args: Any, **kwargs: Any) -> Any:
         return self.catalog.list_recommendation_interactions(*args, **kwargs)
 
     def get_preference_snapshot(self, *args: Any, **kwargs: Any) -> Any:

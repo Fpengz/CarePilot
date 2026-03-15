@@ -18,9 +18,7 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_metrics_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_metrics_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -34,9 +32,7 @@ def _login(
     email: str = "member@example.com",
     password: str = "member-pass",
 ) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 

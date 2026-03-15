@@ -120,9 +120,7 @@ def build_image_input(
 
     mime_type = candidate.type or ""
     if mime_type not in SUPPORTED_IMAGE_TYPES:
-        logger.warning(
-            "build_image_input_unsupported_type mime_type=%s", mime_type
-        )
+        logger.warning("build_image_input_unsupported_type mime_type=%s", mime_type)
         return (
             None,
             "Unsupported image format. Please use JPG, PNG, or WEBP.",

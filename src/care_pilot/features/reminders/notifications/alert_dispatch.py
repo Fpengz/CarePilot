@@ -68,9 +68,7 @@ def send_in_app(reminder_event: ReminderEvent) -> DeliveryResult:
     )
 
 
-def send_push(
-    reminder_event: ReminderEvent, force_fail: bool = False
-) -> DeliveryResult:
+def send_push(reminder_event: ReminderEvent, force_fail: bool = False) -> DeliveryResult:
     destination = "push://default"
     logger.info(
         "send_push_attempt event_id=%s channel=push destination=%s attempt=1 user_id=%s medication=%s force_fail=%s",
@@ -113,9 +111,7 @@ def _channel_from_name(channel: str):
     return None
 
 
-def _delivery_from_channel_result(
-    event_id: str, channel_result: ChannelResult
-) -> DeliveryResult:
+def _delivery_from_channel_result(event_id: str, channel_result: ChannelResult) -> DeliveryResult:
     return DeliveryResult(
         event_id=event_id,
         channel=channel_result.channel,
@@ -198,11 +194,7 @@ def dispatch_reminder(
                 channel_result.success,
                 channel_result.destination,
             )
-            results.append(
-                _delivery_from_channel_result(
-                    reminder_event.id, channel_result
-                )
-            )
+            results.append(_delivery_from_channel_result(reminder_event.id, channel_result))
             continue
 
         if channel != "push":
@@ -242,9 +234,7 @@ def dispatch_reminder_async(
     worker = OutboxWorker(
         repo,
         max_attempts=(
-            (retries + 1)
-            if retries is not None
-            else settings.workers.alert_worker_max_attempts
+            (retries + 1) if retries is not None else settings.workers.alert_worker_max_attempts
         ),
         concurrency=settings.workers.alert_worker_concurrency,
     )
@@ -294,9 +284,7 @@ def dispatch_reminder_async(
             attempts=result.attempt,
             error=result.error,
             destination=result.destination,
-            delivered_at=(
-                datetime.now(timezone.utc) if result.success else None
-            ),
+            delivered_at=(datetime.now(timezone.utc) if result.success else None),
         )
         for result in channel_results
         if result.alert_id == message.alert_id
@@ -339,9 +327,7 @@ def trigger_alert(
         alert.alert_id,
         fast_forward_scheduled_retries=False,
     )
-    channel_results = [
-        item for item in channel_results if item.alert_id == alert.alert_id
-    ]
+    channel_results = [item for item in channel_results if item.alert_id == alert.alert_id]
     results = [
         DeliveryResult(
             event_id=item.alert_id,
@@ -373,11 +359,7 @@ def _drain_alert_for_sync_delivery(
             by_sink[item.sink] = item
 
         records = repository.list_alert_records(alert_id)
-        pending = [
-            record
-            for record in records
-            if record.state in PENDING_ALERT_STATES
-        ]
+        pending = [record for record in records if record.state in PENDING_ALERT_STATES]
         if not pending:
             break
 

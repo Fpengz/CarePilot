@@ -37,7 +37,9 @@ class MealStore:
     def get_meal_record(self, user_id: str, meal_id: str) -> Any | None:
         return self._store.get_meal_record(user_id, meal_id)
 
-    def list_meal_catalog_items(self, *, locale: str, slot: str | None = None, limit: int = 100) -> list[Any]:
+    def list_meal_catalog_items(
+        self, *, locale: str, slot: str | None = None, limit: int = 100
+    ) -> list[Any]:
         return self._store.list_meal_catalog_items(locale=locale, slot=slot, limit=limit)
 
     def get_meal_catalog_item(self, meal_id: str) -> Any | None:
@@ -72,7 +74,9 @@ class MealStore:
 class FoodStore:
     _store: FoodRepositoryProtocol
 
-    def list_canonical_foods(self, *, locale: str, slot: str | None = None, limit: int = 100) -> list[Any]:
+    def list_canonical_foods(
+        self, *, locale: str, slot: str | None = None, limit: int = 100
+    ) -> list[Any]:
         return self._store.list_canonical_foods(locale=locale, slot=slot, limit=limit)
 
     def get_canonical_food(self, food_id: str) -> Any | None:
@@ -313,8 +317,12 @@ class ReminderStore:
     def list_reminder_notification_endpoints(self, *, user_id: str) -> list[Any]:
         return self._store.list_reminder_notification_endpoints(user_id=user_id)
 
-    def replace_reminder_notification_endpoints(self, *, user_id: str, endpoints: list[Any]) -> list[Any]:
-        return self._store.replace_reminder_notification_endpoints(user_id=user_id, endpoints=endpoints)
+    def replace_reminder_notification_endpoints(
+        self, *, user_id: str, endpoints: list[Any]
+    ) -> list[Any]:
+        return self._store.replace_reminder_notification_endpoints(
+            user_id=user_id, endpoints=endpoints
+        )
 
     def list_notification_logs(
         self,

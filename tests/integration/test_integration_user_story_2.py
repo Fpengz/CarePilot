@@ -18,9 +18,7 @@ async def test_user_story_2_image_to_structured_record(tmp_path) -> None:
         content=b"abc",
         metadata={"multi_item_count": "3"},
     )
-    _result, record = await module.analyze_and_record(
-        image_input, user_id="u1"
-    )
+    _result, record = await module.analyze_and_record(image_input, user_id="u1")
     repo.save_meal_record(record)
 
     rows = repo.list_meal_records("u1")

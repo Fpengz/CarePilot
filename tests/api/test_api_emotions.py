@@ -75,9 +75,7 @@ class _StubEmotionPort(EmotionInferencePort):
             context_features=context,
         )
 
-    def infer_speech(
-        self, payload: SpeechEmotionInput
-    ) -> EmotionInferenceResult:
+    def infer_speech(self, payload: SpeechEmotionInput) -> EmotionInferenceResult:
         context = EmotionContextFeatures(recent_labels=[], trend="stable")
         return EmotionInferenceResult(
             source_type="mixed",
@@ -109,14 +107,10 @@ class _StubEmotionPort(EmotionInferencePort):
         )
 
     def health(self) -> EmotionRuntimeHealth:
-        return EmotionRuntimeHealth(
-            status="ready", model_cache_ready=True, source_commit="sha"
-        )
+        return EmotionRuntimeHealth(status="ready", model_cache_ready=True, source_commit="sha")
 
 
-def _client(
-    *, inference_enabled: bool = True, speech_enabled: bool = True
-) -> TestClient:
+def _client(*, inference_enabled: bool = True, speech_enabled: bool = True) -> TestClient:
     ctx = build_app_context()
     ctx.emotion_agent = EmotionAgent(
         runtime=_StubEmotionPort(),
@@ -130,9 +124,7 @@ def _client(
 def test_emotions_text_requires_auth() -> None:
     client = _client(inference_enabled=False, speech_enabled=False)
 
-    response = client.post(
-        "/api/v1/emotions/text", json={"text": "I feel good"}
-    )
+    response = client.post("/api/v1/emotions/text", json={"text": "I feel good"})
 
     assert response.status_code == 401
 
@@ -176,9 +168,7 @@ def test_emotions_text_returns_disabled_error_when_feature_flag_off(
     client = _client(inference_enabled=False, speech_enabled=False)
     _login(client)
 
-    response = client.post(
-        "/api/v1/emotions/text", json={"text": "I feel good"}
-    )
+    response = client.post("/api/v1/emotions/text", json={"text": "I feel good"})
 
     assert response.status_code == 503
     body = response.json()
@@ -190,9 +180,7 @@ def test_emotion_legacy_route_is_removed() -> None:
     client = _client()
     _login(client)
 
-    response = client.post(
-        "/emotion/text", json={"text": "I feel anxious and worried"}
-    )
+    response = client.post("/emotion/text", json={"text": "I feel anxious and worried"})
 
     assert response.status_code == 404
 

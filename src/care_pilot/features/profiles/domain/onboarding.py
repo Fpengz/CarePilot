@@ -33,9 +33,7 @@ class HealthProfileOnboardingRepository(HealthProfileRepository, Protocol):
     ) -> HealthProfileOnboardingState: ...
 
 
-ONBOARDING_STEP_DEFINITIONS: tuple[
-    HealthProfileOnboardingStepDefinition, ...
-] = (
+ONBOARDING_STEP_DEFINITIONS: tuple[HealthProfileOnboardingStepDefinition, ...] = (
     HealthProfileOnboardingStepDefinition(
         id="basic_identity",
         title="Basic Identity",
@@ -117,21 +115,15 @@ def update_health_profile_onboarding(
     if step_id not in ONBOARDING_STEP_IDS:
         raise ValueError("invalid onboarding step")
     profile = (
-        update_health_profile(
-            repository, user_id=user_id, updates=profile_updates
-        )
+        update_health_profile(repository, user_id=user_id, updates=profile_updates)
         if profile_updates
         else get_or_create_health_profile(repository, user_id)
     )
     state = get_or_create_health_profile_onboarding_state(repository, user_id)
     completed_steps = [
-        item
-        for item in ONBOARDING_STEP_IDS
-        if item in {*state.completed_steps, step_id}
+        item for item in ONBOARDING_STEP_IDS if item in {*state.completed_steps, step_id}
     ]
-    current_step = _next_onboarding_step(
-        step_id=step_id, completed_steps=completed_steps
-    )
+    current_step = _next_onboarding_step(step_id=step_id, completed_steps=completed_steps)
     next_state = HealthProfileOnboardingState(
         user_id=user_id,
         current_step=current_step,

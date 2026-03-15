@@ -33,9 +33,7 @@ def generate_mobility_reminders(
     if not settings.enabled:
         return []
 
-    current = datetime.combine(
-        target_date, parse_hhmm(settings.active_start_time)
-    )
+    current = datetime.combine(target_date, parse_hhmm(settings.active_start_time))
     end = datetime.combine(target_date, parse_hhmm(settings.active_end_time))
     reminders: list[ReminderEvent] = []
     while current <= end:

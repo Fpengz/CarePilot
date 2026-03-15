@@ -34,9 +34,7 @@ def _runtime_summary(settings: Settings) -> str:
     provider = getattr(settings.llm.provider, "value", settings.llm.provider)
     destination = "unavailable"
     try:
-        model = LLMFactory.get_model(
-            settings=settings, capability=settings.llm.default_capability
-        )
+        model = LLMFactory.get_model(settings=settings, capability=settings.llm.default_capability)
         destination = LLMFactory.describe_model_destination(model)
     except Exception:  # noqa: BLE001
         destination = "unavailable"
@@ -53,9 +51,7 @@ def bootstrap_runtime_settings() -> Settings:
 
 
 async def main(settings: Settings):
-    console.print(
-        Panel(_runtime_summary(settings), title="Runtime Configuration")
-    )
+    console.print(Panel(_runtime_summary(settings), title="Runtime Configuration"))
 
     # Setup Mr. Tan
     mr_tan = UserProfile(
@@ -96,11 +92,7 @@ async def main(settings: Settings):
         ),
     )
 
-    console.print(
-        Panel(
-            f"[bold blue]Scenario 1: {mr_tan.name} eating {laksa.name}[/bold blue]"
-        )
-    )
+    console.print(Panel(f"[bold blue]Scenario 1: {mr_tan.name} eating {laksa.name}[/bold blue]"))
     warnings = safety.validate_meal(laksa)
     input_data = DietaryAgentInput(
         user_name=mr_tan.name,
@@ -134,9 +126,7 @@ async def main(settings: Settings):
     )
 
     console.print(
-        Panel(
-            f"\n[bold red]Scenario 2: {mr_tan.name} eating {spinach_soup.name}[/bold red]"
-        )
+        Panel(f"\n[bold red]Scenario 2: {mr_tan.name} eating {spinach_soup.name}[/bold red]")
     )
     warnings = safety.validate_meal(spinach_soup)
     input_data = DietaryAgentInput(

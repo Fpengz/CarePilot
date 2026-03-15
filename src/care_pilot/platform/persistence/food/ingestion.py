@@ -54,17 +54,12 @@ def _read_json_array(path: Path) -> list[dict[str, Any]]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, list):
         return []
-    return [
-        cast(dict[str, Any], item) for item in raw if isinstance(item, dict)
-    ]
+    return [cast(dict[str, Any], item) for item in raw if isinstance(item, dict)]
 
 
 def load_canonical_food_records(path: Path) -> list[CanonicalFoodRecord]:
     """Load canonical food records from a JSON array."""
-    return [
-        CanonicalFoodRecord.model_validate(item)
-        for item in _read_json_array(path)
-    ]
+    return [CanonicalFoodRecord.model_validate(item) for item in _read_json_array(path)]
 
 
 def _portion(unit: str, grams: float) -> list[PortionReference]:
@@ -132,9 +127,7 @@ def load_usda_records(path: Path) -> list[CanonicalFoodRecord]:
                 source_dataset="usda_fooddata_central",
                 source_type="import",
                 serving_size=str(entry.get("serving_size") or "1 serving"),
-                default_portion_grams=float(
-                    entry.get("default_portion_grams") or 100.0
-                ),
+                default_portion_grams=float(entry.get("default_portion_grams") or 100.0),
                 portion_references=_portion(
                     str(entry.get("portion_unit") or "serving"),
                     float(entry.get("default_portion_grams") or 100.0),
@@ -160,8 +153,7 @@ def load_open_food_facts_records(path: Path) -> list[CanonicalFoodRecord]:
                     "sugar_g": nutriments.get("sugars_100g"),
                     "protein_g": nutriments.get("proteins_100g"),
                     "fat_g": nutriments.get("fat_100g"),
-                    "sodium_mg": float(nutriments.get("salt_100g", 0.0) or 0.0)
-                    * 400.0,
+                    "sodium_mg": float(nutriments.get("salt_100g", 0.0) or 0.0) * 400.0,
                     "fiber_g": nutriments.get("fiber_100g"),
                 }
             ),
@@ -178,8 +170,7 @@ def load_open_food_facts_records(path: Path) -> list[CanonicalFoodRecord]:
                 aliases_normalized=[_normalize_text(item) for item in aliases],
                 slot=(
                     "snack"
-                    if "drink" in _normalize_text(category)
-                    or "snack" in _normalize_text(category)
+                    if "drink" in _normalize_text(category) or "snack" in _normalize_text(category)
                     else "lunch"
                 ),
                 venue_type="packaged food",

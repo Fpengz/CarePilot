@@ -5,9 +5,7 @@ from __future__ import annotations
 from care_pilot.features.meals.logging import build_meal_analysis_log_payload
 
 
-def test_meal_analysis_log_payload_includes_observation_and_inference_latency() -> (
-    None
-):
+def test_meal_analysis_log_payload_includes_observation_and_inference_latency() -> None:
     payload = build_meal_analysis_log_payload(
         user_id="user-1",
         request_id="req-1",

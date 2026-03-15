@@ -47,9 +47,7 @@ def test_profile_memory_clear() -> None:
 
 def test_clinical_snapshot_memory_set_get() -> None:
     svc = ClinicalSnapshotMemoryService()
-    snap = ClinicalProfileSnapshot(
-        biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"]
-    )
+    snap = ClinicalProfileSnapshot(biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"])
     svc.put("u1", snap)
 
     stored = svc.get("u1")
@@ -59,9 +57,7 @@ def test_clinical_snapshot_memory_set_get() -> None:
 
 def test_clinical_snapshot_memory_clear() -> None:
     svc = ClinicalSnapshotMemoryService()
-    snap = ClinicalProfileSnapshot(
-        biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"]
-    )
+    snap = ClinicalProfileSnapshot(biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"])
     svc.put("u1", snap)
 
     svc.clear("u1")

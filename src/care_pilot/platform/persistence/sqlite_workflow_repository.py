@@ -11,8 +11,10 @@ from datetime import datetime
 from typing import Any, cast
 
 from care_pilot.platform.observability.setup import get_logger
-from care_pilot.platform.observability.workflows.domain.models import (
+from care_pilot.platform.observability.tooling.domain.policy_models import (
     ToolRolePolicyRecord,
+)
+from care_pilot.platform.observability.workflows.domain.models import (
     WorkflowTimelineEvent,
 )
 
@@ -23,9 +25,7 @@ class SQLiteWorkflowRepository:
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
-    def save_tool_role_policy(
-        self, record: ToolRolePolicyRecord
-    ) -> ToolRolePolicyRecord:
+    def save_tool_role_policy(self, record: ToolRolePolicyRecord) -> ToolRolePolicyRecord:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -101,9 +101,7 @@ class SQLiteWorkflowRepository:
             for row in rows
         ]
 
-    def get_tool_role_policy(
-        self, policy_id: str
-    ) -> ToolRolePolicyRecord | None:
+    def get_tool_role_policy(self, policy_id: str) -> ToolRolePolicyRecord | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
@@ -128,9 +126,7 @@ class SQLiteWorkflowRepository:
             updated_at=datetime.fromisoformat(row[9]),
         )
 
-    def save_workflow_timeline_event(
-        self, event: WorkflowTimelineEvent
-    ) -> WorkflowTimelineEvent:
+    def save_workflow_timeline_event(self, event: WorkflowTimelineEvent) -> WorkflowTimelineEvent:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """

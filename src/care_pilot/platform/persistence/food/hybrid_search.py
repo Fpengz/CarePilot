@@ -60,7 +60,9 @@ class FoodHybridSearch:
         candidates = self._vector_search(query=query, disease=disease, top_k=candidate_k)
         return self._keyword_rerank(query=query, candidates=candidates, top_k=top_k)
 
-    def _vector_search(self, *, query: str, disease: str | None, top_k: int) -> list[dict[str, Any]]:
+    def _vector_search(
+        self, *, query: str, disease: str | None, top_k: int
+    ) -> list[dict[str, Any]]:
         if not self.vector_model or not self.vector_collection:
             return []
 

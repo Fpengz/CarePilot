@@ -15,9 +15,7 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_lifecycle_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_lifecycle_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -149,12 +147,8 @@ def test_cors_uses_configured_methods_and_headers(
     _reset_settings_cache()
 
     assert response.status_code == 200
-    allow_methods = response.headers.get(
-        "access-control-allow-methods", ""
-    ).upper()
-    allow_headers = response.headers.get(
-        "access-control-allow-headers", ""
-    ).lower()
+    allow_methods = response.headers.get("access-control-allow-methods", "").upper()
+    allow_headers = response.headers.get("access-control-allow-headers", "").lower()
     assert "POST" in allow_methods
     assert "DELETE" not in allow_methods
     assert "content-type" in allow_headers

@@ -11,7 +11,7 @@ from typing import Any, Literal, TypedDict, cast
 from uuid import uuid4
 
 from care_pilot.features.profiles.domain.models import AccountRole
-from care_pilot.platform.observability.workflows.domain.models import (
+from care_pilot.platform.observability.tooling.domain.policy_models import (
     ToolPolicyEffect,
     ToolRolePolicyRecord,
 )
@@ -57,9 +57,7 @@ def apply_tool_policy_patch(
     next_conditions = patch.get("conditions", record.conditions)
     if not isinstance(next_conditions, dict):
         next_conditions = record.conditions
-    typed_conditions: dict[str, object] = cast(
-        dict[str, object], next_conditions
-    )
+    typed_conditions: dict[str, object] = cast(dict[str, object], next_conditions)
     raw_effect = patch.get("effect", record.effect)
     effect: ToolPolicyEffect = record.effect
     if raw_effect in {"allow", "deny"}:
@@ -127,9 +125,7 @@ def evaluate_tool_policy(
     code_allows_tool: bool,
     mode: Literal["shadow", "enforce"],
 ) -> ToolPolicyEvaluation:
-    code_decision: Literal["allow", "deny"] = (
-        "allow" if code_allows_tool else "deny"
-    )
+    code_decision: Literal["allow", "deny"] = "allow" if code_allows_tool else "deny"
     db_decision, matched = resolve_db_decision(
         policies=policies,
         role=role,
@@ -152,9 +148,7 @@ def evaluate_tool_policy(
     return cast(ToolPolicyEvaluation, payload)
 
 
-def _environment_match(
-    *, policy: ToolRolePolicyRecord, environment: str
-) -> bool:
+def _environment_match(*, policy: ToolRolePolicyRecord, environment: str) -> bool:
     raw = policy.conditions.get("environment")
     if raw is None:
         return True

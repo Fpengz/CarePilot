@@ -44,12 +44,8 @@ class _FakeMemoryStore(MemoryStore):
     def enabled(self) -> bool:
         return True
 
-    def search(
-        self, *, user_id: str, query: str, limit: int
-    ) -> list[MemorySnippet]:
-        self.search_calls.append(
-            {"user_id": user_id, "query": query, "limit": limit}
-        )
+    def search(self, *, user_id: str, query: str, limit: int) -> list[MemorySnippet]:
+        self.search_calls.append({"user_id": user_id, "query": query, "limit": limit})
         return [MemorySnippet(text="Allergic to peanuts", score=0.82)]
 
     def add_messages(
@@ -102,9 +98,7 @@ def test_chat_uses_memory_and_records_turn(
 
     assert fake_store.search_calls
     messages = cast(list[dict[str, object]], captured["messages"])
-    user_message = [
-        cast(str, m["content"]) for m in messages if m.get("role") == "user"
-    ][-1]
+    user_message = [cast(str, m["content"]) for m in messages if m.get("role") == "user"][-1]
     assert "Relevant memories" in user_message
     assert "Allergic to peanuts" in user_message
     assert fake_store.add_calls

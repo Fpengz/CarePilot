@@ -94,9 +94,7 @@ def build_companion_runtime_state(
         snapshot=snapshot,
         emotion_signal=inputs.emotion_signal,
     )
-    engagement = assess_engagement(
-        snapshot=snapshot, emotion_signal=inputs.emotion_signal
-    )
+    engagement = assess_engagement(snapshot=snapshot, emotion_signal=inputs.emotion_signal)
     return CompanionRuntimeState(
         snapshot=snapshot,
         personalization=personalization,
@@ -110,9 +108,7 @@ def run_companion_interaction(
     inputs: CompanionStateInputs,
     evidence_retriever: EvidenceRetrievalPort,
 ) -> CompanionInteractionResult:
-    runtime = build_companion_runtime_state(
-        interaction=interaction, inputs=inputs
-    )
+    runtime = build_companion_runtime_state(interaction=interaction, inputs=inputs)
     evidence = retrieve_supporting_evidence(
         retriever=evidence_retriever,
         interaction_type=interaction.interaction_type,
@@ -184,9 +180,7 @@ def build_companion_today_bundle(
         inputs=inputs,
         evidence_retriever=evidence_retriever,
     )
-    runtime = build_companion_runtime_state(
-        interaction=synthetic_interaction, inputs=inputs
-    )
+    runtime = build_companion_runtime_state(interaction=synthetic_interaction, inputs=inputs)
     return (
         result.snapshot,
         result.engagement,

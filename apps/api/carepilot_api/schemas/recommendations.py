@@ -83,9 +83,7 @@ class SuggestionGenerateFromReportRequest(BaseModel):
 
 
 class SafetyDecisionResponse(BaseModel):
-    decision: Literal[
-        "allow", "modify", "refuse", "escalate", "ask_clarification"
-    ]
+    decision: Literal["allow", "modify", "refuse", "escalate", "ask_clarification"]
     reasons: list[str] = Field(default_factory=list)
     required_actions: list[str] = Field(default_factory=list)
     redactions: list[str] = Field(default_factory=list)
@@ -235,9 +233,7 @@ class AgentSubstitutionAlternativeResponse(BaseModel):
 
 class AgentSubstitutionPlanResponse(BaseModel):
     source_meal: AgentSourceMealResponse
-    alternatives: list[AgentSubstitutionAlternativeResponse] = Field(
-        default_factory=list
-    )
+    alternatives: list[AgentSubstitutionAlternativeResponse] = Field(default_factory=list)
     blocked_reason: str | None = None
 
 
@@ -300,9 +296,7 @@ class ReminderConfirmResponse(BaseModel):
 
 
 class ReminderOccurrenceActionRequest(BaseModel):
-    action: Literal[
-        "taken", "skipped", "snooze", "view_details", "ignored", "expired"
-    ]
+    action: Literal["taken", "skipped", "snooze", "view_details", "ignored", "expired"]
     snooze_minutes: int | None = Field(default=None, ge=1, le=120)
 
 

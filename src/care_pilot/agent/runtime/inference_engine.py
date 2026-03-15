@@ -42,13 +42,9 @@ QWEN_PROVIDER = getattr(ModelProvider, "QWEN", ModelProvider.OPENAI)
 def _collect_text_from_events(events: list[object]) -> str:
     chunks: list[str] = []
     for event in events:
-        if isinstance(event, PartDeltaEvent) and isinstance(
-            event.delta, TextPartDelta
-        ):
+        if isinstance(event, PartDeltaEvent) and isinstance(event.delta, TextPartDelta):
             chunks.append(event.delta.content_delta)
-        elif isinstance(event, PartEndEvent) and isinstance(
-            event.part, TextPart
-        ):
+        elif isinstance(event, PartEndEvent) and isinstance(event.part, TextPart):
             chunks.append(event.part.content)
     return "".join(chunks)
 
@@ -60,9 +56,7 @@ def _is_output_validation_failure(exc: Exception) -> bool:
     return "validation" in message and "output" in message
 
 
-_JSON_FENCE_RE = re.compile(
-    r"```(?:json)?\s*(?P<body>[\s\S]*?)\s*```", re.IGNORECASE
-)
+_JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(?P<body>[\s\S]*?)\s*```", re.IGNORECASE)
 
 
 def _extract_json_candidates(raw_text: str) -> list[str]:
@@ -92,9 +86,7 @@ def _extract_json_snippets(text: str) -> list[str]:
     return snippets
 
 
-def _coerce_output(
-    schema: type[BaseModel], parsed: object
-) -> BaseModel | None:
+def _coerce_output(schema: type[BaseModel], parsed: object) -> BaseModel | None:
     if isinstance(parsed, dict):
         try:
             return schema.model_validate(parsed)
@@ -113,9 +105,7 @@ def _coerce_output(
     return None
 
 
-def _recover_output_from_text(
-    raw_text: str, schema: type[BaseModel]
-) -> BaseModel | None:
+def _recover_output_from_text(raw_text: str, schema: type[BaseModel]) -> BaseModel | None:
     for candidate in _extract_json_candidates(raw_text):
         for snippet in _extract_json_snippets(candidate):
             try:
@@ -153,9 +143,7 @@ class _BaseStrategy:
 
     def _provider_metadata(self) -> ProviderMetadata:
         destination = LLMFactory.describe_model_destination(self.model)
-        model_name = getattr(
-            self.model, "model_name", getattr(self.model, "model", "unknown")
-        )
+        model_name = getattr(self.model, "model_name", getattr(self.model, "model", "unknown"))
         endpoint = (
             destination.split("endpoint=", maxsplit=1)[-1]
             if "endpoint=" in destination
@@ -195,9 +183,7 @@ class _BaseStrategy:
         )
         prompt = request.payload.get("prompt", "")
         image_bytes = request.payload.get("image_bytes")
-        image_mime_type = (
-            request.payload.get("image_mime_type") or "image/jpeg"
-        )
+        image_mime_type = request.payload.get("image_mime_type") or "image/jpeg"
         logger.debug(
             "inference_engine_payload modality=%s mime_type=%s image_bytes=%s payload_keys=%s",
             request.modality,
@@ -225,8 +211,7 @@ class _BaseStrategy:
 
         try:
             if (
-                request.modality
-                in {InferenceModality.IMAGE, InferenceModality.MIXED}
+                request.modality in {InferenceModality.IMAGE, InferenceModality.MIXED}
                 and image_bytes
             ):
                 result = await agent.run(
@@ -237,17 +222,13 @@ class _BaseStrategy:
                     event_stream_handler=_event_stream_handler,
                 )
             else:
-                result = await agent.run(
-                    prompt, event_stream_handler=_event_stream_handler
-                )
+                result = await agent.run(prompt, event_stream_handler=_event_stream_handler)
         except Exception as exc:  # noqa: BLE001
             latency_ms = (time.perf_counter() - started) * 1000.0
             raw_text = "".join(raw_chunks) if raw_chunks else ""
             raw_preview = raw_text[-1200:] if raw_text else None
             if raw_text and _is_output_validation_failure(exc):
-                recovered = _recover_output_from_text(
-                    raw_text, request.output_schema
-                )
+                recovered = _recover_output_from_text(raw_text, request.output_schema)
                 if recovered is not None:
                     logger.info(
                         "inference_output_recovered request_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f capability=%s",
@@ -264,16 +245,12 @@ class _BaseStrategy:
                     )
                     return InferenceResponse(
                         request_id=request.request_id,
-                        structured_output=cast(BaseModel, recovered),
+                        structured_output=recovered,
                         confidence=confidence,
                         latency_ms=latency_ms,
                         provider_metadata=self._provider_metadata(),
-                        warnings=[
-                            "Output validation failed; recovered JSON output."
-                        ],
-                        raw_reference=LLMFactory.describe_model_destination(
-                            self.model
-                        ),
+                        warnings=["Output validation failed; recovered JSON output."],
+                        raw_reference=LLMFactory.describe_model_destination(self.model),
                     )
             if "Exceeded maximum retries" in str(exc):
                 logger.info(
@@ -284,9 +261,7 @@ class _BaseStrategy:
                     self.capability or "none",
                 )
             if raw_preview:
-                logger.debug(
-                    "inference_engine_raw_response_preview=%s", raw_preview
-                )
+                logger.debug("inference_engine_raw_response_preview=%s", raw_preview)
             logger.exception(
                 "inference_run_failed request_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f error=%s capability=%s",
                 request.request_id,
@@ -301,9 +276,7 @@ class _BaseStrategy:
         if not isinstance(result.output, request.output_schema):
             raise TypeError("Inference output does not match requested schema")
         latency_ms = (time.perf_counter() - started) * 1000.0
-        confidence = cast(
-            float | None, getattr(result.output, "confidence_score", None)
-        )
+        confidence = cast(float | None, getattr(result.output, "confidence_score", None))
         return InferenceResponse(
             request_id=request.request_id,
             structured_output=cast(BaseModel, result.output),
@@ -357,11 +330,7 @@ class InferenceEngine:
         capability: LLMCapability | str | None = None,
     ) -> None:
         runtime_settings = settings or get_settings()
-        self.capability = (
-            capability.value
-            if isinstance(capability, LLMCapability)
-            else capability
-        )
+        self.capability = capability.value if isinstance(capability, LLMCapability) else capability
         resolved_runtime = LLMFactory._resolve_runtime(
             settings=runtime_settings,
             provider=provider,
@@ -388,22 +357,14 @@ class InferenceEngine:
             ModelProvider.OLLAMA.value,
             ModelProvider.VLLM.value,
         }:
-            self.strategy = LocalStrategy(
-                self.capability, self.provider, self.model
-            )
+            self.strategy = LocalStrategy(self.capability, self.provider, self.model)
         else:
-            self.strategy = TestStrategy(
-                self.capability, ModelProvider.TEST.value, self.model
-            )
+            self.strategy = TestStrategy(self.capability, ModelProvider.TEST.value, self.model)
 
     async def infer(self, request: InferenceRequest) -> InferenceResponse:
-        timeout_seconds = (
-            get_settings().llm.inference.wall_clock_timeout_seconds
-        )
+        timeout_seconds = get_settings().llm.inference.wall_clock_timeout_seconds
         image_bytes = request.payload.get("image_bytes")
-        image_mime_type = (
-            request.payload.get("image_mime_type") or "image/jpeg"
-        )
+        image_mime_type = request.payload.get("image_mime_type") or "image/jpeg"
         logger.debug(
             "inference_engine_payload modality=%s mime_type=%s image_bytes=%s payload_keys=%s",
             request.modality,
@@ -415,9 +376,7 @@ class InferenceEngine:
             raise ValueError(
                 f"Provider {self.provider} does not support modality {request.modality}"
             )
-        return await asyncio.wait_for(
-            self.strategy.run(request), timeout=timeout_seconds
-        )
+        return await asyncio.wait_for(self.strategy.run(request), timeout=timeout_seconds)
 
     def supports(self, modality: InferenceModality) -> bool:
         return self.strategy.supports(modality)
@@ -466,12 +425,8 @@ class InferenceEngine:
             endpoint=health.endpoint,
             supports={
                 InferenceModality.TEXT: self.supports(InferenceModality.TEXT),
-                InferenceModality.IMAGE: self.supports(
-                    InferenceModality.IMAGE
-                ),
-                InferenceModality.MIXED: self.supports(
-                    InferenceModality.MIXED
-                ),
+                InferenceModality.IMAGE: self.supports(InferenceModality.IMAGE),
+                InferenceModality.MIXED: self.supports(InferenceModality.MIXED),
             },
             expected_latency_ms=expected_latency_ms,
         )

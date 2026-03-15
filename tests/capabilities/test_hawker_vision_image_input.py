@@ -17,9 +17,7 @@ from care_pilot.features.meals.domain.models import ImageInput, MealPerception
 
 
 @pytest.mark.anyio
-async def test_binary_image_input_returns_safe_clarification_in_test_mode() -> (
-    None
-):
+async def test_binary_image_input_returns_safe_clarification_in_test_mode() -> None:
     module = HawkerVisionModule(provider="test")
     image_input = ImageInput(
         source="upload",
@@ -51,9 +49,7 @@ async def test_binary_image_input_passes_image_bytes_to_inference_engine(
         model_name = "stub-model"
 
     class StubEngine:
-        def __init__(
-            self, provider=None, model_name=None, model=None
-        ):  # noqa: ANN001
+        def __init__(self, provider=None, model_name=None, model=None):  # noqa: ANN001
             del model_name
             self.provider = provider or "stub"
             self.model = model or _StubModel()
@@ -133,9 +129,7 @@ async def test_webp_input_converts_to_jpeg_for_inference_engine(
         model_name = "stub-model"
 
     class StubEngine:
-        def __init__(
-            self, provider=None, model_name=None, model=None
-        ):  # noqa: ANN001
+        def __init__(self, provider=None, model_name=None, model=None):  # noqa: ANN001
             del model_name
             self.provider = provider or "stub"
             self.model = model or _StubModel()

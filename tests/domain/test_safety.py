@@ -25,11 +25,7 @@ def mr_tan():
         name="Mr. Tan",
         age=68,
         conditions=[MedicalCondition(name="Hypertension", severity="Medium")],
-        medications=[
-            Medication(
-                name="Warfarin", dosage="5mg", contraindications={"Spinach"}
-            )
-        ],
+        medications=[Medication(name="Warfarin", dosage="5mg", contraindications={"Spinach"})],
     )
 
 

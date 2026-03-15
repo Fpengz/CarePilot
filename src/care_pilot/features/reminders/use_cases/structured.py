@@ -50,9 +50,7 @@ def _definition_summary(definition: ReminderDefinition) -> str:
 def _find_definition_for_regimen(
     *, context: "AppContext", user_id: str, regimen_id: str
 ) -> ReminderDefinition | None:
-    for item in context.stores.reminders.list_reminder_definitions(
-        user_id, active_only=False
-    ):
+    for item in context.stores.reminders.list_reminder_definitions(user_id, active_only=False):
         if item.regimen_id == regimen_id:
             return item
     return None
@@ -102,16 +100,9 @@ def _upsert_definition_from_regimen(
     return context.stores.reminders.save_reminder_definition(candidate)
 
 
-def _existing_occurrence_keys(
-    *, context: "AppContext", user_id: str
-) -> set[tuple[str, str]]:
-    items = context.stores.reminders.list_reminder_occurrences(
-        user_id=user_id, limit=1000
-    )
-    return {
-        (item.reminder_definition_id, item.scheduled_for.isoformat())
-        for item in items
-    }
+def _existing_occurrence_keys(*, context: "AppContext", user_id: str) -> set[tuple[str, str]]:
+    items = context.stores.reminders.list_reminder_occurrences(user_id=user_id, limit=1000)
+    return {(item.reminder_definition_id, item.scheduled_for.isoformat()) for item in items}
 
 
 def _sync_occurrence_projection(
@@ -134,9 +125,7 @@ def generate_structured_reminders_for_session(
     context: "AppContext",
     session: dict[str, object],
 ) -> tuple[list[ReminderEvent], EngagementMetrics]:
-    user_profile: UserProfile = build_user_profile_from_session(
-        session, context.stores.profiles
-    )
+    user_profile: UserProfile = build_user_profile_from_session(session, context.stores.profiles)
     regimens = context.stores.medications.list_medication_regimens(
         user_profile.id, active_only=True
     )
@@ -145,15 +134,11 @@ def generate_structured_reminders_for_session(
         for item in regimens:
             context.stores.medications.save_medication_regimen(item)
 
-    existing_keys = _existing_occurrence_keys(
-        context=context, user_id=user_profile.id
-    )
+    existing_keys = _existing_occurrence_keys(context=context, user_id=user_profile.id)
     created_events: list[ReminderEvent] = []
     target_date = datetime.now(timezone.utc).date()
     for regimen in regimens:
-        definition = _upsert_definition_from_regimen(
-            context=context, regimen=regimen
-        )
+        definition = _upsert_definition_from_regimen(context=context, regimen=regimen)
         for occurrence in occurrences_for_definition(
             definition=definition,
             target_date=target_date,
@@ -165,18 +150,14 @@ def generate_structured_reminders_for_session(
             )
             if dedupe_key in existing_keys:
                 continue
-            saved_occurrence = (
-                context.stores.reminders.save_reminder_occurrence(occurrence)
-            )
+            saved_occurrence = context.stores.reminders.save_reminder_occurrence(occurrence)
             _sync_occurrence_projection(
                 context=context,
                 definition=definition,
                 occurrence=saved_occurrence,
             )
             existing_keys.add(dedupe_key)
-            created_events.append(
-                _event_from_occurrence(definition, saved_occurrence)
-            )
+            created_events.append(_event_from_occurrence(definition, saved_occurrence))
 
     signal_payload = {
         "user_id": user_profile.id,
@@ -185,21 +166,15 @@ def generate_structured_reminders_for_session(
     context.coordination_store.publish_signal(
         context.settings.storage.redis_worker_signal_channel, signal_payload
     )
-    context.coordination_store.publish_signal(
-        "reminders.ready", signal_payload
-    )
-    metrics = compute_mcr(
-        context.stores.reminders.list_reminder_events(user_profile.id)
-    )
+    context.coordination_store.publish_signal("reminders.ready", signal_payload)
+    metrics = compute_mcr(context.stores.reminders.list_reminder_events(user_profile.id))
     return created_events, metrics
 
 
 def list_reminder_definitions_for_user(
     *, context: "AppContext", user_id: str
 ) -> list[ReminderDefinition]:
-    return context.stores.reminders.list_reminder_definitions(
-        user_id, active_only=True
-    )
+    return context.stores.reminders.list_reminder_definitions(user_id, active_only=True)
 
 
 def create_reminder_definition_for_user(
@@ -214,12 +189,8 @@ def create_reminder_definition_for_user(
     if not saved.active:
         return saved
 
-    user_profile: UserProfile = build_user_profile_from_session(
-        session, context.stores.profiles
-    )
-    existing_keys = _existing_occurrence_keys(
-        context=context, user_id=user_profile.id
-    )
+    user_profile: UserProfile = build_user_profile_from_session(session, context.stores.profiles)
+    existing_keys = _existing_occurrence_keys(context=context, user_id=user_profile.id)
     target_date = datetime.now(timezone.utc).date()
     for occurrence in occurrences_for_definition(
         definition=saved, target_date=target_date, user_profile=user_profile
@@ -230,12 +201,8 @@ def create_reminder_definition_for_user(
         )
         if dedupe_key in existing_keys:
             continue
-        saved_occurrence = context.stores.reminders.save_reminder_occurrence(
-            occurrence
-        )
-        _sync_occurrence_projection(
-            context=context, definition=saved, occurrence=saved_occurrence
-        )
+        saved_occurrence = context.stores.reminders.save_reminder_occurrence(occurrence)
+        _sync_occurrence_projection(context=context, definition=saved, occurrence=saved_occurrence)
         existing_keys.add(dedupe_key)
     return saved
 
@@ -248,18 +215,12 @@ def update_reminder_definition_for_user(
     reminder_definition_id: str,
     updates: dict[str, object],
 ) -> ReminderDefinition:
-    existing = context.stores.reminders.get_reminder_definition(
-        reminder_definition_id
-    )
+    existing = context.stores.reminders.get_reminder_definition(reminder_definition_id)
     if existing is None or existing.user_id != user_id:
         raise KeyError("reminder definition not found")
-    schedule_changed = (
-        "schedule" in updates and updates["schedule"] is not None
-    )
+    schedule_changed = "schedule" in updates and updates["schedule"] is not None
     payload = existing.model_dump(mode="json")
-    payload.update(
-        {key: value for key, value in updates.items() if value is not None}
-    )
+    payload.update({key: value for key, value in updates.items() if value is not None})
     payload["updated_at"] = datetime.now(timezone.utc)
     updated = ReminderDefinition.model_validate(payload)
     saved = context.stores.reminders.save_reminder_definition(updated)
@@ -274,11 +235,9 @@ def update_reminder_definition_for_user(
         for occurrence in occurrences:
             if occurrence.status not in {"scheduled", "queued", "processing"}:
                 continue
-            scheduled_notifications = (
-                context.stores.reminders.list_scheduled_notifications(
-                    reminder_id=occurrence.id,
-                    user_id=user_id,
-                )
+            scheduled_notifications = context.stores.reminders.list_scheduled_notifications(
+                reminder_id=occurrence.id,
+                user_id=user_id,
             )
             cancel_reminder_notifications(
                 repository=context.stores.reminders, reminder_id=occurrence.id
@@ -312,9 +271,7 @@ def update_reminder_definition_for_user(
                 }
             )
             context.stores.reminders.save_reminder_occurrence(cancelled)
-            context.stores.reminders.save_reminder_event(
-                _event_from_occurrence(saved, cancelled)
-            )
+            context.stores.reminders.save_reminder_event(_event_from_occurrence(saved, cancelled))
 
         _ensure_today_occurrences_for_session(
             context=context,
@@ -327,15 +284,11 @@ def update_reminder_definition_for_user(
 def _ensure_today_occurrences_for_session(
     *, context: "AppContext", session: dict[str, object]
 ) -> None:
-    user_profile: UserProfile = build_user_profile_from_session(
-        session, context.stores.profiles
-    )
+    user_profile: UserProfile = build_user_profile_from_session(session, context.stores.profiles)
     definitions = context.stores.reminders.list_reminder_definitions(
         user_profile.id, active_only=True
     )
-    existing_keys = _existing_occurrence_keys(
-        context=context, user_id=user_profile.id
-    )
+    existing_keys = _existing_occurrence_keys(context=context, user_id=user_profile.id)
     target_date = datetime.now(timezone.utc).date()
     for definition in definitions:
         for occurrence in occurrences_for_definition(
@@ -349,9 +302,7 @@ def _ensure_today_occurrences_for_session(
             )
             if dedupe_key in existing_keys:
                 continue
-            saved_occurrence = (
-                context.stores.reminders.save_reminder_occurrence(occurrence)
-            )
+            saved_occurrence = context.stores.reminders.save_reminder_occurrence(occurrence)
             _sync_occurrence_projection(
                 context=context,
                 definition=definition,
@@ -367,27 +318,15 @@ def list_upcoming_occurrences_for_user(
     user_id: str,
 ) -> list[ReminderOccurrence]:
     _ensure_today_occurrences_for_session(context=context, session=session)
-    items = context.stores.reminders.list_reminder_occurrences(
-        user_id=user_id, limit=200
-    )
-    return [
-        item
-        for item in items
-        if item.status in {"scheduled", "queued", "processing"}
-    ]
+    items = context.stores.reminders.list_reminder_occurrences(user_id=user_id, limit=200)
+    return [item for item in items if item.status in {"scheduled", "queued", "processing"}]
 
 
 def list_history_occurrences_for_user(
     *, context: "AppContext", user_id: str
 ) -> list[ReminderOccurrence]:
-    items = context.stores.reminders.list_reminder_occurrences(
-        user_id=user_id, limit=200
-    )
-    return [
-        item
-        for item in items
-        if item.status not in {"scheduled", "queued", "processing"}
-    ]
+    items = context.stores.reminders.list_reminder_occurrences(user_id=user_id, limit=200)
+    return [item for item in items if item.status not in {"scheduled", "queued", "processing"}]
 
 
 def apply_occurrence_action_for_session(
@@ -398,14 +337,10 @@ def apply_occurrence_action_for_session(
     action: str,
     snooze_minutes: int | None = None,
 ) -> ReminderOccurrence:
-    occurrence = context.stores.reminders.get_reminder_occurrence(
-        occurrence_id
-    )
+    occurrence = context.stores.reminders.get_reminder_occurrence(occurrence_id)
     if occurrence is None or occurrence.user_id != user_id:
         raise KeyError("reminder occurrence not found")
-    definition = context.stores.reminders.get_reminder_definition(
-        occurrence.reminder_definition_id
-    )
+    definition = context.stores.reminders.get_reminder_definition(occurrence.reminder_definition_id)
     if definition is None:
         raise KeyError("reminder definition not found")
 
@@ -442,10 +377,7 @@ def apply_occurrence_action_for_session(
             action_outcome=(
                 "on_time"
                 if acted_at
-                <= (
-                    occurrence.scheduled_for
-                    + timedelta(minutes=occurrence.grace_window_minutes)
-                )
+                <= (occurrence.scheduled_for + timedelta(minutes=occurrence.grace_window_minutes))
                 else "late"
             ),
         )

@@ -26,9 +26,7 @@ def _download(repo_id: str, cache_dir: str | None) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Cache HF emotion models locally."
-    )
+    parser = argparse.ArgumentParser(description="Cache HF emotion models locally.")
     parser.add_argument(
         "--cache-dir",
         dest="cache_dir",

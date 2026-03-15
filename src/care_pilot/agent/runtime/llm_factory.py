@@ -38,9 +38,7 @@ class LLMFactory:
         return model
 
     @staticmethod
-    def _settings_default(
-        field_name: str, fallback: str | float | int
-    ) -> str | float | int:
+    def _settings_default(field_name: str, fallback: str | float | int) -> str | float | int:
         with suppress(Exception):
             default = LLMSettings.model_fields[field_name].default
             if default is not None:
@@ -57,21 +55,13 @@ class LLMFactory:
             )
         except ValidationError:
             timeout_default = str(
-                LLMFactory._settings_default(
-                    "local_llm_request_timeout_seconds", 1200.0
-                )
+                LLMFactory._settings_default("local_llm_request_timeout_seconds", 1200.0)
             )
             retries_default = str(
-                LLMFactory._settings_default(
-                    "local_llm_transport_max_retries", 0
-                )
+                LLMFactory._settings_default("local_llm_transport_max_retries", 0)
             )
-            timeout_raw = os.getenv(
-                "LOCAL_LLM_REQUEST_TIMEOUT_SECONDS", timeout_default
-            )
-            retries_raw = os.getenv(
-                "LOCAL_LLM_TRANSPORT_MAX_RETRIES", retries_default
-            )
+            timeout_raw = os.getenv("LOCAL_LLM_REQUEST_TIMEOUT_SECONDS", timeout_default)
+            retries_raw = os.getenv("LOCAL_LLM_TRANSPORT_MAX_RETRIES", retries_default)
             with suppress(ValueError):
                 return float(timeout_raw), int(retries_raw)
             return float(timeout_default), int(retries_default)
@@ -86,19 +76,11 @@ class LLMFactory:
             )
         except ValidationError:
             timeout_default = str(
-                LLMFactory._settings_default(
-                    "openai_request_timeout_seconds", 120.0
-                )
+                LLMFactory._settings_default("openai_request_timeout_seconds", 120.0)
             )
-            retries_default = str(
-                LLMFactory._settings_default("openai_transport_max_retries", 2)
-            )
-            timeout_raw = os.getenv(
-                "OPENAI_REQUEST_TIMEOUT_SECONDS", timeout_default
-            )
-            retries_raw = os.getenv(
-                "OPENAI_TRANSPORT_MAX_RETRIES", retries_default
-            )
+            retries_default = str(LLMFactory._settings_default("openai_transport_max_retries", 2))
+            timeout_raw = os.getenv("OPENAI_REQUEST_TIMEOUT_SECONDS", timeout_default)
+            retries_raw = os.getenv("OPENAI_TRANSPORT_MAX_RETRIES", retries_default)
             with suppress(ValueError):
                 return float(timeout_raw), int(retries_raw)
             return float(timeout_default), int(retries_default)
@@ -128,9 +110,7 @@ class LLMFactory:
             return OpenAIProvider(base_url=base_url, api_key=api_key)
 
     @staticmethod
-    def _build_openai_provider(
-        *, api_key: str, base_url: str | None
-    ) -> OpenAIProvider:
+    def _build_openai_provider(*, api_key: str, base_url: str | None) -> OpenAIProvider:
         timeout_seconds, max_retries = LLMFactory._openai_network_config()
         logger.info(
             "provider_openai_network_config base_url=%s timeout_seconds=%.1f transport_max_retries=%s",
@@ -166,12 +146,8 @@ class LLMFactory:
 
     @staticmethod
     def describe_model_destination(model: ModelType) -> str:
-        model_name = getattr(
-            model, "model_name", getattr(model, "model", "unknown")
-        )
-        provider_obj = getattr(
-            model, "provider", getattr(model, "_provider", None)
-        )
+        model_name = getattr(model, "model_name", getattr(model, "model", "unknown"))
+        provider_obj = getattr(model, "provider", getattr(model, "_provider", None))
         base_url = None
         if provider_obj is not None:
             base_url = getattr(provider_obj, "base_url", None)
@@ -184,14 +160,10 @@ class LLMFactory:
     @staticmethod
     def from_profile(profile: LocalModelProfile) -> ModelType:
         if not profile.enabled:
-            logger.warning(
-                "provider_profile_disabled profile_id=%s", profile.id
-            )
+            logger.warning("provider_profile_disabled profile_id=%s", profile.id)
             return LLMFactory._attach_model_name(TestModel(), "test-model")
 
-        api_key = os.getenv(profile.api_key_env) or os.getenv(
-            "LOCAL_LLM_API_KEY"
-        )
+        api_key = os.getenv(profile.api_key_env) or os.getenv("LOCAL_LLM_API_KEY")
         if not api_key:
             try:
                 api_key = get_settings().llm.local.api_key
@@ -242,18 +214,14 @@ class LLMFactory:
                 provider=ModelProvider.TEST.value,
                 model_name=model_name or "test-model",
                 capability=(
-                    capability.value
-                    if isinstance(capability, LLMCapability)
-                    else capability
+                    capability.value if isinstance(capability, LLMCapability) else capability
                 ),
             )
         if target_provider == ModelProvider.GEMINI.value:
             api_key = (
                 runtime_settings.llm.gemini.effective_api_key
                 if runtime_settings is not None
-                else (
-                    os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-                )
+                else (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
             )
             return ResolvedModelRuntime(
                 provider=ModelProvider.GEMINI.value,
@@ -261,16 +229,10 @@ class LLMFactory:
                 or (
                     runtime_settings.llm.gemini.model
                     if runtime_settings is not None
-                    else str(
-                        LLMFactory._settings_default(
-                            "gemini_model", "gemini-1.5-flash"
-                        )
-                    )
+                    else str(LLMFactory._settings_default("gemini_model", "gemini-1.5-flash"))
                 ),
                 capability=(
-                    capability.value
-                    if isinstance(capability, LLMCapability)
-                    else capability
+                    capability.value if isinstance(capability, LLMCapability) else capability
                 ),
                 api_key=api_key,
             )
@@ -281,27 +243,18 @@ class LLMFactory:
                 or (
                     runtime_settings.llm.openai.model
                     if runtime_settings is not None
-                    else str(
-                        LLMFactory._settings_default(
-                            "openai_model", "gpt-4o-mini"
-                        )
-                    )
+                    else str(LLMFactory._settings_default("openai_model", "gpt-4o-mini"))
                 ),
                 capability=(
-                    capability.value
-                    if isinstance(capability, LLMCapability)
-                    else capability
+                    capability.value if isinstance(capability, LLMCapability) else capability
                 ),
                 base_url=(
                     runtime_settings.llm.openai.base_url
-                    if runtime_settings is not None
-                    and runtime_settings.llm.openai.base_url
+                    if runtime_settings is not None and runtime_settings.llm.openai.base_url
                     else os.getenv("OPENAI_BASE_URL")
                 ),
                 api_key=(
-                    runtime_settings.llm.openai.api_key
-                    if runtime_settings is not None
-                    else None
+                    runtime_settings.llm.openai.api_key if runtime_settings is not None else None
                 )
                 or os.getenv("OPENAI_API_KEY"),
             )
@@ -312,27 +265,18 @@ class LLMFactory:
                 or (
                     runtime_settings.llm.qwen.model
                     if runtime_settings is not None
-                    else str(
-                        LLMFactory._settings_default(
-                            "qwen_model", "qwen-vl-cheapest"
-                        )
-                    )
+                    else str(LLMFactory._settings_default("qwen_model", "qwen-vl-cheapest"))
                 ),
                 capability=(
-                    capability.value
-                    if isinstance(capability, LLMCapability)
-                    else capability
+                    capability.value if isinstance(capability, LLMCapability) else capability
                 ),
                 base_url=(
                     runtime_settings.llm.qwen.base_url
-                    if runtime_settings is not None
-                    and runtime_settings.llm.qwen.base_url
+                    if runtime_settings is not None and runtime_settings.llm.qwen.base_url
                     else os.getenv("QWEN_BASE_URL")
                 ),
                 api_key=(
-                    runtime_settings.llm.qwen.api_key
-                    if runtime_settings is not None
-                    else None
+                    runtime_settings.llm.qwen.api_key if runtime_settings is not None else None
                 )
                 or os.getenv("QWEN_API_KEY"),
             )
@@ -346,27 +290,18 @@ class LLMFactory:
                 or (
                     runtime_settings.llm.local.model
                     if runtime_settings is not None
-                    else str(
-                        LLMFactory._settings_default(
-                            "local_llm_model", "qwen3-vl:4b"
-                        )
-                    )
+                    else str(LLMFactory._settings_default("local_llm_model", "qwen3-vl:4b"))
                 ),
                 capability=(
-                    capability.value
-                    if isinstance(capability, LLMCapability)
-                    else capability
+                    capability.value if isinstance(capability, LLMCapability) else capability
                 ),
                 base_url=(
                     runtime_settings.llm.local.base_url
-                    if runtime_settings is not None
-                    and runtime_settings.llm.local.base_url
+                    if runtime_settings is not None and runtime_settings.llm.local.base_url
                     else os.getenv("LOCAL_LLM_BASE_URL")
                 ),
                 api_key=(
-                    runtime_settings.llm.local.api_key
-                    if runtime_settings is not None
-                    else None
+                    runtime_settings.llm.local.api_key if runtime_settings is not None else None
                 )
                 or os.getenv("LOCAL_LLM_API_KEY"),
             )
@@ -377,21 +312,13 @@ class LLMFactory:
                 or (
                     runtime_settings.llm.openai.model
                     if runtime_settings is not None
-                    else str(
-                        LLMFactory._settings_default(
-                            "openai_model", "gpt-4o-mini"
-                        )
-                    )
+                    else str(LLMFactory._settings_default("openai_model", "gpt-4o-mini"))
                 ),
                 capability=(
-                    capability.value
-                    if isinstance(capability, LLMCapability)
-                    else capability
+                    capability.value if isinstance(capability, LLMCapability) else capability
                 ),
             )
-        return ResolvedModelRuntime(
-            provider=ModelProvider.TEST.value, model_name="test-model"
-        )
+        return ResolvedModelRuntime(provider=ModelProvider.TEST.value, model_name="test-model")
 
     @staticmethod
     def get_model(
@@ -413,9 +340,7 @@ class LLMFactory:
                 runtime.model_name,
                 runtime.capability or "none",
             )
-            return LLMFactory._attach_model_name(
-                TestModel(), runtime.model_name
-            )
+            return LLMFactory._attach_model_name(TestModel(), runtime.model_name)
         if runtime.provider == ModelProvider.GEMINI.value:
             api_key = runtime.api_key
             if not api_key:
@@ -466,9 +391,7 @@ class LLMFactory:
             ModelProvider.VLLM.value,
         ):
             base_url = runtime.base_url or str(
-                LLMFactory._settings_default(
-                    "local_llm_base_url", "http://localhost:11434/v1"
-                )
+                LLMFactory._settings_default("local_llm_base_url", "http://localhost:11434/v1")
             )
             api_key = runtime.api_key or str(
                 LLMFactory._settings_default("local_llm_api_key", "ollama")
@@ -484,12 +407,8 @@ class LLMFactory:
             )
             return LLMFactory._attach_model_name(model, runtime.model_name)
         if runtime.provider == ModelProvider.CODEX.value:
-            raise NotImplementedError(
-                "Codex provider routing is reserved but not implemented yet"
-            )
-        logger.warning(
-            "provider_unknown provider=%s fallback=test", runtime.provider
-        )
+            raise NotImplementedError("Codex provider routing is reserved but not implemented yet")
+        logger.warning("provider_unknown provider=%s fallback=test", runtime.provider)
         return LLMFactory._attach_model_name(TestModel(), "test-model")
 
 

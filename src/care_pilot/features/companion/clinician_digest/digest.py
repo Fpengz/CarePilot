@@ -28,9 +28,7 @@ def build_clinician_digest(
 ) -> ClinicianDigest:
     changed: list[str] = []
     if snapshot.active_risk_flags:
-        changed.append(
-            f"Active risk flags: {', '.join(snapshot.active_risk_flags)}."
-        )
+        changed.append(f"Active risk flags: {', '.join(snapshot.active_risk_flags)}.")
     if snapshot.latest_meal_name:
         changed.append(f"Latest meal logged: {snapshot.latest_meal_name}.")
     if snapshot.reminder_count:
@@ -56,16 +54,11 @@ def build_clinician_digest(
 
     interventions_attempted: list[str] = []
     if snapshot.reminder_count:
-        interventions_attempted.append(
-            "Medication reminders were generated for current regimens."
-        )
+        interventions_attempted.append("Medication reminders were generated for current regimens.")
     if snapshot.meal_count:
-        interventions_attempted.append(
-            "Meal logging is active and informing current guidance."
-        )
+        interventions_attempted.append("Meal logging is active and informing current guidance.")
     interventions_attempted.extend(
-        f"Companion proposed: {item}"
-        for item in care_plan.recommended_actions[:2]
+        f"Companion proposed: {item}" for item in care_plan.recommended_actions[:2]
     )
 
     summary = (

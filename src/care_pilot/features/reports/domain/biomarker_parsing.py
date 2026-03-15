@@ -34,9 +34,7 @@ SUPPORTED_BIOMARKER_PATTERNS: dict[str, list[str]] = {
 def _extract_text(report_input: ReportInput) -> str:
     if report_input.source == "pasted_text":
         text = report_input.text or ""
-        logger.debug(
-            "extract_report_text source=pasted_text chars=%s", len(text)
-        )
+        logger.debug("extract_report_text source=pasted_text chars=%s", len(text))
         return text
     if report_input.content_bytes is None:
         logger.warning("extract_report_text source=pdf no_content_bytes")
@@ -53,9 +51,7 @@ def _extract_text(report_input: ReportInput) -> str:
 
 def _extract_value(text: str, patterns: list[str]) -> float | None:
     for pattern in patterns:
-        regex = re.compile(
-            rf"(?:{pattern})\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)", re.IGNORECASE
-        )
+        regex = re.compile(rf"(?:{pattern})\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)", re.IGNORECASE)
         match = regex.search(text)
         if match:
             return float(match.group(1))
@@ -99,11 +95,7 @@ def build_clinical_snapshot(
         flags.append("high_ldl")
     systolic = biomarkers.get("systolic_bp")
     diastolic = biomarkers.get("diastolic_bp")
-    if (
-        systolic is not None
-        and diastolic is not None
-        and (systolic >= 140 or diastolic >= 90)
-    ):
+    if systolic is not None and diastolic is not None and (systolic >= 140 or diastolic >= 90):
         flags.append("high_bp")
     snapshot = ClinicalProfileSnapshot(biomarkers=biomarkers, risk_flags=flags)
     logger.info(

@@ -61,9 +61,7 @@ def _map_inference_error(exc: Exception, *, deps: EmotionDeps) -> Exception:
             code="emotions.speech_disabled",
             message="speech emotion inference is disabled",
         )
-    if isinstance(exc, ValueError) and "fusion model not configured" in str(
-        exc
-    ):
+    if isinstance(exc, ValueError) and "fusion model not configured" in str(exc):
         return build_api_error(
             status_code=503,
             code="emotions.not_configured",
@@ -115,9 +113,7 @@ def infer_text_for_session(
         },
     )
     return EmotionInferenceResponse(
-        observation=_to_observation(
-            result, request_id=request_id, correlation_id=correlation_id
-        ),
+        observation=_to_observation(result, request_id=request_id, correlation_id=correlation_id),
     )
 
 
@@ -159,9 +155,7 @@ def infer_speech_for_session(
         },
     )
     return EmotionInferenceResponse(
-        observation=_to_observation(
-            result, request_id=request_id, correlation_id=correlation_id
-        ),
+        observation=_to_observation(result, request_id=request_id, correlation_id=correlation_id),
     )
 
 

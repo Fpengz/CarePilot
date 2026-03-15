@@ -73,9 +73,7 @@ def main() -> int:
             missing_checkboxes.append(token)
 
     if missing_checkboxes:
-        return fail(
-            "required checklist items must be checked: " + ", ".join(missing_checkboxes)
-        )
+        return fail("required checklist items must be checked: " + ", ".join(missing_checkboxes))
 
     print("PR policy check passed")
     return 0

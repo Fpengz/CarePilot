@@ -27,28 +27,20 @@ def list_metric_trends_for_session(
 ) -> MetricTrendListResponse:
     readings = context.stores.biomarkers.list_biomarker_readings(user_id)
     meals = context.stores.meals.list_meal_records(user_id)
-    adherence = context.stores.medications.list_medication_adherence_events(
-        user_id=user_id
-    )
+    adherence = context.stores.medications.list_medication_adherence_events(user_id=user_id)
     items: list[MetricTrendResponse] = []
     requested = metric_names or ["meal:calories", "adherence:rate"]
     for metric in requested:
         if metric == "meal:calories":
             trend = build_metric_trend(metric, meal_calorie_points(meals))
         elif metric == "adherence:rate":
-            trend = build_metric_trend(
-                metric, adherence_rate_points(adherence)
-            )
+            trend = build_metric_trend(metric, adherence_rate_points(adherence))
         elif metric.startswith("biomarker:"):
             trend = build_metric_trend(
                 metric,
-                biomarker_points(
-                    readings, biomarker_name=metric.split(":", 1)[1]
-                ),
+                biomarker_points(readings, biomarker_name=metric.split(":", 1)[1]),
             )
         else:
             continue
-        items.append(
-            MetricTrendResponse.model_validate(trend.model_dump(mode="json"))
-        )
+        items.append(MetricTrendResponse.model_validate(trend.model_dump(mode="json")))
     return MetricTrendListResponse(items=items)

@@ -59,9 +59,7 @@ def create_household_route(
     )
 
 
-@router.get(
-    "/api/v1/households/current", response_model=HouseholdBundleResponse
-)
+@router.get("/api/v1/households/current", response_model=HouseholdBundleResponse)
 def get_current_household_route(
     request: Request,
     session: dict[str, object] = Depends(current_session),
@@ -71,16 +69,12 @@ def get_current_household_route(
         context=get_context(request),
         user_id=str(session["user_id"]),
         active_household_id=(
-            str(active_household_id)
-            if isinstance(active_household_id, str)
-            else None
+            str(active_household_id) if isinstance(active_household_id, str) else None
         ),
     )
 
 
-@router.patch(
-    "/api/v1/households/active", response_model=HouseholdActiveUpdateResponse
-)
+@router.patch("/api/v1/households/active", response_model=HouseholdActiveUpdateResponse)
 def set_active_household_route(
     payload: HouseholdActiveUpdateRequest,
     request: Request,
@@ -186,9 +180,7 @@ def list_household_care_member_reminders_route(
     )
 
 
-@router.patch(
-    "/api/v1/households/{household_id}", response_model=HouseholdBundleResponse
-)
+@router.patch("/api/v1/households/{household_id}", response_model=HouseholdBundleResponse)
 def rename_household_route(
     household_id: str,
     payload: HouseholdUpdateRequest,
@@ -202,9 +194,7 @@ def rename_household_route(
         actor_user_id=str(session["user_id"]),
         name=payload.name,
         active_household_id=(
-            str(active_household_id)
-            if isinstance(active_household_id, str)
-            else None
+            str(active_household_id) if isinstance(active_household_id, str) else None
         ),
     )
 

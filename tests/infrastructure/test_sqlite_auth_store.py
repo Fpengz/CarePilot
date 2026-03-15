@@ -40,9 +40,7 @@ def test_sqlite_auth_store_persists_users_and_sessions_across_instances(
 
 def test_sqlite_auth_store_expires_sessions(tmp_path) -> None:
     db_path = tmp_path / "auth.db"
-    settings = _build_settings(
-        llm={"provider": "test"}, auth={"session_ttl_seconds": 1}
-    )
+    settings = _build_settings(llm={"provider": "test"}, auth={"session_ttl_seconds": 1})
     store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
     user = store.authenticate("member@example.com", "member-pass")
     assert user is not None
@@ -53,9 +51,7 @@ def test_sqlite_auth_store_expires_sessions(tmp_path) -> None:
         conn.execute(
             "UPDATE auth_sessions SET issued_at = ? WHERE session_id = ?",
             (
-                (
-                    datetime.now(timezone.utc) - timedelta(seconds=5)
-                ).isoformat(),
+                (datetime.now(timezone.utc) - timedelta(seconds=5)).isoformat(),
                 session_id,
             ),
         )
@@ -78,9 +74,7 @@ def test_sqlite_auth_store_records_login_lockout_and_audit_events(
     assert store.record_login_failure("x@example.com") is True
     assert store.is_login_locked("x@example.com") is True
 
-    store.append_auth_audit_event(
-        event_type="login_locked", email="x@example.com"
-    )
+    store.append_auth_audit_event(event_type="login_locked", email="x@example.com")
     items = store.list_auth_audit_events(limit=5)
     assert items
     assert items[0]["event_type"] == "login_locked"
@@ -115,9 +109,7 @@ def test_sqlite_auth_store_drops_session_with_invalid_scopes_json(
 
 def test_sqlite_auth_store_can_disable_demo_user_seeding(tmp_path) -> None:
     db_path = tmp_path / "auth.db"
-    settings = _build_settings(
-        llm={"provider": "test"}, auth={"seed_demo_users": False}
-    )
+    settings = _build_settings(llm={"provider": "test"}, auth={"seed_demo_users": False})
 
     store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
 
@@ -134,7 +126,4 @@ def test_sqlite_auth_store_honors_configured_demo_passwords(tmp_path) -> None:
     store = SQLiteAuthStore(settings=settings, db_path=str(db_path))
 
     assert store.authenticate("member@example.com", "member-pass") is None
-    assert (
-        store.authenticate("member@example.com", "member-custom-pass")
-        is not None
-    )
+    assert store.authenticate("member@example.com", "member-custom-pass") is not None

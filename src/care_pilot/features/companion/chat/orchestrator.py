@@ -42,9 +42,7 @@ class ChatOrchestrator:
         if self.router is None:
             return RouteResult(route_name=ChatRouteLabel.GENERAL, context=None)
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None, self.router.route, user_message
-        )
+        return await loop.run_in_executor(None, self.router.route, user_message)
 
     async def stream_events(
         self,
@@ -68,9 +66,7 @@ class ChatOrchestrator:
             context_blocks.append(extra_context)
         if emotion_context:
             context_blocks.append(emotion_context)
-        context_prefix = (
-            "\n\n".join(context_blocks) if context_blocks else None
-        )
+        context_prefix = "\n\n".join(context_blocks) if context_blocks else None
 
         # Build prompt context from memory
         ctx = self.memory.build_prompt_context()
@@ -79,9 +75,7 @@ class ChatOrchestrator:
         full_response = ""
         if response_prefix:
             full_response = response_prefix
-            yield ChatStreamEvent(
-                event="token", data={"text": response_prefix}
-            )
+            yield ChatStreamEvent(event="token", data={"text": response_prefix})
 
         try:
             # For now, we call the agent non-streaming

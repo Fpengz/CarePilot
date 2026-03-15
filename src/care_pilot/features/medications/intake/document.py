@@ -20,7 +20,9 @@ def build_plain_text_source(instructions_text: str) -> MedicationIntakeSource:
     )
 
 
-def extract_upload_source(*, filename: str, mime_type: str, content: bytes) -> MedicationIntakeSource:
+def extract_upload_source(
+    *, filename: str, mime_type: str, content: bytes
+) -> MedicationIntakeSource:
     if mime_type.startswith("text/"):
         extracted = content.decode("utf-8", errors="ignore")
     else:

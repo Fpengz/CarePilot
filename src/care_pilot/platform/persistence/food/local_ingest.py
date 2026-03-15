@@ -21,9 +21,7 @@ from care_pilot.platform.persistence.food.local_retriever import (
     VECTORSTORE_DIR,
 )
 
-STATIC_DATA_DIR = (
-    Path(__file__).resolve().parents[5] / "src" / "care_pilot" / "data"
-)
+STATIC_DATA_DIR = Path(__file__).resolve().parents[5] / "src" / "care_pilot" / "data"
 HAWKER_JSON = STATIC_DATA_DIR / "food" / "sg_hawker_food.json"
 DRINKS_JSON = STATIC_DATA_DIR / "food" / "sg_drinks_and_tips.json"
 
@@ -58,15 +56,15 @@ class HawkerChunker:
                 "id": f"{fid}_nutrition",
                 "text": (
                     f"{en} ({cn}) | Malay: {malay}\n"
-                    f"Category: {food.get('category','')} | Cuisine: {food.get('cuisine','')}\n"
-                    f"Serving: {food.get('serving_size','')}\n"
-                    f"Calories: {nut.get('calories_kcal','?')} kcal\n"
-                    f"Carbohydrates: {nut.get('carbohydrates_g','?')}g | Sugar: {nut.get('sugar_g','?')}g\n"
-                    f"Protein: {nut.get('protein_g','?')}g\n"
-                    f"Total fat: {nut.get('total_fat_g','?')}g | Saturated fat: {nut.get('saturated_fat_g','?')}g\n"
-                    f"Sodium: {nut.get('sodium_mg','?')}mg | Cholesterol: {nut.get('cholesterol_mg','?')}mg\n"
-                    f"Fibre: {nut.get('fiber_g','?')}g\n"
-                    f"Glycemic index: {food.get('glycemic_index','')} (GI value: {food.get('gi_value','?')})\n"
+                    f"Category: {food.get('category', '')} | Cuisine: {food.get('cuisine', '')}\n"
+                    f"Serving: {food.get('serving_size', '')}\n"
+                    f"Calories: {nut.get('calories_kcal', '?')} kcal\n"
+                    f"Carbohydrates: {nut.get('carbohydrates_g', '?')}g | Sugar: {nut.get('sugar_g', '?')}g\n"
+                    f"Protein: {nut.get('protein_g', '?')}g\n"
+                    f"Total fat: {nut.get('total_fat_g', '?')}g | Saturated fat: {nut.get('saturated_fat_g', '?')}g\n"
+                    f"Sodium: {nut.get('sodium_mg', '?')}mg | Cholesterol: {nut.get('cholesterol_mg', '?')}mg\n"
+                    f"Fibre: {nut.get('fiber_g', '?')}g\n"
+                    f"Glycemic index: {food.get('glycemic_index', '')} (GI value: {food.get('gi_value', '?')})\n"
                     f"Health tags: {tags}"
                 ),
                 "metadata": {**base_meta, "chunk_type": "nutrition"},
@@ -100,7 +98,7 @@ class HawkerChunker:
         alts = food.get("healthier_alternatives", [])
         if alts:
             alt_lines = "\n".join(
-                f"- {a.get('name_en','')} ({a.get('name_cn','')}): {a.get('benefit','')}"
+                f"- {a.get('name_en', '')} ({a.get('name_cn', '')}): {a.get('benefit', '')}"
                 for a in alts
             )
             chunks.append(
@@ -125,8 +123,8 @@ class DrinkChunker:
         for name, info in guide.get("terminology", {}).items():
             text = (
                 f"Singapore kopitiam drink: {name}\n"
-                f"English: {info.get('en','')}\n"
-                f"Chinese: {info.get('cn','')}\n"
+                f"English: {info.get('en', '')}\n"
+                f"Chinese: {info.get('cn', '')}\n"
                 f"Calories: {info.get('calories', 'N/A')} kcal | Sugar: {info.get('sugar_g', 'N/A')}g"
             )
             if "note" in info:
@@ -165,12 +163,10 @@ class DrinkChunker:
                 }
             )
 
-        tips = data.get("local_food_ordering_tips", {}).get(
-            "useful_phrases", {}
-        )
+        tips = data.get("local_food_ordering_tips", {}).get("useful_phrases", {})
         if tips:
             tip_lines = "\n".join(
-                f"- {v.get('en','')} | CN: {v.get('cn','')} | Malay: {v.get('malay','N/A')}"
+                f"- {v.get('en', '')} | CN: {v.get('cn', '')} | Malay: {v.get('malay', 'N/A')}"
                 for v in tips.values()
             )
             chunks.append(
@@ -248,9 +244,7 @@ class FoodInfoIngester:
         self.ingest_hawker()
         self.ingest_drinks()
         total = self._collection.count()
-        print(
-            f"[FoodInfoIngester] Done. Collection '{COLLECTION_NAME}' has {total} documents."
-        )
+        print(f"[FoodInfoIngester] Done. Collection '{COLLECTION_NAME}' has {total} documents.")
 
 
 def _smoke_test() -> None:

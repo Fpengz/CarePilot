@@ -19,14 +19,14 @@ MIGRATED_CALLERS = [
     "tests/integration/test_integration_user_story_1.py",
     "tests/integration/test_integration_user_story_2.py",
 ]
-LEGACY_IMPORT = (
-    "from care_pilot.infrastructure.persistence import SQLiteRepository"
+LEGACY_IMPORT = "from care_pilot.infrastructure.persistence import SQLiteRepository"
+CANONICAL_IMPORT = "from care_pilot.platform.persistence import SQLiteRepository"
+LEGACY_API_AUTH_IMPORT = (
+    "from care_pilot.application.auth.session_context import build_user_profile_from_session"
 )
-CANONICAL_IMPORT = (
-    "from care_pilot.platform.persistence import SQLiteRepository"
+CANONICAL_API_AUTH_IMPORT = (
+    "from care_pilot.platform.auth.session_context import build_user_profile_from_session"
 )
-LEGACY_API_AUTH_IMPORT = "from care_pilot.application.auth.session_context import build_user_profile_from_session"
-CANONICAL_API_AUTH_IMPORT = "from care_pilot.platform.auth.session_context import build_user_profile_from_session"
 
 
 def test_platform_persistence_exports_sqlite_repository() -> None:

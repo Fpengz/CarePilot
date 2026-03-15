@@ -29,9 +29,7 @@ class SQLiteClinicalRepository:
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
-    def save_biomarker_readings(
-        self, user_id: str, readings: list[BiomarkerReading]
-    ) -> None:
+    def save_biomarker_readings(self, user_id: str, readings: list[BiomarkerReading]) -> None:
         with sqlite3.connect(self.db_path) as conn:
             for reading in readings:
                 conn.execute(
@@ -46,11 +44,7 @@ class SQLiteClinicalRepository:
                         reading.value,
                         reading.unit,
                         reading.reference_range,
-                        (
-                            reading.measured_at.isoformat()
-                            if reading.measured_at
-                            else None
-                        ),
+                        (reading.measured_at.isoformat() if reading.measured_at else None),
                         reading.source_doc_id,
                     ),
                 )
@@ -144,16 +138,12 @@ class SQLiteClinicalRepository:
                 symptom_codes=cast(list[str], json.loads(cast(str, row[4]))),
                 free_text=row[5],
                 context=cast(dict[str, object], json.loads(cast(str, row[6]))),
-                safety=SymptomSafety.model_validate(
-                    json.loads(cast(str, row[7]))
-                ),
+                safety=SymptomSafety.model_validate(json.loads(cast(str, row[7]))),
             )
             for row in rows
         ]
 
-    def save_clinical_card(
-        self, card: ClinicalCardRecord
-    ) -> ClinicalCardRecord:
+    def save_clinical_card(self, card: ClinicalCardRecord) -> ClinicalCardRecord:
         payload = card.model_dump(mode="json")
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
@@ -175,9 +165,7 @@ class SQLiteClinicalRepository:
             conn.commit()
         return ClinicalCardRecord.model_validate(payload)
 
-    def list_clinical_cards(
-        self, *, user_id: str, limit: int = 50
-    ) -> list[ClinicalCardRecord]:
+    def list_clinical_cards(self, *, user_id: str, limit: int = 50) -> list[ClinicalCardRecord]:
         bounded = max(1, min(limit, 200))
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
@@ -189,14 +177,9 @@ class SQLiteClinicalRepository:
                 """,
                 (user_id, bounded),
             ).fetchall()
-        return [
-            ClinicalCardRecord.model_validate_json(cast(str, row[0]))
-            for row in rows
-        ]
+        return [ClinicalCardRecord.model_validate_json(cast(str, row[0])) for row in rows]
 
-    def get_clinical_card(
-        self, *, user_id: str, card_id: str
-    ) -> ClinicalCardRecord | None:
+    def get_clinical_card(self, *, user_id: str, card_id: str) -> ClinicalCardRecord | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 "SELECT payload_json FROM clinical_cards WHERE user_id = ? AND id = ?",
@@ -223,9 +206,7 @@ class SQLiteClinicalRepository:
         logger.debug("get_health_profile_hit user_id=%s", user_id)
         return HealthProfileRecord.model_validate_json(payload)
 
-    def save_health_profile(
-        self, profile: HealthProfileRecord
-    ) -> HealthProfileRecord:
+    def save_health_profile(self, profile: HealthProfileRecord) -> HealthProfileRecord:
         payload = profile.model_dump(mode="json")
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
@@ -260,16 +241,10 @@ class SQLiteClinicalRepository:
                 (user_id,),
             ).fetchone()
         if row is None:
-            logger.debug(
-                "get_health_profile_onboarding_state_miss user_id=%s", user_id
-            )
+            logger.debug("get_health_profile_onboarding_state_miss user_id=%s", user_id)
             return None
-        logger.debug(
-            "get_health_profile_onboarding_state_hit user_id=%s", user_id
-        )
-        return HealthProfileOnboardingState.model_validate_json(
-            cast(str, row[0])
-        )
+        logger.debug("get_health_profile_onboarding_state_hit user_id=%s", user_id)
+        return HealthProfileOnboardingState.model_validate_json(cast(str, row[0]))
 
     def save_health_profile_onboarding_state(
         self,

@@ -100,7 +100,9 @@ class SQLiteHouseholdStore:
             "created_at": str(row["created_at"]),
         }
 
-    def create_household(self, *, owner_user_id: str, owner_display_name: str, name: str) -> dict[str, Any]:
+    def create_household(
+        self, *, owner_user_id: str, owner_display_name: str, name: str
+    ) -> dict[str, Any]:
         now = self._now().isoformat()
         household_id = f"hh_{uuid4().hex[:12]}"
         with self._conn:
@@ -172,7 +174,15 @@ class SQLiteHouseholdStore:
                     invite_id, household_id, code, created_by_user_id, created_at, expires_at, max_uses, uses, revoked_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL)
                 """,
-                (invite_id, household_id, code, created_by_user_id, now.isoformat(), expires_at, max_uses),
+                (
+                    invite_id,
+                    household_id,
+                    code,
+                    created_by_user_id,
+                    now.isoformat(),
+                    expires_at,
+                    max_uses,
+                ),
             )
         return {
             "invite_id": invite_id,
@@ -185,7 +195,9 @@ class SQLiteHouseholdStore:
             "uses": 0,
         }
 
-    def join_by_invite(self, *, code: str, user_id: str, display_name: str) -> tuple[dict[str, Any], bool] | None:
+    def join_by_invite(
+        self, *, code: str, user_id: str, display_name: str
+    ) -> tuple[dict[str, Any], bool] | None:
         invite = self._conn.execute(
             """
             SELECT invite_id, household_id, expires_at, max_uses, uses, revoked_at

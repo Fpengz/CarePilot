@@ -76,7 +76,9 @@ def _legacy_perception_from_state(state: MealState) -> MealPerception:
             PerceivedMealItem(
                 label=state.dish_name,
                 candidate_aliases=[],
-                portion_estimate=MealPortionEstimate(amount=amount, unit=unit, confidence=state.confidence_score),
+                portion_estimate=MealPortionEstimate(
+                    amount=amount, unit=unit, confidence=state.confidence_score
+                ),
                 confidence=state.confidence_score,
             )
         ],
@@ -151,7 +153,9 @@ def _preparation_mismatch(*, preparation: str | None, preparation_tags: list[str
     return not any(target == item or target in item or item in target for item in normalized_tags)
 
 
-def _heuristic_risk_tags(*, preparation: str | None, nutrition: MealNutritionProfile, base_tags: list[str]) -> list[str]:
+def _heuristic_risk_tags(
+    *, preparation: str | None, nutrition: MealNutritionProfile, base_tags: list[str]
+) -> list[str]:
     tags = list(dict.fromkeys(base_tags))
     prep = normalize_text(preparation or "")
     if "fried" in prep and "fried" not in tags:
@@ -166,12 +170,22 @@ def _heuristic_risk_tags(*, preparation: str | None, nutrition: MealNutritionPro
         tags.append("protein_rich")
     if nutrition.fiber_g >= 5 and "fiber_rich" not in tags:
         tags.append("fiber_rich")
-    if nutrition.protein_g >= 20 and nutrition.fiber_g >= 5 and nutrition.sodium_mg < 900 and "balanced" not in tags:
+    if (
+        nutrition.protein_g >= 20
+        and nutrition.fiber_g >= 5
+        and nutrition.sodium_mg < 900
+        and "balanced" not in tags
+    ):
         tags.append("balanced")
     return tags
 
 
-def _estimate_grams(*, estimate: MealPortionEstimate, default_portion_grams: float | None, portion_references: list[PortionReference]) -> float | None:
+def _estimate_grams(
+    *,
+    estimate: MealPortionEstimate,
+    default_portion_grams: float | None,
+    portion_references: list[PortionReference],
+) -> float | None:
     amount = estimate.amount if estimate.amount > 0 else 1.0
     reference = _lookup_reference(portion_references, estimate.unit)
     if reference is not None and reference.grams > 0:
@@ -184,7 +198,12 @@ def _estimate_grams(*, estimate: MealPortionEstimate, default_portion_grams: flo
     return None
 
 
-def _portion_factor(*, estimate: MealPortionEstimate, estimated_grams: float | None, default_portion_grams: float | None) -> float:
+def _portion_factor(
+    *,
+    estimate: MealPortionEstimate,
+    estimated_grams: float | None,
+    default_portion_grams: float | None,
+) -> float:
     if estimated_grams is not None and default_portion_grams and default_portion_grams > 0:
         return estimated_grams / default_portion_grams
     return max(estimate.amount, 1.0)
@@ -203,7 +222,9 @@ def _map_portion_size(items: list[NormalizedMealItem]) -> PortionSize:
     return PortionSize.STANDARD
 
 
-def _pick_glycemic_label(items: list[NormalizedMealItem], food_store: Any, locale: str) -> GlycemicIndexLevel:
+def _pick_glycemic_label(
+    items: list[NormalizedMealItem], food_store: Any, locale: str
+) -> GlycemicIndexLevel:
     for item in items:
         if not item.canonical_name:
             continue
@@ -241,7 +262,10 @@ def _normalize_item(*, food_store: Any, locale: str, item: Any) -> NormalizedMea
     strategy = "unmatched"
     confidence = 0.0
     if matched is not None:
-        normalized_record_names = {normalize_text(matched.title), *getattr(matched, "aliases_normalized", [])}
+        normalized_record_names = {
+            normalize_text(matched.title),
+            *getattr(matched, "aliases_normalized", []),
+        }
         for alias in aliases:
             normalized_alias = normalize_text(alias)
             if normalized_alias in normalized_record_names:
@@ -249,7 +273,10 @@ def _normalize_item(*, food_store: Any, locale: str, item: Any) -> NormalizedMea
                 strategy = "exact_alias"
                 confidence = 0.95
                 break
-            if any(normalized_alias in record_name or record_name in normalized_alias for record_name in normalized_record_names):
+            if any(
+                normalized_alias in record_name or record_name in normalized_alias
+                for record_name in normalized_record_names
+            ):
                 matched_alias = alias
                 strategy = "partial_alias"
                 confidence = 0.82
@@ -329,7 +356,9 @@ def _build_legacy_state(
     locale: str,
     needs_manual_review: bool,
 ) -> MealState:
-    item_names = [item.canonical_name for item in enriched_event.normalized_items if item.canonical_name]
+    item_names = [
+        item.canonical_name for item in enriched_event.normalized_items if item.canonical_name
+    ]
     meal_name = enriched_event.meal_name or prior_state.dish_name
     ingredients = [Ingredient(name=name) for name in item_names[:8]]
     anomalies = list(dict.fromkeys([*perception.uncertainties, *prior_state.visual_anomalies]))
@@ -340,10 +369,14 @@ def _build_legacy_state(
         ingredients=ingredients,
         nutrition=enriched_event.total_nutrition.to_legacy(),
         portion_size=_map_portion_size(enriched_event.normalized_items),
-        glycemic_index_estimate=_pick_glycemic_label(enriched_event.normalized_items, food_store, locale),
+        glycemic_index_estimate=_pick_glycemic_label(
+            enriched_event.normalized_items, food_store, locale
+        ),
         localization=LocalizationDetails(detected_components=item_names[:8]),
         visual_anomalies=anomalies,
-        suggested_modifications=list(prior_state.suggested_modifications) if needs_manual_review else [],
+        suggested_modifications=list(prior_state.suggested_modifications)
+        if needs_manual_review
+        else [],
     )
 
 
@@ -353,13 +386,23 @@ def normalize_vision_result(
     food_store: Any,
     locale: str = "en-SG",
 ) -> VisionResult:
-    perception = vision_result.perception or _legacy_perception_from_state(vision_result.primary_state)
-    normalized_items = [_normalize_item(food_store=food_store, locale=locale, item=item) for item in perception.items]
-    unresolved_items = [item.detected_label for item in normalized_items if item.match_strategy == "unmatched"]
+    perception = vision_result.perception or _legacy_perception_from_state(
+        vision_result.primary_state
+    )
+    normalized_items = [
+        _normalize_item(food_store=food_store, locale=locale, item=item)
+        for item in perception.items
+    ]
+    unresolved_items = [
+        item.detected_label for item in normalized_items if item.match_strategy == "unmatched"
+    ]
     total_nutrition = _sum_nutrition(normalized_items)
     risk_tags = sorted({tag for item in normalized_items for tag in item.risk_tags})
     source_records = [
-        RawFoodSourceRecord(source_name=item.source_dataset or "unknown", source_id=item.canonical_food_id or item.detected_label)
+        RawFoodSourceRecord(
+            source_name=item.source_dataset or "unknown",
+            source_id=item.canonical_food_id or item.detected_label,
+        )
         for item in normalized_items
         if item.source_dataset or item.canonical_food_id
     ]
@@ -410,7 +453,9 @@ def build_meal_record(
     vision_result: VisionResult,
     request_id: str | None = None,
 ) -> MealRecognitionRecord:
-    multi_item_count = max(1, len(vision_result.perception.items) if vision_result.perception else 1)
+    multi_item_count = max(
+        1, len(vision_result.perception.items) if vision_result.perception else 1
+    )
     if isinstance(image_input, ImageInput):
         raw = image_input.metadata.get("multi_item_count")
         if raw is not None:

@@ -18,20 +18,20 @@
 **Goal:** Make the frontend meal analysis response type match the backend and enforce key presence via typecheck.  
 **Scope:** Add a type-level guard and update `MealAnalyzeApiResponse` shape only.  
 **Files:**  
-- Create: `/Users/zhoufuwang/Projects/care_pilots/apps/web/lib/contracts/meal-analyze-contract.ts`  
-- Modify: `/Users/zhoufuwang/Projects/care_pilots/apps/web/lib/types.ts`  
+- Create: `apps/web/lib/contracts/meal-analyze-contract.ts`  
+- Modify: `apps/web/lib/types.ts`  
 **Validation:** `pnpm web:typecheck` (fail then pass).  
 **Risk:** Low; type-only changes may surface compile errors in dependent UI.  
 
 **Files:**
-- Create: `/Users/zhoufuwang/Projects/care_pilots/apps/web/lib/contracts/meal-analyze-contract.ts`
-- Modify: `/Users/zhoufuwang/Projects/care_pilots/apps/web/lib/types.ts`
+- Create: `apps/web/lib/contracts/meal-analyze-contract.ts`
+- Modify: `apps/web/lib/types.ts`
 - Test: `pnpm web:typecheck`
 
 - [ ] **Step 1: Write the failing type-level contract check**
 
 ```ts
-// /Users/zhoufuwang/Projects/care_pilot/apps/web/lib/contracts/meal-analyze-contract.ts
+// apps/web/lib/contracts/meal-analyze-contract.ts
 import type { MealAnalyzeApiResponse } from "@/lib/types";
 
 type HasKey<T, K extends PropertyKey> = K extends keyof T ? true : false;
@@ -55,7 +55,7 @@ Expected: FAIL with TypeScript errors that one or more required keys (`validated
 - [ ] **Step 3: Update `MealAnalyzeApiResponse` to match the backend**
 
 ```ts
-// /Users/zhoufuwang/Projects/care_pilot/apps/web/lib/types.ts
+// apps/web/lib/types.ts
 export interface MealAnalyzeApiResponse {
   raw_observation: Record<string, unknown>;
   validated_event: Record<string, unknown>;
@@ -73,8 +73,8 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add /Users/zhoufuwang/Projects/care_pilot/apps/web/lib/contracts/meal-analyze-contract.ts \
-  /Users/zhoufuwang/Projects/care_pilot/apps/web/lib/types.ts
+git add apps/web/lib/contracts/meal-analyze-contract.ts \
+  apps/web/lib/types.ts
 
 git commit -m "web: align meal analyze response type"
 ```
@@ -87,18 +87,18 @@ git commit -m "web: align meal analyze response type"
 **Goal:** Replace legacy `summary` rendering with the new response fields while preserving empty-state behavior.  
 **Scope:** Update only the “Latest Analysis” tab UI bindings and placeholders.  
 **Files:**  
-- Modify: `/Users/zhoufuwang/Projects/care_pilots/apps/web/app/meals/page.tsx`  
+- Modify: `apps/web/app/meals/page.tsx`  
 **Validation:** `pnpm web:typecheck` and manual UI check.  
 **Risk:** Moderate UI regression if placeholders or conditionals are incorrect.  
 
 **Files:**
-- Modify: `/Users/zhoufuwang/Projects/care_pilots/apps/web/app/meals/page.tsx`
+- Modify: `apps/web/app/meals/page.tsx`
 - Test: `pnpm web:typecheck`
 
 - [ ] **Step 1: Write the failing UI mapping check**
 
 ```ts
-// /Users/zhoufuwang/Projects/care_pilot/apps/web/app/meals/page.tsx
+// apps/web/app/meals/page.tsx
 // Keep the current legacy `summary` usage; after Task 1 updates types,
 // this file should fail typecheck and guide the refactor.
 const legacySummary = lastAnalysis?.summary;
@@ -112,7 +112,7 @@ Expected: FAIL with errors about `summary` not existing on `MealAnalyzeApiRespon
 - [ ] **Step 3: Update the “Latest Analysis” card bindings**
 
 ```tsx
-// /Users/zhoufuwang/Projects/care_pilot/apps/web/app/meals/page.tsx
+// apps/web/app/meals/page.tsx
 const validated = lastAnalysis?.validated_event as Record<string, unknown> | undefined;
 const nutrition = lastAnalysis?.nutrition_profile as Record<string, unknown> | undefined;
 const observation = lastAnalysis?.raw_observation as Record<string, unknown> | undefined;
@@ -136,7 +136,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add /Users/zhoufuwang/Projects/care_pilot/apps/web/app/meals/page.tsx
+git add apps/web/app/meals/page.tsx
 
 git commit -m "web: render latest meal analysis from v2 response"
 ```

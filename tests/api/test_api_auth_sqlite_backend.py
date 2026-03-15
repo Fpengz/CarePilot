@@ -14,9 +14,7 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_auth_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_auth_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     _reset_settings_cache()

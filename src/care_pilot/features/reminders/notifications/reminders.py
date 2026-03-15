@@ -59,18 +59,13 @@ def _sort_at(item) -> datetime:  # noqa: ANN001
 def generate_reminders_for_session(
     *, context: AppContext, session: dict[str, object]
 ) -> ReminderGenerateResponse:
-    user_profile = build_user_profile_from_session(
-        session, context.stores.profiles
-    )
+    user_profile = build_user_profile_from_session(session, context.stores.profiles)
     generated_reminders, metrics = generate_structured_reminders_for_session(
         context=context, session=session
     )
-    mobility_settings = (
-        context.stores.reminders.get_mobility_reminder_settings(
-            user_profile.id
-        )
-        or default_mobility_settings(user_profile.id)
-    )
+    mobility_settings = context.stores.reminders.get_mobility_reminder_settings(
+        user_profile.id
+    ) or default_mobility_settings(user_profile.id)
     mobility_reminders = generate_mobility_reminders(
         user_id=user_profile.id,
         target_date=date.today(),
@@ -89,17 +84,11 @@ def generate_reminders_for_session(
     )
     return ReminderGenerateResponse(
         reminders=reminders,
-        metrics=(
-            metrics
-            if isinstance(metrics, EngagementMetrics)
-            else compute_mcr(reminders)
-        ),
+        metrics=(metrics if isinstance(metrics, EngagementMetrics) else compute_mcr(reminders)),
     )
 
 
-def list_reminders_for_session(
-    *, context: AppContext, user_id: str
-) -> ReminderListResponse:
+def list_reminders_for_session(*, context: AppContext, user_id: str) -> ReminderListResponse:
     events = context.stores.reminders.list_reminder_events(user_id)
     metrics = compute_mcr(events)
     return ReminderListResponse(
@@ -136,12 +125,8 @@ def confirm_reminder_for_session(
                 code="reminders.not_found",
                 message="reminder not found",
             ) from exc
-        updated_event = context.stores.reminders.get_reminder_event(
-            updated_occurrence.id
-        )
-        metrics = compute_mcr(
-            context.stores.reminders.list_reminder_events(user_id)
-        )
+        updated_event = context.stores.reminders.get_reminder_event(updated_occurrence.id)
+        metrics = compute_mcr(context.stores.reminders.list_reminder_events(user_id))
         return ReminderConfirmResponse(
             event=updated_event or event,
             metrics=metrics,
@@ -171,12 +156,8 @@ def confirm_reminder_for_session(
             metadata={"meal_confirmation": updated.meal_confirmation},
         )
         context.stores.medications.save_medication_adherence_event(adherence)
-    cancel_reminder_notifications(
-        repository=context.stores.reminders, reminder_id=event_id
-    )
-    metrics = compute_mcr(
-        context.stores.reminders.list_reminder_events(user_id)
-    )
+    cancel_reminder_notifications(repository=context.stores.reminders, reminder_id=event_id)
+    metrics = compute_mcr(context.stores.reminders.list_reminder_events(user_id))
     return ReminderConfirmResponse(
         event=updated,
         metrics=metrics,
@@ -192,9 +173,7 @@ def get_mobility_settings_for_session(
         user_id
     ) or default_mobility_settings(user_id)
     return MobilityReminderSettingsEnvelopeResponse(
-        settings=MobilityReminderSettingsResponse.model_validate(
-            settings.model_dump(mode="json")
-        )
+        settings=MobilityReminderSettingsResponse.model_validate(settings.model_dump(mode="json"))
     )
 
 
@@ -229,7 +208,5 @@ def update_mobility_settings_for_session(
     )
     context.stores.reminders.save_mobility_reminder_settings(settings)
     return MobilityReminderSettingsEnvelopeResponse(
-        settings=MobilityReminderSettingsResponse.model_validate(
-            settings.model_dump(mode="json")
-        )
+        settings=MobilityReminderSettingsResponse.model_validate(settings.model_dump(mode="json"))
     )

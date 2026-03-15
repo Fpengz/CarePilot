@@ -20,8 +20,7 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
 from care_pilot.platform.observability import get_logger
 
 _PROMPT_TEMPLATE = (
-    "Instruction: {query} \n"
-    "Follow the text instruction based on the following audio: <SpeechHere>"
+    "Instruction: {query} \nFollow the text instruction based on the following audio: <SpeechHere>"
 )
 _TRANSCRIBE_PROMPT = "Please transcribe this speech."
 
@@ -31,17 +30,11 @@ logger = get_logger(__name__)
 class AudioAgent:
     """Agent that transcribes audio to text using Groq Whisper or MERaLiON."""
 
-    def __init__(
-        self, repo_id: str | None = None, groq_api_key: str | None = None
-    ) -> None:
+    def __init__(self, repo_id: str | None = None, groq_api_key: str | None = None) -> None:
         self.repo_id = repo_id or "MERaLiON/MERaLiON-2-3B"
         self._groq_api_key = groq_api_key
         self.device = "mps" if torch.backends.mps.is_available() else "cpu"
-        self.torch_dtype = (
-            torch.float16
-            if torch.backends.mps.is_available()
-            else torch.float32
-        )
+        self.torch_dtype = torch.float16 if torch.backends.mps.is_available() else torch.float32
         self.processor = None
         self.model = None
 
@@ -56,9 +49,7 @@ class AudioAgent:
             self.repo_id,
             self.device,
         )
-        self.processor = AutoProcessor.from_pretrained(
-            self.repo_id, trust_remote_code=True
-        )
+        self.processor = AutoProcessor.from_pretrained(self.repo_id, trust_remote_code=True)
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
             self.repo_id,
             torch_dtype=self.torch_dtype,
@@ -95,9 +86,7 @@ class AudioAgent:
             [
                 {
                     "role": "user",
-                    "content": _PROMPT_TEMPLATE.format(
-                        query=_TRANSCRIBE_PROMPT
-                    ),
+                    "content": _PROMPT_TEMPLATE.format(query=_TRANSCRIBE_PROMPT),
                 }
             ]
         ]
@@ -107,25 +96,19 @@ class AudioAgent:
             add_generation_prompt=True,
         )
 
-        inputs = self.processor(
-            text=chat_prompt, audios=[audio_array], return_tensors="pt"
-        ).to(self.device)
-        inputs["input_features"] = inputs["input_features"].to(
-            self.torch_dtype
+        inputs = self.processor(text=chat_prompt, audios=[audio_array], return_tensors="pt").to(
+            self.device
         )
+        inputs["input_features"] = inputs["input_features"].to(self.torch_dtype)
 
         generated_ids = self.model.generate(**inputs, max_new_tokens=256)
-        return self.processor.batch_decode(
-            generated_ids, skip_special_tokens=True
-        )[0]
+        return self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
     # ------------------------------------------------------------------
     # Groq Whisper (cloud)
     # ------------------------------------------------------------------
 
-    def transcribe_bytes(
-        self, raw_bytes: bytes, filename: str = "audio.webm"
-    ) -> str:
+    def transcribe_bytes(self, raw_bytes: bytes, filename: str = "audio.webm") -> str:
         """Transcribe raw audio bytes (webm/mp3/wav/ogg) via Groq Whisper.
 
         This is the preferred method for the FastAPI backend where the browser
@@ -145,9 +128,7 @@ class AudioAgent:
 
         api_key = self._groq_api_key
         if not api_key:
-            raise ValueError(
-                "GROQ_API_KEY not provided for audio transcription"
-            )
+            raise ValueError("GROQ_API_KEY not provided for audio transcription")
 
         buf = io.BytesIO(raw_bytes)
         buf.name = filename
@@ -163,9 +144,7 @@ class AudioAgent:
             prompt="Singlish, Singapore English",
             language="en",
         )
-        logger.info(
-            "audio_agent_groq_response length=%s", len(result.text or "")
-        )
+        logger.info("audio_agent_groq_response length=%s", len(result.text or ""))
         return result.text.strip()
 
     def transcribe_groq(self, audio_input: tuple) -> str:
@@ -192,9 +171,7 @@ class AudioAgent:
         sample_rate, audio_array = audio_input
         audio_array = audio_array.astype(np.float32)
         if sample_rate != 16000:
-            audio_array = librosa.resample(
-                y=audio_array, orig_sr=sample_rate, target_sr=16000
-            )
+            audio_array = librosa.resample(y=audio_array, orig_sr=sample_rate, target_sr=16000)
 
         buffer = io.BytesIO()
         sf.write(buffer, audio_array, 16000, format="WAV")
@@ -209,7 +186,5 @@ class AudioAgent:
             prompt="Singlish, Singapore English",
             language="en",
         )
-        logger.info(
-            "audio_agent_groq_response length=%s", len(result.text or "")
-        )
+        logger.info("audio_agent_groq_response length=%s", len(result.text or ""))
         return result.text

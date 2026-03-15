@@ -69,9 +69,7 @@ class WorkflowResponse(BaseModel):
     request_id: str
     correlation_id: str
     replayed: bool
-    timeline_events: list[WorkflowTimelineEventResponse] = Field(
-        default_factory=list
-    )
+    timeline_events: list[WorkflowTimelineEventResponse] = Field(default_factory=list)
 
 
 class AlertTriggerResponse(BaseModel):
@@ -165,9 +163,7 @@ class CompanionSnapshotResponse(BaseModel):
 
 class CompanionEngagementResponse(BaseModel):
     risk_level: Literal["low", "medium", "high"]
-    recommended_mode: Literal[
-        "supportive", "accountability", "follow_up", "escalate"
-    ]
+    recommended_mode: Literal["supportive", "accountability", "follow_up", "escalate"]
     rationale: list[str] = Field(default_factory=list)
     intervention_opportunities: int = 0
 
@@ -195,9 +191,7 @@ class CompanionCarePlanResponse(BaseModel):
     recommended_actions: list[str] = Field(default_factory=list)
     clinician_follow_up: bool = False
     urgency: Literal["routine", "soon", "prompt"] = "routine"
-    citations: list[CompanionEvidenceCitationResponse] = Field(
-        default_factory=list
-    )
+    citations: list[CompanionEvidenceCitationResponse] = Field(default_factory=list)
     policy_status: Literal["approved", "adjusted", "escalate"] = "approved"
 
 
@@ -209,9 +203,7 @@ class ClinicianDigestResponse(BaseModel):
     priority: Literal["routine", "watch", "urgent"]
     recommended_actions: list[str] = Field(default_factory=list)
     interventions_attempted: list[str] = Field(default_factory=list)
-    citations: list[CompanionEvidenceCitationResponse] = Field(
-        default_factory=list
-    )
+    citations: list[CompanionEvidenceCitationResponse] = Field(default_factory=list)
     risk_level: Literal["low", "medium", "high"]
 
 
@@ -251,9 +243,7 @@ class ImpactSummaryResponse(BaseModel):
 
 
 class WorkflowRuntimeRegistryResponse(BaseModel):
-    workflows: list[WorkflowRuntimeContractResponse] = Field(
-        default_factory=list
-    )
+    workflows: list[WorkflowRuntimeContractResponse] = Field(default_factory=list)
     agents: list[AgentContractResponse] = Field(default_factory=list)
 
 

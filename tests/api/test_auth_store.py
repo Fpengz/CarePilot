@@ -7,17 +7,13 @@ from care_pilot.platform.auth import InMemoryAuthStore
 
 
 def test_get_session_drops_expired_sessions() -> None:
-    settings = _build_settings(
-        llm={"provider": "test"}, auth={"session_ttl_seconds": 1}
-    )
+    settings = _build_settings(llm={"provider": "test"}, auth={"session_ttl_seconds": 1})
     store = InMemoryAuthStore(settings)
     user = store.authenticate("member@example.com", "member-pass")
     assert user is not None
     session = store.create_session(user)
     session_id = str(session["session_id"])
-    session["issued_at"] = (
-        datetime.now(timezone.utc) - timedelta(seconds=10)
-    ).isoformat()
+    session["issued_at"] = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
 
     looked_up = store.get_session(session_id)
 
@@ -33,10 +29,7 @@ def test_in_memory_store_honors_configured_demo_passwords() -> None:
     store = InMemoryAuthStore(settings)
 
     assert store.authenticate("member@example.com", "member-pass") is None
-    assert (
-        store.authenticate("member@example.com", "member-custom-pass")
-        is not None
-    )
+    assert store.authenticate("member@example.com", "member-custom-pass") is not None
 
 
 def _build_settings(**overrides: object) -> Settings:

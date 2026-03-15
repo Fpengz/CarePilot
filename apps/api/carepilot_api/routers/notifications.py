@@ -28,9 +28,7 @@ def notifications_list(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> NotificationListResponse:
-    return list_notifications(
-        context=get_context(request), user_id=str(session["user_id"])
-    )
+    return list_notifications(context=get_context(request), user_id=str(session["user_id"]))
 
 
 @router.post(

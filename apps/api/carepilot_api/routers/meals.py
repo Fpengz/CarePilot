@@ -65,9 +65,7 @@ def meal_records(
     )
 
 
-@router.get(
-    "/api/v1/meal/daily-summary", response_model=MealDailySummaryResponse
-)
+@router.get("/api/v1/meal/daily-summary", response_model=MealDailySummaryResponse)
 def meal_daily_summary(
     request: Request,
     summary_date: date = Query(alias="date"),
@@ -81,9 +79,7 @@ def meal_daily_summary(
     )
 
 
-@router.get(
-    "/api/v1/meal/weekly-summary", response_model=MealWeeklySummaryResponse
-)
+@router.get("/api/v1/meal/weekly-summary", response_model=MealWeeklySummaryResponse)
 def meal_weekly_summary(
     request: Request,
     week_start: date = Query(),

@@ -225,9 +225,7 @@ class SQLiteAlertRepository:
                 )
             conn.commit()
 
-    def list_alert_records(
-        self, alert_id: str | None = None
-    ) -> list[OutboxRecord]:
+    def list_alert_records(self, alert_id: str | None = None) -> list[OutboxRecord]:
         query = (
             "SELECT "
             "alert_id, sink, type, severity, payload_json, correlation_id, created_at, "
@@ -257,9 +255,7 @@ class SQLiteAlertRepository:
                     next_attempt_at=datetime.fromisoformat(row[9]),
                     last_error=row[10],
                     lease_owner=row[11],
-                    lease_until=(
-                        datetime.fromisoformat(row[12]) if row[12] else None
-                    ),
+                    lease_until=(datetime.fromisoformat(row[12]) if row[12] else None),
                     idempotency_key=row[13],
                 )
             )

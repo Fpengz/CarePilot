@@ -189,9 +189,7 @@ def _interpolate(start: float, end: float, progress: float) -> float:
     return start + ((end - start) * progress)
 
 
-def _meal_count_for_day(
-    rng: random.Random, *, profile: SyntheticProfile
-) -> int:
+def _meal_count_for_day(rng: random.Random, *, profile: SyntheticProfile) -> int:
     if profile == "volatile":
         return 4 if rng.random() > 0.45 else 3
     return 4 if rng.random() > 0.72 else 3
@@ -224,33 +222,15 @@ def _slot_blueprints(
 
 def _meal_name(slot: str, risk_tags: list[str]) -> str:
     if slot == "breakfast":
-        return (
-            "Protein oats"
-            if "high_hba1c" not in risk_tags
-            else "Sweet breakfast toast"
-        )
+        return "Protein oats" if "high_hba1c" not in risk_tags else "Sweet breakfast toast"
     if slot == "lunch":
-        return (
-            "Chicken grain bowl"
-            if "high_ldl" not in risk_tags
-            else "Fried hawker lunch"
-        )
+        return "Chicken grain bowl" if "high_ldl" not in risk_tags else "Fried hawker lunch"
     if slot == "dinner":
-        return (
-            "Salmon rice plate"
-            if "high_bp" not in risk_tags
-            else "Late salty dinner"
-        )
-    return (
-        "Greek yogurt snack"
-        if "high_hba1c" not in risk_tags
-        else "Sugary snack"
-    )
+        return "Salmon rice plate" if "high_bp" not in risk_tags else "Late salty dinner"
+    return "Greek yogurt snack" if "high_hba1c" not in risk_tags else "Sugary snack"
 
 
-def _build_profile(
-    *, user_id: str, config: SyntheticProfileConfig
-) -> HealthProfileRecord:
+def _build_profile(*, user_id: str, config: SyntheticProfileConfig) -> HealthProfileRecord:
     return HealthProfileRecord(
         user_id=user_id,
         age=54,
@@ -278,9 +258,7 @@ def _build_profile(
     )
 
 
-def _seed_regimens(
-    repo: SQLiteRepository, *, user_id: str
-) -> list[MedicationRegimen]:
+def _seed_regimens(repo: SQLiteRepository, *, user_id: str) -> list[MedicationRegimen]:
     regimens = [
         MedicationRegimen(
             id=f"synthetic-{user_id}-metformin",
@@ -365,14 +343,9 @@ def seed_synthetic_data(
                 trend_adjustment = rng.uniform(-140.0, 180.0)
             calories = max(
                 140.0,
-                base_calories
-                + day_variation
-                + trend_adjustment
-                + rng.uniform(-50.0, 50.0),
+                base_calories + day_variation + trend_adjustment + rng.uniform(-50.0, 50.0),
             )
-            carbs = max(
-                12.0, base_carbs + (calories / 28.0) + rng.uniform(-8.0, 8.0)
-            )
+            carbs = max(12.0, base_carbs + (calories / 28.0) + rng.uniform(-8.0, 8.0))
             protein = max(10.0, calories / 24.0 + rng.uniform(-4.0, 6.0))
             fat = max(6.0, calories / 42.0 + rng.uniform(-3.0, 5.0))
             fiber = max(2.0, protein / 3.5 + rng.uniform(0.0, 2.0))
@@ -381,9 +354,7 @@ def seed_synthetic_data(
 
             risk_tags: list[str] = []
             if sugar >= 18 or (
-                profile == "improving"
-                and progress < 0.45
-                and slot in {"breakfast", "snack"}
+                profile == "improving" and progress < 0.45 and slot in {"breakfast", "snack"}
             ):
                 risk_tags.append("high_hba1c")
             if fat >= 24 or (profile == "volatile" and calories >= 820):
@@ -431,14 +402,14 @@ def seed_synthetic_data(
             > (
                 0.24
                 if profile == "volatile"
-                else 0.12 if profile == "stable" else 0.18 * (1.0 - progress)
+                else 0.12
+                if profile == "stable"
+                else 0.18 * (1.0 - progress)
             )
             else "missed"
         )
         night_status: Literal["taken", "missed"] = (
-            "taken"
-            if rng.random() > (0.20 if profile != "volatile" else 0.34)
-            else "missed"
+            "taken" if rng.random() > (0.20 if profile != "volatile" else 0.34) else "missed"
         )
         adherence_specs = [
             (regimens[0], _dt(current_day, 9), morning_status),
@@ -457,11 +428,7 @@ def seed_synthetic_data(
                     dosage_text=regimen.dosage_text,
                     status="sent" if status == "taken" else "missed",
                     sent_at=scheduled_at,
-                    ack_at=(
-                        scheduled_at + timedelta(minutes=5)
-                        if status == "taken"
-                        else None
-                    ),
+                    ack_at=(scheduled_at + timedelta(minutes=5) if status == "taken" else None),
                 )
             )
             repo.save_medication_adherence_event(
@@ -473,8 +440,7 @@ def seed_synthetic_data(
                     status=status,
                     scheduled_at=scheduled_at,
                     taken_at=(
-                        scheduled_at
-                        + timedelta(minutes=5 + rng.randint(0, 20))
+                        scheduled_at + timedelta(minutes=5 + rng.randint(0, 20))
                         if status == "taken"
                         else None
                     ),
@@ -486,12 +452,12 @@ def seed_synthetic_data(
             adherence_count += 1
 
         if offset % 7 == 0:
-            weight = _interpolate(
-                config.weight_start, config.weight_end, progress
-            ) + rng.uniform(-0.35, 0.35)
-            systolic = _interpolate(
-                config.bp_start, config.bp_end, progress
-            ) + rng.uniform(-3.0, 3.0)
+            weight = _interpolate(config.weight_start, config.weight_end, progress) + rng.uniform(
+                -0.35, 0.35
+            )
+            systolic = _interpolate(config.bp_start, config.bp_end, progress) + rng.uniform(
+                -3.0, 3.0
+            )
             diastolic = max(78.0, systolic - rng.uniform(46.0, 54.0))
             readings = [
                 BiomarkerReading(
@@ -517,12 +483,12 @@ def seed_synthetic_data(
             biomarker_count += len(readings)
 
         if offset % 28 == 0 or offset == days - 1:
-            hba1c = _interpolate(
-                config.hba1c_start, config.hba1c_end, progress
-            ) + rng.uniform(-0.08, 0.08)
-            ldl = _interpolate(
-                config.ldl_start, config.ldl_end, progress
-            ) + rng.uniform(-0.12, 0.12)
+            hba1c = _interpolate(config.hba1c_start, config.hba1c_end, progress) + rng.uniform(
+                -0.08, 0.08
+            )
+            ldl = _interpolate(config.ldl_start, config.ldl_end, progress) + rng.uniform(
+                -0.12, 0.12
+            )
             readings = [
                 BiomarkerReading(
                     name="hba1c",

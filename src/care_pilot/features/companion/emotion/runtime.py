@@ -66,21 +66,15 @@ class InProcessEmotionRuntime(EmotionInferencePort):
             fusion=self._build_fusion(config, device=device),
         )
 
-    def infer_text(
-        self, payload: EmotionTextAgentInput
-    ) -> EmotionInferenceResult:
+    def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
         return self._pipeline.infer_text(
             text=payload.text,
             language=payload.language,
             user_id=payload.user_id,
         )
 
-    def infer_speech(
-        self, payload: EmotionSpeechAgentInput
-    ) -> EmotionInferenceResult:
-        audio_bytes = preprocess_audio(
-            payload.audio_bytes, content_type=payload.content_type
-        )
+    def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
+        audio_bytes = preprocess_audio(payload.audio_bytes, content_type=payload.content_type)
         return self._pipeline.infer_speech(
             audio_bytes=audio_bytes,
             filename=payload.filename,
@@ -98,9 +92,7 @@ class InProcessEmotionRuntime(EmotionInferencePort):
         )
 
     @staticmethod
-    def _build_fusion(
-        config: EmotionRuntimeConfig, *, device: str
-    ) -> FusionPort:
+    def _build_fusion(config: EmotionRuntimeConfig, *, device: str) -> FusionPort:
         if not config.fusion_model_id:
             return HeuristicFusion()
         try:

@@ -15,9 +15,7 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_household_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_household_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "app.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -27,18 +25,14 @@ def sqlite_household_env(
 
 
 def _login(client: TestClient, email: str, password: str) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
 def test_household_create_requires_auth(sqlite_household_env: None) -> None:
     client = TestClient(create_app())
 
-    response = client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    response = client.post("/api/v1/households", json={"name": "Family Circle"})
 
     assert response.status_code == 401
 
@@ -84,9 +78,7 @@ def test_household_owner_can_invite_and_other_user_can_join(
     helper_client = TestClient(app)
 
     _login(owner_client, "member@example.com", "member-pass")
-    create = owner_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    create = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
     assert create.status_code == 200
     household_id = create.json()["household"]["household_id"]
 
@@ -117,9 +109,7 @@ def test_non_owner_cannot_create_household_invite(
     helper_client = TestClient(app)
 
     _login(owner_client, "member@example.com", "member-pass")
-    created = owner_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
     assert created.status_code == 200
     household_id = created.json()["household"]["household_id"]
 
@@ -127,16 +117,14 @@ def test_non_owner_cannot_create_household_invite(
     helper_join = helper_client.post(
         "/api/v1/households/join",
         json={
-            "code": owner_client.post(
-                f"/api/v1/households/{household_id}/invites"
-            ).json()["invite"]["code"]
+            "code": owner_client.post(f"/api/v1/households/{household_id}/invites").json()[
+                "invite"
+            ]["code"]
         },
     )
     assert helper_join.status_code == 200
 
-    forbidden = helper_client.post(
-        f"/api/v1/households/{household_id}/invites"
-    )
+    forbidden = helper_client.post(f"/api/v1/households/{household_id}/invites")
     assert forbidden.status_code == 403
     assert forbidden.json()["error"]["code"] == "households.forbidden"
 
@@ -155,19 +143,13 @@ def test_user_cannot_create_or_join_second_household(
 
     first = member_client.post("/api/v1/households", json={"name": "One"})
     assert first.status_code == 200
-    create_again = member_client.post(
-        "/api/v1/households", json={"name": "Two"}
-    )
+    create_again = member_client.post("/api/v1/households", json={"name": "Two"})
     assert create_again.status_code == 409
 
-    admin_household = admin_client.post(
-        "/api/v1/households", json={"name": "Ops Home"}
-    )
+    admin_household = admin_client.post("/api/v1/households", json={"name": "Ops Home"})
     assert admin_household.status_code == 200
     admin_household_id = admin_household.json()["household"]["household_id"]
-    invite = admin_client.post(
-        f"/api/v1/households/{admin_household_id}/invites"
-    )
+    invite = admin_client.post(f"/api/v1/households/{admin_household_id}/invites")
     assert invite.status_code == 200
 
     join = helper_client.post(
@@ -189,34 +171,20 @@ def test_household_owner_can_remove_member(sqlite_household_env: None) -> None:
 
     _login(owner_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
-    created = owner_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
     household_id = created.json()["household"]["household_id"]
     invite = owner_client.post(f"/api/v1/households/{household_id}/invites")
     code = invite.json()["invite"]["code"]
-    assert (
-        helper_client.post(
-            "/api/v1/households/join", json={"code": code}
-        ).status_code
-        == 200
-    )
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
 
-    removed = owner_client.post(
-        f"/api/v1/households/{household_id}/members/care_001/remove"
-    )
+    removed = owner_client.post(f"/api/v1/households/{household_id}/members/care_001/remove")
 
     assert removed.status_code == 200
     assert removed.json() == {"ok": True, "removed_user_id": "care_001"}
     members = owner_client.get(f"/api/v1/households/{household_id}/members")
     assert members.status_code == 200
-    assert [item["user_id"] for item in members.json()["members"]] == [
-        "user_001"
-    ]
-    assert (
-        helper_client.get("/api/v1/households/current").json()["household"]
-        is None
-    )
+    assert [item["user_id"] for item in members.json()["members"]] == ["user_001"]
+    assert helper_client.get("/api/v1/households/current").json()["household"] is None
 
 
 def test_non_owner_cannot_remove_household_member(
@@ -230,25 +198,14 @@ def test_non_owner_cannot_remove_household_member(
     _login(owner_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
     _login(admin_client, "admin@example.com", "admin-pass")
-    household_id = owner_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    ).json()["household"]["household_id"]
-    code = owner_client.post(
-        f"/api/v1/households/{household_id}/invites"
-    ).json()["invite"]["code"]
-    assert (
-        helper_client.post(
-            "/api/v1/households/join", json={"code": code}
-        ).status_code
-        == 200
-    )
+    household_id = owner_client.post("/api/v1/households", json={"name": "Family Circle"}).json()[
+        "household"
+    ]["household_id"]
+    code = owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
 
-    forbidden = helper_client.post(
-        f"/api/v1/households/{household_id}/members/user_001/remove"
-    )
-    not_member = admin_client.post(
-        f"/api/v1/households/{household_id}/members/care_001/remove"
-    )
+    forbidden = helper_client.post(f"/api/v1/households/{household_id}/members/user_001/remove")
+    not_member = admin_client.post(f"/api/v1/households/{household_id}/members/care_001/remove")
 
     assert forbidden.status_code == 403
     assert not_member.status_code == 404
@@ -263,28 +220,18 @@ def test_household_member_can_leave_but_owner_cannot_leave_v1(
 
     _login(owner_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
-    household_id = owner_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    ).json()["household"]["household_id"]
-    code = owner_client.post(
-        f"/api/v1/households/{household_id}/invites"
-    ).json()["invite"]["code"]
-    assert (
-        helper_client.post(
-            "/api/v1/households/join", json={"code": code}
-        ).status_code
-        == 200
-    )
+    household_id = owner_client.post("/api/v1/households", json={"name": "Family Circle"}).json()[
+        "household"
+    ]["household_id"]
+    code = owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
 
     leave = helper_client.post(f"/api/v1/households/{household_id}/leave")
     owner_leave = owner_client.post(f"/api/v1/households/{household_id}/leave")
 
     assert leave.status_code == 200
     assert leave.json() == {"ok": True, "left_household_id": household_id}
-    assert (
-        helper_client.get("/api/v1/households/current").json()["household"]
-        is None
-    )
+    assert helper_client.get("/api/v1/households/current").json()["household"] is None
     assert owner_leave.status_code == 403
 
 
@@ -297,33 +244,20 @@ def test_household_owner_can_rename_household(
 
     _login(owner_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
-    created = owner_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
     household_id = created.json()["household"]["household_id"]
-    code = owner_client.post(
-        f"/api/v1/households/{household_id}/invites"
-    ).json()["invite"]["code"]
-    assert (
-        helper_client.post(
-            "/api/v1/households/join", json={"code": code}
-        ).status_code
-        == 200
-    )
+    code = owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
 
     renamed = owner_client.patch(
         f"/api/v1/households/{household_id}", json={"name": "Wellness Crew"}
     )
-    forbidden = helper_client.patch(
-        f"/api/v1/households/{household_id}", json={"name": "Nope"}
-    )
+    forbidden = helper_client.patch(f"/api/v1/households/{household_id}", json={"name": "Nope"})
 
     assert renamed.status_code == 200
     assert renamed.json()["household"]["name"] == "Wellness Crew"
     assert (
-        helper_client.get("/api/v1/households/current").json()["household"][
-            "name"
-        ]
+        helper_client.get("/api/v1/households/current").json()["household"]["name"]
         == "Wellness Crew"
     )
     assert forbidden.status_code == 403
@@ -338,18 +272,14 @@ def test_household_active_selection_is_session_scoped(
 
     _login(client_a, "member@example.com", "member-pass")
     _login(client_b, "member@example.com", "member-pass")
-    household_id = client_a.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    ).json()["household"]["household_id"]
+    household_id = client_a.post("/api/v1/households", json={"name": "Family Circle"}).json()[
+        "household"
+    ]["household_id"]
 
-    set_active = client_a.patch(
-        "/api/v1/households/active", json={"household_id": household_id}
-    )
+    set_active = client_a.patch("/api/v1/households/active", json={"household_id": household_id})
     current_a = client_a.get("/api/v1/households/current")
     current_b = client_b.get("/api/v1/households/current")
-    clear_active = client_a.patch(
-        "/api/v1/households/active", json={"household_id": None}
-    )
+    clear_active = client_a.patch("/api/v1/households/active", json={"household_id": None})
 
     assert set_active.status_code == 200
     assert set_active.json() == {
@@ -390,9 +320,7 @@ def test_household_join_rejects_invalid_invite_code(
     client = TestClient(create_app())
     _login(client, "helper@example.com", "helper-pass")
 
-    response = client.post(
-        "/api/v1/households/join", json={"code": "hh_invalid_code"}
-    )
+    response = client.post("/api/v1/households/join", json={"code": "hh_invalid_code"})
 
     assert response.status_code == 400
     body = response.json()
@@ -409,27 +337,18 @@ def test_household_caregiver_reads_member_profile(
 
     _login(member_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
-    created = member_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
     household_id = created.json()["household"]["household_id"]
     invite = member_client.post(f"/api/v1/households/{household_id}/invites")
     code = invite.json()["invite"]["code"]
-    assert (
-        helper_client.post(
-            "/api/v1/households/join", json={"code": code}
-        ).status_code
-        == 200
-    )
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
     assert (
         member_client.patch(
             "/api/v1/profile/health",
             json={
                 "age": 54,
                 "locale": "en-SG",
-                "conditions": [
-                    {"name": "Type 2 Diabetes", "severity": "High"}
-                ],
+                "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
                 "nutrition_goals": ["lower_sugar"],
                 "preferred_cuisines": ["teochew"],
             },
@@ -437,12 +356,8 @@ def test_household_caregiver_reads_member_profile(
         == 200
     )
 
-    members = helper_client.get(
-        f"/api/v1/households/{household_id}/care/members"
-    )
-    profile = helper_client.get(
-        f"/api/v1/households/{household_id}/care/members/user_001/profile"
-    )
+    members = helper_client.get(f"/api/v1/households/{household_id}/care/members")
+    profile = helper_client.get(f"/api/v1/households/{household_id}/care/members/user_001/profile")
 
     assert members.status_code == 200
     assert members.json()["viewer_user_id"] == "care_001"
@@ -458,9 +373,7 @@ def test_household_caregiver_reads_member_profile(
         "household_id": household_id,
     }
     assert profile_body["profile"]["age"] == 54
-    assert (
-        profile_body["profile"]["conditions"][0]["name"] == "Type 2 Diabetes"
-    )
+    assert profile_body["profile"]["conditions"][0]["name"] == "Type 2 Diabetes"
 
 
 def test_household_caregiver_reads_reject_non_members_and_outside_targets(
@@ -474,18 +387,11 @@ def test_household_caregiver_reads_reject_non_members_and_outside_targets(
     _login(member_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
     _login(admin_client, "admin@example.com", "admin-pass")
-    created = member_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
     household_id = created.json()["household"]["household_id"]
     invite = member_client.post(f"/api/v1/households/{household_id}/invites")
     code = invite.json()["invite"]["code"]
-    assert (
-        helper_client.post(
-            "/api/v1/households/join", json={"code": code}
-        ).status_code
-        == 200
-    )
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
 
     outsider_view = admin_client.get(
         f"/api/v1/households/{household_id}/care/members/user_001/profile"
@@ -509,19 +415,10 @@ def test_household_caregiver_reads_member_summary_and_reminders(
 
     _login(member_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
-    created = member_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
     household_id = created.json()["household"]["household_id"]
-    code = member_client.post(
-        f"/api/v1/households/{household_id}/invites"
-    ).json()["invite"]["code"]
-    assert (
-        helper_client.post(
-            "/api/v1/households/join", json={"code": code}
-        ).status_code
-        == 200
-    )
+    code = member_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
 
     assert member_client.post("/api/v1/reminders/generate").status_code == 200
     from tests.api.test_api_health_profiles import _meal_upload

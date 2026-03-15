@@ -35,15 +35,11 @@ def test_inference_engine_logs_retry_exhaustion_with_estimated_request_count(
         def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
             self.kwargs = kwargs
 
-        async def run(self, prompt: str):  # noqa: ANN201
-            del prompt
-            raise RuntimeError(
-                "Exceeded maximum retries (1) for output validation"
-            )
+        async def run(self, prompt: str, event_stream_handler: object = None):  # noqa: ANN201
+            del prompt, event_stream_handler
+            raise RuntimeError("Exceeded maximum retries (1) for output validation")
 
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.inference_engine.Agent", FakeAgent
-    )
+    monkeypatch.setattr("care_pilot.agent.runtime.inference_engine.Agent", FakeAgent)
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
     monkeypatch.setenv("LOCAL_OUTPUT_VALIDATION_RETRIES", "0")

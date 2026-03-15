@@ -32,9 +32,21 @@ def test_target_services_depend_on_scoped_providers() -> None:
     _ns = vars(_deps_module)
 
     assert get_type_hints(meals.analyze_meal, localns=_ns)["deps"] is deps.MealDeps
-    assert get_type_hints(recommendations.generate_recommendation_for_session, localns=_ns)["deps"] is deps.RecommendationDeps
-    assert get_type_hints(recommendation_agent.get_daily_agent_for_session, localns=_ns)["deps"] is deps.RecommendationAgentDeps
+    assert (
+        get_type_hints(recommendations.generate_recommendation_for_session, localns=_ns)["deps"]
+        is deps.RecommendationDeps
+    )
+    assert (
+        get_type_hints(recommendation_agent.get_daily_agent_for_session, localns=_ns)["deps"]
+        is deps.RecommendationAgentDeps
+    )
     assert get_type_hints(alerts.trigger_alert, localns=_ns)["deps"] is deps.AlertDeps
-    assert get_type_hints(clinical_cards.generate_clinical_card_for_session, localns=_ns)["deps"] is deps.ClinicalCardDeps
+    assert (
+        get_type_hints(clinical_cards.generate_clinical_card_for_session, localns=_ns)["deps"]
+        is deps.ClinicalCardDeps
+    )
     assert get_type_hints(workflows.get_workflow, localns=_ns)["deps"] is deps.WorkflowDeps
-    assert get_type_hints(emotion_session.infer_text_for_session, localns=_ns)["deps"] is deps.EmotionDeps
+    assert (
+        get_type_hints(emotion_session.infer_text_for_session, localns=_ns)["deps"]
+        is deps.EmotionDeps
+    )

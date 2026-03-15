@@ -48,9 +48,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def to_profile_response(
-    *, profile, fallback_mode: bool
-) -> HealthProfileResponseItem:
+def to_profile_response(*, profile, fallback_mode: bool) -> HealthProfileResponseItem:
     """Project a domain health profile into the API response shape."""
     completeness = compute_profile_completeness(profile)
     return HealthProfileResponseItem(
@@ -98,9 +96,7 @@ def to_profile_response(
 # ---------------------------------------------------------------------------
 
 
-def _to_onboarding_response(
-    *, state, profile
-) -> HealthProfileOnboardingEnvelopeResponse:
+def _to_onboarding_response(*, state, profile) -> HealthProfileOnboardingEnvelopeResponse:
     completeness = compute_profile_completeness(profile)
     return HealthProfileOnboardingEnvelopeResponse(
         onboarding=HealthProfileOnboardingStateResponse(
@@ -109,9 +105,7 @@ def _to_onboarding_response(
             is_complete=state.is_complete,
             updated_at=state.updated_at,
         ),
-        profile=to_profile_response(
-            profile=profile, fallback_mode=completeness.state != "ready"
-        ),
+        profile=to_profile_response(profile=profile, fallback_mode=completeness.state != "ready"),
         steps=[
             GuidedHealthStepResponse(
                 id=step.id,
@@ -133,14 +127,10 @@ def get_profile(
     *, context: AppContext, session: dict[str, object]
 ) -> HealthProfileEnvelopeResponse:
     """Fetch or initialize the active user's health profile."""
-    profile = get_or_create_health_profile(
-        context.stores.profiles, str(session["user_id"])
-    )
+    profile = get_or_create_health_profile(context.stores.profiles, str(session["user_id"]))
     completeness = compute_profile_completeness(profile)
     return HealthProfileEnvelopeResponse(
-        profile=to_profile_response(
-            profile=profile, fallback_mode=completeness.state != "ready"
-        )
+        profile=to_profile_response(profile=profile, fallback_mode=completeness.state != "ready")
     )
 
 
@@ -165,9 +155,7 @@ def patch_profile(
     )
     completeness = compute_profile_completeness(profile)
     return HealthProfileEnvelopeResponse(
-        profile=to_profile_response(
-            profile=profile, fallback_mode=completeness.state != "ready"
-        )
+        profile=to_profile_response(profile=profile, fallback_mode=completeness.state != "ready")
     )
 
 
@@ -176,9 +164,7 @@ def get_profile_onboarding(
 ) -> HealthProfileOnboardingEnvelopeResponse:
     """Fetch onboarding progress together with the current health-profile state."""
     user_id = str(session["user_id"])
-    state = get_or_create_health_profile_onboarding_state(
-        context.stores.profiles, user_id
-    )
+    state = get_or_create_health_profile_onboarding_state(context.stores.profiles, user_id)
     profile = get_or_create_health_profile(context.stores.profiles, user_id)
     return _to_onboarding_response(state=state, profile=profile)
 
@@ -225,17 +211,11 @@ def get_daily_suggestions(
     session: dict[str, object],
 ) -> DailySuggestionsResponse:
     """Build daily suggestions from the active user's profile and history."""
-    health_profile, user_profile = resolve_user_profile(
-        context.stores.profiles, session
-    )
+    health_profile, user_profile = resolve_user_profile(context.stores.profiles, session)
     completeness = compute_profile_completeness(health_profile)
     fallback_mode = completeness.state != "ready"
-    meal_history = context.stores.meals.list_meal_records(
-        str(session["user_id"])
-    )
-    biomarker_history = context.stores.biomarkers.list_biomarker_readings(
-        str(session["user_id"])
-    )
+    meal_history = context.stores.meals.list_meal_records(str(session["user_id"]))
+    biomarker_history = context.stores.biomarkers.list_biomarker_readings(str(session["user_id"]))
     logger.info(
         "event=daily_suggestions_generate user_id=%s request_profile_state=%s fallback_mode=%s",
         session["user_id"],
@@ -250,12 +230,8 @@ def get_daily_suggestions(
         fallback_mode=fallback_mode,
     )
     return DailySuggestionsResponse(
-        profile=to_profile_response(
-            profile=health_profile, fallback_mode=fallback_mode
-        ),
-        bundle=DailySuggestionBundleResponse.model_validate(
-            bundle.model_dump(mode="json")
-        ),
+        profile=to_profile_response(profile=health_profile, fallback_mode=fallback_mode),
+        bundle=DailySuggestionBundleResponse.model_validate(bundle.model_dump(mode="json")),
     )
 
 

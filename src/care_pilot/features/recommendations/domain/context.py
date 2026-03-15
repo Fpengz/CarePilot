@@ -63,9 +63,7 @@ def _apply_affinity_update(
     for cuisine in candidate.cuisine_tags:
         _apply_weight(snapshot.cuisine_affinity, cuisine, event_weight)
     for ingredient in candidate.ingredient_tags:
-        _apply_weight(
-            snapshot.ingredient_affinity, ingredient, event_weight * 0.7
-        )
+        _apply_weight(snapshot.ingredient_affinity, ingredient, event_weight * 0.7)
     for tag in candidate.health_tags:
         _apply_weight(snapshot.health_tag_affinity, tag, event_weight * 0.6)
     _apply_weight(snapshot.slot_affinity, candidate.slot, event_weight)
@@ -75,13 +73,9 @@ def _apply_affinity_update(
         snapshot.dismissed_count += 1
     if event_type == "swap_selected":
         snapshot.swap_selected_count += 1
-        snapshot.substitution_tolerance = _clamp(
-            snapshot.substitution_tolerance + 0.03, 0.2, 0.95
-        )
+        snapshot.substitution_tolerance = _clamp(snapshot.substitution_tolerance + 0.03, 0.2, 0.95)
     if event_type == "dismissed":
-        snapshot.substitution_tolerance = _clamp(
-            snapshot.substitution_tolerance - 0.02, 0.2, 0.95
-        )
+        snapshot.substitution_tolerance = _clamp(snapshot.substitution_tolerance - 0.02, 0.2, 0.95)
     return snapshot
 
 
@@ -94,9 +88,7 @@ def _snapshot_from_history(
 ) -> PreferenceSnapshot:
     snapshot = PreferenceSnapshot(user_id=user_id)
     catalog_lookup = {item.meal_id: item for item in catalog}
-    catalog_locale = next(
-        (item.locale for item in catalog if item.locale), "en-SG"
-    )
+    catalog_locale = next((item.locale for item in catalog if item.locale), "en-SG")
     for index, record in enumerate(meal_history, start=1):
         matched = repository.find_food_by_name(
             locale=catalog_locale, name=meal_display_name(record)
@@ -115,9 +107,7 @@ def _snapshot_from_history(
             )
         else:
             slot = _infer_slot(record.captured_at)
-            snapshot.slot_affinity[slot] = (
-                snapshot.slot_affinity.get(slot, 0.0) + weight
-            )
+            snapshot.slot_affinity[slot] = snapshot.slot_affinity.get(slot, 0.0) + weight
     snapshot.updated_at = _now()
     return snapshot
 
@@ -144,18 +134,12 @@ def _ensure_snapshot(
 def build_temporal_context(
     *, meal_history: list[MealRecognitionRecord], interaction_count: int
 ) -> TemporalContext:
-    slot_counts = Counter(
-        _infer_slot(record.captured_at) for record in meal_history
-    )
-    recent_repeat_titles = [
-        meal_display_name(record) for record in meal_history[-3:]
-    ]
+    slot_counts = Counter(_infer_slot(record.captured_at) for record in meal_history)
+    recent_repeat_titles = [meal_display_name(record) for record in meal_history[-3:]]
     return TemporalContext(
         current_slot=_current_slot(),
         meal_history_count=len(meal_history),
         interaction_count=interaction_count,
         recent_repeat_titles=recent_repeat_titles,
-        slot_history_counts={
-            str(key): value for key, value in slot_counts.items()
-        },
+        slot_history_counts={str(key): value for key, value in slot_counts.items()},
     )

@@ -37,9 +37,7 @@ _LABEL_MAP = {
 def _safe_preview(text: str, *, limit: int = 160) -> str:
     preview = text[:limit].replace("\n", " ")
     preview = re.sub(r"[0-9]", "x", preview)
-    preview = re.sub(
-        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview
-    )
+    preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
     return preview
 
 
@@ -59,9 +57,7 @@ class HFTextEmotion(TextEmotionPort):
             device=self._device,
         )
 
-    def predict(
-        self, text: str, language: str | None
-    ) -> TextEmotionBranchResult:
+    def predict(self, text: str, language: str | None) -> TextEmotionBranchResult:
         del language
         self._ensure_pipeline()
         assert self._pipeline is not None
@@ -72,9 +68,7 @@ class HFTextEmotion(TextEmotionPort):
             _safe_preview(text),
         )
         outputs = self._pipeline(text)
-        scores: dict[EmotionLabel, float] = {
-            label: 0.0 for label in EmotionLabel
-        }
+        scores: dict[EmotionLabel, float] = {label: 0.0 for label in EmotionLabel}
         for item in outputs[0]:
             if not isinstance(item, dict):
                 continue
@@ -86,9 +80,7 @@ class HFTextEmotion(TextEmotionPort):
         if sum(scores.values()) == 0.0:
             scores[EmotionLabel.NEUTRAL] = 1.0
 
-        ordered = sorted(
-            scores.items(), key=lambda item: item[1], reverse=True
-        )
+        ordered = sorted(scores.items(), key=lambda item: item[1], reverse=True)
         top_label, top_score = ordered[0]
 
         logger.info(

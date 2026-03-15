@@ -16,9 +16,7 @@ class RouteResult:
     """Returned by every route handler."""
 
     route_name: ChatRouteLabel
-    context: (
-        str | None
-    )  # injected as system context to the LLM (None = no enrichment)
+    context: str | None  # injected as system context to the LLM (None = no enrichment)
     metadata: dict = field(default_factory=dict)  # optional debug info
 
 

@@ -30,7 +30,8 @@ def _resolve_log_level_name() -> str:
 def _has_logfire_handler() -> bool:
     root = logging.getLogger()
     return any(
-        getattr(handler, _HANDLER_MARKER, False) or handler.__class__.__name__ == "LogfireLoggingHandler"
+        getattr(handler, _HANDLER_MARKER, False)
+        or handler.__class__.__name__ == "LogfireLoggingHandler"
         for handler in root.handlers
     )
 
@@ -40,7 +41,10 @@ def _dedupe_logfire_handlers() -> None:
     keep_one = False
     handlers: list[logging.Handler] = []
     for handler in root.handlers:
-        is_logfire = getattr(handler, _HANDLER_MARKER, False) or handler.__class__.__name__ == "LogfireLoggingHandler"
+        is_logfire = (
+            getattr(handler, _HANDLER_MARKER, False)
+            or handler.__class__.__name__ == "LogfireLoggingHandler"
+        )
         if is_logfire:
             if keep_one:
                 continue

@@ -40,13 +40,9 @@ def test_user_story_1_schedule_notify_confirm(tmp_path) -> None:
 
     reminders = generate_daily_reminders(user, [regimen], date(2026, 2, 24))
     repo.save_reminder_event(reminders[0])
-    delivery = dispatch_reminder(
-        reminders[0], ["in_app", "push"], force_push_fail=False
-    )
+    delivery = dispatch_reminder(reminders[0], ["in_app", "push"], force_push_fail=False)
     assert delivery[0].success is True
 
-    mark_meal_confirmation(
-        reminders[0].id, True, datetime(2026, 2, 24, 12, 5), repo
-    )
+    mark_meal_confirmation(reminders[0].id, True, datetime(2026, 2, 24, 12, 5), repo)
     metrics = compute_mcr(repo.list_reminder_events("u1"))
     assert metrics.meal_confirmation_rate == 1.0

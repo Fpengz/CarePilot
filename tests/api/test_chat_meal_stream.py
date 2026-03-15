@@ -59,9 +59,7 @@ def test_meal_command_stream_continues(
 
     monkeypatch.setattr(ChatStreamRuntime, "stream", _fake_stream)
 
-    response = client.post(
-        "/api/v1/chat", json={"message": "[meal] Nasi Goreng"}
-    )
+    response = client.post("/api/v1/chat", json={"message": "[meal] Nasi Goreng"})
     assert response.status_code == 200
 
     tokens: list[str] = []
@@ -89,9 +87,7 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(
 
     app.state.ctx.emotion_agent._inference_enabled = True
 
-    def _raise_emotion_failure(
-        *, text: str, language: str | None = None, context: Any = None
-    ):
+    def _raise_emotion_failure(*, text: str, language: str | None = None, context: Any = None):
         del text, language, context
         raise RuntimeError("broken fusion model")
 
@@ -104,9 +100,7 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(
         del self, messages, model_id
         yield "Hello back."
 
-    monkeypatch.setattr(
-        app.state.ctx.emotion_agent, "infer_text", _raise_emotion_failure
-    )
+    monkeypatch.setattr(app.state.ctx.emotion_agent, "infer_text", _raise_emotion_failure)
     monkeypatch.setattr(ChatStreamRuntime, "stream", _fake_stream)
 
     response = client.post("/api/v1/chat", json={"message": "Hi"})

@@ -40,15 +40,11 @@ _LABEL_MAP = {
 def _safe_preview(text: str, *, limit: int = 160) -> str:
     preview = text[:limit].replace("\n", " ")
     preview = re.sub(r"[0-9]", "x", preview)
-    preview = re.sub(
-        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview
-    )
+    preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
     return preview
 
 
-def _product_state_for_label(
-    label: EmotionLabel, *, trend: str
-) -> EmotionProductState:
+def _product_state_for_label(label: EmotionLabel, *, trend: str) -> EmotionProductState:
     if label in {EmotionLabel.ANGRY, EmotionLabel.FRUSTRATED}:
         return EmotionProductState.DISTRESSED
     if label in {EmotionLabel.ANXIOUS, EmotionLabel.FEARFUL, EmotionLabel.SAD}:
@@ -93,9 +89,7 @@ class HFFusion(FusionPort):
             "text_scores": {k.value: v for k, v in text_scores.items()},
             "speech_scores": {k.value: v for k, v in speech_scores.items()},
             "context": {
-                "recent_labels": [
-                    label.value for label in context.recent_labels
-                ],
+                "recent_labels": [label.value for label in context.recent_labels],
                 "trend": context.trend,
             },
         }
@@ -108,9 +102,7 @@ class HFFusion(FusionPort):
             _safe_preview(prompt),
         )
         outputs = self._pipeline(prompt)
-        logits: dict[EmotionLabel, float] = {
-            label: 0.0 for label in EmotionLabel
-        }
+        logits: dict[EmotionLabel, float] = {label: 0.0 for label in EmotionLabel}
         top_label = EmotionLabel.NEUTRAL
         top_score = 0.0
         for item in outputs[0]:
@@ -129,9 +121,7 @@ class HFFusion(FusionPort):
             logits[EmotionLabel.NEUTRAL] = 1.0
             top_label = EmotionLabel.NEUTRAL
             top_score = 1.0
-        product_state = _product_state_for_label(
-            top_label, trend=context.trend
-        )
+        product_state = _product_state_for_label(top_label, trend=context.trend)
 
         logger.info(
             "emotion_fusion_response model=%s top=%s confidence=%.4f product_state=%s",

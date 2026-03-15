@@ -53,9 +53,6 @@ def test_api_service_shims_delegate_to_feature_services() -> None:
         "apps/api/carepilot_api/services/companion.py": (
             "from care_pilot.features.companion.core.use_cases import"
         ),
-        "apps/api/carepilot_api/services/companion_context.py": (
-            "from care_pilot.features.companion.core.use_cases import"
-        ),
         "apps/api/carepilot_api/services/meals.py": "from care_pilot.features.meals.service import",
         "apps/api/carepilot_api/services/recommendations.py": (
             "from care_pilot.features.recommendations.service import"

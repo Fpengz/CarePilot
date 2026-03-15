@@ -35,9 +35,7 @@ def _to_response(item: SymptomCheckIn) -> SymptomCheckInResponse:
         symptom_codes=list(item.symptom_codes),
         free_text=item.free_text,
         context=dict(item.context),
-        safety=SymptomSafetyResponse.model_validate(
-            item.safety.model_dump(mode="json")
-        ),
+        safety=SymptomSafetyResponse.model_validate(item.safety.model_dump(mode="json")),
     )
 
 
@@ -52,9 +50,7 @@ def create_checkin_for_session(
         id=str(uuid4()),
         user_id=user_id,
         severity=payload.severity,
-        symptom_codes=[
-            code.strip() for code in payload.symptom_codes if code.strip()
-        ],
+        symptom_codes=[code.strip() for code in payload.symptom_codes if code.strip()],
         free_text=payload.free_text,
         context=payload.context,
         safety=SymptomSafety(
@@ -76,25 +72,15 @@ def list_checkins_for_session(
     to_date: date | None,
     limit: int,
 ) -> SymptomCheckInListResponse:
-    start_at = (
-        datetime.combine(from_date, time.min, tzinfo=timezone.utc)
-        if from_date
-        else None
-    )
-    end_at = (
-        datetime.combine(to_date, time.max, tzinfo=timezone.utc)
-        if to_date
-        else None
-    )
+    start_at = datetime.combine(from_date, time.min, tzinfo=timezone.utc) if from_date else None
+    end_at = datetime.combine(to_date, time.max, tzinfo=timezone.utc) if to_date else None
     items = context.stores.symptoms.list_symptom_checkins(
         user_id=user_id,
         start_at=start_at,
         end_at=end_at,
         limit=limit,
     )
-    return SymptomCheckInListResponse(
-        items=[_to_response(item) for item in items]
-    )
+    return SymptomCheckInListResponse(items=[_to_response(item) for item in items])
 
 
 def summarize_checkins_for_session(
@@ -104,16 +90,8 @@ def summarize_checkins_for_session(
     from_date: date | None,
     to_date: date | None,
 ) -> SymptomSummaryResponse:
-    start_at = (
-        datetime.combine(from_date, time.min, tzinfo=timezone.utc)
-        if from_date
-        else None
-    )
-    end_at = (
-        datetime.combine(to_date, time.max, tzinfo=timezone.utc)
-        if to_date
-        else None
-    )
+    start_at = datetime.combine(from_date, time.min, tzinfo=timezone.utc) if from_date else None
+    end_at = datetime.combine(to_date, time.max, tzinfo=timezone.utc) if to_date else None
     items = context.stores.symptoms.list_symptom_checkins(
         user_id=user_id,
         start_at=start_at,
@@ -132,8 +110,7 @@ def summarize_checkins_for_session(
     for item in items:
         code_counts.update(item.symptom_codes)
     top = [
-        SymptomCountResponse(code=code, count=count)
-        for code, count in code_counts.most_common(5)
+        SymptomCountResponse(code=code, count=count) for code, count in code_counts.most_common(5)
     ]
     red_flags = sum(1 for item in items if item.safety.decision == "escalate")
     latest = max((item.recorded_at for item in items), default=None)

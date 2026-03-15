@@ -26,9 +26,7 @@ class ReadinessReport(TypedDict):
     errors: list[str]
 
 
-def _check(
-    name: str, *, status: str, required: bool, detail: str
-) -> ReadinessCheck:
+def _check(name: str, *, status: str, required: bool, detail: str) -> ReadinessCheck:
     return {
         "name": name,
         "status": status,
@@ -123,11 +121,7 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
                 "redis_url",
                 status="pass",
                 required=redis_required,
-                detail=(
-                    "redis URL configured"
-                    if redis_required
-                    else "redis backend not selected"
-                ),
+                detail=("redis URL configured" if redis_required else "redis backend not selected"),
             )
         )
 
@@ -152,13 +146,9 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
         )
 
     shared_rate_limiting_required = (
-        settings.app.env in {"staging", "prod"}
-        and settings.api.rate_limit_enabled
+        settings.app.env in {"staging", "prod"} and settings.api.rate_limit_enabled
     )
-    if (
-        shared_rate_limiting_required
-        and settings.storage.ephemeral_state_backend != "redis"
-    ):
+    if shared_rate_limiting_required and settings.storage.ephemeral_state_backend != "redis":
         checks.append(
             _check(
                 "shared_rate_limiting",
@@ -181,10 +171,7 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
             )
         )
 
-    if (
-        not settings.channels.email_dev_mode
-        and not settings.channels.email_smtp_host
-    ):
+    if not settings.channels.email_dev_mode and not settings.channels.email_smtp_host:
         checks.append(
             _check(
                 "email_configuration",
@@ -203,10 +190,7 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
             )
         )
 
-    if (
-        not settings.channels.sms_dev_mode
-        and not settings.channels.sms_webhook_url
-    ):
+    if not settings.channels.sms_dev_mode and not settings.channels.sms_webhook_url:
         checks.append(
             _check(
                 "sms_configuration",
@@ -226,8 +210,7 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
         )
 
     if not settings.channels.telegram_dev_mode and (
-        not settings.channels.telegram_bot_token
-        or not settings.channels.telegram_chat_id
+        not settings.channels.telegram_bot_token or not settings.channels.telegram_chat_id
     ):
         checks.append(
             _check(
@@ -250,16 +233,12 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
     warnings = [item["detail"] for item in checks if item["status"] == "warn"]
     errors = [item["detail"] for item in checks if item["status"] == "fail"]
 
-    has_required_failures = any(
-        item["required"] and item["status"] == "fail" for item in checks
-    )
+    has_required_failures = any(item["required"] and item["status"] == "fail" for item in checks)
     if has_required_failures:
         status = "not_ready"
     elif warnings:
         status = (
-            "not_ready"
-            if bool(settings.observability.readiness_fail_on_warnings)
-            else "degraded"
+            "not_ready" if bool(settings.observability.readiness_fail_on_warnings) else "degraded"
         )
     else:
         status = "ready"

@@ -74,9 +74,7 @@ class ToolRegistry:
             )
             self._record_metrics(tool_name, result)
             return result
-        if spec.required_scopes and not set(spec.required_scopes).issubset(
-            set(context.scopes)
-        ):
+        if spec.required_scopes and not set(spec.required_scopes).issubset(set(context.scopes)):
             result = ToolExecutionResult(
                 tool_name=tool_name,
                 success=False,
@@ -91,10 +89,7 @@ class ToolRegistry:
             )
             self._record_metrics(tool_name, result)
             return result
-        if (
-            spec.allowed_environments
-            and context.environment not in spec.allowed_environments
-        ):
+        if spec.allowed_environments and context.environment not in spec.allowed_environments:
             result = ToolExecutionResult(
                 tool_name=tool_name,
                 success=False,
@@ -141,9 +136,7 @@ class ToolRegistry:
             self._record_metrics(tool_name, result)
             return result
         except Exception as exc:  # noqa: BLE001
-            logger.exception(
-                "tool_registry_execute_failed tool=%s error=%s", tool_name, exc
-            )
+            logger.exception("tool_registry_execute_failed tool=%s error=%s", tool_name, exc)
             result = ToolExecutionResult(
                 tool_name=tool_name,
                 success=False,
@@ -156,9 +149,7 @@ class ToolRegistry:
             self._record_metrics(tool_name, result)
             return result
 
-    def _record_metrics(
-        self, tool_name: str, result: ToolExecutionResult
-    ) -> None:
+    def _record_metrics(self, tool_name: str, result: ToolExecutionResult) -> None:
         bucket = self._metrics.setdefault(
             tool_name,
             {
@@ -183,9 +174,7 @@ class ToolRegistry:
                 "calls": calls,
                 "success": bucket["success"],
                 "failure": bucket["failure"],
-                "avg_latency_ms": (
-                    (bucket["latency_total_ms"] / calls) if calls > 0 else 0.0
-                ),
+                "avg_latency_ms": ((bucket["latency_total_ms"] / calls) if calls > 0 else 0.0),
             }
         return snapshot
 

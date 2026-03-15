@@ -33,9 +33,7 @@ def test_no_pydantic_ai_agent_import_outside_agent_layer() -> None:
         contents = path.read_text(encoding="utf-8")
         if "from pydantic_ai import Agent" in contents:
             offenders.append(relative)
-    assert (
-        offenders == []
-    ), f"Move `pydantic_ai.Agent` usage into `care_pilot.agent`: {offenders}"
+    assert offenders == [], f"Move `pydantic_ai.Agent` usage into `care_pilot.agent`: {offenders}"
 
 
 def test_no_llm_factory_get_model_outside_agent_layer() -> None:
@@ -47,6 +45,6 @@ def test_no_llm_factory_get_model_outside_agent_layer() -> None:
         contents = path.read_text(encoding="utf-8")
         if "LLMFactory.get_model(" in contents:
             offenders.append(relative)
-    assert (
-        offenders == []
-    ), f"Move `LLMFactory.get_model()` usage into `care_pilot.agent`: {offenders}"
+    assert offenders == [], (
+        f"Move `LLMFactory.get_model()` usage into `care_pilot.agent`: {offenders}"
+    )

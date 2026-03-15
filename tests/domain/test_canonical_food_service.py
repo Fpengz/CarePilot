@@ -33,11 +33,7 @@ def test_default_canonical_food_records_include_canonical_seed() -> None:
     records = build_default_canonical_food_records()
 
     seed_item = next(
-        (
-            item
-            for item in records
-            if item.food_id == "local.hainanese_chicken_rice"
-        ),
+        (item for item in records if item.food_id == "local.hainanese_chicken_rice"),
         None,
     )
 

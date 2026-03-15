@@ -95,9 +95,7 @@ class SQLiteOutboxRepository:
                 ),
             )
 
-    def fetch_due_events(
-        self, now: str, limit: int = 50
-    ) -> list[ReminderEvent]:
+    def fetch_due_events(self, now: str, limit: int = 50) -> list[ReminderEvent]:
         with self._connect() as conn:
             rows = conn.execute(
                 """
@@ -126,9 +124,7 @@ class SQLiteOutboxRepository:
             for row in rows
         ]
 
-    def mark_sent(
-        self, event_id: str, provider_msg_id: Optional[str] = None
-    ) -> None:
+    def mark_sent(self, event_id: str, provider_msg_id: Optional[str] = None) -> None:
         with self._connect() as conn:
             conn.execute(
                 """
@@ -174,9 +170,7 @@ class SQLiteOutboxRepository:
                     """)
             return cursor.rowcount
 
-    def get_event_status(
-        self, event_id: str
-    ) -> Optional[dict[str, str | None]]:
+    def get_event_status(self, event_id: str) -> Optional[dict[str, str | None]]:
         with self._connect() as conn:
             row = conn.execute(
                 """

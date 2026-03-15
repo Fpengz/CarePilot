@@ -23,9 +23,7 @@ from care_pilot.features.meals.domain.models import NutritionRiskProfile
 
 
 @pytest.fixture
-def sqlite_meal_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_meal_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -49,9 +47,7 @@ def _jpeg_bytes_with_color(color: tuple[int, int, int]) -> bytes:
 
 
 def _login(client: TestClient, email: str, password: str) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
@@ -281,6 +277,7 @@ def test_meal_analyze_uses_settings_provider_when_form_provider_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("LLM_PROVIDER", "vllm")
+    monkeypatch.setenv("LLM_CAPABILITY_TARGETS", "{}")
     _reset_settings_cache()
     captured: dict[str, str] = {}
 

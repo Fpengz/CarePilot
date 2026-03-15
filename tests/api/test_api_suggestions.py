@@ -32,15 +32,11 @@ def _login(
     email: str = "member@example.com",
     password: str = "member-pass",
 ) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
-def _meal_upload(
-    client: TestClient, *, color: tuple[int, int, int] = (120, 210, 90)
-) -> None:
+def _meal_upload(client: TestClient, *, color: tuple[int, int, int] = (120, 210, 90)) -> None:
     img = Image.new("RGB", (64, 64), color=color)
     buf = BytesIO()
     img.save(buf, format="JPEG")
@@ -75,17 +71,9 @@ def test_suggestions_generate_from_report_persists_and_lists(
     assert suggestion["safety"]["decision"] == "allow"
     assert suggestion["report_parse"]["readings"]
     assert suggestion["recommendation"]["localized_advice"]
-    assert (
-        suggestion["workflow"]["request_id"] == create.headers["x-request-id"]
-    )
-    assert (
-        suggestion["workflow"]["correlation_id"]
-        == create.headers["x-correlation-id"]
-    )
-    assert [
-        event["event_type"]
-        for event in suggestion["workflow"]["timeline_events"]
-    ] == [
+    assert suggestion["workflow"]["request_id"] == create.headers["x-request-id"]
+    assert suggestion["workflow"]["correlation_id"] == create.headers["x-correlation-id"]
+    assert [event["event_type"] for event in suggestion["workflow"]["timeline_events"]] == [
         "workflow_started",
         "workflow_completed",
     ]
@@ -104,10 +92,7 @@ def test_suggestions_generate_from_report_persists_and_lists(
 
     detail = client.get(f"/api/v1/suggestions/{suggestion['suggestion_id']}")
     assert detail.status_code == 200
-    assert (
-        detail.json()["suggestion"]["suggestion_id"]
-        == suggestion["suggestion_id"]
-    )
+    assert detail.json()["suggestion"]["suggestion_id"] == suggestion["suggestion_id"]
 
 
 def test_suggestions_generate_from_report_requires_meal_record(
@@ -132,9 +117,7 @@ def test_suggestions_endpoints_require_auth(
 ) -> None:
     client = TestClient(create_app())
 
-    create = client.post(
-        "/api/v1/suggestions/generate-from-report", json={"text": "HbA1c 7.1"}
-    )
+    create = client.post("/api/v1/suggestions/generate-from-report", json={"text": "HbA1c 7.1"})
     list_resp = client.get("/api/v1/suggestions")
 
     assert create.status_code == 401
@@ -149,9 +132,7 @@ def test_suggestions_red_flag_text_escalates_without_meal(
 
     response = client.post(
         "/api/v1/suggestions/generate-from-report",
-        json={
-            "text": "I have severe chest pain and trouble breathing right now"
-        },
+        json={"text": "I have severe chest pain and trouble breathing right now"},
     )
 
     assert response.status_code == 200
@@ -160,15 +141,9 @@ def test_suggestions_red_flag_text_escalates_without_meal(
     suggestion = response.json()["suggestion"]
     assert suggestion["safety"]["decision"] == "escalate"
     assert suggestion["safety"]["reasons"]
-    assert (
-        "urgent medical care"
-        in suggestion["recommendation"]["rationale"].lower()
-    )
+    assert "urgent medical care" in suggestion["recommendation"]["rationale"].lower()
     assert suggestion["recommendation"]["safe"] is False
-    assert [
-        event["event_type"]
-        for event in suggestion["workflow"]["timeline_events"]
-    ] == [
+    assert [event["event_type"] for event in suggestion["workflow"]["timeline_events"]] == [
         "workflow_started",
         "workflow_escalated",
     ]
@@ -188,9 +163,7 @@ def test_suggestions_list_household_scope_includes_member_records(
     _login(member_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
 
-    created = member_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
     assert created.status_code == 200
     household_id = created.json()["household"]["household_id"]
     invite = member_client.post(f"/api/v1/households/{household_id}/invites")
@@ -224,9 +197,7 @@ def test_suggestions_list_household_scope_includes_member_records(
     authors = {item["source_user_id"] for item in items}
     assert {"user_001", "care_001"}.issubset(authors)
 
-    detail = member_client.get(
-        f"/api/v1/suggestions/{helper_suggestion_id}?scope=household"
-    )
+    detail = member_client.get(f"/api/v1/suggestions/{helper_suggestion_id}?scope=household")
     assert detail.status_code == 200
     assert detail.json()["suggestion"]["source_user_id"] == "care_001"
 
@@ -256,10 +227,7 @@ def test_suggestions_events_are_replayable_from_workflow_timeline(
     event_types = [event["event_type"] for event in timeline]
     assert "workflow_started" in event_types
     assert "workflow_completed" in event_types
-    assert any(
-        event.get("payload", {}).get("suggestion_id") == suggestion_id
-        for event in timeline
-    )
+    assert any(event.get("payload", {}).get("suggestion_id") == suggestion_id for event in timeline)
 
 
 def test_suggestions_respect_incoming_request_and_correlation_ids(
@@ -296,9 +264,7 @@ def test_suggestions_household_scope_supports_source_user_filter(
     _login(member_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
 
-    created = member_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
     assert created.status_code == 200
     household_id = created.json()["household"]["household_id"]
     invite = member_client.post(f"/api/v1/households/{household_id}/invites")
@@ -332,9 +298,7 @@ def test_suggestions_household_scope_supports_source_user_filter(
         == 200
     )
 
-    filtered = member_client.get(
-        "/api/v1/suggestions?scope=household&source_user_id=care_001"
-    )
+    filtered = member_client.get("/api/v1/suggestions?scope=household&source_user_id=care_001")
     assert filtered.status_code == 200
     items = filtered.json()["items"]
     assert items
@@ -351,9 +315,7 @@ def test_suggestions_household_scope_filter_denies_non_member_source(
     _login(member_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
 
-    created = member_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
     assert created.status_code == 200
     household_id = created.json()["household"]["household_id"]
     invite = member_client.post(f"/api/v1/households/{household_id}/invites")
@@ -370,9 +332,7 @@ def test_suggestions_household_scope_filter_denies_non_member_source(
         == 200
     )
 
-    forbidden = member_client.get(
-        "/api/v1/suggestions?scope=household&source_user_id=ops_001"
-    )
+    forbidden = member_client.get("/api/v1/suggestions?scope=household&source_user_id=ops_001")
     assert forbidden.status_code == 403
     assert forbidden.json()["detail"] == "forbidden"
     assert forbidden.json()["error"]["code"] == "suggestions.forbidden"
@@ -387,20 +347,11 @@ def test_suggestions_household_access_revoked_after_member_removed(
 
     _login(owner_client, "member@example.com", "member-pass")
     _login(helper_client, "helper@example.com", "helper-pass")
-    created = owner_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = owner_client.post("/api/v1/households", json={"name": "Family Circle"})
     assert created.status_code == 200
     household_id = created.json()["household"]["household_id"]
-    code = owner_client.post(
-        f"/api/v1/households/{household_id}/invites"
-    ).json()["invite"]["code"]
-    assert (
-        helper_client.post(
-            "/api/v1/households/join", json={"code": code}
-        ).status_code
-        == 200
-    )
+    code = owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
+    assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
 
     _meal_upload(owner_client, color=(120, 210, 90))
     _meal_upload(helper_client, color=(95, 120, 210))
@@ -429,27 +380,18 @@ def test_suggestions_household_access_revoked_after_member_removed(
         == 200
     )
 
-    removed = owner_client.post(
-        f"/api/v1/households/{household_id}/members/care_001/remove"
-    )
+    removed = owner_client.post(f"/api/v1/households/{household_id}/members/care_001/remove")
     assert removed.status_code == 200
 
-    helper_after_removal = helper_client.get(
-        "/api/v1/suggestions?scope=household"
-    )
+    helper_after_removal = helper_client.get("/api/v1/suggestions?scope=household")
     assert helper_after_removal.status_code == 403
-    assert (
-        helper_after_removal.json()["error"]["code"] == "suggestions.forbidden"
-    )
+    assert helper_after_removal.json()["error"]["code"] == "suggestions.forbidden"
 
     owner_detail_removed_member = owner_client.get(
         f"/api/v1/suggestions/{helper_suggestion_id}?scope=household"
     )
     assert owner_detail_removed_member.status_code == 404
-    assert (
-        owner_detail_removed_member.json()["error"]["code"]
-        == "suggestions.not_found"
-    )
+    assert owner_detail_removed_member.json()["error"]["code"] == "suggestions.not_found"
 
 
 def test_suggestions_cross_household_detail_attempt_is_hidden(
@@ -462,33 +404,21 @@ def test_suggestions_cross_household_detail_attempt_is_hidden(
     _login(member_client, "member@example.com", "member-pass")
     _login(admin_client, "admin@example.com", "admin-pass")
 
-    member_household = member_client.post(
-        "/api/v1/households", json={"name": "Member Home"}
-    )
-    admin_household = admin_client.post(
-        "/api/v1/households", json={"name": "Admin Home"}
-    )
+    member_household = member_client.post("/api/v1/households", json={"name": "Member Home"})
+    admin_household = admin_client.post("/api/v1/households", json={"name": "Admin Home"})
     assert member_household.status_code == 200
     assert admin_household.status_code == 200
     assert (
         member_client.patch(
             "/api/v1/households/active",
-            json={
-                "household_id": member_household.json()["household"][
-                    "household_id"
-                ]
-            },
+            json={"household_id": member_household.json()["household"]["household_id"]},
         ).status_code
         == 200
     )
     assert (
         admin_client.patch(
             "/api/v1/households/active",
-            json={
-                "household_id": admin_household.json()["household"][
-                    "household_id"
-                ]
-            },
+            json={"household_id": admin_household.json()["household"]["household_id"]},
         ).status_code
         == 200
     )
@@ -501,14 +431,10 @@ def test_suggestions_cross_household_detail_attempt_is_hidden(
     assert created.status_code == 200
     admin_suggestion_id = created.json()["suggestion"]["suggestion_id"]
 
-    forbidden_list = member_client.get(
-        "/api/v1/suggestions?scope=household&source_user_id=ops_001"
-    )
+    forbidden_list = member_client.get("/api/v1/suggestions?scope=household&source_user_id=ops_001")
     assert forbidden_list.status_code == 403
     assert forbidden_list.json()["error"]["code"] == "suggestions.forbidden"
 
-    hidden_detail = member_client.get(
-        f"/api/v1/suggestions/{admin_suggestion_id}?scope=household"
-    )
+    hidden_detail = member_client.get(f"/api/v1/suggestions/{admin_suggestion_id}?scope=household")
     assert hidden_detail.status_code == 404
     assert hidden_detail.json()["error"]["code"] == "suggestions.not_found"

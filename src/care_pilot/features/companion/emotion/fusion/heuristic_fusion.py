@@ -16,9 +16,7 @@ from care_pilot.agent.emotion.schemas import (
 )
 
 
-def _product_state_for_label(
-    label: EmotionLabel, *, trend: str
-) -> EmotionProductState:
+def _product_state_for_label(label: EmotionLabel, *, trend: str) -> EmotionProductState:
     if label in {EmotionLabel.ANGRY, EmotionLabel.FRUSTRATED}:
         return EmotionProductState.DISTRESSED
     if label in {EmotionLabel.ANXIOUS, EmotionLabel.FEARFUL, EmotionLabel.SAD}:
@@ -35,9 +33,7 @@ def _product_state_for_label(
 
 
 class HeuristicFusion(FusionPort):
-    def __init__(
-        self, text_weight: float = 0.6, speech_weight: float = 0.4
-    ) -> None:
+    def __init__(self, text_weight: float = 0.6, speech_weight: float = 0.4) -> None:
         self._text_weight = text_weight
         self._speech_weight = speech_weight
 
@@ -49,9 +45,7 @@ class HeuristicFusion(FusionPort):
         context: EmotionContextFeatures,
     ) -> tuple[EmotionFusionOutput, FusionTrace]:
         text_scores = (
-            text_branch.emotion_scores
-            if text_branch
-            else {label: 0.0 for label in EmotionLabel}
+            text_branch.emotion_scores if text_branch else {label: 0.0 for label in EmotionLabel}
         )
         speech_scores = (
             speech_branch.emotion_scores
@@ -66,9 +60,7 @@ class HeuristicFusion(FusionPort):
             s = speech_scores.get(label, 0.0)
 
             if text_branch and speech_branch:
-                fused_logits[label] = (t * self._text_weight) + (
-                    s * self._speech_weight
-                )
+                fused_logits[label] = (t * self._text_weight) + (s * self._speech_weight)
             elif text_branch:
                 fused_logits[label] = t
             elif speech_branch:
@@ -79,14 +71,10 @@ class HeuristicFusion(FusionPort):
         if sum(fused_logits.values()) == 0.0:
             fused_logits[EmotionLabel.NEUTRAL] = 1.0
 
-        ordered = sorted(
-            fused_logits.items(), key=lambda item: item[1], reverse=True
-        )
+        ordered = sorted(fused_logits.items(), key=lambda item: item[1], reverse=True)
         top_label, top_score = ordered[0]
 
-        product_state = _product_state_for_label(
-            top_label, trend=context.trend
-        )
+        product_state = _product_state_for_label(top_label, trend=context.trend)
 
         output = EmotionFusionOutput(
             emotion_label=top_label,
@@ -97,9 +85,7 @@ class HeuristicFusion(FusionPort):
         trace = FusionTrace(
             fusion_inputs={
                 "text_scores": {k.value: v for k, v in text_scores.items()},
-                "speech_scores": {
-                    k.value: v for k, v in speech_scores.items()
-                },
+                "speech_scores": {k.value: v for k, v in speech_scores.items()},
             },
             weighting_strategy=f"heuristic-weighted (text:{self._text_weight}, speech:{self._speech_weight})",
             final_decision_reason=f"Weighted sum gave {top_score:.2f} for {top_label.value}",

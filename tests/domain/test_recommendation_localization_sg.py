@@ -45,8 +45,6 @@ def test_recommendation_uses_sg_local_advice() -> None:
             ),
         ),
     )
-    rec = generate_recommendation(
-        record, ClinicalProfileSnapshot(biomarkers={}), user
-    )
+    rec = generate_recommendation(record, ClinicalProfileSnapshot(biomarkers={}), user)
     joined = " ".join(rec.localized_advice).lower()
     assert "yong tau foo" in joined

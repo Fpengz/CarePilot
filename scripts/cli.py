@@ -201,13 +201,9 @@ def ensure_docker_daemon() -> None:
 
 def infra_compose(args: list[str]) -> int:
     if compose_available():
-        return run(
-            ["docker", "compose", "-f", str(COMPOSE_FILE), *args], check=False
-        ).returncode
+        return run(["docker", "compose", "-f", str(COMPOSE_FILE), *args], check=False).returncode
     if docker_compose_available():
-        return run(
-            ["docker-compose", "-f", str(COMPOSE_FILE), *args], check=False
-        ).returncode
+        return run(["docker-compose", "-f", str(COMPOSE_FILE), *args], check=False).returncode
     warning("Compose is unavailable; falling back to plain docker runtime.")
     return 125
 
@@ -314,9 +310,7 @@ def execute_infra_action(action: str) -> None:
     if action == "up":
         infra_run("up", ["-d", "redis"])
         if not wait_for_tcp("127.0.0.1", 6379, timeout_seconds=60):
-            error(
-                "Redis did not become reachable on 127.0.0.1:6379 within timeout."
-            )
+            error("Redis did not become reachable on 127.0.0.1:6379 within timeout.")
             raise typer.Exit(1)
         info(f"Infra is ready (backend: {infra_backend_name()})")
         infra_run("ps")
@@ -455,17 +449,11 @@ def help_command() -> None:
 
 @app.command("dev")
 def command_dev(
-    no_api: Annotated[
-        bool, typer.Option("--no-api", help="Do not start API service.")
-    ] = False,
-    no_web: Annotated[
-        bool, typer.Option("--no-web", help="Do not start web service.")
-    ] = False,
+    no_api: Annotated[bool, typer.Option("--no-api", help="Do not start API service.")] = False,
+    no_web: Annotated[bool, typer.Option("--no-web", help="Do not start web service.")] = False,
     no_scheduler: Annotated[
         bool,
-        typer.Option(
-            "--no-scheduler", help="Do not start reminder scheduler."
-        ),
+        typer.Option("--no-scheduler", help="Do not start reminder scheduler."),
     ] = False,
     no_sqlite_reminder_worker: Annotated[
         bool,
@@ -488,9 +476,7 @@ def command_dev(
     if no_scheduler:
         start_scheduler = "0"
 
-    start_sqlite_reminder_worker = os.environ.get(
-        "START_SQLITE_REMINDER_WORKER", "1"
-    )
+    start_sqlite_reminder_worker = os.environ.get("START_SQLITE_REMINDER_WORKER", "1")
     if no_sqlite_reminder_worker:
         start_sqlite_reminder_worker = "0"
 
@@ -550,9 +536,7 @@ def command_dev(
         processes.append(api_proc)
 
         if start_scheduler == "1":
-            info(
-                "starting Reminder Scheduler: uv run python -m apps.api.run_reminder_scheduler"
-            )
+            info("starting Reminder Scheduler: uv run python -m apps.api.run_reminder_scheduler")
             scheduler_proc = subprocess.Popen(
                 [
                     "uv",
@@ -568,9 +552,7 @@ def command_dev(
             processes.append(scheduler_proc)
 
         if start_sqlite_reminder_worker == "1":
-            info(
-                "starting SQLite Reminder Worker: uv run python -m apps.workers.reminder_worker"
-            )
+            info("starting SQLite Reminder Worker: uv run python -m apps.workers.reminder_worker")
             sqlite_worker_proc = subprocess.Popen(
                 ["uv", "run", "python", "-m", "apps.workers.reminder_worker"],
                 cwd=REPO_ROOT,
@@ -613,9 +595,7 @@ def command_dev(
     info(f"NEXT_ALLOWED_DEV_ORIGINS={os.environ['NEXT_ALLOWED_DEV_ORIGINS']}")
     info(f"NEXT_PUBLIC_API_BASE_URL={os.environ['NEXT_PUBLIC_API_BASE_URL']}")
     info(f"BACKEND_API_BASE_URL={os.environ['BACKEND_API_BASE_URL']}")
-    info(
-        f"NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER={os.environ['NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER']}"
-    )
+    info(f"NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER={os.environ['NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER']}")
     info(
         "apps/web/.env override "
         + (
@@ -643,9 +623,7 @@ def command_dev(
             if code is None:
                 continue
             if code != 0:
-                error(
-                    "A dev process exited unexpectedly; stopping remaining services."
-                )
+                error("A dev process exited unexpectedly; stopping remaining services.")
                 terminate_all()
                 raise typer.Exit(1)
             processes.remove(proc)
@@ -670,9 +648,7 @@ def infra_default(
 
 @app.command("readiness")
 def command_readiness(
-    base_url: Annotated[
-        str, typer.Argument(help="API base URL")
-    ] = "http://127.0.0.1:8001",
+    base_url: Annotated[str, typer.Argument(help="API base URL")] = "http://127.0.0.1:8001",
     strict_warnings: Annotated[
         bool,
         typer.Option(
@@ -686,9 +662,7 @@ def command_readiness(
     require_cmd("curl")
 
     ready_url = f"{base_url.rstrip('/')}/api/v1/health/ready"
-    payload_response = run(
-        ["curl", "-sf", ready_url], check=False, capture_output=True
-    )
+    payload_response = run(["curl", "-sf", ready_url], check=False, capture_output=True)
     if payload_response.returncode != 0:
         raise typer.Exit(payload_response.returncode)
     payload = payload_response.stdout
@@ -715,9 +689,7 @@ def command_readiness(
 def command_telegram_test(
     message: Annotated[
         str,
-        typer.Option(
-            "--message", "-m", help="Text to include in the reminder payload."
-        ),
+        typer.Option("--message", "-m", help="Text to include in the reminder payload."),
     ] = "Test reminder",
     bot_token: Annotated[
         str | None,
@@ -729,18 +701,14 @@ def command_telegram_test(
     ] = None,
     dev_mode: Annotated[
         bool | None,
-        typer.Option(
-            "--dev-mode/--no-dev-mode", help="Override TELEGRAM_DEV_MODE."
-        ),
+        typer.Option("--dev-mode/--no-dev-mode", help="Override TELEGRAM_DEV_MODE."),
     ] = None,
 ) -> None:
     load_root_env()
     settings = get_settings()
     token = bot_token or settings.channels.telegram_bot_token or ""
     destination = chat_id or settings.channels.telegram_chat_id or ""
-    use_dev_mode = (
-        settings.channels.telegram_dev_mode if dev_mode is None else dev_mode
-    )
+    use_dev_mode = settings.channels.telegram_dev_mode if dev_mode is None else dev_mode
 
     if not token or not destination:
         error(
@@ -791,9 +759,7 @@ def command_reminders_dispatch() -> None:
     from care_pilot.platform.scheduling import run_reminder_scheduler_once
 
     result = asyncio.run(run_reminder_scheduler_once())
-    info(
-        f"reminders.dispatch queued={result.queued_count} deliveries={result.delivery_attempts}"
-    )
+    info(f"reminders.dispatch queued={result.queued_count} deliveries={result.delivery_attempts}")
 
 
 @app.command("reminders-diagnose")
@@ -894,17 +860,13 @@ def command_reminders_diagnose(
     },
 )
 def test_backend(ctx: typer.Context) -> None:
-    assert_no_extra_args(
-        ctx.args, "Usage: uv run python scripts/cli.py test backend"
-    )
+    assert_no_extra_args(ctx.args, "Usage: uv run python scripts/cli.py test backend")
     execute_test_backend()
 
 
 @test_app.command("web")
 def test_web(
-    skip_e2e: Annotated[
-        bool, typer.Option("--skip-e2e", help="Skip end-to-end tests.")
-    ] = False,
+    skip_e2e: Annotated[bool, typer.Option("--skip-e2e", help="Skip end-to-end tests.")] = False,
 ) -> None:
     require_cmd("pnpm")
     run_step("web:lint", ["pnpm", "web:lint"])
@@ -918,20 +880,14 @@ def test_web(
 
 @test_app.command("comprehensive")
 def test_comprehensive(
-    skip_e2e: Annotated[
-        bool, typer.Option("--skip-e2e", help="Skip web e2e tests.")
-    ] = False,
+    skip_e2e: Annotated[bool, typer.Option("--skip-e2e", help="Skip web e2e tests.")] = False,
     skip_smoke: Annotated[
         bool,
-        typer.Option(
-            "--skip-smoke", help="Skip legacy shared-topology smoke flow."
-        ),
+        typer.Option("--skip-smoke", help="Skip legacy shared-topology smoke flow."),
     ] = False,
     no_infra_bootstrap: Annotated[
         bool,
-        typer.Option(
-            "--no-infra-bootstrap", help="Skip infra bootstrap in smoke flow."
-        ),
+        typer.Option("--no-infra-bootstrap", help="Skip infra bootstrap in smoke flow."),
     ] = False,
 ) -> None:
     execute_test_backend()
@@ -946,9 +902,7 @@ def test_comprehensive(
 
 @report_app.command("nightly")
 def report_nightly(
-    date_stamp: Annotated[
-        str | None, typer.Argument(help="Date stamp YYYY-MM-DD.")
-    ] = None,
+    date_stamp: Annotated[str | None, typer.Argument(help="Date stamp YYYY-MM-DD.")] = None,
 ) -> None:
     reports_dir = REPO_ROOT / "reports"
     template_path = reports_dir / "nightly_TEMPLATE.md"
@@ -995,9 +949,7 @@ def ingest_local() -> None:
 def ingest_canonical(
     reset: Annotated[
         bool,
-        typer.Option(
-            "--reset", help="Reset canonical food tables before ingest."
-        ),
+        typer.Option("--reset", help="Reset canonical food tables before ingest."),
     ] = False,
 ) -> None:
     """Ingest canonical food JSON into SQLite."""
@@ -1006,9 +958,7 @@ def ingest_canonical(
     if not records:
         warning("Canonical food seed is empty; nothing to ingest.")
         return
-    _persist_canonical_food_records(
-        records, db_path=_resolve_app_db_path(), reset=reset
-    )
+    _persist_canonical_food_records(records, db_path=_resolve_app_db_path(), reset=reset)
     info(f"Ingested {len(records)} canonical food records into SQLite.")
 
 
@@ -1017,9 +967,7 @@ def ingest_usda(
     path: Annotated[Path, typer.Argument(help="Path to USDA JSON export.")],
     reset: Annotated[
         bool,
-        typer.Option(
-            "--reset", help="Reset canonical food tables before ingest."
-        ),
+        typer.Option("--reset", help="Reset canonical food tables before ingest."),
     ] = False,
 ) -> None:
     load_root_env()
@@ -1027,22 +975,16 @@ def ingest_usda(
         error(f"Missing USDA file: {path}")
         raise typer.Exit(1)
     records = load_usda_records(path)
-    _persist_canonical_food_records(
-        records, db_path=_resolve_app_db_path(), reset=reset
-    )
+    _persist_canonical_food_records(records, db_path=_resolve_app_db_path(), reset=reset)
     info(f"Ingested {len(records)} USDA records into canonical foods.")
 
 
 @ingest_app.command("off")
 def ingest_open_food_facts(
-    path: Annotated[
-        Path, typer.Argument(help="Path to Open Food Facts JSON export.")
-    ],
+    path: Annotated[Path, typer.Argument(help="Path to Open Food Facts JSON export.")],
     reset: Annotated[
         bool,
-        typer.Option(
-            "--reset", help="Reset canonical food tables before ingest."
-        ),
+        typer.Option("--reset", help="Reset canonical food tables before ingest."),
     ] = False,
 ) -> None:
     load_root_env()
@@ -1050,25 +992,15 @@ def ingest_open_food_facts(
         error(f"Missing Open Food Facts file: {path}")
         raise typer.Exit(1)
     records = load_open_food_facts_records(path)
-    _persist_canonical_food_records(
-        records, db_path=_resolve_app_db_path(), reset=reset
-    )
-    info(
-        f"Ingested {len(records)} Open Food Facts records into canonical foods."
-    )
+    _persist_canonical_food_records(records, db_path=_resolve_app_db_path(), reset=reset)
+    info(f"Ingested {len(records)} Open Food Facts records into canonical foods.")
 
 
 @seed_app.command("synthetic")
 def seed_synthetic(
-    user_id: Annotated[
-        str, typer.Option("--user-id", help="Target user ID to seed.")
-    ] = "user_001",
-    days: Annotated[
-        int, typer.Option("--days", min=1, help="Number of days to generate.")
-    ] = 90,
-    seed: Annotated[
-        int, typer.Option("--seed", help="Deterministic random seed.")
-    ] = 17,
+    user_id: Annotated[str, typer.Option("--user-id", help="Target user ID to seed.")] = "user_001",
+    days: Annotated[int, typer.Option("--days", min=1, help="Number of days to generate.")] = 90,
+    seed: Annotated[int, typer.Option("--seed", help="Deterministic random seed.")] = 17,
     profile: Annotated[
         str,
         typer.Option(
@@ -1078,15 +1010,11 @@ def seed_synthetic(
     ] = "stable",
     start_date: Annotated[
         str | None,
-        typer.Option(
-            "--start-date", help="Optional inclusive start date (YYYY-MM-DD)."
-        ),
+        typer.Option("--start-date", help="Optional inclusive start date (YYYY-MM-DD)."),
     ] = None,
     reset: Annotated[
         bool,
-        typer.Option(
-            "--reset", help="Delete existing target-user data before seeding."
-        ),
+        typer.Option("--reset", help="Delete existing target-user data before seeding."),
     ] = False,
     append: Annotated[
         bool,
@@ -1125,9 +1053,7 @@ def seed_synthetic(
     typer.echo("seed.synthetic.complete")
     typer.echo(f"db_path={summary.db_path}")
     typer.echo(f"user_id={summary.user_id}")
-    typer.echo(
-        f"date_range={summary.start_date.isoformat()}..{summary.end_date.isoformat()}"
-    )
+    typer.echo(f"date_range={summary.start_date.isoformat()}..{summary.end_date.isoformat()}")
     typer.echo(f"meals={summary.meals}")
     typer.echo(f"nutrition_profiles={summary.nutrition_profiles}")
     typer.echo(f"biomarkers={summary.biomarkers}")

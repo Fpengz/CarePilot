@@ -45,9 +45,7 @@ def _at(d: date, hhmm: str) -> datetime:
     return datetime.combine(d, t)
 
 
-def _find_slot_window(
-    user: UserProfile, slot: str
-) -> MealScheduleWindow | None:
+def _find_slot_window(user: UserProfile, slot: str) -> MealScheduleWindow | None:
     for window in user.meal_schedule:
         if window.slot == slot:
             return window
@@ -156,9 +154,7 @@ def mark_meal_confirmation(
     )
     event = repository.get_reminder_event(event_id)
     if event is None:
-        logger.error(
-            "mark_meal_confirmation_missing_event event_id=%s", event_id
-        )
+        logger.error("mark_meal_confirmation_missing_event event_id=%s", event_id)
         raise KeyError(f"Reminder event not found: {event_id}")
 
     if confirmed:

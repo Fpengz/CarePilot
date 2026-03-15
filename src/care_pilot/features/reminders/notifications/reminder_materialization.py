@@ -136,9 +136,7 @@ def materialize_reminder_notifications(
     )
     created: list[ScheduledReminderNotification] = []
     for preference in preferences:
-        trigger_at = reminder_event.scheduled_at + timedelta(
-            minutes=preference.offset_minutes
-        )
+        trigger_at = reminder_event.scheduled_at + timedelta(minutes=preference.offset_minutes)
         now = datetime.now(timezone.utc)
         scheduled = ScheduledReminderNotification(
             id=str(uuid4()),
@@ -148,9 +146,7 @@ def materialize_reminder_notifications(
             trigger_at=trigger_at,
             offset_minutes=preference.offset_minutes,
             preference_id=(
-                preference.id
-                if not preference.id.startswith("system-default-")
-                else None
+                preference.id if not preference.id.startswith("system-default-") else None
             ),
             status="pending",
             attempt_count=0,
@@ -209,9 +205,7 @@ def dispatch_due_reminder_notifications(
 ) -> list[QueuedReminderNotification]:
     """Lease due scheduled notifications and enqueue them into the alert outbox."""
     dispatch_at = now or datetime.now(timezone.utc)
-    due_items = repository.lease_due_scheduled_notifications(
-        now=dispatch_at, limit=limit
-    )
+    due_items = repository.lease_due_scheduled_notifications(now=dispatch_at, limit=limit)
     if not due_items:
         return []
 
@@ -267,28 +261,18 @@ def dispatch_due_reminder_notifications(
                 "scheduled_notification_id": item.id,
                 "reminder_id": item.reminder_id,
                 "occurrence_id": str(item.payload.get("occurrence_id", "")),
-                "reminder_definition_id": str(
-                    item.payload.get("reminder_definition_id", "")
-                ),
+                "reminder_definition_id": str(item.payload.get("reminder_definition_id", "")),
                 "user_id": item.user_id,
                 "channel": item.channel,
-                "reminder_type": str(
-                    item.payload.get("reminder_type", "medication")
-                ),
+                "reminder_type": str(item.payload.get("reminder_type", "medication")),
                 "title": str(item.payload.get("title", "")),
                 "body": str(item.payload.get("body", "")),
-                "medication_name": str(
-                    item.payload.get("medication_name", "")
-                ),
+                "medication_name": str(item.payload.get("medication_name", "")),
                 "dosage_text": str(item.payload.get("dosage_text", "")),
                 "scheduled_at": str(item.payload.get("scheduled_at", "")),
                 "trigger_at": item.trigger_at.isoformat(),
-                "destination": (
-                    endpoint.destination if endpoint is not None else ""
-                ),
-                "destination_verified": (
-                    "true" if endpoint and endpoint.verified else "false"
-                ),
+                "destination": (endpoint.destination if endpoint is not None else ""),
+                "destination_verified": ("true" if endpoint and endpoint.verified else "false"),
             },
             destinations=[item.channel],
             correlation_id=item.id,
@@ -335,9 +319,7 @@ def cancel_reminder_notifications(
 ) -> int:
     """Cancel all pending scheduled notifications for a reminder and log the event."""
     count = repository.cancel_scheduled_notifications_for_reminder(reminder_id)
-    for item in repository.list_scheduled_notifications(
-        reminder_id=reminder_id
-    ):
+    for item in repository.list_scheduled_notifications(reminder_id=reminder_id):
         if item.status != "cancelled":
             continue
         repository.append_notification_log(
@@ -468,9 +450,7 @@ def list_reminder_notification_schedules(
             code="reminders.not_found",
             message="reminder not found",
         )
-    items = context.stores.reminders.list_scheduled_notifications(
-        reminder_id=reminder_id
-    )
+    items = context.stores.reminders.list_scheduled_notifications(reminder_id=reminder_id)
     return ScheduledReminderNotificationListResponse(
         items=[
             ScheduledReminderNotificationItemResponse(
@@ -492,9 +472,7 @@ def list_reminder_notification_schedules(
 def list_notification_endpoints(
     *, context: "AppContext", user_id: str
 ) -> ReminderNotificationEndpointListResponse:
-    items = context.stores.reminders.list_reminder_notification_endpoints(
-        user_id=user_id
-    )
+    items = context.stores.reminders.list_reminder_notification_endpoints(user_id=user_id)
     return ReminderNotificationEndpointListResponse(
         endpoints=[
             ReminderNotificationEndpointResponse(
@@ -567,9 +545,7 @@ def list_reminder_notification_logs(
             code="reminders.not_found",
             message="reminder not found",
         )
-    items = context.stores.reminders.list_notification_logs(
-        reminder_id=reminder_id
-    )
+    items = context.stores.reminders.list_notification_logs(reminder_id=reminder_id)
     return ReminderNotificationLogListResponse(
         items=[
             ReminderNotificationLogItemResponse(

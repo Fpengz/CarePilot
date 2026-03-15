@@ -47,6 +47,7 @@ def household_source_members(
     members = household_store.list_members(household_id)
     source_user_ids = [str(member["user_id"]) for member in members]
     source_display_names = {
-        str(member["user_id"]): str(member.get("display_name", member["user_id"])) for member in members
+        str(member["user_id"]): str(member.get("display_name", member["user_id"]))
+        for member in members
     }
     return source_user_ids, source_display_names

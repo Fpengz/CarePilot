@@ -24,9 +24,7 @@ def _message_wants_why(message: str) -> bool:
 
 def _message_wants_one_step(message: str) -> bool:
     lowered = message.lower()
-    return any(
-        term in lowered for term in ("one", "simple", "realistic", "next step")
-    )
+    return any(term in lowered for term in ("one", "simple", "realistic", "next step"))
 
 
 def compose_care_plan(
@@ -54,16 +52,16 @@ def compose_care_plan(
         ]
         reasoning_summary = "Meal review prioritizes repeat meal-risk patterns and a culturally realistic food swap."
     elif interaction.interaction_type == "adherence_follow_up":
-        headline = (
-            "Protect the next medication dose with one friction-reducing step"
-        )
+        headline = "Protect the next medication dose with one friction-reducing step"
         why_now = "Missed reminders and low adherence are more likely to improve when the recovery step is tiny and immediate."
         actions = [
             "Confirm the very next medication reminder and tie it to the next unavoidable routine, such as leaving home or brushing teeth.",
             "Move the medication or reminder cue to the place where the rush usually happens so the next dose is harder to miss.",
             "If doses keep slipping this week, flag it for clinician review so the regimen barriers can be discussed early.",
         ]
-        reasoning_summary = "Adherence follow-up focuses on barrier recovery, not generic health advice."
+        reasoning_summary = (
+            "Adherence follow-up focuses on barrier recovery, not generic health advice."
+        )
     elif interaction.interaction_type == "report_follow_up":
         headline = "Turn the latest report into one follow-up priority"
         why_now = "Current biomarker risk flags warrant a concise explanation and a clinician-visible next step."
@@ -74,9 +72,7 @@ def compose_care_plan(
         ]
         reasoning_summary = "Report follow-up prioritizes abnormal biomarkers, symptom context, and escalation readiness."
     elif interaction.interaction_type == "chat":
-        headline = (
-            "Answer the current question and land on one next best action"
-        )
+        headline = "Answer the current question and land on one next best action"
         why_now = "The patient explicitly asked for guidance, so the response should clarify the concern and close with an action."
         actions = [
             "Take one practical step today that matches the main concern raised in the message.",
@@ -84,9 +80,7 @@ def compose_care_plan(
         ]
         reasoning_summary = "Chat guidance should honor message intent before defaulting to a generic longitudinal summary."
     else:
-        headline = (
-            "Stabilize the current risk signals with one manageable step"
-        )
+        headline = "Stabilize the current risk signals with one manageable step"
         why_now = "The current longitudinal picture shows active opportunities for follow-through and symptom-aware monitoring."
         actions = [
             "Pick the single health action that feels most realistic in the next few hours and complete it before adding another.",

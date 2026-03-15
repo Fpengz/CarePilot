@@ -21,9 +21,7 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_agent_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_agent_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -37,9 +35,7 @@ def _login(
     email: str = "member@example.com",
     password: str = "member-pass",
 ) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
@@ -218,9 +214,7 @@ def _seed_meal_history(app, *, user_id: str = "user_001") -> None:
             ["greens", "tofu", "rice"],
         ),
     ]
-    for idx, (_, dish_name, nutrition, ingredients) in enumerate(
-        seeded, start=1
-    ):
+    for idx, (_, dish_name, nutrition, ingredients) in enumerate(seeded, start=1):
         record = MealRecognitionRecord(
             id=f"meal_{idx}",
             user_id=user_id,
@@ -266,19 +260,13 @@ def test_daily_agent_returns_typed_recommendations_and_substitutions(
     assert body["profile_state"]["bmi"] > 25
     assert body["temporal_context"]["meal_history_count"] == 10
     assert body["data_sources"]["interaction_count"] == 0
-    assert {"breakfast", "lunch", "dinner"}.issubset(
-        body["recommendations"].keys()
-    )
+    assert {"breakfast", "lunch", "dinner"}.issubset(body["recommendations"].keys())
     assert body["substitutions"]["source_meal"]["meal_id"] == "meal_10"
     assert body["substitutions"]["alternatives"]
     assert all(
-        "shellfish" not in item["title"].lower()
-        for item in body["recommendations"].values()
+        "shellfish" not in item["title"].lower() for item in body["recommendations"].values()
     )
-    assert all(
-        "lard" not in item["title"].lower()
-        for item in body["recommendations"].values()
-    )
+    assert all("lard" not in item["title"].lower() for item in body["recommendations"].values())
     assert body["constraints_applied"]
     assert body["workflow"]["workflow_name"] == "daily_recommendation_agent"
 
@@ -332,10 +320,7 @@ def test_recommendation_interactions_refine_preferences_and_disable_fallback(
     body = second.json()
     assert body["fallback_mode"] is False
     assert body["data_sources"]["interaction_count"] >= 5
-    assert (
-        body["recommendations"]["breakfast"]["candidate_id"]
-        == breakfast["candidate_id"]
-    )
+    assert body["recommendations"]["breakfast"]["candidate_id"] == breakfast["candidate_id"]
     assert (
         body["recommendations"]["breakfast"]["scores"]["preference_fit"]
         >= breakfast["scores"]["preference_fit"]

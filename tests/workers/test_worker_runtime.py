@@ -37,7 +37,9 @@ class FakeCoordinationStoreNoWait:
 
 
 @pytest.mark.anyio
-async def test_worker_loop_recovers_from_scheduler_failure_and_continues(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_worker_loop_recovers_from_scheduler_failure_and_continues(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     settings = SimpleNamespace(
         workers=SimpleNamespace(
             worker_mode="external",
@@ -113,7 +115,9 @@ async def test_worker_loop_recovers_from_scheduler_failure_and_continues(monkeyp
 
 
 @pytest.mark.anyio
-async def test_worker_iteration_releases_scheduler_lock_when_scheduler_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_worker_iteration_releases_scheduler_lock_when_scheduler_raises(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     settings = SimpleNamespace(
         workers=SimpleNamespace(
             alert_worker_max_attempts=3,
@@ -121,7 +125,9 @@ async def test_worker_iteration_releases_scheduler_lock_when_scheduler_raises(mo
             reminder_worker_poll_interval_seconds=1,
             outbox_worker_poll_interval_seconds=1,
         ),
-        storage=SimpleNamespace(redis_lock_ttl_seconds=30, redis_worker_signal_channel="workers.ready"),
+        storage=SimpleNamespace(
+            redis_lock_ttl_seconds=30, redis_worker_signal_channel="workers.ready"
+        ),
     )
     coordination_store = FakeCoordinationStore()
     ctx = SimpleNamespace(app_store=object(), coordination_store=coordination_store)
@@ -147,8 +153,11 @@ async def test_worker_iteration_waits_for_signal_when_idle(monkeypatch: pytest.M
             reminder_worker_poll_interval_seconds=15,
             outbox_worker_poll_interval_seconds=5,
         ),
-        storage=SimpleNamespace(redis_lock_ttl_seconds=30, redis_worker_signal_channel="workers.ready"),
+        storage=SimpleNamespace(
+            redis_lock_ttl_seconds=30, redis_worker_signal_channel="workers.ready"
+        ),
     )
+
     class IdleCoordinationStore(FakeCoordinationStore):
         def acquire_lock(self, name: str, *, owner: str, ttl_seconds: int) -> bool:
             return False
@@ -166,7 +175,9 @@ async def test_worker_iteration_waits_for_signal_when_idle(monkeypatch: pytest.M
     monkeypatch.setattr(worker_run, "OutboxWorker", FakeOutboxWorker)
     monkeypatch.setattr(worker_run.asyncio, "sleep", fail_if_sleep_called)
 
-    processed_work = await worker_run._run_worker_iteration(ctx=ctx, settings=settings, owner="worker-test")
+    processed_work = await worker_run._run_worker_iteration(
+        ctx=ctx, settings=settings, owner="worker-test"
+    )
 
     assert processed_work is False
     assert coordination_store.waits == [("workers.ready", 5.0)]

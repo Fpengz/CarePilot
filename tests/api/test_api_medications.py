@@ -1,14 +1,23 @@
 """Module for test api medications."""
 
-from __future__ import annotations
-
 from collections.abc import Generator
+from typing import Any, cast
 
 import pytest
 from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
 from care_pilot.config.app import get_settings
+from care_pilot.agent.runtime.inference_engine import InferenceEngine
+from care_pilot.agent.runtime.inference_types import (
+    InferenceResponse,
+    ProviderMetadata,
+)
+from care_pilot.features.medications.intake.models import (
+    LLMNormalizedMedicationInstruction,
+    MedicationParseOutput,
+    NormalizedMedicationInstruction,
+)
 
 
 def _reset_settings_cache() -> None:
@@ -22,6 +31,59 @@ def sqlite_medications_env(
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
+    monkeypatch.setenv("LLM_PROVIDER", "test")
+
+    async def mock_infer(self, request: Any) -> InferenceResponse:
+        if "Metformin" in str(request.payload.get("prompt", "")):
+            instr = LLMNormalizedMedicationInstruction(
+                medication_name_raw="Metformin 500mg",
+                medication_name_canonical="metformin",
+                dosage_text="1 tablet",
+                timing_type="pre_meal",
+                frequency_type="times_per_day",
+                frequency_times_per_day=2,
+                confidence=0.95,
+                ambiguities=[],
+            )
+        elif "Amlodipine" in str(request.payload.get("prompt", "")):
+            instr = LLMNormalizedMedicationInstruction(
+                medication_name_raw="Amlodipine 5mg",
+                medication_name_canonical="amlodipine",
+                dosage_text="1 tablet",
+                timing_type="fixed_time",
+                frequency_type="fixed_time",
+                fixed_time="08:00",
+                confidence=0.95,
+                ambiguities=[],
+            )
+        else:
+            # Ambiguous case
+            instr = LLMNormalizedMedicationInstruction(
+                medication_name_raw="some tablets",
+                dosage_text="",
+                confidence=0.3,
+                ambiguities=["could not determine dosage"],
+            )
+
+        instructions = cast(list[NormalizedMedicationInstruction], [instr])
+        conf = float(instr.confidence) if instr.confidence is not None else 0.0
+        output = MedicationParseOutput(
+            instructions=instructions,
+            confidence_score=0.95 if conf > 0.5 else 0.3,
+            warnings=[],
+        )
+        return InferenceResponse(
+            request_id=request.request_id,
+            structured_output=output,
+            confidence=output.confidence_score,
+            latency_ms=10.0,
+            provider_metadata=ProviderMetadata(
+                provider="test", model="test-model", endpoint="test"
+            ),
+        )
+
+    monkeypatch.setattr(InferenceEngine, "infer", mock_infer)
+
     _reset_settings_cache()
     yield
     _reset_settings_cache()
@@ -32,9 +94,7 @@ def _login(
     email: str = "member@example.com",
     password: str = "member-pass",
 ) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
@@ -83,9 +143,7 @@ def test_medication_regimen_crud_and_adherence_metrics(
     )
     assert adherence.status_code == 200
 
-    metrics = client.get(
-        "/api/v1/medications/adherence-metrics?from=2026-03-01&to=2026-03-02"
-    )
+    metrics = client.get("/api/v1/medications/adherence-metrics?from=2026-03-01&to=2026-03-02")
     assert metrics.status_code == 200
     body = metrics.json()
     assert body["totals"]["events"] == 1
@@ -128,9 +186,7 @@ def test_medication_text_intake_previews_then_confirms_regimens_and_today_remind
 
     preview = client.post(
         "/api/v1/medications/intake/text",
-        json={
-            "instructions_text": "Take Metformin 500mg twice daily before meals for 5 days"
-        },
+        json={"instructions_text": "Metformin 500mg 1 tablet twice daily before meals for 5 days"},
     )
 
     assert preview.status_code == 200
@@ -142,7 +198,7 @@ def test_medication_text_intake_previews_then_confirms_regimens_and_today_remind
     assert body["source"]["source_type"] == "plain_text"
     assert (
         body["source"]["extracted_text"]
-        == "Take Metformin 500mg twice daily before meals for 5 days"
+        == "Metformin 500mg 1 tablet twice daily before meals for 5 days"
     )
     assert body["normalized_instructions"]
 
@@ -152,14 +208,8 @@ def test_medication_text_intake_previews_then_confirms_regimens_and_today_remind
     )
     assert confirmed.status_code == 200
     confirmed_body = confirmed.json()
-    assert any(
-        item["medication_name"] == "Metformin"
-        for item in confirmed_body["regimens"]
-    )
-    assert any(
-        item["medication_name"] == "Metformin"
-        for item in confirmed_body["reminders"]
-    )
+    assert any(item["medication_name"] == "Metformin" for item in confirmed_body["regimens"])
+    assert any(item["medication_name"] == "Metformin" for item in confirmed_body["reminders"])
     assert confirmed_body["scheduled_notifications"]
 
 
@@ -175,10 +225,7 @@ def test_medication_text_intake_rejects_ambiguous_instructions_by_default(
     )
 
     assert response.status_code == 422
-    assert (
-        response.json()["error"]["code"]
-        == "medications.intake_review_required"
-    )
+    assert response.json()["error"]["code"] == "medications.intake_review_required"
 
 
 def test_medication_text_intake_allows_review_mode_for_ambiguous_instructions(
@@ -214,7 +261,7 @@ def test_medication_upload_intake_extracts_pdf_and_confirms_regimen(
         files={
             "file": (
                 "prescription.pdf",
-                b"Take Amlodipine 5mg every morning",
+                b"Amlodipine 5mg 1 tablet every morning",
                 "application/pdf",
             )
         },
@@ -233,10 +280,7 @@ def test_medication_upload_intake_extracts_pdf_and_confirms_regimen(
         json={"draft_id": body["draft_id"]},
     )
     assert confirmed.status_code == 200
-    assert any(
-        item["medication_name"] == "Amlodipine"
-        for item in confirmed.json()["regimens"]
-    )
+    assert any(item["medication_name"] == "Amlodipine" for item in confirmed.json()["regimens"])
 
 
 def test_confirming_medication_reminder_records_adherence_event(
@@ -258,9 +302,7 @@ def test_confirming_medication_reminder_records_adherence_event(
     regimen_id = intake.json()["regimens"][0]["id"]
     reminder_id = intake.json()["reminders"][0]["id"]
 
-    confirmed = client.post(
-        f"/api/v1/reminders/{reminder_id}/confirm", json={"confirmed": True}
-    )
+    confirmed = client.post(f"/api/v1/reminders/{reminder_id}/confirm", json={"confirmed": True})
     assert confirmed.status_code == 200
 
     metrics = client.get("/api/v1/medications/adherence-metrics")
@@ -304,9 +346,7 @@ def test_repeated_confirm_reuses_existing_regimen_and_reminders(
     first_body = first.json()
     second_body = second.json()
     assert first_body["regimens"][0]["id"] == second_body["regimens"][0]["id"]
-    assert (
-        first_body["reminders"][0]["id"] == second_body["reminders"][0]["id"]
-    )
+    assert first_body["reminders"][0]["id"] == second_body["reminders"][0]["id"]
 
 
 def test_confirm_requires_valid_draft(sqlite_medications_env: None) -> None:
@@ -319,10 +359,7 @@ def test_confirm_requires_valid_draft(sqlite_medications_env: None) -> None:
     )
 
     assert response.status_code == 404
-    assert (
-        response.json()["error"]["code"]
-        == "medications.intake_draft_not_found"
-    )
+    assert response.json()["error"]["code"] == "medications.intake_draft_not_found"
 
 
 def test_confirm_rejects_ambiguous_draft(sqlite_medications_env: None) -> None:
@@ -332,20 +369,16 @@ def test_confirm_rejects_ambiguous_draft(sqlite_medications_env: None) -> None:
     preview = client.post(
         "/api/v1/medications/intake/text",
         json={
-            "instructions_text": "Clopidogrel 75mg daily",
+            "instructions_text": "Take some tablets",
             "allow_ambiguous": True,
         },
     )
     assert preview.status_code == 200
     draft_id = preview.json()["draft_id"]
 
-    confirm = client.post(
-        "/api/v1/medications/intake/confirm", json={"draft_id": draft_id}
-    )
+    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft_id})
     assert confirm.status_code == 422
-    assert (
-        confirm.json()["error"]["code"] == "medications.intake_review_required"
-    )
+    assert confirm.json()["error"]["code"] == "medications.intake_review_required"
 
 
 def test_editing_draft_updates_confirmed_regimen(
@@ -408,9 +441,7 @@ def test_deleting_draft_instruction_removes_it_from_confirmation(
     draft = preview.json()
     assert len(draft["normalized_instructions"]) == 2
 
-    deleted = client.delete(
-        f"/api/v1/medications/intake/drafts/{draft['draft_id']}/instructions/0"
-    )
+    deleted = client.delete(f"/api/v1/medications/intake/drafts/{draft['draft_id']}/instructions/0")
     assert deleted.status_code == 200
     assert len(deleted.json()["normalized_instructions"]) == 1
 
@@ -439,13 +470,9 @@ def test_canceling_draft_prevents_confirmation(
     assert cancelled.status_code == 200
     assert cancelled.json()["ok"] is True
 
-    confirm = client.post(
-        "/api/v1/medications/intake/confirm", json={"draft_id": draft_id}
-    )
+    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft_id})
     assert confirm.status_code == 404
-    assert (
-        confirm.json()["error"]["code"] == "medications.intake_draft_not_found"
-    )
+    assert confirm.json()["error"]["code"] == "medications.intake_draft_not_found"
 
 
 def test_duplicate_manual_regimen_create_returns_conflict(

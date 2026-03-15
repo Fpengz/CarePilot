@@ -99,9 +99,7 @@ def auth_login(
             status_code=429, detail="too many login attempts, try again later"
         ) from exc
     except InvalidCredentialsError as exc:
-        raise HTTPException(
-            status_code=401, detail="invalid credentials"
-        ) from exc
+        raise HTTPException(status_code=401, detail="invalid credentials") from exc
     user = auth_result.user
     session = auth_result.session
     signed = context.session_signer.sign(session["session_id"])
@@ -134,9 +132,7 @@ def auth_signup(
     if not display_name:
         display_name = str(payload.email).split("@", 1)[0]
     if not display_name:
-        raise HTTPException(
-            status_code=400, detail="display_name must not be blank"
-        )
+        raise HTTPException(status_code=400, detail="display_name must not be blank")
 
     context = get_context(request)
     try:
@@ -153,9 +149,7 @@ def auth_signup(
             detail=f"password must be at least {MIN_PASSWORD_LENGTH} characters",
         ) from exc
     except DuplicateEmailError as exc:
-        raise HTTPException(
-            status_code=409, detail="email already registered"
-        ) from exc
+        raise HTTPException(status_code=409, detail="email already registered") from exc
     user = auth_result.user
     session = auth_result.session
     signed = context.session_signer.sign(session["session_id"])
@@ -219,13 +213,9 @@ def auth_update_profile(
     if display_name is not None:
         display_name = display_name.strip()
         if not display_name:
-            raise HTTPException(
-                status_code=400, detail="display_name must not be blank"
-            )
+            raise HTTPException(status_code=400, detail="display_name must not be blank")
     if display_name is None and payload.profile_mode is None:
-        raise HTTPException(
-            status_code=400, detail="no profile changes requested"
-        )
+        raise HTTPException(status_code=400, detail="no profile changes requested")
     context = get_context(request)
     updated = context.auth_store.update_user_profile(
         user_id=str(session["user_id"]),
@@ -237,14 +227,10 @@ def auth_update_profile(
     refreshed = context.auth_store.get_session(str(session["session_id"]))
     if refreshed is None:
         raise HTTPException(status_code=401, detail="session expired")
-    return AuthMeResponse(
-        user=_session_user_from_session(cast(dict[str, object], refreshed))
-    )
+    return AuthMeResponse(user=_session_user_from_session(cast(dict[str, object], refreshed)))
 
 
-@router.patch(
-    "/api/v1/auth/password", response_model=AuthPasswordUpdateResponse
-)
+@router.patch("/api/v1/auth/password", response_model=AuthPasswordUpdateResponse)
 def auth_update_password(
     payload: AuthPasswordUpdateRequest,
     request: Request,
@@ -275,9 +261,7 @@ def auth_update_password(
             user_id=str(session["user_id"]),
             metadata={"reason": "invalid_current_password"},
         )
-        raise HTTPException(
-            status_code=400, detail="current password is incorrect"
-        )
+        raise HTTPException(status_code=400, detail="current password is incorrect")
 
     context.auth_store.append_auth_audit_event(
         event_type="password_changed",
@@ -354,9 +338,7 @@ def auth_revoke_session(
     return AuthSessionRevokeResponse(revoked=True)
 
 
-@router.get(
-    "/api/v1/auth/audit-events", response_model=AuthAuditEventListResponse
-)
+@router.get("/api/v1/auth/audit-events", response_model=AuthAuditEventListResponse)
 def auth_audit_events(
     request: Request,
     limit: int = 50,
@@ -371,11 +353,7 @@ def auth_audit_events(
                 event_id=str(item["event_id"]),
                 event_type=str(item["event_type"]),
                 email=str(item["email"]),
-                user_id=(
-                    str(item["user_id"])
-                    if item.get("user_id") is not None
-                    else None
-                ),
+                user_id=(str(item["user_id"]) if item.get("user_id") is not None else None),
                 created_at=datetime.fromisoformat(str(item["created_at"])),
                 metadata=cast(dict[str, object], item.get("metadata", {})),
             )

@@ -1,9 +1,7 @@
 from typing import Any
 
 def configure(*args: Any, **kwargs: Any) -> None: ...
-
 def warn(*args: Any, **kwargs: Any) -> None: ...
-
 def error(*args: Any, **kwargs: Any) -> None: ...
 
 class LogfireLoggingHandler:

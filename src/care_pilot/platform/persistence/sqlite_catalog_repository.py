@@ -29,9 +29,7 @@ class SQLiteCatalogRepository:
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
-    def save_recommendation(
-        self, user_id: str, payload: dict[str, Any]
-    ) -> None:
+    def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -67,10 +65,7 @@ class SQLiteCatalogRepository:
         params.append(bounded)
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
-        return [
-            MealCatalogItem.model_validate_json(cast(str, row[0]))
-            for row in rows
-        ]
+        return [MealCatalogItem.model_validate_json(cast(str, row[0])) for row in rows]
 
     def get_meal_catalog_item(self, meal_id: str) -> MealCatalogItem | None:
         with sqlite3.connect(self.db_path) as conn:
@@ -102,10 +97,7 @@ class SQLiteCatalogRepository:
         params.append(bounded)
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
-        return [
-            CanonicalFoodRecord.model_validate_json(cast(str, row[0]))
-            for row in rows
-        ]
+        return [CanonicalFoodRecord.model_validate_json(cast(str, row[0])) for row in rows]
 
     def get_canonical_food(self, food_id: str) -> CanonicalFoodRecord | None:
         with sqlite3.connect(self.db_path) as conn:
@@ -117,9 +109,7 @@ class SQLiteCatalogRepository:
             return None
         return CanonicalFoodRecord.model_validate_json(cast(str, row[0]))
 
-    def find_food_by_name(
-        self, *, locale: str, name: str
-    ) -> CanonicalFoodRecord | None:
+    def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
         normalized = normalize_text(name)
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
@@ -199,16 +189,12 @@ class SQLiteCatalogRepository:
                 source_meal_id=row[6],
                 selected_meal_id=row[7],
                 created_at=datetime.fromisoformat(row[8]),
-                metadata=cast(
-                    dict[str, object], json.loads(cast(str, row[9]))
-                ),
+                metadata=cast(dict[str, object], json.loads(cast(str, row[9]))),
             )
             for row in rows
         ]
 
-    def get_preference_snapshot(
-        self, user_id: str
-    ) -> PreferenceSnapshot | None:
+    def get_preference_snapshot(self, user_id: str) -> PreferenceSnapshot | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 "SELECT payload_json FROM preference_snapshots WHERE user_id = ?",
@@ -219,9 +205,7 @@ class SQLiteCatalogRepository:
             return None
         return PreferenceSnapshot.model_validate_json(cast(str, row[0]))
 
-    def save_preference_snapshot(
-        self, snapshot: PreferenceSnapshot
-    ) -> PreferenceSnapshot:
+    def save_preference_snapshot(self, snapshot: PreferenceSnapshot) -> PreferenceSnapshot:
         payload = snapshot.model_dump(mode="json")
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
@@ -243,15 +227,11 @@ class SQLiteCatalogRepository:
         )
         return snapshot
 
-    def save_suggestion_record(
-        self, user_id: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    def save_suggestion_record(self, user_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         suggestion_id = str(payload.get("suggestion_id", ""))
         created_at = str(payload.get("created_at", ""))
         if not suggestion_id or not created_at:
-            raise ValueError(
-                "suggestion payload requires suggestion_id and created_at"
-            )
+            raise ValueError("suggestion payload requires suggestion_id and created_at")
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -268,9 +248,7 @@ class SQLiteCatalogRepository:
         )
         return payload
 
-    def list_suggestion_records(
-        self, user_id: str, limit: int = 20
-    ) -> list[dict[str, Any]]:
+    def list_suggestion_records(self, user_id: str, limit: int = 20) -> list[dict[str, Any]]:
         bounded_limit = max(1, min(limit, 100))
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
@@ -284,14 +262,10 @@ class SQLiteCatalogRepository:
                 (user_id, bounded_limit),
             ).fetchall()
         items = [json.loads(cast(str, row[0])) for row in rows]
-        logger.debug(
-            "list_suggestion_records user_id=%s count=%s", user_id, len(items)
-        )
+        logger.debug("list_suggestion_records user_id=%s count=%s", user_id, len(items))
         return items
 
-    def get_suggestion_record(
-        self, user_id: str, suggestion_id: str
-    ) -> dict[str, Any] | None:
+    def get_suggestion_record(self, user_id: str, suggestion_id: str) -> dict[str, Any] | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """

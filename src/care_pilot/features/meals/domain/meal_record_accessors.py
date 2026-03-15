@@ -26,10 +26,7 @@ def meal_nutrition(record: MealRecognitionRecord) -> Nutrition:
 
 
 def meal_ingredients(record: MealRecognitionRecord) -> list[Ingredient]:
-    if (
-        record.enriched_event is not None
-        and record.enriched_event.normalized_items
-    ):
+    if record.enriched_event is not None and record.enriched_event.normalized_items:
         return [
             Ingredient(
                 name=item.canonical_name,

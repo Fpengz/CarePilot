@@ -84,7 +84,9 @@ class ReminderEvent:
         correlation_id: Optional[str] = None,
     ) -> "ReminderEvent":
         now_str = utc_now_iso()
-        payload_text = payload if isinstance(payload, str) else json.dumps(payload, ensure_ascii=False)
+        payload_text = (
+            payload if isinstance(payload, str) else json.dumps(payload, ensure_ascii=False)
+        )
 
         return cls(
             event_id=f"EVT-{uuid.uuid4().hex}",

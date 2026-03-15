@@ -28,16 +28,12 @@ class APISettings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     cors_methods: str = "GET,POST,PATCH,DELETE,OPTIONS"
     cors_headers: str = "Content-Type,X-Requested-With,Authorization"
-    meal_upload_max_bytes: int = Field(
-        default=10 * 1024 * 1024, ge=1, le=50 * 1024 * 1024
-    )
+    meal_upload_max_bytes: int = Field(default=10 * 1024 * 1024, ge=1, le=50 * 1024 * 1024)
     rate_limit_enabled: bool = True
     rate_limit_window_seconds: int = Field(default=60, ge=1, le=3600)
     rate_limit_auth_login_max_requests: int = Field(default=20, ge=1, le=500)
     rate_limit_meal_analyze_max_requests: int = Field(default=20, ge=1, le=500)
-    rate_limit_recommendations_generate_max_requests: int = Field(
-        default=10, ge=1, le=500
-    )
+    rate_limit_recommendations_generate_max_requests: int = Field(default=10, ge=1, le=500)
 
 
 # ---------------------------------------------------------------------------
@@ -46,17 +42,13 @@ class APISettings(BaseSettings):
 
 
 class AuthSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        extra="ignore", case_sensitive=False, populate_by_name=True
-    )
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False, populate_by_name=True)
 
     session_secret: str = Field(
         default="dev-insecure-session-secret-change-me",
         validation_alias="SESSION_SECRET",
     )
-    cookie_secure: bool = Field(
-        default=False, validation_alias="COOKIE_SECURE"
-    )
+    cookie_secure: bool = Field(default=False, validation_alias="COOKIE_SECURE")
     cookie_samesite: Literal["lax", "strict", "none"] = Field(
         default="lax", validation_alias="COOKIE_SAMESITE"
     )
@@ -100,9 +92,7 @@ class AuthSettings(BaseSettings):
         le=10000,
         validation_alias="AUTH_AUDIT_EVENTS_MAX_ENTRIES",
     )
-    seed_demo_users: bool | None = Field(
-        default=None, validation_alias="AUTH_SEED_DEMO_USERS"
-    )
+    seed_demo_users: bool | None = Field(default=None, validation_alias="AUTH_SEED_DEMO_USERS")
     demo_member_password: str = Field(
         default="member-pass", validation_alias="AUTH_DEMO_MEMBER_PASSWORD"
     )
@@ -120,16 +110,12 @@ class AuthSettings(BaseSettings):
 
 
 class ChannelSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        extra="ignore", case_sensitive=False, populate_by_name=True
-    )
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False, populate_by_name=True)
 
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
     telegram_dev_mode: bool = True
-    telegram_request_timeout_seconds: float = Field(
-        default=10.0, ge=1.0, le=300.0
-    )
+    telegram_request_timeout_seconds: float = Field(default=10.0, ge=1.0, le=300.0)
     email_dev_mode: bool = True
     email_smtp_host: str | None = None
     email_smtp_port: int = Field(default=587, ge=1, le=65535)
@@ -149,9 +135,7 @@ class ChannelSettings(BaseSettings):
 
 
 class StorageSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        extra="ignore", case_sensitive=False, populate_by_name=True
-    )
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False, populate_by_name=True)
 
     app_data_backend: Literal["sqlite"] = "sqlite"
     api_sqlite_db_path: str = "care_pilot_api.db"
@@ -170,17 +154,13 @@ class StorageSettings(BaseSettings):
 
 
 class WorkerSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        extra="ignore", case_sensitive=False, populate_by_name=True
-    )
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False, populate_by_name=True)
 
     worker_mode: Literal["in_process", "external"] = "in_process"
     reminder_scheduler_interval_seconds: int = Field(default=30, ge=5, le=3600)
     reminder_scheduler_batch_size: int = Field(default=100, ge=1, le=1000)
     reminder_max_late_minutes: int = Field(default=60, ge=0, le=1440)
-    reminder_worker_poll_interval_seconds: int = Field(
-        default=15, ge=1, le=3600
-    )
+    reminder_worker_poll_interval_seconds: int = Field(default=15, ge=1, le=3600)
     outbox_worker_poll_interval_seconds: int = Field(default=5, ge=1, le=3600)
     workflow_trace_persistence_enabled: bool = False
     workflow_contract_bootstrap: bool = True
@@ -244,13 +224,9 @@ class EmotionSettings(BaseSettings):
     speech_enabled: bool = False
     request_timeout_seconds: float = Field(default=15.0, ge=0.1, le=300.0)
     model_device: Literal["auto", "cpu", "cuda"] = "auto"
-    model_cache_dir: str | None = Field(
-        default=None, validation_alias="EMOTION_MODEL_CACHE_DIR"
-    )
+    model_cache_dir: str | None = Field(default=None, validation_alias="EMOTION_MODEL_CACHE_DIR")
     text_model_id: str = "j-hartmann/emotion-english-distilroberta-base"
-    speech_model_id: str = (
-        "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
-    )
+    speech_model_id: str = "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
     fusion_model_id: str | None = None
     asr_model_id: str = "openai/whisper-tiny"
     history_window: int = Field(default=5, ge=1, le=20)
@@ -263,13 +239,9 @@ class EmotionSettings(BaseSettings):
 
 
 class ObservabilitySettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        extra="ignore", case_sensitive=False, populate_by_name=True
-    )
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False, populate_by_name=True)
 
-    log_level: str = Field(
-        default="INFO", validation_alias="CARE_PILOT_LOG_LEVEL"
-    )
+    log_level: str = Field(default="INFO", validation_alias="CARE_PILOT_LOG_LEVEL")
     readiness_fail_on_warnings: bool | None = None
     api_dev_log_verbose: bool = False
     api_dev_log_headers: bool = False

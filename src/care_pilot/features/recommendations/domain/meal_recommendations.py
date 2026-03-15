@@ -54,22 +54,14 @@ def _local_advice_for_dish(
             base = list(advice)
             break
     else:
-        base = [
-            "Choose less gravy and ask for reduced sodium at hawker stalls"
-        ]
+        base = ["Choose less gravy and ask for reduced sodium at hawker stalls"]
 
     goals = {goal.lower() for goal in user_profile.nutrition_goals}
-    if (
-        "lower_sugar" in goals
-        or clinical_snapshot.biomarkers.get("hba1c", 0) >= 7.0
-    ):
+    if "lower_sugar" in goals or clinical_snapshot.biomarkers.get("hba1c", 0) >= 7.0:
         base.append(
             "Prefer unsweetened drinks and smaller refined-carb portions to steady glucose response."
         )
-    if (
-        "heart_health" in goals
-        or clinical_snapshot.biomarkers.get("ldl", 0) >= 3.4
-    ):
+    if "heart_health" in goals or clinical_snapshot.biomarkers.get("ldl", 0) >= 3.4:
         base.append(
             "Prioritize clearer soups, steamed proteins, and less fried garnish for heart-health support."
         )
@@ -119,26 +111,21 @@ def generate_recommendation(
         return RecommendationOutput(
             safe=False,
             rationale="Safety engine blocked this recommendation due to a contraindication.",
-            localized_advice=[
-                "Do not consume this meal with current medication regimen."
-            ],
+            localized_advice=["Do not consume this meal with current medication regimen."],
             blocked_reason=exc.message,
             evidence=clinical_snapshot.biomarkers,
         )
 
     biomarkers = clinical_snapshot.biomarkers
     biomarker_line = (
-        ", ".join(f"{k}={v}" for k, v in biomarkers.items())
-        or "no biomarkers available"
+        ", ".join(f"{k}={v}" for k, v in biomarkers.items()) or "no biomarkers available"
     )
     goals_line = ", ".join(user_profile.nutrition_goals) or "general wellness"
     rationale = (
         f"Based on {meal_display_name(meal_record)}, goals ({goals_line}), and biomarkers ({biomarker_line}), "
         "here are localized recommendations for Singapore hawker options."
     )
-    advice = _local_advice_for_dish(
-        meal_display_name(meal_record), user_profile, clinical_snapshot
-    )
+    advice = _local_advice_for_dish(meal_display_name(meal_record), user_profile, clinical_snapshot)
     for warning in safety_warnings:
         advice.append(warning)
 

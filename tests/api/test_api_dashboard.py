@@ -28,9 +28,7 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_dashboard_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_dashboard_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -44,9 +42,7 @@ def _login(
     email: str = "member@example.com",
     password: str = "member-pass",
 ) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
@@ -71,7 +67,7 @@ def _seed_dashboard_state(client: TestClient) -> None:
         )
     )
 
-    base_day = date(2026, 3, 14)
+    base_day = date(2026, 3, 15)
     for offset in range(0, 42):
         current_day = base_day - timedelta(days=offset)
         breakfast_at = _dt(current_day, 8)
@@ -238,13 +234,8 @@ def test_dashboard_overview_uses_hourly_buckets_for_today(
     assert body["range"]["key"] == "today"
     assert body["range"]["bucket"] == "hour"
     assert body["charts"]["calories"]["bucket"] == "hour"
-    assert any(
-        point["value"] > 0 for point in body["charts"]["calories"]["points"]
-    )
-    assert any(
-        bin_item["count"] > 0
-        for bin_item in body["charts"]["meal_timing"]["bins"]
-    )
+    assert any(point["value"] > 0 for point in body["charts"]["calories"]["points"])
+    assert any(bin_item["count"] > 0 for bin_item in body["charts"]["meal_timing"]["bins"])
 
 
 def test_dashboard_overview_supports_custom_ranges_and_weekly_rollups(
@@ -254,9 +245,7 @@ def test_dashboard_overview_supports_custom_ranges_and_weekly_rollups(
     _login(client)
     _seed_dashboard_state(client)
 
-    response = client.get(
-        "/api/v1/dashboard?range=custom&from=2026-01-01&to=2026-03-14"
-    )
+    response = client.get("/api/v1/dashboard?range=custom&from=2026-01-01&to=2026-03-14")
 
     assert response.status_code == 200
     body = response.json()

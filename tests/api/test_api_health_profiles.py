@@ -32,15 +32,11 @@ def _login(
     email: str = "member@example.com",
     password: str = "member-pass",
 ) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
-def _meal_upload(
-    client: TestClient, *, color: tuple[int, int, int] = (120, 210, 90)
-) -> None:
+def _meal_upload(client: TestClient, *, color: tuple[int, int, int] = (120, 210, 90)) -> None:
     img = Image.new("RGB", (64, 64), color=color)
     buf = BytesIO()
     img.save(buf, format="JPEG")
@@ -128,9 +124,7 @@ def test_daily_suggestions_use_profile_history_and_snapshot(
                 "locale": "en-SG",
                 "daily_sodium_limit_mg": 1500,
                 "daily_sugar_limit_g": 24,
-                "conditions": [
-                    {"name": "Type 2 Diabetes", "severity": "High"}
-                ],
+                "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
                 "medications": [
                     {
                         "name": "Metformin",

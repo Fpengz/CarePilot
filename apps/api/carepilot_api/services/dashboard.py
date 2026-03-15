@@ -101,13 +101,9 @@ def _resolve_range(
     }
     if range_key == "custom":
         if from_date is None or to_date is None:
-            raise HTTPException(
-                status_code=400, detail="custom range requires from and to"
-            )
+            raise HTTPException(status_code=400, detail="custom range requires from and to")
         if from_date > to_date:
-            raise HTTPException(
-                status_code=400, detail="from must be before to"
-            )
+            raise HTTPException(status_code=400, detail="from must be before to")
         return _ResolvedRange(
             key="custom",
             label="Custom Range",
@@ -116,9 +112,7 @@ def _resolve_range(
             bucket=_resolve_bucket(key="custom", start=from_date, end=to_date),
         )
     if range_key not in presets:
-        raise HTTPException(
-            status_code=400, detail="unsupported dashboard range"
-        )
+        raise HTTPException(status_code=400, detail="unsupported dashboard range")
     label, days = presets[range_key]
     start = anchor - timedelta(days=days - 1)
     return _ResolvedRange(
@@ -175,10 +169,7 @@ def _series_windows(current: _ResolvedRange) -> list[datetime]:
         return [anchor + timedelta(hours=hour) for hour in range(24)]
     if current.bucket == "day":
         anchor = current.start
-        return [
-            _start_of_day(anchor + timedelta(days=offset))
-            for offset in range(current.days)
-        ]
+        return [_start_of_day(anchor + timedelta(days=offset)) for offset in range(current.days)]
 
     windows: list[datetime] = []
     cursor = _start_of_day(_start_of_week(current.start))
@@ -195,19 +186,11 @@ def _filter_profiles(
     start: date,
     end: date,
 ) -> list[NutritionRiskProfile]:
-    return [
-        item
-        for item in profiles
-        if start <= item.captured_at.astimezone(UTC).date() <= end
-    ]
+    return [item for item in profiles if start <= item.captured_at.astimezone(UTC).date() <= end]
 
 
 def _filter_events(
-    events: (
-        list[MedicationAdherenceEvent]
-        | list[ReminderEvent]
-        | list[ValidatedMealEvent]
-    ),
+    events: (list[MedicationAdherenceEvent] | list[ReminderEvent] | list[ValidatedMealEvent]),
     *,
     start: date,
     end: date,
@@ -272,15 +255,11 @@ def _build_calorie_chart(
             bucket_end=_bucket_end(start, bucket),
             label=_bucket_label(start, bucket),
             value=round(totals.get(start, 0.0), 2),
-            target=round(
-                calorie_target if bucket != "week" else calorie_target * 7, 2
-            ),
+            target=round(calorie_target if bucket != "week" else calorie_target * 7, 2),
         )
         for start in windows
     ]
-    return DashboardMetricChartResponse(
-        title="Daily Calorie Intake", bucket=bucket, points=points
-    )
+    return DashboardMetricChartResponse(title="Daily Calorie Intake", bucket=bucket, points=points)
 
 
 def _build_macro_chart(
@@ -309,9 +288,7 @@ def _build_macro_chart(
         )
         for start in windows
     ]
-    return DashboardMacroChartResponse(
-        title="Nutrition Balance", bucket=bucket, points=points
-    )
+    return DashboardMacroChartResponse(title="Nutrition Balance", bucket=bucket, points=points)
 
 
 def _build_risk_chart(
@@ -321,9 +298,7 @@ def _build_risk_chart(
 ) -> DashboardMetricChartResponse:
     grouped: dict[datetime, list[float]] = defaultdict(list)
     for item in profiles:
-        grouped[_bucket_start(item.captured_at, bucket)].append(
-            _risk_score(item)
-        )
+        grouped[_bucket_start(item.captured_at, bucket)].append(_risk_score(item))
     points = [
         DashboardSeriesPointResponse(
             bucket_start=start,
@@ -333,9 +308,7 @@ def _build_risk_chart(
         )
         for start in windows
     ]
-    return DashboardMetricChartResponse(
-        title="Glycemic Risk Trend", bucket=bucket, points=points
-    )
+    return DashboardMetricChartResponse(title="Glycemic Risk Trend", bucket=bucket, points=points)
 
 
 def _build_adherence_chart(
@@ -343,9 +316,7 @@ def _build_adherence_chart(
     bucket: DashboardBucket,
     events: list[MedicationAdherenceEvent],
 ) -> DashboardMetricChartResponse:
-    grouped: dict[datetime, dict[str, int]] = defaultdict(
-        lambda: {"taken": 0, "total": 0}
-    )
+    grouped: dict[datetime, dict[str, int]] = defaultdict(lambda: {"taken": 0, "total": 0})
     for item in events:
         bucket_key = _bucket_start(item.scheduled_at, bucket)
         grouped[bucket_key]["total"] += 1
@@ -354,9 +325,7 @@ def _build_adherence_chart(
     points = []
     for start in windows:
         data = grouped.get(start, {"taken": 0, "total": 0})
-        rate = (
-            (data["taken"] / data["total"]) * 100.0 if data["total"] else 0.0
-        )
+        rate = (data["taken"] / data["total"]) * 100.0 if data["total"] else 0.0
         points.append(
             DashboardSeriesPointResponse(
                 bucket_start=start,
@@ -366,9 +335,7 @@ def _build_adherence_chart(
                 target=90.0,
             )
         )
-    return DashboardMetricChartResponse(
-        title="Medication Adherence", bucket=bucket, points=points
-    )
+    return DashboardMetricChartResponse(title="Medication Adherence", bucket=bucket, points=points)
 
 
 def _build_meal_timing_chart(
@@ -378,19 +345,13 @@ def _build_meal_timing_chart(
     for meal in meals:
         counts[meal.captured_at.astimezone(UTC).hour] += 1
     bins = [
-        DashboardMealTimingBinResponse(
-            hour=hour, label=f"{hour:02d}:00", count=count
-        )
+        DashboardMealTimingBinResponse(hour=hour, label=f"{hour:02d}:00", count=count)
         for hour, count in enumerate(counts)
     ]
-    return DashboardMealTimingChartResponse(
-        title="Meal Timing Distribution", bins=bins
-    )
+    return DashboardMealTimingChartResponse(title="Meal Timing Distribution", bins=bins)
 
 
-def _average_daily_calories(
-    profiles: list[NutritionRiskProfile], days: int
-) -> float:
+def _average_daily_calories(profiles: list[NutritionRiskProfile], days: int) -> float:
     if days <= 0:
         return 0.0
     return sum(item.calories for item in profiles) / days
@@ -407,9 +368,7 @@ def _latest_value(readings: list[BiomarkerReading], name: str) -> float | None:
     filtered = [item for item in readings if item.name.lower() == name.lower()]
     if not filtered:
         return None
-    filtered.sort(
-        key=lambda item: item.measured_at or datetime.min.replace(tzinfo=UTC)
-    )
+    filtered.sort(key=lambda item: item.measured_at or datetime.min.replace(tzinfo=UTC))
     return float(filtered[-1].value)
 
 
@@ -424,22 +383,14 @@ def _build_summary(
     days: int,
 ) -> DashboardSummaryResponse:
     avg_daily_calories = _average_daily_calories(current_profiles, days)
-    previous_daily_calories = _average_daily_calories(
-        previous_profiles, max(days, 1)
-    )
+    previous_daily_calories = _average_daily_calories(previous_profiles, max(days, 1))
     calorie_score = max(
         0.0,
-        100.0
-        - (abs(avg_daily_calories - calorie_target) / calorie_target * 100.0),
+        100.0 - (abs(avg_daily_calories - calorie_target) / calorie_target * 100.0),
     )
     previous_calorie_score = max(
         0.0,
-        100.0
-        - (
-            abs(previous_daily_calories - calorie_target)
-            / calorie_target
-            * 100.0
-        ),
+        100.0 - (abs(previous_daily_calories - calorie_target) / calorie_target * 100.0),
     )
     calorie_delta = round(calorie_score - previous_calorie_score, 2)
 
@@ -450,28 +401,16 @@ def _build_summary(
     risk_values = [_risk_score(item) for item in current_profiles]
     previous_risk_values = [_risk_score(item) for item in previous_profiles]
     risk_avg = mean(risk_values) if risk_values else 0.0
-    previous_risk_avg = (
-        mean(previous_risk_values) if previous_risk_values else 0.0
-    )
+    previous_risk_avg = mean(previous_risk_values) if previous_risk_values else 0.0
     risk_delta = round(risk_avg - previous_risk_avg, 2)
-    risk_status = (
-        "stable" if risk_avg < 40 else "watch" if risk_avg < 60 else "elevated"
-    )
+    risk_status = "stable" if risk_avg < 40 else "watch" if risk_avg < 60 else "elevated"
 
     hba1c = _latest_value(readings, "hba1c")
     calorie_variance = (
-        abs(avg_daily_calories - calorie_target) / calorie_target
-        if calorie_target
-        else 0.0
+        abs(avg_daily_calories - calorie_target) / calorie_target if calorie_target else 0.0
     )
-    stability = max(
-        0.0, 100.0 - (calorie_variance * 50.0) - (100.0 - adherence_pct) * 0.4
-    )
-    stability_status = (
-        "steady"
-        if stability >= 75
-        else "watch" if stability >= 55 else "fragile"
-    )
+    stability = max(0.0, 100.0 - (calorie_variance * 50.0) - (100.0 - adherence_pct) * 0.4)
+    stability_status = "steady" if stability >= 75 else "watch" if stability >= 55 else "fragile"
 
     return DashboardSummaryResponse(
         nutrition_goal_score=DashboardSummaryMetricResponse(
@@ -597,16 +536,12 @@ def _build_insights(
         recommendations.append(
             "Trim the highest-calorie meal by 10-15% rather than cutting across the whole day."
         )
-        key_drivers.append(
-            "Average calorie intake is running above the configured target."
-        )
+        key_drivers.append("Average calorie intake is running above the configured target.")
     if not recommendations:
         recommendations.append(
             "Keep the current cadence and review deeper analytics only if the trend turns for two consecutive weeks."
         )
-        key_drivers.append(
-            "Nutrition and adherence are both inside the steady zone."
-        )
+        key_drivers.append("Nutrition and adherence are both inside the steady zone.")
     return DashboardInsightsResponse(
         recommendations=recommendations[:3], key_drivers=key_drivers[:3]
     )
@@ -620,32 +555,22 @@ def get_dashboard_overview(
     from_date: date | None = None,
     to_date: date | None = None,
 ) -> DashboardOverviewResponse:
-    current = _resolve_range(
-        range_key=range_key, from_date=from_date, to_date=to_date
-    )
+    current = _resolve_range(range_key=range_key, from_date=from_date, to_date=to_date)
     comparison = _comparison_range(current)
 
     profile = context.stores.profiles.get_health_profile(user_id)
-    calorie_target = _calorie_target(
-        profile if isinstance(profile, HealthProfileRecord) else None
-    )
+    calorie_target = _calorie_target(profile if isinstance(profile, HealthProfileRecord) else None)
 
     all_profiles = context.stores.meals.list_nutrition_risk_profiles(user_id)
-    all_adherence = (
-        context.stores.medications.list_medication_adherence_events(
-            user_id=user_id, limit=1000
-        )
+    all_adherence = context.stores.medications.list_medication_adherence_events(
+        user_id=user_id, limit=1000
     )
     all_reminders = context.stores.reminders.list_reminder_events(user_id)
     all_meals = context.stores.meals.list_validated_meal_events(user_id)
     readings = context.stores.biomarkers.list_biomarker_readings(user_id)
 
-    current_profiles = _filter_profiles(
-        all_profiles, start=current.start, end=current.end
-    )
-    previous_profiles = _filter_profiles(
-        all_profiles, start=comparison.start, end=comparison.end
-    )
+    current_profiles = _filter_profiles(all_profiles, start=current.start, end=current.end)
+    previous_profiles = _filter_profiles(all_profiles, start=comparison.start, end=comparison.end)
     current_adherence = _filter_events(
         all_adherence,
         start=current.start,
@@ -686,21 +611,15 @@ def get_dashboard_overview(
             calorie_target=calorie_target,
         ),
         macros=_build_macro_chart(windows, current.bucket, current_profiles),
-        glycemic_risk=_build_risk_chart(
-            windows, current.bucket, current_profiles
-        ),
-        adherence=_build_adherence_chart(
-            windows, current.bucket, current_adherence
-        ),
+        glycemic_risk=_build_risk_chart(windows, current.bucket, current_profiles),
+        adherence=_build_adherence_chart(windows, current.bucket, current_adherence),
         meal_timing=_build_meal_timing_chart(current_meals),
     )
     return DashboardOverviewResponse(
         range=current.to_response(),
         comparison_range=comparison.to_response(),
         summary=summary,
-        alerts=_build_alerts(
-            summary=summary, reminders=current_reminders, readings=readings
-        ),
+        alerts=_build_alerts(summary=summary, reminders=current_reminders, readings=readings),
         charts=charts,
         insights=_build_insights(
             summary=summary,

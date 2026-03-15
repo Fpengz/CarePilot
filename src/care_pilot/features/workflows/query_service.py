@@ -30,9 +30,7 @@ class WorkflowRunSummary:
     event_count: int
 
 
-def list_workflow_runs(
-    *, event_timeline: EventTimelineService
-) -> list[WorkflowRunSummary]:
+def list_workflow_runs(*, event_timeline: EventTimelineService) -> list[WorkflowRunSummary]:
     events = event_timeline.get_events()
     by_correlation: dict[str, WorkflowRunSummary] = {}
     for event in events:
@@ -74,9 +72,7 @@ def replay_workflow(
     event_timeline: EventTimelineService,
     correlation_id: str,
 ) -> WorkflowExecutionResult:
-    events: list[WorkflowTimelineEvent] = event_timeline.get_events(
-        correlation_id=correlation_id
-    )
+    events: list[WorkflowTimelineEvent] = event_timeline.get_events(correlation_id=correlation_id)
     request_id = events[0].request_id if events else str(uuid4())
     user_id = events[0].user_id if events else None
     return WorkflowExecutionResult(

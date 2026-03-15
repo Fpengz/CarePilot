@@ -55,9 +55,7 @@ SYSTEM_PROMPT = (
 class FoodRoute(BaseRoute):
     """Enriches food and nutrition queries with live web search results."""
 
-    def __init__(
-        self, *, search_agent: SearchAgent, inference_engine: InferenceEngine
-    ) -> None:
+    def __init__(self, *, search_agent: SearchAgent, inference_engine: InferenceEngine) -> None:
         self._sa = search_agent
         self._retriever = FoodInfoRetriever(n_results=4)
         self._engine = inference_engine
@@ -90,9 +88,7 @@ class FoodRoute(BaseRoute):
         # ── Local ChromaDB lookup ──────────────────────────────────────
         local_context = self._retriever.format_for_context(text)
         if local_context:
-            self._logger.info(
-                "chat_food_local_context chars=%s", len(local_context)
-            )
+            self._logger.info("chat_food_local_context chars=%s", len(local_context))
         else:
             self._logger.info("chat_food_local_context_empty")
 

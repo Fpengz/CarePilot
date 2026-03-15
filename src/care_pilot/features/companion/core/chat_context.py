@@ -53,25 +53,17 @@ def format_chat_context(
         f"Reminder response rate: {snapshot.reminder_response_rate:.2f}",
     ]
     if snapshot.adherence_rate is not None:
-        lines.append(
-            f"Medication adherence rate: {snapshot.adherence_rate:.2f}"
-        )
+        lines.append(f"Medication adherence rate: {snapshot.adherence_rate:.2f}")
     if snapshot.symptom_count:
         lines.append(
             f"Symptoms logged: {snapshot.symptom_count} (avg severity {snapshot.average_symptom_severity:.1f})"
         )
     if snapshot.active_risk_flags:
-        lines.append(
-            f"Active risk flags: {', '.join(snapshot.active_risk_flags)}"
-        )
+        lines.append(f"Active risk flags: {', '.join(snapshot.active_risk_flags)}")
 
     if snapshot.biomarker_summary:
-        biomarker_items = list(snapshot.biomarker_summary.items())[
-            :max_biomarkers
-        ]
-        biomarker_text = ", ".join(
-            f"{key}={value}" for key, value in biomarker_items
-        )
+        biomarker_items = list(snapshot.biomarker_summary.items())[:max_biomarkers]
+        biomarker_text = ", ".join(f"{key}={value}" for key, value in biomarker_items)
         lines.append(f"Biomarkers: {biomarker_text}")
 
     if health_profile is not None:
@@ -79,64 +71,38 @@ def format_chat_context(
             lines.append(f"Age: {health_profile.age}")
         if health_profile.conditions:
             condition_names = [
-                getattr(item, "name", str(item))
-                for item in health_profile.conditions
+                getattr(item, "name", str(item)) for item in health_profile.conditions
             ]
-            lines.append(
-                f"Profile conditions: {_join_or_none(condition_names)}"
-            )
+            lines.append(f"Profile conditions: {_join_or_none(condition_names)}")
         if health_profile.medications:
             medication_names = [
-                getattr(item, "name", str(item))
-                for item in health_profile.medications
+                getattr(item, "name", str(item)) for item in health_profile.medications
             ]
-            lines.append(
-                f"Profile medications: {_join_or_none(medication_names)}"
-            )
+            lines.append(f"Profile medications: {_join_or_none(medication_names)}")
         if health_profile.allergies:
-            lines.append(
-                f"Allergies: {_join_or_none(health_profile.allergies)}"
-            )
+            lines.append(f"Allergies: {_join_or_none(health_profile.allergies)}")
         if health_profile.nutrition_goals:
-            lines.append(
-                f"Nutrition goals: {_join_or_none(health_profile.nutrition_goals)}"
-            )
+            lines.append(f"Nutrition goals: {_join_or_none(health_profile.nutrition_goals)}")
         if health_profile.preferred_cuisines:
-            lines.append(
-                f"Preferred cuisines: {_join_or_none(health_profile.preferred_cuisines)}"
-            )
+            lines.append(f"Preferred cuisines: {_join_or_none(health_profile.preferred_cuisines)}")
         if health_profile.disliked_ingredients:
             lines.append(
                 f"Disliked ingredients: {_join_or_none(health_profile.disliked_ingredients)}"
             )
         if health_profile.macro_focus:
-            lines.append(
-                f"Macro focus: {_join_or_none(health_profile.macro_focus)}"
-            )
-        lines.append(
-            f"Daily sodium limit: {int(health_profile.daily_sodium_limit_mg)} mg"
-        )
-        lines.append(
-            f"Daily sugar limit: {int(health_profile.daily_sugar_limit_g)} g"
-        )
-        lines.append(
-            f"Daily protein target: {int(health_profile.daily_protein_target_g)} g"
-        )
-        lines.append(
-            f"Daily fiber target: {int(health_profile.daily_fiber_target_g)} g"
-        )
+            lines.append(f"Macro focus: {_join_or_none(health_profile.macro_focus)}")
+        lines.append(f"Daily sodium limit: {int(health_profile.daily_sodium_limit_mg)} mg")
+        lines.append(f"Daily sugar limit: {int(health_profile.daily_sugar_limit_g)} g")
+        lines.append(f"Daily protein target: {int(health_profile.daily_protein_target_g)} g")
+        lines.append(f"Daily fiber target: {int(health_profile.daily_fiber_target_g)} g")
         if health_profile.target_calories_per_day:
-            lines.append(
-                f"Target calories: {int(health_profile.target_calories_per_day)} kcal"
-            )
+            lines.append(f"Target calories: {int(health_profile.target_calories_per_day)} kcal")
         lines.append(f"Budget tier: {health_profile.budget_tier}")
 
     meal_lines: list[str] = []
     for record in recent_meals[-max_meals:]:
         nutrition = meal_nutrition(record)
-        meal_lines.append(
-            f"- {meal_display_name(record)} ({round(nutrition.calories)} kcal)"
-        )
+        meal_lines.append(f"- {meal_display_name(record)} ({round(nutrition.calories)} kcal)")
     if meal_lines:
         lines.append("Recent meals:")
         lines.extend(meal_lines)
@@ -145,14 +111,10 @@ def format_chat_context(
     if event_items:
         lines.append("Recent activity:")
         for event in event_items[-max_events:]:
-            workflow_name = (
-                f"{event.workflow_name} " if event.workflow_name else ""
-            )
+            workflow_name = f"{event.workflow_name} " if event.workflow_name else ""
             lines.append(f"- {workflow_name}{event.event_type}".strip())
 
-    tool_items = [
-        spec for spec in tool_specs or [] if getattr(spec, "name", None)
-    ]
+    tool_items = [spec for spec in tool_specs or [] if getattr(spec, "name", None)]
     if tool_items:
         lines.append("Available tools:")
         for spec in tool_items:

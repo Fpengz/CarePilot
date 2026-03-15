@@ -21,9 +21,7 @@ def build_profile_mode_medication_view(
         return {"due_now": sum(1 for r in reminders if r.status == "sent")}
     if profile_mode == "caregiver":
         return {"missed": sum(1 for r in reminders if r.status == "missed")}
-    return {
-        "acknowledged": sum(1 for r in reminders if r.status == "acknowledged")
-    }
+    return {"acknowledged": sum(1 for r in reminders if r.status == "acknowledged")}
 
 
 def build_profile_mode_report_advice_view(
@@ -48,9 +46,7 @@ def build_profile_mode_report_advice_view(
 def build_analytics_summary(
     metrics: EngagementMetrics, reminders: list[ReminderEvent]
 ) -> dict[str, float]:
-    acknowledged = sum(
-        1 for event in reminders if event.status == "acknowledged"
-    )
+    acknowledged = sum(1 for event in reminders if event.status == "acknowledged")
     return {
         "mcr": metrics.meal_confirmation_rate,
         "reminders_sent": float(metrics.reminders_sent),

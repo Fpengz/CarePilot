@@ -175,9 +175,7 @@ class SQLiteReminderRepository:
         if row is None:
             return None
 
-        payload = (
-            json.loads(row["payload_json"]) if row["payload_json"] else {}
-        )
+        payload = json.loads(row["payload_json"]) if row["payload_json"] else {}
         return {
             "id": row["id"],
             "user_id": row["user_id"],
@@ -235,18 +233,12 @@ class SQLiteReminderRepository:
                     "state": row["state"],
                     "scheduled_at": row["scheduled_at"],
                     "created_at": row["created_at"],
-                    "payload": (
-                        json.loads(row["payload_json"])
-                        if row["payload_json"]
-                        else {}
-                    ),
+                    "payload": (json.loads(row["payload_json"]) if row["payload_json"] else {}),
                 }
             )
         return result
 
-    def log_confirmation(
-        self, reminder_id: str, is_taken: bool, timestamp: str
-    ) -> None:
+    def log_confirmation(self, reminder_id: str, is_taken: bool, timestamp: str) -> None:
         with self._connect() as conn:
             conn.execute(
                 """
@@ -256,9 +248,7 @@ class SQLiteReminderRepository:
                 (reminder_id, int(is_taken), timestamp),
             )
 
-    def get_latest_confirmation(
-        self, reminder_id: str
-    ) -> Optional[dict[str, Any]]:
+    def get_latest_confirmation(self, reminder_id: str) -> Optional[dict[str, Any]]:
         with self._connect() as conn:
             row = conn.execute(
                 """
@@ -304,9 +294,7 @@ class SQLiteReminderRepository:
                 ),
             )
 
-    def get_last_metric_reading(
-        self, user_id: str, metric_type: str
-    ) -> Optional[dict[str, Any]]:
+    def get_last_metric_reading(self, user_id: str, metric_type: str) -> Optional[dict[str, Any]]:
         with self._connect() as conn:
             row = conn.execute(
                 """
@@ -329,11 +317,7 @@ class SQLiteReminderRepository:
             "unit": row["unit"],
             "measured_at": row["measured_at"],
             "source": row["source"],
-            "raw_payload": (
-                json.loads(row["raw_payload_json"])
-                if row["raw_payload_json"]
-                else {}
-            ),
+            "raw_payload": (json.loads(row["raw_payload_json"]) if row["raw_payload_json"] else {}),
         }
 
     def list_metric_readings(
@@ -375,9 +359,7 @@ class SQLiteReminderRepository:
                     "measured_at": row["measured_at"],
                     "source": row["source"],
                     "raw_payload": (
-                        json.loads(row["raw_payload_json"])
-                        if row["raw_payload_json"]
-                        else {}
+                        json.loads(row["raw_payload_json"]) if row["raw_payload_json"] else {}
                     ),
                 }
             )
@@ -435,9 +417,7 @@ class SQLiteReminderRepository:
         return {
             "user_id": row["user_id"],
             "meal_type": row["meal_type"],
-            "foods": (
-                json.loads(row["foods_json"]) if row["foods_json"] else []
-            ),
+            "foods": (json.loads(row["foods_json"]) if row["foods_json"] else []),
             "note": row["note"],
             "recorded_at": row["recorded_at"],
         }
@@ -476,11 +456,7 @@ class SQLiteReminderRepository:
                 {
                     "user_id": row["user_id"],
                     "meal_type": row["meal_type"],
-                    "foods": (
-                        json.loads(row["foods_json"])
-                        if row["foods_json"]
-                        else []
-                    ),
+                    "foods": (json.loads(row["foods_json"]) if row["foods_json"] else []),
                     "note": row["note"],
                     "recorded_at": row["recorded_at"],
                 }

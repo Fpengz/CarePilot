@@ -27,21 +27,11 @@ def _timeline_event_response(
         event_id=str(payload["event_id"]),
         event_type=str(payload["event_type"]),
         workflow_name=(
-            str(payload["workflow_name"])
-            if payload.get("workflow_name") is not None
-            else None
+            str(payload["workflow_name"]) if payload.get("workflow_name") is not None else None
         ),
-        request_id=(
-            str(payload["request_id"])
-            if payload.get("request_id") is not None
-            else None
-        ),
+        request_id=(str(payload["request_id"]) if payload.get("request_id") is not None else None),
         correlation_id=str(payload["correlation_id"]),
-        user_id=(
-            str(payload["user_id"])
-            if payload.get("user_id") is not None
-            else None
-        ),
+        user_id=(str(payload["user_id"]) if payload.get("user_id") is not None else None),
         payload=WorkflowTimelineEventPayloadResponse.model_validate(
             dict(payload.get("payload") or {})
         ),
@@ -67,21 +57,14 @@ def list_workflows(*, deps: WorkflowDeps) -> WorkflowListResponse:
     )
 
 
-def get_workflow(
-    *, deps: WorkflowDeps, correlation_id: str
-) -> WorkflowResponse:
-    workflow = replay_workflow(
-        event_timeline=deps.event_timeline, correlation_id=correlation_id
-    )
+def get_workflow(*, deps: WorkflowDeps, correlation_id: str) -> WorkflowResponse:
+    workflow = replay_workflow(event_timeline=deps.event_timeline, correlation_id=correlation_id)
     return WorkflowResponse(
         workflow_name=str(workflow.workflow_name),
         request_id=workflow.request_id,
         correlation_id=workflow.correlation_id,
         replayed=workflow.replayed,
-        timeline_events=[
-            _timeline_event_response(event)
-            for event in workflow.timeline_events
-        ],
+        timeline_events=[_timeline_event_response(event) for event in workflow.timeline_events],
     )
 
 

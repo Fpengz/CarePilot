@@ -46,9 +46,7 @@ SYSTEM_PROMPT = (
 class CodeRoute(BaseRoute):
     """Translates a math/calculation query to Python, runs it in E2B, returns context."""
 
-    def __init__(
-        self, *, agent: CodeAgent, inference_engine: InferenceEngine
-    ) -> None:
+    def __init__(self, *, agent: CodeAgent, inference_engine: InferenceEngine) -> None:
         self._agent = agent
         self._engine = inference_engine
         self._logger = get_logger(__name__)

@@ -34,19 +34,13 @@ class ReminderRepository(Protocol):
     def save_reminder(self, reminder: Reminder) -> None: ...
     def update_state(self, reminder_id: str, state: ReminderState) -> None: ...
     def get_reminder(self, reminder_id: str) -> Optional[dict[str, Any]]: ...
-    def log_confirmation(
-        self, reminder_id: str, is_taken: bool, timestamp: str
-    ) -> None: ...
+    def log_confirmation(self, reminder_id: str, is_taken: bool, timestamp: str) -> None: ...
 
 
 class OutboxRepository(Protocol):
     def enqueue(self, event: ReminderEvent) -> None: ...
-    def fetch_due_events(
-        self, now: str, limit: int = 50
-    ) -> list[ReminderEvent]: ...
-    def mark_sent(
-        self, event_id: str, provider_msg_id: Optional[str] = None
-    ) -> None: ...
+    def fetch_due_events(self, now: str, limit: int = 50) -> list[ReminderEvent]: ...
+    def mark_sent(self, event_id: str, provider_msg_id: Optional[str] = None) -> None: ...
     def mark_failed(self, event_id: str, reason: str) -> None: ...
 
 
@@ -113,9 +107,7 @@ class ReminderService:
             correlation_id=correlation_id,
         )
         self.outbox_repo.enqueue(event)
-        self.reminder_repo.update_state(
-            reminder.reminder_id, ReminderState.ENQUEUED
-        )
+        self.reminder_repo.update_state(reminder.reminder_id, ReminderState.ENQUEUED)
         reminder.mark(ReminderState.ENQUEUED)
         return reminder
 
@@ -155,9 +147,7 @@ class ReminderService:
         )
         return template.format(
             dose=dose,
-            drug=drug_info.get(
-                "drug_name_cn", drug_info.get("drug_name_en", "未命名药物")
-            ),
+            drug=drug_info.get("drug_name_cn", drug_info.get("drug_name_en", "未命名药物")),
         )
 
     def schedule_medication_task(
@@ -184,9 +174,7 @@ class ReminderService:
             payload={
                 "drug_query": drug_query,
                 "drug_name": drug_info.get("drug_name_cn", drug_query),
-                "timing_logic": drug_info.get("timing", {}).get(
-                    "relation_to_meal_cn", ""
-                ),
+                "timing_logic": drug_info.get("timing", {}).get("relation_to_meal_cn", ""),
                 "safety_note": drug_info.get("special_notes", ""),
                 "custom_dose": custom_dose or "",
             },
@@ -207,9 +195,7 @@ class ReminderService:
         channel: Optional[str] = None,
     ) -> Optional[Reminder]:
         metric_enum = (
-            metric_type
-            if isinstance(metric_type, MetricType)
-            else MetricType(metric_type)
+            metric_type if isinstance(metric_type, MetricType) else MetricType(metric_type)
         )
         rule = custom_rule or DEFAULT_THRESHOLD_RULES.get(metric_enum)
         measured_at = measured_at or utc_now_iso()
@@ -267,9 +253,7 @@ class ReminderService:
         channel: Optional[str] = None,
     ) -> Reminder:
         metric_enum = (
-            metric_type
-            if isinstance(metric_type, MetricType)
-            else MetricType(metric_type)
+            metric_type if isinstance(metric_type, MetricType) else MetricType(metric_type)
         )
         metric_cn = self._metric_label_cn(metric_enum)
         message = f"请进行{metric_cn}测量，并记录结果。"
@@ -300,13 +284,9 @@ class ReminderService:
         channel: Optional[str] = None,
     ) -> Optional[Reminder]:
         metric_enum = (
-            metric_type
-            if isinstance(metric_type, MetricType)
-            else MetricType(metric_type)
+            metric_type if isinstance(metric_type, MetricType) else MetricType(metric_type)
         )
-        last_reading = self.metric_repo.get_last_metric_reading(
-            user_id, metric_enum.value
-        )
+        last_reading = self.metric_repo.get_last_metric_reading(user_id, metric_enum.value)
         now = datetime.now(timezone.utc)
 
         if not last_reading:
@@ -429,19 +409,14 @@ class ReminderService:
             for interaction in interactions:
                 interaction_norm = interaction.lower().strip()
 
-                if (
-                    food_norm in interaction_norm
-                    or interaction_norm in food_norm
-                ):
+                if food_norm in interaction_norm or interaction_norm in food_norm:
                     return {
                         "type": "RISK_BLOCK",
                         "warning": f"⚠️ 警告: 您正在服用 {drug_info.get('drug_name_cn', med)}。",
                         "detail": interaction,
                     }
 
-                matches = difflib.get_close_matches(
-                    food_norm, [interaction_norm], n=1, cutoff=0.6
-                )
+                matches = difflib.get_close_matches(food_norm, [interaction_norm], n=1, cutoff=0.6)
                 if matches:
                     return {
                         "type": "RISK_BLOCK_FUZZY",
@@ -451,13 +426,9 @@ class ReminderService:
         return None
 
     def confirm_task(self, *, reminder_id: str, is_taken: bool) -> bool:
-        return self.confirm_medication_intake(
-            reminder_id=reminder_id, is_taken=is_taken
-        )
+        return self.confirm_medication_intake(reminder_id=reminder_id, is_taken=is_taken)
 
-    def confirm_medication_intake(
-        self, *, reminder_id: str, is_taken: bool
-    ) -> bool:
+    def confirm_medication_intake(self, *, reminder_id: str, is_taken: bool) -> bool:
         now_str = utc_now_iso()
         self.reminder_repo.log_confirmation(reminder_id, is_taken, now_str)
         new_state = ReminderState.ACKED if is_taken else ReminderState.IGNORED
@@ -477,19 +448,11 @@ class ReminderService:
         for event in events:
             result = self.delivery.send(event)
             if result.success:
-                self.outbox_repo.mark_sent(
-                    event.event_id, result.provider_msg_id
-                )
-                self.reminder_repo.update_state(
-                    event.reminder_id, ReminderState.SENT
-                )
+                self.outbox_repo.mark_sent(event.event_id, result.provider_msg_id)
+                self.reminder_repo.update_state(event.reminder_id, ReminderState.SENT)
             else:
-                self.outbox_repo.mark_failed(
-                    event.event_id, result.error or "unknown error"
-                )
-                self.reminder_repo.update_state(
-                    event.reminder_id, ReminderState.FAILED
-                )
+                self.outbox_repo.mark_failed(event.event_id, result.error or "unknown error")
+                self.reminder_repo.update_state(event.reminder_id, ReminderState.FAILED)
             results.append(result)
 
         return results

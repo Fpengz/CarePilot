@@ -1,4 +1,5 @@
 """Recommendations domain: food catalog, preferences, substitutions, and suggestion bundles."""
+
 # ruff: noqa: F401
 from .models import (
     AgentProfileState,

@@ -27,13 +27,9 @@ def _parse_hhmm(value: str) -> time:
     return time(hour=int(hour), minute=int(minute))
 
 
-def _combine_local(
-    *, target_date: date, value: str, timezone_name: str
-) -> datetime:
+def _combine_local(*, target_date: date, value: str, timezone_name: str) -> datetime:
     local = datetime.combine(target_date, _parse_hhmm(value))
-    return local.replace(tzinfo=ZoneInfo(timezone_name)).astimezone(
-        ZoneInfo("UTC")
-    )
+    return local.replace(tzinfo=ZoneInfo(timezone_name)).astimezone(ZoneInfo("UTC"))
 
 
 def schedule_rule_from_regimen(
@@ -49,9 +45,7 @@ def schedule_rule_from_regimen(
             metadata={"frequency_type": regimen.frequency_type},
         )
 
-    primary_slot: MealSlot | None = (
-        regimen.slot_scope[0] if regimen.slot_scope else None
-    )
+    primary_slot: MealSlot | None = regimen.slot_scope[0] if regimen.slot_scope else None
     direction = "before" if regimen.timing_type == "pre_meal" else "after"
     return ReminderScheduleRule(
         pattern="meal_relative",
@@ -71,19 +65,14 @@ def schedule_rule_from_regimen(
 
 def definition_from_regimen(regimen: MedicationRegimen) -> ReminderDefinition:
     summary = (
-        regimen.instructions_text
-        or f"{regimen.medication_name} {regimen.dosage_text}".strip()
+        regimen.instructions_text or f"{regimen.medication_name} {regimen.dosage_text}".strip()
     )
     return ReminderDefinition(
         id=str(uuid4()),
         user_id=regimen.user_id,
         regimen_id=regimen.id,
         reminder_type="medication",
-        source=(
-            "manual"
-            if regimen.source_type == "manual"
-            else regimen.source_type
-        ),
+        source=("manual" if regimen.source_type == "manual" else regimen.source_type),
         title=f"Take {regimen.medication_name}".strip(),
         body=summary,
         medication_name=regimen.medication_name,
@@ -115,15 +104,9 @@ def occurrences_for_definition(
 ) -> list[ReminderOccurrence]:
     if not definition.active:
         return []
-    if (
-        definition.schedule.start_date
-        and target_date < definition.schedule.start_date
-    ):
+    if definition.schedule.start_date and target_date < definition.schedule.start_date:
         return []
-    if (
-        definition.schedule.end_date
-        and target_date > definition.schedule.end_date
-    ):
+    if definition.schedule.end_date and target_date > definition.schedule.end_date:
         return []
 
     timezone_name = definition.schedule.timezone or definition.timezone
@@ -138,10 +121,7 @@ def occurrences_for_definition(
                 )
             )
     elif definition.schedule.pattern == "one_time":
-        if (
-            definition.schedule.start_date
-            and definition.schedule.start_date != target_date
-        ):
+        if definition.schedule.start_date and definition.schedule.start_date != target_date:
             return []
         for item in definition.schedule.times:
             trigger_times.append(
@@ -168,14 +148,8 @@ def occurrences_for_definition(
         interval = definition.schedule.interval_hours or 0
         if interval <= 0:
             return []
-        anchor = (
-            definition.schedule.times[0]
-            if definition.schedule.times
-            else "08:00"
-        )
-        cursor = _combine_local(
-            target_date=target_date, value=anchor, timezone_name=timezone_name
-        )
+        anchor = definition.schedule.times[0] if definition.schedule.times else "08:00"
+        cursor = _combine_local(target_date=target_date, value=anchor, timezone_name=timezone_name)
         end_of_day = _combine_local(
             target_date=target_date + timedelta(days=1),
             value="00:00",
@@ -189,19 +163,11 @@ def occurrences_for_definition(
         slot_scope = (
             list(raw_scope)
             if isinstance(raw_scope, list) and raw_scope
-            else (
-                [definition.schedule.meal_slot]
-                if definition.schedule.meal_slot
-                else []
-            )
+            else ([definition.schedule.meal_slot] if definition.schedule.meal_slot else [])
         )
         for slot in slot_scope:
             meal_window = next(
-                (
-                    item
-                    for item in user_profile.meal_schedule
-                    if item.slot == slot
-                ),
+                (item for item in user_profile.meal_schedule if item.slot == slot),
                 None,
             )
             anchor = DEFAULT_ANCHORS.get(str(slot), "08:00")

@@ -82,15 +82,11 @@ def generate_from_report(
     correlation_id: str | None,
 ) -> SuggestionGenerateFromReportResponse:
     def build_user_profile(session_payload: dict[str, object]):
-        return build_user_profile_from_session(
-            session_payload, context.stores.profiles
-        )
+        return build_user_profile_from_session(session_payload, context.stores.profiles)
 
     try:
         saved = generate_suggestion_from_report(
-            repository=cast(
-                SuggestionRepositoryPort, context.stores.recommendations
-            ),
+            repository=cast(SuggestionRepositoryPort, context.stores.recommendations),
             clinical_memory=context.clinical_memory,
             session=session,
             text=payload.text,
@@ -99,14 +95,10 @@ def generate_from_report(
             build_user_profile=cast(BuildUserProfileFn, build_user_profile),
             event_timeline=context.event_timeline,
         )
-    except (
-        Exception
-    ) as exc:  # pragma: no cover - covered by mapped branches below
+    except Exception as exc:  # pragma: no cover - covered by mapped branches below
         _raise_for_suggestions_error(exc)
         raise
-    return SuggestionGenerateFromReportResponse(
-        suggestion=_to_suggestion_response(saved)
-    )
+    return SuggestionGenerateFromReportResponse(suggestion=_to_suggestion_response(saved))
 
 
 def list_for_session(
@@ -119,9 +111,7 @@ def list_for_session(
 ) -> SuggestionListResponse:
     try:
         raw_items = list_suggestions_for_session(
-            repository=cast(
-                SuggestionRepositoryPort, context.stores.recommendations
-            ),
+            repository=cast(SuggestionRepositoryPort, context.stores.recommendations),
             household_store=cast(HouseholdStorePort, context.household_store),
             session=session,
             scope=scope,
@@ -131,9 +121,7 @@ def list_for_session(
     except Exception as exc:  # pragma: no cover
         _raise_for_suggestions_error(exc)
         raise
-    return SuggestionListResponse(
-        items=[_to_suggestion_response(item) for item in raw_items]
-    )
+    return SuggestionListResponse(items=[_to_suggestion_response(item) for item in raw_items])
 
 
 def get_for_session(
@@ -145,9 +133,7 @@ def get_for_session(
 ) -> SuggestionDetailResponse:
     try:
         item = get_suggestion_for_session(
-            repository=cast(
-                SuggestionRepositoryPort, context.stores.recommendations
-            ),
+            repository=cast(SuggestionRepositoryPort, context.stores.recommendations),
             household_store=cast(HouseholdStorePort, context.household_store),
             session=session,
             scope=scope,

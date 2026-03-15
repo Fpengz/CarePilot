@@ -38,15 +38,11 @@ def alerts_trigger(
     )
 
 
-@router.get(
-    "/api/v1/alerts/{alert_id}/timeline", response_model=AlertTimelineResponse
-)
+@router.get("/api/v1/alerts/{alert_id}/timeline", response_model=AlertTimelineResponse)
 def alerts_timeline(
     alert_id: str,
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> AlertTimelineResponse:
     require_action(session, "alerts.timeline.read")
-    return get_alert_timeline(
-        deps=alert_deps(get_context(request)), alert_id=alert_id
-    )
+    return get_alert_timeline(deps=alert_deps(get_context(request)), alert_id=alert_id)

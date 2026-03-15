@@ -55,9 +55,7 @@ class AlertRepositoryProtocol(Protocol):
         attempt_count: int | None = None,
     ) -> None: ...
 
-    def list_alert_records(
-        self, alert_id: str | None = None
-    ) -> list[OutboxRecord]: ...
+    def list_alert_records(self, alert_id: str | None = None) -> list[OutboxRecord]: ...
 
 
 class ReminderNotificationRepository(Protocol):
@@ -96,9 +94,7 @@ class ReminderNotificationRepository(Protocol):
 
     def enqueue_alert(self, message: AlertMessage) -> list[OutboxRecord]: ...
 
-    def cancel_scheduled_notifications_for_reminder(
-        self, reminder_id: str
-    ) -> int: ...
+    def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int: ...
 
     def list_scheduled_notifications(
         self,

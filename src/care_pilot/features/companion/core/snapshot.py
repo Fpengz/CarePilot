@@ -56,9 +56,7 @@ def _adherence_rate(events: list[MedicationAdherenceEvent]) -> float | None:
 def _reminder_response_rate(reminders: list[ReminderEvent]) -> float:
     if not reminders:
         return 0.0
-    responded = sum(
-        1 for item in reminders if item.meal_confirmation in {"yes", "no"}
-    )
+    responded = sum(1 for item in reminders if item.meal_confirmation in {"yes", "no"})
     return round(responded / len(reminders), 4)
 
 
@@ -84,11 +82,7 @@ def build_case_snapshot(
         if clinical_snapshot is not None
         else {item.name: float(item.value) for item in biomarker_readings}
     )
-    active_risk_flags = (
-        list(clinical_snapshot.risk_flags)
-        if clinical_snapshot is not None
-        else []
-    )
+    active_risk_flags = list(clinical_snapshot.risk_flags) if clinical_snapshot is not None else []
     if any(item.safety.decision == "escalate" for item in symptoms):
         active_risk_flags.append("symptom_escalation")
     adherence_rate = _adherence_rate(adherence_events)

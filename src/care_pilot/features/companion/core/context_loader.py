@@ -54,9 +54,7 @@ def _subject_user_id(session: dict[str, object]) -> str:
     return str(session["user_id"])
 
 
-def _clinical_snapshot(
-    context: AppContext, *, user_id: str
-) -> ClinicalProfileSnapshot | None:
+def _clinical_snapshot(context: AppContext, *, user_id: str) -> ClinicalProfileSnapshot | None:
     cached = context.clinical_memory.get(user_id)
     if cached is not None:
         return cached
@@ -68,27 +66,19 @@ def _clinical_snapshot(
     return snapshot
 
 
-def _emotion_signal(
-    context: AppContext, *, emotion_text: str | None
-) -> str | None:
+def _emotion_signal(context: AppContext, *, emotion_text: str | None) -> str | None:
     if not emotion_text:
         return None
     try:
         result = context.emotion_agent.infer_text(text=emotion_text)
     except Exception:
         lowered = emotion_text.lower()
-        if any(
-            term in lowered
-            for term in ("stress", "stressed", "worried", "anxious")
-        ):
+        if any(term in lowered for term in ("stress", "stressed", "worried", "anxious")):
             return "anxious"
-        if any(
-            term in lowered
-            for term in ("sad", "discouraged", "down", "frustrated")
-        ):
+        if any(term in lowered for term in ("sad", "discouraged", "down", "frustrated")):
             return "sad"
         return None
-    return str(result.fusion.emotion_label)
+    return str(result.final_emotion)
 
 
 def load_companion_inputs(
@@ -101,25 +91,15 @@ def load_companion_inputs(
     subject_user_id = _subject_user_id(session)
     subject_session = dict(session)
     subject_session["user_id"] = subject_user_id
-    user_profile = build_user_profile_from_session(
-        subject_session, context.stores.profiles
-    )
-    health_profile = context.stores.profiles.get_health_profile(
-        subject_user_id
-    )
+    user_profile = build_user_profile_from_session(subject_session, context.stores.profiles)
+    health_profile = context.stores.profiles.get_health_profile(subject_user_id)
     meals = context.stores.meals.list_meal_records(subject_user_id)
     reminders = context.stores.reminders.list_reminder_events(subject_user_id)
-    adherence_events = (
-        context.stores.medications.list_medication_adherence_events(
-            user_id=subject_user_id
-        )
+    adherence_events = context.stores.medications.list_medication_adherence_events(
+        user_id=subject_user_id
     )
-    symptoms = context.stores.symptoms.list_symptom_checkins(
-        user_id=subject_user_id, limit=200
-    )
-    readings = context.stores.biomarkers.list_biomarker_readings(
-        subject_user_id
-    )
+    symptoms = context.stores.symptoms.list_symptom_checkins(user_id=subject_user_id, limit=200)
+    readings = context.stores.biomarkers.list_biomarker_readings(subject_user_id)
     clinical_snapshot = _clinical_snapshot(context, user_id=subject_user_id)
     emotion_signal = _emotion_signal(context, emotion_text=emotion_text)
     return CompanionStateInputs(
@@ -146,9 +126,7 @@ def build_workflow_response(
         correlation_id=correlation_id,
         replayed=False,
         timeline_events=[
-            WorkflowTimelineEventResponse.model_validate(
-                item.model_dump(mode="json")
-            )
+            WorkflowTimelineEventResponse.model_validate(item.model_dump(mode="json"))
             for item in timeline
         ],
     )
@@ -164,18 +142,12 @@ def get_companion_today(
         evidence_retriever=_EVIDENCE_RETRIEVER,
     )
     return CompanionTodayResponse(
-        snapshot=CompanionSnapshotResponse.model_validate(
-            snapshot.model_dump(mode="json")
-        ),
-        engagement=CompanionEngagementResponse.model_validate(
-            engagement.model_dump(mode="json")
-        ),
+        snapshot=CompanionSnapshotResponse.model_validate(snapshot.model_dump(mode="json")),
+        engagement=CompanionEngagementResponse.model_validate(engagement.model_dump(mode="json")),
         care_plan=CompanionCarePlanResponse.model_validate(
             result.care_plan.model_dump(mode="json")
         ),
-        impact=ImpactSummaryPayloadResponse.model_validate(
-            impact.model_dump(mode="json")
-        ),
+        impact=ImpactSummaryPayloadResponse.model_validate(impact.model_dump(mode="json")),
     )
 
 
@@ -231,9 +203,7 @@ def handle_companion_interaction(
         interaction=CompanionInteractionInfoResponse.model_validate(
             interaction.model_dump(mode="json")
         ),
-        snapshot=CompanionSnapshotResponse.model_validate(
-            result.snapshot.model_dump(mode="json")
-        ),
+        snapshot=CompanionSnapshotResponse.model_validate(result.snapshot.model_dump(mode="json")),
         engagement=CompanionEngagementResponse.model_validate(
             result.engagement.model_dump(mode="json")
         ),
@@ -243,9 +213,7 @@ def handle_companion_interaction(
         clinician_digest_preview=ClinicianDigestResponse.model_validate(
             result.clinician_digest_preview.model_dump(mode="json")
         ),
-        impact=ImpactSummaryPayloadResponse.model_validate(
-            result.impact.model_dump(mode="json")
-        ),
+        impact=ImpactSummaryPayloadResponse.model_validate(result.impact.model_dump(mode="json")),
         workflow=build_workflow_response(
             context=context,
             correlation_id=correlation_id,
@@ -263,24 +231,18 @@ def get_clinician_digest(
         inputs=inputs, evidence_retriever=_EVIDENCE_RETRIEVER
     )
     return ClinicianDigestEnvelopeResponse(
-        digest=ClinicianDigestResponse.model_validate(
-            digest.model_dump(mode="json")
-        )
+        digest=ClinicianDigestResponse.model_validate(digest.model_dump(mode="json"))
     )
 
 
-def get_impact_summary(
-    *, context: AppContext, session: dict[str, object]
-) -> ImpactSummaryResponse:
+def get_impact_summary(*, context: AppContext, session: dict[str, object]) -> ImpactSummaryResponse:
     """Build the impact-summary projection for the active session."""
     inputs = load_companion_inputs(context=context, session=session)
     _, _, _, _, impact, _ = build_companion_today_bundle(
         inputs=inputs, evidence_retriever=_EVIDENCE_RETRIEVER
     )
     return ImpactSummaryResponse(
-        summary=ImpactSummaryPayloadResponse.model_validate(
-            impact.model_dump(mode="json")
-        )
+        summary=ImpactSummaryPayloadResponse.model_validate(impact.model_dump(mode="json"))
     )
 
 

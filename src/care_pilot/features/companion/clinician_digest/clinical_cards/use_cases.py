@@ -43,9 +43,7 @@ def _resolve_date_window(
     payload: ClinicalCardGenerateRequest,
 ) -> tuple[date, date]:
     end_date = _parse_date(payload.end_date) or date.today()
-    start_date = _parse_date(payload.start_date) or (
-        end_date - timedelta(days=6)
-    )
+    start_date = _parse_date(payload.start_date) or (end_date - timedelta(days=6))
     if start_date > end_date:
         raise build_api_error(
             status_code=400,
@@ -79,53 +77,32 @@ def generate_clinical_card_for_session(
 ) -> ClinicalCardEnvelopeResponse:
     start_date, end_date = _resolve_date_window(payload)
     meal_records = deps.stores.meals.list_meal_records(user_id)
-    biomarker_readings = deps.stores.biomarkers.list_biomarker_readings(
-        user_id
-    )
-    symptom_items = deps.stores.symptoms.list_symptom_checkins(
-        user_id=user_id, limit=500
-    )
-    adherence_items = deps.stores.medications.list_medication_adherence_events(
-        user_id=user_id
-    )
+    biomarker_readings = deps.stores.biomarkers.list_biomarker_readings(user_id)
+    symptom_items = deps.stores.symptoms.list_symptom_checkins(user_id=user_id, limit=500)
+    adherence_items = deps.stores.medications.list_medication_adherence_events(user_id=user_id)
 
     in_window_meals = [
-        item
-        for item in meal_records
-        if start_date <= item.captured_at.date() <= end_date
+        item for item in meal_records if start_date <= item.captured_at.date() <= end_date
     ]
     in_window_symptoms = [
-        item
-        for item in symptom_items
-        if start_date <= item.recorded_at.date() <= end_date
+        item for item in symptom_items if start_date <= item.recorded_at.date() <= end_date
     ]
     in_window_adherence = [
-        item
-        for item in adherence_items
-        if start_date <= item.scheduled_at.date() <= end_date
+        item for item in adherence_items if start_date <= item.scheduled_at.date() <= end_date
     ]
     in_window_biomarkers = [
         item
         for item in biomarker_readings
-        if item.measured_at is not None
-        and start_date <= item.measured_at.date() <= end_date
+        if item.measured_at is not None and start_date <= item.measured_at.date() <= end_date
     ]
 
-    calories_now = sum(
-        float(item.meal_state.nutrition.calories) for item in in_window_meals
-    )
-    previous_start = start_date - timedelta(
-        days=(end_date - start_date).days + 1
-    )
+    calories_now = sum(float(item.meal_state.nutrition.calories) for item in in_window_meals)
+    previous_start = start_date - timedelta(days=(end_date - start_date).days + 1)
     previous_end = start_date - timedelta(days=1)
     prev_meals = [
-        item
-        for item in meal_records
-        if previous_start <= item.captured_at.date() <= previous_end
+        item for item in meal_records if previous_start <= item.captured_at.date() <= previous_end
     ]
-    calories_prev = sum(
-        float(item.meal_state.nutrition.calories) for item in prev_meals
-    )
+    calories_prev = sum(float(item.meal_state.nutrition.calories) for item in prev_meals)
     deltas = {
         "meal_count_delta": float(len(in_window_meals) - len(prev_meals)),
         "calories_delta": round(calories_now - calories_prev, 4),
@@ -139,12 +116,8 @@ def generate_clinical_card_for_session(
         "biomarker:hba1c",
         biomarker_points(biomarker_readings, biomarker_name="hba1c"),
     )
-    calorie_trend = build_metric_trend(
-        "meal:calories", meal_calorie_points(meal_records)
-    )
-    adherence_trend = build_metric_trend(
-        "adherence:rate", adherence_rate_points(adherence_items)
-    )
+    calorie_trend = build_metric_trend("meal:calories", meal_calorie_points(meal_records))
+    adherence_trend = build_metric_trend("adherence:rate", adherence_rate_points(adherence_items))
 
     sections = {
         "subjective": (
@@ -199,12 +172,8 @@ def list_clinical_cards_for_session(
     user_id: str,
     limit: int,
 ) -> ClinicalCardListResponse:
-    items = deps.stores.clinical_cards.list_clinical_cards(
-        user_id=user_id, limit=limit
-    )
-    return ClinicalCardListResponse(
-        items=[_to_response(item) for item in items]
-    )
+    items = deps.stores.clinical_cards.list_clinical_cards(user_id=user_id, limit=limit)
+    return ClinicalCardListResponse(items=[_to_response(item) for item in items])
 
 
 def get_clinical_card_for_session(
@@ -213,9 +182,7 @@ def get_clinical_card_for_session(
     user_id: str,
     card_id: str,
 ) -> ClinicalCardEnvelopeResponse:
-    item = deps.stores.clinical_cards.get_clinical_card(
-        user_id=user_id, card_id=card_id
-    )
+    item = deps.stores.clinical_cards.get_clinical_card(user_id=user_id, card_id=card_id)
     if item is None:
         raise build_api_error(
             status_code=404,

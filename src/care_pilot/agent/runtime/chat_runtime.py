@@ -43,9 +43,7 @@ def build_chat_runtime_config(settings: AppSettings) -> ChatRuntimeConfig:
     api_key = chat_settings.api_key or settings.llm.openai.api_key or ""
     timeout_seconds = float(settings.llm.openai.request_timeout_seconds)
     stream_max_retries = getattr(chat_settings, "stream_max_retries", 2)
-    stream_backoff_seconds = getattr(
-        chat_settings, "stream_backoff_seconds", 0.5
-    )
+    stream_backoff_seconds = getattr(chat_settings, "stream_backoff_seconds", 0.5)
     return ChatRuntimeConfig(
         api_key=api_key,
         base_url=str(chat_settings.base_url),
@@ -112,9 +110,7 @@ class ChatStreamRuntime:
     def _safe_preview(text: str, *, limit: int = 160) -> str:
         preview = text[:limit].replace("\n", " ")
         preview = re.sub(r"[0-9]", "x", preview)
-        preview = re.sub(
-            r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview
-        )
+        preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
         return preview
 
     def _normalize_messages_for_sealion(
@@ -131,11 +127,7 @@ class ChatStreamRuntime:
             return messages, False, None
 
         system_context = "\n\n".join(system_chunks)
-        non_system = [
-            message
-            for message in normalized
-            if message.get("role") != "system"
-        ]
+        non_system = [message for message in normalized if message.get("role") != "system"]
         if not non_system:
             non_system = [
                 {
@@ -150,9 +142,7 @@ class ChatStreamRuntime:
                 first = non_system[0]
             existing = str(first.get("content") or "")
             prefix = f"[System context]\n{system_context}"
-            first["content"] = (
-                f"{prefix}\n\n{existing}" if existing else prefix
-            )
+            first["content"] = f"{prefix}\n\n{existing}" if existing else prefix
         preview = self._safe_preview(system_context)
         return (
             cast(list[ChatCompletionMessageParam], non_system),
@@ -160,9 +150,7 @@ class ChatStreamRuntime:
             preview,
         )
 
-    def _log_request(
-        self, *, model: str, messages: list[ChatCompletionMessageParam]
-    ) -> None:
+    def _log_request(self, *, model: str, messages: list[ChatCompletionMessageParam]) -> None:
         if not messages:
             return
         first = messages[0]
@@ -184,15 +172,11 @@ class ChatStreamRuntime:
             self._safe_preview(content),
         )
 
-    async def complete(
-        self, *, messages: list[dict[str, Any]], model_id: str | None = None
-    ) -> str:
+    async def complete(self, *, messages: list[dict[str, Any]], model_id: str | None = None) -> str:
         model = model_id or self._config.model_id
         typed_messages = cast(list[ChatCompletionMessageParam], messages)
         if self._requires_user_only_payload(model):
-            typed_messages, applied, preview = (
-                self._normalize_messages_for_sealion(typed_messages)
-            )
+            typed_messages, applied, preview = self._normalize_messages_for_sealion(typed_messages)
             if applied:
                 logger.info(
                     "chat_payload_normalized applied=%s model=%s preview=%s",
@@ -222,9 +206,7 @@ class ChatStreamRuntime:
         applied = False
         preview: str | None = None
         if self._requires_user_only_payload(model):
-            typed_messages, applied, preview = (
-                self._normalize_messages_for_sealion(typed_messages)
-            )
+            typed_messages, applied, preview = self._normalize_messages_for_sealion(typed_messages)
             if applied:
                 logger.info(
                     "chat_payload_normalized applied=%s model=%s preview=%s",
@@ -242,11 +224,7 @@ class ChatStreamRuntime:
                 )
                 aggregated = ""
                 async for chunk in stream:
-                    token = (
-                        (chunk.choices[0].delta.content or "")
-                        if chunk.choices
-                        else ""
-                    )
+                    token = (chunk.choices[0].delta.content or "") if chunk.choices else ""
                     if token:
                         aggregated += token
                         yield token
@@ -276,6 +254,4 @@ class ChatStreamRuntime:
                     attempts,
                     exc,
                 )
-                await asyncio.sleep(
-                    self._config.stream_backoff_seconds * attempt
-                )
+                await asyncio.sleep(self._config.stream_backoff_seconds * attempt)

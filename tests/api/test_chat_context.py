@@ -58,9 +58,7 @@ def test_format_chat_context_includes_profile_and_meals() -> None:
         portion_size=PortionSize.STANDARD,
     )
     meals = [
-        MealRecognitionRecord(
-            id="m1", user_id="u1", source="chat", meal_state=meal_state
-        ),
+        MealRecognitionRecord(id="m1", user_id="u1", source="chat", meal_state=meal_state),
     ]
 
     context = format_chat_context(snapshot=snapshot, recent_meals=meals)
@@ -97,9 +95,7 @@ def test_format_chat_context_includes_tool_summary() -> None:
     )
     tool = _ToolSummary(name="trigger_alert", purpose="Send a safety alert")
 
-    context = format_chat_context(
-        snapshot=snapshot, recent_meals=[], tool_specs=[tool]
-    )
+    context = format_chat_context(snapshot=snapshot, recent_meals=[], tool_specs=[tool])
 
     assert "Available tools:" in context
     assert "trigger_alert" in context
@@ -135,9 +131,7 @@ def test_format_chat_context_includes_recent_activity() -> None:
         ),
     ]
 
-    context = format_chat_context(
-        snapshot=snapshot, recent_meals=[], recent_events=events
-    )
+    context = format_chat_context(snapshot=snapshot, recent_meals=[], recent_events=events)
 
     assert "Recent activity:" in context
     assert "meal_analysis" in context
@@ -179,9 +173,7 @@ def test_format_chat_context_includes_health_profile_details() -> None:
         budget_tier="budget",
     )
 
-    context = format_chat_context(
-        snapshot=snapshot, recent_meals=[], health_profile=profile
-    )
+    context = format_chat_context(snapshot=snapshot, recent_meals=[], health_profile=profile)
 
     assert "Age: 67" in context
     assert "Allergies: peanuts" in context

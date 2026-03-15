@@ -18,9 +18,7 @@ from care_pilot.features.meals.domain.models import (
 class MealRecognitionRecord(BaseModel):
     id: str
     user_id: str
-    captured_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     source: str
     meal_state: MealState
     meal_perception: MealPerception | None = None

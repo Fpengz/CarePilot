@@ -83,9 +83,7 @@ class OutboxWorker:
             "wechat": WeChatSink(),
         }
 
-    async def process_once(
-        self, alert_id: str | None = None
-    ) -> list[AlertDeliveryResult]:
+    async def process_once(self, alert_id: str | None = None) -> list[AlertDeliveryResult]:
         now = datetime.now(timezone.utc)
         leased = self._repository.lease_alert_records(
             now=now,
@@ -105,9 +103,7 @@ class OutboxWorker:
         tasks = [self._deliver_record(record) for record in leased]
         return await asyncio.gather(*tasks)
 
-    async def _deliver_record(
-        self, record: OutboxRecord
-    ) -> AlertDeliveryResult:
+    async def _deliver_record(self, record: OutboxRecord) -> AlertDeliveryResult:
         sink = self._sinks.get(record.sink)
         if sink is None:
             self._sync_reminder_notification_dead_letter(
@@ -139,9 +135,7 @@ class OutboxWorker:
             created_at=record.created_at,
         )
         attempt = record.attempt_count + 1
-        self._sync_reminder_notification_processing(
-            record=record, attempt=attempt
-        )
+        self._sync_reminder_notification_processing(record=record, attempt=attempt)
         logger.info(
             "alert_delivery_attempt alert_id=%s sink=%s attempt=%s",
             record.alert_id,
@@ -170,9 +164,7 @@ class OutboxWorker:
             self._repository.mark_alert_delivered(
                 record.alert_id, record.sink, attempt_count=attempt
             )
-            self._sync_reminder_notification_delivered(
-                record=record, attempt=attempt
-            )
+            self._sync_reminder_notification_delivered(record=record, attempt=attempt)
             logger.info(
                 "alert_delivery_success alert_id=%s sink=%s attempt=%s",
                 record.alert_id,
@@ -203,9 +195,7 @@ class OutboxWorker:
             return result.model_copy(update={"attempt": attempt})
 
         delay_seconds = (2**attempt) + random.randint(0, 2)
-        next_attempt = datetime.now(timezone.utc) + timedelta(
-            seconds=delay_seconds
-        )
+        next_attempt = datetime.now(timezone.utc) + timedelta(seconds=delay_seconds)
         self._sync_reminder_notification_retry(
             record=record,
             attempt=attempt,
@@ -231,14 +221,10 @@ class OutboxWorker:
 
     # --- reminder notification lifecycle sync helpers ---
 
-    def _sync_reminder_notification_processing(
-        self, *, record: OutboxRecord, attempt: int
-    ) -> None:
+    def _sync_reminder_notification_processing(self, *, record: OutboxRecord, attempt: int) -> None:
         if record.type != "reminder_notification":
             return
-        mark_processing = getattr(
-            self._repository, "mark_scheduled_notification_processing", None
-        )
+        mark_processing = getattr(self._repository, "mark_scheduled_notification_processing", None)
         append_log = getattr(self._repository, "append_notification_log", None)
         if callable(mark_processing):
             mark_processing(record.alert_id, attempt)
@@ -261,14 +247,10 @@ class OutboxWorker:
                 )
             )
 
-    def _sync_reminder_notification_delivered(
-        self, *, record: OutboxRecord, attempt: int
-    ) -> None:
+    def _sync_reminder_notification_delivered(self, *, record: OutboxRecord, attempt: int) -> None:
         if record.type != "reminder_notification":
             return
-        mark_delivered = getattr(
-            self._repository, "mark_scheduled_notification_delivered", None
-        )
+        mark_delivered = getattr(self._repository, "mark_scheduled_notification_delivered", None)
         append_log = getattr(self._repository, "append_notification_log", None)
         if callable(mark_delivered):
             mark_delivered(record.alert_id, attempt)
@@ -301,9 +283,7 @@ class OutboxWorker:
     ) -> None:
         if record.type != "reminder_notification":
             return
-        reschedule = getattr(
-            self._repository, "reschedule_scheduled_notification", None
-        )
+        reschedule = getattr(self._repository, "reschedule_scheduled_notification", None)
         append_log = getattr(self._repository, "append_notification_log", None)
         if callable(reschedule):
             reschedule(
@@ -342,9 +322,7 @@ class OutboxWorker:
     ) -> None:
         if record.type != "reminder_notification":
             return
-        dead_letter = getattr(
-            self._repository, "mark_scheduled_notification_dead_letter", None
-        )
+        dead_letter = getattr(self._repository, "mark_scheduled_notification_dead_letter", None)
         append_log = getattr(self._repository, "append_notification_log", None)
         if callable(dead_letter):
             dead_letter(record.alert_id, attempt_count=attempt, error=error)

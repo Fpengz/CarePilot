@@ -36,9 +36,7 @@ class AuthUserRecord:
 
 def _pbkdf2_hash(password: str, *, salt: bytes | None = None) -> str:
     salt = salt or os.urandom(16)
-    digest = hashlib.pbkdf2_hmac(
-        "sha256", password.encode("utf-8"), salt, 200_000
-    )
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 200_000)
     return (
         "pbkdf2_sha256$200000$"
         + base64.b64encode(salt).decode()
@@ -57,9 +55,7 @@ def _pbkdf2_verify(password: str, encoded: str) -> bool:
         expected = base64.b64decode(digest_b64.encode())
     except Exception:
         return False
-    actual = hashlib.pbkdf2_hmac(
-        "sha256", password.encode("utf-8"), salt, iterations
-    )
+    actual = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
     return hmac.compare_digest(actual, expected)
 
 
@@ -83,16 +79,10 @@ class InMemoryAuthStore:
         self._hasher = PasswordHasher(settings.auth.password_hash_scheme)
         self._demo_defaults = build_demo_user_seeds(settings)
         self._session_ttl_seconds = int(settings.auth.session_ttl_seconds)
-        self._login_max_failed_attempts = int(
-            settings.auth.login_max_failed_attempts
-        )
-        self._login_failure_window_seconds = int(
-            settings.auth.login_failure_window_seconds
-        )
+        self._login_max_failed_attempts = int(settings.auth.login_max_failed_attempts)
+        self._login_failure_window_seconds = int(settings.auth.login_failure_window_seconds)
         self._login_lockout_seconds = int(settings.auth.login_lockout_seconds)
-        self._auth_audit_events_max_entries = int(
-            settings.auth.audit_events_max_entries
-        )
+        self._auth_audit_events_max_entries = int(settings.auth.audit_events_max_entries)
         self._users_by_email: dict[str, AuthUserRecord] = {}
         self._sessions: dict[str, dict[str, Any]] = {}
         self._login_failures: dict[str, dict[str, Any]] = {}
@@ -163,9 +153,7 @@ class InMemoryAuthStore:
             return False
         if lockout_until.tzinfo is None:
             lockout_until = lockout_until.replace(tzinfo=timezone.utc)
-        if datetime.now(timezone.utc) >= lockout_until.astimezone(
-            timezone.utc
-        ):
+        if datetime.now(timezone.utc) >= lockout_until.astimezone(timezone.utc):
             state["lockout_until"] = None
             state["failed_count"] = 0
             state["window_started_at"] = None
@@ -188,9 +176,7 @@ class InMemoryAuthStore:
             try:
                 window_started = datetime.fromisoformat(window_started_raw)
                 if window_started.tzinfo is None:
-                    window_started = window_started.replace(
-                        tzinfo=timezone.utc
-                    )
+                    window_started = window_started.replace(tzinfo=timezone.utc)
                 reset_window = (
                     now - window_started.astimezone(timezone.utc)
                 ).total_seconds() > self._login_failure_window_seconds
@@ -201,9 +187,7 @@ class InMemoryAuthStore:
             state["window_started_at"] = now.isoformat()
         current_failed_count_raw = state.get("failed_count", 0)
         current_failed_count = (
-            current_failed_count_raw
-            if isinstance(current_failed_count_raw, int)
-            else 0
+            current_failed_count_raw if isinstance(current_failed_count_raw, int) else 0
         )
         state["failed_count"] = current_failed_count + 1
         state["lockout_until"] = None
@@ -238,9 +222,7 @@ class InMemoryAuthStore:
         if len(self._auth_audit_events) > self._auth_audit_events_max_entries:
             del self._auth_audit_events[self._auth_audit_events_max_entries :]
 
-    def list_auth_audit_events(
-        self, *, limit: int = 50
-    ) -> list[dict[str, Any]]:
+    def list_auth_audit_events(self, *, limit: int = 50) -> list[dict[str, Any]]:
         bounded = max(1, min(int(limit), 200))
         return [dict(item) for item in self._auth_audit_events[:bounded]]
 
@@ -289,9 +271,7 @@ class InMemoryAuthStore:
         if not self._hasher.verify(current_password, user.password_hash):
             return (False, 0)
         user.password_hash = self._hasher.hash(new_password)
-        revoked_count = self.revoke_other_sessions(
-            user_id, keep_session_id=keep_session_id
-        )
+        revoked_count = self.revoke_other_sessions(user_id, keep_session_id=keep_session_id)
         return (True, revoked_count)
 
     def create_session(self, user: AuthUserRecord) -> dict[str, Any]:
@@ -346,9 +326,7 @@ class InMemoryAuthStore:
             if str(resolved.get("user_id")) != user_id:
                 continue
             items.append(resolved)
-        items.sort(
-            key=lambda item: str(item.get("issued_at", "")), reverse=True
-        )
+        items.sort(key=lambda item: str(item.get("issued_at", "")), reverse=True)
         return items
 
     def get_session_owner(self, session_id: str) -> str | None:
@@ -358,9 +336,7 @@ class InMemoryAuthStore:
         user_id = session.get("user_id")
         return str(user_id) if isinstance(user_id, str) else None
 
-    def revoke_other_sessions(
-        self, user_id: str, *, keep_session_id: str
-    ) -> int:
+    def revoke_other_sessions(self, user_id: str, *, keep_session_id: str) -> int:
         revoked = 0
         for session in self.list_sessions_for_user(user_id):
             session_id = str(session.get("session_id", ""))

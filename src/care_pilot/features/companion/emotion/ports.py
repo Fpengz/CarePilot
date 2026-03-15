@@ -59,14 +59,10 @@ class FusionPort(Protocol):
 
 
 class EmotionInferencePort(Protocol):
-    def infer_text(
-        self, payload: EmotionTextAgentInput
-    ) -> EmotionInferenceResult:
+    def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
         """Infer emotion labels from text input."""
 
-    def infer_speech(
-        self, payload: EmotionSpeechAgentInput
-    ) -> EmotionInferenceResult:
+    def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
         """Infer emotion labels from speech/audio input."""
 
     def health(self) -> EmotionRuntimeHealth:

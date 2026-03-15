@@ -87,17 +87,13 @@ class ReminderWorkerConfig:
             db_path=db_path,
             drug_knowledge_dir=drug_knowledge_dir,
             channel=os.getenv("REMINDER_DEFAULT_CHANNEL", "telegram"),
-            poll_interval_seconds=_env_int(
-                "REMINDER_WORKER_POLL_INTERVAL_SECONDS", 15
-            ),
+            poll_interval_seconds=_env_int("REMINDER_WORKER_POLL_INTERVAL_SECONDS", 15),
             batch_size=_env_int("REMINDER_WORKER_BATCH_SIZE", 50),
             telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
             telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", ""),
             telegram_dev_mode=_env_bool("TELEGRAM_DEV_MODE", True),
             log_level=os.getenv("REMINDER_WORKER_LOG_LEVEL", "INFO"),
-            use_empty_knowledge_fallback=_env_bool(
-                "REMINDER_USE_EMPTY_KNOWLEDGE_FALLBACK", True
-            ),
+            use_empty_knowledge_fallback=_env_bool("REMINDER_USE_EMPTY_KNOWLEDGE_FALLBACK", True),
         )
 
 
@@ -128,9 +124,7 @@ def build_knowledge_repository(config: ReminderWorkerConfig):
         )
         return EmptyDrugKnowledgeRepository()
 
-    raise FileNotFoundError(
-        f"Drug knowledge directory does not exist: {knowledge_dir}"
-    )
+    raise FileNotFoundError(f"Drug knowledge directory does not exist: {knowledge_dir}")
 
 
 def build_service(config: ReminderWorkerConfig) -> ReminderService:
@@ -188,9 +182,7 @@ class ReminderWorker:
             self.config.batch_size,
         )
 
-        results = self.service.dispatch_due_events(
-            limit=self.config.batch_size
-        )
+        results = self.service.dispatch_due_events(limit=self.config.batch_size)
 
         total = len(results)
         success_count = sum(1 for r in results if r.success)

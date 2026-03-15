@@ -56,18 +56,12 @@ async def run_reminder_scheduler_once(
     worker = OutboxWorker(
         repo,
         max_attempts=settings.workers.alert_worker_max_attempts,
-        concurrency=max(
-            settings.workers.alert_worker_concurrency, len(queued)
-        ),
+        concurrency=max(settings.workers.alert_worker_concurrency, len(queued)),
     )
     results = []
     if queued:
         for item in queued:
-            results.extend(
-                await worker.process_once(
-                    alert_id=item.scheduled_notification_id
-                )
-            )
+            results.extend(await worker.process_once(alert_id=item.scheduled_notification_id))
     else:
         results = await worker.process_once()
     logger.info(
@@ -75,9 +69,7 @@ async def run_reminder_scheduler_once(
         len(queued),
         len(results),
     )
-    return ReminderSchedulerRunResult(
-        queued_count=len(queued), delivery_attempts=len(results)
-    )
+    return ReminderSchedulerRunResult(queued_count=len(queued), delivery_attempts=len(results))
 
 
 async def run_reminder_scheduler_loop() -> None:
@@ -90,9 +82,7 @@ async def run_reminder_scheduler_loop() -> None:
     )
     while True:
         await run_reminder_scheduler_once()
-        await asyncio.sleep(
-            settings.workers.reminder_scheduler_interval_seconds
-        )
+        await asyncio.sleep(settings.workers.reminder_scheduler_interval_seconds)
 
 
 __all__ = [

@@ -12,9 +12,7 @@ from care_pilot.agent.emotion.schemas import (
 
 
 class TimelineContextFeatureExtractor(ContextFeaturePort):
-    def __init__(
-        self, event_timeline: object, history_window: int = 5
-    ) -> None:
+    def __init__(self, event_timeline: object, history_window: int = 5) -> None:
         """
         :param event_timeline: An EventTimelineService instance.
         :param history_window: Number of recent events to consider.
@@ -32,11 +30,7 @@ class TimelineContextFeatureExtractor(ContextFeaturePort):
         # Assuming event_timeline.get_events(user_id) -> Iterable[TimelineEvent]
         all_events = getattr(self._timeline, "get_events")(user_id=user_id)
 
-        history = [
-            e
-            for e in all_events
-            if getattr(e, "event_type", "") == "emotion_observed"
-        ]
+        history = [e for e in all_events if getattr(e, "event_type", "") == "emotion_observed"]
         history = sorted(history, key=lambda e: getattr(e, "created_at"))
         recent = history[-self._history_window :]
 

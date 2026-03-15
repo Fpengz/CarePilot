@@ -115,9 +115,7 @@ def list_household_members_for_user(
     *, household_store: HouseholdStorePort, household_id: str, user_id: str
 ) -> list[dict[str, Any]]:
     try:
-        ensure_household_member(
-            household_store, household_id=household_id, user_id=user_id
-        )
+        ensure_household_member(household_store, household_id=household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     return household_store.list_members(household_id)
@@ -127,16 +125,12 @@ def create_household_invite_for_owner(
     *, household_store: HouseholdStorePort, household_id: str, user_id: str
 ) -> dict[str, Any]:
     try:
-        ensure_household_owner(
-            household_store, household_id=household_id, user_id=user_id
-        )
+        ensure_household_owner(household_store, household_id=household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     except HouseholdAccessForbiddenError:
         raise HouseholdForbiddenError
-    return household_store.create_invite(
-        household_id=household_id, created_by_user_id=user_id
-    )
+    return household_store.create_invite(household_id=household_id, created_by_user_id=user_id)
 
 
 def join_household_by_code(
@@ -148,9 +142,7 @@ def join_household_by_code(
 ) -> HouseholdBundle:
     if household_store.get_household_for_user(user_id) is not None:
         raise HouseholdMembershipConflictError
-    result = household_store.join_by_invite(
-        code=code, user_id=user_id, display_name=display_name
-    )
+    result = household_store.join_by_invite(code=code, user_id=user_id, display_name=display_name)
     if result is None:
         raise HouseholdInviteInvalidError
     household, joined = result
@@ -170,9 +162,7 @@ def remove_household_member_for_owner(
     target_user_id: str,
 ) -> None:
     try:
-        ensure_household_owner(
-            household_store, household_id=household_id, user_id=actor_user_id
-        )
+        ensure_household_owner(household_store, household_id=household_id, user_id=actor_user_id)
     except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     except HouseholdAccessForbiddenError:
@@ -185,9 +175,7 @@ def remove_household_member_for_owner(
         raise HouseholdNotFoundError
     if target_role == "owner":
         raise HouseholdForbiddenError
-    removed = household_store.remove_member(
-        household_id=household_id, user_id=target_user_id
-    )
+    removed = household_store.remove_member(household_id=household_id, user_id=target_user_id)
     if not removed:
         raise HouseholdNotFoundError
 
@@ -196,16 +184,12 @@ def leave_household_for_member(
     *, household_store: HouseholdStorePort, household_id: str, user_id: str
 ) -> None:
     try:
-        role = ensure_household_member(
-            household_store, household_id=household_id, user_id=user_id
-        )
+        role = ensure_household_member(household_store, household_id=household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     if role == "owner":
         raise HouseholdOwnerLeaveForbiddenError
-    removed = household_store.remove_member(
-        household_id=household_id, user_id=user_id
-    )
+    removed = household_store.remove_member(household_id=household_id, user_id=user_id)
     if not removed:
         raise HouseholdNotFoundError
 
@@ -218,21 +202,15 @@ def rename_household_for_owner(
     name: str,
 ) -> HouseholdBundle:
     try:
-        ensure_household_owner(
-            household_store, household_id=household_id, user_id=actor_user_id
-        )
+        ensure_household_owner(household_store, household_id=household_id, user_id=actor_user_id)
     except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     except HouseholdAccessForbiddenError:
         raise HouseholdForbiddenError
-    household = household_store.rename_household(
-        household_id=household_id, name=name
-    )
+    household = household_store.rename_household(household_id=household_id, name=name)
     if household is None:
         raise HouseholdNotFoundError
-    return HouseholdBundle(
-        household=household, members=household_store.list_members(household_id)
-    )
+    return HouseholdBundle(household=household, members=household_store.list_members(household_id))
 
 
 def validate_active_household_for_user(
@@ -244,9 +222,7 @@ def validate_active_household_for_user(
     if household_id is None:
         return None
     try:
-        ensure_household_member(
-            household_store, household_id=household_id, user_id=user_id
-        )
+        ensure_household_member(household_store, household_id=household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
         raise HouseholdNotFoundError
     return household_id
@@ -285,11 +261,7 @@ def household_bundle_response(
 ) -> HouseholdBundleResponse:
     """Wrap household and membership state into the common bundle response."""
     return HouseholdBundleResponse(
-        household=(
-            household_response(bundle_household)
-            if bundle_household is not None
-            else None
-        ),
+        household=(household_response(bundle_household) if bundle_household is not None else None),
         members=[household_member_response(item) for item in members],
         active_household_id=active_household_id,
     )
@@ -317,9 +289,7 @@ def map_household_error(
     not_found_message: str = "household not found",
 ) -> None:
     """Translate household-domain exceptions into API errors."""
-    if isinstance(
-        exc, HouseholdAlreadyExistsError | HouseholdMembershipConflictError
-    ):
+    if isinstance(exc, HouseholdAlreadyExistsError | HouseholdMembershipConflictError):
         raise build_api_error(
             status_code=409,
             code="households.membership_conflict",
@@ -436,9 +406,7 @@ def get_current_household(
     active_household_id: str | None,
 ) -> HouseholdBundleResponse:
     """Fetch the caller's current household and member roster."""
-    bundle = get_current_household_bundle(
-        household_store=context.household_store, user_id=user_id
-    )
+    bundle = get_current_household_bundle(household_store=context.household_store, user_id=user_id)
     return household_bundle_response(
         bundle.household,
         bundle.members,
@@ -473,9 +441,7 @@ def set_active_household(
             code="auth.invalid_session",
             message="invalid session",
         )
-    return HouseholdActiveUpdateResponse(
-        active_household_id=active_household_id
-    )
+    return HouseholdActiveUpdateResponse(active_household_id=active_household_id)
 
 
 def list_household_members(
@@ -494,9 +460,7 @@ def list_household_members(
     except Exception as exc:
         map_household_error(exc)
         raise
-    return HouseholdMembersResponse(
-        members=[household_member_response(item) for item in members]
-    )
+    return HouseholdMembersResponse(members=[household_member_response(item) for item in members])
 
 
 def rename_household(
@@ -548,9 +512,7 @@ def create_household_invite(
     except Exception as exc:
         map_household_error(exc)
         raise
-    return HouseholdInviteCreateResponse(
-        invite=household_invite_response(invite)
-    )
+    return HouseholdInviteCreateResponse(invite=household_invite_response(invite))
 
 
 def join_household(
@@ -590,9 +552,7 @@ def remove_household_member(
             target_user_id=target_user_id,
         )
     except Exception as exc:
-        map_household_error(
-            exc, not_found_message="household member not found"
-        )
+        map_household_error(exc, not_found_message="household member not found")
         raise
     return HouseholdMemberRemoveResponse(removed_user_id=target_user_id)
 
@@ -659,9 +619,7 @@ def get_household_care_member_profile(
         viewer_user_id=viewer_user_id,
         subject_user_id=subject_user_id,
     )
-    profile = get_or_create_health_profile(
-        context.stores.profiles, subject_user_id
-    )
+    profile = get_or_create_health_profile(context.stores.profiles, subject_user_id)
     completeness = compute_profile_completeness(profile)
     return HouseholdCareProfileResponse(
         context=build_care_context(
@@ -669,9 +627,7 @@ def get_household_care_member_profile(
             viewer_user_id=viewer_user_id,
             subject_user_id=subject_user_id,
         ),
-        profile=to_profile_response(
-            profile=profile, fallback_mode=completeness.state != "ready"
-        ),
+        profile=to_profile_response(profile=profile, fallback_mode=completeness.state != "ready"),
     )
 
 

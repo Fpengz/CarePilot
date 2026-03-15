@@ -8,9 +8,7 @@ from care_pilot.features.meals.domain.models import MealState
 
 
 class SafetyViolation(Exception):
-    def __init__(
-        self, message: str, level: str = "Critical", reason: str = ""
-    ):
+    def __init__(self, message: str, level: str = "Critical", reason: str = ""):
         self.message = message
         self.level = level
         self.reason = reason

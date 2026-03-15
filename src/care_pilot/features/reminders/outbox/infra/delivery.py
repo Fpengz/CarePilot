@@ -67,9 +67,7 @@ class TelegramDeliveryAdapter:
             payload = json.loads(event.payload)
             if isinstance(payload, dict):
                 return str(
-                    payload.get("message")
-                    or payload.get("payload", {}).get("message")
-                    or ""
+                    payload.get("message") or payload.get("payload", {}).get("message") or ""
                 )
         except Exception:
             pass
@@ -116,9 +114,7 @@ class WebhookDeliveryAdapter:
     Generic placeholder adapter for external channels such as WhatsApp.
     """
 
-    def __init__(
-        self, *, endpoint_name: str = "external-webhook", dev_mode: bool = True
-    ) -> None:
+    def __init__(self, *, endpoint_name: str = "external-webhook", dev_mode: bool = True) -> None:
         self.endpoint_name = endpoint_name
         self.dev_mode = dev_mode
 
@@ -166,9 +162,7 @@ def build_delivery_adapter(
         )
 
     if channel_norm in {"whatsapp", "sms", "email", "webhook"}:
-        return WebhookDeliveryAdapter(
-            endpoint_name=channel_norm, dev_mode=True
-        )
+        return WebhookDeliveryAdapter(endpoint_name=channel_norm, dev_mode=True)
 
     if fallback_to_mock:
         return MockDeliveryAdapter()

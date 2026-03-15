@@ -41,9 +41,7 @@ def test_ensure_household_member_returns_role_for_member() -> None:
         }
     )
 
-    role = ensure_household_member(
-        store, household_id="hh_1", user_id="user_001"
-    )
+    role = ensure_household_member(store, household_id="hh_1", user_id="user_001")
 
     assert role == "owner"
 

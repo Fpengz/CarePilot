@@ -23,9 +23,7 @@ logfire_api = cast(Any, logfire)
 
 
 class SafetyEngine:
-    def __init__(
-        self, user: UserProfile, db: DrugInteractionRepository | None = None
-    ):
+    def __init__(self, user: UserProfile, db: DrugInteractionRepository | None = None):
         self.user = user
         if db is None:
             from care_pilot.features.safety.infra.drug_interaction_db import (
@@ -50,10 +48,7 @@ class SafetyEngine:
             nutrition = meal.nutrition
             ingredients = [i.name for i in meal.ingredients]
 
-            if (
-                nutrition.sodium_mg
-                > self.user.daily_sodium_limit_mg * SODIUM_WARNING_FRACTION
-            ):
+            if nutrition.sodium_mg > self.user.daily_sodium_limit_mg * SODIUM_WARNING_FRACTION:
                 warning = f"High Sodium Alert: {nutrition.sodium_mg}mg (50% of daily limit)"
                 logfire_api.warn(
                     "nutritional_threshold_exceeded",
@@ -62,13 +57,8 @@ class SafetyEngine:
                 )
                 warnings.append(warning)
 
-            if (
-                nutrition.sugar_g
-                > self.user.daily_sugar_limit_g * SUGAR_WARNING_FRACTION
-            ):
-                warning = (
-                    f"High Sugar Alert: {nutrition.sugar_g}g sugar detected."
-                )
+            if nutrition.sugar_g > self.user.daily_sugar_limit_g * SUGAR_WARNING_FRACTION:
+                warning = f"High Sugar Alert: {nutrition.sugar_g}g sugar detected."
                 logfire_api.warn(
                     "nutritional_threshold_exceeded",
                     nutrient="sugar",
@@ -78,14 +68,10 @@ class SafetyEngine:
 
             # 1b. Hypoglycemia caution for glucose-lowering regimens.
             has_glucose_lowering_med = any(
-                med.name.strip().lower()
-                in {"insulin", "glibenclamide", "gliclazide"}
+                med.name.strip().lower() in {"insulin", "glibenclamide", "gliclazide"}
                 for med in self.user.medications
             )
-            if (
-                has_glucose_lowering_med
-                and nutrition.carbs_g < HYPOGLYCEMIA_LOW_CARB_THRESHOLD_G
-            ):
+            if has_glucose_lowering_med and nutrition.carbs_g < HYPOGLYCEMIA_LOW_CARB_THRESHOLD_G:
                 warning = (
                     f"Hypoglycemia Risk: {nutrition.carbs_g}g carbohydrates may be too low "
                     "for current glucose-lowering medication."

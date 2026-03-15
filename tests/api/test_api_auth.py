@@ -125,9 +125,7 @@ def test_signup_rejects_short_password() -> None:
     )
 
     assert response.status_code == 400
-    assert (
-        response.json()["detail"] == "password must be at least 12 characters"
-    )
+    assert response.json()["detail"] == "password must be at least 12 characters"
 
 
 def test_me_requires_auth() -> None:
@@ -281,12 +279,8 @@ def test_list_sessions_returns_current_and_same_user_sessions_only() -> None:
     sessions = response.json()["sessions"]
     assert len(sessions) == 2
     assert sum(1 for item in sessions if item["is_current"]) == 1
-    assert login_a.json()["session"]["session_id"] in {
-        item["session_id"] for item in sessions
-    }
-    assert login_b.json()["session"]["session_id"] in {
-        item["session_id"] for item in sessions
-    }
+    assert login_a.json()["session"]["session_id"] in {item["session_id"] for item in sessions}
+    assert login_b.json()["session"]["session_id"] in {item["session_id"] for item in sessions}
     assert admin_login.json()["session"]["session_id"] not in {
         item["session_id"] for item in sessions
     }
@@ -326,9 +320,7 @@ def test_revoke_other_users_session_returns_404() -> None:
     assert admin_login.status_code == 200
     member_session_id = member_login.json()["session"]["session_id"]
 
-    revoke = admin_client.post(
-        f"/api/v1/auth/sessions/{member_session_id}/revoke"
-    )
+    revoke = admin_client.post(f"/api/v1/auth/sessions/{member_session_id}/revoke")
 
     assert revoke.status_code == 404
 
@@ -390,9 +382,7 @@ def test_patch_profile_persists_for_future_sessions() -> None:
     )
     assert login.status_code == 200
 
-    patch = client.patch(
-        "/api/v1/auth/profile", json={"display_name": "Casey Family"}
-    )
+    patch = client.patch("/api/v1/auth/profile", json={"display_name": "Casey Family"})
     assert patch.status_code == 200
     logout = client.post("/api/v1/auth/logout")
     assert logout.status_code == 200
@@ -496,22 +486,17 @@ def test_auth_audit_events_admin_only_and_bounded() -> None:
     member_forbidden = member_client.get("/api/v1/auth/audit-events")
     assert member_forbidden.status_code == 403
 
-    admin_events = admin_client.get(
-        "/api/v1/auth/audit-events", params={"limit": 2}
-    )
+    admin_events = admin_client.get("/api/v1/auth/audit-events", params={"limit": 2})
     assert admin_events.status_code == 200
     items = admin_events.json()["items"]
     assert len(items) == 2
     assert all(
-        item["event_type"] in {"login_success", "login_failed", "login_locked"}
-        for item in items
+        item["event_type"] in {"login_success", "login_failed", "login_locked"} for item in items
     )
     assert any(item["event_type"] == "login_success" for item in items)
 
 
-def test_patch_password_updates_credentials_and_revokes_other_sessions() -> (
-    None
-):
+def test_patch_password_updates_credentials_and_revokes_other_sessions() -> None:
     app = create_app()
     client_a = TestClient(app)
     client_b = TestClient(app)
@@ -594,14 +579,9 @@ def test_patch_password_rejects_weak_or_reused_password() -> None:
     )
 
     assert weak.status_code == 400
-    assert (
-        weak.json()["detail"] == "new password must be at least 12 characters"
-    )
+    assert weak.json()["detail"] == "new password must be at least 12 characters"
     assert reused.status_code == 400
-    assert (
-        reused.json()["detail"]
-        == "new password must differ from current password"
-    )
+    assert reused.json()["detail"] == "new password must differ from current password"
 
 
 def test_settings_default_auth_backend_is_sqlite(

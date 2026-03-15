@@ -32,9 +32,7 @@ def test_in_memory_coordination_store_lock_is_exclusive() -> None:
     assert third is True
 
 
-def test_in_memory_coordination_store_wait_for_signal_returns_published_payload() -> (
-    None
-):
+def test_in_memory_coordination_store_wait_for_signal_returns_published_payload() -> None:
     store = InMemoryCoordinationStore()
 
     def publish_later() -> None:
@@ -51,9 +49,7 @@ def test_in_memory_coordination_store_wait_for_signal_returns_published_payload(
     assert payload == {"kind": "reminders"}
 
 
-def test_in_memory_coordination_store_wait_for_signal_times_out_cleanly() -> (
-    None
-):
+def test_in_memory_coordination_store_wait_for_signal_times_out_cleanly() -> None:
     store = InMemoryCoordinationStore()
 
     payload = store.wait_for_signal("workers.ready", timeout_seconds=0.01)

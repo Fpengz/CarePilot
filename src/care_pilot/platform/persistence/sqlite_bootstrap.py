@@ -446,9 +446,7 @@ COLUMN_MIGRATIONS: tuple[tuple[str, str, str], ...] = (
 )
 
 
-def ensure_sqlite_column(
-    cur: sqlite3.Cursor, table: str, column: str, definition: str
-) -> None:
+def ensure_sqlite_column(cur: sqlite3.Cursor, table: str, column: str, definition: str) -> None:
     cur.execute(f"PRAGMA table_info({table})")
     columns = {row[1] for row in cur.fetchall()}
     if column not in columns:
@@ -474,9 +472,7 @@ def seed_reference_data(db_path: str) -> None:
         conn.commit()
 
 
-def _seed_meal_catalog(
-    cur: sqlite3.Cursor, items: Sequence[MealCatalogItem]
-) -> None:
+def _seed_meal_catalog(cur: sqlite3.Cursor, items: Sequence[MealCatalogItem]) -> None:
     cur.execute("SELECT COUNT(*) FROM meal_catalog")
     existing = cur.fetchone()
     if existing is not None and int(existing[0]) > 0:
@@ -497,9 +493,7 @@ def _seed_meal_catalog(
         )
 
 
-def _seed_canonical_foods(
-    cur: sqlite3.Cursor, records: Sequence[CanonicalFoodRecord]
-) -> None:
+def _seed_canonical_foods(cur: sqlite3.Cursor, records: Sequence[CanonicalFoodRecord]) -> None:
     cur.execute("SELECT COUNT(*) FROM canonical_foods")
     existing = cur.fetchone()
     if existing is None or int(existing[0]) == 0:

@@ -15,12 +15,15 @@ from uuid import uuid4
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 ImageQuality = Literal["poor", "fair", "good", "unknown"]
-MatchStrategy = Literal["exact_alias", "partial_alias", "fuzzy_alias", "fallback_label", "unmatched"]
+MatchStrategy = Literal[
+    "exact_alias", "partial_alias", "fuzzy_alias", "fallback_label", "unmatched"
+]
 
 
 # ---------------------------------------------------------------------------
 # Nutrition value types (previously in models/meal.py)
 # ---------------------------------------------------------------------------
+
 
 class GlycemicIndexLevel(StrEnum):
     LOW = "Low (<55)"
@@ -66,7 +69,9 @@ class LocalizationDetails(BaseModel):
 
 class SafetyAnalysis(BaseModel):
     is_safe_for_consumption: bool = True
-    risk_factors: list[str] = Field(default_factory=list, description="e.g., 'High Sodium', 'High Sugar'")
+    risk_factors: list[str] = Field(
+        default_factory=list, description="e.g., 'High Sodium', 'High Sugar'"
+    )
     diabetic_warning: bool = False
     hypertensive_warning: bool = False
 
@@ -75,7 +80,9 @@ class MealState(BaseModel):
     """The 'Gold Standard' output for the Hawker Vision Module."""
 
     dish_name: str = Field(..., description="Standardized English name")
-    confidence_score: float = Field(..., ge=0, le=1, description="Model's confidence in identification")
+    confidence_score: float = Field(
+        ..., ge=0, le=1, description="Model's confidence in identification"
+    )
     identification_method: Literal["AI_Flash", "HPB_Fallback", "User_Manual"]
     ingredients: list[Ingredient]
     nutrition: Nutrition
@@ -104,6 +111,7 @@ class MealEvent(BaseModel):
 # ---------------------------------------------------------------------------
 # Domain perception and enrichment models
 # ---------------------------------------------------------------------------
+
 
 class MealNutritionProfile(BaseModel):
     calories: float = Field(default=0.0, ge=0.0, description="kcal")
@@ -180,7 +188,12 @@ class PerceivedMealItem(BaseModel):
                     break
         portion = value.get("portion_estimate")
         if isinstance(portion, dict) and "amount" not in portion:
-            quantity = portion.get("quantity") or portion.get("servings") or portion.get("portion") or portion.get("qty")
+            quantity = (
+                portion.get("quantity")
+                or portion.get("servings")
+                or portion.get("portion")
+                or portion.get("qty")
+            )
             amount = None
             if isinstance(quantity, (int, float)):
                 amount = float(quantity)
@@ -305,6 +318,7 @@ class ImageInput(BaseModel):
 # ---------------------------------------------------------------------------
 # Meal analysis pipeline models (stages 1–4)
 # ---------------------------------------------------------------------------
+
 
 class DietaryClaim(BaseModel):
     label: str

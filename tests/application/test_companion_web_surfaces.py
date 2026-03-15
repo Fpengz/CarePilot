@@ -20,20 +20,15 @@ def test_route_meta_advertises_companion_surfaces() -> None:
     assert 'href: "/impact"' in route_meta
 
 
-def test_companion_page_uses_interaction_selector_and_product_cards() -> None:
+def test_companion_page_redirects_to_dashboard() -> None:
     companion_page = (WEB_ROOT / "app" / "companion" / "page.tsx").read_text(encoding="utf-8")
-    assert 'interaction_type: "check_in"' not in companion_page
-    # The interaction-type selector lives in InteractionForm; verify it is composed here.
-    assert "InteractionForm" in companion_page
-    # Domain-specific product cards must be present.
-    assert "SupportingEvidenceCard" in companion_page
-    assert "CarePlanCard" in companion_page
-    assert "ImpactWatchCard" in companion_page
-    assert "JsonViewer" not in companion_page
+    assert 'redirect("/dashboard")' in companion_page
 
 
 def test_clinician_and_impact_pages_no_longer_lead_with_raw_json() -> None:
-    clinician_page = (WEB_ROOT / "app" / "clinician-digest" / "page.tsx").read_text(encoding="utf-8")
+    clinician_page = (WEB_ROOT / "app" / "clinician-digest" / "page.tsx").read_text(
+        encoding="utf-8"
+    )
     impact_page = (WEB_ROOT / "app" / "impact" / "page.tsx").read_text(encoding="utf-8")
     assert "JsonViewer" not in clinician_page
     assert "JsonViewer" not in impact_page

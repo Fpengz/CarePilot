@@ -4,39 +4,20 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import StrEnum
-from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from care_pilot.features.profiles.domain.models import AccountRole
 from care_pilot.core.contracts.agent_envelopes import (
     AgentHandoff,
     AgentOutputEnvelope,
 )
-
-ToolPolicyEffect = Literal["allow", "deny"]
-
-
-class ToolRolePolicyRecord(BaseModel):
-    id: str
-    role: AccountRole
-    agent_id: str
-    tool_name: str
-    effect: ToolPolicyEffect
-    conditions: dict[str, object] = Field(default_factory=dict)
-    priority: int = 0
-    enabled: bool = True
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
-
-
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolExecutionResult,
-)  # noqa: E402
+)
+from care_pilot.platform.observability.tooling.domain.policy_models import (
+    ToolPolicyEffect,
+    ToolRolePolicyRecord,
+)
 
 
 class WorkflowName(StrEnum):
@@ -55,9 +36,7 @@ class WorkflowTimelineEvent(BaseModel):
     correlation_id: str
     user_id: str | None = None
     payload: dict[str, object] = Field(default_factory=dict)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class WorkflowExecutionResult(BaseModel):
@@ -70,9 +49,7 @@ class WorkflowExecutionResult(BaseModel):
     tool_results: list[ToolExecutionResult] = Field(default_factory=list)
     timeline_events: list[WorkflowTimelineEvent] = Field(default_factory=list)
     replayed: bool = False
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class AgentContract(BaseModel):

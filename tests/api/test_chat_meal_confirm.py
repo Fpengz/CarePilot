@@ -82,9 +82,6 @@ def test_confirm_meal_proposal_logs_meal() -> None:
     assert body["status"] == "logged"
     assert "assistant_followup" in body
     assert "Follow-up guidance." in body["assistant_followup"]
-    assert (
-        len(ctx.stores.meals.list_validated_meal_events("user_001"))
-        == before_count + 1
-    )
+    assert len(ctx.stores.meals.list_validated_meal_events("user_001")) == before_count + 1
 
     monkeypatch.undo()

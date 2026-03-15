@@ -73,17 +73,13 @@ class RecommendationInteraction(BaseModel):
     slot: MealSlot
     source_meal_id: str | None = None
     selected_meal_id: str | None = None
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: dict[str, object] = Field(default_factory=dict)
 
 
 class PreferenceSnapshot(BaseModel):
     user_id: str
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     interaction_count: int = 0
     accepted_count: int = 0
     dismissed_count: int = 0
@@ -147,9 +143,7 @@ class SubstitutionPlan(BaseModel):
 
 class TemporalContext(BaseModel):
     current_slot: MealSlot
-    generated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     meal_history_count: int
     interaction_count: int
     recent_repeat_titles: list[str] = Field(default_factory=list)
@@ -202,9 +196,7 @@ class CanonicalFoodRecord(BaseModel):
     risk_tags: list[str] = Field(default_factory=list)
     glycemic_index_label: str | None = None
     glycemic_index_value: int | None = None
-    disease_advice: dict[str, CanonicalFoodAdvice] = Field(
-        default_factory=dict
-    )
+    disease_advice: dict[str, CanonicalFoodAdvice] = Field(default_factory=dict)
     alternatives: list[CanonicalFoodAlternative] = Field(default_factory=list)
     serving_size: str | None = None
     default_portion_grams: float | None = None

@@ -40,9 +40,7 @@ def _safe_preview(text: str | None, *, limit: int = 160) -> str | None:
         return None
     preview = text[:limit].replace("\n", " ")
     preview = re.sub(r"[0-9]", "x", preview)
-    preview = re.sub(
-        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview
-    )
+    preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
     return preview
 
 
@@ -72,14 +70,8 @@ class HFSpeechEmotion(SpeechEmotionPort):
         if isinstance(data, np.ndarray) and data.ndim > 1:
             data = np.mean(data, axis=1)
         audio_array = data.astype(np.float32)
-        duration_sec = (
-            float(len(audio_array) / sample_rate) if sample_rate else 0.0
-        )
-        rms = (
-            float(np.sqrt(np.mean(np.square(audio_array))))
-            if len(audio_array)
-            else 0.0
-        )
+        duration_sec = float(len(audio_array) / sample_rate) if sample_rate else 0.0
+        rms = float(np.sqrt(np.mean(np.square(audio_array)))) if len(audio_array) else 0.0
 
         self._ensure_pipeline()
         assert self._pipeline is not None
@@ -93,9 +85,7 @@ class HFSpeechEmotion(SpeechEmotionPort):
             _safe_preview(transcript),
         )
         outputs = self._pipeline(audio_array, sampling_rate=sample_rate)
-        scores: dict[EmotionLabel, float] = {
-            label: 0.0 for label in EmotionLabel
-        }
+        scores: dict[EmotionLabel, float] = {label: 0.0 for label in EmotionLabel}
         for item in outputs:
             label = str(item.get("label", "")).lower()
             mapped = _LABEL_MAP.get(label)
@@ -110,9 +100,7 @@ class HFSpeechEmotion(SpeechEmotionPort):
             "rms": rms,
         }
 
-        ordered = sorted(
-            scores.items(), key=lambda item: item[1], reverse=True
-        )
+        ordered = sorted(scores.items(), key=lambda item: item[1], reverse=True)
         top_label, top_score = ordered[0]
 
         logger.info(

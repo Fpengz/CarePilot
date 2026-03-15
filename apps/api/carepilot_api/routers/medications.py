@@ -54,9 +54,7 @@ def medications_regimens_list(
     session: dict[str, object] = Depends(current_session),
 ) -> MedicationRegimenListResponse:
     require_action(session, "medications.regimens.read")
-    return list_regimens_for_session(
-        context=get_context(request), user_id=str(session["user_id"])
-    )
+    return list_regimens_for_session(context=get_context(request), user_id=str(session["user_id"]))
 
 
 @router.post(
@@ -76,9 +74,7 @@ def medications_regimens_create(
     )
 
 
-@router.post(
-    "/api/v1/medications/intake/text", response_model=MedicationIntakeResponse
-)
+@router.post("/api/v1/medications/intake/text", response_model=MedicationIntakeResponse)
 async def medications_intake_text(
     payload: MedicationIntakeTextRequest,
     request: Request,

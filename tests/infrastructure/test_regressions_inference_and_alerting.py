@@ -43,9 +43,7 @@ async def test_analyze_dietary_request_uses_correct_capability(
         async def run(self, prompt, **kwargs):
             return MockResult()
 
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.LLMFactory.get_model", mock_get_model
-    )
+    monkeypatch.setattr("care_pilot.agent.runtime.LLMFactory.get_model", mock_get_model)
     monkeypatch.setattr("care_pilot.agent.dietary.agent.Agent", MockAgent)
 
     input_data = DietaryAgentInput(
@@ -93,9 +91,7 @@ def test_outbox_worker_preserves_original_alert_message_payload(
 
     worker = OutboxWorker(repo, max_attempts=2, concurrency=2)
     capture = CaptureSink()
-    worker._sinks["in_app"] = (
-        capture  # test-only seam to inspect delivered message
-    )
+    worker._sinks["in_app"] = capture  # test-only seam to inspect delivered message
 
     import asyncio
 

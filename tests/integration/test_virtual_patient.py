@@ -32,9 +32,7 @@ mr_tan = UserProfile(
 )
 
 # Hypothesis strategies for randomized meals
-ingredient_strategy = st.builds(
-    Ingredient, name=st.text(min_size=1, max_size=20)
-)
+ingredient_strategy = st.builds(Ingredient, name=st.text(min_size=1, max_size=20))
 nutrition_strategy = st.builds(
     Nutrition,
     calories=st.floats(min_value=0, max_value=2000),
@@ -140,9 +138,7 @@ def test_compound_multi_medication_risk_raises_critical() -> None:
         id="user_004",
         name="Mr. Ong",
         age=70,
-        conditions=[
-            MedicalCondition(name="Atrial fibrillation", severity="High")
-        ],
+        conditions=[MedicalCondition(name="Atrial fibrillation", severity="High")],
         medications=[
             Medication(name="Warfarin", dosage="5mg"),
             Medication(name="Atorvastatin", dosage="20mg"),

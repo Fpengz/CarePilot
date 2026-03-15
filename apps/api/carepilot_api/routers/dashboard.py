@@ -115,7 +115,9 @@ def dashboard_trend(
         computed = {
             key: {
                 "change": round(metric.last - metric.first, 4),
-                "pct": round((metric.last - metric.first) / metric.first * 100, 2) if metric.first else 0,
+                "pct": round((metric.last - metric.first) / metric.first * 100, 2)
+                if metric.first
+                else 0,
             }
             for key, metric in payload.metrics.items()
         }

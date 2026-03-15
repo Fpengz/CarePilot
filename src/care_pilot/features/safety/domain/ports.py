@@ -15,9 +15,7 @@ if TYPE_CHECKING:
 class DrugInteractionRepository(Protocol):
     """Protocol for drug/food interaction database lookups."""
 
-    def get_contraindications(
-        self, medication_name: str
-    ) -> list[tuple[str, str, str]]: ...
+    def get_contraindications(self, medication_name: str) -> list[tuple[str, str, str]]: ...
 
 
 class SafetyPort(Protocol):

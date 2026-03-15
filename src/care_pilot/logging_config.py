@@ -3,6 +3,7 @@ Provide a backward-compatibility logging shim.
 
 This module preserves legacy imports and forwards to the observability setup.
 """
+
 # ruff: noqa: F401
 import sys
 import types

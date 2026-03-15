@@ -91,9 +91,7 @@ class MealWeeklySummaryResponse(BaseModel):
     week_end: str
     meal_count: int
     totals: DailyNutritionTotalsResponse
-    daily_breakdown: dict[str, MealWeeklySummaryDayResponse] = Field(
-        default_factory=dict
-    )
+    daily_breakdown: dict[str, MealWeeklySummaryDayResponse] = Field(default_factory=dict)
     pattern_flags: list[str] = Field(default_factory=list)
 
 
@@ -102,15 +100,11 @@ class MedicationRegimenCreateRequest(BaseModel):
     dosage_text: str
     timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
     canonical_name: str | None = None
-    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = (
-        "fixed_time"
-    )
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = "fixed_time"
     frequency_times_per_day: int = Field(default=1, ge=1, le=8)
     time_rules: list[dict[str, object]] = Field(default_factory=list)
     offset_minutes: int = 0
-    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(
-        default_factory=list
-    )
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
     fixed_time: str | None = None
     max_daily_doses: int = Field(default=1, ge=1, le=8)
     instructions_text: str | None = None
@@ -128,15 +122,11 @@ class MedicationRegimenPatchRequest(BaseModel):
     canonical_name: str | None = None
     dosage_text: str | None = None
     timing_type: Literal["pre_meal", "post_meal", "fixed_time"] | None = None
-    frequency_type: (
-        Literal["times_per_day", "fixed_slots", "fixed_time"] | None
-    ) = None
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] | None = None
     frequency_times_per_day: int | None = Field(default=None, ge=1, le=8)
     time_rules: list[dict[str, object]] | None = None
     offset_minutes: int | None = None
-    slot_scope: (
-        list[Literal["breakfast", "lunch", "dinner", "snack"]] | None
-    ) = None
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] | None = None
     fixed_time: str | None = None
     max_daily_doses: int | None = Field(default=None, ge=1, le=8)
     instructions_text: str | None = None
@@ -155,15 +145,11 @@ class MedicationRegimenResponse(BaseModel):
     canonical_name: str | None = None
     dosage_text: str
     timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
-    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = (
-        "fixed_time"
-    )
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = "fixed_time"
     frequency_times_per_day: int = 1
     time_rules: list[dict[str, object]] = Field(default_factory=list)
     offset_minutes: int
-    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(
-        default_factory=list
-    )
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
     fixed_time: str | None = None
     max_daily_doses: int
     instructions_text: str | None = None
@@ -225,9 +211,7 @@ class MedicationAdherenceTotalsResponse(BaseModel):
 
 class MedicationAdherenceMetricsResponse(BaseModel):
     totals: MedicationAdherenceTotalsResponse
-    events: list[MedicationAdherenceEventResponse] = Field(
-        default_factory=list
-    )
+    events: list[MedicationAdherenceEventResponse] = Field(default_factory=list)
 
 
 class MedicationIntakeTextRequest(BaseModel):
@@ -244,14 +228,10 @@ class MedicationDraftInstructionUpdateRequest(BaseModel):
     medication_name_canonical: str | None = None
     dosage_text: str
     timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
-    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = (
-        "fixed_time"
-    )
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = "fixed_time"
     frequency_times_per_day: int = Field(default=1, ge=1, le=8)
     offset_minutes: int = 0
-    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(
-        default_factory=list
-    )
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
     fixed_time: str | None = None
     time_rules: list[dict[str, object]] = Field(default_factory=list)
     duration_days: int | None = None
@@ -278,14 +258,10 @@ class NormalizedMedicationInstructionResponse(BaseModel):
     medication_name_canonical: str | None = None
     dosage_text: str
     timing_type: Literal["pre_meal", "post_meal", "fixed_time"]
-    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = (
-        "fixed_time"
-    )
+    frequency_type: Literal["times_per_day", "fixed_slots", "fixed_time"] = "fixed_time"
     frequency_times_per_day: int = 1
     offset_minutes: int = 0
-    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(
-        default_factory=list
-    )
+    slot_scope: list[Literal["breakfast", "lunch", "dinner", "snack"]] = Field(default_factory=list)
     fixed_time: str | None = None
     time_rules: list[dict[str, object]] = Field(default_factory=list)
     duration_days: int | None = None
@@ -298,14 +274,14 @@ class NormalizedMedicationInstructionResponse(BaseModel):
 class MedicationIntakeResponse(BaseModel):
     draft_id: str
     source: MedicationIntakeSourceResponse
-    normalized_instructions: list[NormalizedMedicationInstructionResponse] = (
-        Field(default_factory=list)
+    normalized_instructions: list[NormalizedMedicationInstructionResponse] = Field(
+        default_factory=list
     )
     regimens: list[MedicationRegimenResponse] = Field(default_factory=list)
     reminders: list[ReminderEvent] = Field(default_factory=list)
-    scheduled_notifications: list[
-        ScheduledReminderNotificationItemResponse
-    ] = Field(default_factory=list)
+    scheduled_notifications: list[ScheduledReminderNotificationItemResponse] = Field(
+        default_factory=list
+    )
 
 
 class SymptomCheckInRequest(BaseModel):
@@ -518,11 +494,7 @@ class DashboardOverviewResponse(BaseModel):
     alerts: list[DashboardAlertResponse] = Field(default_factory=list)
     charts: DashboardChartsResponse
     insights: DashboardInsightsResponse
-    links: DashboardLinksResponse = Field(
-        default_factory=DashboardLinksResponse
-    )
+    links: DashboardLinksResponse = Field(default_factory=DashboardLinksResponse)
 
 
-MealAnalyzeResponse.model_rebuild(
-    _types_namespace={"WorkflowResponse": WorkflowResponse}
-)
+MealAnalyzeResponse.model_rebuild(_types_namespace={"WorkflowResponse": WorkflowResponse})

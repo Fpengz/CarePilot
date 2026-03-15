@@ -31,9 +31,7 @@ class AgentRegistry:
     def list_workflow_contracts(self) -> list[WorkflowRuntimeContract]:
         return list(self._workflow_contracts.values())
 
-    def get_workflow_contract(
-        self, workflow_name: WorkflowName
-    ) -> WorkflowRuntimeContract | None:
+    def get_workflow_contract(self, workflow_name: WorkflowName) -> WorkflowRuntimeContract | None:
         return self._workflow_contracts.get(workflow_name)
 
 

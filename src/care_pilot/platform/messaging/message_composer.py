@@ -54,9 +54,7 @@ CHANNEL_CAPABILITIES: dict[str, ChannelCapability] = {
 }
 
 
-def compose_alert_message(
-    alert: AlertMessage, *, channel: str
-) -> PresentationMessage:
+def compose_alert_message(alert: AlertMessage, *, channel: str) -> PresentationMessage:
     """Build a ``PresentationMessage`` from an alert, tailored to the target channel."""
     payload_message = alert.payload.get("message", "Alert")
     title = "Alert Notification"

@@ -56,9 +56,7 @@ async def run_graph(
                 duration_ms=timer.elapsed_ms(),
             )
             return state, result
-        raise TypeError(
-            f"Unsupported graph object: missing async run(): {type(graph)!r}"
-        )
+        raise TypeError(f"Unsupported graph object: missing async run(): {type(graph)!r}")
     except Exception as exc:
         emitter.workflow_failed(
             ctx,

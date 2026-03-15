@@ -51,14 +51,11 @@ class _InMemoryCanonicalFoodStore:
     def __init__(self) -> None:
         self._records = build_default_canonical_food_records()
 
-    def list_canonical_foods(
-        self, *, locale: str, limit: int = 500
-    ) -> list[Any]:
+    def list_canonical_foods(self, *, locale: str, limit: int = 500) -> list[Any]:
         items = [
             item
             for item in self._records
-            if getattr(item, "locale", None) == locale
-            and getattr(item, "active", True)
+            if getattr(item, "locale", None) == locale and getattr(item, "active", True)
         ]
         return items[:limit]
 
@@ -67,9 +64,7 @@ class _InMemoryCanonicalFoodStore:
         if not target:
             return None
         for item in self._records:
-            if getattr(item, "locale", None) != locale or not getattr(
-                item, "active", True
-            ):
+            if getattr(item, "locale", None) != locale or not getattr(item, "active", True):
                 continue
             title = str(getattr(item, "title", "")).strip().lower()
             if title == target:
@@ -142,18 +137,13 @@ class HawkerVisionModule:
             self.inference_engine = InferenceEngine(model=model)
             agent_model = model
         else:
-            self.inference_engine = InferenceEngine(
-                provider=requested_provider
-            )
+            self.inference_engine = InferenceEngine(provider=requested_provider)
             agent_model = LLMFactory.get_model(
                 provider=requested_provider,
                 capability=LLMCapability.MEAL_VISION,
             )
 
-        self.provider = (
-            getattr(self.inference_engine, "provider", requested_provider)
-            or "unknown"
-        )
+        self.provider = getattr(self.inference_engine, "provider", requested_provider) or "unknown"
 
         try:
             self.agent = cast(
@@ -249,11 +239,7 @@ class HawkerVisionModule:
                 }
             )
         lowered = dish.lower()
-        label = (
-            "Laksa"
-            if "laksa" in lowered
-            else "Mee Rebus" if "mee" in lowered else "Meal"
-        )
+        label = "Laksa" if "laksa" in lowered else "Mee Rebus" if "mee" in lowered else "Meal"
         return MealPerception.model_validate(
             {
                 "meal_detected": True,
@@ -277,9 +263,7 @@ class HawkerVisionModule:
         )
 
     async def analyze_dish(self, dish: str | ImageInput) -> VisionResult:
-        prompt, modality, image_bytes, image_mime_type = self._build_prompt(
-            dish
-        )
+        prompt, modality, image_bytes, image_mime_type = self._build_prompt(dish)
         logger.debug(
             "hawker_vision_inference_payload modality=%s mime_type=%s image_bytes=%s prompt_preview=%s",
             modality,
@@ -340,9 +324,7 @@ class HawkerVisionModule:
                 output_schema=MealPerception,
                 system_prompt=SYSTEM_PROMPT,
             )
-            response = cast(
-                InferenceResponse, await self.inference_engine.infer(request)
-            )
+            response = cast(InferenceResponse, await self.inference_engine.infer(request))
             perception = cast(MealPerception, response.structured_output)
             raw = response.structured_output.model_dump_json()
             latency_ms = response.latency_ms
@@ -387,9 +369,7 @@ class HawkerVisionModule:
                 confidence_score=perception.confidence_score,
                 latency_ms=latency_ms,
                 model_version=model_version,
-            ).model_copy(
-                update={"perception": perception, "provider": self.provider}
-            )
+            ).model_copy(update={"perception": perception, "provider": self.provider})
 
         meal_state = perception_to_meal_state(perception)
         needs_review = (

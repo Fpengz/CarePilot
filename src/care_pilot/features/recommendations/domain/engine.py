@@ -79,23 +79,15 @@ class RecommendationAgentRepository(Protocol):
         limit: int = 100,
     ) -> list[FoodItem]: ...
 
-    def get_preference_snapshot(
-        self, user_id: str
-    ) -> PreferenceSnapshot | None: ...
+    def get_preference_snapshot(self, user_id: str) -> PreferenceSnapshot | None: ...
 
-    def save_preference_snapshot(
-        self, snapshot: PreferenceSnapshot
-    ) -> PreferenceSnapshot: ...
+    def save_preference_snapshot(self, snapshot: PreferenceSnapshot) -> PreferenceSnapshot: ...
 
-    def get_meal_record(
-        self, user_id: str, meal_id: str
-    ) -> MealRecognitionRecord | None: ...
+    def get_meal_record(self, user_id: str, meal_id: str) -> MealRecognitionRecord | None: ...
 
     def get_canonical_food(self, food_id: str) -> FoodItem | None: ...
 
-    def find_food_by_name(
-        self, *, locale: str, name: str
-    ) -> FoodItem | None: ...
+    def find_food_by_name(self, *, locale: str, name: str) -> FoodItem | None: ...
 
     def save_recommendation_interaction(
         self, interaction: RecommendationInteraction
@@ -140,15 +132,11 @@ def _rank_candidates_for_slot(
             snapshot=clinical_snapshot,
             profile=profile,
         )
-        source_for_distance = source_meal or (
-            meal_history[-1] if meal_history else None
-        )
+        source_for_distance = source_meal or (meal_history[-1] if meal_history else None)
         if source_for_distance is None:
             substitution_penalty = 0.12
         else:
-            substitution_penalty = round(
-                1 - _score_similarity(candidate, source_for_distance), 3
-            )
+            substitution_penalty = round(1 - _score_similarity(candidate, source_for_distance), 3)
         adherence = _adherence_likelihood(
             snapshot, preference_fit=preference_fit, temporal_fit=temporal_fit
         )
@@ -221,11 +209,7 @@ def generate_daily_agent_recommendation(
         best = ranked[0]
         confidence = _clamp(
             best.scores.total_score
-            + (
-                0.05
-                if snapshot.interaction_count >= INTERACTION_WARMUP_THRESHOLD
-                else -0.05
-            )
+            + (0.05 if snapshot.interaction_count >= INTERACTION_WARMUP_THRESHOLD else -0.05)
         )
         recommendations[slot] = AgentRecommendationCard(
             candidate_id=best.item.meal_id,
@@ -310,15 +294,12 @@ def build_substitution_plan(
         if source_catalog is not None
         else _infer_slot(source_record.captured_at)
     )
-    catalog = repository.list_canonical_foods(
-        locale=health_profile.locale, slot=source_slot
-    )
+    catalog = repository.list_canonical_foods(locale=health_profile.locale, slot=source_slot)
     snapshot = _ensure_snapshot(
         repository=repository,
         user_id=user_id,
         meal_history=meal_history,
-        catalog=catalog
-        or repository.list_canonical_foods(locale=health_profile.locale),
+        catalog=catalog or repository.list_canonical_foods(locale=health_profile.locale),
     )
     restricted_terms = {
         *[item.lower() for item in health_profile.allergies],
@@ -337,33 +318,23 @@ def build_substitution_plan(
     alternatives: list[SubstitutionAlternative] = []
     source_nutrition = meal_nutrition(source_record)
     for candidate in ranked:
-        if normalize_text(candidate.item.title) == normalize_text(
-            meal_display_name(source_record)
-        ):
+        if normalize_text(candidate.item.title) == normalize_text(meal_display_name(source_record)):
             continue
         delta = HealthDelta(
             calories=round(
                 candidate.item.nutrition.calories - source_nutrition.calories,
                 2,
             ),
-            sugar_g=round(
-                candidate.item.nutrition.sugar_g - source_nutrition.sugar_g, 2
-            ),
+            sugar_g=round(candidate.item.nutrition.sugar_g - source_nutrition.sugar_g, 2),
             sodium_mg=round(
-                candidate.item.nutrition.sodium_mg
-                - source_nutrition.sodium_mg,
+                candidate.item.nutrition.sodium_mg - source_nutrition.sodium_mg,
                 2,
             ),
         )
-        if not (
-            delta.calories < 0 or delta.sugar_g < 0 or delta.sodium_mg < 0
-        ):
+        if not (delta.calories < 0 or delta.sugar_g < 0 or delta.sodium_mg < 0):
             continue
         taste_distance = round(
-            1
-            - _score_similarity(
-                candidate.item, source_catalog or source_record
-            ),
+            1 - _score_similarity(candidate.item, source_catalog or source_record),
             3,
         )
         if taste_distance > max(snapshot.substitution_tolerance, 0.75):
@@ -423,9 +394,7 @@ def record_interaction_and_update_preferences(
         catalog=repository.list_canonical_foods(locale=candidate.locale),
     )
     snapshot.interaction_count += 1
-    _apply_affinity_update(
-        snapshot, candidate=candidate, event_type=event_type
-    )
+    _apply_affinity_update(snapshot, candidate=candidate, event_type=event_type)
     snapshot.updated_at = _now()
     if snapshot.interaction_count > 0:
         snapshot.adherence_bias = round(

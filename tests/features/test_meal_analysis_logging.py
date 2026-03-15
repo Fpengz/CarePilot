@@ -53,10 +53,7 @@ def test_resolve_meal_analysis_model_prefers_capability_target() -> None:
         },
     )
 
-    assert (
-        resolve_meal_analysis_model_name(settings, provider="gemini")
-        == "vision-x"
-    )
+    assert resolve_meal_analysis_model_name(settings, provider="gemini") == "vision-x"
 
 
 def test_log_meal_analysis_event_emits_payload(caplog) -> None:

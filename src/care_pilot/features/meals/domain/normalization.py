@@ -21,30 +21,20 @@ from care_pilot.features.meals.domain.models import (
 def perception_to_meal_state(perception: MealPerception) -> MealState:
     """Map generic agent perception to the initial legacy MealState."""
     primary_item = perception.items[0] if perception.items else None
-    amount = (
-        primary_item.portion_estimate.amount
-        if primary_item is not None
-        else 1.0
-    )
+    amount = primary_item.portion_estimate.amount if primary_item is not None else 1.0
     portion_size = (
         PortionSize.SMALL
         if amount <= 0.75
-        else PortionSize.LARGE if amount >= 1.5 else PortionSize.STANDARD
+        else PortionSize.LARGE
+        if amount >= 1.5
+        else PortionSize.STANDARD
     )
     return MealState(
-        dish_name=(
-            primary_item.label
-            if primary_item is not None
-            else "Unidentified meal"
-        ),
+        dish_name=(primary_item.label if primary_item is not None else "Unidentified meal"),
         confidence_score=perception.confidence_score,
         identification_method="AI_Flash",
-        ingredients=[
-            Ingredient(name=item.label) for item in perception.items[:8]
-        ],
-        nutrition=Nutrition(
-            calories=0, carbs_g=0, sugar_g=0, protein_g=0, fat_g=0, sodium_mg=0
-        ),
+        ingredients=[Ingredient(name=item.label) for item in perception.items[:8]],
+        nutrition=Nutrition(calories=0, carbs_g=0, sugar_g=0, protein_g=0, fat_g=0, sodium_mg=0),
         portion_size=portion_size,
         glycemic_index_estimate=GlycemicIndexLevel.UNKNOWN,
         visual_anomalies=list(perception.uncertainties),
@@ -63,9 +53,7 @@ def build_clarification_response(
         confidence_score=confidence_score,
         identification_method="User_Manual",
         ingredients=[],
-        nutrition=Nutrition(
-            calories=0, carbs_g=0, sugar_g=0, protein_g=0, fat_g=0, sodium_mg=0
-        ),
+        nutrition=Nutrition(calories=0, carbs_g=0, sugar_g=0, protein_g=0, fat_g=0, sodium_mg=0),
         visual_anomalies=["Image uncertainty"],
         suggested_modifications=[
             "Clarification needed: please retake the photo with better lighting.",

@@ -16,9 +16,7 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_reports_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_reports_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -28,9 +26,7 @@ def sqlite_reports_env(
 
 
 def _login(client: TestClient, email: str, password: str) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
@@ -120,9 +116,7 @@ def test_recommendations_generate_requires_clinical_snapshot(
 def test_recommendations_generate_rate_limited(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv(
-        "API_RATE_LIMIT_RECOMMENDATIONS_GENERATE_MAX_REQUESTS", "1"
-    )
+    monkeypatch.setenv("API_RATE_LIMIT_RECOMMENDATIONS_GENERATE_MAX_REQUESTS", "1")
     _reset_settings_cache()
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
@@ -196,13 +190,8 @@ def test_reports_parse_includes_symptom_summary_and_workflow_trace(
     assert replay.status_code == 200
     workflow_body = replay.json()
     assert workflow_body["workflow_name"] == "replay"
-    event_types = [
-        event["event_type"] for event in workflow_body["timeline_events"]
-    ]
-    event_workflows = [
-        event.get("workflow_name")
-        for event in workflow_body["timeline_events"]
-    ]
+    event_types = [event["event_type"] for event in workflow_body["timeline_events"]]
+    event_workflows = [event.get("workflow_name") for event in workflow_body["timeline_events"]]
     assert "workflow_started" in event_types
     assert "workflow_completed" in event_types
     assert "report_parse" in event_workflows

@@ -24,9 +24,7 @@ from care_pilot.features.profiles.domain.profile_tools import (
 )
 
 
-def _infer_interaction_goal(
-    *, interaction_type: InteractionType, message: str
-) -> InteractionGoal:
+def _infer_interaction_goal(*, interaction_type: InteractionType, message: str) -> InteractionGoal:
     lowered = message.lower()
     if interaction_type == "meal_review":
         return (
@@ -38,9 +36,7 @@ def _infer_interaction_goal(
         return "recovery"
     if any(term in lowered for term in ("why", "explain", "understand")):
         return "education"
-    if any(
-        term in lowered for term in ("one", "simple", "realistic", "next step")
-    ):
+    if any(term in lowered for term in ("one", "simple", "realistic", "next step")):
         return "next_step"
     return "monitoring"
 
@@ -72,9 +68,7 @@ def build_personalization_context(
     if emotion_signal in {"sad", "frustrated", "anxious", "confused"}:
         barrier_hints.append("patient may need a more supportive tone")
 
-    interaction_goal = _infer_interaction_goal(
-        interaction_type=interaction_type, message=message
-    )
+    interaction_goal = _infer_interaction_goal(interaction_type=interaction_type, message=message)
 
     preferred_tone = "practical"
     if emotion_signal in {"sad", "frustrated", "anxious"}:
@@ -133,16 +127,11 @@ def build_caregiver_tool_state(history: list[MealState]) -> CaregiverToolState:
     alerts: list[str] = []
     manual_review_count = 0
     for meal in history:
-        if (
-            meal.identification_method == "User_Manual"
-            or meal.confidence_score < 0.75
-        ):
+        if meal.identification_method == "User_Manual" or meal.confidence_score < 0.75:
             manual_review_count += 1
             alerts.append(f"{meal.dish_name}: manual review required.")
         if meal.nutrition.sodium_mg >= 1000:
-            alerts.append(
-                f"{meal.dish_name}: high sodium ({meal.nutrition.sodium_mg:.0f}mg)."
-            )
+            alerts.append(f"{meal.dish_name}: high sodium ({meal.nutrition.sodium_mg:.0f}mg).")
     return CaregiverToolState(
         high_risk_alert_count=len(alerts),
         manual_review_count=manual_review_count,
@@ -156,12 +145,9 @@ def build_clinical_summary_tool_state(
     biomarkers: dict[str, float],
 ) -> ClinicalSummaryToolState:
     latest_meal = history[-1].dish_name if history else "No meal analyzed"
-    biomarker_text = (
-        ", ".join(f"{k}={v}" for k, v in biomarkers.items()) or "No biomarkers"
-    )
+    biomarker_text = ", ".join(f"{k}={v}" for k, v in biomarkers.items()) or "No biomarkers"
     narrative = (
-        f"Subject {user.name}: latest meal '{latest_meal}'. "
-        f"Biomarker grounding: {biomarker_text}."
+        f"Subject {user.name}: latest meal '{latest_meal}'. Biomarker grounding: {biomarker_text}."
     )
     payload = {
         "subject_id": user.id,

@@ -23,12 +23,8 @@ def _force_in_memory_auth_backend(
     _reset_settings_cache()
 
 
-def _login_and_get_cookie(
-    client: TestClient, *, email: str, password: str
-) -> tuple[str, str]:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+def _login_and_get_cookie(client: TestClient, *, email: str, password: str) -> tuple[str, str]:
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
     cookie = response.cookies.get("dg_session")
     assert cookie is not None
@@ -72,15 +68,11 @@ def test_require_session_accepts_live_session_when_duplicate_cookie_contains_inv
 ):
     app = create_app()
     client = TestClient(app)
-    live_cookie, _ = _login_and_get_cookie(
-        client, email="admin@example.com", password="admin-pass"
-    )
+    live_cookie, _ = _login_and_get_cookie(client, email="admin@example.com", password="admin-pass")
     assert live_cookie
 
     probe_client = TestClient(app)
-    headers = {
-        "cookie": f"dg_session=invalid.not-a-signed-token; dg_session={live_cookie}"
-    }
+    headers = {"cookie": f"dg_session=invalid.not-a-signed-token; dg_session={live_cookie}"}
     me = probe_client.get("/api/v1/auth/me", headers=headers)
     household = probe_client.get("/api/v1/households/current", headers=headers)
 
@@ -88,9 +80,7 @@ def test_require_session_accepts_live_session_when_duplicate_cookie_contains_inv
     assert household.status_code == 200
 
 
-def test_require_session_returns_session_expired_when_all_signed_candidates_are_dead() -> (
-    None
-):
+def test_require_session_returns_session_expired_when_all_signed_candidates_are_dead() -> None:
     app = create_app()
     client = TestClient(app)
     cookie_a, session_id_a = _login_and_get_cookie(
@@ -110,9 +100,7 @@ def test_require_session_returns_session_expired_when_all_signed_candidates_are_
     assert response.json()["detail"] == "session expired"
 
 
-def test_require_session_returns_invalid_session_when_all_candidates_are_bad_signatures() -> (
-    None
-):
+def test_require_session_returns_invalid_session_when_all_candidates_are_bad_signatures() -> None:
     app = create_app()
     probe_client = TestClient(app)
     headers = {"cookie": "dg_session=bad-token-1; dg_session=bad-token-2"}

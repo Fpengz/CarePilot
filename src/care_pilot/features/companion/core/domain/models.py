@@ -14,7 +14,9 @@ from pydantic import BaseModel, Field
 RiskLevel = Literal["low", "medium", "high"]
 EngagementMode = Literal["supportive", "accountability", "follow_up", "escalate"]
 UrgencyLevel = Literal["routine", "soon", "prompt"]
-InteractionType = Literal["chat", "meal_review", "check_in", "report_follow_up", "adherence_follow_up"]
+InteractionType = Literal[
+    "chat", "meal_review", "check_in", "report_follow_up", "adherence_follow_up"
+]
 PolicyStatus = Literal["approved", "adjusted", "escalate"]
 DigestPriority = Literal["routine", "watch", "urgent"]
 InteractionGoal = Literal["education", "next_step", "swap", "recovery", "monitoring"]

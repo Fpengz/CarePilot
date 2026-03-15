@@ -54,11 +54,7 @@ class SQLiteMedicationRepository:
                     regimen.source_type,
                     regimen.source_filename,
                     regimen.source_hash,
-                    (
-                        regimen.start_date.isoformat()
-                        if regimen.start_date
-                        else None
-                    ),
+                    (regimen.start_date.isoformat() if regimen.start_date else None),
                     regimen.end_date.isoformat() if regimen.end_date else None,
                     regimen.timezone,
                     regimen.parse_confidence,
@@ -102,9 +98,7 @@ class SQLiteMedicationRepository:
                     json.loads(cast(str, row[8]) or "[]"),
                 ),
                 offset_minutes=int(row[9]),
-                slot_scope=cast(
-                    list[MealSlot], json.loads(cast(str, row[10]))
-                ),
+                slot_scope=cast(list[MealSlot], json.loads(cast(str, row[10]))),
                 fixed_time=row[11],
                 max_daily_doses=int(row[12]),
                 instructions_text=row[13],
@@ -114,17 +108,13 @@ class SQLiteMedicationRepository:
                 start_date=date.fromisoformat(row[17]) if row[17] else None,
                 end_date=date.fromisoformat(row[18]) if row[18] else None,
                 timezone=row[19],
-                parse_confidence=(
-                    float(row[20]) if row[20] is not None else None
-                ),
+                parse_confidence=(float(row[20]) if row[20] is not None else None),
                 active=bool(row[21]),
             )
             for row in rows
         ]
 
-    def get_medication_regimen(
-        self, *, user_id: str, regimen_id: str
-    ) -> MedicationRegimen | None:
+    def get_medication_regimen(self, *, user_id: str, regimen_id: str) -> MedicationRegimen | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
@@ -148,9 +138,7 @@ class SQLiteMedicationRepository:
             timing_type=row[5],
             frequency_type=row[6],
             frequency_times_per_day=int(row[7]),
-            time_rules=cast(
-                list[dict[str, object]], json.loads(cast(str, row[8]) or "[]")
-            ),
+            time_rules=cast(list[dict[str, object]], json.loads(cast(str, row[8]) or "[]")),
             offset_minutes=int(row[9]),
             slot_scope=cast(list[MealSlot], json.loads(cast(str, row[10]))),
             fixed_time=row[11],
@@ -166,9 +154,7 @@ class SQLiteMedicationRepository:
             active=bool(row[21]),
         )
 
-    def delete_medication_regimen(
-        self, *, user_id: str, regimen_id: str
-    ) -> bool:
+    def delete_medication_regimen(self, *, user_id: str, regimen_id: str) -> bool:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(
                 "DELETE FROM medication_regimens WHERE user_id = ? AND id = ?",
@@ -235,9 +221,7 @@ class SQLiteMedicationRepository:
                 scheduled_at=datetime.fromisoformat(row[5]),
                 taken_at=datetime.fromisoformat(row[6]) if row[6] else None,
                 source=row[7],
-                metadata=cast(
-                    dict[str, object], json.loads(cast(str, row[8]))
-                ),
+                metadata=cast(dict[str, object], json.loads(cast(str, row[8]))),
                 created_at=datetime.fromisoformat(row[9]),
             )
             for row in rows

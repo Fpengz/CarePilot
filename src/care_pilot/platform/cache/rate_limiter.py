@@ -18,9 +18,7 @@ from .redis_store import _load_redis_module
 
 
 class RateLimiter(Protocol):
-    def allow(
-        self, *, key: str, limit: int, window_seconds: int
-    ) -> tuple[bool, int]: ...
+    def allow(self, *, key: str, limit: int, window_seconds: int) -> tuple[bool, int]: ...
 
 
 class InMemoryRateLimiter:
@@ -28,9 +26,7 @@ class InMemoryRateLimiter:
         self._events: dict[str, deque[float]] = {}
         self._lock = Lock()
 
-    def allow(
-        self, *, key: str, limit: int, window_seconds: int
-    ) -> tuple[bool, int]:
+    def allow(self, *, key: str, limit: int, window_seconds: int) -> tuple[bool, int]:
         now = time()
         cutoff = now - float(window_seconds)
         with self._lock:
@@ -39,9 +35,7 @@ class InMemoryRateLimiter:
                 events.popleft()
             if len(events) >= limit:
                 retry_after = (
-                    int(max(1, window_seconds - (now - events[0])))
-                    if events
-                    else window_seconds
+                    int(max(1, window_seconds - (now - events[0]))) if events else window_seconds
                 )
                 return (False, retry_after)
             events.append(now)
@@ -55,16 +49,12 @@ class RedisRateLimiter:
 
     def __post_init__(self) -> None:
         redis_module = _load_redis_module()
-        self._client = redis_module.Redis.from_url(
-            self.redis_url, decode_responses=True
-        )
+        self._client = redis_module.Redis.from_url(self.redis_url, decode_responses=True)
 
     def _key(self, key: str) -> str:
         return f"{self.namespace}:rate_limit:v2:{key}"
 
-    def allow(
-        self, *, key: str, limit: int, window_seconds: int
-    ) -> tuple[bool, int]:
+    def allow(self, *, key: str, limit: int, window_seconds: int) -> tuple[bool, int]:
         namespaced_key = self._key(key)
         with self._client.pipeline() as pipe:
             pipe.incr(namespaced_key)
@@ -86,10 +76,7 @@ class RedisRateLimiter:
 
 
 def build_rate_limiter(settings: Settings) -> RateLimiter:
-    if (
-        settings.storage.ephemeral_state_backend == "redis"
-        and settings.storage.redis_url
-    ):
+    if settings.storage.ephemeral_state_backend == "redis" and settings.storage.redis_url:
         return RedisRateLimiter(
             redis_url=str(settings.storage.redis_url),
             namespace=settings.storage.redis_namespace,

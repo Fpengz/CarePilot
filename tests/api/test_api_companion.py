@@ -20,9 +20,7 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_companion_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_companion_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -37,9 +35,7 @@ def _login(
     email: str = "member@example.com",
     password: str = "member-pass",
 ) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
@@ -78,9 +74,7 @@ def _seed_companion_state(client: TestClient) -> None:
     assert reminders.status_code == 200
 
 
-def _set_subject_user_id(
-    app_client: TestClient, *, session_id: str, subject_user_id: str
-) -> None:
+def _set_subject_user_id(app_client: TestClient, *, session_id: str, subject_user_id: str) -> None:
     app = app_client.app
     assert isinstance(app, FastAPI)
     auth_store = app.state.ctx.auth_store
@@ -185,10 +179,7 @@ def test_companion_interaction_changes_by_interaction_type_and_includes_richer_g
     meal_body = meal_review.json()
     adherence_body = adherence_follow_up.json()
 
-    assert (
-        meal_body["care_plan"]["headline"]
-        != adherence_body["care_plan"]["headline"]
-    )
+    assert meal_body["care_plan"]["headline"] != adherence_body["care_plan"]["headline"]
     assert (
         meal_body["care_plan"]["recommended_actions"]
         != adherence_body["care_plan"]["recommended_actions"]
@@ -211,15 +202,10 @@ def test_companion_interaction_changes_by_interaction_type_and_includes_richer_g
     assert adherence_body["clinician_digest_preview"]["why_now"]
     assert meal_body["impact"]["baseline_window"]
     assert adherence_body["impact"]["comparison_window"]
+    assert "meal" in " ".join(meal_body["care_plan"]["recommended_actions"]).lower()
     assert (
-        "meal"
-        in " ".join(meal_body["care_plan"]["recommended_actions"]).lower()
-    )
-    assert (
-        "medication"
-        in " ".join(adherence_body["care_plan"]["recommended_actions"]).lower()
-        or "reminder"
-        in " ".join(adherence_body["care_plan"]["recommended_actions"]).lower()
+        "medication" in " ".join(adherence_body["care_plan"]["recommended_actions"]).lower()
+        or "reminder" in " ".join(adherence_body["care_plan"]["recommended_actions"]).lower()
     )
 
 
@@ -271,9 +257,7 @@ def test_companion_endpoints_use_subject_user_state_for_care_mode_sessions(
     assert member_login.status_code == 200
     assert helper_login.status_code == 200
 
-    created = member_client.post(
-        "/api/v1/households", json={"name": "Family Circle"}
-    )
+    created = member_client.post("/api/v1/households", json={"name": "Family Circle"})
     assert created.status_code == 200
     household_id = created.json()["household"]["household_id"]
     invite = member_client.post(f"/api/v1/households/{household_id}/invites")

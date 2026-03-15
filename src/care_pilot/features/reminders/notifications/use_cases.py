@@ -136,11 +136,7 @@ def _notification_from_event(
         id=notification_id,
         event_id=event.event_id,
         event_type=event.event_type,
-        workflow_name=(
-            str(event.workflow_name)
-            if event.workflow_name is not None
-            else None
-        ),
+        workflow_name=(str(event.workflow_name) if event.workflow_name is not None else None),
         category=_category_for_event(event),
         title=_title_for_event(event),
         message=_message_for_event(event),
@@ -159,19 +155,13 @@ def _user_notification_events(
     *, context: "AppContext", user_id: str
 ) -> list[WorkflowTimelineEvent]:
     events = context.event_timeline.get_events(user_id=user_id)
-    return [
-        event for event in events if event.event_type == "workflow_completed"
-    ]
+    return [event for event in events if event.event_type == "workflow_completed"]
 
 
-def list_notifications(
-    *, context: "AppContext", user_id: str
-) -> NotificationListResponse:
+def list_notifications(*, context: "AppContext", user_id: str) -> NotificationListResponse:
     events = _user_notification_events(context=context, user_id=user_id)
     items = [
-        _notification_from_event(
-            event=event, reads=context.notification_reads, user_id=user_id
-        )
+        _notification_from_event(event=event, reads=context.notification_reads, user_id=user_id)
         for event in reversed(events)
     ]
     unread_count = sum(1 for item in items if not item.read)
@@ -185,21 +175,13 @@ def mark_notification_read(
     notification_id: str,
 ) -> NotificationMarkReadResponse | None:
     existing = list_notifications(context=context, user_id=user_id)
-    current = next(
-        (item for item in existing.items if item.id == notification_id), None
-    )
+    current = next((item for item in existing.items if item.id == notification_id), None)
     if current is None:
         return None
-    context.notification_reads.mark_read(
-        user_id=user_id, notification_id=notification_id
-    )
+    context.notification_reads.mark_read(user_id=user_id, notification_id=notification_id)
     refreshed = list_notifications(context=context, user_id=user_id)
-    updated = next(
-        item for item in refreshed.items if item.id == notification_id
-    )
-    return NotificationMarkReadResponse(
-        notification=updated, unread_count=refreshed.unread_count
-    )
+    updated = next(item for item in refreshed.items if item.id == notification_id)
+    return NotificationMarkReadResponse(notification=updated, unread_count=refreshed.unread_count)
 
 
 def mark_all_notifications_read(

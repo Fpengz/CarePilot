@@ -15,10 +15,7 @@ def test_parse_meal_command_accepts_bracket_prefix() -> None:
 
 
 def test_parse_meal_command_accepts_colon_prefix() -> None:
-    assert (
-        _parse_meal_command("meal: soft-boiled eggs with toast")
-        == "soft-boiled eggs with toast"
-    )
+    assert _parse_meal_command("meal: soft-boiled eggs with toast") == "soft-boiled eggs with toast"
 
 
 def test_parse_meal_command_accepts_log_meal_prefix() -> None:

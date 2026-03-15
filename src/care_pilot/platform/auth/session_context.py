@@ -27,18 +27,12 @@ def build_user_profile_from_session(
     repository: HealthProfileRepository | None = None,
 ) -> UserProfile:
     health_profile = (
-        repository.get_health_profile(str(session["user_id"]))
-        if repository is not None
-        else None
+        repository.get_health_profile(str(session["user_id"])) if repository is not None else None
     ) or default_health_profile(str(session["user_id"]))
-    profile = build_user_profile_from_health_profile(
-        session=session, health_profile=health_profile
-    )
+    profile = build_user_profile_from_health_profile(session=session, health_profile=health_profile)
     profile.profile_mode = cast(
         ProfileMode,
         session.get("profile_mode")
-        or default_profile_mode_for_role(
-            cast(AccountRole, session["account_role"])
-        ),
+        or default_profile_mode_for_role(cast(AccountRole, session["account_role"])),
     )
     return profile

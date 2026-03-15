@@ -44,12 +44,13 @@ def test_run_reminder_scheduler_once_dispatches_and_delivers_due_notifications(
 def test_run_reminder_scheduler_once_builds_configured_store_when_repository_omitted(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    fake_repo = object()
+    fake_repo = SimpleNamespace(lease_alert_records=lambda **kwargs: [])
     settings = SimpleNamespace(
         workers=SimpleNamespace(
             reminder_scheduler_batch_size=25,
             alert_worker_max_attempts=3,
             alert_worker_concurrency=4,
+            reminder_max_late_minutes=30,
         )
     )
     recorded: dict[str, object] = {}
@@ -64,7 +65,7 @@ def test_run_reminder_scheduler_once_builds_configured_store_when_repository_omi
         return fake_repo
 
     def fake_dispatch_due_reminder_notifications(
-        *, repository: object, now: datetime, limit: int
+        *, repository: object, now: datetime, limit: int, **kwargs: object
     ) -> list[object]:
         recorded["dispatch_repository"] = repository
         recorded["dispatch_limit"] = limit
@@ -89,7 +90,4 @@ def test_run_reminder_scheduler_once_builds_configured_store_when_repository_omi
     )
     assert recorded["settings"] is settings
     assert recorded["dispatch_repository"] is fake_repo
-    assert (
-        recorded["dispatch_limit"]
-        == settings.workers.reminder_scheduler_batch_size
-    )
+    assert recorded["dispatch_limit"] == settings.workers.reminder_scheduler_batch_size

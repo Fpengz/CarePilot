@@ -60,17 +60,13 @@ from uuid import uuid4
 router = APIRouter(tags=["reminders"])
 
 
-@router.post(
-    "/api/v1/reminders/generate", response_model=ReminderGenerateResponse
-)
+@router.post("/api/v1/reminders/generate", response_model=ReminderGenerateResponse)
 def reminders_generate(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> ReminderGenerateResponse:
     require_action(session, "reminders.generate")
-    return generate_reminders_for_session(
-        context=get_context(request), session=session
-    )
+    return generate_reminders_for_session(context=get_context(request), session=session)
 
 
 @router.get("/api/v1/reminders", response_model=ReminderListResponse)
@@ -168,9 +164,7 @@ def reminder_definitions_patch(
     return ReminderDefinitionEnvelopeResponse(item=item)
 
 
-@router.get(
-    "/api/v1/reminders/upcoming", response_model=ReminderOccurrenceListResponse
-)
+@router.get("/api/v1/reminders/upcoming", response_model=ReminderOccurrenceListResponse)
 def reminder_occurrences_upcoming(
     request: Request,
     session: dict[str, object] = Depends(current_session),
@@ -185,9 +179,7 @@ def reminder_occurrences_upcoming(
     )
 
 
-@router.get(
-    "/api/v1/reminders/history", response_model=ReminderOccurrenceListResponse
-)
+@router.get("/api/v1/reminders/history", response_model=ReminderOccurrenceListResponse)
 def reminder_occurrences_history(
     request: Request,
     session: dict[str, object] = Depends(current_session),

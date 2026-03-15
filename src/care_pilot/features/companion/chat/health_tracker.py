@@ -111,9 +111,7 @@ class HealthTracker:
         # Parse each message (DB-cached after first parse)
         all_metrics: list[dict] = []
         for msg in messages:
-            parsed = self._parse_and_cache(
-                msg["id"], msg["content"], msg["created_at"]
-            )
+            parsed = self._parse_and_cache(msg["id"], msg["content"], msg["created_at"])
             all_metrics.extend(parsed)
 
         if not all_metrics:
@@ -146,9 +144,7 @@ class HealthTracker:
         messages = self._get_tracked_messages(start_date, end_date)
         all_metrics: list[dict] = []
         for msg in messages:
-            parsed = self._parse_and_cache(
-                msg["id"], msg["content"], msg["created_at"]
-            )
+            parsed = self._parse_and_cache(msg["id"], msg["content"], msg["created_at"])
             all_metrics.extend(parsed)
 
         groups: dict[str, dict] = {}
@@ -201,9 +197,7 @@ class HealthTracker:
                 )
             """)
 
-    def _get_tracked_messages(
-        self, start_date: str, end_date: str
-    ) -> list[dict]:
+    def _get_tracked_messages(self, start_date: str, end_date: str) -> list[dict]:
         """Query chat_messages for [TRACK] user messages within the date window."""
         with self._connect() as conn:
             rows = conn.execute(
@@ -223,9 +217,7 @@ class HealthTracker:
     # LLM parsing with DB cache
     # ------------------------------------------------------------------ #
 
-    def _parse_and_cache(
-        self, message_id: int, content: str, recorded_at: str
-    ) -> list[dict]:
+    def _parse_and_cache(self, message_id: int, content: str, recorded_at: str) -> list[dict]:
         """Return parsed metrics for a message, using cached DB results if available."""
         with self._connect() as conn:
             cached = conn.execute(
@@ -251,9 +243,7 @@ class HealthTracker:
                     "message_id": message_id,
                     "user_id": self._user_id,
                     "session_id": self._session_id,
-                    "metric_type": str(
-                        m.get("metric_type", "unknown")
-                    ).strip(),
+                    "metric_type": str(m.get("metric_type", "unknown")).strip(),
                     "value": float(val),
                     "unit": m.get("unit"),
                     "label": m.get("label") or m.get("metric_type", "unknown"),
@@ -290,10 +280,7 @@ class HealthTracker:
                 system_prompt=_PARSE_PROMPT,
             )
             response = asyncio.run(self._engine.infer(request))
-            return [
-                metric.model_dump()
-                for metric in response.structured_output.metrics
-            ]
+            return [metric.model_dump() for metric in response.structured_output.metrics]
         except Exception as exc:  # noqa: BLE001
             self._logger.warning("chat_health_metrics_failed error=%s", exc)
             return []
@@ -302,9 +289,7 @@ class HealthTracker:
     # Chart rendering
     # ------------------------------------------------------------------ #
 
-    def _render_chart(
-        self, all_metrics: list[dict], start_date: str, end_date: str
-    ):
+    def _render_chart(self, all_metrics: list[dict], start_date: str, end_date: str):
         """Build a matplotlib Figure with one subplot per metric_type."""
         # Group by metric_type, sort by time
         groups: dict[str, list[tuple]] = {}
@@ -359,9 +344,7 @@ class HealthTracker:
                 fig.autofmt_xdate(rotation=30, ha="right")
             else:
                 ax.set_xticks(dates)
-                ax.xaxis.set_major_formatter(
-                    mdates.DateFormatter("%b %d %H:%M")
-                )
+                ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d %H:%M"))
 
             # Annotate each point with its value
             for d, v in zip(dates, values):
@@ -398,8 +381,6 @@ class HealthTracker:
         return fig
 
 
-def _table_has_column(
-    conn: sqlite3.Connection, table: str, column: str
-) -> bool:
+def _table_has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
     rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
     return any(row[1] == column for row in rows)

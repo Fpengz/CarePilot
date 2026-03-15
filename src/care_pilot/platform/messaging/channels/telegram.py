@@ -26,9 +26,7 @@ class TelegramChannel:
         self.chat_id = settings.channels.telegram_chat_id or ""
         self.dev_mode = settings.channels.telegram_dev_mode
         self.app_timezone = settings.app.timezone
-        self.request_timeout_seconds = (
-            settings.channels.telegram_request_timeout_seconds
-        )
+        self.request_timeout_seconds = settings.channels.telegram_request_timeout_seconds
 
     def _build_endpoint(self) -> str:
         return f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
@@ -38,11 +36,7 @@ class TelegramChannel:
             local_tz = ZoneInfo(self.app_timezone)
         except ZoneInfoNotFoundError:
             local_tz = timezone.utc
-        dt = (
-            value
-            if value.tzinfo is not None
-            else value.replace(tzinfo=local_tz)
-        )
+        dt = value if value.tzinfo is not None else value.replace(tzinfo=local_tz)
         local_dt = dt.astimezone(local_tz)
         return local_dt.isoformat(timespec="seconds")
 
@@ -54,23 +48,17 @@ class TelegramChannel:
             return raw[len("telegram://") :]
         return raw
 
-    def _build_payload(
-        self, reminder_event: ReminderEvent, chat_id: str
-    ) -> dict[str, str]:
+    def _build_payload(self, reminder_event: ReminderEvent, chat_id: str) -> dict[str, str]:
         text = (
             f"Medication reminder: {reminder_event.medication_name} "
             f"{reminder_event.dosage_text} at {self._format_scheduled_at(reminder_event.scheduled_at)}"
         )
         return {"chat_id": chat_id, "text": text}
 
-    def send(
-        self, reminder_event: ReminderEvent, destination: str | None = None
-    ) -> ChannelResult:
+    def send(self, reminder_event: ReminderEvent, destination: str | None = None) -> ChannelResult:
         chat_id = self._resolve_chat_id(destination)
         if not self.bot_token or not chat_id:
-            logger.warning(
-                "telegram_send_missing_config event_id=%s", reminder_event.id
-            )
+            logger.warning("telegram_send_missing_config event_id=%s", reminder_event.id)
             return ChannelResult(
                 channel=self.name,
                 success=False,
@@ -120,9 +108,7 @@ class TelegramChannel:
             method="POST",
         )
         try:
-            with request.urlopen(
-                req, timeout=self.request_timeout_seconds
-            ) as resp:  # noqa: S310
+            with request.urlopen(req, timeout=self.request_timeout_seconds) as resp:  # noqa: S310
                 ok = 200 <= resp.status < 300
                 if not ok:
                     result = ChannelResult(

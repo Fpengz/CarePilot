@@ -62,11 +62,7 @@ def _slot_from_category(category: str) -> MealSlot:
         return "breakfast"
     if "bread" in normalized or "pastry" in normalized:
         return "breakfast"
-    if (
-        "drink" in normalized
-        or "dessert" in normalized
-        or "snack" in normalized
-    ):
+    if "drink" in normalized or "dessert" in normalized or "snack" in normalized:
         return "snack"
     if "dinner" in normalized:
         return "dinner"
@@ -165,15 +161,9 @@ def _default_portion_grams(serving_size: str | None, title: str) -> float:
     }.get(unit, 300.0)
 
 
-def _portion_references(
-    serving_size: str | None, title: str
-) -> list[PortionReference]:
+def _portion_references(serving_size: str | None, title: str) -> list[PortionReference]:
     grams = _default_portion_grams(serving_size, title)
-    return [
-        PortionReference(
-            unit=_portion_unit(serving_size), grams=grams, confidence=0.7
-        )
-    ]
+    return [PortionReference(unit=_portion_unit(serving_size), grams=grams, confidence=0.7)]
 
 
 def _risk_tags(
@@ -182,11 +172,7 @@ def _risk_tags(
     preparation_tags: list[str],
     health_tags: list[str],
 ) -> list[str]:
-    tags = list(
-        dict.fromkeys(
-            str(tag).lower() for tag in health_tags if str(tag).strip()
-        )
-    )
+    tags = list(dict.fromkeys(str(tag).lower() for tag in health_tags if str(tag).strip()))
     if "fried" in preparation_tags and "fried" not in tags:
         tags.append("fried")
     if nutrition.sodium_mg >= 900 and "high_sodium" not in tags:
@@ -275,9 +261,7 @@ def _from_teammate_entry(
     title = str(title_source or "").strip()
     if not title:
         title = str(entry["food_id"])
-    merged_aliases = list(
-        dict.fromkeys([*aliases, *(base.aliases if base is not None else [])])
-    )
+    merged_aliases = list(dict.fromkeys([*aliases, *(base.aliases if base is not None else [])]))
     disease_advice_raw = entry.get("disease_advice") or {}
     assert isinstance(disease_advice_raw, dict)
     disease_advice = {
@@ -285,24 +269,17 @@ def _from_teammate_entry(
         for key, value in disease_advice_raw.items()
         if isinstance(value, dict)
     }
-    alternatives_raw = cast(
-        list[object], entry.get("healthier_alternatives") or []
-    )
+    alternatives_raw = cast(list[object], entry.get("healthier_alternatives") or [])
     alternatives = [
         CanonicalFoodAlternative.model_validate(item)
         for item in alternatives_raw
         if isinstance(item, dict)
     ]
-    slot = (
-        base.slot
-        if base is not None
-        else _slot_from_category(str(entry.get("category") or ""))
-    )
+    slot = base.slot if base is not None else _slot_from_category(str(entry.get("category") or ""))
     venue_type = (
         base.venue_type
         if base is not None and base.venue_type
-        else normalize_text(str(entry.get("source") or "")).replace(" ", "_")
-        or "hawker_stall"
+        else normalize_text(str(entry.get("source") or "")).replace(" ", "_") or "hawker_stall"
     )
     calories = _number(
         nutrition.get("calories_kcal"),
@@ -318,11 +295,7 @@ def _from_teammate_entry(
     )
     health_tags_raw = cast(list[object], entry.get("health_tags") or [])
     serving_size = (
-        str(
-            entry.get("serving_size")
-            or (base.serving_size if base is not None else "")
-        )
-        or None
+        str(entry.get("serving_size") or (base.serving_size if base is not None else "")) or None
     )
     merged_health_tags = list(
         dict.fromkeys(
@@ -372,11 +345,7 @@ def _from_teammate_entry(
         ),
     )
     return CanonicalFoodRecord(
-        food_id=(
-            base.food_id
-            if base is not None
-            else f"seed.{str(entry['food_id']).lower()}"
-        ),
+        food_id=(base.food_id if base is not None else f"seed.{str(entry['food_id']).lower()}"),
         title=title,
         locale=base.locale if base is not None else "en-SG",
         aliases=merged_aliases,
@@ -402,26 +371,21 @@ def _from_teammate_entry(
             health_tags=merged_health_tags,
         ),
         glycemic_index_label=str(
-            entry.get("glycemic_index")
-            or (base.glycemic_index_label if base is not None else "")
+            entry.get("glycemic_index") or (base.glycemic_index_label if base is not None else "")
         ).lower()
         or None,
         glycemic_index_value=_int_number(
             entry.get("gi_value"),
             base.glycemic_index_value if base is not None else None,
         ),
-        disease_advice=disease_advice
-        or (base.disease_advice if base is not None else {}),
-        alternatives=alternatives
-        or (base.alternatives if base is not None else []),
+        disease_advice=disease_advice or (base.disease_advice if base is not None else {}),
+        alternatives=alternatives or (base.alternatives if base is not None else []),
         serving_size=serving_size,
         default_portion_grams=_default_portion_grams(serving_size, title),
         portion_references=_portion_references(serving_size, title),
         source_dataset="sg_hawker_food",
         source_type="import",
-        localization_variant=(
-            base.localization_variant if base is not None else None
-        ),
+        localization_variant=(base.localization_variant if base is not None else None),
         active=base.active if base is not None else True,
     )
 
@@ -448,8 +412,7 @@ def build_default_canonical_food_records() -> list[CanonicalFoodRecord]:
     )
 
     merged: dict[str, CanonicalFoodRecord] = {
-        normalize_text(item.title): _from_meal_catalog_item(item)
-        for item in DEFAULT_MEAL_CATALOG
+        normalize_text(item.title): _from_meal_catalog_item(item) for item in DEFAULT_MEAL_CATALOG
     }
     for item in load_canonical_food_records(_canonical_seed_path()):
         merged[normalize_text(item.title)] = item
@@ -461,9 +424,7 @@ def build_default_canonical_food_records() -> list[CanonicalFoodRecord]:
         normalized_name = normalize_text(str(entry.get("food_name_en") or ""))
         if not normalized_name:
             continue
-        merged[normalized_name] = _from_teammate_entry(
-            entry, base=merged.get(normalized_name)
-        )
+        merged[normalized_name] = _from_teammate_entry(entry, base=merged.get(normalized_name))
     return sorted(merged.values(), key=lambda item: item.food_id)
 
 
@@ -478,18 +439,14 @@ def rank_food_candidates(
 ) -> list[tuple[CanonicalFoodRecord, float]]:
     """Rank canonical records against an observed label using name and ingredient overlap."""
     aliases = [observed_label, *(candidate_aliases or [])]
-    normalized_aliases = [
-        normalize_text(item) for item in aliases if normalize_text(item)
-    ]
+    normalized_aliases = [normalize_text(item) for item in aliases if normalize_text(item)]
     observed_tokens = (
         set().union(*(_token_set(item) for item in normalized_aliases))
         if normalized_aliases
         else set()
     )
     component_tokens = {
-        normalize_text(item)
-        for item in (detected_components or [])
-        if normalize_text(item)
+        normalize_text(item) for item in (detected_components or []) if normalize_text(item)
     }
     preparation_token = normalize_text(preparation or "")
     ranked: list[tuple[CanonicalFoodRecord, float]] = []
@@ -502,42 +459,28 @@ def rank_food_candidates(
             if alias in record_names:
                 name_score = max(name_score, 1.0)
                 continue
-            if any(
-                alias in record_name or record_name in alias
-                for record_name in record_names
-            ):
+            if any(alias in record_name or record_name in alias for record_name in record_names):
                 name_score = max(name_score, 0.82)
                 continue
             alias_tokens = _token_set(alias)
-            record_tokens = set().union(
-                *(_token_set(record_name) for record_name in record_names)
-            )
-            name_score = max(
-                name_score, _overlap_score(alias_tokens, record_tokens) * 0.7
-            )
+            record_tokens = set().union(*(_token_set(record_name) for record_name in record_names))
+            name_score = max(name_score, _overlap_score(alias_tokens, record_tokens) * 0.7)
         ingredient_tokens = {
-            normalize_text(token)
-            for token in item.ingredient_tags
-            if normalize_text(token)
+            normalize_text(token) for token in item.ingredient_tags if normalize_text(token)
         }
         component_score = _overlap_score(component_tokens, ingredient_tokens)
         prep_tokens = {
-            normalize_text(token)
-            for token in item.preparation_tags
-            if normalize_text(token)
+            normalize_text(token) for token in item.preparation_tags if normalize_text(token)
         }
         preparation_score = 0.0
         if preparation_token:
             if preparation_token in prep_tokens:
                 preparation_score = 1.0
             elif any(
-                preparation_token in token or token in preparation_token
-                for token in prep_tokens
+                preparation_token in token or token in preparation_token for token in prep_tokens
             ):
                 preparation_score = 0.65
-        token_score = _overlap_score(
-            observed_tokens, ingredient_tokens.union(prep_tokens)
-        )
+        token_score = _overlap_score(observed_tokens, ingredient_tokens.union(prep_tokens))
         score = round(
             name_score * 0.65
             + component_score * 0.2
@@ -558,9 +501,7 @@ def find_food_by_name(
     locale: str = "en-SG",
 ) -> CanonicalFoodRecord | None:
     """Return the best-matching canonical record for a name, or ``None`` if below threshold."""
-    ranked = rank_food_candidates(
-        records=records, locale=locale, observed_label=name
-    )
+    ranked = rank_food_candidates(records=records, locale=locale, observed_label=name)
     if not ranked:
         return None
     best, score = ranked[0]

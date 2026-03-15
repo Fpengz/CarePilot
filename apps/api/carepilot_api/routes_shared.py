@@ -45,16 +45,12 @@ def _is_valid_session_payload(session: object) -> bool:
         if not isinstance(payload.get(key), str):
             return False
     scopes = payload.get("scopes")
-    if not isinstance(scopes, list) or not all(
-        isinstance(item, str) for item in scopes
-    ):
+    if not isinstance(scopes, list) or not all(isinstance(item, str) for item in scopes):
         return False
     return True
 
 
-def _session_cookie_candidates(
-    request: Request, session_cookie: str | None
-) -> list[str]:
+def _session_cookie_candidates(request: Request, session_cookie: str | None) -> list[str]:
     raw_cookie = request.headers.get("cookie") or ""
     candidates: list[str] = []
     for part in raw_cookie.split(";"):
@@ -108,9 +104,7 @@ def require_session(
 
 
 def require_scopes(session: SessionData, required_scopes: set[str]) -> None:
-    scopes = [
-        str(item) for item in cast(list[object], session.get("scopes", []))
-    ]
+    scopes = [str(item) for item in cast(list[object], session.get("scopes", []))]
     if not has_scopes(scopes, required_scopes):
         raise HTTPException(status_code=403, detail="forbidden")
 
@@ -119,9 +113,7 @@ def require_action(session: SessionData, action: str) -> None:
     authorize_action(session, action=action)
 
 
-def require_resource_action(
-    session: SessionData, action: str, resource: dict[str, object]
-) -> None:
+def require_resource_action(session: SessionData, action: str, resource: dict[str, object]) -> None:
     authorize_resource_action(session, action=action, resource=resource)
 
 

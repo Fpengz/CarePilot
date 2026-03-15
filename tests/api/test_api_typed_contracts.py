@@ -38,86 +38,38 @@ from care_pilot.features.meals.domain.models import (
 
 
 def test_meal_contract_responses_use_typed_models() -> None:
+    assert MealAnalyzeResponse.model_fields["raw_observation"].annotation is RawObservationBundle
+    assert MealAnalyzeResponse.model_fields["validated_event"].annotation is ValidatedMealEvent
+    assert MealAnalyzeResponse.model_fields["nutrition_profile"].annotation is NutritionRiskProfile
     assert (
-        MealAnalyzeResponse.model_fields["raw_observation"].annotation
-        is RawObservationBundle
+        MealAnalyzeResponse.model_fields["output_envelope"].annotation == AgentOutputEnvelope | None
     )
-    assert (
-        MealAnalyzeResponse.model_fields["validated_event"].annotation
-        is ValidatedMealEvent
-    )
-    assert (
-        MealAnalyzeResponse.model_fields["nutrition_profile"].annotation
-        is NutritionRiskProfile
-    )
-    assert (
-        MealAnalyzeResponse.model_fields["output_envelope"].annotation
-        == AgentOutputEnvelope | None
-    )
-    assert (
-        MealAnalyzeResponse.model_fields["workflow"].annotation
-        is WorkflowResponse
-    )
-    assert (
-        MealRecordsResponse.model_fields["records"].annotation
-        == list[ValidatedMealEvent]
-    )
-    assert (
-        MealRecordsResponse.model_fields["page"].annotation
-        == CursorPageResponse | None
-    )
+    assert MealAnalyzeResponse.model_fields["workflow"].annotation is WorkflowResponse
+    assert MealRecordsResponse.model_fields["records"].annotation == list[ValidatedMealEvent]
+    assert MealRecordsResponse.model_fields["page"].annotation == CursorPageResponse | None
 
 
 def test_recommendation_and_suggestion_contracts_use_typed_models() -> None:
     assert (
-        RecommendationGenerateResponse.model_fields[
-            "recommendation"
-        ].annotation
+        RecommendationGenerateResponse.model_fields["recommendation"].annotation
         is RecommendationOutput
     )
-    assert (
-        RecommendationGenerateResponse.model_fields["workflow"].annotation
-        is WorkflowResponse
-    )
+    assert RecommendationGenerateResponse.model_fields["workflow"].annotation is WorkflowResponse
     assert (
         SuggestionItemResponse.model_fields["report_parse"].annotation
         is SuggestionReportParseResponse
     )
-    assert (
-        SuggestionItemResponse.model_fields["recommendation"].annotation
-        is RecommendationOutput
-    )
-    assert (
-        SuggestionItemResponse.model_fields["workflow"].annotation
-        is WorkflowResponse
-    )
+    assert SuggestionItemResponse.model_fields["recommendation"].annotation is RecommendationOutput
+    assert SuggestionItemResponse.model_fields["workflow"].annotation is WorkflowResponse
 
 
 def test_reminder_contracts_use_typed_models() -> None:
-    assert (
-        ReminderGenerateResponse.model_fields["reminders"].annotation
-        == list[ReminderEvent]
-    )
-    assert (
-        ReminderGenerateResponse.model_fields["metrics"].annotation
-        is EngagementMetrics
-    )
-    assert (
-        ReminderListResponse.model_fields["reminders"].annotation
-        == list[ReminderEvent]
-    )
-    assert (
-        ReminderListResponse.model_fields["metrics"].annotation
-        is EngagementMetrics
-    )
-    assert (
-        ReminderConfirmResponse.model_fields["event"].annotation
-        is ReminderEvent
-    )
-    assert (
-        ReminderConfirmResponse.model_fields["metrics"].annotation
-        is EngagementMetrics
-    )
+    assert ReminderGenerateResponse.model_fields["reminders"].annotation == list[ReminderEvent]
+    assert ReminderGenerateResponse.model_fields["metrics"].annotation is EngagementMetrics
+    assert ReminderListResponse.model_fields["reminders"].annotation == list[ReminderEvent]
+    assert ReminderListResponse.model_fields["metrics"].annotation is EngagementMetrics
+    assert ReminderConfirmResponse.model_fields["event"].annotation is ReminderEvent
+    assert ReminderConfirmResponse.model_fields["metrics"].annotation is EngagementMetrics
 
 
 def test_alert_workflow_and_interaction_contracts_use_typed_models() -> None:
@@ -125,10 +77,7 @@ def test_alert_workflow_and_interaction_contracts_use_typed_models() -> None:
         AlertTriggerResponse.model_fields["outbox_timeline"].annotation
         == list[AlertTimelineItemResponse]
     )
-    assert (
-        AlertTriggerResponse.model_fields["workflow"].annotation
-        is WorkflowResponse
-    )
+    assert AlertTriggerResponse.model_fields["workflow"].annotation is WorkflowResponse
     assert (
         AlertTimelineResponse.model_fields["outbox_timeline"].annotation
         == list[AlertTimelineItemResponse]
@@ -138,15 +87,11 @@ def test_alert_workflow_and_interaction_contracts_use_typed_models() -> None:
         is WorkflowTimelineEventPayloadResponse
     )
     assert (
-        RecommendationInteractionResponse.model_fields[
-            "interaction"
-        ].annotation
+        RecommendationInteractionResponse.model_fields["interaction"].annotation
         is RecommendationInteractionItemResponse
     )
     assert (
-        RecommendationInteractionResponse.model_fields[
-            "preference_snapshot"
-        ].annotation
+        RecommendationInteractionResponse.model_fields["preference_snapshot"].annotation
         is RecommendationPreferenceSnapshotResponse
     )
 
@@ -157,6 +102,5 @@ def test_clinical_card_contracts_use_typed_models() -> None:
         == dict[str, ClinicalCardTrendResponse]
     )
     assert (
-        ClinicalCardResponse.model_fields["provenance"].annotation
-        is ClinicalCardProvenanceResponse
+        ClinicalCardResponse.model_fields["provenance"].annotation is ClinicalCardProvenanceResponse
     )

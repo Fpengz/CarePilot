@@ -20,26 +20,20 @@ class LLMCapabilityRouter:
     def __init__(self, settings: AppSettings) -> None:
         self._settings = settings
 
-    def resolve(
-        self, capability: LLMCapability | str | None
-    ) -> ResolvedModelRuntime | None:
+    def resolve(self, capability: LLMCapability | str | None) -> ResolvedModelRuntime | None:
         if capability is None:
             return None
 
-        capability_name = (
-            capability.value
-            if isinstance(capability, LLMCapability)
-            else capability
-        )
+        capability_name = capability.value if isinstance(capability, LLMCapability) else capability
         targets = self._settings.llm.capability_map
         # Coerce the string key to LLMCapability for typed dict lookup; unknown keys get None.
         try:
             cap_key = LLMCapability(capability_name)
         except ValueError:
             cap_key = None
-        target = (
-            targets.get(cap_key) if cap_key is not None else None
-        ) or targets.get(LLMCapability.FALLBACK)
+        target = (targets.get(cap_key) if cap_key is not None else None) or targets.get(
+            LLMCapability.FALLBACK
+        )
         if target is None:
             return None
 
@@ -63,9 +57,7 @@ class LLMCapabilityRouter:
             return self._settings.llm.qwen.model
         return self._settings.llm.local.model
 
-    def _resolve_base_url(
-        self, provider: str, target: LLMCapabilityTarget
-    ) -> str | None:
+    def _resolve_base_url(self, provider: str, target: LLMCapabilityTarget) -> str | None:
         if target.base_url is not None:
             return str(target.base_url)
         if provider == ModelProvider.OPENAI.value:
@@ -76,9 +68,7 @@ class LLMCapabilityRouter:
             return self._settings.llm.local.base_url
         return None
 
-    def _resolve_api_key(
-        self, provider: str, target: LLMCapabilityTarget
-    ) -> str | None:
+    def _resolve_api_key(self, provider: str, target: LLMCapabilityTarget) -> str | None:
         if target.api_key:
             return target.api_key
         if target.api_key_env:

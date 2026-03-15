@@ -77,9 +77,7 @@ def login_and_create_session(
         user_id=user.user_id,
         metadata={"account_role": user.account_role},
     )
-    return AuthSessionResult(
-        user=user, session=auth_store.create_session(user)
-    )
+    return AuthSessionResult(user=user, session=auth_store.create_session(user))
 
 
 def signup_member_and_create_session(
@@ -108,6 +106,4 @@ def signup_member_and_create_session(
         user_id=user.user_id,
         metadata={"account_role": user.account_role},
     )
-    return AuthSessionResult(
-        user=user, session=auth_store.create_session(user)
-    )
+    return AuthSessionResult(user=user, session=auth_store.create_session(user))

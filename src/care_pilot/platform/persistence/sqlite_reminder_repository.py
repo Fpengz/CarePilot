@@ -31,9 +31,7 @@ class SQLiteReminderRepository:
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
-    def save_reminder_definition(
-        self, definition: ReminderDefinition
-    ) -> ReminderDefinition:
+    def save_reminder_definition(self, definition: ReminderDefinition) -> ReminderDefinition:
         payload = definition.model_dump(mode="json")
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
@@ -71,14 +69,10 @@ class SQLiteReminderRepository:
             conn.commit()
         saved = self.get_reminder_definition(definition.id)
         if saved is None:
-            raise RuntimeError(
-                f"failed to persist reminder definition {definition.id}"
-            )
+            raise RuntimeError(f"failed to persist reminder definition {definition.id}")
         return saved
 
-    def get_reminder_definition(
-        self, reminder_definition_id: str
-    ) -> ReminderDefinition | None:
+    def get_reminder_definition(self, reminder_definition_id: str) -> ReminderDefinition | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
@@ -109,9 +103,7 @@ class SQLiteReminderRepository:
             treatment_duration=row[12],
             channels=json.loads(cast(str, row[13])),
             timezone=row[14],
-            schedule=ReminderScheduleRule.model_validate(
-                json.loads(cast(str, row[15]))
-            ),
+            schedule=ReminderScheduleRule.model_validate(json.loads(cast(str, row[15]))),
             active=bool(row[16]),
             created_at=datetime.fromisoformat(row[17]),
             updated_at=datetime.fromisoformat(row[18]),
@@ -148,9 +140,7 @@ class SQLiteReminderRepository:
                 treatment_duration=row[12],
                 channels=json.loads(cast(str, row[13])),
                 timezone=row[14],
-                schedule=ReminderScheduleRule.model_validate(
-                    json.loads(cast(str, row[15]))
-                ),
+                schedule=ReminderScheduleRule.model_validate(json.loads(cast(str, row[15]))),
                 active=bool(row[16]),
                 created_at=datetime.fromisoformat(row[17]),
                 updated_at=datetime.fromisoformat(row[18]),
@@ -158,9 +148,7 @@ class SQLiteReminderRepository:
             for row in rows
         ]
 
-    def save_reminder_occurrence(
-        self, occurrence: ReminderOccurrence
-    ) -> ReminderOccurrence:
+    def save_reminder_occurrence(self, occurrence: ReminderOccurrence) -> ReminderOccurrence:
         payload = occurrence.model_dump(mode="json")
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
@@ -181,11 +169,7 @@ class SQLiteReminderRepository:
                     occurrence.status,
                     occurrence.action,
                     occurrence.action_outcome,
-                    (
-                        occurrence.acted_at.isoformat()
-                        if occurrence.acted_at
-                        else None
-                    ),
+                    (occurrence.acted_at.isoformat() if occurrence.acted_at else None),
                     occurrence.grace_window_minutes,
                     occurrence.retry_count,
                     occurrence.last_delivery_status,
@@ -197,14 +181,10 @@ class SQLiteReminderRepository:
             conn.commit()
         saved = self.get_reminder_occurrence(occurrence.id)
         if saved is None:
-            raise RuntimeError(
-                f"failed to persist reminder occurrence {occurrence.id}"
-            )
+            raise RuntimeError(f"failed to persist reminder occurrence {occurrence.id}")
         return saved
 
-    def get_reminder_occurrence(
-        self, occurrence_id: str
-    ) -> ReminderOccurrence | None:
+    def get_reminder_occurrence(self, occurrence_id: str) -> ReminderOccurrence | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
@@ -281,9 +261,7 @@ class SQLiteReminderRepository:
             for row in rows
         ]
 
-    def append_reminder_action(
-        self, action: ReminderActionRecord
-    ) -> ReminderActionRecord:
+    def append_reminder_action(self, action: ReminderActionRecord) -> ReminderActionRecord:
         payload = action.model_dump(mode="json")
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
@@ -471,9 +449,7 @@ class SQLiteReminderRepository:
             )
             for r in rows
         ]
-        logger.debug(
-            "list_reminder_events user_id=%s count=%s", user_id, len(events)
-        )
+        logger.debug("list_reminder_events user_id=%s count=%s", user_id, len(events))
         return events
 
     def replace_reminder_notification_preferences(
@@ -580,17 +556,9 @@ class SQLiteReminderRepository:
                     item.preference_id,
                     item.status,
                     item.attempt_count,
-                    (
-                        item.next_attempt_at.isoformat()
-                        if item.next_attempt_at
-                        else None
-                    ),
+                    (item.next_attempt_at.isoformat() if item.next_attempt_at else None),
                     item.queued_at.isoformat() if item.queued_at else None,
-                    (
-                        item.delivered_at.isoformat()
-                        if item.delivered_at
-                        else None
-                    ),
+                    (item.delivered_at.isoformat() if item.delivered_at else None),
                     item.last_error,
                     json.dumps(item.payload),
                     item.idempotency_key,
@@ -609,9 +577,7 @@ class SQLiteReminderRepository:
             if row is not None:
                 existing = self.get_scheduled_notification(str(row[0]))
         if existing is None:
-            raise RuntimeError(
-                f"failed to persist scheduled notification {item.id}"
-            )
+            raise RuntimeError(f"failed to persist scheduled notification {item.id}")
         return existing
 
     def get_scheduled_notification(
@@ -682,13 +648,9 @@ class SQLiteReminderRepository:
                 preference_id=row[6],
                 status=row[7],
                 attempt_count=row[8],
-                next_attempt_at=(
-                    datetime.fromisoformat(row[9]) if row[9] else None
-                ),
+                next_attempt_at=(datetime.fromisoformat(row[9]) if row[9] else None),
                 queued_at=datetime.fromisoformat(row[10]) if row[10] else None,
-                delivered_at=(
-                    datetime.fromisoformat(row[11]) if row[11] else None
-                ),
+                delivered_at=(datetime.fromisoformat(row[11]) if row[11] else None),
                 last_error=row[12],
                 payload=json.loads(cast(str, row[13])),
                 idempotency_key=row[14],
@@ -833,9 +795,7 @@ class SQLiteReminderRepository:
             )
             conn.commit()
 
-    def cancel_scheduled_notifications_for_reminder(
-        self, reminder_id: str
-    ) -> int:
+    def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int:
         now = datetime.now(timezone.utc)
         with sqlite3.connect(self.db_path) as conn:
             result = conn.execute(
@@ -995,9 +955,7 @@ class SQLiteReminderRepository:
             for row in rows
         ]
 
-    def get_mobility_reminder_settings(
-        self, user_id: str
-    ) -> MobilityReminderSettings | None:
+    def get_mobility_reminder_settings(self, user_id: str) -> MobilityReminderSettings | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """

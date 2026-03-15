@@ -54,9 +54,7 @@ def test_get_model_explicit_args_override_settings(monkeypatch) -> None:
     monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
     monkeypatch.setenv("LOCAL_LLM_MODEL", "qwen3-vl:4b")
     get_settings.cache_clear()
-    model = LLMFactory.get_model(
-        provider="ollama", model_name="override-model"
-    )
+    model = LLMFactory.get_model(provider="ollama", model_name="override-model")
     assert getattr(model, "model_name", "") == "override-model"
     get_settings.cache_clear()
 
@@ -103,12 +101,8 @@ def test_profile_uses_profile_specific_api_key_env(monkeypatch) -> None:
             self.model_name = model_name
             self.provider = provider
 
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider
-    )
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel
-    )
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel)
     monkeypatch.setenv("CUSTOM_PROFILE_API_KEY", "profile-secret")
     monkeypatch.delenv("LOCAL_LLM_API_KEY", raising=False)
     get_settings.cache_clear()
@@ -143,12 +137,8 @@ def test_profile_creation_does_not_require_global_provider_validation(
             self.model_name = model_name
             self.provider = provider
 
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider
-    )
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel
-    )
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel)
     monkeypatch.setenv("LLM_PROVIDER", "gemini")
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
@@ -191,15 +181,9 @@ def test_local_provider_uses_configured_timeout_and_transport_retries(
             self.model_name = model_name
             self.provider = provider
 
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.AsyncOpenAI", FakeAsyncOpenAI
-    )
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider
-    )
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel
-    )
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.AsyncOpenAI", FakeAsyncOpenAI)
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel)
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
     monkeypatch.setenv("LOCAL_LLM_MODEL", "qwen3-vl:4b")
@@ -237,15 +221,9 @@ def test_get_model_explicit_openai_provider_uses_openai_settings(
             self.model_name = model_name
             self.provider = provider
 
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.AsyncOpenAI", FakeAsyncOpenAI
-    )
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider
-    )
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel
-    )
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.AsyncOpenAI", FakeAsyncOpenAI)
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel)
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("OPENAI_MODEL", "gpt-4o-mini")
     monkeypatch.setenv("OPENAI_REQUEST_TIMEOUT_SECONDS", "90")
@@ -275,24 +253,16 @@ def test_get_model_explicit_qwen_provider_uses_openai_network_settings(
         def __init__(self, *, openai_client=None, **kwargs):  # noqa: ANN003
             captured["openai_client"] = openai_client
             captured["provider_kwargs"] = kwargs
-            self.base_url = (
-                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-            )
+            self.base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
 
     class FakeModel:
         def __init__(self, model_name: str, provider: FakeProvider) -> None:
             self.model_name = model_name
             self.provider = provider
 
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.AsyncOpenAI", FakeAsyncOpenAI
-    )
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider
-    )
-    monkeypatch.setattr(
-        "care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel
-    )
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.AsyncOpenAI", FakeAsyncOpenAI)
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIProvider", FakeProvider)
+    monkeypatch.setattr("care_pilot.agent.runtime.llm_factory.OpenAIChatModel", FakeModel)
     monkeypatch.setenv("QWEN_API_KEY", "qwen-key")
     monkeypatch.setenv("QWEN_MODEL", "qwen-vl-cheapest")
     monkeypatch.setenv(
@@ -308,10 +278,7 @@ def test_get_model_explicit_qwen_provider_uses_openai_network_settings(
     assert getattr(model, "model_name", None) == "qwen-vl-cheapest"
     kwargs = cast(dict[str, object], captured["async_openai_kwargs"])
     assert kwargs["api_key"] == "qwen-key"
-    assert (
-        kwargs["base_url"]
-        == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-    )
+    assert kwargs["base_url"] == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
     assert kwargs["timeout"] == 90.0
     assert kwargs["max_retries"] == 2
     get_settings.cache_clear()

@@ -17,11 +17,12 @@ from care_pilot.features.profiles.domain.models import MealSlot
 
 from .models import (
     LLMNormalizedMedicationInstruction,
+    MedicationFrequencyType,
     MedicationInferenceEngineProtocol,
     MedicationIntakeParseResult,
     MedicationIntakeSource,
-    MedicationParseOutput,
     MedicationParseOutputLoose,
+    MedicationTimingType,
     NormalizedMedicationInstruction,
 )
 
@@ -73,9 +74,7 @@ Rules:
 
 
 def _statement_chunks(text: str) -> list[str]:
-    parts = [
-        item.strip() for item in re.split(r"[\n;]+", text) if item.strip()
-    ]
+    parts = [item.strip() for item in re.split(r"[\n;]+", text) if item.strip()]
     return parts or [text.strip()]
 
 
@@ -111,10 +110,7 @@ def _frequency_times(text: str) -> int:
         )
     ):
         return 3
-    if any(
-        token in lowered
-        for token in ("twice daily", "twice a day", "two times a day", "bid")
-    ):
+    if any(token in lowered for token in ("twice daily", "twice a day", "two times a day", "bid")):
         return 2
     return 1
 
@@ -144,9 +140,7 @@ def _default_slots(times_per_day: int) -> list[MealSlot]:
 def _fixed_time_from_text(text: str) -> str | None:
     match = _TIME_RE.search(text)
     if match:
-        return (
-            f"{int(match.group('hour')):02d}:{int(match.group('minute')):02d}"
-        )
+        return f"{int(match.group('hour')):02d}:{int(match.group('minute')):02d}"
     lowered = text.lower()
     if "bedtime" in lowered:
         return "22:00"
@@ -190,9 +184,7 @@ def _normalize_instruction_dates(
 
     return instruction.model_copy(
         update={
-            "medication_name_raw": _normalize_name(
-                instruction.medication_name_raw
-            ),
+            "medication_name_raw": _normalize_name(instruction.medication_name_raw),
             "medication_name_canonical": canonical,
             "start_date": start_date,
             "end_date": end_date,
@@ -212,9 +204,7 @@ def _coerce_llm_instruction(
     slot_scope = list(instruction.slot_scope or [])
     time_rules = list(instruction.time_rules or [])
     confidence = (
-        instruction.confidence
-        if instruction.confidence is not None
-        else default_confidence
+        instruction.confidence if instruction.confidence is not None else default_confidence
     )
     timing_type = instruction.timing_type or "fixed_time"
     frequency_type = instruction.frequency_type or "fixed_time"
@@ -248,8 +238,8 @@ def _coerce_llm_instruction(
         medication_name_raw=instruction.medication_name_raw,
         medication_name_canonical=instruction.medication_name_canonical,
         dosage_text=instruction.dosage_text,
-        timing_type=timing_type,
-        frequency_type=frequency_type,
+        timing_type=cast(MedicationTimingType, timing_type),
+        frequency_type=cast(MedicationFrequencyType, frequency_type),
         frequency_times_per_day=frequency_times_per_day,
         offset_minutes=instruction.offset_minutes or 0,
         slot_scope=slot_scope,
@@ -263,9 +253,7 @@ def _coerce_llm_instruction(
     )
 
 
-def _build_instruction(
-    statement: str, today: date
-) -> NormalizedMedicationInstruction:
+def _build_instruction(statement: str, today: date) -> NormalizedMedicationInstruction:
     dosage_match = _DOSAGE_RE.search(statement)
     ambiguities: list[str] = []
     if dosage_match is None:
@@ -283,15 +271,11 @@ def _build_instruction(
     frequency_times_per_day = _frequency_times(statement)
     duration_days = _duration_days(statement)
     start_date = today
-    end_date = (
-        today + timedelta(days=duration_days - 1) if duration_days else None
-    )
+    end_date = today + timedelta(days=duration_days - 1) if duration_days else None
     lowered = statement.lower()
 
     if "before meals" in lowered or "before meal" in lowered:
-        slots = _explicit_slots(statement) or _default_slots(
-            frequency_times_per_day
-        )
+        slots = _explicit_slots(statement) or _default_slots(frequency_times_per_day)
         return NormalizedMedicationInstruction(
             medication_name_raw=medication_name,
             medication_name_canonical=_canonical_name(medication_name),
@@ -301,9 +285,7 @@ def _build_instruction(
             frequency_times_per_day=len(slots),
             offset_minutes=30,
             slot_scope=slots,
-            time_rules=[
-                {"kind": "before_meal", "slots": slots, "offset_minutes": 30}
-            ],
+            time_rules=[{"kind": "before_meal", "slots": slots, "offset_minutes": 30}],
             duration_days=duration_days,
             start_date=start_date,
             end_date=end_date,
@@ -311,9 +293,7 @@ def _build_instruction(
         )
 
     if "after meals" in lowered or "after meal" in lowered:
-        slots = _explicit_slots(statement) or _default_slots(
-            frequency_times_per_day
-        )
+        slots = _explicit_slots(statement) or _default_slots(frequency_times_per_day)
         return NormalizedMedicationInstruction(
             medication_name_raw=medication_name,
             medication_name_canonical=_canonical_name(medication_name),
@@ -323,9 +303,7 @@ def _build_instruction(
             frequency_times_per_day=len(slots),
             offset_minutes=15,
             slot_scope=slots,
-            time_rules=[
-                {"kind": "after_meal", "slots": slots, "offset_minutes": 15}
-            ],
+            time_rules=[{"kind": "after_meal", "slots": slots, "offset_minutes": 15}],
             duration_days=duration_days,
             start_date=start_date,
             end_date=end_date,
@@ -343,9 +321,7 @@ def _build_instruction(
             medication_name_canonical=_canonical_name(medication_name),
             dosage_text=dosage_text,
             timing_type="pre_meal" if "meal" in lowered else "fixed_time",
-            frequency_type=(
-                "fixed_slots" if "meal" in lowered else "times_per_day"
-            ),
+            frequency_type=("fixed_slots" if "meal" in lowered else "times_per_day"),
             frequency_times_per_day=frequency_times_per_day,
             offset_minutes=30 if "meal" in lowered else 0,
             slot_scope=slots if "meal" in lowered else [],
@@ -373,9 +349,7 @@ def _build_instruction(
         frequency_type="fixed_time",
         frequency_times_per_day=1,
         fixed_time=fixed_time,
-        time_rules=[
-            {"kind": "fixed_time", "time_local": fixed_time, "label": label}
-        ],
+        time_rules=[{"kind": "fixed_time", "time_local": fixed_time, "label": label}],
         duration_days=duration_days,
         start_date=start_date,
         end_date=end_date,
@@ -392,9 +366,7 @@ def _parse_deterministic(
         for statement in _statement_chunks(source.extracted_text)
         if statement.strip()
     ]
-    return MedicationIntakeParseResult(
-        source=source, instructions=instructions
-    )
+    return MedicationIntakeParseResult(source=source, instructions=instructions)
 
 
 async def _parse_with_llm(
@@ -430,9 +402,7 @@ async def _parse_with_llm(
     output = cast(MedicationParseOutputLoose, response.structured_output)
     normalized = [
         _normalize_instruction_dates(
-            _coerce_llm_instruction(
-                item, default_confidence=output.confidence_score
-            ),
+            _coerce_llm_instruction(item, default_confidence=output.confidence_score),
             today=today,
         )
         for item in output.instructions
@@ -448,9 +418,7 @@ async def parse_medication_instructions(
     inference_engine: MedicationInferenceEngineProtocol | None = None,
 ) -> MedicationIntakeParseResult:
     provider_name = (
-        getattr(inference_engine, "provider", None)
-        if inference_engine is not None
-        else None
+        getattr(inference_engine, "provider", None) if inference_engine is not None else None
     )
     if inference_engine is not None and provider_name != "test":
         try:

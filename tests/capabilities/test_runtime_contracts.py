@@ -24,32 +24,20 @@ def test_persistence_exports_backend_neutral_builder_and_contracts() -> None:
 
 
 def test_platform_tool_registry_accepts_alert_repository_protocol() -> None:
-    assert (
-        get_type_hints(build_platform_tool_registry)["repository"]
-        is AlertRepositoryProtocol
-    )
+    assert get_type_hints(build_platform_tool_registry)["repository"] is AlertRepositoryProtocol
 
 
-def test_reminder_scheduler_depends_on_backend_neutral_repository_contract() -> (
-    None
-):
+def test_reminder_scheduler_depends_on_backend_neutral_repository_contract() -> None:
     repository_hint = get_type_hints(run_reminder_scheduler_once)["repository"]
     hint_args = get_args(repository_hint)
-    assert any(
-        getattr(item, "__name__", "") == "ReminderSchedulerRepository"
-        for item in hint_args
-    )
+    assert any(getattr(item, "__name__", "") == "ReminderSchedulerRepository" for item in hint_args)
 
 
-def test_alert_models_and_reminder_scheduler_import_without_circular_dependency() -> (
-    None
-):
+def test_alert_models_and_reminder_scheduler_import_without_circular_dependency() -> None:
     command = [
         sys.executable,
         "-c",
         "import care_pilot.features.safety.domain.alerts.models; import care_pilot.platform.scheduling.schedulers.reminder_scheduler",
     ]
-    result = subprocess.run(
-        command, cwd=REPO_ROOT, capture_output=True, text=True, check=False
-    )
+    result = subprocess.run(command, cwd=REPO_ROOT, capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr

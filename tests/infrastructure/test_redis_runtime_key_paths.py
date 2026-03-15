@@ -58,9 +58,7 @@ class _FakeRedisModule:
         _client: _FakeRedisClient
 
         @classmethod
-        def from_url(
-            cls, _redis_url: str, *, decode_responses: bool
-        ) -> _FakeRedisClient:
+        def from_url(cls, _redis_url: str, *, decode_responses: bool) -> _FakeRedisClient:
             assert decode_responses is True
             return cls._client
 
@@ -71,19 +69,13 @@ class _FakeRedisModule:
 def _bind_fake_redis_for_cache(monkeypatch, client: _FakeRedisClient) -> None:
     fake_module = _FakeRedisModule(client)
     fake_module.bind()
-    monkeypatch.setattr(
-        redis_cache_module, "_load_redis_module", lambda: fake_module
-    )
+    monkeypatch.setattr(redis_cache_module, "_load_redis_module", lambda: fake_module)
 
 
-def _bind_fake_redis_for_coordination(
-    monkeypatch, client: _FakeRedisClient
-) -> None:
+def _bind_fake_redis_for_coordination(monkeypatch, client: _FakeRedisClient) -> None:
     fake_module = _FakeRedisModule(client)
     fake_module.bind()
-    monkeypatch.setattr(
-        redis_coord_module, "_load_redis_module", lambda: fake_module
-    )
+    monkeypatch.setattr(redis_coord_module, "_load_redis_module", lambda: fake_module)
 
 
 def test_redis_cache_store_uses_canonical_namespaced_keys(monkeypatch) -> None:
@@ -93,10 +85,7 @@ def test_redis_cache_store_uses_canonical_namespaced_keys(monkeypatch) -> None:
         redis_url="redis://localhost:6379/0", namespace="dietary"
     )
 
-    assert (
-        store._key("reminders.ready")
-        == "dietary:cache:reminder:reminders.ready"
-    )
+    assert store._key("reminders.ready") == "dietary:cache:reminder:reminders.ready"
     assert store.get_json("workers.ready") is None
     assert client.get_calls == ["dietary:cache:general:workers.ready"]
 
@@ -131,6 +120,4 @@ def test_redis_coordination_store_waits_on_canonical_channel(
     payload = store.wait_for_signal("workers.ready", timeout_seconds=0.2)
 
     assert payload is None
-    assert client.brpop_calls == [
-        ("dietary:coordination:signal:workflow:workers.ready", 1)
-    ]
+    assert client.brpop_calls == [("dietary:coordination:signal:workflow:workers.ready", 1)]

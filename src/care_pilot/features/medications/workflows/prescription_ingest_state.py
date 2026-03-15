@@ -11,4 +11,3 @@ class PrescriptionIngestState(BaseModel):
     # Input (normalized; no HTTP types)
     prescription_text: str
     source: str = "pasted_text"
-

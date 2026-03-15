@@ -30,15 +30,9 @@ from care_pilot.config.runtime import (
 class AppIdentitySettings(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    env: Literal["dev", "staging", "prod"] = Field(
-        default="dev", validation_alias="APP_ENV"
-    )
-    timezone: str = Field(
-        default="Asia/Singapore", validation_alias="APP_TIMEZONE"
-    )
-    image_downscale_enabled: bool = Field(
-        default=False, validation_alias="IMAGE_DOWNSCALE_ENABLED"
-    )
+    env: Literal["dev", "staging", "prod"] = Field(default="dev", validation_alias="APP_ENV")
+    timezone: str = Field(default="Asia/Singapore", validation_alias="APP_TIMEZONE")
+    image_downscale_enabled: bool = Field(default=False, validation_alias="IMAGE_DOWNSCALE_ENABLED")
     image_max_side_px: int = Field(
         default=1024, ge=256, le=4096, validation_alias="IMAGE_MAX_SIDE_PX"
     )
@@ -47,9 +41,7 @@ class AppIdentitySettings(BaseModel):
 class AppSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    _DEFAULT_SESSION_SECRET: ClassVar[str] = (
-        "dev-insecure-session-secret-change-me"
-    )
+    _DEFAULT_SESSION_SECRET: ClassVar[str] = "dev-insecure-session-secret-change-me"
 
     app: AppIdentitySettings = Field(default_factory=AppIdentitySettings)
     api: APISettings = Field(default_factory=APISettings)
@@ -59,9 +51,7 @@ class AppSettings(BaseModel):
     emotion: EmotionSettings = Field(default_factory=EmotionSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
     memory: MemorySettings = Field(default_factory=MemorySettings)
-    observability: ObservabilitySettings = Field(
-        default_factory=ObservabilitySettings
-    )
+    observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
     storage: StorageSettings = Field(default_factory=StorageSettings)
     workers: WorkerSettings = Field(default_factory=WorkerSettings)
 
@@ -82,42 +72,24 @@ class AppSettings(BaseModel):
         if not self.auth.session_secret:
             raise ValueError("SESSION_SECRET must not be empty")
 
-        if (
-            self.app.env == "prod"
-            and self.workers.tool_policy_enforcement_mode == "shadow"
-        ):
+        if self.app.env == "prod" and self.workers.tool_policy_enforcement_mode == "shadow":
             self.workers.tool_policy_enforcement_mode = "enforce"
         if self.app.env in {"staging", "prod"}:
             if self.auth.session_secret == self._DEFAULT_SESSION_SECRET:
-                raise ValueError(
-                    "SESSION_SECRET must be overridden for staging/prod"
-                )
+                raise ValueError("SESSION_SECRET must be overridden for staging/prod")
             if not self.auth.cookie_secure:
-                raise ValueError(
-                    "COOKIE_SECURE must be enabled for staging/prod"
-                )
+                raise ValueError("COOKIE_SECURE must be enabled for staging/prod")
             if self.auth.seed_demo_users:
-                raise ValueError(
-                    "AUTH_SEED_DEMO_USERS must be disabled for staging/prod"
-                )
+                raise ValueError("AUTH_SEED_DEMO_USERS must be disabled for staging/prod")
         if self.auth.cookie_samesite == "none" and not self.auth.cookie_secure:
-            raise ValueError(
-                "COOKIE_SECURE must be enabled when COOKIE_SAMESITE=none"
-            )
-        if (
-            self.storage.ephemeral_state_backend == "redis"
-            and not self.storage.redis_url
-        ):
-            raise ValueError(
-                "REDIS_URL must be set when EPHEMERAL_STATE_BACKEND=redis"
-            )
+            raise ValueError("COOKIE_SECURE must be enabled when COOKIE_SAMESITE=none")
+        if self.storage.ephemeral_state_backend == "redis" and not self.storage.redis_url:
+            raise ValueError("REDIS_URL must be set when EPHEMERAL_STATE_BACKEND=redis")
         if (
             self.workers.worker_mode == "external"
             and self.storage.ephemeral_state_backend != "redis"
         ):
-            raise ValueError(
-                "EPHEMERAL_STATE_BACKEND must be redis when WORKER_MODE=external"
-            )
+            raise ValueError("EPHEMERAL_STATE_BACKEND must be redis when WORKER_MODE=external")
         return self
 
     @property

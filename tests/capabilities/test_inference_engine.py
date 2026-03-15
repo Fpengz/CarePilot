@@ -1,6 +1,7 @@
 """Tests for inference engine."""
 
 import asyncio
+from typing import cast
 
 import pytest
 from pydantic import BaseModel
@@ -59,16 +60,12 @@ def test_inference_engine_recovers_json_on_validation_failure(
     monkeypatch.setenv("LLM_PROVIDER", "test")
 
     class _FakeAgent:
-        def __init__(
-            self, model, output_type, system_prompt, output_retries
-        ):  # noqa: ANN001, ARG002
+        def __init__(self, model, output_type, system_prompt, output_retries):  # noqa: ANN001, ARG002
             self.output_type = output_type
 
         async def run(self, prompt, event_stream_handler=None):  # noqa: ANN001
             async def _events():
-                yield PartEndEvent(
-                    index=0, part=TextPart(content='{"value": 42}')
-                )
+                yield PartEndEvent(index=0, part=TextPart(content='{"value": 42}'))
 
             if event_stream_handler is not None:
                 await event_stream_handler(None, _events())
@@ -90,7 +87,7 @@ def test_inference_engine_recovers_json_on_validation_failure(
     )
 
     response = asyncio.run(engine.infer(request))
-    assert response.structured_output.value == 42
+    assert cast(_RecoveryOutput, response.structured_output).value == 42
     assert response.warnings
     get_settings.cache_clear()
 
@@ -102,9 +99,7 @@ def test_inference_engine_recovers_list_output(
     monkeypatch.setenv("LLM_PROVIDER", "test")
 
     class _FakeAgent:
-        def __init__(
-            self, model, output_type, system_prompt, output_retries
-        ):  # noqa: ANN001, ARG002
+        def __init__(self, model, output_type, system_prompt, output_retries):  # noqa: ANN001, ARG002
             self.output_type = output_type
 
         async def run(self, prompt, event_stream_handler=None):  # noqa: ANN001
@@ -134,8 +129,9 @@ def test_inference_engine_recovers_list_output(
     )
 
     response = asyncio.run(engine.infer(request))
-    assert response.structured_output.instructions == [{"dose": 1}]
-    assert response.structured_output.warnings
+    list_output = cast(_ListRecoveryOutput, response.structured_output)
+    assert list_output.instructions == [{"dose": 1}]
+    assert list_output.warnings
     get_settings.cache_clear()
 
 

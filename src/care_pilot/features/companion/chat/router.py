@@ -72,15 +72,9 @@ class QueryRouter:
         code_agent: CodeAgent,
         reasoning_engine: InferenceEngine,
     ) -> None:
-        self._drug_route = DrugRoute(
-            search_agent=search_agent, inference_engine=inference_engine
-        )
-        self._food_route = FoodRoute(
-            search_agent=search_agent, inference_engine=inference_engine
-        )
-        self._code_route = CodeRoute(
-            agent=code_agent, inference_engine=reasoning_engine
-        )
+        self._drug_route = DrugRoute(search_agent=search_agent, inference_engine=inference_engine)
+        self._food_route = FoodRoute(search_agent=search_agent, inference_engine=inference_engine)
+        self._code_route = CodeRoute(agent=code_agent, inference_engine=reasoning_engine)
         self._engine = inference_engine
         self._logger = get_logger(__name__)
 
@@ -101,9 +95,7 @@ class QueryRouter:
             response = asyncio.run(self._engine.infer(request))
             return response.structured_output.label
         except Exception as exc:  # noqa: BLE001
-            self._logger.warning(
-                "chat_router_classification_failed error=%s", exc
-            )
+            self._logger.warning("chat_router_classification_failed error=%s", exc)
             return ChatRouteLabel.GENERAL
 
     def route(self, user_message: str) -> RouteResult:

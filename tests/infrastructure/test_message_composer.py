@@ -7,9 +7,7 @@ from care_pilot.platform.messaging.message_composer import (
 )
 
 
-def test_compose_manual_alert_message_uses_generic_title_not_medication_label() -> (
-    None
-):
+def test_compose_manual_alert_message_uses_generic_title_not_medication_label() -> None:
     alert = AlertMessage(
         alert_id="a1",
         type="manual_test_alert",

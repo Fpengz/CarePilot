@@ -108,9 +108,7 @@ class SessionUser(BaseModel):
 
 class SessionInfo(BaseModel):
     session_id: str
-    issued_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    issued_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class AuthLoginResponse(BaseModel):
@@ -203,9 +201,7 @@ class HealthProfileOnboardingStateResponse(BaseModel):
 
 class HealthProfileOnboardingPatchRequest(BaseModel):
     step_id: str
-    profile: HealthProfileUpdateRequest = Field(
-        default_factory=HealthProfileUpdateRequest
-    )
+    profile: HealthProfileUpdateRequest = Field(default_factory=HealthProfileUpdateRequest)
 
 
 class HealthProfileOnboardingEnvelopeResponse(BaseModel):

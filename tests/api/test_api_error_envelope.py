@@ -41,9 +41,7 @@ def test_unauthorized_response_uses_standard_error_envelope() -> None:
 def test_validation_error_response_uses_standard_error_envelope() -> None:
     client = TestClient(create_app())
 
-    response = client.post(
-        "/api/v1/auth/signup", json={"email": "member@example.com"}
-    )
+    response = client.post("/api/v1/auth/signup", json={"email": "member@example.com"})
 
     assert response.status_code == 422
     body = response.json()

@@ -171,14 +171,10 @@ class LLMSettings(BaseSettings):
       LLM_USE_INFERENCE_ENGINE_V2
     """
 
-    model_config = SettingsConfigDict(
-        extra="ignore", case_sensitive=False, populate_by_name=True
-    )
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False, populate_by_name=True)
 
     # --- Core routing ---
-    provider: ModelProvider = Field(
-        default=ModelProvider.TEST, validation_alias="LLM_PROVIDER"
-    )
+    provider: ModelProvider = Field(default=ModelProvider.TEST, validation_alias="LLM_PROVIDER")
     default_capability: LLMCapability = Field(
         default=LLMCapability.DIETARY_REASONING,
         validation_alias="LLM_DEFAULT_CAPABILITY",
@@ -199,9 +195,7 @@ class LLMSettings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
     openai_base_url: AnyHttpUrl | str | None = None
-    openai_request_timeout_seconds: float = Field(
-        default=120.0, ge=1.0, le=7200.0
-    )
+    openai_request_timeout_seconds: float = Field(default=120.0, ge=1.0, le=7200.0)
     openai_transport_max_retries: int = Field(default=2, ge=0, le=10)
 
     # --- Qwen (OpenAI-compatible) ---
@@ -215,13 +209,9 @@ class LLMSettings(BaseSettings):
     local_llm_base_url: AnyHttpUrl | str | None = "http://localhost:11434/v1"
     local_llm_api_key: str = "ollama"
     local_llm_model: str = "qwen3-vl:4b"
-    local_llm_request_timeout_seconds: float = Field(
-        default=1200.0, ge=1.0, le=7200.0
-    )
+    local_llm_request_timeout_seconds: float = Field(default=1200.0, ge=1.0, le=7200.0)
     local_llm_transport_max_retries: int = Field(default=0, ge=0, le=10)
-    local_profiles: dict[str, LocalModelProfile] = Field(
-        default_factory=default_local_profiles
-    )
+    local_profiles: dict[str, LocalModelProfile] = Field(default_factory=default_local_profiles)
 
     # --- Inference engine ---
     inference_wall_clock_timeout_seconds: float = Field(
@@ -265,9 +255,7 @@ class LLMSettings(BaseSettings):
         return OpenAIConfig(
             api_key=self.openai_api_key,
             model=self.openai_model,
-            base_url=(
-                str(self.openai_base_url) if self.openai_base_url else None
-            ),
+            base_url=(str(self.openai_base_url) if self.openai_base_url else None),
             request_timeout_seconds=self.openai_request_timeout_seconds,
             transport_max_retries=self.openai_transport_max_retries,
         )
@@ -285,11 +273,7 @@ class LLMSettings(BaseSettings):
     def local(self) -> LocalLLMConfig:
         """Structured view of local LLM credentials, network settings, and profiles."""
         return LocalLLMConfig(
-            base_url=(
-                str(self.local_llm_base_url)
-                if self.local_llm_base_url
-                else None
-            ),
+            base_url=(str(self.local_llm_base_url) if self.local_llm_base_url else None),
             api_key=self.local_llm_api_key,
             model=self.local_llm_model,
             request_timeout_seconds=self.local_llm_request_timeout_seconds,
@@ -315,30 +299,16 @@ class LLMSettings(BaseSettings):
     @model_validator(mode="after")
     def _validate_provider_credentials(self) -> "LLMSettings":
         """Enforce that each non-test provider has required credentials or endpoints."""
-        if (
-            self.provider == ModelProvider.GEMINI
-            and not self.gemini.effective_api_key
-        ):
+        if self.provider == ModelProvider.GEMINI and not self.gemini.effective_api_key:
             raise ValueError(
                 "Gemini provider selected but GEMINI_API_KEY/GOOGLE_API_KEY is not set"
             )
         if self.provider == ModelProvider.OPENAI and not self.openai.api_key:
-            raise ValueError(
-                "OpenAI provider selected but OPENAI_API_KEY is not set"
-            )
+            raise ValueError("OpenAI provider selected but OPENAI_API_KEY is not set")
         if self.provider == ModelProvider.QWEN and not self.qwen.api_key:
-            raise ValueError(
-                "Qwen provider selected but QWEN_API_KEY is not set"
-            )
+            raise ValueError("Qwen provider selected but QWEN_API_KEY is not set")
         if self.provider == ModelProvider.CODEX:
-            raise ValueError(
-                "Codex provider routing is reserved but not implemented yet"
-            )
-        if (
-            self.provider in {ModelProvider.OLLAMA, ModelProvider.VLLM}
-            and not self.local.base_url
-        ):
-            raise ValueError(
-                "Local provider selected but LOCAL_LLM_BASE_URL is not set"
-            )
+            raise ValueError("Codex provider routing is reserved but not implemented yet")
+        if self.provider in {ModelProvider.OLLAMA, ModelProvider.VLLM} and not self.local.base_url:
+            raise ValueError("Local provider selected but LOCAL_LLM_BASE_URL is not set")
         return self

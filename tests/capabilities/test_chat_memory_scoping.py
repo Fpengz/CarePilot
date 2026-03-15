@@ -7,9 +7,7 @@ from care_pilot.features.companion.chat.memory import MemoryManager
 
 
 class _DummyInferenceEngine:
-    async def infer(
-        self, request
-    ):  # pragma: no cover - should not be called in these tests.
+    async def infer(self, request):  # pragma: no cover - should not be called in these tests.
         raise AssertionError("Inference should not run during scoping tests")
 
 
@@ -33,12 +31,8 @@ def test_memory_scoped_by_user_and_session(tmp_path):
     memory_a.add_message("user", "hello from a")
     memory_b.add_message("user", "hello from b")
 
-    assert memory_a.all_messages() == [
-        {"role": "user", "content": "hello from a"}
-    ]
-    assert memory_b.all_messages() == [
-        {"role": "user", "content": "hello from b"}
-    ]
+    assert memory_a.all_messages() == [{"role": "user", "content": "hello from a"}]
+    assert memory_b.all_messages() == [{"role": "user", "content": "hello from b"}]
 
 
 def test_health_tracker_filters_by_user(tmp_path):

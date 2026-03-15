@@ -36,9 +36,7 @@ def _jpeg_bytes() -> bytes:
 
 
 def _login(client: TestClient, email: str, password: str) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
@@ -124,12 +122,8 @@ def test_meal_workflow_uses_incoming_correlation_contract(
     assert body["workflow"]["correlation_id"] == "corr-meal-contract"
     timeline = body["workflow"]["timeline_events"]
     assert timeline
-    assert all(
-        event["request_id"] == "req-meal-contract" for event in timeline
-    )
-    assert all(
-        event["correlation_id"] == "corr-meal-contract" for event in timeline
-    )
+    assert all(event["request_id"] == "req-meal-contract" for event in timeline)
+    assert all(event["correlation_id"] == "corr-meal-contract" for event in timeline)
 
 
 def test_alert_workflow_uses_incoming_correlation_contract(
@@ -156,12 +150,8 @@ def test_alert_workflow_uses_incoming_correlation_contract(
     assert body["workflow"]["correlation_id"] == "corr-alert-contract"
     timeline = body["workflow"]["timeline_events"]
     assert timeline
-    assert all(
-        event["request_id"] == "req-alert-contract" for event in timeline
-    )
-    assert all(
-        event["correlation_id"] == "corr-alert-contract" for event in timeline
-    )
+    assert all(event["request_id"] == "req-alert-contract" for event in timeline)
+    assert all(event["correlation_id"] == "corr-alert-contract" for event in timeline)
 
 
 def test_failure_logs_include_enriched_metadata(
@@ -180,9 +170,7 @@ def test_failure_logs_include_enriched_metadata(
     )
     assert response.status_code == 400
     failures = [
-        record.message
-        for record in caplog.records
-        if "event=api_request_failed" in record.message
+        record.message for record in caplog.records if "event=api_request_failed" in record.message
     ]
     assert failures
     message = failures[-1]

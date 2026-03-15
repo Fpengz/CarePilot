@@ -69,9 +69,7 @@ def _record(*, enriched: bool = True) -> MealRecognitionRecord:
                     canonical_name="Chicken Rice",
                     match_strategy="exact_alias",
                     match_confidence=0.96,
-                    portion_estimate=MealPortionEstimate(
-                        amount=1, unit="plate", confidence=0.8
-                    ),
+                    portion_estimate=MealPortionEstimate(amount=1, unit="plate", confidence=0.8),
                     estimated_grams=320.0,
                     nutrition=MealNutritionProfile(
                         calories=640,
@@ -147,24 +145,15 @@ class _FakeRecommendationRepo:
             items = [item for item in items if item.slot == slot]
         return items[:limit]
 
-    def get_preference_snapshot(
-        self, user_id: str
-    ) -> PreferenceSnapshot | None:
+    def get_preference_snapshot(self, user_id: str) -> PreferenceSnapshot | None:
         return self._snapshot
 
-    def save_preference_snapshot(
-        self, snapshot: PreferenceSnapshot
-    ) -> PreferenceSnapshot:
+    def save_preference_snapshot(self, snapshot: PreferenceSnapshot) -> PreferenceSnapshot:
         self._snapshot = snapshot
         return snapshot
 
-    def get_meal_record(
-        self, user_id: str, meal_id: str
-    ) -> MealRecognitionRecord | None:
-        if (
-            self._meal_record.id == meal_id
-            and self._meal_record.user_id == user_id
-        ):
+    def get_meal_record(self, user_id: str, meal_id: str) -> MealRecognitionRecord | None:
+        if self._meal_record.id == meal_id and self._meal_record.user_id == user_id:
             return self._meal_record
         return None
 
@@ -174,9 +163,7 @@ class _FakeRecommendationRepo:
                 return item
         return None
 
-    def find_food_by_name(
-        self, *, locale: str, name: str
-    ) -> CanonicalFoodRecord | None:
+    def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
         for item in [self._source, self._alternative]:
             if item.title == name:
                 return item
@@ -195,14 +182,10 @@ class _LocaleAwareRecommendationRepo(_FakeRecommendationRepo):
         alternative: CanonicalFoodRecord,
         meal_record: MealRecognitionRecord,
     ) -> None:
-        super().__init__(
-            source=source, alternative=alternative, meal_record=meal_record
-        )
+        super().__init__(source=source, alternative=alternative, meal_record=meal_record)
         self.seen_locales: list[str] = []
 
-    def find_food_by_name(
-        self, *, locale: str, name: str
-    ) -> CanonicalFoodRecord | None:
+    def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
         self.seen_locales.append(locale)
         return super().find_food_by_name(locale=locale, name=name)
 
@@ -290,9 +273,7 @@ def test_metrics_and_recommendation_use_enriched_event() -> None:
     assert "Chicken Rice Set" in recommendation.rationale
 
 
-def test_recommendation_agent_uses_enriched_titles_for_temporal_and_substitution_flows() -> (
-    None
-):
+def test_recommendation_agent_uses_enriched_titles_for_temporal_and_substitution_flows() -> None:
     record = _record()
     source = _canonical_food(
         food_id="source",
@@ -308,13 +289,9 @@ def test_recommendation_agent_uses_enriched_titles_for_temporal_and_substitution
         sodium_mg=480,
         sugar_g=2,
     )
-    repo = _FakeRecommendationRepo(
-        source=source, alternative=alternative, meal_record=record
-    )
+    repo = _FakeRecommendationRepo(source=source, alternative=alternative, meal_record=record)
 
-    temporal = build_temporal_context(
-        meal_history=[record], interaction_count=0
-    )
+    temporal = build_temporal_context(meal_history=[record], interaction_count=0)
     plan = build_substitution_plan(
         repository=repo,
         user_id="u1",
@@ -332,9 +309,7 @@ def test_recommendation_agent_uses_enriched_titles_for_temporal_and_substitution
     assert [item.title for item in plan.alternatives] == ["Fish Soup"]
 
 
-def test_snapshot_bootstrap_uses_catalog_locale_for_exact_meal_lookup() -> (
-    None
-):
+def test_snapshot_bootstrap_uses_catalog_locale_for_exact_meal_lookup() -> None:
     record = _record()
     source = _canonical_food(
         food_id="source",

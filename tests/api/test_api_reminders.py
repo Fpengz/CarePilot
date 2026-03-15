@@ -14,9 +14,7 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_reminder_env(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+def sqlite_reminder_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -26,9 +24,7 @@ def sqlite_reminder_env(
 
 
 def _login(client: TestClient, email: str, password: str) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
@@ -46,9 +42,7 @@ def test_generate_list_and_confirm_reminders_flow() -> None:
     assert listed.status_code == 200
     assert listed.json()["metrics"]["reminders_sent"] >= 1
 
-    confirmed = client.post(
-        f"/api/v1/reminders/{event_id}/confirm", json={"confirmed": True}
-    )
+    confirmed = client.post(f"/api/v1/reminders/{event_id}/confirm", json={"confirmed": True})
     assert confirmed.status_code == 200
     assert confirmed.json()["event"]["status"] == "acknowledged"
 
@@ -61,9 +55,7 @@ def test_confirm_reminder_missing_event_uses_domain_code() -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
 
-    response = client.post(
-        "/api/v1/reminders/rem_missing/confirm", json={"confirmed": True}
-    )
+    response = client.post("/api/v1/reminders/rem_missing/confirm", json={"confirmed": True})
 
     assert response.status_code == 404
     body = response.json()
@@ -128,12 +120,8 @@ def test_generate_reminders_includes_mobility_events_when_enabled(
 
     assert generated.status_code == 200
     reminders = generated.json()["reminders"]
-    medication = [
-        item for item in reminders if item["reminder_type"] == "medication"
-    ]
-    mobility = [
-        item for item in reminders if item["reminder_type"] == "mobility"
-    ]
+    medication = [item for item in reminders if item["reminder_type"] == "medication"]
+    mobility = [item for item in reminders if item["reminder_type"] == "mobility"]
     assert medication
     assert len(mobility) == 3
     assert {item["title"] for item in mobility} == {"Time to move"}

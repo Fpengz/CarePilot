@@ -8,9 +8,7 @@ from care_pilot.platform.cache.rate_limiter import (
 )
 
 
-def test_build_rate_limiter_uses_in_memory_backend_for_local_profiles() -> (
-    None
-):
+def test_build_rate_limiter_uses_in_memory_backend_for_local_profiles() -> None:
     limiter = build_rate_limiter(
         _build_settings(
             llm={"provider": "test"},

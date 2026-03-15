@@ -40,9 +40,7 @@ def _run_with_timeout(action: Callable[[], T], timeout_seconds: float) -> T:
         try:
             return future.result(timeout=timeout_seconds)
         except FutureTimeoutError as exc:
-            raise EmotionInferenceTimeoutError(
-                "emotion inference timed out"
-            ) from exc
+            raise EmotionInferenceTimeoutError("emotion inference timed out") from exc
 
 
 def infer_text_emotion(
@@ -60,9 +58,7 @@ def infer_speech_emotion(
     payload: EmotionSpeechAgentInput,
     timeout_seconds: float,
 ) -> EmotionInferenceResult:
-    return _run_with_timeout(
-        lambda: port.infer_speech(payload), timeout_seconds
-    )
+    return _run_with_timeout(lambda: port.infer_speech(payload), timeout_seconds)
 
 
 class EmotionAgent:
@@ -94,9 +90,7 @@ class EmotionAgent:
             raise EmotionAgentDisabledError("emotion inference is disabled")
         return infer_text_emotion(
             port=self._runtime,
-            payload=EmotionTextAgentInput(
-                text=text, language=language, user_id=user_id
-            ),
+            payload=EmotionTextAgentInput(text=text, language=language, user_id=user_id),
             timeout_seconds=self._request_timeout_seconds,
         )
 
@@ -113,9 +107,7 @@ class EmotionAgent:
         if not self._inference_enabled:
             raise EmotionAgentDisabledError("emotion inference is disabled")
         if not self._speech_enabled:
-            raise EmotionSpeechDisabledError(
-                "speech emotion inference is disabled"
-            )
+            raise EmotionSpeechDisabledError("speech emotion inference is disabled")
         return infer_speech_emotion(
             port=self._runtime,
             payload=EmotionSpeechAgentInput(

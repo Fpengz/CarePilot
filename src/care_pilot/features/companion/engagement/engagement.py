@@ -65,7 +65,5 @@ def assess_engagement(
         risk_level=risk_level,
         recommended_mode=mode,
         rationale=rationale,
-        intervention_opportunities=max(
-            score, 1 if snapshot.active_risk_flags else 0
-        ),
+        intervention_opportunities=max(score, 1 if snapshot.active_risk_flags else 0),
     )

@@ -42,7 +42,10 @@ from care_pilot.features.meals.domain.models import (
     ContextSnapshot,
     NutritionRiskProfile,
 )
-from care_pilot.features.meals.workflows.meal_upload_graph import MealUploadDeps, run_meal_upload_workflow
+from care_pilot.features.meals.workflows.meal_upload_graph import (
+    MealUploadDeps,
+    run_meal_upload_workflow,
+)
 from care_pilot.features.meals.workflows.meal_upload_state import MealUploadState
 from care_pilot.shared.time import local_date_for
 
@@ -102,7 +105,9 @@ async def analyze_meal(
         request_id=getattr(request.state, "request_id", None),
         correlation_id=getattr(request.state, "correlation_id", None),
     )
-    dedupe_state = cast(dict[str, Any], request.app.state.__dict__.setdefault("_capture_dedupe_state", {}))
+    dedupe_state = cast(
+        dict[str, Any], request.app.state.__dict__.setdefault("_capture_dedupe_state", {})
+    )
     if should_suppress_duplicate_capture(dedupe_state, capture, window_seconds=30):
         raise build_api_error(
             status_code=409,
@@ -147,7 +152,9 @@ async def analyze_meal(
     latency_ms = (time.perf_counter() - analysis_started) * 1000
     vision_result = workflow_output.raw_observation.vision_result
     log_provider = vision_result.provider or routed_provider or str(deps.settings.llm.provider)
-    log_model = vision_result.model_version or resolve_meal_analysis_model_name(deps.settings.llm, log_provider)
+    log_model = vision_result.model_version or resolve_meal_analysis_model_name(
+        deps.settings.llm, log_provider
+    )
     log_payload = build_meal_analysis_log_payload(
         user_id=user_profile.id,
         request_id=capture.request_id,
@@ -223,7 +230,8 @@ def get_daily_summary(
     daily = [
         item
         for item in profiles
-        if local_date_for(item.captured_at, timezone_name=deps.settings.app.timezone) == summary_date
+        if local_date_for(item.captured_at, timezone_name=deps.settings.app.timezone)
+        == summary_date
     ]
     calories = sum(item.calories for item in daily)
     sugar = sum(item.sugar_g for item in daily)

@@ -32,9 +32,7 @@ def test_settings_parse_capability_targets_from_env_shape() -> None:
     assert str(target.base_url) == "http://sealion.local/v1"
 
 
-def test_factory_uses_capability_specific_target_over_global_provider() -> (
-    None
-):
+def test_factory_uses_capability_specific_target_over_global_provider() -> None:
     settings = _build_settings(
         llm={
             "provider": "openai",
@@ -50,14 +48,10 @@ def test_factory_uses_capability_specific_target_over_global_provider() -> (
         },
     )
 
-    model = LLMFactory.get_model(
-        settings=settings, capability=LLMCapability.CHATBOT
-    )
+    model = LLMFactory.get_model(settings=settings, capability=LLMCapability.CHATBOT)
 
     assert getattr(model, "model_name", None) == "aisingapore/sealion"
-    assert "http://sealion.local/v1" in LLMFactory.describe_model_destination(
-        model
-    )
+    assert "http://sealion.local/v1" in LLMFactory.describe_model_destination(model)
 
 
 def test_inference_engine_health_reports_capability_metadata() -> None:
@@ -75,9 +69,7 @@ def test_inference_engine_health_reports_capability_metadata() -> None:
         },
     )
 
-    engine = InferenceEngine(
-        settings=settings, capability=LLMCapability.MEAL_VISION
-    )
+    engine = InferenceEngine(settings=settings, capability=LLMCapability.MEAL_VISION)
     health = engine.health()
 
     assert health.capability == LLMCapability.MEAL_VISION.value
@@ -95,9 +87,7 @@ def test_unmapped_capability_falls_back_to_legacy_global_settings() -> None:
         }
     )
 
-    model = LLMFactory.get_model(
-        settings=settings, capability=LLMCapability.CLINICAL_SUMMARY
-    )
+    model = LLMFactory.get_model(settings=settings, capability=LLMCapability.CLINICAL_SUMMARY)
 
     assert getattr(model, "model_name", None) == "gpt-4o-mini"
     assert "endpoint=default" in LLMFactory.describe_model_destination(model)

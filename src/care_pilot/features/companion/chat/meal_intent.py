@@ -19,19 +19,11 @@ from care_pilot.agent.runtime.inference_types import (
     InferenceRequest,
 )
 
-_MEAL_PREFIX_RE = re.compile(
-    r"^(?:log\s+meal|meal)\s*:\s*(.+)$", re.IGNORECASE
-)
-_QUESTION_RE = re.compile(
-    r"\b(can|should|is it ok to|is it okay to)\b", re.IGNORECASE
-)
-_MEAL_TIME_RE = re.compile(
-    r"\b(breakfast|lunch|dinner|supper)\b", re.IGNORECASE
-)
+_MEAL_PREFIX_RE = re.compile(r"^(?:log\s+meal|meal)\s*:\s*(.+)$", re.IGNORECASE)
+_QUESTION_RE = re.compile(r"\b(can|should|is it ok to|is it okay to)\b", re.IGNORECASE)
+_MEAL_TIME_RE = re.compile(r"\b(breakfast|lunch|dinner|supper)\b", re.IGNORECASE)
 _ATE_RE = re.compile(r"\b(i|we)\s+(ate|had|have)\s+(.+)$", re.IGNORECASE)
-_FOR_MEAL_RE = re.compile(
-    r"\bfor\s+(breakfast|lunch|dinner|supper)\b.*$", re.IGNORECASE
-)
+_FOR_MEAL_RE = re.compile(r"\bfor\s+(breakfast|lunch|dinner|supper)\b.*$", re.IGNORECASE)
 _MEAL_LABEL_RE = re.compile(
     r"^\s*(breakfast|lunch|dinner|supper)\s*(?:was|is|:)?\s*(.+)$",
     re.IGNORECASE,
@@ -47,9 +39,7 @@ class MealLogIntentResult:
     source: Literal["heuristic", "llm"]
 
 
-def meal_proposal_cache_key(
-    *, user_id: str, session_id: str, proposal_id: str
-) -> str:
+def meal_proposal_cache_key(*, user_id: str, session_id: str, proposal_id: str) -> str:
     return f"chat:meal:proposal:{user_id}:{session_id}:{proposal_id}"
 
 
@@ -76,24 +66,18 @@ def _heuristic_intent(message: str) -> tuple[MealLogIntentResult, bool]:
     cleaned = message.strip()
     if not cleaned:
         return (
-            MealLogIntentResult(
-                False, None, 0.0, "empty_message", "heuristic"
-            ),
+            MealLogIntentResult(False, None, 0.0, "empty_message", "heuristic"),
             False,
         )
     if _QUESTION_RE.search(cleaned) and "eat" in cleaned.lower():
         return (
-            MealLogIntentResult(
-                False, None, 0.2, "question_intent", "heuristic"
-            ),
+            MealLogIntentResult(False, None, 0.2, "question_intent", "heuristic"),
             False,
         )
     explicit = _extract_explicit_command(cleaned)
     if explicit:
         return (
-            MealLogIntentResult(
-                True, explicit, 0.95, "explicit_command", "heuristic"
-            ),
+            MealLogIntentResult(True, explicit, 0.95, "explicit_command", "heuristic"),
             False,
         )
     match = _ATE_RE.match(cleaned)
@@ -101,9 +85,7 @@ def _heuristic_intent(message: str) -> tuple[MealLogIntentResult, bool]:
         candidate = _strip_meal_suffix(match.group(3))
         if candidate:
             return (
-                MealLogIntentResult(
-                    True, candidate, 0.82, "ate_statement", "heuristic"
-                ),
+                MealLogIntentResult(True, candidate, 0.82, "ate_statement", "heuristic"),
                 False,
             )
     label_match = _MEAL_LABEL_RE.match(cleaned)
@@ -113,24 +95,16 @@ def _heuristic_intent(message: str) -> tuple[MealLogIntentResult, bool]:
             generic = {"good", "great", "ok", "okay", "fine", "solid", "bad"}
             if candidate.lower() in generic:
                 return (
-                    MealLogIntentResult(
-                        False, None, 0.4, "meal_label_ambiguous", "heuristic"
-                    ),
+                    MealLogIntentResult(False, None, 0.4, "meal_label_ambiguous", "heuristic"),
                     True,
                 )
             return (
-                MealLogIntentResult(
-                    True, candidate, 0.65, "meal_label", "heuristic"
-                ),
+                MealLogIntentResult(True, candidate, 0.65, "meal_label", "heuristic"),
                 False,
             )
-    if _MEAL_TIME_RE.search(cleaned) or re.search(
-        r"\b(ate|had)\b", cleaned, re.IGNORECASE
-    ):
+    if _MEAL_TIME_RE.search(cleaned) or re.search(r"\b(ate|had)\b", cleaned, re.IGNORECASE):
         return (
-            MealLogIntentResult(
-                False, None, 0.4, "meal_time_mention", "heuristic"
-            ),
+            MealLogIntentResult(False, None, 0.4, "meal_time_mention", "heuristic"),
             True,
         )
     return (
@@ -176,9 +150,7 @@ Return JSON with fields: intent, meal_text, confidence, reason.
 """
 
 
-async def classify_meal_log_intent(
-    message: str, *, engine: InferenceEngine
-) -> MealLogIntentResult:
+async def classify_meal_log_intent(message: str, *, engine: InferenceEngine) -> MealLogIntentResult:
     request = InferenceRequest(
         request_id="meal-log-intent",
         user_id=None,
@@ -189,9 +161,7 @@ async def classify_meal_log_intent(
     )
     response = await engine.infer(request)
     output = cast(MealLogIntentOutput, response.structured_output)
-    meal_text = (
-        output.meal_text.strip() if isinstance(output.meal_text, str) else None
-    )
+    meal_text = output.meal_text.strip() if isinstance(output.meal_text, str) else None
     return MealLogIntentResult(
         intent=bool(output.intent),
         meal_text=meal_text or None,

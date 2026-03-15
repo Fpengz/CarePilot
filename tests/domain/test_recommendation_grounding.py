@@ -31,9 +31,7 @@ def _user() -> UserProfile:
     )
 
 
-def _record(
-    dish: str, ingredients: list[Ingredient] | None = None
-) -> MealRecognitionRecord:
+def _record(dish: str, ingredients: list[Ingredient] | None = None) -> MealRecognitionRecord:
     return MealRecognitionRecord(
         id="m1",
         user_id="u1",

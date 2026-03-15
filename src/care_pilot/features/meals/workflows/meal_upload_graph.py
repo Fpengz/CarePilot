@@ -75,15 +75,11 @@ def _extract_dietary_claims(*, text: str | None) -> DietaryClaims:
         claimed_items=claims,
         consumption_fraction=consumption_fraction,
         meal_time_label=(
-            "breakfast"
-            if "breakfast" in lowered
-            else "lunch" if "lunch" in lowered else None
+            "breakfast" if "breakfast" in lowered else "lunch" if "lunch" in lowered else None
         ),
         vendor_or_source=None,
         preparation_override="no sugar" if "no sugar" in lowered else None,
-        dietary_constraints=[
-            item for item in ("no sugar", "less salt") if item in lowered
-        ],
+        dietary_constraints=[item for item in ("no sugar", "less salt") if item in lowered],
         goal_context=None,
         certainty_level="high" if claims else "low",
         ambiguity_notes=[],
@@ -95,27 +91,20 @@ def _claim_perception(labels: list[str], confidence: float) -> MealPerception:
         PerceivedMealItem(
             label=label,
             candidate_aliases=[label],
-            portion_estimate=MealPortionEstimate(
-                amount=1.0, unit="serving", confidence=confidence
-            ),
+            portion_estimate=MealPortionEstimate(amount=1.0, unit="serving", confidence=confidence),
             confidence=confidence,
         )
         for label in labels
         if label
     ]
-    return MealPerception(
-        items=items, confidence_score=confidence, image_quality="unknown"
-    )
+    return MealPerception(items=items, confidence_score=confidence, image_quality="unknown")
 
 
 class Start(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
     async def run(
         self,
         ctx: GraphRunContext[MealUploadState, MealUploadDeps],
-    ) -> (
-        BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]
-        | End[MealUploadOutput]
-    ):
+    ) -> BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput] | End[MealUploadOutput]:
         emitter = WorkflowTraceEmitter(ctx.deps.event_timeline)
         trace_ctx = WorkflowTraceContext(
             workflow_name=WorkflowName.MEAL_ANALYSIS.value,
@@ -134,16 +123,11 @@ class Start(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
         return PerceiveMeal()
 
 
-class PerceiveMeal(
-    BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]
-):
+class PerceiveMeal(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
     async def run(
         self,
         ctx: GraphRunContext[MealUploadState, MealUploadDeps],
-    ) -> (
-        BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]
-        | End[MealUploadOutput]
-    ):
+    ) -> BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput] | End[MealUploadOutput]:
         from care_pilot.agent.meal_analysis.vision_module import (
             HawkerVisionModule,
         )
@@ -166,16 +150,11 @@ class PerceiveMeal(
         return ReconcileClaims()
 
 
-class ReconcileClaims(
-    BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]
-):
+class ReconcileClaims(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
     async def run(
         self,
         ctx: GraphRunContext[MealUploadState, MealUploadDeps],
-    ) -> (
-        BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]
-        | End[MealUploadOutput]
-    ):
+    ) -> BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput] | End[MealUploadOutput]:
         if ctx.state.vision_result is None:
             raise ValueError("vision_result missing")
 
@@ -184,11 +163,7 @@ class ReconcileClaims(
         perception = ctx.state.vision_result.perception or MealPerception()
         claim_labels = [item.label for item in claims.claimed_items]
         vision_labels = [item.label for item in perception.items]
-        if (
-            claim_labels
-            and vision_labels
-            and set(claim_labels) != set(vision_labels)
-        ):
+        if claim_labels and vision_labels and set(claim_labels) != set(vision_labels):
             unresolved.append("claim_vs_vision_conflict")
             decision = await arbitrate_meal_label(
                 vision_labels=vision_labels,
@@ -199,9 +174,7 @@ class ReconcileClaims(
                 claim_labels = [decision.chosen_label]
                 unresolved = []
         reconciled_perception = (
-            _claim_perception(claim_labels, confidence=0.6)
-            if claim_labels
-            else perception
+            _claim_perception(claim_labels, confidence=0.6) if claim_labels else perception
         )
         reconciled = normalize_vision_result(
             vision_result=ctx.state.vision_result.model_copy(
@@ -219,10 +192,7 @@ class Persist(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
     async def run(
         self,
         ctx: GraphRunContext[MealUploadState, MealUploadDeps],
-    ) -> (
-        BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]
-        | End[MealUploadOutput]
-    ):
+    ) -> BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput] | End[MealUploadOutput]:
         if ctx.state.vision_result is None or ctx.state.claims is None:
             raise ValueError("missing vision_result or claims")
 
@@ -233,16 +203,12 @@ class Persist(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
             dietary_claims=ctx.state.claims,
             context=ctx.state.context,
             image_quality=(
-                getattr(
-                    ctx.state.vision_result.perception, "image_quality", None
-                )
+                getattr(ctx.state.vision_result.perception, "image_quality", None)
                 if ctx.state.vision_result.perception
                 else None
             ),
             confidence_score=(
-                getattr(
-                    ctx.state.vision_result.perception, "confidence_score", 0.0
-                )
+                getattr(ctx.state.vision_result.perception, "confidence_score", 0.0)
                 if ctx.state.vision_result.perception
                 else 0.0
             ),
@@ -276,8 +242,7 @@ class Persist(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
                 "source": raw_observation.source,
             },
             needs_manual_review=bool(
-                enriched_event.needs_manual_review
-                or ctx.state.unresolved_conflicts
+                enriched_event.needs_manual_review or ctx.state.unresolved_conflicts
             ),
         )
         total = enriched_event.total_nutrition
@@ -325,9 +290,7 @@ class Persist(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
                 correlation_id=ctx.state.correlation_id,
                 confidence=ctx.state.vision_result.primary_state.confidence_score,
                 obligations=["evaluate_meal_against_profile"],
-                payload={
-                    "dish_name": ctx.state.vision_result.primary_state.dish_name
-                },
+                payload={"dish_name": ctx.state.vision_result.primary_state.dish_name},
             )
         ]
         if ctx.state.vision_result.needs_manual_review:
@@ -385,13 +348,11 @@ class Persist(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
         )
 
 
-meal_upload_graph: Graph[MealUploadState, MealUploadDeps, MealUploadOutput] = (
-    Graph(
-        nodes=[Start, PerceiveMeal, ReconcileClaims, Persist],
-        name="meal_upload",
-        state_type=MealUploadState,
-        run_end_type=MealUploadOutput,
-    )
+meal_upload_graph: Graph[MealUploadState, MealUploadDeps, MealUploadOutput] = Graph(
+    nodes=[Start, PerceiveMeal, ReconcileClaims, Persist],
+    name="meal_upload",
+    state_type=MealUploadState,
+    run_end_type=MealUploadOutput,
 )
 
 
@@ -399,7 +360,5 @@ async def run_meal_upload_workflow(
     *, deps: MealUploadDeps, state: MealUploadState
 ) -> MealUploadOutput:
     persistence = SimpleStatePersistence()
-    result = await meal_upload_graph.run(
-        Start(), state=state, deps=deps, persistence=persistence
-    )
+    result = await meal_upload_graph.run(Start(), state=state, deps=deps, persistence=persistence)
     return result.output

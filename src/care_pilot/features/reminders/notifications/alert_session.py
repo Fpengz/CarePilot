@@ -40,9 +40,7 @@ def trigger_alert_for_session(
     request_id: str | None = None,
     correlation_id: str | None = None,
 ) -> AlertTriggerResponse:
-    user_profile = build_user_profile_from_session(
-        session, deps.stores.profiles
-    )
+    user_profile = build_user_profile_from_session(session, deps.stores.profiles)
     issued_request_id = request_id or str(uuid4())
     issued_correlation_id = correlation_id or str(uuid4())
     deps.event_timeline.append(
@@ -104,9 +102,7 @@ def trigger_alert_for_session(
         user_id=user_profile.id,
         handoffs=handoffs,
         tool_results=[tool_result],
-        timeline_events=deps.event_timeline.get_events(
-            correlation_id=issued_correlation_id
-        ),
+        timeline_events=deps.event_timeline.get_events(correlation_id=issued_correlation_id),
     )
     tool_result = workflow.tool_results[0] if workflow.tool_results else None
     if tool_result is None:
@@ -117,9 +113,7 @@ def trigger_alert_for_session(
         )
     alert_id = None
     if tool_result.output is not None:
-        alert_id = cast(
-            dict[str, object], tool_result.output.model_dump()
-        ).get("alert_id")
+        alert_id = cast(dict[str, object], tool_result.output.model_dump()).get("alert_id")
     outbox = deps.stores.alerts.list_alert_records(cast(str | None, alert_id))
     return AlertTriggerResponse(
         tool_result=tool_result,
@@ -128,14 +122,10 @@ def trigger_alert_for_session(
     )
 
 
-def get_alert_timeline(
-    *, deps: AlertDeps, alert_id: str
-) -> AlertTimelineResponse:
+def get_alert_timeline(*, deps: AlertDeps, alert_id: str) -> AlertTimelineResponse:
     outbox = deps.stores.alerts.list_alert_records(alert_id)
     if not outbox:
-        raise build_api_error(
-            status_code=404, code="alerts.not_found", message="alert not found"
-        )
+        raise build_api_error(status_code=404, code="alerts.not_found", message="alert not found")
     return AlertTimelineResponse(
         alert_id=alert_id,
         outbox_timeline=[item.model_dump(mode="json") for item in outbox],

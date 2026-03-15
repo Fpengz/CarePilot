@@ -10,12 +10,8 @@ from care_pilot.agent.chat.schemas import ChatStreamEvent
 
 
 class _DummyInferenceEngine:
-    async def infer(
-        self, request
-    ):  # pragma: no cover - should not be called in these tests.
-        raise AssertionError(
-            "Inference should not run during stream event tests"
-        )
+    async def infer(self, request):  # pragma: no cover - should not be called in these tests.
+        raise AssertionError("Inference should not run during stream event tests")
 
 
 def test_stream_events_emits_token_and_done(tmp_path, monkeypatch):
@@ -65,9 +61,7 @@ def test_stream_events_handles_track_shortcut(tmp_path):
         )
 
         events: list[ChatStreamEvent] = []
-        async for event in orchestrator.stream_events(
-            user_message="[TRACK] weight 70kg"
-        ):
+        async for event in orchestrator.stream_events(user_message="[TRACK] weight 70kg"):
             events.append(event)
         return events
 

@@ -46,15 +46,11 @@ def _alert_to_reminder(message: AlertMessage):
         channel=message.destinations[0] if message.destinations else "unknown",
     )
     medication_name = message.payload.get("medication_name", composed.title)
-    dosage_text = message.payload.get(
-        "dosage_text", format_alert_text_for_transport(composed)
-    )
+    dosage_text = message.payload.get("dosage_text", format_alert_text_for_transport(composed))
     scheduled_at_raw = message.payload.get("scheduled_at")
     try:
         scheduled_at = (
-            datetime.fromisoformat(scheduled_at_raw)
-            if scheduled_at_raw
-            else message.created_at
+            datetime.fromisoformat(scheduled_at_raw) if scheduled_at_raw else message.created_at
         )
     except ValueError:
         scheduled_at = message.created_at
@@ -105,10 +101,7 @@ class EmailSink:
 
     def send(self, message: AlertMessage) -> AlertDeliveryResult:
         settings = get_settings()
-        destination = (
-            str(message.payload.get("destination", "")).strip()
-            or "mailto://default"
-        )
+        destination = str(message.payload.get("destination", "")).strip() or "mailto://default"
         if settings.channels.email_dev_mode:
             logger.info(
                 "email_sink_dev_send alert_id=%s destination=%s",
@@ -149,10 +142,7 @@ class EmailSink:
         try:
             if settings.channels.email_smtp_use_tls:
                 smtp.starttls()
-            if (
-                settings.channels.email_smtp_username
-                and settings.channels.email_smtp_password
-            ):
+            if settings.channels.email_smtp_username and settings.channels.email_smtp_password:
                 smtp.login(
                     settings.channels.email_smtp_username,
                     settings.channels.email_smtp_password,
@@ -225,9 +215,7 @@ class SmsSink:
             headers={
                 "Content-Type": "application/json",
                 **(
-                    {
-                        "Authorization": f"Bearer {settings.channels.sms_api_key}"
-                    }
+                    {"Authorization": f"Bearer {settings.channels.sms_api_key}"}
                     if settings.channels.sms_api_key
                     else {}
                 ),
@@ -263,9 +251,7 @@ class TelegramSink:
 
     def send(self, message: AlertMessage) -> AlertDeliveryResult:
         proxy = _alert_to_reminder(message)
-        destination = (
-            str(message.payload.get("destination", "")).strip() or None
-        )
+        destination = str(message.payload.get("destination", "")).strip() or None
         result = self._channel.send(proxy, destination=destination)
         return AlertDeliveryResult(
             alert_id=message.alert_id,

@@ -60,9 +60,7 @@ class LLMNormalizedMedicationInstruction(BaseModel):
 
 class MedicationIntakeParseResult(BaseModel):
     source: MedicationIntakeSource
-    instructions: list[NormalizedMedicationInstruction] = Field(
-        default_factory=list
-    )
+    instructions: list[NormalizedMedicationInstruction] = Field(default_factory=list)
 
 
 class MedicationIntakeDraft(BaseModel):
@@ -70,23 +68,17 @@ class MedicationIntakeDraft(BaseModel):
     user_id: str
     timezone_name: str
     source: MedicationIntakeSource
-    instructions: list[NormalizedMedicationInstruction] = Field(
-        default_factory=list
-    )
+    instructions: list[NormalizedMedicationInstruction] = Field(default_factory=list)
 
 
 class MedicationParseOutput(BaseModel):
-    instructions: list[NormalizedMedicationInstruction] = Field(
-        default_factory=list
-    )
+    instructions: list[NormalizedMedicationInstruction] = Field(default_factory=list)
     confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
     warnings: list[str] = Field(default_factory=list)
 
 
 class MedicationParseOutputLoose(BaseModel):
-    instructions: list[LLMNormalizedMedicationInstruction] = Field(
-        default_factory=list
-    )
+    instructions: list[LLMNormalizedMedicationInstruction] = Field(default_factory=list)
     confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
     warnings: list[str] = Field(default_factory=list)
 

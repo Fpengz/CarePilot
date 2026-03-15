@@ -101,11 +101,7 @@ class NotImplementedYet(
                 correlation_id=ctx.state.correlation_id
             ),
         )
-        return End(
-            PrescriptionIngestOutput(
-                status="not_implemented", workflow=workflow
-            )
-        )
+        return End(PrescriptionIngestOutput(status="not_implemented", workflow=workflow))
 
 
 prescription_ingest_graph: Graph[

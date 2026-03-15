@@ -31,17 +31,13 @@ from care_pilot.agent.emotion import EmotionAgent
 
 
 class _StubASR:
-    def transcribe(
-        self, audio_bytes: bytes, *, filename: str | None, language: str | None
-    ) -> str:
+    def transcribe(self, audio_bytes: bytes, *, filename: str | None, language: str | None) -> str:
         del audio_bytes, filename, language
         return "hello"
 
 
 class _StubText:
-    def predict(
-        self, text: str, language: str | None
-    ) -> TextEmotionBranchResult:
+    def predict(self, text: str, language: str | None) -> TextEmotionBranchResult:
         del language
         return TextEmotionBranchResult(
             transcript_or_text=text,
@@ -54,9 +50,7 @@ class _StubText:
 
 
 class _StubSpeech:
-    def predict(
-        self, audio_bytes: bytes, *, transcript: str | None
-    ) -> SpeechEmotionBranchResult:
+    def predict(self, audio_bytes: bytes, *, transcript: str | None) -> SpeechEmotionBranchResult:
         del audio_bytes
         return SpeechEmotionBranchResult(
             transcription=transcript,
@@ -72,9 +66,7 @@ class _StubSpeech:
 class _StubContext:
     def extract(self, user_id: str | None) -> EmotionContextFeatures:
         del user_id
-        return EmotionContextFeatures(
-            recent_labels=[], trend="stable", recent_product_states=[]
-        )
+        return EmotionContextFeatures(recent_labels=[], trend="stable", recent_product_states=[])
 
 
 class _StubFusion:
@@ -122,9 +114,7 @@ def _runtime() -> InProcessEmotionRuntime:
 
 def test_inprocess_emotion_runtime_text_inference() -> None:
     runtime = _runtime()
-    result = runtime.infer_text(
-        EmotionTextAgentInput(text="I am happy and calm")
-    )
+    result = runtime.infer_text(EmotionTextAgentInput(text="I am happy and calm"))
 
     assert result.source_type == "text"
     assert result.final_emotion == "neutral"
@@ -134,9 +124,7 @@ def test_inprocess_emotion_runtime_text_inference() -> None:
 def test_inprocess_emotion_runtime_speech_inference() -> None:
     runtime = _runtime()
     result = runtime.infer_speech(
-        EmotionSpeechAgentInput(
-            audio_bytes=b"fake-wave-data", content_type="audio/wav"
-        )
+        EmotionSpeechAgentInput(audio_bytes=b"fake-wave-data", content_type="audio/wav")
     )
 
     assert result.source_type == "mixed"
@@ -150,27 +138,19 @@ def test_inprocess_runtime_health_reports_ready_when_configured() -> None:
 
 
 class _SlowPort(EmotionInferencePort):
-    def infer_text(
-        self, payload: EmotionTextAgentInput
-    ) -> EmotionInferenceResult:
+    def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
         del payload
         time.sleep(0.05)
         return _runtime().infer_text(EmotionTextAgentInput(text="neutral"))
 
-    def infer_speech(
-        self, payload: EmotionSpeechAgentInput
-    ) -> EmotionInferenceResult:
+    def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
         del payload
         return _runtime().infer_speech(
-            EmotionSpeechAgentInput(
-                audio_bytes=b"fake", content_type="audio/wav"
-            )
+            EmotionSpeechAgentInput(audio_bytes=b"fake", content_type="audio/wav")
         )
 
     def health(self) -> EmotionRuntimeHealth:
-        return EmotionRuntimeHealth(
-            status="ready", model_cache_ready=True, source_commit="sha"
-        )
+        return EmotionRuntimeHealth(status="ready", model_cache_ready=True, source_commit="sha")
 
 
 def test_emotion_service_times_out_with_wall_clock_limit() -> None:

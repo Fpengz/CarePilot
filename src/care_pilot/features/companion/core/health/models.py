@@ -52,9 +52,7 @@ class ReportInput(BaseModel):
     source: Literal["pdf", "pasted_text"]
     content_bytes: bytes | None = None
     text: str | None = None
-    uploaded_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class BiomarkerReading(BaseModel):
@@ -81,9 +79,7 @@ class SymptomSafety(BaseModel):
 class SymptomCheckIn(BaseModel):
     id: str
     user_id: str
-    recorded_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    recorded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     severity: int = Field(ge=1, le=5)
     symptom_codes: list[str] = Field(default_factory=list)
     free_text: str | None = None
@@ -118,9 +114,7 @@ class MedicationAdherenceEvent(BaseModel):
     taken_at: datetime | None = None
     source: AdherenceSource = "manual"
     metadata: dict[str, object] = Field(default_factory=dict)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class MedicationAdherenceMetrics(BaseModel):
@@ -161,15 +155,9 @@ class HealthProfileRecord(BaseModel):
     budget_tier: BudgetTier = "moderate"
     meal_schedule: list[MealScheduleWindow] = Field(
         default_factory=lambda: [
-            MealScheduleWindow(
-                slot="breakfast", start_time="07:00", end_time="09:00"
-            ),
-            MealScheduleWindow(
-                slot="lunch", start_time="12:00", end_time="14:00"
-            ),
-            MealScheduleWindow(
-                slot="dinner", start_time="18:00", end_time="20:00"
-            ),
+            MealScheduleWindow(slot="breakfast", start_time="07:00", end_time="09:00"),
+            MealScheduleWindow(slot="lunch", start_time="12:00", end_time="14:00"),
+            MealScheduleWindow(slot="dinner", start_time="18:00", end_time="20:00"),
         ]
     )
     preferred_notification_channel: str = "in_app"

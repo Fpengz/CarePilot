@@ -30,9 +30,7 @@ POLICY_RULES: dict[str, PolicyRule] = {
     "meal.analyze": PolicyRule(required_scopes=frozenset({"meal:write"})),
     "meal.records.read": PolicyRule(required_scopes=frozenset({"meal:read"})),
     "reports.parse": PolicyRule(required_scopes=frozenset({"report:write"})),
-    "recommendations.generate": PolicyRule(
-        required_scopes=frozenset({"recommendation:generate"})
-    ),
+    "recommendations.generate": PolicyRule(required_scopes=frozenset({"recommendation:generate"})),
     "recommendations.daily_agent.read": PolicyRule(
         required_scopes=frozenset({"recommendation:generate"})
     ),
@@ -42,57 +40,33 @@ POLICY_RULES: dict[str, PolicyRule] = {
     "recommendations.interactions.write": PolicyRule(
         required_scopes=frozenset({"recommendation:generate"})
     ),
-    "emotions.text.infer": PolicyRule(
-        required_scopes=frozenset({"emotion:infer"})
-    ),
-    "emotions.speech.infer": PolicyRule(
-        required_scopes=frozenset({"emotion:infer"})
-    ),
+    "emotions.text.infer": PolicyRule(required_scopes=frozenset({"emotion:infer"})),
+    "emotions.speech.infer": PolicyRule(required_scopes=frozenset({"emotion:infer"})),
     "chat.messages.read": PolicyRule(required_scopes=frozenset()),
     "chat.messages.write": PolicyRule(required_scopes=frozenset()),
     "suggestions.generate": PolicyRule(
         required_scopes=frozenset({"report:write", "recommendation:generate"})
     ),
     "suggestions.read": PolicyRule(required_scopes=frozenset({"report:read"})),
-    "reminders.generate": PolicyRule(
-        required_scopes=frozenset({"reminder:write"})
-    ),
+    "reminders.generate": PolicyRule(required_scopes=frozenset({"reminder:write"})),
     "reminders.read": PolicyRule(required_scopes=frozenset({"reminder:read"})),
-    "reminders.confirm": PolicyRule(
-        required_scopes=frozenset({"reminder:write"})
-    ),
-    "medications.regimens.read": PolicyRule(
-        required_scopes=frozenset({"reminder:read"})
-    ),
-    "medications.regimens.write": PolicyRule(
-        required_scopes=frozenset({"reminder:write"})
-    ),
-    "medications.adherence.read": PolicyRule(
-        required_scopes=frozenset({"reminder:read"})
-    ),
-    "medications.adherence.write": PolicyRule(
-        required_scopes=frozenset({"reminder:write"})
-    ),
+    "reminders.confirm": PolicyRule(required_scopes=frozenset({"reminder:write"})),
+    "medications.regimens.read": PolicyRule(required_scopes=frozenset({"reminder:read"})),
+    "medications.regimens.write": PolicyRule(required_scopes=frozenset({"reminder:write"})),
+    "medications.adherence.read": PolicyRule(required_scopes=frozenset({"reminder:read"})),
+    "medications.adherence.write": PolicyRule(required_scopes=frozenset({"reminder:write"})),
     "symptoms.read": PolicyRule(required_scopes=frozenset({"report:read"})),
     "symptoms.write": PolicyRule(required_scopes=frozenset({"report:write"})),
-    "clinical_cards.read": PolicyRule(
-        required_scopes=frozenset({"report:read"})
-    ),
+    "clinical_cards.read": PolicyRule(required_scopes=frozenset({"report:read"})),
     "clinical_cards.generate": PolicyRule(
         required_scopes=frozenset({"report:read", "recommendation:generate"})
     ),
-    "metrics.trends.read": PolicyRule(
-        required_scopes=frozenset({"report:read"})
-    ),
+    "metrics.trends.read": PolicyRule(required_scopes=frozenset({"report:read"})),
     "dashboard.read": PolicyRule(
-        required_scopes=frozenset(
-            {"meal:read", "reminder:read", "report:read"}
-        )
+        required_scopes=frozenset({"meal:read", "reminder:read", "report:read"})
     ),
     "companion.today.read": PolicyRule(
-        required_scopes=frozenset(
-            {"meal:read", "reminder:read", "report:read"}
-        )
+        required_scopes=frozenset({"meal:read", "reminder:read", "report:read"})
     ),
     "companion.interactions.write": PolicyRule(
         required_scopes=frozenset({"recommendation:generate", "report:read"})
@@ -101,35 +75,19 @@ POLICY_RULES: dict[str, PolicyRule] = {
         required_scopes=frozenset({"report:read", "recommendation:generate"})
     ),
     "impact.summary.read": PolicyRule(
-        required_scopes=frozenset(
-            {"meal:read", "reminder:read", "report:read"}
-        )
+        required_scopes=frozenset({"meal:read", "reminder:read", "report:read"})
     ),
     "households.care.read_members": PolicyRule(required_scopes=frozenset()),
     "households.care.read_profile": PolicyRule(required_scopes=frozenset()),
-    "households.care.read_meals": PolicyRule(
-        required_scopes=frozenset({"meal:read"})
-    ),
-    "households.care.read_reminders": PolicyRule(
-        required_scopes=frozenset({"reminder:read"})
-    ),
+    "households.care.read_meals": PolicyRule(required_scopes=frozenset({"meal:read"})),
+    "households.care.read_reminders": PolicyRule(required_scopes=frozenset({"reminder:read"})),
     "alerts.trigger": PolicyRule(required_scopes=frozenset({"alert:trigger"})),
-    "alerts.timeline.read": PolicyRule(
-        required_scopes=frozenset({"alert:timeline:read"})
-    ),
+    "alerts.timeline.read": PolicyRule(required_scopes=frozenset({"alert:timeline:read"})),
     "workflows.read": PolicyRule(required_scopes=frozenset({"workflow:read"})),
-    "workflows.replay": PolicyRule(
-        required_scopes=frozenset({"workflow:replay"})
-    ),
-    "workflows.write": PolicyRule(
-        required_scopes=frozenset({"workflow:write"})
-    ),
-    "auth.audit.read": PolicyRule(
-        required_scopes=frozenset({"auth:audit:read"})
-    ),
-    "auth.sessions.revoke": PolicyRule(
-        required_scopes=frozenset(), resource_guard="session_owner"
-    ),
+    "workflows.replay": PolicyRule(required_scopes=frozenset({"workflow:replay"})),
+    "workflows.write": PolicyRule(required_scopes=frozenset({"workflow:write"})),
+    "auth.audit.read": PolicyRule(required_scopes=frozenset({"auth:audit:read"})),
+    "auth.sessions.revoke": PolicyRule(required_scopes=frozenset(), resource_guard="session_owner"),
 }
 
 
@@ -150,9 +108,7 @@ def _guard_session_owner(session: SessionData, resource: ResourceData) -> None:
         raise HTTPException(status_code=404, detail="session not found")
 
 
-def authorize_resource_action(
-    session: SessionData, *, action: str, resource: ResourceData
-) -> None:
+def authorize_resource_action(session: SessionData, *, action: str, resource: ResourceData) -> None:
     authorize_action(session, action=action)
     rule = POLICY_RULES[action]
     if rule.resource_guard is None:

@@ -103,9 +103,7 @@ async def request_context_middleware(request: Request, call_next) -> Response:
                         details={
                             "retry_after_seconds": retry_after,
                             "limit": limit,
-                            "window_seconds": int(
-                                settings.api.rate_limit_window_seconds
-                            ),
+                            "window_seconds": int(settings.api.rate_limit_window_seconds),
                         },
                     ),
                 )

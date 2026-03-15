@@ -46,12 +46,8 @@ def test_dispatch_due_reminder_notifications_is_idempotent_per_schedule(
         repository=repo, reminder_event=event, reminder_type="medication"
     )
 
-    first = dispatch_due_reminder_notifications(
-        repository=repo, now=event.scheduled_at
-    )
-    second = dispatch_due_reminder_notifications(
-        repository=repo, now=event.scheduled_at
-    )
+    first = dispatch_due_reminder_notifications(repository=repo, now=event.scheduled_at)
+    second = dispatch_due_reminder_notifications(repository=repo, now=event.scheduled_at)
 
     assert len(schedules) == 1
     assert len(first) == 1

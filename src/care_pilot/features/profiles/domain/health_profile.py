@@ -23,13 +23,9 @@ DEFAULT_PROFILE_AGE = 68
 
 
 class HealthProfileRepository(Protocol):
-    def get_health_profile(
-        self, user_id: str
-    ) -> HealthProfileRecord | None: ...
+    def get_health_profile(self, user_id: str) -> HealthProfileRecord | None: ...
 
-    def save_health_profile(
-        self, profile: HealthProfileRecord
-    ) -> HealthProfileRecord: ...
+    def save_health_profile(self, profile: HealthProfileRecord) -> HealthProfileRecord: ...
 
 
 def default_health_profile(user_id: str) -> HealthProfileRecord:
@@ -98,9 +94,7 @@ def build_user_profile_from_health_profile(
         conditions=list(health_profile.conditions),
         medications=list(health_profile.medications),
         profile_mode=session.get("profile_mode")
-        or default_profile_mode_for_role(
-            cast(AccountRole, str(session["account_role"]))
-        ),
+        or default_profile_mode_for_role(cast(AccountRole, str(session["account_role"]))),
         locale=health_profile.locale,
         allergies=list(health_profile.allergies),
         nutrition_goals=list(health_profile.nutrition_goals),
@@ -120,20 +114,14 @@ def resolve_user_profile(
     repository: HealthProfileRepository,
     session: dict[str, Any],
 ) -> tuple[HealthProfileRecord, UserProfile]:
-    health_profile = get_or_create_health_profile(
-        repository, str(session["user_id"])
-    )
+    health_profile = get_or_create_health_profile(repository, str(session["user_id"]))
     return health_profile, build_user_profile_from_health_profile(
         session=session, health_profile=health_profile
     )
 
 
 def compute_bmi(profile: HealthProfileRecord) -> float | None:
-    if (
-        profile.height_cm is None
-        or profile.weight_kg is None
-        or profile.height_cm <= 0
-    ):
+    if profile.height_cm is None or profile.weight_kg is None or profile.height_cm <= 0:
         return None
     height_m = profile.height_cm / 100.0
     return round(profile.weight_kg / (height_m * height_m), 2)

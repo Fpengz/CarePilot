@@ -29,11 +29,7 @@ class StaticEvidenceRetriever:
         query_parts = [interaction_type.replace("_", " ")]
         if snapshot.active_risk_flags:
             query_parts.extend(snapshot.active_risk_flags[:2])
-        if (
-            "meal" in interaction_type
-            or "hawker" in lowered
-            or snapshot.meal_risk_streak >= 1
-        ):
+        if "meal" in interaction_type or "hawker" in lowered or snapshot.meal_risk_streak >= 1:
             citations.append(
                 EvidenceCitation(
                     title="Hawker meal risk reset",
@@ -42,11 +38,7 @@ class StaticEvidenceRetriever:
                     confidence=0.81,
                 )
             )
-        if (
-            interaction_type == "adherence_follow_up"
-            or "med" in lowered
-            or "dose" in lowered
-        ):
+        if interaction_type == "adherence_follow_up" or "med" in lowered or "dose" in lowered:
             citations.append(
                 EvidenceCitation(
                     title="Medication recovery step",
@@ -56,8 +48,7 @@ class StaticEvidenceRetriever:
                 )
             )
         if interaction_type == "report_follow_up" or any(
-            flag in snapshot.active_risk_flags
-            for flag in ("high_hba1c", "high_ldl", "high_bp")
+            flag in snapshot.active_risk_flags for flag in ("high_hba1c", "high_ldl", "high_bp")
         ):
             citations.append(
                 EvidenceCitation(
@@ -78,8 +69,7 @@ class StaticEvidenceRetriever:
             )
 
         return EvidenceBundle(
-            query=", ".join(dict.fromkeys(query_parts))
-            or "general chronic care support",
+            query=", ".join(dict.fromkeys(query_parts)) or "general chronic care support",
             guidance_summary=(
                 f"Anchor the response in {personalization.recommended_explanation_style} coaching with "
                 f"{personalization.preferred_tone} tone."

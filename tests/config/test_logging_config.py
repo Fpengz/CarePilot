@@ -6,9 +6,7 @@ import care_pilot.logging_config as logging_config
 
 
 class _DummyLogfireHandler(logging.Handler):
-    def emit(
-        self, record: logging.LogRecord
-    ) -> None:  # pragma: no cover - no-op test handler
+    def emit(self, record: logging.LogRecord) -> None:  # pragma: no cover - no-op test handler
         del record
 
 
@@ -31,18 +29,14 @@ def test_setup_logging_is_idempotent(monkeypatch) -> None:
             "LogfireLoggingHandler",
             _DummyLogfireHandler,
         )
-        monkeypatch.setattr(
-            logging_config.logfire_api, "configure", lambda **_: None
-        )
+        monkeypatch.setattr(logging_config.logfire_api, "configure", lambda **_: None)
 
         logging_config.setup_logging("care-pilot-test")
         logging_config._CONFIGURED = False
         logging_config.setup_logging("care-pilot-test")
 
         tagged_handlers = [
-            h
-            for h in root.handlers
-            if getattr(h, logging_config._HANDLER_MARKER, False)
+            h for h in root.handlers if getattr(h, logging_config._HANDLER_MARKER, False)
         ]
         assert len(tagged_handlers) == 1
     finally:
@@ -53,9 +47,7 @@ def test_setup_logging_is_idempotent(monkeypatch) -> None:
             "LogfireLoggingHandler",
             original_logfire_handler,
         )
-        monkeypatch.setattr(
-            logging_config.logfire_api, "configure", original_logfire_configure
-        )
+        monkeypatch.setattr(logging_config.logfire_api, "configure", original_logfire_configure)
         if root_marker_exists:
             setattr(root, logging_config._ROOT_MARKER, original_root_marker)
         elif hasattr(root, logging_config._ROOT_MARKER):

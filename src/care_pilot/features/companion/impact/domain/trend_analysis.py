@@ -54,18 +54,14 @@ def build_metric_trend(metric: str, points: list[MetricPoint]) -> MetricTrend:
     )
 
 
-def biomarker_points(
-    readings: list[BiomarkerReading], *, biomarker_name: str
-) -> list[MetricPoint]:
+def biomarker_points(readings: list[BiomarkerReading], *, biomarker_name: str) -> list[MetricPoint]:
     target = biomarker_name.lower()
     out: list[MetricPoint] = []
     for reading in readings:
         if reading.name.lower() != target:
             continue
         measured_at = reading.measured_at or datetime.now(timezone.utc)
-        out.append(
-            MetricPoint(timestamp=measured_at, value=float(reading.value))
-        )
+        out.append(MetricPoint(timestamp=measured_at, value=float(reading.value)))
     return out
 
 
@@ -90,9 +86,7 @@ def meal_calorie_points(
 def adherence_rate_points(
     events: list[MedicationAdherenceEvent],
 ) -> list[MetricPoint]:
-    buckets: dict[str, dict[str, int]] = defaultdict(
-        lambda: {"taken": 0, "total": 0}
-    )
+    buckets: dict[str, dict[str, int]] = defaultdict(lambda: {"taken": 0, "total": 0})
     for event in events:
         day = event.scheduled_at.date().isoformat()
         buckets[day]["total"] += 1

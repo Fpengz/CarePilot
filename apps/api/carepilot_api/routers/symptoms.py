@@ -27,9 +27,7 @@ from care_pilot.features.symptoms.use_cases import (
 router = APIRouter(tags=["symptoms"])
 
 
-@router.post(
-    "/api/v1/symptoms/check-ins", response_model=SymptomCheckInEnvelopeResponse
-)
+@router.post("/api/v1/symptoms/check-ins", response_model=SymptomCheckInEnvelopeResponse)
 def symptoms_checkins_create(
     payload: SymptomCheckInRequest,
     request: Request,
@@ -43,9 +41,7 @@ def symptoms_checkins_create(
     )
 
 
-@router.get(
-    "/api/v1/symptoms/check-ins", response_model=SymptomCheckInListResponse
-)
+@router.get("/api/v1/symptoms/check-ins", response_model=SymptomCheckInListResponse)
 def symptoms_checkins_list(
     request: Request,
     from_date: date | None = Query(default=None, alias="from"),

@@ -74,9 +74,7 @@ def test_tool_registry_executes_and_returns_typed_output() -> None:
     result = registry.execute(
         "echo_patient",
         {"text": "hello"},
-        ToolPolicyContext(
-            account_role="member", scopes=["echo:read"], environment="dev"
-        ),
+        ToolPolicyContext(account_role="member", scopes=["echo:read"], environment="dev"),
     )
 
     assert result.success is True

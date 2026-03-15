@@ -235,22 +235,14 @@ DEFAULT_MEAL_CATALOG: tuple[MealCatalogItem, ...] = (
 
 
 def normalize_catalog_text(value: str) -> str:
-    return "".join(
-        ch for ch in value.lower() if ch.isalnum() or ch.isspace()
-    ).strip()
+    return "".join(ch for ch in value.lower() if ch.isalnum() or ch.isspace()).strip()
 
 
 def list_default_catalog(*, locale: str = "en-SG") -> list[MealCatalogItem]:
-    return [
-        item
-        for item in DEFAULT_MEAL_CATALOG
-        if item.locale == locale and item.active
-    ]
+    return [item for item in DEFAULT_MEAL_CATALOG if item.locale == locale and item.active]
 
 
-def find_catalog_item_by_title(
-    title: str, *, locale: str = "en-SG"
-) -> MealCatalogItem | None:
+def find_catalog_item_by_title(title: str, *, locale: str = "en-SG") -> MealCatalogItem | None:
     needle = normalize_catalog_text(title)
     for item in list_default_catalog(locale=locale):
         if needle == normalize_catalog_text(item.title):

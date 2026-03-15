@@ -24,22 +24,14 @@ logger = get_logger(__name__)
 
 
 class SQLiteAuthStore:
-    def __init__(
-        self, settings: Settings, db_path: str = "care_pilot_api.db"
-    ) -> None:
+    def __init__(self, settings: Settings, db_path: str = "care_pilot_api.db") -> None:
         self._hasher = PasswordHasher(settings.auth.password_hash_scheme)
         self._demo_defaults = build_demo_user_seeds(settings)
         self._session_ttl_seconds = int(settings.auth.session_ttl_seconds)
-        self._login_max_failed_attempts = int(
-            settings.auth.login_max_failed_attempts
-        )
-        self._login_failure_window_seconds = int(
-            settings.auth.login_failure_window_seconds
-        )
+        self._login_max_failed_attempts = int(settings.auth.login_max_failed_attempts)
+        self._login_failure_window_seconds = int(settings.auth.login_failure_window_seconds)
         self._login_lockout_seconds = int(settings.auth.login_lockout_seconds)
-        self._auth_audit_events_max_entries = int(
-            settings.auth.audit_events_max_entries
-        )
+        self._auth_audit_events_max_entries = int(settings.auth.audit_events_max_entries)
         self._lock = RLock()
         self._db_path = db_path
         self._init_db()
@@ -103,14 +95,10 @@ class SQLiteAuthStore:
             )
             session_columns = {
                 str(row["name"])
-                for row in cur.execute(
-                    "PRAGMA table_info(auth_sessions)"
-                ).fetchall()
+                for row in cur.execute("PRAGMA table_info(auth_sessions)").fetchall()
             }
             if "active_household_id" not in session_columns:
-                cur.execute(
-                    "ALTER TABLE auth_sessions ADD COLUMN active_household_id TEXT"
-                )
+                cur.execute("ALTER TABLE auth_sessions ADD COLUMN active_household_id TEXT")
             conn.commit()
 
     def _seed_defaults(self) -> None:
@@ -248,9 +236,7 @@ class SQLiteAuthStore:
             return False
         if lockout_until.tzinfo is None:
             lockout_until = lockout_until.replace(tzinfo=timezone.utc)
-        if datetime.now(timezone.utc) >= lockout_until.astimezone(
-            timezone.utc
-        ):
+        if datetime.now(timezone.utc) >= lockout_until.astimezone(timezone.utc):
             with self._lock:
                 with self._connect() as conn:
                     conn.execute(
@@ -274,9 +260,7 @@ class SQLiteAuthStore:
             try:
                 window_started = datetime.fromisoformat(window_started_raw)
                 if window_started.tzinfo is None:
-                    window_started = window_started.replace(
-                        tzinfo=timezone.utc
-                    )
+                    window_started = window_started.replace(tzinfo=timezone.utc)
                 reset_window = (
                     now - window_started.astimezone(timezone.utc)
                 ).total_seconds() > self._login_failure_window_seconds
@@ -284,16 +268,12 @@ class SQLiteAuthStore:
                 reset_window = True
         failed_count_raw = state.get("failed_count", 0)
         failed_count = (
-            0
-            if reset_window
-            else (failed_count_raw if isinstance(failed_count_raw, int) else 0)
+            0 if reset_window else (failed_count_raw if isinstance(failed_count_raw, int) else 0)
         )
         failed_count += 1
         lockout_until: str | None = None
         if failed_count >= self._login_max_failed_attempts:
-            lockout_until = (
-                now + timedelta(seconds=self._login_lockout_seconds)
-            ).isoformat()
+            lockout_until = (now + timedelta(seconds=self._login_lockout_seconds)).isoformat()
         with self._lock:
             with self._connect() as conn:
                 conn.execute(
@@ -308,11 +288,7 @@ class SQLiteAuthStore:
                     (
                         email,
                         failed_count,
-                        (
-                            now.isoformat()
-                            if reset_window
-                            else state.get("window_started_at")
-                        ),
+                        (now.isoformat() if reset_window else state.get("window_started_at")),
                         lockout_until,
                     ),
                 )
@@ -322,9 +298,7 @@ class SQLiteAuthStore:
     def record_login_success(self, email: str) -> None:
         with self._lock:
             with self._connect() as conn:
-                conn.execute(
-                    "DELETE FROM auth_login_failures WHERE email = ?", (email,)
-                )
+                conn.execute("DELETE FROM auth_login_failures WHERE email = ?", (email,))
                 conn.commit()
 
     def append_auth_audit_event(
@@ -351,9 +325,7 @@ class SQLiteAuthStore:
                         json.dumps(metadata or {}),
                     ),
                 )
-                count_row = conn.execute(
-                    "SELECT COUNT(*) AS c FROM auth_audit_events"
-                ).fetchone()
+                count_row = conn.execute("SELECT COUNT(*) AS c FROM auth_audit_events").fetchone()
                 count = int(count_row["c"]) if count_row is not None else 0
                 if count > self._auth_audit_events_max_entries:
                     excess = count - self._auth_audit_events_max_entries
@@ -370,9 +342,7 @@ class SQLiteAuthStore:
                     )
                 conn.commit()
 
-    def list_auth_audit_events(
-        self, *, limit: int = 50
-    ) -> list[dict[str, Any]]:
+    def list_auth_audit_events(self, *, limit: int = 50) -> list[dict[str, Any]]:
         bounded = max(1, min(int(limit), 200))
         with self._lock:
             with self._connect() as conn:
@@ -390,13 +360,9 @@ class SQLiteAuthStore:
                 "event_id": str(row["event_id"]),
                 "event_type": str(row["event_type"]),
                 "email": str(row["email"]),
-                "user_id": (
-                    str(row["user_id"]) if row["user_id"] is not None else None
-                ),
+                "user_id": (str(row["user_id"]) if row["user_id"] is not None else None),
                 "created_at": str(row["created_at"]),
-                "metadata": cast(
-                    dict[str, Any], json.loads(str(row["metadata_json"]))
-                ),
+                "metadata": cast(dict[str, Any], json.loads(str(row["metadata_json"]))),
             }
             for row in rows
         ]
@@ -421,12 +387,8 @@ class SQLiteAuthStore:
         if row is None:
             return None
         current = self._row_to_user(cast(sqlite3.Row, row))
-        new_display_name = (
-            display_name if display_name is not None else current.display_name
-        )
-        new_profile_mode = (
-            profile_mode if profile_mode is not None else current.profile_mode
-        )
+        new_display_name = display_name if display_name is not None else current.display_name
+        new_profile_mode = profile_mode if profile_mode is not None else current.profile_mode
         with self._lock:
             with self._connect() as conn:
                 conn.execute(
@@ -473,9 +435,7 @@ class SQLiteAuthStore:
                     (self._hasher.hash(new_password), user_id),
                 )
                 conn.commit()
-        revoked_count = self.revoke_other_sessions(
-            user_id, keep_session_id=keep_session_id
-        )
+        revoked_count = self.revoke_other_sessions(user_id, keep_session_id=keep_session_id)
         return (True, revoked_count)
 
     def create_session(self, user: AuthUserRecord) -> dict[str, Any]:
@@ -532,9 +492,7 @@ class SQLiteAuthStore:
             "issued_at": str(row["issued_at"]),
             "subject_user_id": str(row["subject_user_id"]),
             "active_household_id": (
-                str(row["active_household_id"])
-                if row["active_household_id"] is not None
-                else None
+                str(row["active_household_id"]) if row["active_household_id"] is not None else None
             ),
         }
 
@@ -601,9 +559,7 @@ class SQLiteAuthStore:
         user_id = session.get("user_id")
         return str(user_id) if isinstance(user_id, str) else None
 
-    def revoke_other_sessions(
-        self, user_id: str, *, keep_session_id: str
-    ) -> int:
+    def revoke_other_sessions(self, user_id: str, *, keep_session_id: str) -> int:
         with self._lock:
             with self._connect() as conn:
                 rows = conn.execute(

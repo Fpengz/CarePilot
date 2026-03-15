@@ -35,10 +35,5 @@ def test_profile_mode_medication_views() -> None:
             status="acknowledged",
         ),
     ]
-    assert (
-        build_profile_mode_medication_view("self", reminders)["due_now"] == 1
-    )
-    assert (
-        build_profile_mode_medication_view("caregiver", reminders)["missed"]
-        == 1
-    )
+    assert build_profile_mode_medication_view("self", reminders)["due_now"] == 1
+    assert build_profile_mode_medication_view("caregiver", reminders)["missed"] == 1

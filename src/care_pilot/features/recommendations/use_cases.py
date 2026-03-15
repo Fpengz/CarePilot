@@ -138,14 +138,10 @@ def _source_scope(
     if not isinstance(active_household_id, str) or not active_household_id:
         raise MissingActiveHouseholdError
     try:
-        ensure_household_member(
-            household_store, household_id=active_household_id, user_id=user_id
-        )
+        ensure_household_member(household_store, household_id=active_household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
         raise SuggestionForbiddenError
-    return household_source_members(
-        household_store, household_id=active_household_id
-    )
+    return household_source_members(household_store, household_id=active_household_id)
 
 
 def generate_suggestion_from_report(
@@ -231,9 +227,7 @@ def generate_suggestion_from_report(
     clinical_memory.put(user_id, snapshot)
 
     user_profile = build_user_profile(session)
-    recommendation = generate_recommendation(
-        meal_records[-1], snapshot, user_profile
-    )
+    recommendation = generate_recommendation(meal_records[-1], snapshot, user_profile)
     recommendation_json = recommendation.model_dump(mode="json")
     repository.save_recommendation(user_id, recommendation_json)
 
@@ -292,9 +286,7 @@ def list_suggestions_for_session(
 
     raw_items: list[dict[str, Any]] = []
     for source_user_id in source_user_ids:
-        for item in repository.list_suggestion_records(
-            source_user_id, limit=limit
-        ):
+        for item in repository.list_suggestion_records(source_user_id, limit=limit):
             normalized = dict(item)
             normalized.setdefault("source_user_id", source_user_id)
             normalized.setdefault(
@@ -302,9 +294,7 @@ def list_suggestions_for_session(
                 source_display_names.get(source_user_id, source_user_id),
             )
             raw_items.append(normalized)
-    raw_items.sort(
-        key=lambda item: str(item.get("created_at", "")), reverse=True
-    )
+    raw_items.sort(key=lambda item: str(item.get("created_at", "")), reverse=True)
     return raw_items[:limit]
 
 
@@ -384,16 +374,10 @@ def generate_recommendation_for_session(
         snapshot = build_clinical_snapshot(readings)
         deps.clinical_memory.put(user_id, snapshot)
 
-    user_profile = build_user_profile_from_session(
-        session, deps.stores.profiles
-    )
-    recommendation = generate_recommendation(
-        meal_records[-1], snapshot, user_profile
-    )
+    user_profile = build_user_profile_from_session(session, deps.stores.profiles)
+    recommendation = generate_recommendation(meal_records[-1], snapshot, user_profile)
     recommendation_json = recommendation.model_dump(mode="json")
-    deps.stores.recommendations.save_recommendation(
-        user_id, recommendation_json
-    )
+    deps.stores.recommendations.save_recommendation(user_id, recommendation_json)
 
     workflow = {
         "workflow_name": "recommendation_generate",
@@ -421,9 +405,7 @@ async def get_daily_agent_for_session(
     correlation_id: str | None,
 ) -> RecommendationAgentResponse:
     user_id = str(session["user_id"])
-    health_profile, user_profile = resolve_user_profile(
-        deps.stores.profiles, session
-    )
+    health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
     meal_history = deps.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
     output = await deps.recommendation_agent.generate(
@@ -455,9 +437,7 @@ def get_substitutions_for_session(
     payload: RecommendationSubstitutionRequest,
 ) -> RecommendationSubstitutionResponse:
     user_id = str(session["user_id"])
-    health_profile, user_profile = resolve_user_profile(
-        deps.stores.profiles, session
-    )
+    health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
     meal_history = deps.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
     try:
@@ -484,9 +464,7 @@ def get_substitutions_for_session(
             code="recommendations.no_meal_records",
             message="no meal records available",
         )
-    return RecommendationSubstitutionResponse.model_validate(
-        plan.model_dump(mode="json")
-    )
+    return RecommendationSubstitutionResponse.model_validate(plan.model_dump(mode="json"))
 
 
 def record_interaction_for_session(

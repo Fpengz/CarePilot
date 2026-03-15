@@ -93,24 +93,18 @@ class SQLiteMealRepository:
         )
         return synthesized_records
 
-    def get_meal_record(
-        self, user_id: str, meal_id: str
-    ) -> MealRecognitionRecord | None:
+    def get_meal_record(self, user_id: str, meal_id: str) -> MealRecognitionRecord | None:
         legacy = self._get_legacy_meal_record(user_id, meal_id)
         if legacy is not None:
             return legacy
         event = self.get_validated_meal_event(user_id, meal_id)
         if event is None:
-            logger.debug(
-                "get_meal_record_miss user_id=%s meal_id=%s", user_id, meal_id
-            )
+            logger.debug("get_meal_record_miss user_id=%s meal_id=%s", user_id, meal_id)
             return None
         profile = self.get_nutrition_risk_profile(user_id, meal_id)
         return self._build_meal_record_from_event(event, profile)
 
-    def _load_legacy_meal_records(
-        self, user_id: str
-    ) -> list[MealRecognitionRecord]:
+    def _load_legacy_meal_records(self, user_id: str) -> list[MealRecognitionRecord]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
                 """
@@ -129,14 +123,10 @@ class SQLiteMealRepository:
                     source=r[3],
                     meal_state=MealState.model_validate_json(r[4]),
                     meal_perception=(
-                        MealPerception.model_validate_json(r[5])
-                        if r[5] is not None
-                        else None
+                        MealPerception.model_validate_json(r[5]) if r[5] is not None else None
                     ),
                     enriched_event=(
-                        EnrichedMealEvent.model_validate_json(r[6])
-                        if r[6] is not None
-                        else None
+                        EnrichedMealEvent.model_validate_json(r[6]) if r[6] is not None else None
                     ),
                     analysis_version=r[7],
                     multi_item_count=r[8],
@@ -144,9 +134,7 @@ class SQLiteMealRepository:
             )
         return out
 
-    def _get_legacy_meal_record(
-        self, user_id: str, meal_id: str
-    ) -> MealRecognitionRecord | None:
+    def _get_legacy_meal_record(self, user_id: str, meal_id: str) -> MealRecognitionRecord | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
@@ -164,31 +152,23 @@ class SQLiteMealRepository:
             source=row[3],
             meal_state=MealState.model_validate_json(row[4]),
             meal_perception=(
-                MealPerception.model_validate_json(row[5])
-                if row[5] is not None
-                else None
+                MealPerception.model_validate_json(row[5]) if row[5] is not None else None
             ),
             enriched_event=(
-                EnrichedMealEvent.model_validate_json(row[6])
-                if row[6] is not None
-                else None
+                EnrichedMealEvent.model_validate_json(row[6]) if row[6] is not None else None
             ),
             analysis_version=row[7],
             multi_item_count=row[8],
         )
 
-    def _load_v2_meal_records(
-        self, user_id: str
-    ) -> list[MealRecognitionRecord]:
+    def _load_v2_meal_records(self, user_id: str) -> list[MealRecognitionRecord]:
         events = self.list_validated_meal_events(user_id)
         if not events:
             return []
         profiles = self.list_nutrition_risk_profiles(user_id)
         profile_map = {profile.event_id: profile for profile in profiles}
         return [
-            self._build_meal_record_from_event(
-                event, profile_map.get(event.event_id)
-            )
+            self._build_meal_record_from_event(event, profile_map.get(event.event_id))
             for event in events
         ]
 
@@ -264,9 +244,7 @@ class SQLiteMealRepository:
             observation.user_id,
         )
 
-    def list_meal_observations(
-        self, user_id: str
-    ) -> list[RawObservationBundle]:
+    def list_meal_observations(self, user_id: str) -> list[RawObservationBundle]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
                 """
@@ -299,9 +277,7 @@ class SQLiteMealRepository:
             event.user_id,
         )
 
-    def list_validated_meal_events(
-        self, user_id: str
-    ) -> list[ValidatedMealEvent]:
+    def list_validated_meal_events(self, user_id: str) -> list[ValidatedMealEvent]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
                 """
@@ -312,9 +288,7 @@ class SQLiteMealRepository:
             ).fetchall()
         return [ValidatedMealEvent.model_validate_json(r[0]) for r in rows]
 
-    def get_validated_meal_event(
-        self, user_id: str, event_id: str
-    ) -> ValidatedMealEvent | None:
+    def get_validated_meal_event(self, user_id: str, event_id: str) -> ValidatedMealEvent | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
@@ -327,9 +301,7 @@ class SQLiteMealRepository:
             return None
         return ValidatedMealEvent.model_validate_json(row[0])
 
-    def save_nutrition_risk_profile(
-        self, profile: NutritionRiskProfile
-    ) -> None:
+    def save_nutrition_risk_profile(self, profile: NutritionRiskProfile) -> None:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -352,9 +324,7 @@ class SQLiteMealRepository:
             profile.user_id,
         )
 
-    def list_nutrition_risk_profiles(
-        self, user_id: str
-    ) -> list[NutritionRiskProfile]:
+    def list_nutrition_risk_profiles(self, user_id: str) -> list[NutritionRiskProfile]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
                 """

@@ -34,7 +34,9 @@ def current_observability_context() -> dict[str, str]:
 
 
 @contextmanager
-def bind_observability_context(*, correlation_id: str | None = None, request_id: str | None = None) -> Iterator[None]:
+def bind_observability_context(
+    *, correlation_id: str | None = None, request_id: str | None = None
+) -> Iterator[None]:
     correlation_token = None
     request_token = None
     if correlation_id is not None:

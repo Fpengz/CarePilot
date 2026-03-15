@@ -33,9 +33,7 @@ class MemoryStore(Protocol):
     @property
     def enabled(self) -> bool: ...
 
-    def search(
-        self, *, user_id: str, query: str, limit: int
-    ) -> list[MemorySnippet]: ...
+    def search(self, *, user_id: str, query: str, limit: int) -> list[MemorySnippet]: ...
 
     def add_messages(
         self,
@@ -54,9 +52,7 @@ class NullMemoryStore:
     def enabled(self) -> bool:
         return False
 
-    def search(
-        self, *, user_id: str, query: str, limit: int
-    ) -> list[MemorySnippet]:
+    def search(self, *, user_id: str, query: str, limit: int) -> list[MemorySnippet]:
         return []
 
     def add_messages(
@@ -99,13 +95,9 @@ class Mem0MemoryStore:
     def enabled(self) -> bool:
         return True
 
-    def search(
-        self, *, user_id: str, query: str, limit: int
-    ) -> list[MemorySnippet]:
+    def search(self, *, user_id: str, query: str, limit: int) -> list[MemorySnippet]:
         try:
-            result = self._client.search(
-                query, filters={"user_id": user_id}, top_k=limit
-            )
+            result = self._client.search(query, filters={"user_id": user_id}, top_k=limit)
         except TypeError:
             result = self._client.search(query, filters={"user_id": user_id})
 
@@ -126,20 +118,10 @@ class Mem0MemoryStore:
             snippets.append(
                 MemorySnippet(
                     text=text,
-                    score=(
-                        float(score)
-                        if isinstance(score, (int, float, str))
-                        else None
-                    ),
-                    memory_id=(
-                        str(item.get("id"))
-                        if item.get("id") is not None
-                        else None
-                    ),
+                    score=(float(score) if isinstance(score, (int, float, str)) else None),
+                    memory_id=(str(item.get("id")) if item.get("id") is not None else None),
                     metadata=(
-                        cast(dict[str, object], metadata)
-                        if isinstance(metadata, dict)
-                        else None
+                        cast(dict[str, object], metadata) if isinstance(metadata, dict) else None
                     ),
                 )
             )

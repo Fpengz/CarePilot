@@ -27,9 +27,7 @@ from care_pilot.features.profiles.use_cases import (
 router = APIRouter(tags=["health-profile"])
 
 
-@router.get(
-    "/api/v1/profile/health", response_model=HealthProfileEnvelopeResponse
-)
+@router.get("/api/v1/profile/health", response_model=HealthProfileEnvelopeResponse)
 def health_profile_get(
     request: Request,
     session: dict[str, object] = Depends(current_session),
@@ -37,17 +35,13 @@ def health_profile_get(
     return get_profile(context=get_context(request), session=session)
 
 
-@router.patch(
-    "/api/v1/profile/health", response_model=HealthProfileEnvelopeResponse
-)
+@router.patch("/api/v1/profile/health", response_model=HealthProfileEnvelopeResponse)
 def health_profile_patch(
     payload: HealthProfileUpdateRequest,
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> HealthProfileEnvelopeResponse:
-    return patch_profile(
-        context=get_context(request), session=session, payload=payload
-    )
+    return patch_profile(context=get_context(request), session=session, payload=payload)
 
 
 @router.get(
@@ -58,9 +52,7 @@ def health_profile_onboarding_get(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> HealthProfileOnboardingEnvelopeResponse:
-    return get_profile_onboarding(
-        context=get_context(request), session=session
-    )
+    return get_profile_onboarding(context=get_context(request), session=session)
 
 
 @router.patch(
@@ -72,9 +64,7 @@ def health_profile_onboarding_patch(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> HealthProfileOnboardingEnvelopeResponse:
-    return patch_profile_onboarding(
-        context=get_context(request), session=session, payload=payload
-    )
+    return patch_profile_onboarding(context=get_context(request), session=session, payload=payload)
 
 
 @router.post(
@@ -85,14 +75,10 @@ def health_profile_onboarding_complete(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> HealthProfileOnboardingEnvelopeResponse:
-    return complete_profile_onboarding(
-        context=get_context(request), session=session
-    )
+    return complete_profile_onboarding(context=get_context(request), session=session)
 
 
-@router.get(
-    "/api/v1/suggestions/daily", response_model=DailySuggestionsResponse
-)
+@router.get("/api/v1/suggestions/daily", response_model=DailySuggestionsResponse)
 def suggestions_daily(
     request: Request,
     session: dict[str, object] = Depends(current_session),

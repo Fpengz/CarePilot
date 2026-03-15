@@ -25,9 +25,7 @@ def test_telegram_dev_mode_skips_network(monkeypatch) -> None:
     monkeypatch.setenv("TELEGRAM_DEV_MODE", "1")
 
     def _never_called(*args, **kwargs):
-        raise AssertionError(
-            "urlopen should not be called in TELEGRAM_DEV_MODE"
-        )
+        raise AssertionError("urlopen should not be called in TELEGRAM_DEV_MODE")
 
     monkeypatch.setattr(request, "urlopen", _never_called)
 
@@ -63,11 +61,7 @@ def test_telegram_payload_formats_local_timezone(monkeypatch) -> None:
 
     channel = TelegramChannel()
     event = _event().model_copy(
-        update={
-            "scheduled_at": datetime(
-                2026, 2, 25, 9, 48, 3, tzinfo=timezone.utc
-            )
-        }
+        update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3, tzinfo=timezone.utc)}
     )
     payload = channel._build_payload(event, channel._resolve_chat_id(None))
 
@@ -86,9 +80,7 @@ def test_telegram_payload_preserves_naive_local_wall_clock(
     monkeypatch.setenv("APP_TIMEZONE", "Asia/Singapore")
 
     channel = TelegramChannel()
-    event = _event().model_copy(
-        update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3)}
-    )
+    event = _event().model_copy(update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3)})
     payload = channel._build_payload(event, channel._resolve_chat_id(None))
 
     assert "09:48:03+08:00" in payload["text"]

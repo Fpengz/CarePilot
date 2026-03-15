@@ -188,9 +188,7 @@ def _build_app_store(settings: Settings) -> AppStoreBackend:
 def _build_auth_store(settings: Settings) -> AuthStore:
     if settings.auth.store_backend == "in_memory":
         return InMemoryAuthStore(settings)
-    return SQLiteAuthStore(
-        settings=settings, db_path=settings.auth.sqlite_db_path
-    )
+    return SQLiteAuthStore(settings=settings, db_path=settings.auth.sqlite_db_path)
 
 
 def _build_household_store(settings: Settings) -> HouseholdStore:
@@ -241,15 +239,11 @@ def build_app_context() -> AppContext:
     else:
 
         class _DisabledEmotionRuntime:
-            def infer_text(
-                self, payload
-            ) -> EmotionInferenceResult:  # noqa: ANN001
+            def infer_text(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
                 del payload
                 raise RuntimeError("emotion runtime disabled")
 
-            def infer_speech(
-                self, payload
-            ) -> EmotionInferenceResult:  # noqa: ANN001
+            def infer_speech(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
                 del payload
                 raise RuntimeError("emotion runtime disabled")
 
@@ -331,9 +325,7 @@ def meal_deps(ctx: AppContext) -> MealDeps:
 
 
 def recommendation_deps(ctx: AppContext) -> RecommendationDeps:
-    return RecommendationDeps(
-        stores=ctx.stores, clinical_memory=ctx.clinical_memory
-    )
+    return RecommendationDeps(stores=ctx.stores, clinical_memory=ctx.clinical_memory)
 
 
 def workflow_deps(ctx: AppContext) -> WorkflowDeps:

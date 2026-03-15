@@ -25,9 +25,9 @@ def build_capture_envelope(
     correlation_id: str | None = None,
 ) -> CaptureEnvelope:
     """Wrap an ``ImageInput`` in a ``CaptureEnvelope`` with dedup metadata."""
-    content_sha256 = image_input.metadata.get(
-        "content_sha256"
-    ) or compute_content_sha256(image_input.content)
+    content_sha256 = image_input.metadata.get("content_sha256") or compute_content_sha256(
+        image_input.content
+    )
     return CaptureEnvelope(
         capture_id=str(uuid4()),
         request_id=request_id or str(uuid4()),

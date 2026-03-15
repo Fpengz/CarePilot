@@ -134,10 +134,7 @@ def test_hawker_vision_uses_profile_built_model_for_inference_engine(
     HawkerVisionModule(local_profile=profile)
 
     assert StubEngine.seen_model is not None
-    assert (
-        getattr(StubEngine.seen_model, "provider").base_url
-        == "http://profile-specific:9000/v1"
-    )
+    assert getattr(StubEngine.seen_model, "provider").base_url == "http://profile-specific:9000/v1"
 
 
 @pytest.mark.anyio
@@ -152,9 +149,7 @@ async def test_hawker_vision_feature_flag_disables_inference_engine_v2(
 
     async def fail_infer(*args, **kwargs):  # noqa: ANN001
         del args, kwargs
-        raise AssertionError(
-            "inference engine should not be used when v2 is disabled"
-        )
+        raise AssertionError("inference engine should not be used when v2 is disabled")
 
     async def fake_run(prompt: str):
         del prompt

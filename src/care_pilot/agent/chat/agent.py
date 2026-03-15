@@ -27,9 +27,7 @@ logger = get_logger(__name__)
 def _safe_preview(text: str, *, limit: int = 160) -> str:
     preview = text[:limit].replace("\n", " ")
     preview = re.sub(r"[0-9]", "x", preview)
-    preview = re.sub(
-        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview
-    )
+    preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
     return preview
 
 
@@ -54,9 +52,7 @@ async def run_chat(
     # In a full refactor, we'd pass history to agent.run().
     prompt = message
     if history:
-        history_text = "\n".join(
-            f"{m['role']}: {m['content']}" for m in history
-        )
+        history_text = "\n".join(f"{m['role']}: {m['content']}" for m in history)
         prompt = f"{history_text}\nuser: {message}"
     if system_prompt_override:
         prompt = f"[System context]\n{system_prompt_override}\n\n{prompt}"

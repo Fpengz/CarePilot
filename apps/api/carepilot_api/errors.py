@@ -59,9 +59,7 @@ def _failure_metadata(
     }
 
 
-async def handle_api_app_error(
-    request: Request, exc: ApiAppError
-) -> JSONResponse:
+async def handle_api_app_error(request: Request, exc: ApiAppError) -> JSONResponse:
     metadata = _failure_metadata(
         request=request,
         status_code=exc.status_code,
@@ -77,9 +75,7 @@ async def handle_api_app_error(
         correlation_id=getattr(request.state, "correlation_id", None),
         details=exc.details,
     )
-    return JSONResponse(
-        content=body, status_code=exc.status_code, headers=exc.headers
-    )
+    return JSONResponse(content=body, status_code=exc.status_code, headers=exc.headers)
 
 
 def _http_error_code(status_code: int) -> str:
@@ -94,9 +90,7 @@ def _http_error_code(status_code: int) -> str:
     return mapping.get(status_code, "request.error")
 
 
-async def handle_http_exception(
-    request: Request, exc: HTTPException
-) -> JSONResponse:
+async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
     message = str(exc.detail)
     code = _http_error_code(exc.status_code)
     metadata = _failure_metadata(
@@ -113,9 +107,7 @@ async def handle_http_exception(
         message=message,
         correlation_id=getattr(request.state, "correlation_id", None),
     )
-    return JSONResponse(
-        content=body, status_code=exc.status_code, headers=exc.headers
-    )
+    return JSONResponse(content=body, status_code=exc.status_code, headers=exc.headers)
 
 
 async def handle_validation_exception(
@@ -142,9 +134,7 @@ async def handle_validation_exception(
     return JSONResponse(content=body, status_code=422)
 
 
-async def handle_unhandled_exception(
-    request: Request, exc: Exception
-) -> JSONResponse:
+async def handle_unhandled_exception(request: Request, exc: Exception) -> JSONResponse:
     logger.exception(
         "event=api_request_failed_unhandled path=%s method=%s",
         request.url.path,

@@ -72,9 +72,7 @@ from care_pilot.platform.auth.session_context import (
 from care_pilot.features.profiles.domain.models import MealSlot
 from care_pilot.features.reminders.domain.models import ReminderEvent
 
-_DOSAGE_TEXT_RE = re.compile(
-    r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|iu|unit|units)\b", re.IGNORECASE
-)
+_DOSAGE_TEXT_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|iu|unit|units)\b", re.IGNORECASE)
 _GENERIC_MEDICATION_NAMES = {
     "tablet",
     "tablets",
@@ -110,36 +108,26 @@ def _parse_hhmm(value: str | None) -> str | None:
 def _to_regimen_response(
     regimen: MedicationRegimen,
 ) -> MedicationRegimenResponse:
-    return MedicationRegimenResponse.model_validate(
-        regimen.model_dump(mode="json")
-    )
+    return MedicationRegimenResponse.model_validate(regimen.model_dump(mode="json"))
 
 
 def _to_adherence_response(
     event: MedicationAdherenceEvent,
 ) -> MedicationAdherenceEventResponse:
-    return MedicationAdherenceEventResponse.model_validate(
-        event.model_dump(mode="json")
-    )
+    return MedicationAdherenceEventResponse.model_validate(event.model_dump(mode="json"))
 
 
 def _to_notification_response(
     item: object,
 ) -> ScheduledReminderNotificationItemResponse:
-    payload = (
-        getattr(item, "model_dump")(mode="json")
-        if hasattr(item, "model_dump")
-        else item
-    )
+    payload = getattr(item, "model_dump")(mode="json") if hasattr(item, "model_dump") else item
     return ScheduledReminderNotificationItemResponse.model_validate(payload)
 
 
 def _to_instruction_response(
     item: NormalizedMedicationInstruction,
 ) -> NormalizedMedicationInstructionResponse:
-    return NormalizedMedicationInstructionResponse.model_validate(
-        item.model_dump(mode="json")
-    )
+    return NormalizedMedicationInstructionResponse.model_validate(item.model_dump(mode="json"))
 
 
 def _session_timezone(*, context: AppContext, user_id: str) -> str:
@@ -166,15 +154,10 @@ def _ranges_overlap(
     left_range_end = left_end or date.max
     right_range_start = right_start or date.min
     right_range_end = right_end or date.max
-    return (
-        left_range_start <= right_range_end
-        and right_range_start <= left_range_end
-    )
+    return left_range_start <= right_range_end and right_range_start <= left_range_end
 
 
-def _same_schedule_signature(
-    left: MedicationRegimen, right: MedicationRegimen
-) -> bool:
+def _same_schedule_signature(left: MedicationRegimen, right: MedicationRegimen) -> bool:
     return (
         left.canonical_name == right.canonical_name
         and left.dosage_text == right.dosage_text
@@ -249,9 +232,7 @@ def _build_regimen_from_instruction(
 ) -> MedicationRegimen:
     slot_scope = list(instruction.slot_scope)
     if instruction.timing_type in {"pre_meal", "post_meal"} and not slot_scope:
-        slot_scope = _default_slot_scope(
-            max(1, instruction.frequency_times_per_day)
-        )
+        slot_scope = _default_slot_scope(max(1, instruction.frequency_times_per_day))
     return MedicationRegimen(
         id=regimen_id,
         user_id=user_id,
@@ -298,10 +279,7 @@ def _validate_intake_parse_result(
     review_required = any(
         (not item.dosage_text)
         or item.confidence < 0.75
-        or any(
-            "could not determine" in detail.lower()
-            for detail in item.ambiguities
-        )
+        or any("could not determine" in detail.lower() for detail in item.ambiguities)
         for item in parse_result.instructions
     )
     if review_required and not allow_ambiguous:
@@ -312,9 +290,7 @@ def _validate_intake_parse_result(
             details={
                 "source_hash": parse_result.source.source_hash,
                 "ambiguities": [
-                    item.ambiguities
-                    for item in parse_result.instructions
-                    if item.ambiguities
+                    item.ambiguities for item in parse_result.instructions if item.ambiguities
                 ],
             },
         )
@@ -323,41 +299,27 @@ def _validate_intake_parse_result(
 def _instruction_is_actionable(
     instruction: NormalizedMedicationInstruction,
 ) -> bool:
-    if not instruction.dosage_text or not _DOSAGE_TEXT_RE.search(
-        instruction.dosage_text
-    ):
+    if not instruction.dosage_text or not _DOSAGE_TEXT_RE.search(instruction.dosage_text):
         return False
-    if instruction.ambiguities:
+    if any("could not determine" in detail.lower() for detail in instruction.ambiguities):
         return False
     if instruction.confidence < 0.75:
         return False
     if instruction.timing_type == "fixed_time" and not instruction.fixed_time:
         return False
-    if (
-        instruction.timing_type in {"pre_meal", "post_meal"}
-        and not instruction.slot_scope
-    ):
+    if instruction.timing_type in {"pre_meal", "post_meal"} and not instruction.slot_scope:
         return False
-    return (
-        instruction.medication_name_raw.strip().lower()
-        not in _GENERIC_MEDICATION_NAMES
-    )
+    return instruction.medication_name_raw.strip().lower() not in _GENERIC_MEDICATION_NAMES
 
 
 def _apply_user_confirmation(
     instruction: NormalizedMedicationInstruction,
 ) -> NormalizedMedicationInstruction:
-    if (
-        not instruction.medication_name_raw.strip()
-        or not instruction.dosage_text
-    ):
+    if not instruction.medication_name_raw.strip() or not instruction.dosage_text:
         return instruction
     if instruction.timing_type == "fixed_time" and not instruction.fixed_time:
         return instruction
-    if (
-        instruction.timing_type in {"pre_meal", "post_meal"}
-        and not instruction.slot_scope
-    ):
+    if instruction.timing_type in {"pre_meal", "post_meal"} and not instruction.slot_scope:
         return instruction
     return instruction.model_copy(
         update={
@@ -396,9 +358,7 @@ def _store_intake_draft(
 def _load_intake_draft(
     *, context: AppContext, user_id: str, draft_id: str
 ) -> MedicationIntakeDraft:
-    payload = context.cache_store.get_json(
-        _draft_cache_key(user_id=user_id, draft_id=draft_id)
-    )
+    payload = context.cache_store.get_json(_draft_cache_key(user_id=user_id, draft_id=draft_id))
     if payload is None:
         raise build_api_error(
             status_code=404,
@@ -415,12 +375,8 @@ def _load_intake_draft(
     return draft
 
 
-def _delete_intake_draft(
-    *, context: AppContext, user_id: str, draft_id: str
-) -> None:
-    context.cache_store.delete(
-        _draft_cache_key(user_id=user_id, draft_id=draft_id)
-    )
+def _delete_intake_draft(*, context: AppContext, user_id: str, draft_id: str) -> None:
+    context.cache_store.delete(_draft_cache_key(user_id=user_id, draft_id=draft_id))
 
 
 def _save_intake_draft(
@@ -434,26 +390,18 @@ def _save_intake_draft(
     return draft
 
 
-def _build_preview_response(
-    *, draft: MedicationIntakeDraft
-) -> MedicationIntakeResponse:
+def _build_preview_response(*, draft: MedicationIntakeDraft) -> MedicationIntakeResponse:
     return MedicationIntakeResponse(
         draft_id=draft.draft_id,
-        source=MedicationIntakeSourceResponse.model_validate(
-            draft.source.model_dump(mode="json")
-        ),
-        normalized_instructions=[
-            _to_instruction_response(item) for item in draft.instructions
-        ],
+        source=MedicationIntakeSourceResponse.model_validate(draft.source.model_dump(mode="json")),
+        normalized_instructions=[_to_instruction_response(item) for item in draft.instructions],
         regimens=[],
         reminders=[],
         scheduled_notifications=[],
     )
 
 
-def _draft_instruction_at(
-    *, draft: MedicationIntakeDraft, instruction_index: int
-) -> None:
+def _draft_instruction_at(*, draft: MedicationIntakeDraft, instruction_index: int) -> None:
     if instruction_index < 0 or instruction_index >= len(draft.instructions):
         raise build_api_error(
             status_code=404,
@@ -475,9 +423,7 @@ def _run_parsed_intake(
     reminders: list[ReminderEvent] = []
     scheduled_notifications: list[object] = []
     user_profile = _build_intake_user_profile(context=context, user_id=user_id)
-    existing_reminder_events = context.stores.reminders.list_reminder_events(
-        user_id
-    )
+    existing_reminder_events = context.stores.reminders.list_reminder_events(user_id)
 
     for instruction in parse_result.instructions:
         if not _instruction_is_actionable(instruction):
@@ -502,9 +448,7 @@ def _run_parsed_intake(
             instruction=instruction,
         )
         if existing is None:
-            duplicate = _find_duplicate_regimen(
-                context=context, user_id=user_id, candidate=regimen
-            )
+            duplicate = _find_duplicate_regimen(context=context, user_id=user_id, candidate=regimen)
             if duplicate is not None:
                 regimen = duplicate
             else:
@@ -515,8 +459,7 @@ def _run_parsed_intake(
         current = [
             item
             for item in existing_reminder_events
-            if item.regimen_id == regimen.id
-            and item.scheduled_at.date() == today
+            if item.regimen_id == regimen.id and item.scheduled_at.date() == today
         ]
         if not current:
             current = generate_daily_reminders(user_profile, [regimen], today)
@@ -532,9 +475,7 @@ def _run_parsed_intake(
         else:
             for reminder in current:
                 scheduled_notifications.extend(
-                    context.stores.reminders.list_scheduled_notifications(
-                        reminder_id=reminder.id
-                    )
+                    context.stores.reminders.list_scheduled_notifications(reminder_id=reminder.id)
                 )
         reminders.extend(current)
 
@@ -544,8 +485,7 @@ def _run_parsed_intake(
             parse_result.source.model_dump(mode="json")
         ),
         normalized_instructions=[
-            _to_instruction_response(item)
-            for item in parse_result.instructions
+            _to_instruction_response(item) for item in parse_result.instructions
         ],
         regimens=[_to_regimen_response(item) for item in regimens],
         reminders=list(reminders),
@@ -559,9 +499,7 @@ def list_regimens_for_session(
     *, context: AppContext, user_id: str
 ) -> MedicationRegimenListResponse:
     items = context.stores.medications.list_medication_regimens(user_id)
-    return MedicationRegimenListResponse(
-        items=[_to_regimen_response(item) for item in items]
-    )
+    return MedicationRegimenListResponse(items=[_to_regimen_response(item) for item in items])
 
 
 def create_regimen_for_session(
@@ -581,9 +519,7 @@ def create_regimen_for_session(
         id=str(uuid4()),
         user_id=user_id,
         medication_name=payload.medication_name.strip(),
-        canonical_name=(
-            payload.canonical_name or payload.medication_name.strip()
-        )
+        canonical_name=(payload.canonical_name or payload.medication_name.strip())
         .lower()
         .replace(" ", "_"),
         dosage_text=payload.dosage_text.strip(),
@@ -605,9 +541,7 @@ def create_regimen_for_session(
         parse_confidence=payload.parse_confidence,
         active=payload.active,
     )
-    duplicate = _find_duplicate_regimen(
-        context=context, user_id=user_id, candidate=regimen
-    )
+    duplicate = _find_duplicate_regimen(context=context, user_id=user_id, candidate=regimen)
     if duplicate is not None:
         raise build_api_error(
             status_code=409,
@@ -616,9 +550,7 @@ def create_regimen_for_session(
             details={"existing_regimen_id": duplicate.id},
         )
     context.stores.medications.save_medication_regimen(regimen)
-    return MedicationRegimenEnvelopeResponse(
-        regimen=_to_regimen_response(regimen)
-    )
+    return MedicationRegimenEnvelopeResponse(regimen=_to_regimen_response(regimen))
 
 
 def patch_regimen_for_session(
@@ -648,9 +580,7 @@ def patch_regimen_for_session(
         updates["fixed_time"] = _parse_hhmm(payload.fixed_time)
     next_payload = existing.model_dump(mode="json")
     next_payload.update(updates)
-    if next_payload.get(
-        "timing_type"
-    ) == "fixed_time" and not next_payload.get("fixed_time"):
+    if next_payload.get("timing_type") == "fixed_time" and not next_payload.get("fixed_time"):
         raise build_api_error(
             status_code=400,
             code="medications.invalid_fixed_time",
@@ -671,9 +601,7 @@ def patch_regimen_for_session(
             details={"existing_regimen_id": duplicate.id},
         )
     context.stores.medications.save_medication_regimen(updated)
-    return MedicationRegimenEnvelopeResponse(
-        regimen=_to_regimen_response(updated)
-    )
+    return MedicationRegimenEnvelopeResponse(regimen=_to_regimen_response(updated))
 
 
 def delete_regimen_for_session(
@@ -681,9 +609,7 @@ def delete_regimen_for_session(
 ) -> MedicationRegimenDeleteResponse:
     for event in context.stores.reminders.list_reminder_events(user_id):
         if event.regimen_id == regimen_id:
-            cancel_reminder_notifications(
-                repository=context.stores.reminders, reminder_id=event.id
-            )
+            cancel_reminder_notifications(repository=context.stores.reminders, reminder_id=event.id)
     deleted = context.stores.medications.delete_medication_regimen(
         user_id=user_id, regimen_id=regimen_id
     )
@@ -717,9 +643,7 @@ def record_adherence_for_session(
         metadata=payload.metadata,
     )
     saved = context.stores.medications.save_medication_adherence_event(event)
-    return MedicationAdherenceEventEnvelopeResponse(
-        event=_to_adherence_response(saved)
-    )
+    return MedicationAdherenceEventEnvelopeResponse(event=_to_adherence_response(saved))
 
 
 def adherence_metrics_for_session(
@@ -729,16 +653,8 @@ def adherence_metrics_for_session(
     from_date: date | None,
     to_date: date | None,
 ) -> MedicationAdherenceMetricsResponse:
-    start_at = (
-        datetime.combine(from_date, time.min, tzinfo=timezone.utc)
-        if from_date
-        else None
-    )
-    end_at = (
-        datetime.combine(to_date, time.max, tzinfo=timezone.utc)
-        if to_date
-        else None
-    )
+    start_at = datetime.combine(from_date, time.min, tzinfo=timezone.utc) if from_date else None
+    end_at = datetime.combine(to_date, time.max, tzinfo=timezone.utc) if to_date else None
     events = context.stores.medications.list_medication_adherence_events(
         user_id=user_id,
         start_at=start_at,
@@ -755,9 +671,7 @@ def adherence_metrics_for_session(
         adherence_rate=(taken / len(events)) if events else 0.0,
     )
     return MedicationAdherenceMetricsResponse(
-        totals=MedicationAdherenceTotalsResponse.model_validate(
-            totals.model_dump(mode="json")
-        ),
+        totals=MedicationAdherenceTotalsResponse.model_validate(totals.model_dump(mode="json")),
         events=[_to_adherence_response(item) for item in events],
     )
 
@@ -849,9 +763,7 @@ async def intake_upload_for_session(
     correlation_id: str | None = None,
 ) -> MedicationIntakeResponse:
     started = perf_counter()
-    source = extract_upload_source(
-        filename=filename, mime_type=mime_type, content=content
-    )
+    source = extract_upload_source(filename=filename, mime_type=mime_type, content=content)
     timezone_name = _session_timezone(context=context, user_id=user_id)
     today = _today_for_timezone(timezone_name)
     trace = WorkflowTraceEmitter(context.event_timeline)
@@ -880,9 +792,7 @@ async def intake_upload_for_session(
                 context.medication_inference_engine,
             ),
         )
-        _validate_intake_parse_result(
-            parse_result=parse_result, allow_ambiguous=allow_ambiguous
-        )
+        _validate_intake_parse_result(parse_result=parse_result, allow_ambiguous=allow_ambiguous)
         draft = _store_intake_draft(
             context=context,
             user_id=user_id,
@@ -925,12 +835,8 @@ def confirm_intake_for_session(
     user_id: str,
     payload: MedicationIntakeConfirmRequest,
 ) -> MedicationIntakeResponse:
-    draft = _load_intake_draft(
-        context=context, user_id=user_id, draft_id=payload.draft_id
-    )
-    if any(
-        not _instruction_is_actionable(item) for item in draft.instructions
-    ):
+    draft = _load_intake_draft(context=context, user_id=user_id, draft_id=payload.draft_id)
+    if any(not _instruction_is_actionable(item) for item in draft.instructions):
         raise build_api_error(
             status_code=422,
             code="medications.intake_review_required",
@@ -938,15 +844,11 @@ def confirm_intake_for_session(
             details={
                 "source_hash": draft.source.source_hash,
                 "ambiguities": [
-                    item.ambiguities
-                    for item in draft.instructions
-                    if item.ambiguities
+                    item.ambiguities for item in draft.instructions if item.ambiguities
                 ],
             },
         )
-    parse_result = MedicationIntakeParseResult(
-        source=draft.source, instructions=draft.instructions
-    )
+    parse_result = MedicationIntakeParseResult(source=draft.source, instructions=draft.instructions)
     today = _today_for_timezone(draft.timezone_name)
     response = _run_parsed_intake(
         context=context,
@@ -956,9 +858,7 @@ def confirm_intake_for_session(
         timezone_name=draft.timezone_name,
         today=today,
     )
-    _delete_intake_draft(
-        context=context, user_id=user_id, draft_id=draft.draft_id
-    )
+    _delete_intake_draft(context=context, user_id=user_id, draft_id=draft.draft_id)
     return response
 
 
@@ -970,13 +870,9 @@ def update_draft_instruction_for_session(
     instruction_index: int,
     payload: MedicationDraftInstructionUpdateRequest,
 ) -> MedicationIntakeResponse:
-    draft = _load_intake_draft(
-        context=context, user_id=user_id, draft_id=draft_id
-    )
+    draft = _load_intake_draft(context=context, user_id=user_id, draft_id=draft_id)
     _draft_instruction_at(draft=draft, instruction_index=instruction_index)
-    updated = NormalizedMedicationInstruction.model_validate(
-        payload.model_dump(mode="json")
-    )
+    updated = NormalizedMedicationInstruction.model_validate(payload.model_dump(mode="json"))
     draft.instructions[instruction_index] = _apply_user_confirmation(updated)
     saved = _save_intake_draft(context=context, draft=draft)
     return _build_preview_response(draft=saved)
@@ -989,14 +885,10 @@ def delete_draft_instruction_for_session(
     draft_id: str,
     instruction_index: int,
 ) -> MedicationIntakeResponse:
-    draft = _load_intake_draft(
-        context=context, user_id=user_id, draft_id=draft_id
-    )
+    draft = _load_intake_draft(context=context, user_id=user_id, draft_id=draft_id)
     _draft_instruction_at(draft=draft, instruction_index=instruction_index)
     remaining = [
-        item
-        for index, item in enumerate(draft.instructions)
-        if index != instruction_index
+        item for index, item in enumerate(draft.instructions) if index != instruction_index
     ]
     saved = _save_intake_draft(
         context=context,

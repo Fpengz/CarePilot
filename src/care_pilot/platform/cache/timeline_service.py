@@ -43,9 +43,7 @@ class EventTimelineService:
     ) -> None:
         self._events: list[WorkflowTimelineEvent] = []
         self._repository = repository
-        self._persistence_enabled = (
-            persistence_enabled and repository is not None
-        )
+        self._persistence_enabled = persistence_enabled and repository is not None
 
     def append(
         self,

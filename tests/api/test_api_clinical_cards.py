@@ -35,9 +35,7 @@ def _login(
     email: str = "member@example.com",
     password: str = "member-pass",
 ) -> None:
-    response = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
 
 
@@ -65,9 +63,7 @@ def test_clinical_card_generate_list_get(
     )
     assert parsed.status_code == 200
 
-    created = client.post(
-        "/api/v1/clinical-cards/generate", json={"format": "sectioned"}
-    )
+    created = client.post("/api/v1/clinical-cards/generate", json={"format": "sectioned"})
     assert created.status_code == 200
     body = created.json()
     card_id = body["card"]["id"]

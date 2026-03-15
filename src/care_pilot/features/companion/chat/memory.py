@@ -142,22 +142,14 @@ class MemoryManager:
             self._summary_in_flight = True
             self._schedule_summary_update(batch, eligible_boundary)
 
-    def _schedule_summary_update(
-        self, new_messages: list[dict], eligible_boundary: int
-    ) -> None:
+    def _schedule_summary_update(self, new_messages: list[dict], eligible_boundary: int) -> None:
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            asyncio.run(
-                self._update_and_persist_summary(
-                    new_messages, eligible_boundary
-                )
-            )
+            asyncio.run(self._update_and_persist_summary(new_messages, eligible_boundary))
             return
 
-        loop.create_task(
-            self._update_and_persist_summary(new_messages, eligible_boundary)
-        )
+        loop.create_task(self._update_and_persist_summary(new_messages, eligible_boundary))
 
     async def _update_and_persist_summary(
         self, new_messages: list[dict], eligible_boundary: int
@@ -171,9 +163,7 @@ class MemoryManager:
 
     async def _update_rolling_summary(self, new_messages: list[dict]) -> None:
         """Call the LLM to merge new_messages into the rolling summary."""
-        batch_text = "\n".join(
-            f"{m['role'].capitalize()}: {m['content']}" for m in new_messages
-        )
+        batch_text = "\n".join(f"{m['role'].capitalize()}: {m['content']}" for m in new_messages)
         user_content = ""
         if self._rolling_summary:
             user_content += f"Previous summary:\n{self._rolling_summary}\n\n"
@@ -192,9 +182,7 @@ class MemoryManager:
             output = cast(ChatSummaryOutput, response.structured_output)
             new_summary = output.summary.strip()
             self._rolling_summary = new_summary
-            self._logger.info(
-                "chat_memory_summary_updated length=%s", len(new_summary)
-            )
+            self._logger.info("chat_memory_summary_updated length=%s", len(new_summary))
         except Exception as exc:  # noqa: BLE001
             self._logger.warning("chat_memory_summary_failed error=%s", exc)
 
@@ -288,8 +276,6 @@ class MemoryManager:
             )
 
 
-def _table_has_column(
-    conn: sqlite3.Connection, table: str, column: str
-) -> bool:
+def _table_has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
     rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
     return any(row[1] == column for row in rows)

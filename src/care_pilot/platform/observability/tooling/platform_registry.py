@@ -39,9 +39,7 @@ def build_platform_tool_registry(
     """Return a ``ToolRegistry`` pre-loaded with the ``trigger_alert`` platform tool."""
     registry = ToolRegistry()
 
-    def _trigger_alert_tool(
-        payload: BaseModel, _ctx: ToolPolicyContext
-    ) -> BaseModel:
+    def _trigger_alert_tool(payload: BaseModel, _ctx: ToolPolicyContext) -> BaseModel:
         from care_pilot.features.reminders.notifications.alert_dispatch import (
             trigger_alert,
         )
@@ -57,9 +55,7 @@ def build_platform_tool_registry(
         return TriggerAlertToolOutput(
             alert_id=alert.alert_id,
             correlation_id=alert.correlation_id,
-            deliveries=[
-                delivery.model_dump(mode="json") for delivery in deliveries
-            ],
+            deliveries=[delivery.model_dump(mode="json") for delivery in deliveries],
         )
 
     registry.register(

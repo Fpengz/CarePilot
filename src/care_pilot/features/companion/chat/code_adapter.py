@@ -4,9 +4,11 @@ Execute Python code snippets in a sandboxed runtime.
 This module wraps the E2B code interpreter to run agent-generated Python
 snippets safely with a configurable timeout.
 """
+
 from __future__ import annotations
 
 from e2b_code_interpreter import Sandbox
+
 
 class CodeAgent:
     """Runs arbitrary Python code in an E2B sandbox and returns the output."""
@@ -28,6 +30,7 @@ class CodeAgent:
             )
         # Ensure the SDK can read the key if it relies on env-based lookup.
         import os
+
         os.environ.setdefault("E2B_API_KEY", self._api_key)
         sandbox = None
         try:
@@ -38,10 +41,7 @@ class CodeAgent:
             stderr = "\n".join(execution.logs.stderr).strip()
 
             if execution.error:
-                return (
-                    f"Error during execution:\n"
-                    f"{execution.error.name}: {execution.error.value}"
-                )
+                return f"Error during execution:\n{execution.error.name}: {execution.error.value}"
 
             if stdout:
                 return stdout

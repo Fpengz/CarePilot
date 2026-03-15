@@ -41,17 +41,12 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
         ttl_seconds=settings.storage.redis_lock_ttl_seconds,
     ):
         try:
-            reminder_result = await run_reminder_scheduler_once(
-                repository=ctx.app_store
-            )
+            reminder_result = await run_reminder_scheduler_once(repository=ctx.app_store)
             processed_work = processed_work or bool(
-                reminder_result.queued_count
-                or reminder_result.delivery_attempts
+                reminder_result.queued_count or reminder_result.delivery_attempts
             )
         finally:
-            ctx.coordination_store.release_lock(
-                "reminder-scheduler", owner=owner
-            )
+            ctx.coordination_store.release_lock("reminder-scheduler", owner=owner)
 
     if ctx.coordination_store.acquire_lock(
         "sqlite-reminder-worker",
@@ -62,9 +57,7 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
             sqlite_processed = run_sqlite_reminder_worker_once()
             processed_work = processed_work or bool(sqlite_processed)
         finally:
-            ctx.coordination_store.release_lock(
-                "sqlite-reminder-worker", owner=owner
-            )
+            ctx.coordination_store.release_lock("sqlite-reminder-worker", owner=owner)
 
     if ctx.coordination_store.acquire_lock(
         "outbox-worker",

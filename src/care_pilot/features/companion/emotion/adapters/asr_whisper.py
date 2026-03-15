@@ -19,9 +19,7 @@ logger = get_logger(__name__)
 def _safe_preview(text: str, *, limit: int = 160) -> str:
     preview = text[:limit].replace("\n", " ")
     preview = re.sub(r"[0-9]", "x", preview)
-    preview = re.sub(
-        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview
-    )
+    preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
     return preview
 
 

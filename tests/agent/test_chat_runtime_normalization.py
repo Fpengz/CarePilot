@@ -44,9 +44,7 @@ def test_normalize_flattens_system_into_user() -> None:
         ],
     )
 
-    normalized, applied, preview = runtime._normalize_messages_for_sealion(
-        messages
-    )
+    normalized, applied, preview = runtime._normalize_messages_for_sealion(messages)
 
     assert applied is True
     assert preview is not None
@@ -66,9 +64,7 @@ def test_normalize_no_system_is_noop() -> None:
         [{"role": "user", "content": "Hello"}],
     )
 
-    normalized, applied, preview = runtime._normalize_messages_for_sealion(
-        messages
-    )
+    normalized, applied, preview = runtime._normalize_messages_for_sealion(messages)
 
     assert applied is False
     assert preview is None
@@ -85,18 +81,12 @@ async def test_stream_sends_user_only_payload(
 
     captured: dict[str, Any] = {}
 
-    async def _fake_create(
-        *, model: str, messages: list[dict[str, object]], stream: bool = False
-    ):
+    async def _fake_create(*, model: str, messages: list[dict[str, object]], stream: bool = False):
         captured["messages"] = messages
-        chunk = SimpleNamespace(
-            choices=[SimpleNamespace(delta=SimpleNamespace(content="ok"))]
-        )
+        chunk = SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="ok"))])
         return _FakeStream([chunk])
 
-    monkeypatch.setattr(
-        runtime._client.chat.completions, "create", _fake_create
-    )
+    monkeypatch.setattr(runtime._client.chat.completions, "create", _fake_create)
 
     source_messages = [
         {"role": "system", "content": "Context"},

@@ -16,9 +16,7 @@ class _StubFoodStore:
     def __init__(self, *records: CanonicalFoodRecord) -> None:
         self._records = list(records)
 
-    def find_food_by_name(
-        self, *, locale: str, name: str
-    ) -> CanonicalFoodRecord | None:
+    def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
         for record in self._records:
             if record.locale != locale:
                 continue
@@ -30,11 +28,7 @@ class _StubFoodStore:
     def list_canonical_foods(
         self, *, locale: str, slot: str | None = None, limit: int = 100
     ) -> list[CanonicalFoodRecord]:
-        records = [
-            record
-            for record in self._records
-            if record.locale == locale and record.active
-        ]
+        records = [record for record in self._records if record.locale == locale and record.active]
         if slot is not None:
             records = [record for record in records if record.slot == slot]
         return records[:limit]
@@ -120,15 +114,10 @@ def test_normalize_vision_result_preserves_multi_item_meal_name() -> None:
     assert normalized.enriched_event is not None
     assert normalized.enriched_event.meal_name == "Laksa + Barley Drink"
     assert normalized.primary_state.dish_name == "Laksa + Barley Drink"
-    assert (
-        normalized.enriched_event.summary
-        == "Laksa + Barley Drink with 2 detected item(s)"
-    )
+    assert normalized.enriched_event.summary == "Laksa + Barley Drink with 2 detected item(s)"
 
 
-def test_normalize_vision_result_uses_component_refinement_for_ambiguous_label() -> (
-    None
-):
+def test_normalize_vision_result_uses_component_refinement_for_ambiguous_label() -> None:
     store = _StubFoodStore(
         CanonicalFoodRecord(
             food_id="ckt",
@@ -215,19 +204,12 @@ def test_normalize_vision_result_uses_component_refinement_for_ambiguous_label()
     )
 
     assert normalized.enriched_event is not None
-    assert (
-        normalized.enriched_event.normalized_items[0].canonical_food_id
-        == "ckt"
-    )
-    assert (
-        normalized.enriched_event.normalized_items[0].match_confidence >= 0.85
-    )
+    assert normalized.enriched_event.normalized_items[0].canonical_food_id == "ckt"
+    assert normalized.enriched_event.normalized_items[0].match_confidence >= 0.85
     assert normalized.primary_state.dish_name == "Char Kway Teow"
 
 
-def test_normalize_vision_result_marks_ambiguous_component_mismatch_for_manual_review() -> (
-    None
-):
+def test_normalize_vision_result_marks_ambiguous_component_mismatch_for_manual_review() -> None:
     store = _StubFoodStore(
         CanonicalFoodRecord(
             food_id="laksa",

@@ -36,9 +36,7 @@ def test_send_in_app_success() -> None:
 
 
 def test_dispatch_push_failure_does_not_block_in_app() -> None:
-    results = dispatch_reminder(
-        _event(), ["in_app", "push"], retries=1, force_push_fail=True
-    )
+    results = dispatch_reminder(_event(), ["in_app", "push"], retries=1, force_push_fail=True)
     assert len(results) == 2
     assert results[0].success is True
     assert results[1].channel == "push"
@@ -101,9 +99,7 @@ def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(
     assert captured["medication_name"] == event.medication_name
 
 
-def test_trigger_alert_returns_only_current_alert_deliveries(
-    monkeypatch, tmp_path
-) -> None:
+def test_trigger_alert_returns_only_current_alert_deliveries(monkeypatch, tmp_path) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("ALERT_WORKER_CONCURRENCY", "1")
     get_settings.cache_clear()
@@ -139,9 +135,7 @@ def test_trigger_alert_returns_only_current_alert_deliveries(
     get_settings.cache_clear()
 
 
-def test_dispatch_reminder_v2_preserves_force_push_fail_and_retries(
-    monkeypatch, tmp_path
-) -> None:
+def test_dispatch_reminder_v2_preserves_force_push_fail_and_retries(monkeypatch, tmp_path) -> None:
     event = _event()
     repo = SQLiteRepository(str(tmp_path / "alerts.db"))
 
@@ -163,9 +157,7 @@ def test_dispatch_reminder_v2_preserves_force_push_fail_and_retries(
     assert records[0].attempt_count == 1
 
 
-def test_dispatch_reminder_v2_retries_until_success(
-    monkeypatch, tmp_path
-) -> None:
+def test_dispatch_reminder_v2_retries_until_success(monkeypatch, tmp_path) -> None:
     event = _event()
     repo = SQLiteRepository(str(tmp_path / "alerts.db"))
     attempts = {"count": 0}
@@ -206,16 +198,12 @@ def test_dispatch_reminder_v2_retries_until_success(
     assert records[0].attempt_count == 2
 
 
-def test_trigger_alert_drains_all_destinations_across_batches(
-    monkeypatch, tmp_path
-) -> None:
+def test_trigger_alert_drains_all_destinations_across_batches(monkeypatch, tmp_path) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("ALERT_WORKER_CONCURRENCY", "1")
     get_settings.cache_clear()
 
-    def fake_channel_send(
-        self, reminder_event, destination=None
-    ):  # noqa: ANN001
+    def fake_channel_send(self, reminder_event, destination=None):  # noqa: ANN001
         channel_name = self.__class__.__name__.replace("Channel", "").lower()
         return type(
             "Result",

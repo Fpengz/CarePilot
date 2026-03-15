@@ -56,9 +56,7 @@ class _FakeInferenceEngine:
 @pytest.mark.anyio
 async def test_parse_before_meal_duration_instruction() -> None:
     result = await parse_medication_instructions(
-        source=build_plain_text_source(
-            "Take Metformin 500mg twice daily before meals for 5 days"
-        ),
+        source=build_plain_text_source("Take Metformin 500mg twice daily before meals for 5 days"),
         today=date(2026, 3, 14),
     )
 
@@ -103,9 +101,7 @@ async def test_parse_unknown_text_returns_ambiguity() -> None:
 @pytest.mark.anyio
 async def test_parse_prefers_llm_structured_output_when_available() -> None:
     result = await parse_medication_instructions(
-        source=build_plain_text_source(
-            "Take Metformin 500mg twice daily before meals for 5 days"
-        ),
+        source=build_plain_text_source("Take Metformin 500mg twice daily before meals for 5 days"),
         today=date(2026, 3, 14),
         inference_engine=_FakeInferenceEngine(
             MedicationParseOutputLoose.model_validate(
@@ -184,9 +180,7 @@ async def test_parse_coerces_llm_invalid_fields() -> None:
     result = await parse_medication_instructions(
         source=build_plain_text_source("Gabapentin 300mg three times daily"),
         today=date(2026, 3, 14),
-        inference_engine=_FakeInferenceEngine(
-            output, expected_schema=MedicationParseOutputLoose
-        ),
+        inference_engine=_FakeInferenceEngine(output, expected_schema=MedicationParseOutputLoose),
     )
 
     instruction = result.instructions[0]

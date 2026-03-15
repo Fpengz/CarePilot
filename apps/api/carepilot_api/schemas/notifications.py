@@ -109,9 +109,7 @@ class NotificationMarkAllReadResponse(BaseModel):
 
 
 class ReminderNotificationPreferenceRuleRequest(BaseModel):
-    channel: Literal[
-        "in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"
-    ]
+    channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
     offset_minutes: int = Field(le=0)
     enabled: bool = True
 
@@ -120,18 +118,14 @@ class ReminderNotificationPreferenceRuleResponse(BaseModel):
     id: str
     scope_type: Literal["default", "reminder_type"]
     scope_key: str | None = None
-    channel: Literal[
-        "in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"
-    ]
+    channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
     offset_minutes: int
     enabled: bool
     updated_at: datetime
 
 
 class ReminderNotificationPreferenceUpdateRequest(BaseModel):
-    rules: list[ReminderNotificationPreferenceRuleRequest] = Field(
-        default_factory=list
-    )
+    rules: list[ReminderNotificationPreferenceRuleRequest] = Field(default_factory=list)
 
 
 class ReminderNotificationPreferenceListResponse(BaseModel):
@@ -139,18 +133,14 @@ class ReminderNotificationPreferenceListResponse(BaseModel):
 
 
 class ReminderNotificationEndpointRequest(BaseModel):
-    channel: Literal[
-        "in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"
-    ]
+    channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
     destination: str
     verified: bool = False
 
 
 class ReminderNotificationEndpointResponse(BaseModel):
     id: str
-    channel: Literal[
-        "in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"
-    ]
+    channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
     destination: str
     verified: bool
     updated_at: datetime
@@ -161,17 +151,13 @@ class ReminderNotificationEndpointListResponse(BaseModel):
 
 
 class ReminderNotificationEndpointUpdateRequest(BaseModel):
-    endpoints: list[ReminderNotificationEndpointRequest] = Field(
-        default_factory=list
-    )
+    endpoints: list[ReminderNotificationEndpointRequest] = Field(default_factory=list)
 
 
 class ScheduledReminderNotificationItemResponse(BaseModel):
     id: str
     reminder_id: str
-    channel: Literal[
-        "in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"
-    ]
+    channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
     trigger_at: datetime
     offset_minutes: int
     status: Literal[
@@ -195,9 +181,7 @@ class ScheduledReminderNotificationListResponse(BaseModel):
 class ReminderNotificationLogItemResponse(BaseModel):
     id: str
     scheduled_notification_id: str
-    channel: Literal[
-        "in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"
-    ]
+    channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
     attempt_number: int
     event_type: Literal[
         "scheduled",

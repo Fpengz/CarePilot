@@ -27,30 +27,20 @@ class FakeRepository:
     def list_meal_records(self, user_id: str, limit: int = 20) -> list[Any]:
         return self.meals.get(user_id, [])[:limit]
 
-    def save_biomarker_readings(
-        self, user_id: str, readings: list[Any]
-    ) -> None:
+    def save_biomarker_readings(self, user_id: str, readings: list[Any]) -> None:
         return None
 
-    def save_recommendation(
-        self, user_id: str, payload: dict[str, Any]
-    ) -> None:
+    def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
         return None
 
-    def save_suggestion_record(
-        self, user_id: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    def save_suggestion_record(self, user_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         self.suggestions.setdefault(user_id, []).append(payload)
         return payload
 
-    def list_suggestion_records(
-        self, user_id: str, limit: int = 20
-    ) -> list[dict[str, Any]]:
+    def list_suggestion_records(self, user_id: str, limit: int = 20) -> list[dict[str, Any]]:
         return list(self.suggestions.get(user_id, []))[:limit]
 
-    def get_suggestion_record(
-        self, user_id: str, suggestion_id: str
-    ) -> dict[str, Any] | None:
+    def get_suggestion_record(self, user_id: str, suggestion_id: str) -> dict[str, Any] | None:
         for item in self.suggestions.get(user_id, []):
             if item.get("suggestion_id") == suggestion_id:
                 return item
@@ -104,9 +94,7 @@ class FakeHouseholdStore:
         return list(self.members.get(household_id, []))
 
 
-def _session(
-    user_id: str = "user_001", display_name: str = "Member"
-) -> dict[str, Any]:
+def _session(user_id: str = "user_001", display_name: str = "Member") -> dict[str, Any]:
     return {
         "user_id": user_id,
         "display_name": display_name,
@@ -156,10 +144,7 @@ def test_generate_suggestion_escalates_on_red_flag_without_meal() -> None:
         "workflow_escalated",
     ]
     suggestion_id = result["suggestion_id"]
-    assert all(
-        event["payload"]["suggestion_id"] == suggestion_id
-        for event in timeline
-    )
+    assert all(event["payload"]["suggestion_id"] == suggestion_id for event in timeline)
 
 
 def test_generate_suggestion_requires_meal_when_no_red_flag() -> None:
