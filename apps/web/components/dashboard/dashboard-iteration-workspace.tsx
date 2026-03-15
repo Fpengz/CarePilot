@@ -1,6 +1,17 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 import { ErrorCard } from "@/components/app/error-card";
 import { useSession } from "@/components/app/session-provider";
@@ -8,6 +19,8 @@ import { SummaryStrip } from "@/components/dashboard/summary-strip";
 import { RangeSelector, type RangeKey } from "@/components/dashboard/range-selector";
 import { TrendPanel } from "@/components/dashboard/trend-panel";
 import { ClinicalSummary } from "@/components/dashboard/clinical-summary";
+import { NutritionBalanceChart } from "@/components/dashboard/nutrition-balance-chart";
+import { CHART_COLORS, COMMON_AXIS_PROPS, ClinicalTooltip } from "./chart-utils";
 import { getDashboardOverview } from "@/lib/api/dashboard-client";
 import type {
   DashboardMacroChartApi,
@@ -40,34 +53,8 @@ function MetricLineChart({
   tint: string;
   detailLabel: string;
 }) {
-  const windowed = chart.points;
-  const [activeIndex, setActiveIndex] = useState<number | null>(windowed.length ? windowed.length - 1 : null);
-  useEffect(() => {
-    setActiveIndex(windowed.length ? windowed.length - 1 : null);
-  }, [windowed]);
-
-  const active = activeIndex == null ? null : windowed[activeIndex] ?? null;
-  const values = windowed.map((point) => point.value);
-  const targets = windowed.map((point) => point.target ?? 0);
-  const maxValue = Math.max(1, ...values, ...targets);
-  const minValue = Math.min(...values);
-  const range = Math.max(1, maxValue - Math.min(0, minValue));
-
-  const path = windowed
-    .map((point, index) => {
-      const x = windowed.length === 1 ? 50 : (index / (windowed.length - 1)) * 100;
-      const y = 100 - (((point.value - Math.min(0, minValue)) / range) * 84 + 8);
-      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-    })
-    .join(" ");
-  const targetPath = windowed
-    .map((point, index) => {
-      const target = point.target ?? 0;
-      const x = windowed.length === 1 ? 50 : (index / (windowed.length - 1)) * 100;
-      const y = 100 - (((target - Math.min(0, minValue)) / range) * 84 + 8);
-      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-    })
-    .join(" ");
+  const data = chart.points;
+  const active = data[data.length - 1];
 
   return (
     <div className="space-y-4">
@@ -81,175 +68,66 @@ function MetricLineChart({
           </div>
         </div>
       </div>
-      <div className="rounded-xl border border-[color:var(--chart-grid)] bg-[linear-gradient(180deg,var(--chart-gradient-start),var(--chart-gradient-end))] p-4">
-        <svg viewBox="0 0 100 100" className="h-48 w-full overflow-visible">
-          {chart.title === "Glycemic Risk Trend" ? (
-            <>
-              <rect x="0" y="8" width="100" height="28" fill="var(--chart-grid)" fillOpacity="0.2" rx="4" />
-              <rect x="0" y="36" width="100" height="24" fill="var(--chart-grid)" fillOpacity="0.15" rx="4" />
-              <rect x="0" y="60" width="100" height="32" fill="var(--chart-grid)" fillOpacity="0.1" rx="4" />
-            </>
-          ) : null}
-          <path d={targetPath} fill="none" stroke="var(--chart-text)" strokeDasharray="2.5 2.5" strokeWidth="1.2" strokeOpacity="0.4" />
-          <path d={path} fill="none" stroke={tint} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          {windowed.map((point, index) => {
-            const x = windowed.length === 1 ? 50 : (index / (windowed.length - 1)) * 100;
-            const y = 100 - (((point.value - Math.min(0, minValue)) / range) * 84 + 8);
-            const isActive = activeIndex === index;
-            return (
-              <g key={`${point.bucket_start}-${point.label}`}>
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={isActive ? 3.6 : 2.5}
-                  fill={isActive ? tint : "var(--chart-bg)"}
-                  stroke={tint}
-                  strokeWidth="1.5"
-                  className="cursor-pointer transition"
-                  onMouseEnter={() => setActiveIndex(index)}
-                />
-              </g>
-            );
-          })}
-        </svg>
-        <div className="mt-3 flex justify-between text-[10px] font-bold uppercase tracking-[0.1em] text-[color:var(--chart-text)]">
-          {windowed.length > 0 && <div>{windowed[0].label}</div>}
-          {windowed.length > 2 && <div className="hidden sm:block">{windowed[Math.floor(windowed.length / 2)].label}</div>}
-          {windowed.length > 1 && <div>{windowed[windowed.length - 1].label}</div>}
-        </div>
+      <div className="h-48 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeOpacity={0.4} />
+            <XAxis dataKey="label" {...COMMON_AXIS_PROPS} tickMargin={10} />
+            <YAxis {...COMMON_AXIS_PROPS} tickMargin={10} />
+            <Tooltip content={<ClinicalTooltip />} />
+            {data.some((p) => p.target !== undefined && p.target !== null) && (
+              <Line
+                type="monotone"
+                dataKey="target"
+                name="Target"
+                stroke="var(--chart-text)"
+                strokeDasharray="3 3"
+                strokeOpacity={0.4}
+                dot={false}
+              />
+            )}
+            <Line
+              type="monotone"
+              dataKey="value"
+              name="Value"
+              stroke={tint}
+              strokeWidth={3}
+              dot={{ r: 3, fill: tint, strokeWidth: 0 }}
+              activeDot={{ r: 5, fill: tint, stroke: "var(--background)", strokeWidth: 2 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
 }
 
-function MacroStackChart({ chart }: { chart: DashboardMacroChartApi }) {
-  const windowed = chart.points;
-  const [activeIndex, setActiveIndex] = useState<number | null>(windowed.length ? windowed.length - 1 : null);
-  useEffect(() => {
-    setActiveIndex(windowed.length ? windowed.length - 1 : null);
-  }, [windowed]);
-  const active = activeIndex == null ? null : windowed[activeIndex] ?? null;
-  const maxCalories = Math.max(1, ...windowed.map((point) => point.calories));
-  const isScrollable = windowed.length > 14;
-
-  return (
-    <section className="metric-card">
-      <div className="flex items-center justify-between gap-4">
-        <div className="text-sm font-semibold text-[color:var(--foreground)]">{chart.title}</div>
-        <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)]">
-          <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#d97706]" />P</span>
-          <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#0f766e]" />C</span>
-          <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#7c3aed]" />F</span>
-        </div>
-      </div>
-      <p className="mt-1 text-xs text-[color:var(--muted-foreground)]">
-        Daily macro balance across the selected period.
-      </p>
-      <div className="mt-4 space-y-4">
-        {active ? (
-          <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.03] px-3 py-2 text-xs text-[color:var(--muted-foreground)] animate-in fade-in duration-300">
-            <span className="font-semibold text-[color:var(--foreground)]">{active.label}</span>
-            {` — `}
-            {`${Math.round(active.protein_g)}g Prot, ${Math.round(active.carbs_g)}g Carb, ${Math.round(active.fat_g)}g Fat`}
-          </div>
-        ) : (
-          <div className="h-8" />
-        )}
-        
-        <div className={cn(
-          "rounded-xl border border-[color:var(--chart-grid)] bg-[linear-gradient(180deg,var(--chart-gradient-start),var(--chart-gradient-end))] px-3 pb-3 pt-5",
-          isScrollable ? "overflow-x-auto scrollbar-hide" : ""
-        )}>
-          <div 
-            className="flex h-56 items-end gap-1.5"
-            style={{ 
-              minWidth: isScrollable ? `${windowed.length * 24}px` : '100%',
-              justifyContent: isScrollable ? 'flex-start' : 'space-between'
-            }}
-          >
-            {windowed.map((point, index) => {
-              const height = `${Math.max(8, (point.calories / maxCalories) * 100)}%`;
-              const total = Math.max(1, point.protein_g + point.carbs_g + point.fat_g);
-              const showLabel = windowed.length <= 14 || index === 0 || index === windowed.length - 1 || index % 7 === 0;
-              
-              return (
-                <button
-                  key={point.bucket_start}
-                  type="button"
-                  className={cn(
-                    "flex flex-col items-center gap-2 h-full justify-end transition-opacity duration-200",
-                    isScrollable ? "w-5" : "flex-1",
-                    activeIndex !== null && activeIndex !== index ? "opacity-60" : "opacity-100"
-                  )}
-                  onMouseEnter={() => setActiveIndex(index)}
-                >
-                  <div className={cn(
-                    "flex w-full flex-col overflow-hidden rounded-t-lg rounded-b-sm border border-[color:var(--chart-grid)]", 
-                    activeIndex === index && "ring-2 ring-[color:var(--foreground)]/10 ring-offset-1 dark:ring-offset-black"
-                  )}>
-                    <div style={{ height, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                      <div style={{ height: `${(point.protein_g / total) * 100}%` }} className="bg-[#d97706]" />
-                      <div style={{ height: `${(point.carbs_g / total) * 100}%` }} className="bg-[#0f766e]" />
-                      <div style={{ height: `${(point.fat_g / total) * 100}%` }} className="bg-[#7c3aed]" />
-                    </div>
-                  </div>
-                  {showLabel ? (
-                    <span className="text-[9px] font-bold uppercase tracking-tighter text-[color:var(--chart-text)] opacity-60 truncate w-full text-center">{point.label}</span>
-                  ) : (
-                    <div className="h-1.5 w-px bg-[color:var(--chart-grid)] opacity-40" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function MealTimingHistogram({ chart }: { chart: DashboardMealTimingChartApi }) {
-  const peak = Math.max(1, ...chart.bins.map((item) => item.count));
-  const [activeHour, setActiveHour] = useState<number | null>(null);
-  const active = activeHour == null ? null : chart.bins.find((item) => item.hour === activeHour) ?? null;
-  
   return (
     <section className="metric-card">
       <div className="text-sm font-semibold text-[color:var(--foreground)]">{chart.title}</div>
       <p className="mt-1 text-xs text-[color:var(--muted-foreground)]">
         Frequency distribution of meals across the 24-hour cycle.
       </p>
-      <div className="mt-4 space-y-4">
-        <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.03] px-3 py-2 text-xs text-[color:var(--muted-foreground)]">
-          {active ? (
-            <>
-              <span className="font-semibold text-[color:var(--foreground)]">{active.label}</span>
-              {` — `}
-              {`${active.count} meals recorded`}
-            </>
-          ) : (
-            "Hover to inspect hourly density."
-          )}
-        </div>
-        <div className="overflow-x-auto scrollbar-hide rounded-xl border border-[color:var(--chart-grid)] bg-[linear-gradient(180deg,var(--chart-gradient-start),var(--chart-gradient-end))] p-3">
-          <div className="grid h-56 min-w-[480px] grid-cols-24 items-end gap-1.5">
-            {chart.bins.map((item) => (
-              <button key={item.hour} type="button" className="flex h-full flex-col justify-end gap-1.5" onMouseEnter={() => setActiveHour(item.hour)}>
-                <div
-                  className={cn(
-                    "rounded-t-lg rounded-b-sm bg-[linear-gradient(180deg,#0f766e,#164e63)] transition-all",
-                    activeHour === item.hour ? "opacity-100 shadow-sm scale-x-110" : "opacity-70",
-                  )}
-                  style={{ height: `${Math.max(6, (item.count / peak) * 100)}%` }}
-                />
-                <span className={cn(
-                  "text-[9px] font-bold text-[color:var(--chart-text)] transition-opacity",
-                  item.hour % 4 === 0 ? "opacity-60" : "opacity-30"
-                )}>{item.hour}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="mt-6 h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chart.bins} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeOpacity={0.4} />
+            <XAxis dataKey="hour" {...COMMON_AXIS_PROPS} tickMargin={10} />
+            <YAxis {...COMMON_AXIS_PROPS} tickMargin={10} />
+            <Tooltip
+              content={<ClinicalTooltip />}
+              cursor={{ fill: "var(--chart-grid)", fillOpacity: 0.1 }}
+            />
+            <Bar
+              dataKey="count"
+              name="Meals"
+              fill="var(--primary)"
+              radius={[4, 4, 0, 0]}
+              className="fill-[color:var(--foreground)] opacity-70"
+            />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </section>
   );
@@ -368,7 +246,7 @@ export function DashboardIterationWorkspace() {
                   overview.summary.nutrition_goal_score,
                 ]}
               />
-              <MacroStackChart chart={overview.charts.macros} />
+              <NutritionBalanceChart chart={overview.charts.macros} />
               <MealTimingHistogram chart={overview.charts.meal_timing} />
             </div>
           </div>
