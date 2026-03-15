@@ -50,16 +50,17 @@ async def run_reminder_scheduler_once(
         now=dispatch_at,
         limit=settings.workers.reminder_scheduler_batch_size,
     )
-    if not queued:
-        return ReminderSchedulerRunResult(queued_count=0, delivery_attempts=0)
     worker = OutboxWorker(
         repo,
         max_attempts=settings.workers.alert_worker_max_attempts,
         concurrency=max(settings.workers.alert_worker_concurrency, len(queued)),
     )
     results = []
-    for item in queued:
-        results.extend(await worker.process_once(alert_id=item.scheduled_notification_id))
+    if queued:
+        for item in queued:
+            results.extend(await worker.process_once(alert_id=item.scheduled_notification_id))
+    else:
+        results = await worker.process_once()
     logger.info(
         "reminder_scheduler_run_complete queued_count=%s delivery_attempts=%s",
         len(queued),
