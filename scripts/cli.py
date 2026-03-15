@@ -10,7 +10,6 @@ reports. The command set mirrors the current repository layout under `apps/`,
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import shutil
@@ -34,7 +33,6 @@ from dietary_guardian.features.reminders.domain.models import ReminderEvent
 from dietary_guardian.features.recommendations.domain.canonical_food_matching import normalize_text
 from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
 from dietary_guardian.platform.messaging.channels.telegram import TelegramChannel
-from dietary_guardian.platform.scheduling import run_reminder_scheduler_once
 from dietary_guardian.platform.persistence.food import (
     FoodInfoIngester,
     load_default_canonical_food_records,
@@ -695,6 +693,13 @@ def command_telegram_test(
 def command_reminders_dispatch() -> None:
     """Dispatch due reminder notifications once (scheduler + outbox)."""
     load_root_env()
+    import asyncio
+    import sys
+
+    if str(REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT))
+    from dietary_guardian.platform.scheduling import run_reminder_scheduler_once
+
     result = asyncio.run(run_reminder_scheduler_once())
     info(f"reminders.dispatch queued={result.queued_count} deliveries={result.delivery_attempts}")
 
