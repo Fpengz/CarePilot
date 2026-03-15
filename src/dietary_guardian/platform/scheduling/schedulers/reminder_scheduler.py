@@ -55,7 +55,7 @@ async def run_reminder_scheduler_once(
     worker = OutboxWorker(
         repo,
         max_attempts=settings.workers.alert_worker_max_attempts,
-        concurrency=min(settings.workers.alert_worker_concurrency, max(1, len(queued))),
+        concurrency=max(settings.workers.alert_worker_concurrency, len(queued)),
     )
     results = await worker.process_once()
     logger.info(
