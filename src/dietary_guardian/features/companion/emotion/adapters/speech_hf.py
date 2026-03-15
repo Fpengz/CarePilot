@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import io
+import re
 
 import numpy as np
 import soundfile as sf
 from transformers import pipeline
 
 from dietary_guardian.features.companion.emotion.ports import SpeechEmotionPort
-from dietary_guardian.agent.emotion.schemas import EmotionLabel
+from dietary_guardian.agent.emotion.schemas import EmotionLabel, SpeechEmotionBranchResult
+from dietary_guardian.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 _LABEL_MAP = {
     "happy": EmotionLabel.HAPPY,
@@ -26,6 +30,14 @@ _LABEL_MAP = {
     "neutral": EmotionLabel.NEUTRAL,
     "confused": EmotionLabel.CONFUSED,
 }
+
+def _safe_preview(text: str | None, *, limit: int = 160) -> str | None:
+    if not text:
+        return None
+    preview = text[:limit].replace("\n", " ")
+    preview = re.sub(r"[0-9]", "x", preview)
+    preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
+    return preview
 
 
 class HFSpeechEmotion(SpeechEmotionPort):
@@ -49,8 +61,7 @@ class HFSpeechEmotion(SpeechEmotionPort):
         audio_bytes: bytes,
         *,
         transcript: str | None,
-    ) -> tuple[dict[EmotionLabel, float], dict[str, float], str, str]:
-        del transcript
+    ) -> SpeechEmotionBranchResult:
         data, sample_rate = sf.read(io.BytesIO(audio_bytes))
         if isinstance(data, np.ndarray) and data.ndim > 1:
             data = np.mean(data, axis=1)
@@ -60,6 +71,15 @@ class HFSpeechEmotion(SpeechEmotionPort):
 
         self._ensure_pipeline()
         assert self._pipeline is not None
+        logger.info(
+            "emotion_speech_request model=%s bytes=%s sample_rate=%s duration_sec=%.3f rms=%.5f transcript_preview=%s",
+            self._model_id,
+            len(audio_bytes),
+            sample_rate,
+            duration_sec,
+            rms,
+            _safe_preview(transcript),
+        )
         outputs = self._pipeline(audio_array, sampling_rate=sample_rate)
         scores: dict[EmotionLabel, float] = {label: 0.0 for label in EmotionLabel}
         for item in outputs:
@@ -75,7 +95,27 @@ class HFSpeechEmotion(SpeechEmotionPort):
             "duration_sec": duration_sec,
             "rms": rms,
         }
-        return scores, acoustic_summary, self._model_id, "hf"
+        
+        ordered = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        top_label, top_score = ordered[0]
+
+        logger.info(
+            "emotion_speech_response model=%s top=%s confidence=%.4f",
+            self._model_id,
+            top_label.value,
+            top_score,
+        )
+        return SpeechEmotionBranchResult(
+            raw_audio_reference=None,
+            transcription=transcript,
+            acoustic_scores=acoustic_summary,
+            predicted_emotion=top_label,
+            emotion_scores=scores,
+            confidence=top_score,
+            asr_metadata={},
+            model_name=self._model_id,
+            metadata={"adapter": "hf"},
+        )
 
 
 __all__ = ["HFSpeechEmotion"]

@@ -6,12 +6,14 @@ from typing import Protocol
 
 from dietary_guardian.agent.emotion.schemas import (
     EmotionContextFeatures,
-    EmotionLabel,
-    EmotionProductState,
     EmotionTextAgentInput,
     EmotionSpeechAgentInput,
     EmotionInferenceResult,
     EmotionRuntimeHealth,
+    TextEmotionBranchResult,
+    SpeechEmotionBranchResult,
+    EmotionFusionOutput,
+    FusionTrace,
 )
 
 
@@ -30,7 +32,7 @@ class TextEmotionPort(Protocol):
         self,
         text: str,
         language: str | None,
-    ) -> tuple[dict[EmotionLabel, float], str, str]: ...
+    ) -> TextEmotionBranchResult: ...
 
 
 class SpeechEmotionPort(Protocol):
@@ -39,17 +41,21 @@ class SpeechEmotionPort(Protocol):
         audio_bytes: bytes,
         *,
         transcript: str | None,
-    ) -> tuple[dict[EmotionLabel, float], dict[str, float], str, str]: ...
+    ) -> SpeechEmotionBranchResult: ...
+
+
+class ContextFeaturePort(Protocol):
+    def extract(self, user_id: str | None) -> EmotionContextFeatures: ...
 
 
 class FusionPort(Protocol):
     def predict(
         self,
         *,
-        text_scores: dict[EmotionLabel, float],
-        speech_scores: dict[EmotionLabel, float] | None,
+        text_branch: TextEmotionBranchResult | None,
+        speech_branch: SpeechEmotionBranchResult | None,
         context: EmotionContextFeatures,
-    ) -> tuple[EmotionLabel, EmotionProductState, float, dict[EmotionLabel, float]]: ...
+    ) -> tuple[EmotionFusionOutput, FusionTrace]: ...
 
 
 class EmotionInferencePort(Protocol):
@@ -67,6 +73,7 @@ __all__ = [
     "ASRPort",
     "TextEmotionPort",
     "SpeechEmotionPort",
+    "ContextFeaturePort",
     "FusionPort",
     "EmotionInferencePort",
 ]

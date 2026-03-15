@@ -15,8 +15,8 @@ from dietary_guardian.agent.emotion.schemas import (
     EmotionLabel,
     EmotionProductState,
     EmotionRuntimeHealth,
-    EmotionSpeechBranch,
-    EmotionTextBranch,
+    SpeechEmotionBranchResult,
+    TextEmotionBranchResult,
 )
 
 __all__ = [
@@ -28,6 +28,6 @@ __all__ = [
     "EmotionLabel",
     "EmotionProductState",
     "EmotionRuntimeHealth",
-    "EmotionSpeechBranch",
-    "EmotionTextBranch",
+    "SpeechEmotionBranchResult",
+    "TextEmotionBranchResult",
 ]

@@ -21,6 +21,7 @@ class EmotionRuntimeConfig:
     history_window: int
     model_device: str
     source_commit: str
+    model_cache_dir: str | None
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "EmotionRuntimeConfig":
@@ -32,4 +33,5 @@ class EmotionRuntimeConfig:
             history_window=settings.emotion.history_window,
             model_device=settings.emotion.model_device,
             source_commit=settings.emotion.source_commit,
+            model_cache_dir=settings.emotion.model_cache_dir,
         )

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import StrEnum
-from typing import Literal
+from typing import Literal, Any
 
 from pydantic import BaseModel, Field
 
@@ -44,24 +44,38 @@ class EmotionEvidence(BaseModel):
     score: float = Field(ge=0.0, le=1.0)
 
 
-class EmotionTextBranch(BaseModel):
-    transcript: str
+class TextEmotionBranchResult(BaseModel):
+    transcript_or_text: str
+    emotion_scores: dict[EmotionLabel, float]
+    predicted_emotion: EmotionLabel
+    confidence: float
     model_name: str
-    model_version: str
-    scores: dict[EmotionLabel, float]
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class EmotionSpeechBranch(BaseModel):
-    transcript: str | None = None
+class SpeechEmotionBranchResult(BaseModel):
+    raw_audio_reference: str | None = None
+    transcription: str | None = None
+    acoustic_scores: dict[str, float] = Field(default_factory=dict)
+    predicted_emotion: EmotionLabel
+    emotion_scores: dict[EmotionLabel, float]
+    confidence: float
+    asr_metadata: dict[str, Any] = Field(default_factory=dict)
     model_name: str
-    model_version: str
-    scores: dict[EmotionLabel, float]
-    acoustic_summary: dict[str, float] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class EmotionContextFeatures(BaseModel):
     recent_labels: list[EmotionLabel] = Field(default_factory=list)
     trend: Literal["worsening", "stable", "improving"]
+    recent_product_states: list[EmotionProductState] = Field(default_factory=list)
+
+
+class FusionTrace(BaseModel):
+    fusion_inputs: dict[str, Any]
+    weighting_strategy: str
+    conflict_resolution: str | None = None
+    final_decision_reason: str
 
 
 class EmotionFusionOutput(BaseModel):
@@ -73,10 +87,15 @@ class EmotionFusionOutput(BaseModel):
 
 class EmotionInferenceResult(BaseModel):
     source_type: Literal["text", "speech", "mixed"]
-    text_branch: EmotionTextBranch | None = None
-    speech_branch: EmotionSpeechBranch | None = None
+    final_emotion: EmotionLabel
+    product_state: EmotionProductState
+    confidence: float
+    text_branch: TextEmotionBranchResult | None = None
+    speech_branch: SpeechEmotionBranchResult | None = None
     context_features: EmotionContextFeatures
-    fusion: EmotionFusionOutput
+    fusion_method: str
+    model_metadata: dict[str, str] = Field(default_factory=dict)
+    trace: FusionTrace
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -92,7 +111,7 @@ class EmotionTextAgentInput(BaseModel):
 
     text: str
     language: str | None = None
-    context: EmotionContextFeatures | None = None
+    user_id: str | None = None
 
 
 class EmotionSpeechAgentInput(BaseModel):
@@ -103,7 +122,7 @@ class EmotionSpeechAgentInput(BaseModel):
     content_type: str | None = None
     transcription: str | None = None
     language: str | None = None
-    context: EmotionContextFeatures | None = None
+    user_id: str | None = None
 
 
 class EmotionAgentOutput(BaseModel):
@@ -126,9 +145,10 @@ __all__ = [
     "EmotionConfidenceBand",
     "EmotionProductState",
     "EmotionEvidence",
-    "EmotionTextBranch",
-    "EmotionSpeechBranch",
+    "TextEmotionBranchResult",
+    "SpeechEmotionBranchResult",
     "EmotionContextFeatures",
+    "FusionTrace",
     "EmotionFusionOutput",
     "EmotionInferenceResult",
     "EmotionRuntimeHealth",

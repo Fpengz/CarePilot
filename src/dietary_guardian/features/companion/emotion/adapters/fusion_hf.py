@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from transformers import pipeline
 
 from dietary_guardian.features.companion.emotion.ports import FusionPort
@@ -9,7 +10,14 @@ from dietary_guardian.agent.emotion.schemas import (
     EmotionContextFeatures,
     EmotionLabel,
     EmotionProductState,
+    TextEmotionBranchResult,
+    SpeechEmotionBranchResult,
+    EmotionFusionOutput,
+    FusionTrace,
 )
+from dietary_guardian.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 _LABEL_MAP = {
     "happy": EmotionLabel.HAPPY,
@@ -27,6 +35,12 @@ _LABEL_MAP = {
     "confused": EmotionLabel.CONFUSED,
     "neutral": EmotionLabel.NEUTRAL,
 }
+
+def _safe_preview(text: str, *, limit: int = 160) -> str:
+    preview = text[:limit].replace("\n", " ")
+    preview = re.sub(r"[0-9]", "x", preview)
+    preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
+    return preview
 
 
 def _product_state_for_label(label: EmotionLabel, *, trend: str) -> EmotionProductState:
@@ -60,11 +74,12 @@ class HFFusion(FusionPort):
     def predict(
         self,
         *,
-        text_scores: dict[EmotionLabel, float],
-        speech_scores: dict[EmotionLabel, float] | None,
+        text_branch: TextEmotionBranchResult | None,
+        speech_branch: SpeechEmotionBranchResult | None,
         context: EmotionContextFeatures,
-    ) -> tuple[EmotionLabel, EmotionProductState, float, dict[EmotionLabel, float]]:
-        speech_scores = speech_scores or {}
+    ) -> tuple[EmotionFusionOutput, FusionTrace]:
+        text_scores = text_branch.emotion_scores if text_branch else {}
+        speech_scores = speech_branch.emotion_scores if speech_branch else {}
         features = {
             "text_scores": {k.value: v for k, v in text_scores.items()},
             "speech_scores": {k.value: v for k, v in speech_scores.items()},
@@ -76,6 +91,11 @@ class HFFusion(FusionPort):
         prompt = f"Fusion features: {features}"
         self._ensure_pipeline()
         assert self._pipeline is not None
+        logger.info(
+            "emotion_fusion_request model=%s prompt_preview=%s",
+            self._model_id,
+            _safe_preview(prompt),
+        )
         outputs = self._pipeline(prompt)
         logits: dict[EmotionLabel, float] = {label: 0.0 for label in EmotionLabel}
         top_label = EmotionLabel.NEUTRAL
@@ -97,7 +117,27 @@ class HFFusion(FusionPort):
             top_label = EmotionLabel.NEUTRAL
             top_score = 1.0
         product_state = _product_state_for_label(top_label, trend=context.trend)
-        return top_label, product_state, float(top_score), logits
+
+        logger.info(
+            "emotion_fusion_response model=%s top=%s confidence=%.4f product_state=%s",
+            self._model_id,
+            top_label.value,
+            top_score,
+            product_state.value,
+        )
+        output = EmotionFusionOutput(
+            emotion_label=top_label,
+            product_state=product_state,
+            confidence=float(top_score),
+            logits=logits,
+        )
+        trace = FusionTrace(
+            fusion_inputs=features,
+            weighting_strategy="hf-text-classification-head",
+            conflict_resolution="argmax",
+            final_decision_reason=f"Top fused score was {top_score:.2f} for {top_label.value}",
+        )
+        return output, trace
 
 
 __all__ = ["HFFusion"]

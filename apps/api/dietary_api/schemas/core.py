@@ -36,10 +36,13 @@ from dietary_guardian.agent.emotion.schemas import (
     EmotionFusionOutput,
     EmotionLabel,
     EmotionRuntimeHealth,
-    EmotionSpeechBranch,
-    EmotionTextBranch,
+    TextEmotionBranchResult,
+    SpeechEmotionBranchResult,
+    FusionTrace,
+    EmotionProductState,
 )
 from dietary_guardian.features.meals.domain.models import VisionResult
+
 from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
 from dietary_guardian.features.households.schemas import (  # noqa: F401
     HouseholdActiveUpdateRequest,
@@ -130,10 +133,15 @@ class EmotionEvidenceResponse(BaseModel):
 
 class EmotionObservationResponse(BaseModel):
     source_type: Literal["text", "speech", "mixed"]
-    text_branch: EmotionTextBranch | None = None
-    speech_branch: EmotionSpeechBranch | None = None
+    final_emotion: EmotionLabel
+    product_state: EmotionProductState
+    confidence: float
+    text_branch: TextEmotionBranchResult | None = None
+    speech_branch: SpeechEmotionBranchResult | None = None
     context_features: EmotionContextFeatures
-    fusion: EmotionFusionOutput
+    fusion_method: str
+    model_metadata: dict[str, str] = Field(default_factory=dict)
+    trace: FusionTrace
     created_at: datetime
     request_id: str | None = None
     correlation_id: str | None = None

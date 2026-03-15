@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from transformers import pipeline
 
 from dietary_guardian.features.companion.emotion.ports import TextEmotionPort
-from dietary_guardian.agent.emotion.schemas import EmotionLabel
+from dietary_guardian.agent.emotion.schemas import EmotionLabel, TextEmotionBranchResult
+from dietary_guardian.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 _LABEL_MAP = {
     "joy": EmotionLabel.HAPPY,
@@ -26,6 +30,12 @@ _LABEL_MAP = {
     "neutral": EmotionLabel.NEUTRAL,
 }
 
+def _safe_preview(text: str, *, limit: int = 160) -> str:
+    preview = text[:limit].replace("\n", " ")
+    preview = re.sub(r"[0-9]", "x", preview)
+    preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
+    return preview
+
 
 class HFTextEmotion(TextEmotionPort):
     def __init__(self, model_id: str, device: str) -> None:
@@ -43,10 +53,16 @@ class HFTextEmotion(TextEmotionPort):
             device=self._device,
         )
 
-    def predict(self, text: str, language: str | None) -> tuple[dict[EmotionLabel, float], str, str]:
+    def predict(self, text: str, language: str | None) -> TextEmotionBranchResult:
         del language
         self._ensure_pipeline()
         assert self._pipeline is not None
+        logger.info(
+            "emotion_text_request model=%s text_len=%s preview=%s",
+            self._model_id,
+            len(text),
+            _safe_preview(text),
+        )
         outputs = self._pipeline(text)
         scores: dict[EmotionLabel, float] = {label: 0.0 for label in EmotionLabel}
         for item in outputs[0]:
@@ -59,7 +75,24 @@ class HFTextEmotion(TextEmotionPort):
             scores[mapped] = max(scores[mapped], float(item.get("score", 0.0)))
         if sum(scores.values()) == 0.0:
             scores[EmotionLabel.NEUTRAL] = 1.0
-        return scores, self._model_id, "hf"
+            
+        ordered = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        top_label, top_score = ordered[0]
+
+        logger.info(
+            "emotion_text_response model=%s top=%s confidence=%.4f",
+            self._model_id,
+            top_label.value,
+            top_score,
+        )
+        return TextEmotionBranchResult(
+            transcript_or_text=text,
+            emotion_scores=scores,
+            predicted_emotion=top_label,
+            confidence=top_score,
+            model_name=self._model_id,
+            metadata={"adapter": "hf"},
+        )
 
 
 __all__ = ["HFTextEmotion"]

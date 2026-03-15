@@ -15,14 +15,12 @@ from apps.api.dietary_api.schemas import (
     EmotionObservationResponse,
     EmotionTextRequest,
 )
-from dietary_guardian.agent.emotion import (
+from dietary_guardian.agent.emotion.agent import (
     EmotionAgentDisabledError,
     EmotionSpeechDisabledError,
 )
 from dietary_guardian.agent.emotion.schemas import (
-    EmotionContextFeatures,
     EmotionInferenceResult,
-    EmotionLabel,
 )
 from uuid import uuid4
 
@@ -35,10 +33,15 @@ def _to_observation(
 ) -> EmotionObservationResponse:
     return EmotionObservationResponse(
         source_type=result.source_type,
+        final_emotion=result.final_emotion,
+        product_state=result.product_state,
+        confidence=result.confidence,
         text_branch=result.text_branch,
         speech_branch=result.speech_branch,
         context_features=result.context_features,
-        fusion=result.fusion,
+        fusion_method=result.fusion_method,
+        model_metadata=result.model_metadata,
+        trace=result.trace,
         created_at=result.created_at,
         request_id=request_id,
         correlation_id=correlation_id,
@@ -78,40 +81,6 @@ def _map_inference_error(exc: Exception, *, deps: EmotionDeps) -> Exception:
         )
     return exc
 
-def _build_context_features(*, deps: EmotionDeps, user_id: str | None) -> EmotionContextFeatures:
-    if not user_id:
-        return EmotionContextFeatures(recent_labels=[], trend="stable")
-    history = [
-        event
-        for event in deps.event_timeline.get_events(user_id=user_id)
-        if event.event_type == "emotion_observed"
-    ]
-    history = sorted(history, key=lambda e: e.created_at)
-    window = deps.settings.emotion.history_window
-    recent = history[-window:]
-    recent_labels: list[EmotionLabel] = []
-    for event in recent:
-        raw = str(event.payload.get("emotion", "")).lower()
-        try:
-            recent_labels.append(EmotionLabel(raw))
-        except ValueError:
-            continue
-    trend = "stable"
-    negative = {
-        EmotionLabel.SAD,
-        EmotionLabel.ANGRY,
-        EmotionLabel.FRUSTRATED,
-        EmotionLabel.ANXIOUS,
-        EmotionLabel.FEARFUL,
-        EmotionLabel.CONFUSED,
-    }
-    if len(recent_labels) >= 2:
-        prev, last = recent_labels[-2], recent_labels[-1]
-        if last in negative and prev not in negative:
-            trend = "worsening"
-        elif last not in negative and prev in negative:
-            trend = "improving"
-    return EmotionContextFeatures(recent_labels=recent_labels, trend=trend)
 
 def infer_text_for_session(
     *,
@@ -122,14 +91,14 @@ def infer_text_for_session(
     user_id: str | None,
 ) -> EmotionInferenceResponse:
     try:
-        context = _build_context_features(deps=deps, user_id=user_id)
         result = deps.emotion_agent.infer_text(
             text=payload.text,
             language=payload.language,
-            context=context,
+            user_id=user_id,
         )
     except Exception as exc:
         raise _map_inference_error(exc, deps=deps)
+        
     deps.event_timeline.append(
         event_type="emotion_observed",
         workflow_name="emotion_inference",
@@ -137,8 +106,10 @@ def infer_text_for_session(
         correlation_id=correlation_id or str(uuid4()),
         user_id=user_id,
         payload={
-            "emotion": str(result.fusion.emotion_label),
-            "product_state": str(result.fusion.product_state),
+            "emotion": str(result.final_emotion),
+            "product_state": str(result.product_state),
+            "confidence": result.confidence,
+            "fusion_method": result.fusion_method,
         },
     )
     return EmotionInferenceResponse(
@@ -159,17 +130,17 @@ def infer_speech_for_session(
     user_id: str | None,
 ) -> EmotionInferenceResponse:
     try:
-        context = _build_context_features(deps=deps, user_id=user_id)
         result = deps.emotion_agent.infer_speech(
             audio_bytes=audio_bytes,
             filename=filename,
             content_type=content_type,
             transcription=transcription,
             language=language,
-            context=context,
+            user_id=user_id,
         )
     except Exception as exc:
         raise _map_inference_error(exc, deps=deps)
+        
     deps.event_timeline.append(
         event_type="emotion_observed",
         workflow_name="emotion_inference",
@@ -177,8 +148,10 @@ def infer_speech_for_session(
         correlation_id=correlation_id or str(uuid4()),
         user_id=user_id,
         payload={
-            "emotion": str(result.fusion.emotion_label),
-            "product_state": str(result.fusion.product_state),
+            "emotion": str(result.final_emotion),
+            "product_state": str(result.product_state),
+            "confidence": result.confidence,
+            "fusion_method": result.fusion_method,
         },
     )
     return EmotionInferenceResponse(

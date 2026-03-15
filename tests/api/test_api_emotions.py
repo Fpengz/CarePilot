@@ -13,13 +13,13 @@ from dietary_guardian.features.companion.emotion.ports import EmotionInferencePo
 from dietary_guardian.agent.emotion.schemas import SpeechEmotionInput, TextEmotionInput
 from dietary_guardian.agent.emotion.schemas import (
     EmotionContextFeatures,
-    EmotionFusionOutput,
     EmotionInferenceResult,
     EmotionLabel,
     EmotionProductState,
     EmotionRuntimeHealth,
-    EmotionSpeechBranch,
-    EmotionTextBranch,
+    SpeechEmotionBranchResult,
+    TextEmotionBranchResult,
+    FusionTrace,
 )
 
 
@@ -47,49 +47,50 @@ def _login(client: TestClient) -> None:
 
 class _StubEmotionPort(EmotionInferencePort):
     def infer_text(self, payload: TextEmotionInput) -> EmotionInferenceResult:
-        context = payload.context or EmotionContextFeatures(recent_labels=[], trend="stable")
+        context = EmotionContextFeatures(recent_labels=[], trend="stable")
         return EmotionInferenceResult(
             source_type="text",
-            text_branch=EmotionTextBranch(
-                transcript=payload.text,
+            final_emotion=EmotionLabel.NEUTRAL,
+            product_state=EmotionProductState.STABLE,
+            confidence=0.7,
+            fusion_method="stub",
+            trace=FusionTrace(fusion_inputs={}, weighting_strategy="stub", final_decision_reason="stub"),
+            text_branch=TextEmotionBranchResult(
+                transcript_or_text=payload.text,
                 model_name="stub-text",
-                model_version="1",
-                scores={EmotionLabel.NEUTRAL: 0.7},
+                predicted_emotion=EmotionLabel.NEUTRAL,
+                confidence=0.7,
+                emotion_scores={EmotionLabel.NEUTRAL: 0.7},
             ),
             speech_branch=None,
             context_features=context,
-            fusion=EmotionFusionOutput(
-                emotion_label=EmotionLabel.NEUTRAL,
-                product_state=EmotionProductState.STABLE,
-                confidence=0.7,
-                logits={EmotionLabel.NEUTRAL: 0.7},
-            ),
         )
 
     def infer_speech(self, payload: SpeechEmotionInput) -> EmotionInferenceResult:
-        context = payload.context or EmotionContextFeatures(recent_labels=[], trend="stable")
+        context = EmotionContextFeatures(recent_labels=[], trend="stable")
         return EmotionInferenceResult(
             source_type="mixed",
-            text_branch=EmotionTextBranch(
-                transcript=payload.transcription or "hello",
+            final_emotion=EmotionLabel.NEUTRAL,
+            product_state=EmotionProductState.STABLE,
+            confidence=0.7,
+            fusion_method="stub",
+            trace=FusionTrace(fusion_inputs={}, weighting_strategy="stub", final_decision_reason="stub"),
+            text_branch=TextEmotionBranchResult(
+                transcript_or_text=payload.transcription or "hello",
                 model_name="stub-text",
-                model_version="1",
-                scores={EmotionLabel.NEUTRAL: 0.7},
+                predicted_emotion=EmotionLabel.NEUTRAL,
+                confidence=0.7,
+                emotion_scores={EmotionLabel.NEUTRAL: 0.7},
             ),
-            speech_branch=EmotionSpeechBranch(
-                transcript="hello",
+            speech_branch=SpeechEmotionBranchResult(
+                transcription=payload.transcription,
                 model_name="stub-speech",
-                model_version="1",
-                scores={EmotionLabel.NEUTRAL: 0.6},
-                acoustic_summary={"duration_sec": 1.0},
+                predicted_emotion=EmotionLabel.NEUTRAL,
+                confidence=0.6,
+                emotion_scores={EmotionLabel.NEUTRAL: 0.6},
+                acoustic_scores={"duration_sec": 1.0},
             ),
             context_features=context,
-            fusion=EmotionFusionOutput(
-                emotion_label=EmotionLabel.NEUTRAL,
-                product_state=EmotionProductState.STABLE,
-                confidence=0.7,
-                logits={EmotionLabel.NEUTRAL: 0.7},
-            ),
         )
 
     def health(self) -> EmotionRuntimeHealth:
@@ -127,8 +128,8 @@ def test_emotions_text_returns_observation() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["observation"]["source_type"] == "text"
-    assert body["observation"]["fusion"]["emotion_label"] in {"neutral", "happy"}
-    assert body["observation"]["fusion"]["product_state"] == "stable"
+    assert body["observation"]["final_emotion"] in {"neutral", "happy"}
+    assert body["observation"]["product_state"] == "stable"
 
 
 def test_emotions_speech_returns_observation() -> None:
@@ -143,7 +144,7 @@ def test_emotions_speech_returns_observation() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["observation"]["source_type"] == "mixed"
-    assert body["observation"]["fusion"]["product_state"] == "stable"
+    assert body["observation"]["product_state"] == "stable"
 
 
 def test_emotions_text_returns_disabled_error_when_feature_flag_off(

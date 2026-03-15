@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from dietary_guardian.features.companion.emotion.ports import ASRPort, FusionPort, SpeechEmotionPort, TextEmotionPort
+from dietary_guardian.features.companion.emotion.ports import (
+    ASRPort,
+    FusionPort,
+    SpeechEmotionPort,
+    TextEmotionPort,
+    ContextFeaturePort,
+)
 from dietary_guardian.agent.emotion.schemas import (
-    EmotionContextFeatures,
-    EmotionFusionOutput,
     EmotionInferenceResult,
-    EmotionSpeechBranch,
-    EmotionTextBranch,
 )
 
 
@@ -19,11 +21,13 @@ class EmotionPipeline:
         asr: ASRPort,
         text: TextEmotionPort,
         speech: SpeechEmotionPort,
+        context: ContextFeaturePort,
         fusion: FusionPort,
     ) -> None:
         self._asr = asr
         self._text = text
         self._speech = speech
+        self._context = context
         self._fusion = fusion
 
     def infer_text(
@@ -31,30 +35,28 @@ class EmotionPipeline:
         *,
         text: str,
         language: str | None,
-        context: EmotionContextFeatures,
+        user_id: str | None,
     ) -> EmotionInferenceResult:
-        text_scores, text_model_name, text_model_version = self._text.predict(text, language)
-        fusion_label, product_state, confidence, logits = self._fusion.predict(
-            text_scores=text_scores,
-            speech_scores=None,
-            context=context,
+        context_features = self._context.extract(user_id)
+        text_branch_result = self._text.predict(text, language)
+        fusion_output, trace = self._fusion.predict(
+            text_branch=text_branch_result,
+            speech_branch=None,
+            context=context_features,
         )
         return EmotionInferenceResult(
             source_type="text",
-            text_branch=EmotionTextBranch(
-                transcript=text,
-                model_name=text_model_name,
-                model_version=text_model_version,
-                scores=text_scores,
-            ),
+            final_emotion=fusion_output.emotion_label,
+            product_state=fusion_output.product_state,
+            confidence=fusion_output.confidence,
+            text_branch=text_branch_result,
             speech_branch=None,
-            context_features=context,
-            fusion=EmotionFusionOutput(
-                emotion_label=fusion_label,
-                product_state=product_state,
-                confidence=confidence,
-                logits=logits,
-            ),
+            context_features=context_features,
+            fusion_method="hf-text-classification-head",
+            model_metadata={
+                "text_model": text_branch_result.model_name,
+            },
+            trace=trace,
         )
 
     def infer_speech(
@@ -64,40 +66,35 @@ class EmotionPipeline:
         filename: str | None,
         language: str | None,
         transcription: str | None,
-        context: EmotionContextFeatures,
+        user_id: str | None,
     ) -> EmotionInferenceResult:
-        asr_transcript = self._asr.transcribe(audio_bytes, filename=filename, language=language)
-        text_transcript = transcription or asr_transcript
-        speech_scores, acoustic_summary, speech_model_name, speech_model_version = self._speech.predict(
+        context_features = self._context.extract(user_id)
+        asr_transcript = transcription or self._asr.transcribe(audio_bytes, filename=filename, language=language)
+        
+        speech_branch_result = self._speech.predict(
             audio_bytes,
             transcript=asr_transcript,
         )
-        text_scores, text_model_name, text_model_version = self._text.predict(text_transcript, language)
-        fusion_label, product_state, confidence, logits = self._fusion.predict(
-            text_scores=text_scores,
-            speech_scores=speech_scores,
-            context=context,
+        text_branch_result = self._text.predict(asr_transcript, language)
+        
+        fusion_output, trace = self._fusion.predict(
+            text_branch=text_branch_result,
+            speech_branch=speech_branch_result,
+            context=context_features,
         )
+        
         return EmotionInferenceResult(
             source_type="mixed",
-            text_branch=EmotionTextBranch(
-                transcript=text_transcript,
-                model_name=text_model_name,
-                model_version=text_model_version,
-                scores=text_scores,
-            ),
-            speech_branch=EmotionSpeechBranch(
-                transcript=asr_transcript,
-                model_name=speech_model_name,
-                model_version=speech_model_version,
-                scores=speech_scores,
-                acoustic_summary=acoustic_summary,
-            ),
-            context_features=context,
-            fusion=EmotionFusionOutput(
-                emotion_label=fusion_label,
-                product_state=product_state,
-                confidence=confidence,
-                logits=logits,
-            ),
+            final_emotion=fusion_output.emotion_label,
+            product_state=fusion_output.product_state,
+            confidence=fusion_output.confidence,
+            text_branch=text_branch_result,
+            speech_branch=speech_branch_result,
+            context_features=context_features,
+            fusion_method="hf-text-classification-head",
+            model_metadata={
+                "text_model": text_branch_result.model_name,
+                "speech_model": speech_branch_result.model_name,
+            },
+            trace=trace,
         )

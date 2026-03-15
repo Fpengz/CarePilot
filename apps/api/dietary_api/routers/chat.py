@@ -46,9 +46,9 @@ _MEAL_PREFIX_RE = re.compile(r"^(?:log\s+meal|meal)\s*:\s*(.+)$", re.IGNORECASE)
 
 
 def _format_emotion_context(inference: EmotionInferenceResult) -> str:
-    pct = int(inference.fusion.confidence * 100)
+    pct = int(inference.confidence * 100)
     return (
-        f"[Emotional context] The user appears to be feeling **{inference.fusion.emotion_label}** "
+        f"[Emotional context] The user appears to be feeling **{inference.final_emotion}** "
         f"(confidence {pct} %). Please respond with appropriate empathy and tailor "
         f"your advice to their current emotional state."
     )
@@ -219,13 +219,20 @@ async def chat_stream(
                 inference = await loop.run_in_executor(
                     None, lambda: deps.emotion_agent.infer_text(text=user_message)
                 )
+                logger.info(
+                    "chat_emotion_inference_result request_id=%s emotion=%s confidence=%s product_state=%s",
+                    getattr(request.state, "request_id", None),
+                    inference.final_emotion,
+                    inference.confidence,
+                    inference.product_state,
+                )
                 emotion_ctx = _format_emotion_context(inference)
                 yield _format_event(
                     "emotion",
                     {
-                        "emotion": inference.fusion.emotion_label,
-                        "score": inference.fusion.confidence,
-                        "product_state": inference.fusion.product_state,
+                        "emotion": inference.final_emotion,
+                        "score": inference.confidence,
+                        "product_state": inference.product_state,
                     },
                 )
             except EmotionAgentDisabledError:
@@ -308,9 +315,11 @@ async def chat_stream(
         messages.append({"role": "user", "content": user_prompt})
 
         try:
+            logger.info("chat_stream_start request_id=%s", getattr(request.state, "request_id", None))
             async for token in ctx.chat_stream_runtime.stream(messages=messages):
                 assistant_response += token
                 yield _format_event("token", {"text": token})
+            logger.info("chat_stream_complete request_id=%s tokens_len=%d", getattr(request.state, "request_id", None), len(assistant_response))
         except Exception as exc:  # noqa: BLE001
             had_error = True
             yield _format_event("error", {"message": str(exc), "phase": "stream", "retryable": False})
@@ -376,9 +385,9 @@ async def chat_audio(
                 yield _format_event(
                     "emotion",
                     {
-                        "emotion": inference.fusion.emotion_label,
-                        "score": inference.fusion.confidence,
-                        "product_state": inference.fusion.product_state,
+                        "emotion": inference.final_emotion,
+                        "score": inference.confidence,
+                        "product_state": inference.product_state,
                     },
                 )
             except (EmotionAgentDisabledError, EmotionSpeechDisabledError):

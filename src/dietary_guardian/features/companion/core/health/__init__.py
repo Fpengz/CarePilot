@@ -11,8 +11,8 @@ from .emotion import (
     EmotionLabel,
     EmotionProductState,
     EmotionRuntimeHealth,
-    EmotionSpeechBranch,
-    EmotionTextBranch,
+    SpeechEmotionBranchResult,
+    TextEmotionBranchResult,
 )
 from .models import (
     BiomarkerReading,

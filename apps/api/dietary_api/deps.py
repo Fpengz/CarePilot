@@ -221,7 +221,10 @@ def build_app_context() -> AppContext:
     coordination_store = _build_coordination_store(settings)
     household_store = _build_household_store(settings)
     if settings.emotion.inference_enabled or settings.emotion.speech_enabled:
-        emotion_runtime = InProcessEmotionRuntime(EmotionRuntimeConfig.from_settings(settings))
+        emotion_runtime = InProcessEmotionRuntime(
+            EmotionRuntimeConfig.from_settings(settings),
+            event_timeline=event_timeline
+        )
     else:
         class _DisabledEmotionRuntime:
             def infer_text(self, payload) -> EmotionInferenceResult:  # noqa: ANN001

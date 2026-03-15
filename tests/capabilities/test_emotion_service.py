@@ -20,6 +20,10 @@ from dietary_guardian.agent.emotion.schemas import (
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,
     EmotionRuntimeHealth,
+    SpeechEmotionBranchResult,
+    TextEmotionBranchResult,
+    EmotionFusionOutput,
+    FusionTrace,
 )
 from dietary_guardian.agent.emotion import EmotionAgent
 
@@ -31,29 +35,55 @@ class _StubASR:
 
 
 class _StubText:
-    def predict(self, text: str, language: str | None) -> tuple[dict[EmotionLabel, float], str, str]:
-        del text, language
-        return {EmotionLabel.NEUTRAL: 0.7}, "text-model", "1"
+    def predict(self, text: str, language: str | None) -> TextEmotionBranchResult:
+        del language
+        return TextEmotionBranchResult(
+            transcript_or_text=text,
+            emotion_scores={EmotionLabel.NEUTRAL: 0.7},
+            predicted_emotion=EmotionLabel.NEUTRAL,
+            confidence=0.7,
+            model_name="text-model",
+            metadata={},
+        )
 
 
 class _StubSpeech:
     def predict(
         self, audio_bytes: bytes, *, transcript: str | None
-    ) -> tuple[dict[EmotionLabel, float], dict[str, float], str, str]:
-        del audio_bytes, transcript
-        return {EmotionLabel.NEUTRAL: 0.6}, {"duration_sec": 1.2}, "speech-model", "1"
+    ) -> SpeechEmotionBranchResult:
+        del audio_bytes
+        return SpeechEmotionBranchResult(
+            transcription=transcript,
+            acoustic_scores={"duration_sec": 1.2},
+            predicted_emotion=EmotionLabel.NEUTRAL,
+            emotion_scores={EmotionLabel.NEUTRAL: 0.6},
+            confidence=0.6,
+            model_name="speech-model",
+            metadata={},
+        )
+
+
+class _StubContext:
+    def extract(self, user_id: str | None) -> EmotionContextFeatures:
+        del user_id
+        return EmotionContextFeatures(recent_labels=[], trend="stable", recent_product_states=[])
 
 
 class _StubFusion:
     def predict(
         self,
         *,
-        text_scores: dict[EmotionLabel, float],
-        speech_scores: dict[EmotionLabel, float] | None,
+        text_branch: TextEmotionBranchResult | None,
+        speech_branch: SpeechEmotionBranchResult | None,
         context: EmotionContextFeatures,
-    ) -> tuple[EmotionLabel, EmotionProductState, float, dict[EmotionLabel, float]]:
-        del text_scores, speech_scores, context
-        return EmotionLabel.NEUTRAL, EmotionProductState.STABLE, 0.72, {EmotionLabel.NEUTRAL: 0.72}
+    ) -> tuple[EmotionFusionOutput, FusionTrace]:
+        del text_branch, speech_branch, context
+        return EmotionFusionOutput(
+            emotion_label=EmotionLabel.NEUTRAL,
+            product_state=EmotionProductState.STABLE,
+            confidence=0.72,
+            logits={EmotionLabel.NEUTRAL: 0.72},
+        ), FusionTrace(fusion_inputs={}, weighting_strategy="stub", final_decision_reason="stub")
 
 
 def _runtime() -> InProcessEmotionRuntime:
@@ -66,11 +96,13 @@ def _runtime() -> InProcessEmotionRuntime:
             history_window=5,
             model_device="cpu",
             source_commit="9afc3f1a3a3fec71a4e5920d8f4103710b337ecc",
+            model_cache_dir=None,
         ),
         pipeline=EmotionPipeline(
             asr=_StubASR(),
             text=_StubText(),
             speech=_StubSpeech(),
+            context=_StubContext(),
             fusion=_StubFusion(),
         ),
     )
@@ -81,8 +113,8 @@ def test_inprocess_emotion_runtime_text_inference() -> None:
     result = runtime.infer_text(EmotionTextAgentInput(text="I am happy and calm"))
 
     assert result.source_type == "text"
-    assert result.fusion.emotion_label == "neutral"
-    assert result.fusion.product_state == "stable"
+    assert result.final_emotion == "neutral"
+    assert result.product_state == "stable"
 
 
 def test_inprocess_emotion_runtime_speech_inference() -> None:
@@ -92,7 +124,7 @@ def test_inprocess_emotion_runtime_speech_inference() -> None:
     )
 
     assert result.source_type == "mixed"
-    assert result.fusion.product_state == "stable"
+    assert result.product_state == "stable"
 
 
 def test_inprocess_runtime_health_reports_ready_when_configured() -> None:

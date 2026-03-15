@@ -14,7 +14,6 @@ from typing import Callable, TypeVar
 from dietary_guardian.agent.emotion.schemas import (
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,
-    EmotionContextFeatures,
     EmotionRuntimeHealth,
     EmotionInferenceResult,
 )
@@ -85,13 +84,13 @@ class EmotionAgent:
         *,
         text: str,
         language: str | None = None,
-        context: EmotionContextFeatures | None = None,
+        user_id: str | None = None,
     ):
         if not self._inference_enabled:
             raise EmotionAgentDisabledError("emotion inference is disabled")
         return infer_text_emotion(
             port=self._runtime,
-            payload=EmotionTextAgentInput(text=text, language=language, context=context),
+            payload=EmotionTextAgentInput(text=text, language=language, user_id=user_id),
             timeout_seconds=self._request_timeout_seconds,
         )
 
@@ -103,7 +102,7 @@ class EmotionAgent:
         content_type: str | None = None,
         transcription: str | None = None,
         language: str | None = None,
-        context: EmotionContextFeatures | None = None,
+        user_id: str | None = None,
     ):
         if not self._inference_enabled:
             raise EmotionAgentDisabledError("emotion inference is disabled")
@@ -117,7 +116,7 @@ class EmotionAgent:
                 content_type=content_type,
                 transcription=transcription,
                 language=language,
-                context=context,
+                user_id=user_id,
             ),
             timeout_seconds=self._request_timeout_seconds,
         )
