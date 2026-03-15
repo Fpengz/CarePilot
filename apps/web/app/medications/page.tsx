@@ -69,7 +69,7 @@ export default function MedicationsPage() {
   const confirmIntakeMutation = useMutation({
     mutationFn: confirmMedicationIntake,
     onSuccess: async (result) => {
-      setIntakeResult(result);
+      setIntakeResult(null);
       setError(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["medication-regimens"] }),
