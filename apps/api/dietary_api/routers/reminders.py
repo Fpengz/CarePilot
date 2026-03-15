@@ -142,6 +142,7 @@ def reminder_definitions_patch(
         item = update_reminder_definition_for_user(
             context=get_context(request),
             user_id=str(session["user_id"]),
+            session=session,
             reminder_definition_id=reminder_definition_id,
             updates=payload.model_dump(exclude_unset=True),
         )

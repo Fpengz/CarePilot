@@ -17,6 +17,7 @@ from dietary_guardian.features.reminders.domain.models import (
     ReminderDefinition,
     ReminderEvent,
     ReminderOccurrence,
+    ReminderNotificationLogEntry,
 )
 from dietary_guardian.features.reminders.notifications.reminder_materialization import (
     cancel_reminder_notifications,
@@ -158,17 +159,72 @@ def update_reminder_definition_for_user(
     *,
     context: "AppContext",
     user_id: str,
+    session: dict[str, object] | None = None,
     reminder_definition_id: str,
     updates: dict[str, object],
 ) -> ReminderDefinition:
     existing = context.stores.reminders.get_reminder_definition(reminder_definition_id)
     if existing is None or existing.user_id != user_id:
         raise KeyError("reminder definition not found")
+    schedule_changed = "schedule" in updates and updates["schedule"] is not None
     payload = existing.model_dump(mode="json")
     payload.update({key: value for key, value in updates.items() if value is not None})
     payload["updated_at"] = datetime.now(timezone.utc)
     updated = ReminderDefinition.model_validate(payload)
-    return context.stores.reminders.save_reminder_definition(updated)
+    saved = context.stores.reminders.save_reminder_definition(updated)
+
+    if schedule_changed:
+        now = datetime.now(timezone.utc)
+        occurrences = context.stores.reminders.list_reminder_occurrences(
+            user_id=user_id,
+            reminder_definition_id=reminder_definition_id,
+            limit=200,
+        )
+        for occurrence in occurrences:
+            if occurrence.status not in {"scheduled", "queued", "processing"}:
+                continue
+            scheduled_notifications = context.stores.reminders.list_scheduled_notifications(
+                reminder_id=occurrence.id,
+                user_id=user_id,
+            )
+            cancel_reminder_notifications(repository=context.stores.reminders, reminder_id=occurrence.id)
+            for scheduled in scheduled_notifications:
+                context.app_store.mark_alert_dead_letter(
+                    scheduled.id,
+                    scheduled.channel,
+                    error="cancelled_by_schedule_update",
+                    attempt_count=scheduled.attempt_count,
+                )
+                context.stores.reminders.append_notification_log(
+                    ReminderNotificationLogEntry(
+                        id=str(uuid4()),
+                        scheduled_notification_id=scheduled.id,
+                        reminder_id=scheduled.reminder_id,
+                        user_id=scheduled.user_id,
+                        channel=scheduled.channel,
+                        attempt_number=scheduled.attempt_count,
+                        event_type="cancelled",
+                        error_message="cancelled_by_schedule_update",
+                    )
+                )
+            cancelled = occurrence.model_copy(
+                update={
+                    "status": "cancelled",
+                    "action": "expired",
+                    "action_outcome": "missed",
+                    "acted_at": now,
+                    "updated_at": now,
+                }
+            )
+            context.stores.reminders.save_reminder_occurrence(cancelled)
+            context.stores.reminders.save_reminder_event(_event_from_occurrence(saved, cancelled))
+
+        _ensure_today_occurrences_for_session(
+            context=context,
+            session=session or {"user_id": user_id, "account_role": "member"},
+        )
+
+    return saved
 
 
 def _ensure_today_occurrences_for_session(*, context: "AppContext", session: dict[str, object]) -> None:

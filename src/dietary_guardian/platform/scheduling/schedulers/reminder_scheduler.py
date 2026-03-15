@@ -49,6 +49,7 @@ async def run_reminder_scheduler_once(
         repository=repo,
         now=dispatch_at,
         limit=settings.workers.reminder_scheduler_batch_size,
+        max_late_minutes=settings.workers.reminder_max_late_minutes,
     )
     worker = OutboxWorker(
         repo,
