@@ -127,7 +127,7 @@ export default function WorkflowsPage() {
                 </div>
                 <div className="flex items-end gap-2">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     className="h-11 rounded-xl font-bold px-6"
                     disabled={loadingAction !== null || !canList}
                     onClick={async () => {

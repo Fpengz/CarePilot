@@ -63,7 +63,7 @@ export function ClinicalSummary({
               <span className="text-[11px] font-bold uppercase tracking-widest">Action Required</span>
             </div>
             <p className="text-sm font-medium leading-relaxed text-[color:var(--foreground)]">
-              "{recommendation}"
+              &quot;{recommendation}&quot;
             </p>
             <button className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[color:var(--accent)] hover:underline">
               Implement recommendation →

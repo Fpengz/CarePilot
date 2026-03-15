@@ -271,6 +271,10 @@ export function SettingsWorkspace() {
   const [emailOffset, setEmailOffset] = useState(0);
   const [smsEnabled, setSmsEnabled] = useState(false);
   const [smsOffset, setSmsOffset] = useState(0);
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
+  const [telegramOffset, setTelegramOffset] = useState(0);
+  const [telegramDestination, setTelegramDestination] = useState("");
+  const [telegramVerified, setTelegramVerified] = useState(true);
 
   useEffect(() => {
     if (!user) return;
@@ -308,19 +312,25 @@ export function SettingsWorkspace() {
         const inAppRule = preferenceResponse.preferences.find((item) => item.channel === "in_app");
         const emailRule = preferenceResponse.preferences.find((item) => item.channel === "email");
         const smsRule = preferenceResponse.preferences.find((item) => item.channel === "sms");
+        const telegramRule = preferenceResponse.preferences.find((item) => item.channel === "telegram");
         setInAppEnabled(Boolean(inAppRule?.enabled ?? true));
         setInAppOffset(inAppRule?.offset_minutes ?? 0);
         setEmailEnabled(Boolean(emailRule?.enabled));
         setEmailOffset(emailRule?.offset_minutes ?? 0);
         setSmsEnabled(Boolean(smsRule?.enabled));
         setSmsOffset(smsRule?.offset_minutes ?? 0);
+        setTelegramEnabled(Boolean(telegramRule?.enabled));
+        setTelegramOffset(telegramRule?.offset_minutes ?? 0);
 
         const emailEndpoint = endpointResponse.endpoints.find((item) => item.channel === "email");
         const smsEndpoint = endpointResponse.endpoints.find((item) => item.channel === "sms");
+        const telegramEndpoint = endpointResponse.endpoints.find((item) => item.channel === "telegram");
         setEmailDestination(emailEndpoint?.destination ?? "");
         setEmailVerified(Boolean(emailEndpoint?.verified ?? true));
         setSmsDestination(smsEndpoint?.destination ?? "");
         setSmsVerified(Boolean(smsEndpoint?.verified));
+        setTelegramDestination(telegramEndpoint?.destination ?? "");
+        setTelegramVerified(Boolean(telegramEndpoint?.verified ?? true));
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -438,12 +448,14 @@ export function SettingsWorkspace() {
             { channel: "in_app", offset_minutes: inAppOffset, enabled: inAppEnabled },
             { channel: "email", offset_minutes: emailOffset, enabled: emailEnabled },
             { channel: "sms", offset_minutes: smsOffset, enabled: smsEnabled },
+            { channel: "telegram", offset_minutes: telegramOffset, enabled: telegramEnabled },
           ],
         }),
         updateReminderNotificationEndpoints({
           endpoints: [
             ...(emailDestination ? [{ channel: "email", destination: emailDestination, verified: emailVerified }] : []),
             ...(smsDestination ? [{ channel: "sms", destination: smsDestination, verified: smsVerified }] : []),
+            ...(telegramDestination ? [{ channel: "telegram", destination: telegramDestination, verified: telegramVerified }] : []),
           ],
         }),
       ]);
@@ -697,6 +709,27 @@ export function SettingsWorkspace() {
                     <p className="text-xs text-[color:var(--muted-foreground)]">Morning summary of care tasks.</p>
                   </div>
                   <input type="checkbox" checked={emailEnabled} onChange={(e) => setEmailEnabled(e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-[color:var(--accent)] focus:ring-[color:var(--accent)]" />
+                </div>
+                <div className="flex flex-col gap-4 p-4 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)]">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-bold">Telegram Delivery</Label>
+                      <p className="text-xs text-[color:var(--muted-foreground)]">Direct alerts via Telegram bot.</p>
+                    </div>
+                    <input type="checkbox" checked={telegramEnabled} onChange={(e) => setTelegramEnabled(e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-[color:var(--accent)] focus:ring-[color:var(--accent)]" />
+                  </div>
+                  {telegramEnabled && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                      <Label htmlFor="telegram-chat-id" className="text-[10px] uppercase font-bold tracking-widest opacity-60">Chat ID</Label>
+                      <Input
+                        id="telegram-chat-id"
+                        placeholder="e.g. 123456789"
+                        value={telegramDestination}
+                        onChange={(e) => setTelegramDestination(e.target.value)}
+                        className="h-10 rounded-lg text-xs"
+                      />
+                    </div>
+                  )}
                 </div>
                 <Button onClick={handleDeliverySave} disabled={status !== "authenticated" || savingDelivery} className="h-11 w-full rounded-xl shadow-sm">
                   <AsyncLabel active={savingDelivery} idle="Save Delivery Rules" loading="Saving" />

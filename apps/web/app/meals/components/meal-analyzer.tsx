@@ -131,15 +131,15 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
 
             <div className="flex gap-2">
               <Button 
-                className="flex-1 rounded-xl h-12 shadow-sm" 
-                disabled={isBusy || !!result} 
+                className="flex-1 rounded-xl h-12 font-bold" 
+                disabled={!!isBusy || !!result} 
                 onClick={handleAnalyze}
               >
-                <AsyncLabel active={isBusy} loading="Analyzing" idle="Start Analysis" />
+                <AsyncLabel active={!!isBusy} loading="Analyzing" idle="Start Analysis" />
               </Button>
               {result && (
                 <Button 
-                  variant="outline" 
+                  variant="secondary" 
                   className="rounded-xl h-12 gap-2" 
                   onClick={handleClear}
                 >

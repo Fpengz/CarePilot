@@ -113,7 +113,7 @@ export default function AlertsPage() {
                   />
                 </div>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   className="w-full h-11 rounded-xl font-bold"
                   disabled={!alertId || loadingAction !== null || !canReadTimeline}
                   onClick={async () => {

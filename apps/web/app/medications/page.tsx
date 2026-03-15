@@ -161,7 +161,7 @@ export default function MedicationsPage() {
                   >
                     Confirm & Create Reminders
                   </Button>
-                  <Button variant="outline" onClick={() => setIntakeResult(null)}>Discard</Button>
+                  <Button variant="secondary" onClick={() => setIntakeResult(null)}>Discard</Button>
                 </div>
               </CardContent>
             </Card>

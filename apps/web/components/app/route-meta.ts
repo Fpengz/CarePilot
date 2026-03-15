@@ -170,12 +170,14 @@ export const ROUTE_META: RouteMeta[] = [
   {
     href: "/reminders",
     label: "Reminders",
-    pageTitle: "Reminders",
+    pageTitle: "Care Coordination",
     breadcrumbLabel: "Reminders",
     group: "main",
     icon: Bell,
-    showInSidebar: false,
-    mobileTab: false,
+    showInSidebar: true,
+    mobileTab: true,
+    sidebarSection: "monitoring",
+    sidebarOrder: 4,
   },
   {
     href: "/household",

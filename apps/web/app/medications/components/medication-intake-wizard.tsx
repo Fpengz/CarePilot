@@ -78,7 +78,7 @@ export function MedicationIntakeWizard({ onTextIntake, onFileUpload, busy }: Med
               onClick={() => onTextIntake(text)} 
               disabled={busy || !text.trim()}
             >
-              <AsyncLabel active={busy} loading="Parsing" idle="Analyze Instructions" />
+              <AsyncLabel active={!!busy} loading="Parsing" idle="Analyze Instructions" />
             </Button>
             <Button variant="ghost" className="rounded-xl h-11" onClick={() => setMode("choice")}>Cancel</Button>
           </div>
@@ -103,7 +103,7 @@ export function MedicationIntakeWizard({ onTextIntake, onFileUpload, busy }: Med
               onClick={() => file && onFileUpload(file)} 
               disabled={busy || !file}
             >
-              <AsyncLabel active={busy} loading="Uploading" idle="Analyze Document" />
+              <AsyncLabel active={!!busy} loading="Uploading" idle="Analyze Document" />
             </Button>
             <Button variant="ghost" className="rounded-xl h-11" onClick={() => setMode("choice")}>Cancel</Button>
           </div>

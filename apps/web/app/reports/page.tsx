@@ -104,7 +104,11 @@ export default function ReportsPage() {
                   <div className="text-[10px] font-bold uppercase tracking-widest text-rose-600 opacity-70">Identified Risk Flags</div>
                   <div className="flex flex-wrap gap-2">
                     {result.snapshot.risk_flags.map((flag) => (
-                      <Badge key={flag} variant="destructive" className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-tighter">
+                      <Badge 
+                        key={flag} 
+                        variant="outline" 
+                        className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-tighter bg-rose-50 text-rose-600 border-rose-200"
+                      >
                         {flag}
                       </Badge>
                     ))}
@@ -122,7 +126,7 @@ export default function ReportsPage() {
               <span className="text-[10px] font-bold uppercase tracking-widest">Trust & Provenance</span>
             </div>
             <p className="text-xs leading-relaxed text-emerald-800/70">
-              Biomarkers are extracted using our validated clinical parser. These signals directly inform your AI assistant's risk modeling and dietary recommendations.
+              Biomarkers are extracted using our validated clinical parser. These signals directly inform your AI assistant&apos;s risk modeling and dietary recommendations.
             </p>
           </div>
 

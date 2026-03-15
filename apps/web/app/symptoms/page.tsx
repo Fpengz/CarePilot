@@ -78,7 +78,7 @@ export default function SymptomsPage() {
             Log physical signals to help your AI companion detect patterns and provide safer clinical guidance.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={refreshData} className="gap-2">
+        <Button variant="secondary" size="sm" onClick={refreshData} className="gap-2">
           <RefreshCcw className="h-3.5 w-3.5" /> Sync Data
         </Button>
       </div>
@@ -183,12 +183,18 @@ export default function SymptomsPage() {
                         </div>
                       </div>
                     </div>
-                    <Badge variant={item.safety.decision === "escalate" ? "destructive" : "outline"} className="text-[10px] uppercase tracking-tighter">
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-[10px] uppercase tracking-tighter",
+                        item.safety.decision === "escalate" ? "bg-rose-50 text-rose-600 border-rose-200" : ""
+                      )}
+                    >
                       {item.safety.decision}
                     </Badge>
                   </div>
                   {item.free_text && (
-                    <p className="mt-2 text-xs text-[color:var(--muted-foreground)] line-clamp-2 italic">"{item.free_text}"</p>
+                    <p className="mt-2 text-xs text-[color:var(--muted-foreground)] line-clamp-2 italic">&quot;{item.free_text}&quot;</p>
                   )}
                 </div>
               ))}

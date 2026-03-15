@@ -44,7 +44,7 @@ export default function ClinicianDigestPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={refresh} className="gap-2 rounded-lg">
+          <Button variant="secondary" size="sm" onClick={refresh} className="gap-2 rounded-lg">
             <RefreshCcw className="h-3.5 w-3.5" /> Refresh
           </Button>
           <Button variant="default" size="sm" className="gap-2 rounded-lg">
@@ -77,7 +77,13 @@ export default function ClinicianDigestPage() {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <Badge variant={digest?.risk_level === "high" ? "destructive" : "outline"} className="px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                    digest?.risk_level === "high" ? "bg-rose-50 text-rose-600 border-rose-200" : ""
+                  )}
+                >
                   Risk Level: {digest?.risk_level ?? "Low"}
                 </Badge>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Priority: {digest?.priority ?? "Normal"}</div>

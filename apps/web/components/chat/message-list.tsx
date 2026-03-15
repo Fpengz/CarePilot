@@ -20,7 +20,7 @@ export function MessageList({
   audioNotice: string | null;
   onMealAction: (proposalId: string, action: "confirm" | "skip") => void;
   proposalLoadingId: string | null;
-  bottomRef: React.RefObject<HTMLDivElement>;
+  bottomRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
     <div className="flex-1 space-y-4 overflow-y-auto pb-6">
