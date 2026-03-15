@@ -141,6 +141,22 @@
     @apply space-y-4 text-[14px] leading-relaxed tracking-tight;
   }
 
+  .chat-markdown h1 {
+    @apply mt-6 mb-4 text-xl font-bold text-[color:var(--foreground)];
+  }
+
+  .chat-markdown h2 {
+    @apply mt-5 mb-3 text-lg font-bold text-[color:var(--foreground)];
+  }
+
+  .chat-markdown h3 {
+    @apply mt-4 mb-2 text-base font-semibold text-[color:var(--foreground)];
+  }
+
+  .chat-markdown h4, .chat-markdown h5, .chat-markdown h6 {
+    @apply mt-3 mb-1 text-[13px] font-semibold text-[color:var(--foreground)];
+  }
+
   .chat-markdown a {
     @apply font-medium underline decoration-[color:var(--accent)] decoration-1 underline-offset-4 transition-colors hover:text-[color:var(--accent)];
   }
@@ -159,8 +175,32 @@
   }
 
   .chat-markdown pre {
-    @apply max-h-[28rem] overflow-auto rounded-lg border border-white/5 bg-[#0f172a] p-4 text-[13px] text-[#f8fafc] dark:border-[color:var(--border)] dark:bg-[color:var(--code-bg)] dark:text-[color:var(--code-fg)];
+    @apply my-4 max-h-[28rem] overflow-auto rounded-lg border border-white/5 bg-[#0f172a] p-4 text-[13px] text-[#f8fafc] dark:border-[color:var(--border)] dark:bg-[color:var(--code-bg)] dark:text-[color:var(--code-fg)];
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .chat-markdown pre code {
+    @apply bg-transparent p-0 text-inherit;
+  }
+
+  .chat-markdown table {
+    @apply my-4 w-full border-collapse text-left text-[13px];
+  }
+
+  .chat-markdown thead {
+    @apply border-b border-[color:var(--border-soft)] bg-[color:var(--panel-soft)];
+  }
+
+  .chat-markdown th {
+    @apply px-4 py-2 font-semibold text-[color:var(--foreground)];
+  }
+
+  .chat-markdown td {
+    @apply border-b border-[color:var(--border-soft)] px-4 py-2 text-[color:var(--muted-foreground)];
+  }
+
+  .chat-markdown tr:last-child td {
+    @apply border-b-0;
   }
 
   .chat-markdown blockquote {

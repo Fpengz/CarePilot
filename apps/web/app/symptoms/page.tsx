@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, AlertTriangle, RefreshCcw, Thermometer, Info } from "lucide-react";
+import { Activity, AlertTriangle, RefreshCcw, Thermometer, Info, History } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { createSymptomCheckIn, getSymptomSummary, listSymptomCheckIns } from "@/lib/api/meal-client";

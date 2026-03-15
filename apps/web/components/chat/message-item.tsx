@@ -1,6 +1,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { MessageView } from "@/app/chat/components/types";
 import { AssistantMeta } from "@/components/chat/assistant-meta";
@@ -78,7 +79,11 @@ export function MessageItem({
         ) : null}
 
         {content ? (
-          <ReactMarkdown className="chat-markdown mt-4" rehypePlugins={[rehypeSanitize]}>
+          <ReactMarkdown
+            className="chat-markdown mt-4"
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeSanitize]}
+          >
             {content}
           </ReactMarkdown>
         ) : isStreaming ? (
