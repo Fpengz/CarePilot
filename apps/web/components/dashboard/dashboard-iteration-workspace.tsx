@@ -125,16 +125,23 @@ export function DashboardIterationWorkspace() {
             <MetricStrip overview={overview} sparklines={summarySparklines} />
             
             {/* Middle Row */}
-            <div className="col-span-12 lg:col-span-8">
+            <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
               <CorrelationChart 
                 calories={overview.charts.calories.points} 
                 risk={overview.charts.glycemic_risk.points} 
               />
+              <div className="h-24">
+                <InsightsSidebar 
+                  recommendation={overview.insights.recommendations[0] ?? "Keep tracking your meals to reveal deeper insights."} 
+                />
+              </div>
             </div>
+            
             <div className="col-span-12 lg:col-span-4">
-              <InsightsSidebar 
-                recommendation={overview.insights.recommendations[0] ?? "Keep tracking your meals to reveal deeper insights."} 
-              />
+              <div className="glass-card h-full flex flex-col justify-center items-center text-center p-8 opacity-40">
+                <div className="text-[10px] font-bold uppercase tracking-[0.3em] mb-2">Contextual Slot</div>
+                <p className="text-[11px] font-medium leading-relaxed">Reserved for future longitudinal markers or clinical device sync.</p>
+              </div>
             </div>
 
             {/* Bottom Row */}

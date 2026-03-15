@@ -28,7 +28,14 @@ _DURATION_RE = re.compile(r"\bfor\s+(?P<days>\d+)\s+days?\b", re.IGNORECASE)
 _SYSTEM_PROMPT = """\
 You extract structured medication instructions from user-provided medication instructions.
 
-Return JSON only. Each instruction must contain:
+Return JSON only using this wrapper schema:
+{
+  "instructions": [<instruction objects>],
+  "confidence_score": 0.0-1.0,
+  "warnings": ["..."]
+}
+
+Each instruction object must contain:
 - medication_name_raw
 - medication_name_canonical (snake_case generic name when known, else normalized lowercase token)
 - dosage_text

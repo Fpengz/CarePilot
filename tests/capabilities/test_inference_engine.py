@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
+from pydantic_ai.messages import PartEndEvent, TextPart
 
 
 def test_inference_engine_strategy_selection_test_provider(monkeypatch) -> None:
@@ -32,6 +33,47 @@ def test_inference_engine_strategy_selection_local_provider(monkeypatch) -> None
 
 class _TestOutput(BaseModel):
     message: str
+
+
+class _RecoveryOutput(BaseModel):
+    value: int
+
+
+def test_inference_engine_recovers_json_on_validation_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("LLM_PROVIDER", "test")
+
+    class _FakeAgent:
+        def __init__(self, model, output_type, system_prompt, output_retries):  # noqa: ANN001, ARG002
+            self.output_type = output_type
+
+        async def run(self, prompt, event_stream_handler=None):  # noqa: ANN001
+            async def _events():
+                yield PartEndEvent(index=0, part=TextPart(content='{"value": 42}'))
+
+            if event_stream_handler is not None:
+                await event_stream_handler(None, _events())
+            raise ValueError("Output validation failed")
+
+    monkeypatch.setattr(
+        "dietary_guardian.agent.runtime.inference_engine.Agent",
+        _FakeAgent,
+    )
+
+    engine = InferenceEngine()
+    request = InferenceRequest(
+        request_id="recovery-case",
+        user_id="user_001",
+        modality=InferenceModality.TEXT,
+        payload={"prompt": "test"},
+        output_schema=_RecoveryOutput,
+        system_prompt="test",
+    )
+
+    response = asyncio.run(engine.infer(request))
+    assert response.structured_output.value == 42
+    assert response.warnings
+    get_settings.cache_clear()
 
 
 def test_inference_engine_enforces_wall_clock_timeout(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -8,7 +8,7 @@ export function MealClock({ bins }: { bins: { hour: number; count: number }[] })
         <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Circadian Rhythms</span>
         <h3 className="text-lg font-bold tracking-tight">Meal Timing (24h)</h3>
       </div>
-      <div className="h-64 w-full">
+      <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="80%" data={bins}>
             <PolarGrid stroke="var(--chart-grid)" strokeOpacity={0.5} />

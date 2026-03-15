@@ -188,6 +188,21 @@ function buildApiRequestError(response: Response, rawBody: string): ApiRequestEr
   });
 }
 
+function buildErrorLogPayload(error: ApiRequestError): Record<string, unknown> {
+  const details = error.error.details;
+  const normalizedDetails =
+    details && typeof details === "object" && Object.keys(details as Record<string, unknown>).length > 0
+      ? (details as Record<string, unknown>)
+      : undefined;
+  return {
+    code: error.error.code,
+    message: error.error.message,
+    status_code: error.error.status_code,
+    correlation_id: error.correlationId,
+    ...(normalizedDetails ? { details: normalizedDetails } : {}),
+  };
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const method = init?.method ?? "GET";
   const startedAt = performance.now();
@@ -216,6 +231,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       request_id: error.requestId,
       correlation_id: error.correlationId,
       error_code: error.error.code,
+      error: buildErrorLogPayload(error),
     });
     throw error;
   }

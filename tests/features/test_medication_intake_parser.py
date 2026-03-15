@@ -18,7 +18,11 @@ class _FakeInferenceEngine:
         if self.should_fail:
             raise RuntimeError("llm unavailable")
         assert request.payload["prompt"]
-        assert "medication instructions" in request.system_prompt.lower()
+        lowered_prompt = request.system_prompt.lower()
+        assert "medication instructions" in lowered_prompt
+        assert "instructions" in lowered_prompt
+        assert "confidence_score" in lowered_prompt
+        assert "warnings" in lowered_prompt
         assert request.output_schema is MedicationParseOutput
         assert self.output is not None
         return InferenceResponse(

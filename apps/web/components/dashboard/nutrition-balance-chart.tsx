@@ -42,7 +42,7 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
         </div>
       </div>
 
-      <div className="h-64 w-full">
+      <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeOpacity={0.5} />

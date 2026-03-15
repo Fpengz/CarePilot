@@ -6,11 +6,12 @@ for agent runtime execution.
 """
 
 import asyncio
+import json
 import time
 from dataclasses import dataclass
 from typing import Any, Protocol, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from pydantic_ai import Agent
 from pydantic_ai.messages import (
     BinaryImage,
@@ -45,6 +46,37 @@ def _collect_text_from_events(events: list[object]) -> str:
         elif isinstance(event, PartEndEvent) and isinstance(event.part, TextPart):
             chunks.append(event.part.content)
     return "".join(chunks)
+
+
+def _is_output_validation_failure(exc: Exception) -> bool:
+    if isinstance(exc, ValidationError):
+        return True
+    message = str(exc).lower()
+    return "validation" in message and "output" in message
+
+
+def _extract_json_payload(raw_text: str) -> str | None:
+    trimmed = raw_text.strip()
+    if trimmed.startswith("{") and trimmed.endswith("}"):
+        return trimmed
+    start = trimmed.find("{")
+    end = trimmed.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    return trimmed[start : end + 1]
+
+
+def _recover_output_from_text(raw_text: str, schema: type[BaseModel]) -> BaseModel | None:
+    candidate = _extract_json_payload(raw_text)
+    if not candidate:
+        return None
+    try:
+        return schema.model_validate_json(candidate)
+    except Exception:
+        try:
+            return schema.model_validate(json.loads(candidate))
+        except Exception:
+            return None
 
 
 class ProviderStrategy(Protocol):
@@ -138,6 +170,30 @@ class _BaseStrategy:
                 result = await agent.run(prompt, event_stream_handler=_event_stream_handler)
         except Exception as exc:  # noqa: BLE001
             latency_ms = (time.perf_counter() - started) * 1000.0
+            raw_text = "".join(raw_chunks) if raw_chunks else ""
+            raw_preview = raw_text[-1200:] if raw_text else None
+            if raw_text and _is_output_validation_failure(exc):
+                recovered = _recover_output_from_text(raw_text, request.output_schema)
+                if recovered is not None:
+                    logger.info(
+                        "inference_output_recovered request_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f capability=%s",
+                        request.request_id,
+                        self.provider_name,
+                        self._provider_metadata().model,
+                        self._provider_metadata().endpoint,
+                        latency_ms,
+                        self.capability or "none",
+                    )
+                    confidence = cast(float | None, getattr(recovered, "confidence_score", None))
+                    return InferenceResponse(
+                        request_id=request.request_id,
+                        structured_output=cast(BaseModel, recovered),
+                        confidence=confidence,
+                        latency_ms=latency_ms,
+                        provider_metadata=self._provider_metadata(),
+                        warnings=["Output validation failed; recovered JSON output."],
+                        raw_reference=LLMFactory.describe_model_destination(self.model),
+                    )
             if "Exceeded maximum retries" in str(exc):
                 logger.info(
                     "inference_output_validation_retry_exhausted request_id=%s provider=%s estimated_model_requests=%s capability=%s",
@@ -146,8 +202,7 @@ class _BaseStrategy:
                     max(output_retries + 1, 1),
                     self.capability or "none",
                 )
-            if raw_chunks:
-                raw_preview = "".join(raw_chunks)[-1200:]
+            if raw_preview:
                 logger.debug("inference_engine_raw_response_preview=%s", raw_preview)
             logger.exception(
                 "inference_run_failed request_id=%s provider=%s model=%s endpoint=%s latency_ms=%.2f error=%s capability=%s",

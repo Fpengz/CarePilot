@@ -15,7 +15,7 @@ export function CorrelationChart({ calories, risk }: { calories: any[]; risk: an
         <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Metabolic Data</span>
         <h3 className="text-lg font-bold tracking-tight">Correlation Analysis</h3>
       </div>
-      <div className="h-64 w-full">
+      <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeOpacity={0.5} />
