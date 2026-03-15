@@ -20,7 +20,7 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
   ];
 
   return (
-    <section className="metric-card">
+    <section className="glass-card">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-semibold text-[color:var(--foreground)]">{chart.title}</div>

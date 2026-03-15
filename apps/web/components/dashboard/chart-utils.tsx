@@ -17,6 +17,11 @@ export const COMMON_AXIS_PROPS = {
   axisLine: false,
 };
 
+export const formatChartValue = (value: number) => {
+  if (value === 0) return "-";
+  return Math.round(value).toString();
+};
+
 export const ClinicalTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     return (
@@ -30,7 +35,7 @@ export const ClinicalTooltip = ({ active, payload, label }: TooltipProps<ValueTy
                 <span className="text-xs font-medium text-[color:var(--foreground)]">{entry.name}</span>
               </div>
               <span className="text-xs font-bold tabular-nums text-[color:var(--foreground)]">
-                {entry.value}{entry.unit || 'g'}
+                {entry.value === 0 ? "-" : entry.value}{entry.value !== 0 ? (entry.unit || 'g') : ''}
               </span>
             </div>
           ))}
