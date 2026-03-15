@@ -448,6 +448,10 @@ export default function RemindersPage() {
                   definition={definitionMap.get(occurrence.reminder_definition_id)}
                   onAction={(action, snoozeMinutes) => handleOccurrenceAction(occurrence.id, action, snoozeMinutes)}
                   actionDisabled={actionLoadingId === occurrence.id || loading}
+                  onEdit={() => {
+                    const definition = definitionMap.get(occurrence.reminder_definition_id);
+                    if (definition) startEditDefinition(definition);
+                  }}
                 />
               ))
             ) : (
@@ -492,6 +496,10 @@ export default function RemindersPage() {
                   definition={definitionMap.get(occurrence.reminder_definition_id)}
                   onAction={(action, snoozeMinutes) => handleOccurrenceAction(occurrence.id, action, snoozeMinutes)}
                   actionDisabled={actionLoadingId === occurrence.id || loading}
+                  onEdit={() => {
+                    const definition = definitionMap.get(occurrence.reminder_definition_id);
+                    if (definition) startEditDefinition(definition);
+                  }}
                 />
               ))
             ) : (

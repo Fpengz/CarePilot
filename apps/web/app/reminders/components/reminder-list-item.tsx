@@ -135,13 +135,13 @@ export function ReminderListItem({
               ref={menuRef}
               className="absolute right-0 top-full z-10 mt-2 w-44 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-1 shadow-lg"
             >
-              {definition ? (
+              {definition && onEdit ? (
                 <>
                   <button
                     type="button"
                     onClick={() => {
                       setMenuOpen(false);
-                      onEdit?.();
+                      onEdit();
                     }}
                     className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-[color:var(--foreground)] hover:bg-[color:var(--muted)]"
                   >
