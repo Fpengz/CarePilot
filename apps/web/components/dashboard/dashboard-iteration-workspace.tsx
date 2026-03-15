@@ -15,9 +15,8 @@ import {
 
 import { ErrorCard } from "@/components/app/error-card";
 import { useSession } from "@/components/app/session-provider";
-import { HealthSignal } from "@/components/dashboard/health-signal";
+import { MetricStrip } from "@/components/dashboard/metric-strip";
 import { InsightsSidebar } from "@/components/dashboard/insights-sidebar";
-import { SummaryMetricCard } from "@/components/dashboard/summary-metric-card";
 import { CorrelationChart } from "@/components/dashboard/correlation-chart";
 import { MealClock } from "@/components/dashboard/meal-clock";
 import { RangeSelector, type RangeKey } from "@/components/dashboard/range-selector";
@@ -120,43 +119,32 @@ export function DashboardIterationWorkspace() {
       {loading && !overview ? <DashboardSkeleton /> : null}
 
       {overview && summarySparklines ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
-          {/* Row 1 */}
-          <HealthSignal 
-            metabolic={overview.summary.adherence_score.value > 80 ? "Balanced" : "Variable"} 
-            risk={overview.summary.glycemic_risk.value < 30 ? "Low" : "High"} 
-          />
-          <SummaryMetricCard 
-            label="Adherence" 
-            value={Math.round(overview.summary.adherence_score.value)} 
-            unit="%" 
-            data={summarySparklines.adherence} 
-          />
-          <SummaryMetricCard 
-            label="Glycemic Risk" 
-            value={Math.round(overview.summary.glycemic_risk.value)} 
-            unit="/100" 
-            data={summarySparklines.risk} 
-          />
+        <div className="relative isolate">
+          <div className="dashboard-grounding" />
+          <div className="grid grid-cols-12 gap-6">
+            <MetricStrip overview={overview} sparklines={summarySparklines} />
+            
+            {/* Middle Row */}
+            <div className="col-span-12 lg:col-span-8">
+              <CorrelationChart 
+                calories={overview.charts.calories.points} 
+                risk={overview.charts.glycemic_risk.points} 
+              />
+            </div>
+            <div className="col-span-12 lg:col-span-4">
+              <InsightsSidebar 
+                recommendation={overview.insights.recommendations[0] ?? "Keep tracking your meals to reveal deeper insights."} 
+              />
+            </div>
 
-          {/* Row 2 */}
-          <SummaryMetricCard 
-            label="Nutrition Goal" 
-            value={Math.round(overview.summary.nutrition_goal_score.value)} 
-            unit="%" 
-            data={summarySparklines.nutrition} 
-          />
-          <CorrelationChart 
-            calories={overview.charts.calories.points} 
-            risk={overview.charts.glycemic_risk.points} 
-          />
-
-          {/* Row 3 */}
-          <NutritionBalanceChart chart={overview.charts.macros} />
-          <MealClock bins={overview.charts.meal_timing.bins} />
-          <InsightsSidebar 
-            recommendation={overview.insights.recommendations[0] ?? "Keep tracking your meals to reveal deeper insights."} 
-          />
+            {/* Bottom Row */}
+            <div className="col-span-12 lg:col-span-6">
+              <NutritionBalanceChart chart={overview.charts.macros} />
+            </div>
+            <div className="col-span-12 lg:col-span-6">
+              <MealClock bins={overview.charts.meal_timing.bins} />
+            </div>
+          </div>
         </div>
       ) : null}
     </div>
