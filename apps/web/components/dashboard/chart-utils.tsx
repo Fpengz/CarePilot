@@ -5,8 +5,8 @@ export const CHART_COLORS = {
   protein: "#f59e0b",
   carbs: "#047857",
   fat: "#9333ea",
-  calories: "#c2410c",
-  risk: "#dc2626",
+  calories: "#4338ca", // Indigo for metabolic intake
+  risk: "#be123c",    // Rose for glycemic risk
 };
 
 export const COMMON_AXIS_PROPS = {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Label } from "recharts";
 import { DashboardMacroChartApi } from "@/lib/types";
 import { CHART_COLORS, COMMON_AXIS_PROPS, ClinicalTooltip } from "./chart-utils";
 import { cn } from "@/lib/utils";
@@ -44,10 +44,17 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
 
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+          <BarChart data={data} margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeOpacity={0.5} />
-            <XAxis dataKey="label" {...COMMON_AXIS_PROPS} />
-            <YAxis {...COMMON_AXIS_PROPS} />
+            <XAxis dataKey="label" {...COMMON_AXIS_PROPS} tickMargin={10} />
+            <YAxis {...COMMON_AXIS_PROPS} width={40}>
+              <Label 
+                value="GRAMS (G)" 
+                angle={-90} 
+                position="insideLeft" 
+                style={{ textAnchor: 'middle', fontSize: '8px', fontWeight: 'bold', fill: 'var(--chart-text)', opacity: 0.8 }} 
+              />
+            </YAxis>
             <Tooltip content={<ClinicalTooltip />} cursor={{ fill: "var(--chart-grid)", fillOpacity: 0.1 }} />
             
             {(view === "all" || view === "protein") && (
