@@ -282,6 +282,14 @@
   .grain-overlay {
     position: relative;
   }
+
+  .glass-card {
+    @apply bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-xl rounded-3xl p-6 transition-all;
+  }
+
+  .status-chip {
+    @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider;
+  }
 }
 
 @media (max-width: 640px) {
