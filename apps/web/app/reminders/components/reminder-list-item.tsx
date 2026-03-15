@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Bell, Clock, MapPin, Calendar, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ReminderDefinitionApi, ReminderOccurrenceApi } from "@/lib/types";
@@ -19,15 +20,37 @@ function statusTone(status: ReminderOccurrenceApi["status"]) {
 export function ReminderListItem({ 
   definition, 
   occurrence,
-  onToggle
+  onToggle,
+  toggleDisabled,
+  onEdit,
+  onAction,
+  actionDisabled,
 }: { 
   definition?: ReminderDefinitionApi;
   occurrence?: ReminderOccurrenceApi;
   onToggle?: () => void;
+  toggleDisabled?: boolean;
+  onEdit?: () => void;
+  onAction?: (action: "taken" | "skipped" | "snooze", snoozeMinutes?: number) => void;
+  actionDisabled?: boolean;
 }) {
   const title = definition?.title ?? occurrence?.reminder_definition_id ?? "Reminder";
   const body = definition?.body ?? definition?.instructions_text ?? "Instructions";
   const time = occurrence ? timestampFormatter.format(new Date(occurrence.trigger_at)) : null;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(event: MouseEvent) {
+      const target = event.target as Node;
+      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
+      setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
 
   return (
     <div className="group flex items-center justify-between gap-4 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 transition-all hover:border-[color:var(--border)] hover:shadow-sm">
@@ -69,12 +92,117 @@ export function ReminderListItem({
             </span>
           </div>
         )}
-        <button 
-          className="h-8 w-8 rounded-lg text-[color:var(--muted-foreground)] opacity-0 transition-opacity hover:bg-[color:var(--muted)] group-hover:opacity-100"
-          aria-label="More options"
-        >
-          < MoreVertical className="h-4 w-4" />
-        </button>
+        <div className="relative">
+          <button
+            ref={buttonRef}
+            className="h-8 w-8 rounded-lg text-[color:var(--muted-foreground)] opacity-70 transition-opacity hover:bg-[color:var(--muted)] hover:opacity-100"
+            aria-label="More options"
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            onClick={() => setMenuOpen((prev) => !prev)}
+            type="button"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+          {menuOpen ? (
+            <div
+              ref={menuRef}
+              className="absolute right-0 top-full z-10 mt-2 w-44 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-1 shadow-lg"
+            >
+              {definition ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onEdit?.();
+                    }}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-[color:var(--foreground)] hover:bg-[color:var(--muted)]"
+                  >
+                    Edit
+                  </button>
+                  {onToggle ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onToggle();
+                      }}
+                      disabled={toggleDisabled}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
+                        toggleDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
+                      )}
+                    >
+                      {definition.active ? "Pause" : "Activate"}
+                    </button>
+                  ) : null}
+                </>
+              ) : null}
+
+              {occurrence && onAction ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onAction("taken");
+                    }}
+                    disabled={actionDisabled}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
+                      actionDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
+                    )}
+                  >
+                    Finished
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onAction("skipped");
+                    }}
+                    disabled={actionDisabled}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
+                      actionDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
+                    )}
+                  >
+                    Skipped
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onAction("snooze", 10);
+                    }}
+                    disabled={actionDisabled}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
+                      actionDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
+                    )}
+                  >
+                    Snooze 10m
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onAction("snooze", 30);
+                    }}
+                    disabled={actionDisabled}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
+                      actionDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
+                    )}
+                  >
+                    Snooze 30m
+                  </button>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );

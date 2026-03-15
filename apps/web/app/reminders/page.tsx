@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Calendar, History, ListTodo } from "lucide-react";
+import { Plus, Search, Calendar, History, ListTodo, X } from "lucide-react";
 
 import { ErrorCard } from "@/components/app/error-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import {
+  actOnReminderOccurrence,
+  createReminderDefinition,
   listReminderDefinitions,
   listReminderHistory,
   listUpcomingReminderOccurrences,
@@ -26,6 +33,19 @@ export default function RemindersPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [toggleLoadingId, setToggleLoadingId] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingDefinitionId, setEditingDefinitionId] = useState<string | null>(null);
+  const [newReminder, setNewReminder] = useState({
+    title: "",
+    body: "",
+    reminder_type: "medication" as "medication" | "mobility",
+    pattern: "daily_fixed_times" as any,
+    time: "08:00",
+    interval_hours: 4,
+    weekdays: [] as number[],
+    oneTimeDate: new Date().toISOString().split("T")[0],
+  });
 
   const definitionMap = useMemo(() => new Map(definitions.map((item) => [item.id, item])), [definitions]);
   const todayKey = new Date().toDateString();
@@ -69,6 +89,115 @@ export default function RemindersPage() {
     }
   }
 
+  function startEditDefinition(definition: ReminderDefinitionApi) {
+    const schedule = definition.schedule;
+    const time = schedule.times?.[0] ?? "08:00";
+    const oneTimeDate = schedule.start_date ? schedule.start_date.split("T")[0] : new Date().toISOString().split("T")[0];
+    setEditingDefinitionId(definition.id);
+    setNewReminder({
+      title: definition.title,
+      body: definition.body ?? "",
+      reminder_type: definition.reminder_type,
+      pattern: schedule.pattern as any,
+      time,
+      interval_hours: schedule.interval_hours ?? 4,
+      weekdays: schedule.weekdays ?? [],
+      oneTimeDate,
+    });
+    setShowCreateForm(true);
+  }
+
+  async function handleOccurrenceAction(
+    occurrenceId: string,
+    action: "taken" | "skipped" | "snooze",
+    snoozeMinutes?: number,
+  ) {
+    setError(null);
+    setActionLoadingId(occurrenceId);
+    try {
+      await actOnReminderOccurrence({
+        occurrenceId,
+        action,
+        snooze_minutes: snoozeMinutes,
+      });
+      await loadStructuredData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleCreateReminder() {
+    if (!newReminder.title.trim()) {
+      setError("Title is required");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const schedule: any = {
+        pattern: newReminder.pattern,
+        timezone,
+        offset_minutes: 0,
+        as_needed: false,
+        metadata: {},
+      };
+
+      if (newReminder.pattern === "one_time") {
+        schedule.start_date = newReminder.oneTimeDate;
+        schedule.times = [newReminder.time];
+      } else if (newReminder.pattern === "daily_fixed_times") {
+        schedule.times = [newReminder.time];
+      } else if (newReminder.pattern === "every_x_hours") {
+        schedule.interval_hours = newReminder.interval_hours;
+        schedule.times = [newReminder.time];
+      } else if (newReminder.pattern === "specific_weekdays") {
+        schedule.weekdays = newReminder.weekdays;
+        schedule.times = [newReminder.time];
+      }
+
+      if (editingDefinitionId) {
+        await patchReminderDefinition(editingDefinitionId, {
+          title: newReminder.title,
+          body: newReminder.body,
+          schedule,
+        });
+      } else {
+        await createReminderDefinition({
+          title: newReminder.title,
+          body: newReminder.body,
+          reminder_type: newReminder.reminder_type,
+          medication_name: newReminder.reminder_type === "medication" ? newReminder.title : undefined,
+          dosage_text: newReminder.reminder_type === "medication" ? "as prescribed" : "",
+          schedule,
+          active: true,
+          source: "manual",
+        });
+      }
+
+      setShowCreateForm(false);
+      setEditingDefinitionId(null);
+      setNewReminder({
+        title: "",
+        body: "",
+        reminder_type: "medication",
+        pattern: "daily_fixed_times",
+        time: "08:00",
+        interval_hours: 4,
+        weekdays: [],
+        oneTimeDate: new Date().toISOString().split("T")[0],
+      });
+      await loadStructuredData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="section-stack">
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
@@ -78,10 +207,171 @@ export default function RemindersPage() {
             Manage your clinical schedule, set medication reminders, and review historical adherence outcomes.
           </p>
         </div>
-        <Button className="h-11 rounded-xl px-6 font-bold shadow-sm gap-2">
-          <Plus className="h-4 w-4" /> Create Reminder
-        </Button>
+        {!showCreateForm && (
+          <Button 
+            className="h-11 rounded-xl px-6 font-bold shadow-sm gap-2"
+            onClick={() => setShowCreateForm(true)}
+          >
+            <Plus className="h-4 w-4" /> Create Reminder
+          </Button>
+        )}
       </div>
+
+      {showCreateForm && (
+        <Card className="border-[color:var(--accent)]/20 shadow-lg animate-in fade-in slide-in-from-top-4">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold tracking-tight">{editingDefinitionId ? "Edit Reminder" : "Create Manual Reminder"}</h2>
+              <Button 
+                variant="ghost" 
+                className="h-8 w-8 rounded-full p-0"
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setEditingDefinitionId(null);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="reminder-title">Title / Name</Label>
+                <Input 
+                  id="reminder-title"
+                  placeholder="e.g., Metformin 500mg" 
+                  value={newReminder.title}
+                  onChange={(e) => setNewReminder({ ...newReminder, title: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reminder-type">Type</Label>
+                <Select
+                  id="reminder-type"
+                  value={newReminder.reminder_type}
+                  onChange={(e) => setNewReminder({ ...newReminder, reminder_type: e.target.value as any })}
+                >
+                  <option value="medication">Medication</option>
+                  <option value="mobility">Mobility / Task</option>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reminder-pattern">Schedule Type</Label>
+                <Select
+                  id="reminder-pattern"
+                  value={newReminder.pattern}
+                  onChange={(e) => setNewReminder({ ...newReminder, pattern: e.target.value as any })}
+                >
+                  <option value="daily_fixed_times">Daily (Fixed Time)</option>
+                  <option value="every_x_hours">Interval (Every X hours)</option>
+                  <option value="specific_weekdays">Weekly (Specific Days)</option>
+                  <option value="one_time">One-time</option>
+                </Select>
+              </div>
+
+              {newReminder.pattern === "one_time" && (
+                <div className="space-y-2">
+                  <Label htmlFor="one-time-date">Date</Label>
+                  <Input 
+                    id="one-time-date"
+                    type="date"
+                    value={newReminder.oneTimeDate}
+                    onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
+                  />
+                </div>
+              )}
+
+              {newReminder.pattern === "every_x_hours" && (
+                <div className="space-y-2">
+                  <Label htmlFor="interval-hours">Interval (Hours)</Label>
+                  <Input 
+                    id="interval-hours"
+                    type="number"
+                    min="1"
+                    max="24"
+                    value={newReminder.interval_hours}
+                    onChange={(e) => setNewReminder({ ...newReminder, interval_hours: parseInt(e.target.value) || 1 })}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="reminder-time">Time</Label>
+                <Input 
+                  id="reminder-time"
+                  type="time"
+                  value={newReminder.time}
+                  onChange={(e) => setNewReminder({ ...newReminder, time: e.target.value })}
+                />
+              </div>
+
+              {newReminder.pattern === "specific_weekdays" && (
+                <div className="space-y-3 md:col-span-2">
+                  <Label>Repeat on</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => {
+                      const dayNum = idx + 1;
+                      const isSelected = newReminder.weekdays.includes(dayNum);
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => {
+                            const next = isSelected 
+                              ? newReminder.weekdays.filter(d => d !== dayNum) 
+                              : [...newReminder.weekdays, dayNum];
+                            setNewReminder({ ...newReminder, weekdays: next.sort() });
+                          }}
+                          className={cn(
+                            "h-10 w-12 rounded-lg border text-xs font-bold transition-all",
+                            isSelected 
+                              ? "bg-[color:var(--accent)] text-white border-[color:var(--accent)]" 
+                              : "border-[color:var(--border-soft)] hover:bg-[color:var(--panel-soft)]"
+                          )}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="reminder-body">Instructions / Notes (Optional)</Label>
+                <Textarea 
+                  id="reminder-body"
+                  placeholder="Take with food, avoid caffeine..."
+                  value={newReminder.body}
+                  onChange={(e) => setNewReminder({ ...newReminder, body: e.target.value })}
+                  className="min-h-[80px]"
+                />
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-end gap-3 border-t border-[color:var(--border-soft)] pt-6">
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setEditingDefinitionId(null);
+                }}
+                className="h-11 px-6 rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateReminder}
+                disabled={loading}
+                className="h-11 px-8 rounded-xl font-bold shadow-md bg-[color:var(--accent)] hover:bg-[color:var(--accent)]/90"
+              >
+                {loading ? (editingDefinitionId ? "Updating..." : "Creating...") : (editingDefinitionId ? "Update Reminder" : "Save Reminder")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {error && <ErrorCard message={error} />}
 
@@ -141,6 +431,8 @@ export default function RemindersPage() {
                   key={occurrence.id} 
                   occurrence={occurrence} 
                   definition={definitionMap.get(occurrence.reminder_definition_id)}
+                  onAction={(action, snoozeMinutes) => handleOccurrenceAction(occurrence.id, action, snoozeMinutes)}
+                  actionDisabled={actionLoadingId === occurrence.id || loading}
                 />
               ))
             ) : (
@@ -150,7 +442,7 @@ export default function RemindersPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-bold tracking-tight">Nothing due today</p>
-                  <p className="text-xs text-[color:var(--muted-foreground)] opacity-60">You're all caught up on your clinical schedule.</p>
+                  <p className="text-xs text-[color:var(--muted-foreground)] opacity-60">You&apos;re all caught up on your clinical schedule.</p>
                 </div>
               </div>
             )}
@@ -165,6 +457,8 @@ export default function RemindersPage() {
                   key={definition.id} 
                   definition={definition} 
                   onToggle={() => toggleDefinition(definition)}
+                  toggleDisabled={toggleLoadingId === definition.id || loading}
+                  onEdit={() => startEditDefinition(definition)}
                 />
               ))
             ) : (
@@ -181,6 +475,8 @@ export default function RemindersPage() {
                   key={occurrence.id} 
                   occurrence={occurrence} 
                   definition={definitionMap.get(occurrence.reminder_definition_id)}
+                  onAction={(action, snoozeMinutes) => handleOccurrenceAction(occurrence.id, action, snoozeMinutes)}
+                  actionDisabled={actionLoadingId === occurrence.id || loading}
                 />
               ))
             ) : (
