@@ -91,9 +91,13 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-health-teal: var(--health-teal);
+  --color-health-teal-soft: var(--health-teal-soft);
   --color-health-amber: var(--health-amber);
+  --color-health-amber-soft: var(--health-amber-soft);
   --color-health-slate: var(--health-slate);
+  --color-health-slate-soft: var(--health-slate-soft);
   --color-health-rose: var(--health-rose);
+  --color-health-rose-soft: var(--health-rose-soft);
 }
 
 @layer base {
