@@ -7,8 +7,8 @@ using the runtime settings.
 
 import uvicorn
 
-from apps.api.dietary_api.main import create_app
-from dietary_guardian.config.app import get_settings
+from apps.api.carepilot_api.main import create_app
+from care_pilot.config.app import get_settings
 
 
 def main() -> None:

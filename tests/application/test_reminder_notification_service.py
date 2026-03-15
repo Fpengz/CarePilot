@@ -2,9 +2,9 @@
 
 from datetime import datetime, timezone
 
-from dietary_guardian.features.reminders.domain import ReminderEvent
-from dietary_guardian.platform.persistence import SQLiteAppStore
-from dietary_guardian.features.reminders.notifications.reminder_materialization import (
+from care_pilot.features.reminders.domain import ReminderEvent
+from care_pilot.platform.persistence import SQLiteAppStore
+from care_pilot.features.reminders.notifications.reminder_materialization import (
     dispatch_due_reminder_notifications,
     materialize_reminder_notifications,
 )
@@ -20,11 +20,15 @@ def _event() -> ReminderEvent:
     )
 
 
-def test_materialize_reminder_notifications_uses_default_in_app_fallback(tmp_path) -> None:
+def test_materialize_reminder_notifications_uses_default_in_app_fallback(
+    tmp_path,
+) -> None:
     repo = SQLiteAppStore(str(tmp_path / "notifications.db"))
 
     repo.save_reminder_event(_event())
-    created = materialize_reminder_notifications(repository=repo, reminder_event=_event(), reminder_type="medication")
+    created = materialize_reminder_notifications(
+        repository=repo, reminder_event=_event(), reminder_type="medication"
+    )
 
     assert len(created) == 1
     assert created[0].channel == "in_app"
@@ -32,14 +36,22 @@ def test_materialize_reminder_notifications_uses_default_in_app_fallback(tmp_pat
     assert created[0].status == "pending"
 
 
-def test_dispatch_due_reminder_notifications_is_idempotent_per_schedule(tmp_path) -> None:
+def test_dispatch_due_reminder_notifications_is_idempotent_per_schedule(
+    tmp_path,
+) -> None:
     repo = SQLiteAppStore(str(tmp_path / "notifications.db"))
     event = _event()
     repo.save_reminder_event(event)
-    schedules = materialize_reminder_notifications(repository=repo, reminder_event=event, reminder_type="medication")
+    schedules = materialize_reminder_notifications(
+        repository=repo, reminder_event=event, reminder_type="medication"
+    )
 
-    first = dispatch_due_reminder_notifications(repository=repo, now=event.scheduled_at)
-    second = dispatch_due_reminder_notifications(repository=repo, now=event.scheduled_at)
+    first = dispatch_due_reminder_notifications(
+        repository=repo, now=event.scheduled_at
+    )
+    second = dispatch_due_reminder_notifications(
+        repository=repo, now=event.scheduled_at
+    )
 
     assert len(schedules) == 1
     assert len(first) == 1

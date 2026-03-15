@@ -3,9 +3,9 @@ requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "dietary-tools"
-version = "0.0.0"
-description = "Dietary Guardian: meal vision, medication reminders, and biomarker-grounded guidance"
+name = "CarePilot"
+version = "0.1.0"
+description = "CarePilot: meal vision, medication reminders, and biomarker-grounded guidance"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Proprietary" }
@@ -13,7 +13,7 @@ authors = [
     { name = "Wang Zhoufu" },
 ]
 maintainers = [
-    { name = "Dietary Guardian Engineering Team" },
+    { name = "Wang Zhoufu" },
 ]
 keywords = ["dietary-monitoring", "healthcare", "pydantic-ai", "medical-agents"]
 classifiers = [
@@ -51,12 +51,13 @@ dependencies = [
     "e2b-code-interpreter>=2.4.1",
     "matplotlib>=3.10.8",
     "mem0ai>=1.0.0",
+    "black>=26.3.1",
 ]
 
 [project.urls]
-Homepage = "https://github.com/Fpengz/dietary_tool"
-Repository = "https://github.com/Fpengz/dietary_tool"
-Issues = "https://github.com/Fpengz/dietary_tool/issues"
+Homepage = "https://github.com/Fpengz/CarePilot"
+Repository = "https://github.com/Fpengz/CarePilot"
+Issues = "https://github.com/Fpengz/CarePilot/issues"
 Documentation = "README.md"
 
 [dependency-groups]
@@ -75,12 +76,11 @@ dev = [
 default-groups = ["dev"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/dietary_guardian"]
-
+packages = ["src/care_pilot"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/dietary_guardian",
+    "src/care_pilot",
     "src/main.py",
     "README.md",
     "pyproject.toml",
@@ -92,7 +92,7 @@ mypy_path = ["src"]
 namespace_packages = true
 ignore_missing_imports = false
 strict = true
-files = ["dietary_guardian"]
+files = ["care_pilot"]
 
 [tool.ruff]
 target-version = "py312"
@@ -105,5 +105,5 @@ testpaths = ["tests"]
 addopts = "-q"
 python_files = ["test_*.py"]
 filterwarnings = [
-    "error::DeprecationWarning:dietary_guardian.*",
+    "error::DeprecationWarning:care_pilot.*",
 ]

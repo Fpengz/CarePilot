@@ -6,11 +6,11 @@
 - Move session-scoped emotion helpers into the API layer to keep feature code free of HTTP wiring.
 
 ## Files touched
-- `src/dietary_guardian/features/companion/core/health/emotion.py`
-- `src/dietary_guardian/agent/emotion/agent.py`
-- `apps/api/dietary_api/routers/chat.py`
-- `apps/api/dietary_api/routers/emotions.py`
-- `apps/api/dietary_api/services/emotion_session.py`
+- `src/care_pilot/features/companion/core/health/emotion.py`
+- `src/care_pilot/agent/emotion/agent.py`
+- `apps/api/carepilot_api/routers/chat.py`
+- `apps/api/carepilot_api/routers/emotions.py`
+- `apps/api/carepilot_api/services/emotion_session.py`
 
 ## Validation
 - `SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 uv run pytest -q tests/api/test_api_emotions.py -k "health_returns_disabled"`

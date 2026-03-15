@@ -1,12 +1,14 @@
 """Tests for memory services."""
 
-from dietary_guardian.features.companion.core.health.models import ClinicalProfileSnapshot
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.companion.core.health.models import (
+    ClinicalProfileSnapshot,
+)
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.platform.cache import (
+from care_pilot.platform.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
     ProfileMemoryService,
@@ -45,7 +47,9 @@ def test_profile_memory_clear() -> None:
 
 def test_clinical_snapshot_memory_set_get() -> None:
     svc = ClinicalSnapshotMemoryService()
-    snap = ClinicalProfileSnapshot(biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"])
+    snap = ClinicalProfileSnapshot(
+        biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"]
+    )
     svc.put("u1", snap)
 
     stored = svc.get("u1")
@@ -55,7 +59,9 @@ def test_clinical_snapshot_memory_set_get() -> None:
 
 def test_clinical_snapshot_memory_clear() -> None:
     svc = ClinicalSnapshotMemoryService()
-    snap = ClinicalProfileSnapshot(biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"])
+    snap = ClinicalProfileSnapshot(
+        biomarkers={"ldl": 4.2}, risk_flags=["high_ldl"]
+    )
     svc.put("u1", snap)
 
     svc.clear("u1")
@@ -89,4 +95,7 @@ def test_event_timeline_append_list_and_filter() -> None:
 
     c1_events = svc.get_events(correlation_id="c1")
     assert len(c1_events) == 2
-    assert [e.event_type for e in c1_events] == ["workflow_started", "workflow_completed"]
+    assert [e.event_type for e in c1_events] == [
+        "workflow_started",
+        "workflow_completed",
+    ]

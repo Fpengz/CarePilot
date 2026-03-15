@@ -2,8 +2,8 @@
 
 from datetime import datetime
 
-from dietary_guardian.features.reminders.domain.models import ReminderEvent
-from dietary_guardian.features.medications.domain import compute_mcr
+from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.features.medications.domain import compute_mcr
 
 
 def test_compute_mcr_zero_denominator() -> None:
@@ -14,9 +14,30 @@ def test_compute_mcr_zero_denominator() -> None:
 
 def test_compute_mcr_mixed_responses() -> None:
     events = [
-        ReminderEvent(id="1", user_id="u", medication_name="A", scheduled_at=datetime(2026, 2, 24, 8, 0), dosage_text="5mg", meal_confirmation="yes"),
-        ReminderEvent(id="2", user_id="u", medication_name="A", scheduled_at=datetime(2026, 2, 24, 12, 0), dosage_text="5mg", meal_confirmation="no"),
-        ReminderEvent(id="3", user_id="u", medication_name="A", scheduled_at=datetime(2026, 2, 24, 20, 0), dosage_text="5mg", meal_confirmation="yes"),
+        ReminderEvent(
+            id="1",
+            user_id="u",
+            medication_name="A",
+            scheduled_at=datetime(2026, 2, 24, 8, 0),
+            dosage_text="5mg",
+            meal_confirmation="yes",
+        ),
+        ReminderEvent(
+            id="2",
+            user_id="u",
+            medication_name="A",
+            scheduled_at=datetime(2026, 2, 24, 12, 0),
+            dosage_text="5mg",
+            meal_confirmation="no",
+        ),
+        ReminderEvent(
+            id="3",
+            user_id="u",
+            medication_name="A",
+            scheduled_at=datetime(2026, 2, 24, 20, 0),
+            dosage_text="5mg",
+            meal_confirmation="yes",
+        ),
     ]
     metrics = compute_mcr(events)
     assert metrics.reminders_sent == 3

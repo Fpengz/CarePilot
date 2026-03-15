@@ -5,10 +5,10 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -16,7 +16,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_medications_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_medications_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -25,12 +27,20 @@ def sqlite_medications_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generat
     _reset_settings_cache()
 
 
-def _login(client: TestClient, email: str = "member@example.com", password: str = "member-pass") -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(
+    client: TestClient,
+    email: str = "member@example.com",
+    password: str = "member-pass",
+) -> None:
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
-def test_medication_regimen_crud_and_adherence_metrics(sqlite_medications_env: None) -> None:
+def test_medication_regimen_crud_and_adherence_metrics(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -73,7 +83,9 @@ def test_medication_regimen_crud_and_adherence_metrics(sqlite_medications_env: N
     )
     assert adherence.status_code == 200
 
-    metrics = client.get("/api/v1/medications/adherence-metrics?from=2026-03-01&to=2026-03-02")
+    metrics = client.get(
+        "/api/v1/medications/adherence-metrics?from=2026-03-01&to=2026-03-02"
+    )
     assert metrics.status_code == 200
     body = metrics.json()
     assert body["totals"]["events"] == 1
@@ -81,7 +93,9 @@ def test_medication_regimen_crud_and_adherence_metrics(sqlite_medications_env: N
     assert body["totals"]["adherence_rate"] == 1.0
 
 
-def test_reminder_generation_uses_persisted_regimens(sqlite_medications_env: None) -> None:
+def test_reminder_generation_uses_persisted_regimens(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -106,13 +120,17 @@ def test_reminder_generation_uses_persisted_regimens(sqlite_medications_env: Non
     assert any(item["medication_name"] == "Atorvastatin" for item in reminders)
 
 
-def test_medication_text_intake_previews_then_confirms_regimens_and_today_reminders(sqlite_medications_env: None) -> None:
+def test_medication_text_intake_previews_then_confirms_regimens_and_today_reminders(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
     preview = client.post(
         "/api/v1/medications/intake/text",
-        json={"instructions_text": "Take Metformin 500mg twice daily before meals for 5 days"},
+        json={
+            "instructions_text": "Take Metformin 500mg twice daily before meals for 5 days"
+        },
     )
 
     assert preview.status_code == 200
@@ -122,18 +140,32 @@ def test_medication_text_intake_previews_then_confirms_regimens_and_today_remind
     assert body["reminders"] == []
     assert body["scheduled_notifications"] == []
     assert body["source"]["source_type"] == "plain_text"
-    assert body["source"]["extracted_text"] == "Take Metformin 500mg twice daily before meals for 5 days"
+    assert (
+        body["source"]["extracted_text"]
+        == "Take Metformin 500mg twice daily before meals for 5 days"
+    )
     assert body["normalized_instructions"]
 
-    confirmed = client.post("/api/v1/medications/intake/confirm", json={"draft_id": body["draft_id"]})
+    confirmed = client.post(
+        "/api/v1/medications/intake/confirm",
+        json={"draft_id": body["draft_id"]},
+    )
     assert confirmed.status_code == 200
     confirmed_body = confirmed.json()
-    assert any(item["medication_name"] == "Metformin" for item in confirmed_body["regimens"])
-    assert any(item["medication_name"] == "Metformin" for item in confirmed_body["reminders"])
+    assert any(
+        item["medication_name"] == "Metformin"
+        for item in confirmed_body["regimens"]
+    )
+    assert any(
+        item["medication_name"] == "Metformin"
+        for item in confirmed_body["reminders"]
+    )
     assert confirmed_body["scheduled_notifications"]
 
 
-def test_medication_text_intake_rejects_ambiguous_instructions_by_default(sqlite_medications_env: None) -> None:
+def test_medication_text_intake_rejects_ambiguous_instructions_by_default(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -143,16 +175,24 @@ def test_medication_text_intake_rejects_ambiguous_instructions_by_default(sqlite
     )
 
     assert response.status_code == 422
-    assert response.json()["error"]["code"] == "medications.intake_review_required"
+    assert (
+        response.json()["error"]["code"]
+        == "medications.intake_review_required"
+    )
 
 
-def test_medication_text_intake_allows_review_mode_for_ambiguous_instructions(sqlite_medications_env: None) -> None:
+def test_medication_text_intake_allows_review_mode_for_ambiguous_instructions(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
     response = client.post(
         "/api/v1/medications/intake/text",
-        json={"instructions_text": "Please remind me about my tablets", "allow_ambiguous": True},
+        json={
+            "instructions_text": "Please remind me about my tablets",
+            "allow_ambiguous": True,
+        },
     )
 
     assert response.status_code == 200
@@ -163,7 +203,9 @@ def test_medication_text_intake_allows_review_mode_for_ambiguous_instructions(sq
     assert body["reminders"] == []
 
 
-def test_medication_upload_intake_extracts_pdf_and_confirms_regimen(sqlite_medications_env: None) -> None:
+def test_medication_upload_intake_extracts_pdf_and_confirms_regimen(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -186,12 +228,20 @@ def test_medication_upload_intake_extracts_pdf_and_confirms_regimen(sqlite_medic
     assert body["draft_id"]
     assert body["regimens"] == []
 
-    confirmed = client.post("/api/v1/medications/intake/confirm", json={"draft_id": body["draft_id"]})
+    confirmed = client.post(
+        "/api/v1/medications/intake/confirm",
+        json={"draft_id": body["draft_id"]},
+    )
     assert confirmed.status_code == 200
-    assert any(item["medication_name"] == "Amlodipine" for item in confirmed.json()["regimens"])
+    assert any(
+        item["medication_name"] == "Amlodipine"
+        for item in confirmed.json()["regimens"]
+    )
 
 
-def test_confirming_medication_reminder_records_adherence_event(sqlite_medications_env: None) -> None:
+def test_confirming_medication_reminder_records_adherence_event(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -200,12 +250,17 @@ def test_confirming_medication_reminder_records_adherence_event(sqlite_medicatio
         json={"instructions_text": "Amlodipine 5mg every morning"},
     )
     assert preview.status_code == 200
-    intake = client.post("/api/v1/medications/intake/confirm", json={"draft_id": preview.json()["draft_id"]})
+    intake = client.post(
+        "/api/v1/medications/intake/confirm",
+        json={"draft_id": preview.json()["draft_id"]},
+    )
     assert intake.status_code == 200
     regimen_id = intake.json()["regimens"][0]["id"]
     reminder_id = intake.json()["reminders"][0]["id"]
 
-    confirmed = client.post(f"/api/v1/reminders/{reminder_id}/confirm", json={"confirmed": True})
+    confirmed = client.post(
+        f"/api/v1/reminders/{reminder_id}/confirm", json={"confirmed": True}
+    )
     assert confirmed.status_code == 200
 
     metrics = client.get("/api/v1/medications/adherence-metrics")
@@ -218,7 +273,9 @@ def test_confirming_medication_reminder_records_adherence_event(sqlite_medicatio
     assert events[0]["source"] == "reminder_confirm"
 
 
-def test_repeated_confirm_reuses_existing_regimen_and_reminders(sqlite_medications_env: None) -> None:
+def test_repeated_confirm_reuses_existing_regimen_and_reminders(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -231,8 +288,14 @@ def test_repeated_confirm_reuses_existing_regimen_and_reminders(sqlite_medicatio
         json={"instructions_text": "Amlodipine 5mg every morning"},
     )
 
-    first = client.post("/api/v1/medications/intake/confirm", json={"draft_id": first_preview.json()["draft_id"]})
-    second = client.post("/api/v1/medications/intake/confirm", json={"draft_id": second_preview.json()["draft_id"]})
+    first = client.post(
+        "/api/v1/medications/intake/confirm",
+        json={"draft_id": first_preview.json()["draft_id"]},
+    )
+    second = client.post(
+        "/api/v1/medications/intake/confirm",
+        json={"draft_id": second_preview.json()["draft_id"]},
+    )
 
     assert first_preview.status_code == 200
     assert second_preview.status_code == 200
@@ -241,17 +304,25 @@ def test_repeated_confirm_reuses_existing_regimen_and_reminders(sqlite_medicatio
     first_body = first.json()
     second_body = second.json()
     assert first_body["regimens"][0]["id"] == second_body["regimens"][0]["id"]
-    assert first_body["reminders"][0]["id"] == second_body["reminders"][0]["id"]
+    assert (
+        first_body["reminders"][0]["id"] == second_body["reminders"][0]["id"]
+    )
 
 
 def test_confirm_requires_valid_draft(sqlite_medications_env: None) -> None:
     client = TestClient(create_app())
     _login(client)
 
-    response = client.post("/api/v1/medications/intake/confirm", json={"draft_id": "missing-draft"})
+    response = client.post(
+        "/api/v1/medications/intake/confirm",
+        json={"draft_id": "missing-draft"},
+    )
 
     assert response.status_code == 404
-    assert response.json()["error"]["code"] == "medications.intake_draft_not_found"
+    assert (
+        response.json()["error"]["code"]
+        == "medications.intake_draft_not_found"
+    )
 
 
 def test_confirm_rejects_ambiguous_draft(sqlite_medications_env: None) -> None:
@@ -260,17 +331,26 @@ def test_confirm_rejects_ambiguous_draft(sqlite_medications_env: None) -> None:
 
     preview = client.post(
         "/api/v1/medications/intake/text",
-        json={"instructions_text": "Clopidogrel 75mg daily", "allow_ambiguous": True},
+        json={
+            "instructions_text": "Clopidogrel 75mg daily",
+            "allow_ambiguous": True,
+        },
     )
     assert preview.status_code == 200
     draft_id = preview.json()["draft_id"]
 
-    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft_id})
+    confirm = client.post(
+        "/api/v1/medications/intake/confirm", json={"draft_id": draft_id}
+    )
     assert confirm.status_code == 422
-    assert confirm.json()["error"]["code"] == "medications.intake_review_required"
+    assert (
+        confirm.json()["error"]["code"] == "medications.intake_review_required"
+    )
 
 
-def test_editing_draft_updates_confirmed_regimen(sqlite_medications_env: None) -> None:
+def test_editing_draft_updates_confirmed_regimen(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -303,34 +383,48 @@ def test_editing_draft_updates_confirmed_regimen(sqlite_medications_env: None) -
     )
 
     assert updated.status_code == 200
-    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft["draft_id"]})
+    confirm = client.post(
+        "/api/v1/medications/intake/confirm",
+        json={"draft_id": draft["draft_id"]},
+    )
     assert confirm.status_code == 200
     assert confirm.json()["regimens"][0]["medication_name"] == "Losartan"
     assert confirm.json()["regimens"][0]["dosage_text"] == "50mg"
 
 
-def test_deleting_draft_instruction_removes_it_from_confirmation(sqlite_medications_env: None) -> None:
+def test_deleting_draft_instruction_removes_it_from_confirmation(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
     preview = client.post(
         "/api/v1/medications/intake/text",
-        json={"instructions_text": "Amlodipine 5mg every morning; Metformin 500mg twice daily before meals"},
+        json={
+            "instructions_text": "Amlodipine 5mg every morning; Metformin 500mg twice daily before meals"
+        },
     )
     assert preview.status_code == 200
     draft = preview.json()
     assert len(draft["normalized_instructions"]) == 2
 
-    deleted = client.delete(f"/api/v1/medications/intake/drafts/{draft['draft_id']}/instructions/0")
+    deleted = client.delete(
+        f"/api/v1/medications/intake/drafts/{draft['draft_id']}/instructions/0"
+    )
     assert deleted.status_code == 200
     assert len(deleted.json()["normalized_instructions"]) == 1
 
-    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft["draft_id"]})
+    confirm = client.post(
+        "/api/v1/medications/intake/confirm",
+        json={"draft_id": draft["draft_id"]},
+    )
     assert confirm.status_code == 200
     assert len(confirm.json()["regimens"]) == 1
 
 
-def test_canceling_draft_prevents_confirmation(sqlite_medications_env: None) -> None:
+def test_canceling_draft_prevents_confirmation(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -345,12 +439,18 @@ def test_canceling_draft_prevents_confirmation(sqlite_medications_env: None) -> 
     assert cancelled.status_code == 200
     assert cancelled.json()["ok"] is True
 
-    confirm = client.post("/api/v1/medications/intake/confirm", json={"draft_id": draft_id})
+    confirm = client.post(
+        "/api/v1/medications/intake/confirm", json={"draft_id": draft_id}
+    )
     assert confirm.status_code == 404
-    assert confirm.json()["error"]["code"] == "medications.intake_draft_not_found"
+    assert (
+        confirm.json()["error"]["code"] == "medications.intake_draft_not_found"
+    )
 
 
-def test_duplicate_manual_regimen_create_returns_conflict(sqlite_medications_env: None) -> None:
+def test_duplicate_manual_regimen_create_returns_conflict(
+    sqlite_medications_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 

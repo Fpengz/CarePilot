@@ -4,14 +4,23 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.meals.domain.models import Ingredient, MealEvent, Nutrition
-from dietary_guardian.features.safety.infra.drug_interaction_db import DrugInteractionDB
-from dietary_guardian.features.safety.domain.engine import SafetyEngine, SafetyViolation
+from care_pilot.features.meals.domain.models import (
+    Ingredient,
+    MealEvent,
+    Nutrition,
+)
+from care_pilot.features.safety.infra.drug_interaction_db import (
+    DrugInteractionDB,
+)
+from care_pilot.features.safety.domain.engine import (
+    SafetyEngine,
+    SafetyViolation,
+)
 
 # Clinical setup for Mr. Tan
 mr_tan = UserProfile(
@@ -23,7 +32,9 @@ mr_tan = UserProfile(
 )
 
 # Hypothesis strategies for randomized meals
-ingredient_strategy = st.builds(Ingredient, name=st.text(min_size=1, max_size=20))
+ingredient_strategy = st.builds(
+    Ingredient, name=st.text(min_size=1, max_size=20)
+)
 nutrition_strategy = st.builds(
     Nutrition,
     calories=st.floats(min_value=0, max_value=2000),
@@ -83,7 +94,10 @@ def test_maoi_interaction_escalates_for_tyramine_rich_foods() -> None:
     )
     meal = MealEvent(
         name="Cheese platter",
-        ingredients=[Ingredient(name="Aged Cheese"), Ingredient(name="Crackers")],
+        ingredients=[
+            Ingredient(name="Aged Cheese"),
+            Ingredient(name="Crackers"),
+        ],
         nutrition=Nutrition(
             calories=320,
             carbs_g=20,
@@ -126,7 +140,9 @@ def test_compound_multi_medication_risk_raises_critical() -> None:
         id="user_004",
         name="Mr. Ong",
         age=70,
-        conditions=[MedicalCondition(name="Atrial fibrillation", severity="High")],
+        conditions=[
+            MedicalCondition(name="Atrial fibrillation", severity="High")
+        ],
         medications=[
             Medication(name="Warfarin", dosage="5mg"),
             Medication(name="Atorvastatin", dosage="20mg"),
@@ -134,7 +150,10 @@ def test_compound_multi_medication_risk_raises_critical() -> None:
     )
     meal = MealEvent(
         name="Green smoothie",
-        ingredients=[Ingredient(name="Spinach"), Ingredient(name="Grapefruit")],
+        ingredients=[
+            Ingredient(name="Spinach"),
+            Ingredient(name="Grapefruit"),
+        ],
         nutrition=Nutrition(
             calories=260,
             carbs_g=28,

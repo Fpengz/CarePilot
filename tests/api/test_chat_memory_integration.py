@@ -8,10 +8,10 @@ from typing import Iterable, cast
 import pytest
 from fastapi.testclient import TestClient
 
-from apps.api.dietary_api.main import create_app
-from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.platform.memory import MemorySnippet, MemoryStore
+from apps.api.carepilot_api.main import create_app
+from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
+from care_pilot.config.app import get_settings
+from care_pilot.platform.memory import MemorySnippet, MemoryStore
 
 
 def _reset_settings_cache() -> None:
@@ -44,8 +44,12 @@ class _FakeMemoryStore(MemoryStore):
     def enabled(self) -> bool:
         return True
 
-    def search(self, *, user_id: str, query: str, limit: int) -> list[MemorySnippet]:
-        self.search_calls.append({"user_id": user_id, "query": query, "limit": limit})
+    def search(
+        self, *, user_id: str, query: str, limit: int
+    ) -> list[MemorySnippet]:
+        self.search_calls.append(
+            {"user_id": user_id, "query": query, "limit": limit}
+        )
         return [MemorySnippet(text="Allergic to peanuts", score=0.82)]
 
     def add_messages(
@@ -66,7 +70,9 @@ class _FakeMemoryStore(MemoryStore):
         )
 
 
-def test_chat_uses_memory_and_records_turn(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_chat_uses_memory_and_records_turn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     app = create_app()
     client = TestClient(app)
     _login(client)
@@ -96,7 +102,9 @@ def test_chat_uses_memory_and_records_turn(monkeypatch: pytest.MonkeyPatch) -> N
 
     assert fake_store.search_calls
     messages = cast(list[dict[str, object]], captured["messages"])
-    user_message = [cast(str, m["content"]) for m in messages if m.get("role") == "user"][-1]
+    user_message = [
+        cast(str, m["content"]) for m in messages if m.get("role") == "user"
+    ][-1]
     assert "Relevant memories" in user_message
     assert "Allergic to peanuts" in user_message
     assert fake_store.add_calls

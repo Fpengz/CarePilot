@@ -2,8 +2,8 @@
 
 import pytest
 
-from dietary_guardian.config.app import AppSettings, get_settings
-from dietary_guardian.config.llm import InferenceConfig, LLMSettings
+from care_pilot.config.app import AppSettings, get_settings
+from care_pilot.config.llm import InferenceConfig, LLMSettings
 
 
 def test_llm_inference_defaults() -> None:

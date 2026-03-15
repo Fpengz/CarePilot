@@ -2,15 +2,23 @@
 
 from datetime import datetime
 
-from dietary_guardian.features.companion.core.health.models import ClinicalProfileSnapshot
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.companion.core.health.models import (
+    ClinicalProfileSnapshot,
+)
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.meals.domain.models import Ingredient, MealState, Nutrition
-from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
-from dietary_guardian.features.recommendations.domain.meal_recommendations import generate_recommendation
+from care_pilot.features.meals.domain.models import (
+    Ingredient,
+    MealState,
+    Nutrition,
+)
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.recommendations.domain.meal_recommendations import (
+    generate_recommendation,
+)
 
 
 def test_safety_override_blocks_recommendation() -> None:
@@ -31,9 +39,18 @@ def test_safety_override_blocks_recommendation() -> None:
             confidence_score=0.95,
             identification_method="AI_Flash",
             ingredients=[Ingredient(name="Spinach")],
-            nutrition=Nutrition(calories=150, carbs_g=10, sugar_g=1, protein_g=6, fat_g=4, sodium_mg=400),
+            nutrition=Nutrition(
+                calories=150,
+                carbs_g=10,
+                sugar_g=1,
+                protein_g=6,
+                fat_g=4,
+                sodium_mg=400,
+            ),
         ),
     )
-    rec = generate_recommendation(record, ClinicalProfileSnapshot(biomarkers={"ldl": 3.8}), user)
+    rec = generate_recommendation(
+        record, ClinicalProfileSnapshot(biomarkers={"ldl": 3.8}), user
+    )
     assert rec.safe is False
     assert rec.blocked_reason is not None

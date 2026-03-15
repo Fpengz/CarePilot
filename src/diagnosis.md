@@ -13,7 +13,7 @@
   What likely applies here (and what I saw in-code)
 
   - The biggest practical risk is LLM/model plumbing leaking outside the agent layer (it already happened in at least one place and is now fixed by moving
-    arbitration into dietary_guardian.agent).
+    arbitration into care_pilot.agent).
   - Secondary risks: duplicated reasoning paths (meal reasoning vs chat vs recommendations), and “workflow-in-service” creep.
 
   ———
@@ -30,11 +30,11 @@
 
   Standardization decisions (to make refactoring easier)
 
-  - **Inference agents:** standardize on `pydantic_ai` for model-backed reasoning/extraction, invoked through the agent runtime (`src/dietary_guardian/agent/runtime/*`).
-    - Rule: do not instantiate `pydantic_ai.Agent` or call provider factories directly outside `src/dietary_guardian/agent/**`.
+  - **Inference agents:** standardize on `pydantic_ai` for model-backed reasoning/extraction, invoked through the agent runtime (`src/care_pilot/agent/runtime/*`).
+    - Rule: do not instantiate `pydantic_ai.Agent` or call provider factories directly outside `src/care_pilot/agent/**`.
   - **Workflows:** standardize on `pydantic-graph` for declared multi-step workflows (explicit steps + typed workflow state).
     - Rule: workflows orchestrate; they do not own domain rules, persistence, or scheduling logic.
-  - **Determinism:** domain rules, persistence, and scheduling remain deterministic and live in `src/dietary_guardian/features/**/domain`.
+  - **Determinism:** domain rules, persistence, and scheduling remain deterministic and live in `src/care_pilot/features/**/domain`.
   - **LangGraph:** explicitly deferred; reserve it for workflows that *require* checkpointed persistence, interrupts, or long-lived thread state.
 
   ———
@@ -94,22 +94,22 @@
 
   ## 6) Refactored Layer Boundaries (sharp rules)
 
-  Agent layer (src/dietary_guardian/agent/**)
+  Agent layer (src/care_pilot/agent/**)
 
   - MUST: return typed outputs; include confidence/warnings/errors; never write durable state.
   - MUST NOT: call repos directly; schedule notifications; orchestrate multi-step journeys; use HTTP types.
 
-  Workflow/application (src/dietary_guardian/features/**)
+  Workflow/application (src/care_pilot/features/**)
 
   - MUST: own sequencing + idempotency + compensation + timeline emission.
   - MUST NOT: instantiate pydantic_ai.Agent or call LLMFactory.get_model() directly (enforced by tests/meta/test_agent_layer_boundaries.py).
 
-  Domain/service (src/dietary_guardian/features/**/domain)
+  Domain/service (src/care_pilot/features/**/domain)
 
   - MUST: deterministic + unit-testable; own state transitions + persistence writes.
   - MUST NOT: prompts/LLM calls/schema parsing from LLM text.
 
-  Platform/infrastructure (src/dietary_guardian/platform/**)
+  Platform/infrastructure (src/care_pilot/platform/**)
 
   - MUST: infra-only; provide ports/adapters; no feature/agent imports.
 
@@ -167,9 +167,9 @@
 
   Keep the modular-monolith “feature-first” layout:
 
-  - src/dietary_guardian/agent/ — only model-powered reasoning/interpretation + runtime
-  - src/dietary_guardian/features/ — workflows + deterministic domain behavior
-  - src/dietary_guardian/platform/ — infra adapters (DB/storage/queue/notifications/observability)
+  - src/care_pilot/agent/ — only model-powered reasoning/interpretation + runtime
+  - src/care_pilot/features/ — workflows + deterministic domain behavior
+  - src/care_pilot/platform/ — infra adapters (DB/storage/queue/notifications/observability)
 
   Within agent:
 

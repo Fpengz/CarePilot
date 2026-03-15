@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from dietary_guardian.platform.memory import MemorySnippet
-from dietary_guardian.features.companion.chat.memory_store import build_memory_context
+from care_pilot.platform.memory import MemorySnippet
+from care_pilot.features.companion.chat.memory_store import (
+    build_memory_context,
+)
 
 
 def test_build_memory_context_renders_top_k() -> None:

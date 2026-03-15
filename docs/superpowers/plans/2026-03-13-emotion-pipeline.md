@@ -11,18 +11,18 @@
 ---
 
 ## File Structure (Planned)
-- Modify: `src/dietary_guardian/features/companion/core/health/emotion.py`
-- Modify: `src/dietary_guardian/agent/emotion/agent.py`
-- Modify: `src/dietary_guardian/agent/emotion/runtime.py`
-- Create: `src/dietary_guardian/agent/emotion/pipeline.py`
-- Create: `src/dietary_guardian/agent/emotion/ports.py`
-- Create: `src/dietary_guardian/agent/emotion/adapters/asr_meralion.py`
-- Create: `src/dietary_guardian/agent/emotion/adapters/text_hf.py`
-- Create: `src/dietary_guardian/agent/emotion/adapters/speech_hf.py`
-- Create: `src/dietary_guardian/agent/emotion/adapters/fusion_hf.py`
-- Modify: `apps/api/dietary_api/schemas/core.py`
-- Modify: `apps/api/dietary_api/services/emotion_session.py`
-- Modify: `apps/api/dietary_api/routers/emotions.py`
+- Modify: `src/care_pilot/features/companion/core/health/emotion.py`
+- Modify: `src/care_pilot/agent/emotion/agent.py`
+- Modify: `src/care_pilot/agent/emotion/runtime.py`
+- Create: `src/care_pilot/agent/emotion/pipeline.py`
+- Create: `src/care_pilot/agent/emotion/ports.py`
+- Create: `src/care_pilot/agent/emotion/adapters/asr_meralion.py`
+- Create: `src/care_pilot/agent/emotion/adapters/text_hf.py`
+- Create: `src/care_pilot/agent/emotion/adapters/speech_hf.py`
+- Create: `src/care_pilot/agent/emotion/adapters/fusion_hf.py`
+- Modify: `apps/api/carepilot_api/schemas/core.py`
+- Modify: `apps/api/carepilot_api/services/emotion_session.py`
+- Modify: `apps/api/carepilot_api/routers/emotions.py`
 - Modify: `docs/api-emotions-contract.md`
 - Modify: `tests/capabilities/test_emotion_service.py`
 - Modify: `tests/api/test_api_emotions.py`
@@ -34,8 +34,8 @@
 ### Task 1: Replace Emotion Domain Contract With Full Trace
 
 **Files:**
-- Modify: `src/dietary_guardian/features/companion/core/health/emotion.py`
-- Modify: `apps/api/dietary_api/schemas/core.py`
+- Modify: `src/care_pilot/features/companion/core/health/emotion.py`
+- Modify: `apps/api/carepilot_api/schemas/core.py`
 - Test: `tests/capabilities/test_emotion_service.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -81,7 +81,7 @@ Expected: FAIL with `NameError` or schema mismatch.
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/dietary_guardian/features/companion/core/health/emotion.py
+# src/care_pilot/features/companion/core/health/emotion.py
 
 class EmotionProductState(StrEnum):
     STABLE = "stable"
@@ -122,7 +122,7 @@ class EmotionInferenceResult(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 ```
 
-Update `apps/api/dietary_api/schemas/core.py` to mirror the new response structure and update response models accordingly.
+Update `apps/api/carepilot_api/schemas/core.py` to mirror the new response structure and update response models accordingly.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -132,7 +132,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/dietary_guardian/features/companion/core/health/emotion.py apps/api/dietary_api/schemas/core.py tests/capabilities/test_emotion_service.py
+git add src/care_pilot/features/companion/core/health/emotion.py apps/api/carepilot_api/schemas/core.py tests/capabilities/test_emotion_service.py
 git commit -m "feat: add emotion trace domain contract"
 ```
 
@@ -143,9 +143,9 @@ git commit -m "feat: add emotion trace domain contract"
 ### Task 2: Add Ports and Pipeline Orchestrator
 
 **Files:**
-- Create: `src/dietary_guardian/agent/emotion/ports.py`
-- Create: `src/dietary_guardian/agent/emotion/pipeline.py`
-- Modify: `src/dietary_guardian/agent/emotion/runtime.py`
+- Create: `src/care_pilot/agent/emotion/ports.py`
+- Create: `src/care_pilot/agent/emotion/pipeline.py`
+- Modify: `src/care_pilot/agent/emotion/runtime.py`
 - Test: `tests/capabilities/test_emotion_service.py`
 
 - [ ] **Step 1: Write failing test**
@@ -186,7 +186,7 @@ Expected: FAIL with `NameError`.
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/dietary_guardian/agent/emotion/ports.py
+# src/care_pilot/agent/emotion/ports.py
 
 class ASRPort(Protocol):
     def transcribe(self, audio_bytes: bytes, *, filename: str | None, language: str | None) -> str: ...
@@ -213,7 +213,7 @@ class FusionPort(Protocol):
 ```
 
 ```python
-# src/dietary_guardian/agent/emotion/pipeline.py
+# src/care_pilot/agent/emotion/pipeline.py
 
 class EmotionPipeline:
     def __init__(self, *, asr: ASRPort, text: TextEmotionPort, speech: SpeechEmotionPort, fusion: FusionPort) -> None:
@@ -291,7 +291,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/dietary_guardian/agent/emotion/ports.py src/dietary_guardian/agent/emotion/pipeline.py src/dietary_guardian/agent/emotion/runtime.py tests/capabilities/test_emotion_service.py
+git add src/care_pilot/agent/emotion/ports.py src/care_pilot/agent/emotion/pipeline.py src/care_pilot/agent/emotion/runtime.py tests/capabilities/test_emotion_service.py
 git commit -m "feat: add injectable emotion pipeline"
 ```
 
@@ -302,12 +302,12 @@ git commit -m "feat: add injectable emotion pipeline"
 ### Task 3: Add HF-backed adapters and MERaLiON ASR
 
 **Files:**
-- Create: `src/dietary_guardian/agent/emotion/adapters/asr_meralion.py`
-- Create: `src/dietary_guardian/agent/emotion/adapters/text_hf.py`
-- Create: `src/dietary_guardian/agent/emotion/adapters/speech_hf.py`
-- Create: `src/dietary_guardian/agent/emotion/adapters/fusion_hf.py`
-- Modify: `src/dietary_guardian/config/runtime.py`
-- Modify: `src/dietary_guardian/agent/emotion/runtime.py`
+- Create: `src/care_pilot/agent/emotion/adapters/asr_meralion.py`
+- Create: `src/care_pilot/agent/emotion/adapters/text_hf.py`
+- Create: `src/care_pilot/agent/emotion/adapters/speech_hf.py`
+- Create: `src/care_pilot/agent/emotion/adapters/fusion_hf.py`
+- Modify: `src/care_pilot/config/runtime.py`
+- Modify: `src/care_pilot/agent/emotion/runtime.py`
 
 - [ ] **Step 1: Write failing test**
 
@@ -336,7 +336,7 @@ Expected: FAIL.
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/dietary_guardian/config/runtime.py
+# src/care_pilot/config/runtime.py
 
 class EmotionSettings(BaseSettings):
     ...
@@ -346,7 +346,7 @@ class EmotionSettings(BaseSettings):
 ```
 
 ```python
-# src/dietary_guardian/agent/emotion/adapters/asr_meralion.py
+# src/care_pilot/agent/emotion/adapters/asr_meralion.py
 
 class MeralionASR(ASRPort):
     def __init__(self, repo_id: str) -> None: ...
@@ -354,7 +354,7 @@ class MeralionASR(ASRPort):
 ```
 
 ```python
-# src/dietary_guardian/agent/emotion/adapters/text_hf.py
+# src/care_pilot/agent/emotion/adapters/text_hf.py
 
 class HFTextEmotion(TextEmotionPort):
     def __init__(self, model_id: str, device: str) -> None: ...
@@ -362,7 +362,7 @@ class HFTextEmotion(TextEmotionPort):
 ```
 
 ```python
-# src/dietary_guardian/agent/emotion/adapters/speech_hf.py
+# src/care_pilot/agent/emotion/adapters/speech_hf.py
 
 class HFSpeechEmotion(SpeechEmotionPort):
     def __init__(self, model_id: str, device: str) -> None: ...
@@ -370,7 +370,7 @@ class HFSpeechEmotion(SpeechEmotionPort):
 ```
 
 ```python
-# src/dietary_guardian/agent/emotion/adapters/fusion_hf.py
+# src/care_pilot/agent/emotion/adapters/fusion_hf.py
 
 class HFFusion(FusionPort):
     def __init__(self, model_id: str, device: str) -> None: ...
@@ -387,7 +387,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/dietary_guardian/agent/emotion/adapters src/dietary_guardian/config/runtime.py src/dietary_guardian/agent/emotion/runtime.py tests/capabilities/test_emotion_service.py
+git add src/care_pilot/agent/emotion/adapters src/care_pilot/config/runtime.py src/care_pilot/agent/emotion/runtime.py tests/capabilities/test_emotion_service.py
 git commit -m "feat: add HF emotion adapters and config"
 ```
 
@@ -398,9 +398,9 @@ git commit -m "feat: add HF emotion adapters and config"
 ### Task 4: Update API and Timeline Context
 
 **Files:**
-- Modify: `apps/api/dietary_api/services/emotion_session.py`
-- Modify: `apps/api/dietary_api/routers/emotions.py`
-- Modify: `apps/api/dietary_api/schemas/core.py`
+- Modify: `apps/api/carepilot_api/services/emotion_session.py`
+- Modify: `apps/api/carepilot_api/routers/emotions.py`
+- Modify: `apps/api/carepilot_api/schemas/core.py`
 - Modify: `docs/api-emotions-contract.md`
 - Test: `tests/api/test_api_emotions.py`
 
@@ -444,7 +444,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api/dietary_api/services/emotion_session.py apps/api/dietary_api/routers/emotions.py apps/api/dietary_api/schemas/core.py docs/api-emotions-contract.md tests/api/test_api_emotions.py
+git add apps/api/carepilot_api/services/emotion_session.py apps/api/carepilot_api/routers/emotions.py apps/api/carepilot_api/schemas/core.py docs/api-emotions-contract.md tests/api/test_api_emotions.py
 git commit -m "feat: update emotions api to full trace"
 ```
 

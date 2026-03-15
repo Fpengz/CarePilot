@@ -2,14 +2,14 @@
 
 from pydantic import BaseModel
 
-from dietary_guardian.platform.observability.tooling.domain.models import (
+from care_pilot.platform.observability.tooling.domain.models import (
     ToolErrorClass,
     ToolPolicyContext,
     ToolSensitivity,
     ToolSideEffect,
     ToolSpec,
 )
-from dietary_guardian.platform.observability.tooling.registry import ToolRegistry
+from care_pilot.platform.observability.tooling.registry import ToolRegistry
 
 
 class EchoInput(BaseModel):
@@ -22,6 +22,7 @@ class EchoOutput(BaseModel):
 
 def test_tool_registry_blocks_missing_scope() -> None:
     registry = ToolRegistry()
+
     def handler(payload: BaseModel, _ctx: ToolPolicyContext) -> BaseModel:
         typed = EchoInput.model_validate(payload)
         return EchoOutput(echoed=typed.text)
@@ -52,6 +53,7 @@ def test_tool_registry_blocks_missing_scope() -> None:
 
 def test_tool_registry_executes_and_returns_typed_output() -> None:
     registry = ToolRegistry()
+
     def handler(payload: BaseModel, _ctx: ToolPolicyContext) -> BaseModel:
         typed = EchoInput.model_validate(payload)
         return EchoOutput(echoed=typed.text.upper())
@@ -72,7 +74,9 @@ def test_tool_registry_executes_and_returns_typed_output() -> None:
     result = registry.execute(
         "echo_patient",
         {"text": "hello"},
-        ToolPolicyContext(account_role="member", scopes=["echo:read"], environment="dev"),
+        ToolPolicyContext(
+            account_role="member", scopes=["echo:read"], environment="dev"
+        ),
     )
 
     assert result.success is True

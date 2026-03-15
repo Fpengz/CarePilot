@@ -38,8 +38,8 @@ uv run python scripts/dg.py dev
 This is a **modular monolith** with strict layer ownership:
 
 ```
-apps/api/dietary_api/   ← HTTP transport only: auth, policy, thin routers
-src/dietary_guardian/
+apps/api/carepilot_api/   ← HTTP transport only: auth, policy, thin routers
+src/care_pilot/
   application/          ← Use cases and orchestration (the "business logic" home)
   domain/               ← Typed contracts, deterministic rules, pure functions
   infrastructure/       ← Persistence, cache, LLM adapters, external integrations
@@ -65,7 +65,7 @@ tests/                  ← Organized by architectural layer: domain/, applicati
 ## Key Conventions
 
 ### Layer rules (enforced by architecture)
-- **Routers** import from `dietary_guardian.application.*` only — never from `services.*` or domain directly
+- **Routers** import from `care_pilot.application.*` only — never from `services.*` or domain directly
 - **Application layer** imports from `domain.*` and `infrastructure.*` — never from `apps.*`
 - **Domain layer** must be pure: no infrastructure imports, no I/O. The one exception is `domain/safety/engine.py` which lazily imports `infrastructure.safety.drug_interaction_db` as a default only if no `DrugInteractionRepository` is injected
 - **`application/meals/api_service.py`** is intentionally NOT exported from `application/meals/__init__.py` — this breaks a circular import with `capabilities/`
@@ -87,15 +87,15 @@ async def analyze_meal(deps: MealDeps, session: dict, ...) -> MealAnalyzeRespons
 All agents inherit `BaseAgent[InputT, OutputT]` from `capabilities/base.py` and return `AgentResult[OutputT]`. The envelope always has `success`, `output`, `confidence`, `warnings`, `errors`, `raw`. Agents are retrieved by name from `AgentRegistry` and never call stores or write state directly.
 
 ### Policy enforcement
-All action names are defined in `apps/api/dietary_api/policy.py` as `POLICY_RULES`. Call `require_action(session, "scope.action")` at the top of every route handler. For resource-level checks (ownership), use `authorize_resource_action`.
+All action names are defined in `apps/api/carepilot_api/policy.py` as `POLICY_RULES`. Call `require_action(session, "scope.action")` at the top of every route handler. For resource-level checks (ownership), use `authorize_resource_action`.
 
 ### Settings
-Config lives in `src/dietary_guardian/config/app.py` (composition root) and `runtime.py` (individual settings groups). Use `get_settings()` to access — it validates cross-field constraints (e.g., secrets required in prod, Redis required for external workers). Environment variables follow the pattern `SETTING_GROUP_FIELD_NAME` (e.g., `AUTH_STORE_BACKEND`, `LLM_PROVIDER`, `REDIS_URL`).
+Config lives in `src/care_pilot/config/app.py` (composition root) and `runtime.py` (individual settings groups). Use `get_settings()` to access — it validates cross-field constraints (e.g., secrets required in prod, Redis required for external workers). Environment variables follow the pattern `SETTING_GROUP_FIELD_NAME` (e.g., `AUTH_STORE_BACKEND`, `LLM_PROVIDER`, `REDIS_URL`).
 
 ### Testing conventions
 - **Domain tests**: Zero mocks — pure functions with deterministic inputs
 - **Application tests**: Dataclass-based **fake stores** (not `unittest.mock`) injected as deps
-- **Monkeypatch string paths** must match the actual import location after any renames — check for `monkeypatch.setattr("dietary_guardian.capabilities.X", ...)` when moving modules
+- **Monkeypatch string paths** must match the actual import location after any renames — check for `monkeypatch.setattr("care_pilot.capabilities.X", ...)` when moving modules
 - After major module moves, clear pycache: `find . -type d -name __pycache__ -exec rm -rf {} +`
 
 ### Backward-compat shims
@@ -107,7 +107,7 @@ Follow this sequence per `AGENTS.md`:
 2. Add infrastructure adapter in `infrastructure/<feature>/`
 3. Expose signal in `CaseSnapshot` if patient-facing
 4. Implement use cases in `application/<feature>/use_cases.py`
-5. Add thin router in `apps/api/dietary_api/routers/<feature>.py`
+5. Add thin router in `apps/api/carepilot_api/routers/<feature>.py`
 6. Register policy action in `policy.py`
 7. Add scoped deps to `deps.py` if needed
 
@@ -115,4 +115,4 @@ Follow this sequence per `AGENTS.md`:
 `<type>(<scope>): <subject>` — Conventional Commits. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`.
 
 ### High-risk files — coordinate before touching
-`config/app.py`, `infrastructure/persistence/*`, `infrastructure/auth/*`, `apps/api/dietary_api/deps.py`, `apps/api/dietary_api/policy.py`, `apps/workers/run.py`
+`config/app.py`, `infrastructure/persistence/*`, `infrastructure/auth/*`, `apps/api/carepilot_api/deps.py`, `apps/api/carepilot_api/policy.py`, `apps/workers/run.py`

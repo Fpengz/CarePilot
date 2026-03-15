@@ -1,11 +1,11 @@
-# Dietary Guardian Dashboard Redesign (High-Density & Minimalist)
+# CarePilot Dashboard Redesign (High-Density & Minimalist)
 
 **Date:** 2026-03-15
 **Status:** Approved
 **Target:** `apps/web/components/dashboard/`
 
 ## 1. Objective
-Redesign the "Dietary Guardian" health dashboard to achieve a high-density, minimalist aesthetic that prioritizes high-level health signals and clear, actionable insights over verbose textual summaries.
+Redesign the "CarePilot" health dashboard to achieve a high-density, minimalist aesthetic that prioritizes high-level health signals and clear, actionable insights over verbose textual summaries.
 
 ## 2. Context
 The current dashboard uses a traditional, text-heavy banner (`ClinicalSummary`) and standard vertical stacking. The redesign will transition to a 3-column masonry layout with advanced data visualizations and a standardized typography/visual system ("Clinical Calm").

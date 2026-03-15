@@ -32,13 +32,13 @@ Every multi-agent task must define:
 - `Risk`
 
 ## Architecture Ownership Map
-- Transport/API: `apps/api/dietary_api/**`
+- Transport/API: `apps/api/carepilot_api/**`
 - Web UX: `apps/web/**`
 - Worker/runtime: `apps/workers/**`
-- Core primitives: `src/dietary_guardian/core/**`
-- Feature behavior: `src/dietary_guardian/features/**`
-- Agent capabilities: `src/dietary_guardian/agent/**`
-- Platform adapters: `src/dietary_guardian/platform/**`
+- Core primitives: `src/care_pilot/core/**`
+- Feature behavior: `src/care_pilot/features/**`
+- Agent capabilities: `src/care_pilot/agent/**`
+- Platform adapters: `src/care_pilot/platform/**`
 - Documentation: `README.md`, `ARCHITECTURE.md`, `SYSTEM_ROADMAP.md`, `docs/**`
 
 ## Canonical Companion Modules
@@ -59,7 +59,7 @@ Do not put new business logic primarily in route handlers.
 - Agents must use typed input/output contracts.
 - Agents must not write durable state directly.
 - Safety and policy checks remain outside prompts.
-- **Inference standard:** model-powered agents use `pydantic_ai` via `src/dietary_guardian/agent/runtime/*` (no direct `pydantic_ai.Agent` usage outside `src/dietary_guardian/agent/**`).
+- **Inference standard:** model-powered agents use `pydantic_ai` via `src/care_pilot/agent/runtime/*` (no direct `pydantic_ai.Agent` usage outside `src/care_pilot/agent/**`).
 - **Workflow standard:** declared multi-step product journeys use `pydantic-graph` (typed workflow state + explicit steps). Keep domain rules/persistence/scheduling deterministic in `features/**/domain`.
 - **LangGraph policy:** reserved for future workflows that require first-class checkpointed persistence, interrupts, or long-lived thread state. Do not introduce it by default.
 
@@ -74,11 +74,11 @@ Preferred sequence:
 5. add validation and docs
 
 ## High-Risk Files
-- `src/dietary_guardian/config/settings.py`
-- `src/dietary_guardian/platform/persistence/*`
-- `src/dietary_guardian/platform/auth/*`
-- `apps/api/dietary_api/deps.py`
-- `apps/api/dietary_api/policy.py`
+- `src/care_pilot/config/settings.py`
+- `src/care_pilot/platform/persistence/*`
+- `src/care_pilot/platform/auth/*`
+- `apps/api/carepilot_api/deps.py`
+- `apps/api/carepilot_api/policy.py`
 - `apps/workers/run.py`
 - `README.md`
 - `ARCHITECTURE.md`

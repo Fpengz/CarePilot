@@ -2,15 +2,19 @@
 
 from datetime import datetime
 
-from dietary_guardian.features.companion.core.health.models import ClinicalProfileSnapshot
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.companion.core.health.models import (
+    ClinicalProfileSnapshot,
+)
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.meals.domain.models import MealState, Nutrition
-from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
-from dietary_guardian.features.recommendations.domain.meal_recommendations import generate_recommendation
+from care_pilot.features.meals.domain.models import MealState, Nutrition
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.recommendations.domain.meal_recommendations import (
+    generate_recommendation,
+)
 
 
 def test_recommendation_uses_sg_local_advice() -> None:
@@ -31,9 +35,18 @@ def test_recommendation_uses_sg_local_advice() -> None:
             confidence_score=0.95,
             identification_method="AI_Flash",
             ingredients=[],
-            nutrition=Nutrition(calories=700, carbs_g=80, sugar_g=6, protein_g=20, fat_g=35, sodium_mg=1500),
+            nutrition=Nutrition(
+                calories=700,
+                carbs_g=80,
+                sugar_g=6,
+                protein_g=20,
+                fat_g=35,
+                sodium_mg=1500,
+            ),
         ),
     )
-    rec = generate_recommendation(record, ClinicalProfileSnapshot(biomarkers={}), user)
+    rec = generate_recommendation(
+        record, ClinicalProfileSnapshot(biomarkers={}), user
+    )
     joined = " ".join(rec.localized_advice).lower()
     assert "yong tau foo" in joined

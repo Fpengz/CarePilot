@@ -6,12 +6,12 @@ from types import SimpleNamespace
 from typing import cast
 
 import pytest
-from apps.api.dietary_api.deps import AppContext
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.deps import AppContext
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import AppSettings as Settings, get_settings
-from dietary_guardian.platform.auth import InMemoryAuthStore, SessionSigner
+from care_pilot.config.app import AppSettings as Settings, get_settings
+from care_pilot.platform.auth import InMemoryAuthStore, SessionSigner
 
 
 def _reset_settings_cache() -> None:
@@ -36,7 +36,9 @@ def _create_auth_only_app():
 
 
 @pytest.fixture(autouse=True)
-def _force_in_memory_auth_backend(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def _force_in_memory_auth_backend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "in_memory")
     _reset_settings_cache()
     yield
@@ -90,11 +92,19 @@ def test_signup_rejects_duplicate_email() -> None:
 
     first = client.post(
         "/api/v1/auth/signup",
-        json={"email": "dupe@example.com", "password": "dupe-pass-01", "display_name": "First"},
+        json={
+            "email": "dupe@example.com",
+            "password": "dupe-pass-01",
+            "display_name": "First",
+        },
     )
     second = client.post(
         "/api/v1/auth/signup",
-        json={"email": "dupe@example.com", "password": "dupe-pass-02", "display_name": "Second"},
+        json={
+            "email": "dupe@example.com",
+            "password": "dupe-pass-02",
+            "display_name": "Second",
+        },
     )
 
     assert first.status_code == 200
@@ -107,11 +117,17 @@ def test_signup_rejects_short_password() -> None:
 
     response = client.post(
         "/api/v1/auth/signup",
-        json={"email": "shortpw@example.com", "password": "short", "display_name": "Short Pw"},
+        json={
+            "email": "shortpw@example.com",
+            "password": "short",
+            "display_name": "Short Pw",
+        },
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "password must be at least 12 characters"
+    assert (
+        response.json()["detail"] == "password must be at least 12 characters"
+    )
 
 
 def test_me_requires_auth() -> None:
@@ -152,13 +168,31 @@ def test_removed_roles_cannot_login() -> None:
 
     assert old_clinician.status_code == 401
     assert old_operator.status_code == 401
-    assert client.post("/api/v1/auth/login", json={"email": "patient@example.com", "password": "patient-pass"}).status_code == 401
-    assert client.post("/api/v1/auth/login", json={"email": "caregiver@example.com", "password": "caregiver-pass"}).status_code == 401
+    assert (
+        client.post(
+            "/api/v1/auth/login",
+            json={"email": "patient@example.com", "password": "patient-pass"},
+        ).status_code
+        == 401
+    )
+    assert (
+        client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": "caregiver@example.com",
+                "password": "caregiver-pass",
+            },
+        ).status_code
+        == 401
+    )
 
 
 def test_logout_clears_session() -> None:
     client = TestClient(create_app())
-    client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
 
     response = client.post("/api/v1/auth/logout")
     assert response.status_code == 200
@@ -179,7 +213,9 @@ def test_logout_is_idempotent_without_session() -> None:
     assert "Max-Age=0" in set_cookie or "max-age=0" in set_cookie
 
 
-def test_login_cookie_uses_configured_samesite(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_login_cookie_uses_configured_samesite(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("COOKIE_SAMESITE", "strict")
     _reset_settings_cache()
     client = TestClient(create_app())
@@ -198,7 +234,10 @@ def test_me_rejects_corrupted_session_payload_with_401() -> None:
     app = create_app()
     client = TestClient(app)
 
-    login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
     assert login.status_code == 200
     session_id = login.json()["session"]["session_id"]
 
@@ -221,13 +260,16 @@ def test_list_sessions_returns_current_and_same_user_sessions_only() -> None:
     admin_client = TestClient(app)
 
     login_a = member_client_a.post(
-        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
     )
     login_b = member_client_b.post(
-        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
     )
     admin_login = admin_client.post(
-        "/api/v1/auth/login", json={"email": "admin@example.com", "password": "admin-pass"}
+        "/api/v1/auth/login",
+        json={"email": "admin@example.com", "password": "admin-pass"},
     )
     assert login_a.status_code == 200
     assert login_b.status_code == 200
@@ -239,14 +281,23 @@ def test_list_sessions_returns_current_and_same_user_sessions_only() -> None:
     sessions = response.json()["sessions"]
     assert len(sessions) == 2
     assert sum(1 for item in sessions if item["is_current"]) == 1
-    assert login_a.json()["session"]["session_id"] in {item["session_id"] for item in sessions}
-    assert login_b.json()["session"]["session_id"] in {item["session_id"] for item in sessions}
-    assert admin_login.json()["session"]["session_id"] not in {item["session_id"] for item in sessions}
+    assert login_a.json()["session"]["session_id"] in {
+        item["session_id"] for item in sessions
+    }
+    assert login_b.json()["session"]["session_id"] in {
+        item["session_id"] for item in sessions
+    }
+    assert admin_login.json()["session"]["session_id"] not in {
+        item["session_id"] for item in sessions
+    }
 
 
 def test_revoke_specific_session_revokes_current_and_clears_cookie() -> None:
     client = TestClient(create_app())
-    login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
     assert login.status_code == 200
     session_id = login.json()["session"]["session_id"]
 
@@ -264,16 +315,20 @@ def test_revoke_other_users_session_returns_404() -> None:
     admin_client = TestClient(app)
 
     member_login = member_client.post(
-        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
     )
     admin_login = admin_client.post(
-        "/api/v1/auth/login", json={"email": "admin@example.com", "password": "admin-pass"}
+        "/api/v1/auth/login",
+        json={"email": "admin@example.com", "password": "admin-pass"},
     )
     assert member_login.status_code == 200
     assert admin_login.status_code == 200
     member_session_id = member_login.json()["session"]["session_id"]
 
-    revoke = admin_client.post(f"/api/v1/auth/sessions/{member_session_id}/revoke")
+    revoke = admin_client.post(
+        f"/api/v1/auth/sessions/{member_session_id}/revoke"
+    )
 
     assert revoke.status_code == 404
 
@@ -283,8 +338,14 @@ def test_revoke_others_keeps_current_session_only() -> None:
     client_a = TestClient(app)
     client_b = TestClient(app)
 
-    login_a = client_a.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
-    login_b = client_b.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    login_a = client_a.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
+    login_b = client_b.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
     assert login_a.status_code == 200
     assert login_b.status_code == 200
 
@@ -298,7 +359,10 @@ def test_revoke_others_keeps_current_session_only() -> None:
 
 def test_patch_profile_updates_current_session_and_me() -> None:
     client = TestClient(create_app())
-    login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
     assert login.status_code == 200
 
     patch = client.patch(
@@ -320,16 +384,22 @@ def test_patch_profile_persists_for_future_sessions() -> None:
     app = create_app()
     client = TestClient(app)
     relogin_client = TestClient(app)
-    login = client.post("/api/v1/auth/login", json={"email": "helper@example.com", "password": "helper-pass"})
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "helper@example.com", "password": "helper-pass"},
+    )
     assert login.status_code == 200
 
-    patch = client.patch("/api/v1/auth/profile", json={"display_name": "Casey Family"})
+    patch = client.patch(
+        "/api/v1/auth/profile", json={"display_name": "Casey Family"}
+    )
     assert patch.status_code == 200
     logout = client.post("/api/v1/auth/logout")
     assert logout.status_code == 200
 
     relogin = relogin_client.post(
-        "/api/v1/auth/login", json={"email": "helper@example.com", "password": "helper-pass"}
+        "/api/v1/auth/login",
+        json={"email": "helper@example.com", "password": "helper-pass"},
     )
     assert relogin.status_code == 200
     assert relogin.json()["user"]["display_name"] == "Casey Family"
@@ -337,7 +407,10 @@ def test_patch_profile_persists_for_future_sessions() -> None:
 
 def test_patch_profile_rejects_empty_update() -> None:
     client = TestClient(create_app())
-    login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
     assert login.status_code == 200
 
     patch = client.patch("/api/v1/auth/profile", json={})
@@ -358,19 +431,27 @@ def test_login_locks_after_repeated_failures_and_then_allows_after_lockout_expir
     client = TestClient(create_app())
 
     for _ in range(max_attempts):
-        failed = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "wrong-pass"})
+        failed = client.post(
+            "/api/v1/auth/login",
+            json={"email": "member@example.com", "password": "wrong-pass"},
+        )
         assert failed.status_code == 401
 
-    locked = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    locked = client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
     assert locked.status_code == 429
 
     time.sleep(lockout_seconds + 0.1)
     success = client.post(
-        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
     )
     assert success.status_code == 200
     next_failed = client.post(
-        "/api/v1/auth/login", json={"email": "member@example.com", "password": "wrong-pass"}
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "wrong-pass"},
     )
     assert next_failed.status_code == 401
     assert "too many login attempts" not in next_failed.text.lower()
@@ -380,10 +461,16 @@ def test_login_normalizes_email_for_authentication_and_lockout() -> None:
     app = create_app()
     client = TestClient(app)
 
-    failed = client.post("/api/v1/auth/login", json={"email": " MEMBER@EXAMPLE.COM ", "password": "wrong-pass"})
+    failed = client.post(
+        "/api/v1/auth/login",
+        json={"email": " MEMBER@EXAMPLE.COM ", "password": "wrong-pass"},
+    )
     assert failed.status_code == 401
 
-    success = client.post("/api/v1/auth/login", json={"email": " MEMBER@EXAMPLE.COM ", "password": "member-pass"})
+    success = client.post(
+        "/api/v1/auth/login",
+        json={"email": " MEMBER@EXAMPLE.COM ", "password": "member-pass"},
+    )
     assert success.status_code == 200
 
 
@@ -392,36 +479,61 @@ def test_auth_audit_events_admin_only_and_bounded() -> None:
     member_client = TestClient(app)
     admin_client = TestClient(app)
 
-    member_client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "wrong-pass"})
-    member_client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
-    admin_login = admin_client.post("/api/v1/auth/login", json={"email": "admin@example.com", "password": "admin-pass"})
+    member_client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "wrong-pass"},
+    )
+    member_client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
+    admin_login = admin_client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@example.com", "password": "admin-pass"},
+    )
     assert admin_login.status_code == 200
 
     member_forbidden = member_client.get("/api/v1/auth/audit-events")
     assert member_forbidden.status_code == 403
 
-    admin_events = admin_client.get("/api/v1/auth/audit-events", params={"limit": 2})
+    admin_events = admin_client.get(
+        "/api/v1/auth/audit-events", params={"limit": 2}
+    )
     assert admin_events.status_code == 200
     items = admin_events.json()["items"]
     assert len(items) == 2
-    assert all(item["event_type"] in {"login_success", "login_failed", "login_locked"} for item in items)
+    assert all(
+        item["event_type"] in {"login_success", "login_failed", "login_locked"}
+        for item in items
+    )
     assert any(item["event_type"] == "login_success" for item in items)
 
 
-def test_patch_password_updates_credentials_and_revokes_other_sessions() -> None:
+def test_patch_password_updates_credentials_and_revokes_other_sessions() -> (
+    None
+):
     app = create_app()
     client_a = TestClient(app)
     client_b = TestClient(app)
     relogin_client = TestClient(app)
 
-    login_a = client_a.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
-    login_b = client_b.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    login_a = client_a.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
+    login_b = client_b.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
     assert login_a.status_code == 200
     assert login_b.status_code == 200
 
     patch = client_a.patch(
         "/api/v1/auth/password",
-        json={"current_password": "member-pass", "new_password": "member-pass-2"},
+        json={
+            "current_password": "member-pass",
+            "new_password": "member-pass-2",
+        },
     )
 
     assert patch.status_code == 200
@@ -430,10 +542,12 @@ def test_patch_password_updates_credentials_and_revokes_other_sessions() -> None
     assert client_b.get("/api/v1/auth/me").status_code == 401
 
     old_login = relogin_client.post(
-        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"}
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
     )
     new_login = relogin_client.post(
-        "/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass-2"}
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass-2"},
     )
     assert old_login.status_code == 401
     assert new_login.status_code == 200
@@ -441,12 +555,18 @@ def test_patch_password_updates_credentials_and_revokes_other_sessions() -> None
 
 def test_patch_password_rejects_wrong_current_password() -> None:
     client = TestClient(create_app())
-    login = client.post("/api/v1/auth/login", json={"email": "helper@example.com", "password": "helper-pass"})
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "helper@example.com", "password": "helper-pass"},
+    )
     assert login.status_code == 200
 
     patch = client.patch(
         "/api/v1/auth/password",
-        json={"current_password": "wrong-pass", "new_password": "helper-pass-2"},
+        json={
+            "current_password": "wrong-pass",
+            "new_password": "helper-pass-2",
+        },
     )
 
     assert patch.status_code == 400
@@ -455,7 +575,10 @@ def test_patch_password_rejects_wrong_current_password() -> None:
 
 def test_patch_password_rejects_weak_or_reused_password() -> None:
     client = TestClient(create_app())
-    login = client.post("/api/v1/auth/login", json={"email": "helper@example.com", "password": "helper-pass"})
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "helper@example.com", "password": "helper-pass"},
+    )
     assert login.status_code == 200
 
     weak = client.patch(
@@ -464,16 +587,26 @@ def test_patch_password_rejects_weak_or_reused_password() -> None:
     )
     reused = client.patch(
         "/api/v1/auth/password",
-        json={"current_password": "helper-pass", "new_password": "helper-pass"},
+        json={
+            "current_password": "helper-pass",
+            "new_password": "helper-pass",
+        },
     )
 
     assert weak.status_code == 400
-    assert weak.json()["detail"] == "new password must be at least 12 characters"
+    assert (
+        weak.json()["detail"] == "new password must be at least 12 characters"
+    )
     assert reused.status_code == 400
-    assert reused.json()["detail"] == "new password must differ from current password"
+    assert (
+        reused.json()["detail"]
+        == "new password must differ from current password"
+    )
 
 
-def test_settings_default_auth_backend_is_sqlite(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_settings_default_auth_backend_is_sqlite(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.delenv("AUTH_STORE_BACKEND", raising=False)
     settings = _build_settings(llm={"provider": "test"})
     assert settings.auth.store_backend == "sqlite"

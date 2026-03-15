@@ -1,16 +1,24 @@
 """Tests for main config bootstrap."""
 
 import main as main_module
-from dietary_guardian.config.app import AppSettings as Settings
+from care_pilot.config.app import AppSettings as Settings
 
 
 def _build_settings(**overrides: object) -> Settings:
     return Settings.model_validate(overrides)
 
 
-def test_bootstrap_runtime_settings_exits_on_validation_error(monkeypatch) -> None:
+def test_bootstrap_runtime_settings_exits_on_validation_error(
+    monkeypatch,
+) -> None:
     def _raise_validation() -> Settings:
-        return _build_settings(llm={"provider": "gemini", "gemini_api_key": None, "google_api_key": None})
+        return _build_settings(
+            llm={
+                "provider": "gemini",
+                "gemini_api_key": None,
+                "google_api_key": None,
+            }
+        )
 
     monkeypatch.setattr(main_module, "get_settings", _raise_validation)
 

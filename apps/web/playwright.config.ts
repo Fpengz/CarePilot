@@ -23,7 +23,7 @@ export default defineConfig({
         `AUTH_SQLITE_DB_PATH=${backendDbPrefix}-auth.sqlite3 ` +
         `API_SQLITE_DB_PATH=${backendDbPrefix}-api.sqlite3 ` +
         `API_CORS_ORIGINS=http://127.0.0.1:3000,http://localhost:3000 ` +
-        `uv run python -m uvicorn apps.api.dietary_api.main:create_app --factory --host 127.0.0.1 --port 8001`,
+        `uv run python -m uvicorn apps.api.carepilot_api.main:create_app --factory --host 127.0.0.1 --port 8001`,
       url: "http://127.0.0.1:8001/api/v1/health/live",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

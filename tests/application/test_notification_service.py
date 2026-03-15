@@ -3,11 +3,14 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.safety.domain.alerts.models import AlertDeliveryResult, AlertMessage
-from dietary_guardian.features.reminders.domain.models import ReminderEvent
-from dietary_guardian.platform.persistence import SQLiteRepository
-from dietary_guardian.features.reminders.notifications.alert_dispatch import (
+from care_pilot.config.app import get_settings
+from care_pilot.features.safety.domain.alerts.models import (
+    AlertDeliveryResult,
+    AlertMessage,
+)
+from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.platform.persistence import SQLiteRepository
+from care_pilot.features.reminders.notifications.alert_dispatch import (
     dispatch_reminder,
     dispatch_reminder_async,
     send_in_app,
@@ -33,7 +36,9 @@ def test_send_in_app_success() -> None:
 
 
 def test_dispatch_push_failure_does_not_block_in_app() -> None:
-    results = dispatch_reminder(_event(), ["in_app", "push"], retries=1, force_push_fail=True)
+    results = dispatch_reminder(
+        _event(), ["in_app", "push"], retries=1, force_push_fail=True
+    )
     assert len(results) == 2
     assert results[0].success is True
     assert results[1].channel == "push"
@@ -60,7 +65,9 @@ def test_dispatch_telegram_channel(monkeypatch) -> None:
     get_settings.cache_clear()
 
 
-def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(monkeypatch, tmp_path) -> None:
+def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(
+    monkeypatch, tmp_path
+) -> None:
     captured = {}
 
     def fake_send(self, reminder_event, destination=None):  # noqa: ANN001
@@ -80,7 +87,7 @@ def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(monkeypa
         )()
 
     monkeypatch.setattr(
-        "dietary_guardian.platform.messaging.channels.telegram.TelegramChannel.send",
+        "care_pilot.platform.messaging.channels.telegram.TelegramChannel.send",
         fake_send,
     )
 
@@ -94,7 +101,9 @@ def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(monkeypa
     assert captured["medication_name"] == event.medication_name
 
 
-def test_trigger_alert_returns_only_current_alert_deliveries(monkeypatch, tmp_path) -> None:
+def test_trigger_alert_returns_only_current_alert_deliveries(
+    monkeypatch, tmp_path
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("ALERT_WORKER_CONCURRENCY", "1")
     get_settings.cache_clear()
@@ -130,7 +139,9 @@ def test_trigger_alert_returns_only_current_alert_deliveries(monkeypatch, tmp_pa
     get_settings.cache_clear()
 
 
-def test_dispatch_reminder_v2_preserves_force_push_fail_and_retries(monkeypatch, tmp_path) -> None:
+def test_dispatch_reminder_v2_preserves_force_push_fail_and_retries(
+    monkeypatch, tmp_path
+) -> None:
     event = _event()
     repo = SQLiteRepository(str(tmp_path / "alerts.db"))
 
@@ -152,7 +163,9 @@ def test_dispatch_reminder_v2_preserves_force_push_fail_and_retries(monkeypatch,
     assert records[0].attempt_count == 1
 
 
-def test_dispatch_reminder_v2_retries_until_success(monkeypatch, tmp_path) -> None:
+def test_dispatch_reminder_v2_retries_until_success(
+    monkeypatch, tmp_path
+) -> None:
     event = _event()
     repo = SQLiteRepository(str(tmp_path / "alerts.db"))
     attempts = {"count": 0}
@@ -171,7 +184,10 @@ def test_dispatch_reminder_v2_retries_until_success(monkeypatch, tmp_path) -> No
             error=None if success else "push delivery failed",
         )
 
-    monkeypatch.setattr("dietary_guardian.platform.messaging.alert_outbox.PushSink.send", flaky_push_send)
+    monkeypatch.setattr(
+        "care_pilot.platform.messaging.alert_outbox.PushSink.send",
+        flaky_push_send,
+    )
 
     results = dispatch_reminder_async(
         event,
@@ -190,12 +206,16 @@ def test_dispatch_reminder_v2_retries_until_success(monkeypatch, tmp_path) -> No
     assert records[0].attempt_count == 2
 
 
-def test_trigger_alert_drains_all_destinations_across_batches(monkeypatch, tmp_path) -> None:
+def test_trigger_alert_drains_all_destinations_across_batches(
+    monkeypatch, tmp_path
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("ALERT_WORKER_CONCURRENCY", "1")
     get_settings.cache_clear()
 
-    def fake_channel_send(self, reminder_event, destination=None):  # noqa: ANN001
+    def fake_channel_send(
+        self, reminder_event, destination=None
+    ):  # noqa: ANN001
         channel_name = self.__class__.__name__.replace("Channel", "").lower()
         return type(
             "Result",
@@ -211,15 +231,15 @@ def test_trigger_alert_drains_all_destinations_across_batches(monkeypatch, tmp_p
         )()
 
     monkeypatch.setattr(
-        "dietary_guardian.platform.messaging.channels.telegram.TelegramChannel.send",
+        "care_pilot.platform.messaging.channels.telegram.TelegramChannel.send",
         fake_channel_send,
     )
     monkeypatch.setattr(
-        "dietary_guardian.platform.messaging.channels.whatsapp.WhatsAppChannel.send",
+        "care_pilot.platform.messaging.channels.whatsapp.WhatsAppChannel.send",
         fake_channel_send,
     )
     monkeypatch.setattr(
-        "dietary_guardian.platform.messaging.channels.wechat.WeChatChannel.send",
+        "care_pilot.platform.messaging.channels.wechat.WeChatChannel.send",
         fake_channel_send,
     )
 
@@ -232,14 +252,22 @@ def test_trigger_alert_drains_all_destinations_across_batches(monkeypatch, tmp_p
         repository=repo,
     )
 
-    assert {item.channel for item in deliveries} == {"in_app", "push", "telegram", "whatsapp", "wechat"}
+    assert {item.channel for item in deliveries} == {
+        "in_app",
+        "push",
+        "telegram",
+        "whatsapp",
+        "wechat",
+    }
     records = repo.list_alert_records(alert.alert_id)
     assert len(records) == 5
     assert all(item.state == "delivered" for item in records)
     get_settings.cache_clear()
 
 
-def test_dispatch_reminder_v2_handles_sink_exceptions_as_delivery_failures(monkeypatch, tmp_path) -> None:
+def test_dispatch_reminder_v2_handles_sink_exceptions_as_delivery_failures(
+    monkeypatch, tmp_path
+) -> None:
     event = _event()
     repo = SQLiteRepository(str(tmp_path / "alerts.db"))
 
@@ -247,7 +275,10 @@ def test_dispatch_reminder_v2_handles_sink_exceptions_as_delivery_failures(monke
         del self, message
         raise RuntimeError("push provider timeout")
 
-    monkeypatch.setattr("dietary_guardian.platform.messaging.alert_outbox.PushSink.send", broken_push_send)
+    monkeypatch.setattr(
+        "care_pilot.platform.messaging.alert_outbox.PushSink.send",
+        broken_push_send,
+    )
 
     results = dispatch_reminder_async(
         event,

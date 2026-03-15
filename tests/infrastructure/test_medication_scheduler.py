@@ -2,17 +2,17 @@
 
 from datetime import date, datetime
 
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.reminders.domain.models import (
+from care_pilot.features.reminders.domain.models import (
     MedicationRegimen,
     ReminderEvent,
 )
-from dietary_guardian.platform.persistence import SQLiteRepository
-from dietary_guardian.features.medications.domain import (
+from care_pilot.platform.persistence import SQLiteRepository
+from care_pilot.features.medications.domain import (
     generate_daily_reminders,
     mark_meal_confirmation,
 )

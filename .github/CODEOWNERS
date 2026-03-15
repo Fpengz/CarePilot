@@ -13,11 +13,11 @@
 /.env.example @Fpengz
 
 # Runtime configuration and policy
-/src/dietary_guardian/config/settings.py @Fpengz
-/apps/api/dietary_api/policy.py @Fpengz
-/apps/api/dietary_api/deps.py @Fpengz
+/src/care_pilot/config/settings.py @Fpengz
+/apps/api/carepilot_api/policy.py @Fpengz
+/apps/api/carepilot_api/deps.py @Fpengz
 
 # Auth and persistence critical paths
-/src/dietary_guardian/application/auth/* @Fpengz
-/src/dietary_guardian/infrastructure/auth/* @Fpengz
-/src/dietary_guardian/infrastructure/persistence/* @Fpengz
+/src/care_pilot/application/auth/* @Fpengz
+/src/care_pilot/infrastructure/auth/* @Fpengz
+/src/care_pilot/infrastructure/persistence/* @Fpengz

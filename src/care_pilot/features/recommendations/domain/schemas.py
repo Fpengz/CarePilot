@@ -1,0 +1,38 @@
+"""
+Define recommendation agent schemas.
+
+This module provides typed I/O contracts for recommendation synthesis.
+"""
+
+from __future__ import annotations
+
+from pydantic import BaseModel
+
+from care_pilot.features.companion.core.health.models import (
+    ClinicalProfileSnapshot,
+    HealthProfileRecord,
+)
+from care_pilot.features.profiles.domain.models import UserProfile
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.recommendations.domain.models import (
+    DailyAgentRecommendation,
+)
+
+
+class RecommendationAgentInput(BaseModel):
+    """Typed context for generating a daily recommendation bundle."""
+
+    user_id: str
+    health_profile: HealthProfileRecord
+    user_profile: UserProfile
+    meal_history: list[MealRecognitionRecord]
+    clinical_snapshot: ClinicalProfileSnapshot | None = None
+
+
+class RecommendationAgentOutput(BaseModel):
+    """Standardized recommendation agent output wrapper."""
+
+    recommendation: DailyAgentRecommendation
+
+
+__all__ = ["RecommendationAgentInput", "RecommendationAgentOutput"]

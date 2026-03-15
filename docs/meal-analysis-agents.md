@@ -1,7 +1,7 @@
 # Meal Analysis Agents
 
 ## Purpose
-This document explains the current meal-analysis architecture, what is already implemented, and the most valuable next improvements for the Dietary Guardian meal-analysis stack.
+This document explains the current meal-analysis architecture, what is already implemented, and the most valuable next improvements for the CarePilot meal-analysis stack.
 
 The system is now organized around a deliberate split:
 - vision and perception first
@@ -59,33 +59,33 @@ Image or text input
 ## Module Map
 
 ### Vision and perception
-- `src/dietary_guardian/agent/meal_analysis/vision_module.py`
+- `src/care_pilot/agent/meal_analysis/vision_module.py`
 
 ### Domain contracts
-- `src/dietary_guardian/features/meals/domain/models.py`
+- `src/care_pilot/features/meals/domain/models.py`
 
 ### Application normalization and enrichment
-- `src/dietary_guardian/features/meals/use_cases.py`
+- `src/care_pilot/features/meals/use_cases.py`
 
 ### Provider/runtime integration
-- `src/dietary_guardian/agent/runtime/llm_factory.py`
-- `src/dietary_guardian/agent/runtime/llm_routing.py`
-- `src/dietary_guardian/agent/runtime/inference_engine.py`
+- `src/care_pilot/agent/runtime/llm_factory.py`
+- `src/care_pilot/agent/runtime/llm_routing.py`
+- `src/care_pilot/agent/runtime/inference_engine.py`
 
 ### Canonical food seed, ranking, and loading logic
-- `src/dietary_guardian/features/recommendations/domain/canonical_food_matching.py`
-- `src/dietary_guardian/platform/persistence/food/ingestion.py`
+- `src/care_pilot/features/recommendations/domain/canonical_food_matching.py`
+- `src/care_pilot/platform/persistence/food/ingestion.py`
 
 ### Persistence
-- `src/dietary_guardian/platform/persistence/sqlite_repository.py`
+- `src/care_pilot/platform/persistence/sqlite_repository.py`
 
 ### Compatibility helpers for downstream consumers
-- `src/dietary_guardian/features/meals/presenter.py`
+- `src/care_pilot/features/meals/presenter.py`
 
 ### Example downstream consumers
-- `src/dietary_guardian/features/meals/api_service.py`
-- `src/dietary_guardian/features/recommendations/use_cases.py`
-- `src/dietary_guardian/features/companion/core/use_cases.py`
+- `src/care_pilot/features/meals/api_service.py`
+- `src/care_pilot/features/recommendations/use_cases.py`
+- `src/care_pilot/features/companion/core/use_cases.py`
 
 ## Core Contracts
 
@@ -229,9 +229,9 @@ The canonical food layer stabilizes meal naming, nutrition logic, glycemic metad
 ### Current data sources
 The active canonical food layer is assembled from:
 - `DEFAULT_MEAL_CATALOG`
-- Singapore-local seed data in `src/dietary_guardian/data/food/sg_hawker_food.json`
-- optional reduced USDA data in `src/dietary_guardian/data/food/usda_foods.json`
-- optional reduced Open Food Facts data in `src/dietary_guardian/data/food/open_food_facts_products.json`
+- Singapore-local seed data in `src/care_pilot/data/food/sg_hawker_food.json`
+- optional reduced USDA data in `src/care_pilot/data/food/usda_foods.json`
+- optional reduced Open Food Facts data in `src/care_pilot/data/food/open_food_facts_products.json`
 
 ### Current ingestion posture
 The code is wired for curated reduced source files rather than raw source mirrors. That is the right trade-off for the current hackathon branch:

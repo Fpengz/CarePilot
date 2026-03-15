@@ -1,6 +1,6 @@
-# Dietary Guardian SG
+# CarePilot
 
-Dietary Guardian SG is an AI health companion for chronic-condition support outside the clinic. It combines meal analysis, reminders, adherence tracking, symptoms, reports, clinician-facing digests, and impact tracking in a modular-monolith architecture.
+CarePilot is an AI health companion for chronic-condition support outside the clinic. It combines meal analysis, reminders, adherence tracking, symptoms, reports, clinician-facing digests, and impact tracking in a modular-monolith architecture.
 
 ## What the system does
 - builds a longitudinal patient view from meals, reminders, adherence events, symptoms, biomarkers, and profile context
@@ -26,7 +26,7 @@ apps/
   web/        Next.js frontend
   workers/    async worker runtime
 src/
-  dietary_guardian/
+  care_pilot/
     core/            tiny shared primitives and base contracts
     features/        product behavior and service entrypoints
     agent/           bounded model/provider logic
@@ -39,11 +39,11 @@ tests/        repository-level tests
 ## Architecture in one view
 - `apps/web` is the main patient and admin interface
 - `apps/api` keeps routers thin and maps HTTP requests into feature services
-- `src/dietary_guardian/features` owns companion logic such as case snapshots, personalization, engagement, care plans, clinician digests, impact, and safety
-- `src/dietary_guardian/platform` owns persistence and external integrations
+- `src/care_pilot/features` owns companion logic such as case snapshots, personalization, engagement, care plans, clinician digests, impact, and safety
+- `src/care_pilot/platform` owns persistence and external integrations
 - `apps/workers` runs reminder, outbox, and related async processing
-- `src/dietary_guardian/agent` stays bounded behind typed inputs and outputs; deterministic logic remains the source of truth for durable health state
-- chat-specific agents live under `src/dietary_guardian/agent/chat/`
+- `src/care_pilot/agent` stays bounded behind typed inputs and outputs; deterministic logic remains the source of truth for durable health state
+- chat-specific agents live under `src/care_pilot/agent/chat/`
 
 ## Merge provenance
 This branch merges prior work from:

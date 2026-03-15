@@ -2,19 +2,19 @@
 
 from typing import Literal
 
-from dietary_guardian.features.companion.personalization import (
+from care_pilot.features.companion.personalization import (
     build_caregiver_tool_state,
     build_clinical_summary_tool_state,
     build_self_tool_state,
     get_profile_sections,
 )
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.meals.domain.models import MealState, Nutrition
-from dietary_guardian.features.profiles.domain.profile_tools import (
+from care_pilot.features.meals.domain.models import MealState, Nutrition
+from care_pilot.features.profiles.domain.profile_tools import (
     CaregiverToolState,
     ClinicalSummaryToolState,
     SelfToolState,

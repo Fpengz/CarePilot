@@ -1,19 +1,19 @@
 {
-  "name": "dietary-tools-monorepo",
+  "name": "care-pilot-monorepo",
   "version": "0.1.0",
-  "description": "Dietary Guardian monorepo (FastAPI backend + Next.js web)",
+  "description": "Care Pilot monorepo (FastAPI backend + Next.js web)",
   "private": true,
   "license": "UNLICENSED",
   "keywords": [
-    "dietary-guardian",
+    "care-pilot",
     "fastapi",
     "nextjs",
     "health-tech",
     "monorepo"
   ],
-  "homepage": "https://github.com/Fpengz/dietary_tool",
+  "homepage": "https://github.com/Fpengz/CarePilot",
   "bugs": {
-    "url": "https://github.com/Fpengz/dietary_tool/issues"
+    "url": "https://github.com/Fpengz/CarePilot/issues"
   },
   "packageManager": "pnpm@10.6.0",
   "engines": {
@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Fpengz/dietary_tool.git"
+    "url": "https://github.com/Fpengz/CarePilot.git"
   },
   "workspaces": [
     "apps/web"

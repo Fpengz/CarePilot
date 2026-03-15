@@ -4,11 +4,11 @@ from collections.abc import Generator
 from io import BytesIO
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -16,7 +16,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_reports_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_reports_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -26,7 +28,9 @@ def sqlite_reports_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[N
 
 
 def _login(client: TestClient, email: str, password: str) -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
@@ -42,13 +46,18 @@ def _meal_upload(client: TestClient) -> None:
     assert response.status_code == 200
 
 
-def test_reports_parse_text_returns_readings_and_snapshot(sqlite_reports_env: None) -> None:
+def test_reports_parse_text_returns_readings_and_snapshot(
+    sqlite_reports_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
 
     response = client.post(
         "/api/v1/reports/parse",
-        json={"source": "pasted_text", "text": "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95"},
+        json={
+            "source": "pasted_text",
+            "text": "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95",
+        },
     )
 
     assert response.status_code == 200
@@ -58,7 +67,9 @@ def test_reports_parse_text_returns_readings_and_snapshot(sqlite_reports_env: No
     assert "high_ldl" in body["snapshot"]["risk_flags"]
 
 
-def test_recommendations_generate_uses_latest_meal_and_snapshot(sqlite_reports_env: None) -> None:
+def test_recommendations_generate_uses_latest_meal_and_snapshot(
+    sqlite_reports_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
     _meal_upload(client)
@@ -77,7 +88,9 @@ def test_recommendations_generate_uses_latest_meal_and_snapshot(sqlite_reports_e
     assert body["recommendation"]["safe"] in {True, False}
 
 
-def test_recommendations_generate_requires_meal_records(sqlite_reports_env: None) -> None:
+def test_recommendations_generate_requires_meal_records(
+    sqlite_reports_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
 
@@ -89,7 +102,9 @@ def test_recommendations_generate_requires_meal_records(sqlite_reports_env: None
     assert body["error"]["code"] == "recommendations.no_meal_records"
 
 
-def test_recommendations_generate_requires_clinical_snapshot(sqlite_reports_env: None) -> None:
+def test_recommendations_generate_requires_clinical_snapshot(
+    sqlite_reports_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
     _meal_upload(client)
@@ -102,8 +117,12 @@ def test_recommendations_generate_requires_clinical_snapshot(sqlite_reports_env:
     assert body["error"]["code"] == "recommendations.no_clinical_snapshot"
 
 
-def test_recommendations_generate_rate_limited(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("API_RATE_LIMIT_RECOMMENDATIONS_GENERATE_MAX_REQUESTS", "1")
+def test_recommendations_generate_rate_limited(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "API_RATE_LIMIT_RECOMMENDATIONS_GENERATE_MAX_REQUESTS", "1"
+    )
     _reset_settings_cache()
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
@@ -125,7 +144,9 @@ def test_recommendations_generate_rate_limited(monkeypatch: pytest.MonkeyPatch) 
     assert body["error"]["code"] == "recommendations.generate.rate_limited"
 
 
-def test_reports_parse_includes_symptom_summary_and_workflow_trace(sqlite_reports_env: None) -> None:
+def test_reports_parse_includes_symptom_summary_and_workflow_trace(
+    sqlite_reports_env: None,
+) -> None:
     app = create_app()
     member_client = TestClient(app)
     admin_client = TestClient(app)
@@ -153,8 +174,14 @@ def test_reports_parse_includes_symptom_summary_and_workflow_trace(sqlite_report
 
     response = member_client.post(
         "/api/v1/reports/parse",
-        json={"source": "pasted_text", "text": "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95"},
-        headers={"X-Request-ID": "req-report-parse-1", "X-Correlation-ID": "corr-report-parse-1"},
+        json={
+            "source": "pasted_text",
+            "text": "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95",
+        },
+        headers={
+            "X-Request-ID": "req-report-parse-1",
+            "X-Correlation-ID": "corr-report-parse-1",
+        },
     )
     assert response.status_code == 200
     body = response.json()
@@ -169,8 +196,13 @@ def test_reports_parse_includes_symptom_summary_and_workflow_trace(sqlite_report
     assert replay.status_code == 200
     workflow_body = replay.json()
     assert workflow_body["workflow_name"] == "replay"
-    event_types = [event["event_type"] for event in workflow_body["timeline_events"]]
-    event_workflows = [event.get("workflow_name") for event in workflow_body["timeline_events"]]
+    event_types = [
+        event["event_type"] for event in workflow_body["timeline_events"]
+    ]
+    event_workflows = [
+        event.get("workflow_name")
+        for event in workflow_body["timeline_events"]
+    ]
     assert "workflow_started" in event_types
     assert "workflow_completed" in event_types
     assert "report_parse" in event_workflows

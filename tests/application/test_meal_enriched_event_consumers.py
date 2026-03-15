@@ -3,14 +3,17 @@
 from datetime import date, datetime, timezone
 from typing import Any, cast
 
-from dietary_guardian.features.companion.core.snapshot import build_case_snapshot
-from dietary_guardian.features.companion.core.health.models import ClinicalProfileSnapshot, HealthProfileRecord
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.companion.core.snapshot import build_case_snapshot
+from care_pilot.features.companion.core.health.models import (
+    ClinicalProfileSnapshot,
+    HealthProfileRecord,
+)
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.meals.domain import (
+from care_pilot.features.meals.domain import (
     EnrichedMealEvent,
     MealNutritionProfile,
     MealPortionEstimate,
@@ -18,20 +21,26 @@ from dietary_guardian.features.meals.domain import (
     build_daily_nutrition_summary,
     build_weekly_nutrition_summary,
 )
-from dietary_guardian.features.recommendations.domain import (
+from care_pilot.features.recommendations.domain import (
     CanonicalFoodRecord,
     PreferenceSnapshot,
     RecommendationInteraction,
 )
-from dietary_guardian.features.meals.domain.models import Ingredient, MealState, Nutrition
-from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
-from dietary_guardian.features.companion.impact.domain import meal_calorie_points
-from dietary_guardian.features.recommendations.domain.engine import (
+from care_pilot.features.meals.domain.models import (
+    Ingredient,
+    MealState,
+    Nutrition,
+)
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.companion.impact.domain import meal_calorie_points
+from care_pilot.features.recommendations.domain.engine import (
     _snapshot_from_history,
     build_substitution_plan,
     build_temporal_context,
 )
-from dietary_guardian.features.recommendations.domain.meal_recommendations import generate_recommendation
+from care_pilot.features.recommendations.domain.meal_recommendations import (
+    generate_recommendation,
+)
 
 
 def _record(*, enriched: bool = True) -> MealRecognitionRecord:
@@ -40,7 +49,14 @@ def _record(*, enriched: bool = True) -> MealRecognitionRecord:
         confidence_score=0.55,
         identification_method="AI_Flash",
         ingredients=[Ingredient(name="fallback ingredient")],
-        nutrition=Nutrition(calories=100, carbs_g=10, sugar_g=1, protein_g=2, fat_g=3, sodium_mg=120),
+        nutrition=Nutrition(
+            calories=100,
+            carbs_g=10,
+            sugar_g=1,
+            protein_g=2,
+            fat_g=3,
+            sodium_mg=120,
+        ),
     )
     enriched_event = None
     if enriched:
@@ -53,7 +69,9 @@ def _record(*, enriched: bool = True) -> MealRecognitionRecord:
                     canonical_name="Chicken Rice",
                     match_strategy="exact_alias",
                     match_confidence=0.96,
-                    portion_estimate=MealPortionEstimate(amount=1, unit="plate", confidence=0.8),
+                    portion_estimate=MealPortionEstimate(
+                        amount=1, unit="plate", confidence=0.8
+                    ),
                     estimated_grams=320.0,
                     nutrition=MealNutritionProfile(
                         calories=640,
@@ -110,27 +128,43 @@ def _user() -> UserProfile:
 
 
 class _FakeRecommendationRepo:
-    def __init__(self, source: CanonicalFoodRecord, alternative: CanonicalFoodRecord, meal_record: MealRecognitionRecord) -> None:
+    def __init__(
+        self,
+        source: CanonicalFoodRecord,
+        alternative: CanonicalFoodRecord,
+        meal_record: MealRecognitionRecord,
+    ) -> None:
         self._source = source
         self._alternative = alternative
         self._meal_record = meal_record
         self._snapshot: PreferenceSnapshot | None = None
 
-    def list_canonical_foods(self, *, locale: str, slot: str | None = None, limit: int = 100) -> list[CanonicalFoodRecord]:
+    def list_canonical_foods(
+        self, *, locale: str, slot: str | None = None, limit: int = 100
+    ) -> list[CanonicalFoodRecord]:
         items = [self._source, self._alternative]
         if slot is not None:
             items = [item for item in items if item.slot == slot]
         return items[:limit]
 
-    def get_preference_snapshot(self, user_id: str) -> PreferenceSnapshot | None:
+    def get_preference_snapshot(
+        self, user_id: str
+    ) -> PreferenceSnapshot | None:
         return self._snapshot
 
-    def save_preference_snapshot(self, snapshot: PreferenceSnapshot) -> PreferenceSnapshot:
+    def save_preference_snapshot(
+        self, snapshot: PreferenceSnapshot
+    ) -> PreferenceSnapshot:
         self._snapshot = snapshot
         return snapshot
 
-    def get_meal_record(self, user_id: str, meal_id: str) -> MealRecognitionRecord | None:
-        if self._meal_record.id == meal_id and self._meal_record.user_id == user_id:
+    def get_meal_record(
+        self, user_id: str, meal_id: str
+    ) -> MealRecognitionRecord | None:
+        if (
+            self._meal_record.id == meal_id
+            and self._meal_record.user_id == user_id
+        ):
             return self._meal_record
         return None
 
@@ -140,27 +174,47 @@ class _FakeRecommendationRepo:
                 return item
         return None
 
-    def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
+    def find_food_by_name(
+        self, *, locale: str, name: str
+    ) -> CanonicalFoodRecord | None:
         for item in [self._source, self._alternative]:
             if item.title == name:
                 return item
         return None
 
-    def save_recommendation_interaction(self, interaction: RecommendationInteraction) -> RecommendationInteraction:
+    def save_recommendation_interaction(
+        self, interaction: RecommendationInteraction
+    ) -> RecommendationInteraction:
         return interaction
 
 
 class _LocaleAwareRecommendationRepo(_FakeRecommendationRepo):
-    def __init__(self, source: CanonicalFoodRecord, alternative: CanonicalFoodRecord, meal_record: MealRecognitionRecord) -> None:
-        super().__init__(source=source, alternative=alternative, meal_record=meal_record)
+    def __init__(
+        self,
+        source: CanonicalFoodRecord,
+        alternative: CanonicalFoodRecord,
+        meal_record: MealRecognitionRecord,
+    ) -> None:
+        super().__init__(
+            source=source, alternative=alternative, meal_record=meal_record
+        )
         self.seen_locales: list[str] = []
 
-    def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
+    def find_food_by_name(
+        self, *, locale: str, name: str
+    ) -> CanonicalFoodRecord | None:
         self.seen_locales.append(locale)
         return super().find_food_by_name(locale=locale, name=name)
 
 
-def _canonical_food(*, food_id: str, title: str, calories: float, sodium_mg: float, sugar_g: float) -> CanonicalFoodRecord:
+def _canonical_food(
+    *,
+    food_id: str,
+    title: str,
+    calories: float,
+    sodium_mg: float,
+    sugar_g: float,
+) -> CanonicalFoodRecord:
     return CanonicalFoodRecord(
         food_id=food_id,
         title=title,
@@ -194,10 +248,13 @@ def test_daily_summary_prefers_enriched_nutrition() -> None:
 
 
 def test_weekly_summary_prefers_enriched_display_name() -> None:
-    summary = cast(dict[str, Any], build_weekly_nutrition_summary(
-        meal_history=[_record(), _record()],
-        week_start=date(2026, 2, 23),
-    ))
+    summary = cast(
+        dict[str, Any],
+        build_weekly_nutrition_summary(
+            meal_history=[_record(), _record()],
+            week_start=date(2026, 2, 23),
+        ),
+    )
 
     totals = cast(dict[str, float], summary["totals"])
     pattern_flags = cast(list[str], summary["pattern_flags"])
@@ -225,19 +282,39 @@ def test_metrics_and_recommendation_use_enriched_event() -> None:
     record = _record()
 
     points = meal_calorie_points([record])
-    recommendation = generate_recommendation(record, ClinicalProfileSnapshot(biomarkers={}), _user())
+    recommendation = generate_recommendation(
+        record, ClinicalProfileSnapshot(biomarkers={}), _user()
+    )
 
     assert points[0].value == 640
     assert "Chicken Rice Set" in recommendation.rationale
 
 
-def test_recommendation_agent_uses_enriched_titles_for_temporal_and_substitution_flows() -> None:
+def test_recommendation_agent_uses_enriched_titles_for_temporal_and_substitution_flows() -> (
+    None
+):
     record = _record()
-    source = _canonical_food(food_id="source", title="Chicken Rice Set", calories=640, sodium_mg=980, sugar_g=4)
-    alternative = _canonical_food(food_id="alt", title="Fish Soup", calories=420, sodium_mg=480, sugar_g=2)
-    repo = _FakeRecommendationRepo(source=source, alternative=alternative, meal_record=record)
+    source = _canonical_food(
+        food_id="source",
+        title="Chicken Rice Set",
+        calories=640,
+        sodium_mg=980,
+        sugar_g=4,
+    )
+    alternative = _canonical_food(
+        food_id="alt",
+        title="Fish Soup",
+        calories=420,
+        sodium_mg=480,
+        sugar_g=2,
+    )
+    repo = _FakeRecommendationRepo(
+        source=source, alternative=alternative, meal_record=record
+    )
 
-    temporal = build_temporal_context(meal_history=[record], interaction_count=0)
+    temporal = build_temporal_context(
+        meal_history=[record], interaction_count=0
+    )
     plan = build_substitution_plan(
         repository=repo,
         user_id="u1",
@@ -255,13 +332,29 @@ def test_recommendation_agent_uses_enriched_titles_for_temporal_and_substitution
     assert [item.title for item in plan.alternatives] == ["Fish Soup"]
 
 
-def test_snapshot_bootstrap_uses_catalog_locale_for_exact_meal_lookup() -> None:
+def test_snapshot_bootstrap_uses_catalog_locale_for_exact_meal_lookup() -> (
+    None
+):
     record = _record()
-    source = _canonical_food(food_id="source", title="Chicken Rice Set", calories=640, sodium_mg=980, sugar_g=4)
+    source = _canonical_food(
+        food_id="source",
+        title="Chicken Rice Set",
+        calories=640,
+        sodium_mg=980,
+        sugar_g=4,
+    )
     source.locale = "zh-SG"
-    alternative = _canonical_food(food_id="alt", title="Fish Soup", calories=420, sodium_mg=480, sugar_g=2)
+    alternative = _canonical_food(
+        food_id="alt",
+        title="Fish Soup",
+        calories=420,
+        sodium_mg=480,
+        sugar_g=2,
+    )
     alternative.locale = "zh-SG"
-    repo = _LocaleAwareRecommendationRepo(source=source, alternative=alternative, meal_record=record)
+    repo = _LocaleAwareRecommendationRepo(
+        source=source, alternative=alternative, meal_record=record
+    )
 
     snapshot = _snapshot_from_history(
         repository=repo,

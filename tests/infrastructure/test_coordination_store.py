@@ -3,7 +3,9 @@
 from threading import Thread
 from time import sleep
 
-from dietary_guardian.platform.scheduling.coordination.in_memory import InMemoryCoordinationStore
+from care_pilot.platform.scheduling.coordination.in_memory import (
+    InMemoryCoordinationStore,
+)
 
 
 def test_in_memory_coordination_store_publish_and_drain_signal() -> None:
@@ -30,7 +32,9 @@ def test_in_memory_coordination_store_lock_is_exclusive() -> None:
     assert third is True
 
 
-def test_in_memory_coordination_store_wait_for_signal_returns_published_payload() -> None:
+def test_in_memory_coordination_store_wait_for_signal_returns_published_payload() -> (
+    None
+):
     store = InMemoryCoordinationStore()
 
     def publish_later() -> None:
@@ -47,7 +51,9 @@ def test_in_memory_coordination_store_wait_for_signal_returns_published_payload(
     assert payload == {"kind": "reminders"}
 
 
-def test_in_memory_coordination_store_wait_for_signal_times_out_cleanly() -> None:
+def test_in_memory_coordination_store_wait_for_signal_times_out_cleanly() -> (
+    None
+):
     store = InMemoryCoordinationStore()
 
     payload = store.wait_for_signal("workers.ready", timeout_seconds=0.01)

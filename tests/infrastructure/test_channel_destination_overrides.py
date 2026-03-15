@@ -5,9 +5,9 @@ These tests ensure per-account reminder endpoints override global defaults so
 delivery routes reflect user settings.
 """
 
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.safety.domain.alerts import AlertMessage
-from dietary_guardian.platform.messaging.channels.sinks import TelegramSink
+from care_pilot.config.app import get_settings
+from care_pilot.features.safety.domain.alerts import AlertMessage
+from care_pilot.platform.messaging.channels.sinks import TelegramSink
 
 
 def test_telegram_sink_prefers_payload_destination(monkeypatch) -> None:

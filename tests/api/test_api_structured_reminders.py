@@ -5,10 +5,10 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -16,7 +16,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_structured_reminder_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_structured_reminder_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -25,12 +27,20 @@ def sqlite_structured_reminder_env(tmp_path, monkeypatch: pytest.MonkeyPatch) ->
     _reset_settings_cache()
 
 
-def _login(client: TestClient, email: str = "member@example.com", password: str = "member-pass") -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(
+    client: TestClient,
+    email: str = "member@example.com",
+    password: str = "member-pass",
+) -> None:
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
-def test_structured_reminder_generate_list_and_action_flow(sqlite_structured_reminder_env: None) -> None:
+def test_structured_reminder_generate_list_and_action_flow(
+    sqlite_structured_reminder_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -56,7 +66,10 @@ def test_structured_reminder_generate_list_and_action_flow(sqlite_structured_rem
     assert definitions.status_code == 200
     definitions_body = definitions.json()
     assert definitions_body["items"]
-    assert definitions_body["items"][0]["schedule"]["pattern"] in {"daily_fixed_times", "meal_relative"}
+    assert definitions_body["items"][0]["schedule"]["pattern"] in {
+        "daily_fixed_times",
+        "meal_relative",
+    }
 
     upcoming = client.get("/api/v1/reminders/upcoming")
     assert upcoming.status_code == 200

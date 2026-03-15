@@ -4,9 +4,12 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from dietary_guardian.features.safety.domain.alerts.models import AlertMessage
-from dietary_guardian.platform.persistence import SQLiteRepository
-from dietary_guardian.platform.messaging.alert_outbox import AlertPublisher, OutboxWorker
+from care_pilot.features.safety.domain.alerts.models import AlertMessage
+from care_pilot.platform.persistence import SQLiteRepository
+from care_pilot.platform.messaging.alert_outbox import (
+    AlertPublisher,
+    OutboxWorker,
+)
 
 
 def test_alert_publish_persists_to_outbox(tmp_path) -> None:
@@ -71,7 +74,9 @@ def test_outbox_worker_unknown_sink_dead_letters(tmp_path) -> None:
     assert stored[0].state == "dead_letter"
 
 
-def test_duplicate_publish_does_not_reset_existing_outbox_state(tmp_path) -> None:
+def test_duplicate_publish_does_not_reset_existing_outbox_state(
+    tmp_path,
+) -> None:
     repo = SQLiteRepository(str(tmp_path / "alerts.db"))
     publisher = AlertPublisher(repo)
     message = AlertMessage(
@@ -94,7 +99,9 @@ def test_duplicate_publish_does_not_reset_existing_outbox_state(tmp_path) -> Non
     assert stored[0].attempt_count == 1
 
 
-def test_outbox_worker_persists_incremented_attempt_count_on_success(tmp_path) -> None:
+def test_outbox_worker_persists_incremented_attempt_count_on_success(
+    tmp_path,
+) -> None:
     repo = SQLiteRepository(str(tmp_path / "alerts.db"))
     publisher = AlertPublisher(repo)
     message = AlertMessage(

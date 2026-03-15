@@ -2,16 +2,27 @@
 
 import pytest
 
-from dietary_guardian.agent.dietary.agent import analyze_dietary_request
-from dietary_guardian.agent.dietary.schemas import DietaryAgentInput, DietaryAgentOutput
-from dietary_guardian.config.llm import LLMCapability
-from dietary_guardian.features.safety.domain.alerts.models import AlertDeliveryResult, AlertMessage
-from dietary_guardian.platform.persistence import SQLiteRepository
-from dietary_guardian.platform.messaging.alert_outbox import AlertPublisher, OutboxWorker
+from care_pilot.agent.dietary.agent import analyze_dietary_request
+from care_pilot.agent.dietary.schemas import (
+    DietaryAgentInput,
+    DietaryAgentOutput,
+)
+from care_pilot.config.llm import LLMCapability
+from care_pilot.features.safety.domain.alerts.models import (
+    AlertDeliveryResult,
+    AlertMessage,
+)
+from care_pilot.platform.persistence import SQLiteRepository
+from care_pilot.platform.messaging.alert_outbox import (
+    AlertPublisher,
+    OutboxWorker,
+)
 
 
 @pytest.mark.anyio
-async def test_analyze_dietary_request_uses_correct_capability(monkeypatch) -> None:
+async def test_analyze_dietary_request_uses_correct_capability(
+    monkeypatch,
+) -> None:
     captured_capability = None
 
     class MockModel:
@@ -28,11 +39,14 @@ async def test_analyze_dietary_request_uses_correct_capability(monkeypatch) -> N
     class MockAgent:
         def __init__(self, model, output_type, system_prompt):
             pass
+
         async def run(self, prompt, **kwargs):
             return MockResult()
 
-    monkeypatch.setattr("dietary_guardian.agent.runtime.LLMFactory.get_model", mock_get_model)
-    monkeypatch.setattr("dietary_guardian.agent.dietary.agent.Agent", MockAgent)
+    monkeypatch.setattr(
+        "care_pilot.agent.runtime.LLMFactory.get_model", mock_get_model
+    )
+    monkeypatch.setattr("care_pilot.agent.dietary.agent.Agent", MockAgent)
 
     input_data = DietaryAgentInput(
         user_name="Mr Tan",
@@ -46,7 +60,9 @@ async def test_analyze_dietary_request_uses_correct_capability(monkeypatch) -> N
     assert captured_capability == LLMCapability.DIETARY_REASONING
 
 
-def test_outbox_worker_preserves_original_alert_message_payload(tmp_path) -> None:
+def test_outbox_worker_preserves_original_alert_message_payload(
+    tmp_path,
+) -> None:
     class CaptureSink:
         name = "in_app"
 
@@ -77,7 +93,9 @@ def test_outbox_worker_preserves_original_alert_message_payload(tmp_path) -> Non
 
     worker = OutboxWorker(repo, max_attempts=2, concurrency=2)
     capture = CaptureSink()
-    worker._sinks["in_app"] = capture  # test-only seam to inspect delivered message
+    worker._sinks["in_app"] = (
+        capture  # test-only seam to inspect delivered message
+    )
 
     import asyncio
 

@@ -6,10 +6,12 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from apps.api.dietary_api.main import create_app
-from dietary_guardian.features.companion.chat.meal_intent import meal_proposal_cache_key
-from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime
-from dietary_guardian.config.app import get_settings
+from apps.api.carepilot_api.main import create_app
+from care_pilot.features.companion.chat.meal_intent import (
+    meal_proposal_cache_key,
+)
+from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -42,7 +44,9 @@ def test_confirm_meal_proposal_logs_meal() -> None:
     sessions = ctx.auth_store.list_sessions_for_user("user_001")
     session_id = sessions[0]["session_id"]
     proposal_id = str(uuid4())
-    cache_key = meal_proposal_cache_key(user_id="user_001", session_id=session_id, proposal_id=proposal_id)
+    cache_key = meal_proposal_cache_key(
+        user_id="user_001", session_id=session_id, proposal_id=proposal_id
+    )
     ctx.cache_store.set_json(
         cache_key,
         {
@@ -78,6 +82,9 @@ def test_confirm_meal_proposal_logs_meal() -> None:
     assert body["status"] == "logged"
     assert "assistant_followup" in body
     assert "Follow-up guidance." in body["assistant_followup"]
-    assert len(ctx.stores.meals.list_validated_meal_events("user_001")) == before_count + 1
+    assert (
+        len(ctx.stores.meals.list_validated_meal_events("user_001"))
+        == before_count + 1
+    )
 
     monkeypatch.undo()

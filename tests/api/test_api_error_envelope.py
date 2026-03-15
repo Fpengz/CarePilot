@@ -3,10 +3,10 @@
 from collections.abc import Generator
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -14,7 +14,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture(autouse=True)
-def _force_in_memory_auth_backend(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def _force_in_memory_auth_backend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "in_memory")
     _reset_settings_cache()
     yield
@@ -39,7 +41,9 @@ def test_unauthorized_response_uses_standard_error_envelope() -> None:
 def test_validation_error_response_uses_standard_error_envelope() -> None:
     client = TestClient(create_app())
 
-    response = client.post("/api/v1/auth/signup", json={"email": "member@example.com"})
+    response = client.post(
+        "/api/v1/auth/signup", json={"email": "member@example.com"}
+    )
 
     assert response.status_code == 422
     body = response.json()

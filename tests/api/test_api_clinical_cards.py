@@ -6,11 +6,11 @@ import io
 from collections.abc import Generator
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -18,7 +18,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_clinical_cards_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_clinical_cards_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -28,8 +30,14 @@ def sqlite_clinical_cards_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Gene
     _reset_settings_cache()
 
 
-def _login(client: TestClient, email: str = "member@example.com", password: str = "member-pass") -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(
+    client: TestClient,
+    email: str = "member@example.com",
+    password: str = "member-pass",
+) -> None:
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
@@ -45,18 +53,30 @@ def _meal_upload(client: TestClient) -> None:
     assert response.status_code == 200
 
 
-def test_clinical_card_generate_list_get(sqlite_clinical_cards_env: None) -> None:
+def test_clinical_card_generate_list_get(
+    sqlite_clinical_cards_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
     _meal_upload(client)
-    parsed = client.post("/api/v1/reports/parse", json={"source": "pasted_text", "text": "LDL: 4.2 HbA1c: 7.1"})
+    parsed = client.post(
+        "/api/v1/reports/parse",
+        json={"source": "pasted_text", "text": "LDL: 4.2 HbA1c: 7.1"},
+    )
     assert parsed.status_code == 200
 
-    created = client.post("/api/v1/clinical-cards/generate", json={"format": "sectioned"})
+    created = client.post(
+        "/api/v1/clinical-cards/generate", json={"format": "sectioned"}
+    )
     assert created.status_code == 200
     body = created.json()
     card_id = body["card"]["id"]
-    assert set(body["card"]["sections"].keys()) == {"subjective", "objective", "assessment", "plan"}
+    assert set(body["card"]["sections"].keys()) == {
+        "subjective",
+        "objective",
+        "assessment",
+        "plan",
+    }
     assert "deltas" in body["card"]
 
     listed = client.get("/api/v1/clinical-cards")

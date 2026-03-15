@@ -3,10 +3,10 @@
 from collections.abc import Generator
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -14,7 +14,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture(autouse=True)
-def _isolated_health_env(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def _isolated_health_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     monkeypatch.setenv("LLM_PROVIDER", "test")
     monkeypatch.setenv("REQUIRED_PROVIDER", "test")
     monkeypatch.setenv("APP_ENV", "dev")
@@ -50,13 +52,19 @@ def test_health_config_requires_authenticated_admin() -> None:
     unauthenticated = client.get("/api/v1/health/config")
     assert unauthenticated.status_code == 401
 
-    member_login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+    member_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "member@example.com", "password": "member-pass"},
+    )
     assert member_login.status_code == 200
     forbidden = client.get("/api/v1/health/config")
     assert forbidden.status_code == 403
 
     admin_client = TestClient(create_app())
-    admin_login = admin_client.post("/api/v1/auth/login", json={"email": "admin@example.com", "password": "admin-pass"})
+    admin_login = admin_client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@example.com", "password": "admin-pass"},
+    )
     assert admin_login.status_code == 200
     config = admin_client.get("/api/v1/health/config")
     assert config.status_code == 200
@@ -76,7 +84,10 @@ def test_health_ready_reports_degraded_when_optional_notification_config_is_miss
     assert ready.status_code == 200
     body = ready.json()
     assert body["status"] == "degraded"
-    assert any(check["name"] == "email_configuration" and check["status"] == "warn" for check in body["checks"])
+    assert any(
+        check["name"] == "email_configuration" and check["status"] == "warn"
+        for check in body["checks"]
+    )
 
 
 def test_health_ready_reports_not_ready_when_required_redis_is_unreachable(
@@ -92,7 +103,10 @@ def test_health_ready_reports_not_ready_when_required_redis_is_unreachable(
     assert ready.status_code == 200
     body = ready.json()
     assert body["status"] == "not_ready"
-    assert any(check["name"] == "redis_connectivity" and check["status"] == "fail" for check in body["checks"])
+    assert any(
+        check["name"] == "redis_connectivity" and check["status"] == "fail"
+        for check in body["checks"]
+    )
 
 
 def test_request_context_headers_are_emitted_and_passthrough() -> None:

@@ -37,7 +37,7 @@ This directory contains focused documentation that supplements the three root ca
 
 Runtime API discovery:
 - FastAPI interactive docs: `http://localhost:8001/docs`
-- Route definitions under `apps/api/dietary_api/routers/` remain the code-level source of truth for current endpoints
+- Route definitions under `apps/api/carepilot_api/routers/` remain the code-level source of truth for current endpoints
 
 ## Supporting assets
 - `docs/architecture/architecture.drawio`

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
-from dietary_guardian.features.meals.domain.models import Nutrition
-from dietary_guardian.features.recommendations.domain.canonical_food_matching import (
+from care_pilot.features.recommendations.domain.models import (
+    CanonicalFoodRecord,
+)
+from care_pilot.features.meals.domain.models import Nutrition
+from care_pilot.features.recommendations.domain.canonical_food_matching import (
     build_default_canonical_food_records,
     find_food_by_name,
     rank_food_candidates,
@@ -30,7 +32,14 @@ def test_default_canonical_food_records_include_teammate_hawker_seed() -> None:
 def test_default_canonical_food_records_include_canonical_seed() -> None:
     records = build_default_canonical_food_records()
 
-    seed_item = next((item for item in records if item.food_id == "local.hainanese_chicken_rice"), None)
+    seed_item = next(
+        (
+            item
+            for item in records
+            if item.food_id == "local.hainanese_chicken_rice"
+        ),
+        None,
+    )
 
     assert seed_item is not None
 
@@ -56,7 +65,14 @@ def test_rank_food_candidates_prefers_component_and_preparation_fit() -> None:
         cuisine_tags=["local"],
         ingredient_tags=["kway teow", "egg", "cockles", "lard"],
         preparation_tags=["fried", "noodles"],
-        nutrition=Nutrition(calories=700, carbs_g=80, sugar_g=8, protein_g=20, fat_g=30, sodium_mg=1200),
+        nutrition=Nutrition(
+            calories=700,
+            carbs_g=80,
+            sugar_g=8,
+            protein_g=20,
+            fat_g=30,
+            sodium_mg=1200,
+        ),
     )
     kway_teow_soup = CanonicalFoodRecord(
         food_id="soup",
@@ -68,7 +84,14 @@ def test_rank_food_candidates_prefers_component_and_preparation_fit() -> None:
         cuisine_tags=["local"],
         ingredient_tags=["kway teow", "fish cake", "soup"],
         preparation_tags=["soup", "noodles"],
-        nutrition=Nutrition(calories=400, carbs_g=55, sugar_g=4, protein_g=15, fat_g=8, sodium_mg=700),
+        nutrition=Nutrition(
+            calories=400,
+            carbs_g=55,
+            sugar_g=4,
+            protein_g=15,
+            fat_g=8,
+            sodium_mg=700,
+        ),
     )
 
     ranked = rank_food_candidates(

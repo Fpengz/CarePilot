@@ -2,8 +2,13 @@
 
 import logging
 
-from dietary_guardian.config.llm import LLMCapability, LLMCapabilityTarget, LLMSettings, ModelProvider
-from dietary_guardian.features.meals.logging import (
+from care_pilot.config.llm import (
+    LLMCapability,
+    LLMCapabilityTarget,
+    LLMSettings,
+    ModelProvider,
+)
+from care_pilot.features.meals.logging import (
     build_meal_analysis_log_payload,
     log_meal_analysis_event,
     resolve_meal_analysis_model_name,
@@ -42,11 +47,16 @@ def test_resolve_meal_analysis_model_prefers_capability_target() -> None:
     settings = LLMSettings(
         provider=ModelProvider.TEST,
         capability_map={
-            LLMCapability.MEAL_VISION: LLMCapabilityTarget(provider=ModelProvider.OPENAI, model="vision-x"),
+            LLMCapability.MEAL_VISION: LLMCapabilityTarget(
+                provider=ModelProvider.OPENAI, model="vision-x"
+            ),
         },
     )
 
-    assert resolve_meal_analysis_model_name(settings, provider="gemini") == "vision-x"
+    assert (
+        resolve_meal_analysis_model_name(settings, provider="gemini")
+        == "vision-x"
+    )
 
 
 def test_log_meal_analysis_event_emits_payload(caplog) -> None:

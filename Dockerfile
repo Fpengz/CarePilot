@@ -44,4 +44,4 @@ EXPOSE 8001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -fsS http://127.0.0.1:${API_PORT}/api/v1/health/live || exit 1
 
-CMD ["sh", "-c", "python -m apps.api.dietary_api.runtime_validate && python -m apps.api.run"]
+CMD ["sh", "-c", "python -m apps.api.carepilot_api.runtime_validate && python -m apps.api.run"]

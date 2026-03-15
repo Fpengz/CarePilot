@@ -1,13 +1,13 @@
 """Module for test llm capability routing."""
 
-from dietary_guardian.config.app import AppSettings as Settings
+from care_pilot.config.app import AppSettings as Settings
 import json
 
-from dietary_guardian.config.llm import LLMCapability, ModelProvider
-from dietary_guardian.config.app import get_settings
-from apps.api.dietary_api.deps import build_app_context, close_app_context
-from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
-from dietary_guardian.agent.runtime.llm_factory import LLMFactory
+from care_pilot.config.llm import LLMCapability, ModelProvider
+from care_pilot.config.app import get_settings
+from apps.api.carepilot_api.deps import build_app_context, close_app_context
+from care_pilot.agent.runtime.inference_engine import InferenceEngine
+from care_pilot.agent.runtime.llm_factory import LLMFactory
 
 
 def test_settings_parse_capability_targets_from_env_shape() -> None:
@@ -32,7 +32,9 @@ def test_settings_parse_capability_targets_from_env_shape() -> None:
     assert str(target.base_url) == "http://sealion.local/v1"
 
 
-def test_factory_uses_capability_specific_target_over_global_provider() -> None:
+def test_factory_uses_capability_specific_target_over_global_provider() -> (
+    None
+):
     settings = _build_settings(
         llm={
             "provider": "openai",
@@ -48,10 +50,14 @@ def test_factory_uses_capability_specific_target_over_global_provider() -> None:
         },
     )
 
-    model = LLMFactory.get_model(settings=settings, capability=LLMCapability.CHATBOT)
+    model = LLMFactory.get_model(
+        settings=settings, capability=LLMCapability.CHATBOT
+    )
 
     assert getattr(model, "model_name", None) == "aisingapore/sealion"
-    assert "http://sealion.local/v1" in LLMFactory.describe_model_destination(model)
+    assert "http://sealion.local/v1" in LLMFactory.describe_model_destination(
+        model
+    )
 
 
 def test_inference_engine_health_reports_capability_metadata() -> None:
@@ -69,7 +75,9 @@ def test_inference_engine_health_reports_capability_metadata() -> None:
         },
     )
 
-    engine = InferenceEngine(settings=settings, capability=LLMCapability.MEAL_VISION)
+    engine = InferenceEngine(
+        settings=settings, capability=LLMCapability.MEAL_VISION
+    )
     health = engine.health()
 
     assert health.capability == LLMCapability.MEAL_VISION.value
@@ -79,9 +87,17 @@ def test_inference_engine_health_reports_capability_metadata() -> None:
 
 
 def test_unmapped_capability_falls_back_to_legacy_global_settings() -> None:
-    settings = _build_settings(llm={"provider": "openai", "openai_api_key": "test-openai-key", "openai_model": "gpt-4o-mini"})
+    settings = _build_settings(
+        llm={
+            "provider": "openai",
+            "openai_api_key": "test-openai-key",
+            "openai_model": "gpt-4o-mini",
+        }
+    )
 
-    model = LLMFactory.get_model(settings=settings, capability=LLMCapability.CLINICAL_SUMMARY)
+    model = LLMFactory.get_model(
+        settings=settings, capability=LLMCapability.CLINICAL_SUMMARY
+    )
 
     assert getattr(model, "model_name", None) == "gpt-4o-mini"
     assert "endpoint=default" in LLMFactory.describe_model_destination(model)
@@ -114,5 +130,7 @@ def test_app_context_medication_parse_uses_base_provider(monkeypatch) -> None:
     assert health.capability == LLMCapability.MEDICATION_PARSE.value
     assert health.provider == ModelProvider.OPENAI.value
     assert health.model == "gpt-4o-mini"
+
+
 def _build_settings(**overrides: object) -> Settings:
     return Settings.model_validate(overrides)

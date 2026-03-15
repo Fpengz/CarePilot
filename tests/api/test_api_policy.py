@@ -3,7 +3,7 @@
 from typing import Any
 
 import pytest
-from apps.api.dietary_api.policy import POLICY_RULES, authorize_action, authorize_resource_action
+from apps.api.carepilot_api.policy import POLICY_RULES, authorize_action, authorize_resource_action
 from fastapi import HTTPException
 
 

@@ -4,9 +4,9 @@ This repo is a **modular monolith**. “Workflows” are the orchestration layer
 
 This document standardizes on:
 
-- **Inference agents:** `pydantic_ai` (invoked via `src/dietary_guardian/agent/runtime/*` only)
+- **Inference agents:** `pydantic_ai` (invoked via `src/care_pilot/agent/runtime/*` only)
 - **Declared multi-step workflows:** `pydantic-graph`
-- **Domain rules/persistence/scheduling:** deterministic in `src/dietary_guardian/features/**/domain`
+- **Domain rules/persistence/scheduling:** deterministic in `src/care_pilot/features/**/domain`
 - **LangGraph:** explicitly deferred (only for checkpointed persistence / interrupts / long-lived threads)
 
 ---
@@ -32,7 +32,7 @@ Rule of thumb: if you can’t easily answer “what are the steps and their inpu
 
 ### Workflows must not
 - Instantiate `pydantic_ai.Agent` directly or call model factories directly.
-  - Keep all model plumbing inside `src/dietary_guardian/agent/**` (guardrailed by tests).
+  - Keep all model plumbing inside `src/care_pilot/agent/**` (guardrailed by tests).
 - Own business rules, persistence writes, or scheduling algorithms.
   - Those live in `features/**/domain` and are unit-testable.
 - Import `apps/api/**` or traffic in HTTP types (`Request`, `UploadFile`, etc.).
@@ -42,13 +42,13 @@ Rule of thumb: if you can’t easily answer “what are the steps and their inpu
 ## Where workflows live (repo conventions)
 
 - Keep workflow orchestration in the **feature layer**:
-  - `src/dietary_guardian/features/<feature>/use_cases.py` (small flows)
-  - `src/dietary_guardian/features/<feature>/workflows/*` (graph workflows)
+  - `src/care_pilot/features/<feature>/use_cases.py` (small flows)
+  - `src/care_pilot/features/<feature>/workflows/*` (graph workflows)
 
 Suggested layout for graph workflows:
 
 ```text
-src/dietary_guardian/features/meals/workflows/
+src/care_pilot/features/meals/workflows/
   meal_upload_graph.py
   types.py               # workflow state + output contracts
 ```

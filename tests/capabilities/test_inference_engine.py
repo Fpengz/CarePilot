@@ -5,13 +5,18 @@ import asyncio
 import pytest
 from pydantic import BaseModel
 
-from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
+from care_pilot.agent.runtime.inference_engine import InferenceEngine
+from care_pilot.config.app import get_settings
+from care_pilot.agent.runtime.inference_types import (
+    InferenceModality,
+    InferenceRequest,
+)
 from pydantic_ai.messages import PartEndEvent, TextPart
 
 
-def test_inference_engine_strategy_selection_test_provider(monkeypatch) -> None:
+def test_inference_engine_strategy_selection_test_provider(
+    monkeypatch,
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LLM_PROVIDER", "test")
     engine = InferenceEngine()
@@ -21,7 +26,9 @@ def test_inference_engine_strategy_selection_test_provider(monkeypatch) -> None:
     get_settings.cache_clear()
 
 
-def test_inference_engine_strategy_selection_local_provider(monkeypatch) -> None:
+def test_inference_engine_strategy_selection_local_provider(
+    monkeypatch,
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
@@ -45,24 +52,30 @@ class _ListRecoveryOutput(BaseModel):
     warnings: list[str] = []
 
 
-def test_inference_engine_recovers_json_on_validation_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_inference_engine_recovers_json_on_validation_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LLM_PROVIDER", "test")
 
     class _FakeAgent:
-        def __init__(self, model, output_type, system_prompt, output_retries):  # noqa: ANN001, ARG002
+        def __init__(
+            self, model, output_type, system_prompt, output_retries
+        ):  # noqa: ANN001, ARG002
             self.output_type = output_type
 
         async def run(self, prompt, event_stream_handler=None):  # noqa: ANN001
             async def _events():
-                yield PartEndEvent(index=0, part=TextPart(content='{"value": 42}'))
+                yield PartEndEvent(
+                    index=0, part=TextPart(content='{"value": 42}')
+                )
 
             if event_stream_handler is not None:
                 await event_stream_handler(None, _events())
             raise ValueError("Output validation failed")
 
     monkeypatch.setattr(
-        "dietary_guardian.agent.runtime.inference_engine.Agent",
+        "care_pilot.agent.runtime.inference_engine.Agent",
         _FakeAgent,
     )
 
@@ -82,24 +95,31 @@ def test_inference_engine_recovers_json_on_validation_failure(monkeypatch: pytes
     get_settings.cache_clear()
 
 
-def test_inference_engine_recovers_list_output(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_inference_engine_recovers_list_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LLM_PROVIDER", "test")
 
     class _FakeAgent:
-        def __init__(self, model, output_type, system_prompt, output_retries):  # noqa: ANN001, ARG002
+        def __init__(
+            self, model, output_type, system_prompt, output_retries
+        ):  # noqa: ANN001, ARG002
             self.output_type = output_type
 
         async def run(self, prompt, event_stream_handler=None):  # noqa: ANN001
             async def _events():
-                yield PartEndEvent(index=0, part=TextPart(content='```json\n[{\"dose\": 1}]\n```'))
+                yield PartEndEvent(
+                    index=0,
+                    part=TextPart(content='```json\n[{"dose": 1}]\n```'),
+                )
 
             if event_stream_handler is not None:
                 await event_stream_handler(None, _events())
             raise ValueError("Output validation failed")
 
     monkeypatch.setattr(
-        "dietary_guardian.agent.runtime.inference_engine.Agent",
+        "care_pilot.agent.runtime.inference_engine.Agent",
         _FakeAgent,
     )
 
@@ -119,7 +139,9 @@ def test_inference_engine_recovers_list_output(monkeypatch: pytest.MonkeyPatch) 
     get_settings.cache_clear()
 
 
-def test_inference_engine_enforces_wall_clock_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_inference_engine_enforces_wall_clock_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LLM_PROVIDER", "test")
     monkeypatch.setenv("LLM_INFERENCE_WALL_CLOCK_TIMEOUT_SECONDS", "0.1")

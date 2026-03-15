@@ -8,18 +8,24 @@ from io import BytesIO
 from uuid import uuid4
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.meals.domain.models import MealState, Nutrition, VisionResult
-from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
-from dietary_guardian.features.meals.domain.models import NutritionRiskProfile
+from care_pilot.config.app import get_settings
+from care_pilot.features.meals.domain.models import (
+    MealState,
+    Nutrition,
+    VisionResult,
+)
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.meals.domain.models import NutritionRiskProfile
 
 
 @pytest.fixture
-def sqlite_meal_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_meal_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -43,7 +49,9 @@ def _jpeg_bytes_with_color(color: tuple[int, int, int]) -> bytes:
 
 
 def _login(client: TestClient, email: str, password: str) -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
@@ -125,7 +133,9 @@ def test_meal_analyze_rejects_empty_file_payload() -> None:
     assert response.json()["error"]["code"] == "meal.empty_upload"
 
 
-def test_meal_analyze_rejects_large_upload_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_meal_analyze_rejects_large_upload_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("API_MEAL_UPLOAD_MAX_BYTES", "32")
     _reset_settings_cache()
     client = TestClient(create_app())
@@ -188,7 +198,13 @@ def test_meal_records_limit_query_truncates_response() -> None:
     for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255)]:
         response = client.post(
             "/api/v1/meal/analyze",
-            files={"file": ("meal.jpg", _jpeg_bytes_with_color(color), "image/jpeg")},
+            files={
+                "file": (
+                    "meal.jpg",
+                    _jpeg_bytes_with_color(color),
+                    "image/jpeg",
+                )
+            },
             data={"runtime_mode": "local", "provider": "test"},
         )
         assert response.status_code == 200
@@ -211,7 +227,13 @@ def test_meal_records_cursor_pagination_returns_next_page() -> None:
     for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255)]:
         response = client.post(
             "/api/v1/meal/analyze",
-            files={"file": ("meal.jpg", _jpeg_bytes_with_color(color), "image/jpeg")},
+            files={
+                "file": (
+                    "meal.jpg",
+                    _jpeg_bytes_with_color(color),
+                    "image/jpeg",
+                )
+            },
             data={"runtime_mode": "local", "provider": "test"},
         )
         assert response.status_code == 200
@@ -293,7 +315,7 @@ def test_meal_analyze_uses_settings_provider_when_form_provider_missing(
             )
 
     monkeypatch.setattr(
-        "dietary_guardian.agent.meal_analysis.vision_module.HawkerVisionModule",
+        "care_pilot.agent.meal_analysis.vision_module.HawkerVisionModule",
         _FakeHawkerVisionModule,
     )
 
@@ -354,7 +376,7 @@ def test_meal_analyze_defers_provider_selection_when_capability_routing_is_confi
             )
 
     monkeypatch.setattr(
-        "dietary_guardian.agent.meal_analysis.vision_module.HawkerVisionModule",
+        "care_pilot.agent.meal_analysis.vision_module.HawkerVisionModule",
         _FakeHawkerVisionModule,
     )
 
@@ -372,7 +394,9 @@ def test_meal_analyze_defers_provider_selection_when_capability_routing_is_confi
     _reset_settings_cache()
 
 
-def test_meal_analyze_times_out_on_slow_vision_inference(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_meal_analyze_times_out_on_slow_vision_inference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("LLM_INFERENCE_WALL_CLOCK_TIMEOUT_SECONDS", "0.1")
     _reset_settings_cache()
 
@@ -386,7 +410,7 @@ def test_meal_analyze_times_out_on_slow_vision_inference(monkeypatch: pytest.Mon
             raise AssertionError("expected timeout before completion")
 
     monkeypatch.setattr(
-        "dietary_guardian.agent.meal_analysis.vision_module.HawkerVisionModule",
+        "care_pilot.agent.meal_analysis.vision_module.HawkerVisionModule",
         _FakeSlowHawkerVisionModule,
     )
     client = TestClient(create_app())
@@ -405,7 +429,9 @@ def test_meal_analyze_times_out_on_slow_vision_inference(monkeypatch: pytest.Mon
     _reset_settings_cache()
 
 
-def test_meal_analyze_logs_response_summary(caplog: pytest.LogCaptureFixture) -> None:
+def test_meal_analyze_logs_response_summary(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
     caplog.set_level(logging.INFO)
@@ -417,12 +443,18 @@ def test_meal_analyze_logs_response_summary(caplog: pytest.LogCaptureFixture) ->
     )
 
     assert response.status_code == 200
-    response_logs = [record.message for record in caplog.records if "hawker_vision_response_summary" in record.message]
+    response_logs = [
+        record.message
+        for record in caplog.records
+        if "hawker_vision_response_summary" in record.message
+    ]
     assert response_logs
     assert "destination=" in response_logs[-1]
 
 
-def test_meal_daily_summary_aggregates_targets_remaining_and_pattern_insights(sqlite_meal_env: None) -> None:
+def test_meal_daily_summary_aggregates_targets_remaining_and_pattern_insights(
+    sqlite_meal_env: None,
+) -> None:
     app = create_app()
     client = TestClient(app)
     _login(client, "member@example.com", "member-pass")

@@ -1,10 +1,15 @@
 """Tests for message composer."""
 
-from dietary_guardian.features.safety.domain.alerts.models import AlertMessage
-from dietary_guardian.platform.messaging.message_composer import CHANNEL_CAPABILITIES, compose_alert_message
+from care_pilot.features.safety.domain.alerts.models import AlertMessage
+from care_pilot.platform.messaging.message_composer import (
+    CHANNEL_CAPABILITIES,
+    compose_alert_message,
+)
 
 
-def test_compose_manual_alert_message_uses_generic_title_not_medication_label() -> None:
+def test_compose_manual_alert_message_uses_generic_title_not_medication_label() -> (
+    None
+):
     alert = AlertMessage(
         alert_id="a1",
         type="manual_test_alert",

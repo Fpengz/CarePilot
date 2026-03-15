@@ -10,12 +10,14 @@ from __future__ import annotations
 import asyncio
 from uuid import uuid4
 
-from apps.api.dietary_api.deps import build_app_context, close_app_context
-from apps.workers.reminder_worker import run_once as run_sqlite_reminder_worker_once
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.platform.messaging import OutboxWorker
-from dietary_guardian.platform.observability import get_logger
-from dietary_guardian.platform.scheduling import run_reminder_scheduler_once
+from apps.api.carepilot_api.deps import build_app_context, close_app_context
+from apps.workers.reminder_worker import (
+    run_once as run_sqlite_reminder_worker_once,
+)
+from care_pilot.config.app import get_settings
+from care_pilot.platform.messaging import OutboxWorker
+from care_pilot.platform.observability import get_logger
+from care_pilot.platform.scheduling import run_reminder_scheduler_once
 
 logger = get_logger(__name__)
 _WORKER_FAILURE_RETRY_SECONDS = 1.0
@@ -39,12 +41,17 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
         ttl_seconds=settings.storage.redis_lock_ttl_seconds,
     ):
         try:
-            reminder_result = await run_reminder_scheduler_once(repository=ctx.app_store)
+            reminder_result = await run_reminder_scheduler_once(
+                repository=ctx.app_store
+            )
             processed_work = processed_work or bool(
-                reminder_result.queued_count or reminder_result.delivery_attempts
+                reminder_result.queued_count
+                or reminder_result.delivery_attempts
             )
         finally:
-            ctx.coordination_store.release_lock("reminder-scheduler", owner=owner)
+            ctx.coordination_store.release_lock(
+                "reminder-scheduler", owner=owner
+            )
 
     if ctx.coordination_store.acquire_lock(
         "sqlite-reminder-worker",
@@ -55,7 +62,9 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
             sqlite_processed = run_sqlite_reminder_worker_once()
             processed_work = processed_work or bool(sqlite_processed)
         finally:
-            ctx.coordination_store.release_lock("sqlite-reminder-worker", owner=owner)
+            ctx.coordination_store.release_lock(
+                "sqlite-reminder-worker", owner=owner
+            )
 
     if ctx.coordination_store.acquire_lock(
         "outbox-worker",
@@ -103,7 +112,9 @@ async def run_worker_loop() -> None:
     try:
         while True:
             try:
-                processed_work = await _run_worker_iteration(ctx=ctx, settings=settings, owner=owner)
+                processed_work = await _run_worker_iteration(
+                    ctx=ctx, settings=settings, owner=owner
+                )
             except Exception:
                 logger.exception(
                     "worker_loop_iteration_failed worker_mode=%s ephemeral_state_backend=%s owner=%s retry_in_seconds=%.1f",

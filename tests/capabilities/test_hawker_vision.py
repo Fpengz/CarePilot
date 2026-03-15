@@ -2,12 +2,15 @@
 
 import pytest
 
-from dietary_guardian.agent.meal_analysis import HawkerVisionModule
-from dietary_guardian.config.llm import LocalModelProfile
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.meals.domain import MealPerception
-from dietary_guardian.agent.runtime.inference_types import InferenceResponse, ProviderMetadata
-from dietary_guardian.features.meals.domain.models import ImageInput
+from care_pilot.agent.meal_analysis import HawkerVisionModule
+from care_pilot.config.llm import LocalModelProfile
+from care_pilot.config.app import get_settings
+from care_pilot.features.meals.domain import MealPerception
+from care_pilot.agent.runtime.inference_types import (
+    InferenceResponse,
+    ProviderMetadata,
+)
+from care_pilot.features.meals.domain.models import ImageInput
 
 
 @pytest.mark.anyio
@@ -45,7 +48,9 @@ async def test_analyze_and_record_normalizes_into_enriched_event() -> None:
 
 
 @pytest.mark.anyio
-async def test_clarification_dialogue_for_very_low_confidence(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_clarification_dialogue_for_very_low_confidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     module = HawkerVisionModule(provider="test")
 
     very_low_confidence = MealPerception.model_validate(
@@ -55,7 +60,11 @@ async def test_clarification_dialogue_for_very_low_confidence(monkeypatch: pytes
                 {
                     "label": "Possibly Laksa",
                     "candidate_aliases": ["Laksa"],
-                    "portion_estimate": {"amount": 1.0, "unit": "bowl", "confidence": 0.3},
+                    "portion_estimate": {
+                        "amount": 1.0,
+                        "unit": "bowl",
+                        "confidence": 0.3,
+                    },
                     "confidence": 0.3,
                 }
             ],
@@ -72,7 +81,9 @@ async def test_clarification_dialogue_for_very_low_confidence(monkeypatch: pytes
             structured_output=very_low_confidence,
             confidence=very_low_confidence.confidence_score,
             latency_ms=5.0,
-            provider_metadata=ProviderMetadata(provider="test", model="test-model", endpoint="default"),
+            provider_metadata=ProviderMetadata(
+                provider="test", model="test-model", endpoint="default"
+            ),
         )
 
     monkeypatch.setattr(module.inference_engine, "infer", fake_infer)
@@ -87,7 +98,9 @@ async def test_clarification_dialogue_for_very_low_confidence(monkeypatch: pytes
     assert result.perception.image_quality == "poor"
 
 
-def test_hawker_vision_uses_profile_built_model_for_inference_engine(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_hawker_vision_uses_profile_built_model_for_inference_engine(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class FakeProvider:
         base_url = "http://profile-specific:9000/v1"
 
@@ -102,8 +115,14 @@ def test_hawker_vision_uses_profile_built_model_for_inference_engine(monkeypatch
             del provider, model_name
             StubEngine.seen_model = model
 
-    monkeypatch.setattr("dietary_guardian.agent.meal_analysis.vision_module.LLMFactory.from_profile", lambda profile: FakeModel())
-    monkeypatch.setattr("dietary_guardian.agent.meal_analysis.vision_module.InferenceEngine", StubEngine)
+    monkeypatch.setattr(
+        "care_pilot.agent.meal_analysis.vision_module.LLMFactory.from_profile",
+        lambda profile: FakeModel(),
+    )
+    monkeypatch.setattr(
+        "care_pilot.agent.meal_analysis.vision_module.InferenceEngine",
+        StubEngine,
+    )
 
     profile = LocalModelProfile(
         id="custom",
@@ -115,11 +134,16 @@ def test_hawker_vision_uses_profile_built_model_for_inference_engine(monkeypatch
     HawkerVisionModule(local_profile=profile)
 
     assert StubEngine.seen_model is not None
-    assert getattr(StubEngine.seen_model, "provider").base_url == "http://profile-specific:9000/v1"
+    assert (
+        getattr(StubEngine.seen_model, "provider").base_url
+        == "http://profile-specific:9000/v1"
+    )
 
 
 @pytest.mark.anyio
-async def test_hawker_vision_feature_flag_disables_inference_engine_v2(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_hawker_vision_feature_flag_disables_inference_engine_v2(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LLM_USE_INFERENCE_ENGINE_V2", "false")
     get_settings.cache_clear()
@@ -128,7 +152,9 @@ async def test_hawker_vision_feature_flag_disables_inference_engine_v2(monkeypat
 
     async def fail_infer(*args, **kwargs):  # noqa: ANN001
         del args, kwargs
-        raise AssertionError("inference engine should not be used when v2 is disabled")
+        raise AssertionError(
+            "inference engine should not be used when v2 is disabled"
+        )
 
     async def fake_run(prompt: str):
         del prompt
@@ -143,7 +169,11 @@ async def test_hawker_vision_feature_flag_disables_inference_engine_v2(monkeypat
                             {
                                 "label": "Mee Rebus",
                                 "candidate_aliases": ["Mee Rebus"],
-                                "portion_estimate": {"amount": 1.0, "unit": "bowl", "confidence": 0.9},
+                                "portion_estimate": {
+                                    "amount": 1.0,
+                                    "unit": "bowl",
+                                    "confidence": 0.9,
+                                },
                                 "preparation": "soup",
                                 "confidence": 0.95,
                             }

@@ -4,18 +4,18 @@ from scripts import cli
 
 
 def test_dev_env_defaults_sets_log_level_when_missing(monkeypatch) -> None:
-    monkeypatch.delenv("DIETARY_GUARDIAN_LOG_LEVEL", raising=False)
+    monkeypatch.delenv("CARE_PILOT_LOG_LEVEL", raising=False)
     env = {}
 
     cli.apply_dev_env_defaults(env)
 
-    assert env["DIETARY_GUARDIAN_LOG_LEVEL"] == "DEBUG"
+    assert env["CARE_PILOT_LOG_LEVEL"] == "DEBUG"
 
 
 def test_dev_env_defaults_preserves_existing_log_level(monkeypatch) -> None:
-    monkeypatch.setenv("DIETARY_GUARDIAN_LOG_LEVEL", "INFO")
-    env = {"DIETARY_GUARDIAN_LOG_LEVEL": "INFO"}
+    monkeypatch.setenv("CARE_PILOT_LOG_LEVEL", "INFO")
+    env = {"CARE_PILOT_LOG_LEVEL": "INFO"}
 
     cli.apply_dev_env_defaults(env)
 
-    assert env["DIETARY_GUARDIAN_LOG_LEVEL"] == "INFO"
+    assert env["CARE_PILOT_LOG_LEVEL"] == "INFO"

@@ -8,9 +8,9 @@ import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
-from apps.api.dietary_api.main import create_app
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.platform.persistence.sqlite_repository import SQLiteRepository
+from apps.api.carepilot_api.main import create_app
+from care_pilot.config.app import get_settings
+from care_pilot.platform.persistence.sqlite_repository import SQLiteRepository
 from scripts.cli import app
 
 runner = CliRunner()
@@ -21,7 +21,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_seed_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_seed_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -30,22 +32,42 @@ def sqlite_seed_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None
     _reset_settings_cache()
 
 
-def _login(client: TestClient, email: str = "member@example.com", password: str = "member-pass") -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(
+    client: TestClient,
+    email: str = "member@example.com",
+    password: str = "member-pass",
+) -> None:
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
-def test_seed_synthetic_requires_explicit_reset_or_append(sqlite_seed_env: None) -> None:
+def test_seed_synthetic_requires_explicit_reset_or_append(
+    sqlite_seed_env: None,
+) -> None:
     result = runner.invoke(app, ["seed", "synthetic", "--days", "14"])
 
     assert result.exit_code == 2
     assert "choose exactly one of --reset or --append" in result.output
 
 
-def test_seed_synthetic_populates_dashboard_ready_data(sqlite_seed_env: None) -> None:
+def test_seed_synthetic_populates_dashboard_ready_data(
+    sqlite_seed_env: None,
+) -> None:
     result = runner.invoke(
         app,
-        ["seed", "synthetic", "--reset", "--days", "45", "--seed", "17", "--profile", "improving"],
+        [
+            "seed",
+            "synthetic",
+            "--reset",
+            "--days",
+            "45",
+            "--seed",
+            "17",
+            "--profile",
+            "improving",
+        ],
     )
 
     assert result.exit_code == 0, result.stdout
@@ -71,13 +93,27 @@ def test_seed_synthetic_populates_dashboard_ready_data(sqlite_seed_env: None) ->
     assert dashboard.status_code == 200
     body = dashboard.json()
     assert body["alerts"]
-    assert any(point["value"] > 0 for point in body["charts"]["calories"]["points"])
+    assert any(
+        point["value"] > 0 for point in body["charts"]["calories"]["points"]
+    )
 
 
-def test_seed_synthetic_append_adds_newer_records(sqlite_seed_env: None) -> None:
+def test_seed_synthetic_append_adds_newer_records(
+    sqlite_seed_env: None,
+) -> None:
     first = runner.invoke(
         app,
-        ["seed", "synthetic", "--reset", "--days", "14", "--seed", "7", "--profile", "stable"],
+        [
+            "seed",
+            "synthetic",
+            "--reset",
+            "--days",
+            "14",
+            "--seed",
+            "7",
+            "--profile",
+            "stable",
+        ],
     )
     assert first.exit_code == 0, first.stdout
 
@@ -87,7 +123,17 @@ def test_seed_synthetic_append_adds_newer_records(sqlite_seed_env: None) -> None
 
     second = runner.invoke(
         app,
-        ["seed", "synthetic", "--append", "--days", "7", "--seed", "7", "--profile", "stable"],
+        [
+            "seed",
+            "synthetic",
+            "--append",
+            "--days",
+            "7",
+            "--seed",
+            "7",
+            "--profile",
+            "stable",
+        ],
     )
     assert second.exit_code == 0, second.stdout
 

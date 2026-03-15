@@ -1,4 +1,4 @@
-# Dietary Guardian Refactor Plan (Single Source of Truth)
+# CarePilot Refactor Plan (Single Source of Truth)
 
 **Status:** Active (Phase 1 complete)  
 **Principle:** **feature-first modular monolith** with a small typed inference layer  
@@ -20,7 +20,7 @@ Completed in Phase 1:
 
 Completed in Phase 1.5 (Agent Layer Audit & Refactor):
 
-- **Audited and refactored all agents** (`src/dietary_guardian/agent/**`) to be inference-only:
+- **Audited and refactored all agents** (`src/care_pilot/agent/**`) to be inference-only:
   - Standardized on `pydantic_ai` for model-backed agents.
   - Removed orchestration, persistence, and domain writes from all agents.
   - Moved generic input/output schemas from `features/` to their respective `agent/` packages.
@@ -33,7 +33,7 @@ Completed in Phase 1.5 (Agent Layer Audit & Refactor):
 
 Remaining boundary work:
 
-- Many `src/dietary_guardian/features/**` modules still import API schemas and/or API context types (to be removed in Phase 2).
+- Many `src/care_pilot/features/**` modules still import API schemas and/or API context types (to be removed in Phase 2).
 - Explicit `pydantic-graph` workflows for meals and medications (Phase 2).
 
 Phase 2 status update:
@@ -60,8 +60,8 @@ Use this rule across the repo:
 
 ### 1.2 Standard libraries (to reduce refactor friction)
 
-- **Inference agents:** standardize on `pydantic_ai` inside `src/dietary_guardian/agent/**` only.
-- **Multi-step workflows:** standardize on `pydantic-graph` inside `src/dietary_guardian/features/**/workflows/**` only.
+- **Inference agents:** standardize on `pydantic_ai` inside `src/care_pilot/agent/**` only.
+- **Multi-step workflows:** standardize on `pydantic-graph` inside `src/care_pilot/features/**/workflows/**` only.
 - **Scheduling/persistence/policy:** deterministic code in feature domain + platform adapters.
 - **LangGraph:** explicitly deferred until we need checkpointed persistence, interrupts, or long-lived thread state as first-class requirements.
 
@@ -316,9 +316,9 @@ Workflow traces are product-visible and operationally meaningful:
 
 ### Components
 
-- Thin emitter: `src/dietary_guardian/features/workflows/trace_emitter.py`
-- Trace query service: `src/dietary_guardian/features/workflows/query_service.py`
-- Graph runner skeleton (for step tracing later): `src/dietary_guardian/features/workflows/graph_runner.py`
+- Thin emitter: `src/care_pilot/features/workflows/trace_emitter.py`
+- Trace query service: `src/care_pilot/features/workflows/query_service.py`
+- Graph runner skeleton (for step tracing later): `src/care_pilot/features/workflows/graph_runner.py`
 
 Do **not** use graph runtime persistence history as the canonical product audit trail.
 
@@ -370,12 +370,12 @@ Do **not** use graph runtime persistence history as the canonical product audit 
 
 ## 10) Repo-Wide Rules to Enforce (Hard Constraints)
 
-1. Only `src/dietary_guardian/agent/**` may create or directly use `pydantic_ai` agents.
-2. Only `src/dietary_guardian/features/**/workflows/**` may orchestrate multi-step journeys (pydantic-graph).
-3. Only `src/dietary_guardian/features/**/domain/**` owns deterministic business rules and state transitions (incl. persistence writes).
-4. `src/dietary_guardian/platform/**` may not import `src/dietary_guardian/features/**` or `src/dietary_guardian/agent/**`.
+1. Only `src/care_pilot/agent/**` may create or directly use `pydantic_ai` agents.
+2. Only `src/care_pilot/features/**/workflows/**` may orchestrate multi-step journeys (pydantic-graph).
+3. Only `src/care_pilot/features/**/domain/**` owns deterministic business rules and state transitions (incl. persistence writes).
+4. `src/care_pilot/platform/**` may not import `src/care_pilot/features/**` or `src/care_pilot/agent/**`.
 5. API layer maps request/response only and calls feature entrypoints.
-6. No API schema imports inside `src/dietary_guardian/features/**` or `src/dietary_guardian/platform/**`.
+6. No API schema imports inside `src/care_pilot/features/**` or `src/care_pilot/platform/**`.
 7. Workflow traces go to `EventTimelineService` (via thin emitter where appropriate).
 
 ---
@@ -389,8 +389,8 @@ Already implemented:
 
 Next to add (Phase 1.5 / Phase 2):
 
-- forbid `apps/api/dietary_api/schemas` imports from `src/dietary_guardian/features/**` and `src/dietary_guardian/platform/**`
-- forbid `pydantic_graph` imports outside `src/dietary_guardian/features/**/workflows/**`
+- forbid `apps/api/carepilot_api/schemas` imports from `src/care_pilot/features/**` and `src/care_pilot/platform/**`
+- forbid `pydantic_graph` imports outside `src/care_pilot/features/**/workflows/**`
 - enforce platform import direction (platform never imports features/agent)
 
 ---
@@ -437,10 +437,10 @@ Goal: make `features/companion/**` the clear “product spine” with consistent
 - **Goal:** eliminate hidden orchestration in route handlers, normalize companion module ownership, and slim `agent/chat/**` to inference-only.
 - **Scope:** `features/companion/**`, chat API handlers, recommendation/emotion composition surfaces, meta-tests.
 - **Files (expected):**
-  - Move logic out of: `apps/api/dietary_api/routers/chat.py`
-  - New/expanded: `src/dietary_guardian/features/companion/chat/use_cases/**`
-  - Normalize: `src/dietary_guardian/features/companion/{core,chat,emotion,recommendations,care_plans,clinician_digest,engagement,personalization,impact}/**`
-  - Slim: `src/dietary_guardian/agent/chat/**`
+  - Move logic out of: `apps/api/carepilot_api/routers/chat.py`
+  - New/expanded: `src/care_pilot/features/companion/chat/use_cases/**`
+  - Normalize: `src/care_pilot/features/companion/{core,chat,emotion,recommendations,care_plans,clinician_digest,engagement,personalization,impact}/**`
+  - Slim: `src/care_pilot/agent/chat/**`
   - Guardrails: `tests/meta/**`
 - **Validation:** run `ruff`, `ty`, `pytest` on each chunk; keep tests green continuously.
 - **Risk:** chat streaming regressions, session scoping bugs, accidental LLM calls during tests, import-cycle regressions.
@@ -449,7 +449,7 @@ Goal: make `features/companion/**` the clear “product spine” with consistent
 
 Target outcome:
 
-- `apps/api/dietary_api/routers/chat.py` becomes transport-only: parse input, auth, call feature entrypoints, stream tokens.
+- `apps/api/carepilot_api/routers/chat.py` becomes transport-only: parse input, auth, call feature entrypoints, stream tokens.
 - Chat product behavior lives in feature-owned entrypoints:
   - meal command parsing + proposal confirm flow
   - memory injection formatting + persistence
@@ -458,10 +458,10 @@ Target outcome:
 
 Concrete moves:
 
-- Create `src/dietary_guardian/features/companion/chat/use_cases/stream_chat.py`
+- Create `src/care_pilot/features/companion/chat/use_cases/stream_chat.py`
   - defines a typed input (user_id/session_id/message/request_id/correlation_id)
   - returns an async iterator of “token/error/done” events for the router to format.
-- Create `src/dietary_guardian/features/companion/chat/use_cases/confirm_meal_proposal.py`
+- Create `src/care_pilot/features/companion/chat/use_cases/confirm_meal_proposal.py`
   - feature-owned validation + meal logging call + follow-up generation.
 - Keep `ChatStreamRuntime` as the streaming tool; keep memory store interactions in a feature-owned helper module.
 
@@ -482,7 +482,7 @@ Target outcome:
 
 Target outcome:
 
-- `src/dietary_guardian/agent/chat/**` contains only:
+- `src/care_pilot/agent/chat/**` contains only:
   - schemas for chat inference IO (if still useful)
   - prompt(s) and a `pydantic_ai` agent wrapper (if used)
 - No routing, memory management, meal intent, or health tracking logic in `agent/chat/**`.
@@ -501,9 +501,9 @@ Target outcome:
 
 Add/adjust meta-tests:
 
-- no orchestration in `apps/api/dietary_api/routers/**` (allow only request parsing + calling feature entrypoints)
-- forbid `pydantic_ai` usage outside `src/dietary_guardian/agent/**`
-- forbid `pydantic_graph` usage outside `src/dietary_guardian/features/**/workflows/**`
+- no orchestration in `apps/api/carepilot_api/routers/**` (allow only request parsing + calling feature entrypoints)
+- forbid `pydantic_ai` usage outside `src/care_pilot/agent/**`
+- forbid `pydantic_graph` usage outside `src/care_pilot/features/**/workflows/**`
 - enforce import direction: platform never imports features/agent
 
 Deliverable: Phase 3 ends with a repo that is “companion-spine first” and easy to extend without guessing where logic belongs.

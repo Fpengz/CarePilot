@@ -2,8 +2,10 @@
 
 import os
 
-from dietary_guardian.config.app import AppSettings as Settings
-from dietary_guardian.platform.observability.diagnostics.readiness import build_readiness_report
+from care_pilot.config.app import AppSettings as Settings
+from care_pilot.platform.observability.diagnostics.readiness import (
+    build_readiness_report,
+)
 
 
 def _build_settings(**overrides: object) -> Settings:
@@ -51,10 +53,15 @@ def test_readiness_report_is_degraded_for_optional_channel_warnings() -> None:
     report = build_readiness_report(settings=settings)
 
     assert report["status"] == "degraded"
-    assert any(item["name"] == "email_configuration" and item["status"] == "warn" for item in report["checks"])
+    assert any(
+        item["name"] == "email_configuration" and item["status"] == "warn"
+        for item in report["checks"]
+    )
 
 
-def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> None:
+def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> (
+    None
+):
     settings = _build_settings(
         llm={"provider": "test"},
         app={"env": "dev"},
@@ -65,7 +72,10 @@ def test_readiness_report_is_not_ready_when_warning_strict_mode_is_enabled() -> 
     report = build_readiness_report(settings=settings)
 
     assert report["status"] == "not_ready"
-    assert any(item["name"] == "sms_configuration" and item["status"] == "warn" for item in report["checks"])
+    assert any(
+        item["name"] == "sms_configuration" and item["status"] == "warn"
+        for item in report["checks"]
+    )
 
 
 def test_readiness_report_requires_shared_rate_limiting_for_prod() -> None:
@@ -73,10 +83,17 @@ def test_readiness_report_requires_shared_rate_limiting_for_prod() -> None:
         llm={"provider": "test"},
         app={"env": "prod"},
         storage={"ephemeral_state_backend": "in_memory"},
-        auth={"session_secret": "prod-secret", "cookie_secure": True, "seed_demo_users": False},
+        auth={
+            "session_secret": "prod-secret",
+            "cookie_secure": True,
+            "seed_demo_users": False,
+        },
     )
 
     report = build_readiness_report(settings=settings)
 
     assert report["status"] == "not_ready"
-    assert any(item["name"] == "shared_rate_limiting" and item["status"] == "fail" for item in report["checks"])
+    assert any(
+        item["name"] == "shared_rate_limiting" and item["status"] == "fail"
+        for item in report["checks"]
+    )

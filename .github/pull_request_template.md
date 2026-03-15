@@ -12,8 +12,8 @@
 - 
 
 ## Affected Layers
-- [ ] API (`apps/api/dietary_api/**`)
-- [ ] Core services/models (`src/dietary_guardian/**`)
+- [ ] API (`apps/api/carepilot_api/**`)
+- [ ] Core services/models (`src/care_pilot/**`)
 - [ ] Worker runtime (`apps/workers/**`)
 - [ ] Frontend (`apps/web/**`)
 - [ ] Tests (`tests/**`, `apps/api/tests/**`, `apps/web/e2e/**`)

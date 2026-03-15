@@ -37,7 +37,7 @@ export default function ClinicalCalmSamplePage() {
       <div className="app-shell space-y-16">
         <header className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div className="space-y-6">
-            <p className="section-kicker">Dietary Guardian</p>
+            <p className="section-kicker">CarePilot</p>
             <h1 className="text-4xl font-semibold leading-[1.05] tracking-[-0.02em] md:text-5xl">
               Clinical clarity for everyday nutrition decisions.
             </h1>

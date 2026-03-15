@@ -1,16 +1,22 @@
 """Tests for rate limiter."""
 
-from dietary_guardian.config.app import AppSettings as Settings
-from dietary_guardian.platform.cache.rate_limiter import (
+from care_pilot.config.app import AppSettings as Settings
+from care_pilot.platform.cache.rate_limiter import (
     InMemoryRateLimiter,
     RedisRateLimiter,
     build_rate_limiter,
 )
 
 
-def test_build_rate_limiter_uses_in_memory_backend_for_local_profiles() -> None:
+def test_build_rate_limiter_uses_in_memory_backend_for_local_profiles() -> (
+    None
+):
     limiter = build_rate_limiter(
-        _build_settings(llm={"provider": "test"}, app={"env": "dev"}, storage={"ephemeral_state_backend": "in_memory"})
+        _build_settings(
+            llm={"provider": "test"},
+            app={"env": "dev"},
+            storage={"ephemeral_state_backend": "in_memory"},
+        )
     )
     assert isinstance(limiter, InMemoryRateLimiter)
 
@@ -20,9 +26,14 @@ def test_build_rate_limiter_uses_redis_backend_for_shared_profiles() -> None:
         _build_settings(
             llm={"provider": "test"},
             app={"env": "dev"},
-            storage={"ephemeral_state_backend": "redis", "redis_url": "redis://localhost:6379/0"},
+            storage={
+                "ephemeral_state_backend": "redis",
+                "redis_url": "redis://localhost:6379/0",
+            },
         )
     )
     assert isinstance(limiter, RedisRateLimiter)
+
+
 def _build_settings(**overrides: object) -> Settings:
     return Settings.model_validate(overrides)

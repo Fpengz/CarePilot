@@ -1,7 +1,11 @@
 """Tests for role views report advice."""
 
-from apps.api.dietary_api.routers._companion_views import build_profile_mode_report_advice_view
-from dietary_guardian.features.recommendations.domain.models import RecommendationOutput
+from apps.api.carepilot_api.routers._companion_views import (
+    build_profile_mode_report_advice_view,
+)
+from care_pilot.features.recommendations.domain.models import (
+    RecommendationOutput,
+)
 
 
 def test_profile_mode_report_advice_views() -> None:
@@ -10,5 +14,15 @@ def test_profile_mode_report_advice_views() -> None:
         rationale="Biomarker grounded advice",
         localized_advice=["Try fish soup"],
     )
-    assert "fish soup" in build_profile_mode_report_advice_view("self", rec)["message"].lower()
-    assert "biomarker" in build_profile_mode_report_advice_view("caregiver", rec)["message"].lower()
+    assert (
+        "fish soup"
+        in build_profile_mode_report_advice_view("self", rec)[
+            "message"
+        ].lower()
+    )
+    assert (
+        "biomarker"
+        in build_profile_mode_report_advice_view("caregiver", rec)[
+            "message"
+        ].lower()
+    )

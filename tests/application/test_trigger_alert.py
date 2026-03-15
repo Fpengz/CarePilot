@@ -1,7 +1,9 @@
 """Tests for trigger alert."""
 
-from dietary_guardian.platform.persistence import SQLiteRepository
-from dietary_guardian.features.reminders.notifications.alert_dispatch import trigger_alert
+from care_pilot.platform.persistence import SQLiteRepository
+from care_pilot.features.reminders.notifications.alert_dispatch import (
+    trigger_alert,
+)
 
 
 def test_trigger_alert_enqueues_and_processes(tmp_path) -> None:

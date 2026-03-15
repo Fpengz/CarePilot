@@ -10,7 +10,7 @@ Engineering source of truth remains:
 
 ## One-Line Pitch
 
-Dietary Guardian SG is a Singapore-native AI health companion that understands what patients eat, how they feel, what their reports show, and when clinicians should intervene, then turns that into safe, proactive, and culturally relevant guidance.
+CarePilot SG is a Singapore-native AI health companion that understands what patients eat, how they feel, what their reports show, and when clinicians should intervene, then turns that into safe, proactive, and culturally relevant guidance.
 
 ## The Core Story
 

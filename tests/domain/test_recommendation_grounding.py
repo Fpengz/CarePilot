@@ -2,15 +2,23 @@
 
 from datetime import datetime
 
-from dietary_guardian.features.companion.core.health.models import ClinicalProfileSnapshot
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.companion.core.health.models import (
+    ClinicalProfileSnapshot,
+)
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.meals.domain.models import Ingredient, MealState, Nutrition
-from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
-from dietary_guardian.features.recommendations.domain.meal_recommendations import generate_recommendation
+from care_pilot.features.meals.domain.models import (
+    Ingredient,
+    MealState,
+    Nutrition,
+)
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.recommendations.domain.meal_recommendations import (
+    generate_recommendation,
+)
 
 
 def _user() -> UserProfile:
@@ -23,7 +31,9 @@ def _user() -> UserProfile:
     )
 
 
-def _record(dish: str, ingredients: list[Ingredient] | None = None) -> MealRecognitionRecord:
+def _record(
+    dish: str, ingredients: list[Ingredient] | None = None
+) -> MealRecognitionRecord:
     return MealRecognitionRecord(
         id="m1",
         user_id="u1",
@@ -34,7 +44,14 @@ def _record(dish: str, ingredients: list[Ingredient] | None = None) -> MealRecog
             confidence_score=0.9,
             identification_method="AI_Flash",
             ingredients=ingredients or [],
-            nutrition=Nutrition(calories=550, carbs_g=60, sugar_g=8, protein_g=18, fat_g=25, sodium_mg=1200),
+            nutrition=Nutrition(
+                calories=550,
+                carbs_g=60,
+                sugar_g=8,
+                protein_g=18,
+                fat_g=25,
+                sodium_mg=1200,
+            ),
         ),
     )
 

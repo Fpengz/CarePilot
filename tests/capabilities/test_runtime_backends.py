@@ -3,10 +3,10 @@
 from collections.abc import Generator
 
 import pytest
-from apps.api.dietary_api.deps import build_app_context, close_app_context
+from apps.api.carepilot_api.deps import build_app_context, close_app_context
 
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.platform.persistence import SQLiteAppStore, build_app_store
+from care_pilot.config.app import get_settings
+from care_pilot.platform.persistence import SQLiteAppStore, build_app_store
 
 
 def _reset_settings_cache() -> None:
@@ -14,7 +14,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def runtime_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def runtime_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("LLM_PROVIDER", "test")
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
@@ -43,7 +45,9 @@ def test_build_app_context_supports_redis_ephemeral_backend(
         close_app_context(ctx)
 
 
-def test_build_app_context_defaults_to_in_memory_ephemeral_backends(runtime_env: None) -> None:
+def test_build_app_context_defaults_to_in_memory_ephemeral_backends(
+    runtime_env: None,
+) -> None:
     ctx = build_app_context()
     try:
         assert ctx.settings.storage.ephemeral_state_backend == "in_memory"
@@ -53,7 +57,9 @@ def test_build_app_context_defaults_to_in_memory_ephemeral_backends(runtime_env:
         close_app_context(ctx)
 
 
-def test_exported_build_app_store_returns_sqlite_store_in_sqlite_mode(runtime_env: None) -> None:
+def test_exported_build_app_store_returns_sqlite_store_in_sqlite_mode(
+    runtime_env: None,
+) -> None:
     store = build_app_store(get_settings())
     try:
         assert isinstance(store, SQLiteAppStore)
@@ -61,7 +67,9 @@ def test_exported_build_app_store_returns_sqlite_store_in_sqlite_mode(runtime_en
         store.close()
 
 
-def test_build_app_context_uses_sqlite_backends_for_durable_state(runtime_env: None) -> None:
+def test_build_app_context_uses_sqlite_backends_for_durable_state(
+    runtime_env: None,
+) -> None:
     ctx = build_app_context()
     try:
         assert ctx.settings.storage.app_data_backend == "sqlite"

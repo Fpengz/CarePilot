@@ -1,6 +1,6 @@
 """Tests for MealPerception validation."""
 
-from dietary_guardian.features.meals.domain.models import MealPerception
+from care_pilot.features.meals.domain.models import MealPerception
 
 
 def test_meal_perception_accepts_image_quality_dict() -> None:
@@ -29,7 +29,11 @@ def test_meal_perception_accepts_items_dict() -> None:
             "items": {
                 "label": "Char Kway Teow",
                 "candidate_aliases": ["Char Kway Teow"],
-                "portion_estimate": {"amount": 1.0, "unit": "plate", "confidence": 0.8},
+                "portion_estimate": {
+                    "amount": 1.0,
+                    "unit": "plate",
+                    "confidence": 0.8,
+                },
                 "confidence": 0.9,
             },
             "uncertainties": [],
@@ -64,7 +68,11 @@ def test_meal_perception_accepts_candidate_aliases_string() -> None:
                 {
                     "label": "Char Kway Teow",
                     "candidate_aliases": "Char Kway Teow",
-                    "portion_estimate": {"amount": 1.0, "unit": "plate", "confidence": 0.8},
+                    "portion_estimate": {
+                        "amount": 1.0,
+                        "unit": "plate",
+                        "confidence": 0.8,
+                    },
                     "confidence": 0.9,
                 }
             ],
@@ -85,7 +93,10 @@ def test_meal_perception_accepts_name_field_and_quantity_portion() -> None:
                 {
                     "name": "炒粿条",
                     "candidate_aliases": ["炒河粉", "福建炒面", "虾炒粿条"],
-                    "portion_estimate": {"quantity": "2-3 servings", "unit": "servings"},
+                    "portion_estimate": {
+                        "quantity": "2-3 servings",
+                        "unit": "servings",
+                    },
                     "confidence": 0.95,
                 }
             ],

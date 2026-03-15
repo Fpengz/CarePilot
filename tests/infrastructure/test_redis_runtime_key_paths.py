@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 
-from dietary_guardian.platform.cache import redis_store as redis_cache_module
-from dietary_guardian.platform.scheduling.coordination import redis_coordination as redis_coord_module
+from care_pilot.platform.cache import redis_store as redis_cache_module
+from care_pilot.platform.scheduling.coordination import (
+    redis_coordination as redis_coord_module,
+)
 
 
 class _FakeRedisClient:
@@ -56,7 +58,9 @@ class _FakeRedisModule:
         _client: _FakeRedisClient
 
         @classmethod
-        def from_url(cls, _redis_url: str, *, decode_responses: bool) -> _FakeRedisClient:
+        def from_url(
+            cls, _redis_url: str, *, decode_responses: bool
+        ) -> _FakeRedisClient:
             assert decode_responses is True
             return cls._client
 
@@ -67,29 +71,44 @@ class _FakeRedisModule:
 def _bind_fake_redis_for_cache(monkeypatch, client: _FakeRedisClient) -> None:
     fake_module = _FakeRedisModule(client)
     fake_module.bind()
-    monkeypatch.setattr(redis_cache_module, "_load_redis_module", lambda: fake_module)
+    monkeypatch.setattr(
+        redis_cache_module, "_load_redis_module", lambda: fake_module
+    )
 
 
-def _bind_fake_redis_for_coordination(monkeypatch, client: _FakeRedisClient) -> None:
+def _bind_fake_redis_for_coordination(
+    monkeypatch, client: _FakeRedisClient
+) -> None:
     fake_module = _FakeRedisModule(client)
     fake_module.bind()
-    monkeypatch.setattr(redis_coord_module, "_load_redis_module", lambda: fake_module)
+    monkeypatch.setattr(
+        redis_coord_module, "_load_redis_module", lambda: fake_module
+    )
 
 
 def test_redis_cache_store_uses_canonical_namespaced_keys(monkeypatch) -> None:
     client = _FakeRedisClient()
     _bind_fake_redis_for_cache(monkeypatch, client)
-    store = redis_cache_module.RedisCacheStore(redis_url="redis://localhost:6379/0", namespace="dietary")
+    store = redis_cache_module.RedisCacheStore(
+        redis_url="redis://localhost:6379/0", namespace="dietary"
+    )
 
-    assert store._key("reminders.ready") == "dietary:cache:reminder:reminders.ready"
+    assert (
+        store._key("reminders.ready")
+        == "dietary:cache:reminder:reminders.ready"
+    )
     assert store.get_json("workers.ready") is None
     assert client.get_calls == ["dietary:cache:general:workers.ready"]
 
 
-def test_redis_coordination_store_uses_canonical_signal_paths(monkeypatch) -> None:
+def test_redis_coordination_store_uses_canonical_signal_paths(
+    monkeypatch,
+) -> None:
     client = _FakeRedisClient()
     _bind_fake_redis_for_coordination(monkeypatch, client)
-    store = redis_coord_module.RedisCoordinationStore(redis_url="redis://localhost:6379/0", namespace="dietary")
+    store = redis_coord_module.RedisCoordinationStore(
+        redis_url="redis://localhost:6379/0", namespace="dietary"
+    )
 
     channel = "dietary:coordination:signal:reminder:reminders.ready"
     client._lists[channel] = [json.dumps({"id": 1})]
@@ -99,13 +118,19 @@ def test_redis_coordination_store_uses_canonical_signal_paths(monkeypatch) -> No
     assert client.rpop_calls == [channel, channel]
 
 
-def test_redis_coordination_store_waits_on_canonical_channel(monkeypatch) -> None:
+def test_redis_coordination_store_waits_on_canonical_channel(
+    monkeypatch,
+) -> None:
     client = _FakeRedisClient()
     _bind_fake_redis_for_coordination(monkeypatch, client)
-    store = redis_coord_module.RedisCoordinationStore(redis_url="redis://localhost:6379/0", namespace="dietary")
+    store = redis_coord_module.RedisCoordinationStore(
+        redis_url="redis://localhost:6379/0", namespace="dietary"
+    )
     client._brpop_result = None
 
     payload = store.wait_for_signal("workers.ready", timeout_seconds=0.2)
 
     assert payload is None
-    assert client.brpop_calls == [("dietary:coordination:signal:workflow:workers.ready", 1)]
+    assert client.brpop_calls == [
+        ("dietary:coordination:signal:workflow:workers.ready", 1)
+    ]

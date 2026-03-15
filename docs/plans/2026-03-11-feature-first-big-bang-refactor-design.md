@@ -61,7 +61,7 @@ src/
 ## Migration Plan (Big-Bang)
 1. Create/confirm the final directory skeleton.
 2. Move feature behavior from `application/` and `domain/` into `features/` with one `service.py` per feature.
-3. Move all AI to `agent/` and update imports to `dietary_guardian.agent.*`.
+3. Move all AI to `agent/` and update imports to `care_pilot.agent.*`.
 4. Move all infra adapters into `platform/`.
 5. Update all imports across apps, web, workers, and tests.
 6. Delete `application/`, `domain/`, `infrastructure/`, `capabilities/`.

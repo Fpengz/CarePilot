@@ -1,6 +1,6 @@
 """Module for test api alerts."""
 
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
 

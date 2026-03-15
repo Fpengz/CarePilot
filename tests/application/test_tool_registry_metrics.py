@@ -2,13 +2,13 @@
 
 from pydantic import BaseModel
 
-from dietary_guardian.platform.observability.tooling.domain.models import (
+from care_pilot.platform.observability.tooling.domain.models import (
     ToolPolicyContext,
     ToolSensitivity,
     ToolSideEffect,
     ToolSpec,
 )
-from dietary_guardian.platform.observability.tooling.registry import ToolRegistry
+from care_pilot.platform.observability.tooling.registry import ToolRegistry
 
 
 class PingInput(BaseModel):
@@ -39,8 +39,16 @@ def test_tool_registry_metrics_track_success_and_failure() -> None:
         ok_handler,
     )
 
-    ok = registry.execute("ping", {"value": "ok"}, ToolPolicyContext(account_role="member", scopes=["ping:run"]))
-    blocked = registry.execute("ping", {"value": "x"}, ToolPolicyContext(account_role="member", scopes=[]))
+    ok = registry.execute(
+        "ping",
+        {"value": "ok"},
+        ToolPolicyContext(account_role="member", scopes=["ping:run"]),
+    )
+    blocked = registry.execute(
+        "ping",
+        {"value": "x"},
+        ToolPolicyContext(account_role="member", scopes=[]),
+    )
 
     assert ok.success is True
     assert blocked.success is False

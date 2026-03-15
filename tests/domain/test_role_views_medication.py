@@ -2,15 +2,43 @@
 
 from datetime import datetime
 
-from apps.api.dietary_api.routers._companion_views import build_profile_mode_medication_view
-from dietary_guardian.features.reminders.domain.models import ReminderEvent
+from apps.api.carepilot_api.routers._companion_views import (
+    build_profile_mode_medication_view,
+)
+from care_pilot.features.reminders.domain.models import ReminderEvent
 
 
 def test_profile_mode_medication_views() -> None:
     reminders = [
-        ReminderEvent(id="1", user_id="u", medication_name="A", scheduled_at=datetime(2026, 2, 24, 8), dosage_text="5mg", status="sent"),
-        ReminderEvent(id="2", user_id="u", medication_name="A", scheduled_at=datetime(2026, 2, 24, 12), dosage_text="5mg", status="missed"),
-        ReminderEvent(id="3", user_id="u", medication_name="A", scheduled_at=datetime(2026, 2, 24, 20), dosage_text="5mg", status="acknowledged"),
+        ReminderEvent(
+            id="1",
+            user_id="u",
+            medication_name="A",
+            scheduled_at=datetime(2026, 2, 24, 8),
+            dosage_text="5mg",
+            status="sent",
+        ),
+        ReminderEvent(
+            id="2",
+            user_id="u",
+            medication_name="A",
+            scheduled_at=datetime(2026, 2, 24, 12),
+            dosage_text="5mg",
+            status="missed",
+        ),
+        ReminderEvent(
+            id="3",
+            user_id="u",
+            medication_name="A",
+            scheduled_at=datetime(2026, 2, 24, 20),
+            dosage_text="5mg",
+            status="acknowledged",
+        ),
     ]
-    assert build_profile_mode_medication_view("self", reminders)["due_now"] == 1
-    assert build_profile_mode_medication_view("caregiver", reminders)["missed"] == 1
+    assert (
+        build_profile_mode_medication_view("self", reminders)["due_now"] == 1
+    )
+    assert (
+        build_profile_mode_medication_view("caregiver", reminders)["missed"]
+        == 1
+    )

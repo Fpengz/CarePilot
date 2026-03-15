@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Dietary Guardian — Clean Architecture Diagram
+  CarePilot — Clean Architecture Diagram
   Generated for: System Documentation & Architecture Reviews
   Format: Draw.io (mxGraph XML)
   Import: File → Import From → Device… (or drag-and-drop into draw.io)
@@ -75,7 +75,7 @@
          LAYER 2 — API TRANSPORT  (FastAPI)
          ══════════════════════════════════════════════════════════ -->
     <mxCell id="L2"
-      value="API Transport Layer — FastAPI  (apps/api/dietary_api/)"
+      value="API Transport Layer — FastAPI  (apps/api/carepilot_api/)"
       style="swimlane;startSize=32;fontStyle=1;fontSize=13;
              fillColor=#dcfce7;strokeColor=#16a34a;fontColor=#14532d;
              rounded=1;arcSize=3;"
@@ -155,7 +155,7 @@
          LAYER 4 — FEATURE SERVICES
          ══════════════════════════════════════════════════════════ -->
     <mxCell id="L4"
-      value="Feature Services — Canonical Product Behaviour  (src/dietary_guardian/features/)"
+      value="Feature Services — Canonical Product Behaviour  (src/care_pilot/features/)"
       style="swimlane;startSize=32;fontStyle=1;fontSize=13;
              fillColor=#fef3c7;strokeColor=#d97706;fontColor=#78350f;
              rounded=1;arcSize=3;"
@@ -216,7 +216,7 @@
          LAYER 5 — APPLICATION CORE
          ══════════════════════════════════════════════════════════ -->
     <mxCell id="L5"
-      value="Application Core — Use Cases &amp; Orchestration  (src/dietary_guardian/application/)"
+      value="Application Core — Use Cases &amp; Orchestration  (src/care_pilot/application/)"
       style="swimlane;startSize=32;fontStyle=1;fontSize=13;
              fillColor=#ede9fe;strokeColor=#7c3aed;fontColor=#4c1d95;
              rounded=1;arcSize=3;"
@@ -301,7 +301,7 @@
          LAYER 6 — AGENT LAYER
          ══════════════════════════════════════════════════════════ -->
     <mxCell id="L6"
-      value="Agent Layer — LLM-Powered Bounded Reasoning  (src/dietary_guardian/agent/)"
+      value="Agent Layer — LLM-Powered Bounded Reasoning  (src/care_pilot/agent/)"
       style="swimlane;startSize=32;fontStyle=1;fontSize=13;
              fillColor=#fce7f3;strokeColor=#db2777;fontColor=#831843;
              rounded=1;arcSize=3;"
@@ -351,7 +351,7 @@
          LAYER 7 — DOMAIN
          ══════════════════════════════════════════════════════════ -->
     <mxCell id="L7"
-      value="Domain Layer — Business Models &amp; Rules  (src/dietary_guardian/domain/)"
+      value="Domain Layer — Business Models &amp; Rules  (src/care_pilot/domain/)"
       style="swimlane;startSize=32;fontStyle=1;fontSize=13;
              fillColor=#fee2e2;strokeColor=#dc2626;fontColor=#7f1d1d;
              rounded=1;arcSize=3;"
@@ -373,7 +373,7 @@
          LAYER 8 — INFRASTRUCTURE
          ══════════════════════════════════════════════════════════ -->
     <mxCell id="L8"
-      value="Infrastructure Layer — Concrete Adapters  (src/dietary_guardian/infrastructure/)"
+      value="Infrastructure Layer — Concrete Adapters  (src/care_pilot/infrastructure/)"
       style="swimlane;startSize=32;fontStyle=1;fontSize=13;
              fillColor=#e0f2fe;strokeColor=#0284c7;fontColor=#0c4a6e;
              rounded=1;arcSize=3;"

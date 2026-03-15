@@ -2,7 +2,7 @@
 
 from io import BytesIO
 
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
 

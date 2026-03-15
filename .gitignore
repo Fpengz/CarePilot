@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
-src/dietary_guardian/_version.py
+src/care_pilot/_version.py
 build/
 dist/
 wheels/

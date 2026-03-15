@@ -1,4 +1,4 @@
-# Agent Modules — `src/dietary_guardian/agent/`
+# Agent Modules — `src/care_pilot/agent/`
 
 A complete reference for every module under the agent layer.
 

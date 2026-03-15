@@ -2,16 +2,18 @@
 
 from datetime import datetime
 
-from dietary_guardian.features.companion.core.health.models import ReportInput
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.companion.core.health.models import ReportInput
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.meals.domain.models import MealState, Nutrition
-from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
-from dietary_guardian.features.recommendations.domain.meal_recommendations import generate_recommendation
-from dietary_guardian.features.reports.domain import (
+from care_pilot.features.meals.domain.models import MealState, Nutrition
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.recommendations.domain.meal_recommendations import (
+    generate_recommendation,
+)
+from care_pilot.features.reports.domain import (
     build_clinical_snapshot,
     parse_report_input,
 )
@@ -39,7 +41,14 @@ def test_user_story_3_report_to_grounded_recommendation() -> None:
             confidence_score=0.95,
             identification_method="AI_Flash",
             ingredients=[],
-            nutrition=Nutrition(calories=590, carbs_g=60, sugar_g=6, protein_g=20, fat_g=30, sodium_mg=1500),
+            nutrition=Nutrition(
+                calories=590,
+                carbs_g=60,
+                sugar_g=6,
+                protein_g=20,
+                fat_g=30,
+                sodium_mg=1500,
+            ),
         ),
     )
     recommendation = generate_recommendation(meal_record, snapshot, user)

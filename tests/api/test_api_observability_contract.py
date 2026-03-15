@@ -5,11 +5,11 @@ from collections.abc import Generator
 from io import BytesIO
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -17,7 +17,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_observability_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_observability_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -34,23 +36,32 @@ def _jpeg_bytes() -> bytes:
 
 
 def _login(client: TestClient, email: str, password: str) -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
-def test_header_propagation_contract_on_api_routes(sqlite_observability_env: None) -> None:
+def test_header_propagation_contract_on_api_routes(
+    sqlite_observability_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
     response = client.get(
         "/api/v1/meal/records",
-        headers={"X-Request-ID": "req-contract-1", "X-Correlation-ID": "corr-contract-1"},
+        headers={
+            "X-Request-ID": "req-contract-1",
+            "X-Correlation-ID": "corr-contract-1",
+        },
     )
     assert response.status_code == 200
     assert response.headers["x-request-id"] == "req-contract-1"
     assert response.headers["x-correlation-id"] == "corr-contract-1"
 
 
-def test_invalid_trace_headers_are_normalized(sqlite_observability_env: None) -> None:
+def test_invalid_trace_headers_are_normalized(
+    sqlite_observability_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
     response = client.get(
@@ -74,10 +85,17 @@ def test_request_logs_include_standardized_outcome_and_latency(
     caplog.set_level(logging.INFO)
     response = client.get(
         "/api/v1/meal/records",
-        headers={"X-Request-ID": "req-observe-1", "X-Correlation-ID": "corr-observe-1"},
+        headers={
+            "X-Request-ID": "req-observe-1",
+            "X-Correlation-ID": "corr-observe-1",
+        },
     )
     assert response.status_code == 200
-    request_logs = [record.message for record in caplog.records if "event=api_request_complete" in record.message]
+    request_logs = [
+        record.message
+        for record in caplog.records
+        if "event=api_request_complete" in record.message
+    ]
     assert request_logs
     message = request_logs[-1]
     assert "outcome=success" in message
@@ -86,12 +104,17 @@ def test_request_logs_include_standardized_outcome_and_latency(
     assert "correlation_id=corr-observe-1" in message
 
 
-def test_meal_workflow_uses_incoming_correlation_contract(sqlite_observability_env: None) -> None:
+def test_meal_workflow_uses_incoming_correlation_contract(
+    sqlite_observability_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
     response = client.post(
         "/api/v1/meal/analyze",
-        headers={"X-Request-ID": "req-meal-contract", "X-Correlation-ID": "corr-meal-contract"},
+        headers={
+            "X-Request-ID": "req-meal-contract",
+            "X-Correlation-ID": "corr-meal-contract",
+        },
         files={"file": ("meal.jpg", _jpeg_bytes(), "image/jpeg")},
         data={"runtime_mode": "local", "provider": "test"},
     )
@@ -101,16 +124,25 @@ def test_meal_workflow_uses_incoming_correlation_contract(sqlite_observability_e
     assert body["workflow"]["correlation_id"] == "corr-meal-contract"
     timeline = body["workflow"]["timeline_events"]
     assert timeline
-    assert all(event["request_id"] == "req-meal-contract" for event in timeline)
-    assert all(event["correlation_id"] == "corr-meal-contract" for event in timeline)
+    assert all(
+        event["request_id"] == "req-meal-contract" for event in timeline
+    )
+    assert all(
+        event["correlation_id"] == "corr-meal-contract" for event in timeline
+    )
 
 
-def test_alert_workflow_uses_incoming_correlation_contract(sqlite_observability_env: None) -> None:
+def test_alert_workflow_uses_incoming_correlation_contract(
+    sqlite_observability_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client, "admin@example.com", "admin-pass")
     response = client.post(
         "/api/v1/alerts/trigger",
-        headers={"X-Request-ID": "req-alert-contract", "X-Correlation-ID": "corr-alert-contract"},
+        headers={
+            "X-Request-ID": "req-alert-contract",
+            "X-Correlation-ID": "corr-alert-contract",
+        },
         json={
             "alert_type": "manual_test_alert",
             "severity": "warning",
@@ -124,8 +156,12 @@ def test_alert_workflow_uses_incoming_correlation_contract(sqlite_observability_
     assert body["workflow"]["correlation_id"] == "corr-alert-contract"
     timeline = body["workflow"]["timeline_events"]
     assert timeline
-    assert all(event["request_id"] == "req-alert-contract" for event in timeline)
-    assert all(event["correlation_id"] == "corr-alert-contract" for event in timeline)
+    assert all(
+        event["request_id"] == "req-alert-contract" for event in timeline
+    )
+    assert all(
+        event["correlation_id"] == "corr-alert-contract" for event in timeline
+    )
 
 
 def test_failure_logs_include_enriched_metadata(
@@ -136,11 +172,18 @@ def test_failure_logs_include_enriched_metadata(
     caplog.set_level(logging.WARNING)
     response = client.post(
         "/api/v1/suggestions/generate-from-report",
-        headers={"X-Request-ID": "req-failure-log", "X-Correlation-ID": "corr-failure-log"},
+        headers={
+            "X-Request-ID": "req-failure-log",
+            "X-Correlation-ID": "corr-failure-log",
+        },
         json={"text": "HbA1c 7.3 LDL 4.1"},
     )
     assert response.status_code == 400
-    failures = [record.message for record in caplog.records if "event=api_request_failed" in record.message]
+    failures = [
+        record.message
+        for record in caplog.records
+        if "event=api_request_failed" in record.message
+    ]
     assert failures
     message = failures[-1]
     assert "request_id=req-failure-log" in message

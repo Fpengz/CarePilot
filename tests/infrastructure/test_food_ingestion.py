@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from dietary_guardian.platform.persistence.food.ingestion import (
+from care_pilot.platform.persistence.food.ingestion import (
     load_open_food_facts_records,
     load_usda_records,
 )
@@ -42,7 +42,9 @@ def test_load_usda_records_reduces_source_payload(tmp_path: Path) -> None:
     assert records[0].default_portion_grams == 195
 
 
-def test_load_open_food_facts_records_reduces_source_payload(tmp_path: Path) -> None:
+def test_load_open_food_facts_records_reduces_source_payload(
+    tmp_path: Path,
+) -> None:
     path = tmp_path / "off.json"
     path.write_text(
         """

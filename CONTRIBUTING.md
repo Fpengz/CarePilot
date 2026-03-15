@@ -1,7 +1,7 @@
 # Contributing
 
 ## Purpose
-This document defines how contributors should work in the Dietary Guardian repository.
+This document defines how contributors should work in the CarePilot repository.
 
 It is written for:
 - backend engineers
@@ -16,7 +16,7 @@ The project favors maintainability over cleverness. New contributions should mak
 The repository is a monorepo with:
 - FastAPI backend under `apps/api`
 - Next.js frontend under `apps/web`
-- shared Python core under `src/dietary_guardian`
+- shared Python core under `src/care_pilot`
 - tests at both API and repository levels
 
 Current local-first default:
@@ -85,13 +85,13 @@ The repository currently includes a production-style API container via the root 
 Build:
 
 ```bash
-docker build -t dietary-guardian .
+docker build -t care-pilot .
 ```
 
 Run:
 
 ```bash
-docker run --rm -p 8001:8001 --env-file .env dietary-guardian
+docker run --rm -p 8001:8001 --env-file .env care-pilot
 ```
 
 Current limitation:
@@ -172,11 +172,11 @@ A contribution is not complete if it only works locally but is opaque to operate
 High-risk shared-file areas:
 - `.github/workflows/*`
 - `pyproject.toml`, `package.json`, `pnpm-lock.yaml`
-- `src/dietary_guardian/config/settings.py`
-- `src/dietary_guardian/platform/persistence/*`
-- `src/dietary_guardian/platform/auth/*`
-- `apps/api/dietary_api/policy.py`
-- `apps/api/dietary_api/deps.py`
+- `src/care_pilot/config/settings.py`
+- `src/care_pilot/platform/persistence/*`
+- `src/care_pilot/platform/auth/*`
+- `apps/api/carepilot_api/policy.py`
+- `apps/api/carepilot_api/deps.py`
 
 Nightly or batch contributor work should still follow the same rule: one coherent milestone, validation before handoff, and docs updated in the same change when behavior or architecture moved.
 

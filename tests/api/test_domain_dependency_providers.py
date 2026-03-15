@@ -2,8 +2,8 @@
 
 from typing import get_type_hints
 
-from apps.api.dietary_api import deps
-from apps.api.dietary_api.services import (
+from apps.api.carepilot_api import deps
+from apps.api.carepilot_api.services import (
     alerts,
     clinical_cards,
     emotion_session,
@@ -27,7 +27,7 @@ def test_domain_dependency_provider_types_exist() -> None:
 def test_target_services_depend_on_scoped_providers() -> None:
     # Use localns so that TYPE_CHECKING-only imports (e.g. WorkflowDeps used in
     # coordinator.py) can still be resolved by get_type_hints.
-    from apps.api.dietary_api import deps as _deps_module
+    from apps.api.carepilot_api import deps as _deps_module
 
     _ns = vars(_deps_module)
 

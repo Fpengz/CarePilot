@@ -7,42 +7,42 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_feature_first_backend_packages_exist() -> None:
     required_paths = [
-        "src/dietary_guardian/core/__init__.py",
-        "src/dietary_guardian/core/config/__init__.py",
-        "src/dietary_guardian/core/errors.py",
-        "src/dietary_guardian/core/events.py",
-        "src/dietary_guardian/core/ids.py",
-        "src/dietary_guardian/core/time/__init__.py",
-        "src/dietary_guardian/core/types.py",
-        "src/dietary_guardian/features/__init__.py",
-        "src/dietary_guardian/features/companion/__init__.py",
-        "src/dietary_guardian/features/companion/core/__init__.py",
-        "src/dietary_guardian/features/companion/personalization/__init__.py",
-        "src/dietary_guardian/features/companion/engagement/__init__.py",
-        "src/dietary_guardian/features/companion/care_plans/__init__.py",
-        "src/dietary_guardian/features/companion/interactions/__init__.py",
-        "src/dietary_guardian/features/companion/clinician_digest/__init__.py",
-        "src/dietary_guardian/features/companion/impact/__init__.py",
-        "src/dietary_guardian/features/meals/service.py",
-        "src/dietary_guardian/features/recommendations/service.py",
-        "src/dietary_guardian/features/reminders/service.py",
-        "src/dietary_guardian/features/reports/service.py",
-        "src/dietary_guardian/features/safety/service.py",
-        "src/dietary_guardian/agent/__init__.py",
-        "src/dietary_guardian/agent/core/__init__.py",
-        "src/dietary_guardian/agent/runtime/__init__.py",
-        "src/dietary_guardian/agent/meal_analysis/__init__.py",
-        "src/dietary_guardian/agent/recommendation/__init__.py",
-        "src/dietary_guardian/agent/emotion/__init__.py",
-        "src/dietary_guardian/agent/chat/__init__.py",
-        "src/dietary_guardian/platform/__init__.py",
-        "src/dietary_guardian/platform/auth/__init__.py",
-        "src/dietary_guardian/platform/cache/__init__.py",
-        "src/dietary_guardian/platform/messaging/__init__.py",
-        "src/dietary_guardian/platform/observability/__init__.py",
-        "src/dietary_guardian/platform/persistence/__init__.py",
-        "src/dietary_guardian/platform/scheduling/__init__.py",
-        "src/dietary_guardian/platform/storage/__init__.py",
+        "src/care_pilot/core/__init__.py",
+        "src/care_pilot/core/config/__init__.py",
+        "src/care_pilot/core/errors.py",
+        "src/care_pilot/core/events.py",
+        "src/care_pilot/core/ids.py",
+        "src/care_pilot/core/time/__init__.py",
+        "src/care_pilot/core/types.py",
+        "src/care_pilot/features/__init__.py",
+        "src/care_pilot/features/companion/__init__.py",
+        "src/care_pilot/features/companion/core/__init__.py",
+        "src/care_pilot/features/companion/personalization/__init__.py",
+        "src/care_pilot/features/companion/engagement/__init__.py",
+        "src/care_pilot/features/companion/care_plans/__init__.py",
+        "src/care_pilot/features/companion/interactions/__init__.py",
+        "src/care_pilot/features/companion/clinician_digest/__init__.py",
+        "src/care_pilot/features/companion/impact/__init__.py",
+        "src/care_pilot/features/meals/service.py",
+        "src/care_pilot/features/recommendations/service.py",
+        "src/care_pilot/features/reminders/service.py",
+        "src/care_pilot/features/reports/service.py",
+        "src/care_pilot/features/safety/service.py",
+        "src/care_pilot/agent/__init__.py",
+        "src/care_pilot/agent/core/__init__.py",
+        "src/care_pilot/agent/runtime/__init__.py",
+        "src/care_pilot/agent/meal_analysis/__init__.py",
+        "src/care_pilot/agent/recommendation/__init__.py",
+        "src/care_pilot/agent/emotion/__init__.py",
+        "src/care_pilot/agent/chat/__init__.py",
+        "src/care_pilot/platform/__init__.py",
+        "src/care_pilot/platform/auth/__init__.py",
+        "src/care_pilot/platform/cache/__init__.py",
+        "src/care_pilot/platform/messaging/__init__.py",
+        "src/care_pilot/platform/observability/__init__.py",
+        "src/care_pilot/platform/persistence/__init__.py",
+        "src/care_pilot/platform/scheduling/__init__.py",
+        "src/care_pilot/platform/storage/__init__.py",
     ]
     missing = [path for path in required_paths if not (ROOT / path).exists()]
     assert missing == []
@@ -50,18 +50,18 @@ def test_feature_first_backend_packages_exist() -> None:
 
 def test_api_service_shims_delegate_to_feature_services() -> None:
     expected_imports = {
-        "apps/api/dietary_api/services/companion.py": (
-            "from dietary_guardian.features.companion.core.use_cases import"
+        "apps/api/carepilot_api/services/companion.py": (
+            "from care_pilot.features.companion.core.use_cases import"
         ),
-        "apps/api/dietary_api/services/companion_context.py": (
-            "from dietary_guardian.features.companion.core.use_cases import"
+        "apps/api/carepilot_api/services/companion_context.py": (
+            "from care_pilot.features.companion.core.use_cases import"
         ),
-        "apps/api/dietary_api/services/meals.py": "from dietary_guardian.features.meals.service import",
-        "apps/api/dietary_api/services/recommendations.py": (
-            "from dietary_guardian.features.recommendations.service import"
+        "apps/api/carepilot_api/services/meals.py": "from care_pilot.features.meals.service import",
+        "apps/api/carepilot_api/services/recommendations.py": (
+            "from care_pilot.features.recommendations.service import"
         ),
-        "apps/api/dietary_api/services/reminders.py": (
-            "from dietary_guardian.features.reminders.service import"
+        "apps/api/carepilot_api/services/reminders.py": (
+            "from care_pilot.features.reminders.service import"
         ),
     }
     offenders: list[str] = []
@@ -74,12 +74,12 @@ def test_api_service_shims_delegate_to_feature_services() -> None:
 
 def test_runtime_entrypoints_use_agent_and_platform_packages() -> None:
     expectations = {
-        "apps/api/dietary_api/deps.py": [
-            "from dietary_guardian.agent",
-            "from dietary_guardian.platform",
+        "apps/api/carepilot_api/deps.py": [
+            "from care_pilot.agent",
+            "from care_pilot.platform",
         ],
         "apps/workers/run.py": [
-            "from dietary_guardian.platform",
+            "from care_pilot.platform",
         ],
     }
     offenders: list[str] = []

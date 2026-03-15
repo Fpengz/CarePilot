@@ -7,7 +7,7 @@ import os
 
 from huggingface_hub import snapshot_download
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _configure_cache_dir(cache_dir: str | None) -> str | None:
@@ -26,7 +26,9 @@ def _download(repo_id: str, cache_dir: str | None) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Cache HF emotion models locally.")
+    parser = argparse.ArgumentParser(
+        description="Cache HF emotion models locally."
+    )
     parser.add_argument(
         "--cache-dir",
         dest="cache_dir",
@@ -36,7 +38,9 @@ def main() -> None:
     args = parser.parse_args()
 
     settings = get_settings()
-    cache_dir = _configure_cache_dir(args.cache_dir or getattr(settings.emotion, "model_cache_dir", None))
+    cache_dir = _configure_cache_dir(
+        args.cache_dir or getattr(settings.emotion, "model_cache_dir", None)
+    )
 
     model_ids = [
         settings.emotion.text_model_id,

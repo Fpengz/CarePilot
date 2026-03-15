@@ -8,8 +8,8 @@ from typing import Any, cast
 import pytest
 from openai.types.chat import ChatCompletionMessageParam
 
-from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime
-from dietary_guardian.config.app import AppSettings
+from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
+from care_pilot.config.app import AppSettings
 
 
 class _FakeStream:
@@ -35,13 +35,18 @@ def _settings_for_sealion() -> AppSettings:
 def test_normalize_flattens_system_into_user() -> None:
     settings = _settings_for_sealion()
     runtime = ChatStreamRuntime(settings)
-    messages = cast(list[ChatCompletionMessageParam], [
-        {"role": "system", "content": "Context A"},
-        {"role": "system", "content": "Context B"},
-        {"role": "user", "content": "Hello"},
-    ])
+    messages = cast(
+        list[ChatCompletionMessageParam],
+        [
+            {"role": "system", "content": "Context A"},
+            {"role": "system", "content": "Context B"},
+            {"role": "user", "content": "Hello"},
+        ],
+    )
 
-    normalized, applied, preview = runtime._normalize_messages_for_sealion(messages)
+    normalized, applied, preview = runtime._normalize_messages_for_sealion(
+        messages
+    )
 
     assert applied is True
     assert preview is not None
@@ -56,9 +61,14 @@ def test_normalize_flattens_system_into_user() -> None:
 def test_normalize_no_system_is_noop() -> None:
     settings = _settings_for_sealion()
     runtime = ChatStreamRuntime(settings)
-    messages = cast(list[ChatCompletionMessageParam], [{"role": "user", "content": "Hello"}])
+    messages = cast(
+        list[ChatCompletionMessageParam],
+        [{"role": "user", "content": "Hello"}],
+    )
 
-    normalized, applied, preview = runtime._normalize_messages_for_sealion(messages)
+    normalized, applied, preview = runtime._normalize_messages_for_sealion(
+        messages
+    )
 
     assert applied is False
     assert preview is None
@@ -66,19 +76,27 @@ def test_normalize_no_system_is_noop() -> None:
 
 
 @pytest.mark.asyncio
-async def test_stream_sends_user_only_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_stream_sends_user_only_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("SEALION_BASE_URL", "https://api.sea-lion.ai/v1")
     settings = _settings_for_sealion()
     runtime = ChatStreamRuntime(settings)
 
     captured: dict[str, Any] = {}
 
-    async def _fake_create(*, model: str, messages: list[dict[str, object]], stream: bool = False):
+    async def _fake_create(
+        *, model: str, messages: list[dict[str, object]], stream: bool = False
+    ):
         captured["messages"] = messages
-        chunk = SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="ok"))])
+        chunk = SimpleNamespace(
+            choices=[SimpleNamespace(delta=SimpleNamespace(content="ok"))]
+        )
         return _FakeStream([chunk])
 
-    monkeypatch.setattr(runtime._client.chat.completions, "create", _fake_create)
+    monkeypatch.setattr(
+        runtime._client.chat.completions, "create", _fake_create
+    )
 
     source_messages = [
         {"role": "system", "content": "Context"},

@@ -4,11 +4,11 @@ from collections.abc import Generator
 from io import BytesIO
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -16,7 +16,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_health_profile_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_health_profile_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -25,12 +27,20 @@ def sqlite_health_profile_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Gene
     _reset_settings_cache()
 
 
-def _login(client: TestClient, email: str = "member@example.com", password: str = "member-pass") -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(
+    client: TestClient,
+    email: str = "member@example.com",
+    password: str = "member-pass",
+) -> None:
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
-def _meal_upload(client: TestClient, *, color: tuple[int, int, int] = (120, 210, 90)) -> None:
+def _meal_upload(
+    client: TestClient, *, color: tuple[int, int, int] = (120, 210, 90)
+) -> None:
     img = Image.new("RGB", (64, 64), color=color)
     buf = BytesIO()
     img.save(buf, format="JPEG")
@@ -42,7 +52,9 @@ def _meal_upload(client: TestClient, *, color: tuple[int, int, int] = (120, 210,
     assert response.status_code == 200
 
 
-def test_health_profile_patch_persists_across_requests(sqlite_health_profile_env: None) -> None:
+def test_health_profile_patch_persists_across_requests(
+    sqlite_health_profile_env: None,
+) -> None:
     app = create_app()
     client = TestClient(app)
     _login(client)
@@ -57,7 +69,13 @@ def test_health_profile_patch_persists_across_requests(sqlite_health_profile_env
             "daily_protein_target_g": 72,
             "daily_fiber_target_g": 28,
             "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
-            "medications": [{"name": "Metformin", "dosage": "500mg", "contraindications": []}],
+            "medications": [
+                {
+                    "name": "Metformin",
+                    "dosage": "500mg",
+                    "contraindications": [],
+                }
+            ],
             "allergies": ["shellfish"],
             "nutrition_goals": ["lower_sugar", "lower_sodium"],
             "preferred_cuisines": ["teochew", "indian"],
@@ -86,14 +104,19 @@ def test_health_profile_patch_persists_across_requests(sqlite_health_profile_env
     assert fetched_body["daily_fiber_target_g"] == 28
 
 
-def test_daily_suggestions_use_profile_history_and_snapshot(sqlite_health_profile_env: None) -> None:
+def test_daily_suggestions_use_profile_history_and_snapshot(
+    sqlite_health_profile_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
     _meal_upload(client)
     assert (
         client.post(
             "/api/v1/reports/parse",
-            json={"source": "pasted_text", "text": "HbA1c 7.4 LDL 4.1 systolic bp 148 diastolic bp 92"},
+            json={
+                "source": "pasted_text",
+                "text": "HbA1c 7.4 LDL 4.1 systolic bp 148 diastolic bp 92",
+            },
         ).status_code
         == 200
     )
@@ -105,8 +128,16 @@ def test_daily_suggestions_use_profile_history_and_snapshot(sqlite_health_profil
                 "locale": "en-SG",
                 "daily_sodium_limit_mg": 1500,
                 "daily_sugar_limit_g": 24,
-                "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
-                "medications": [{"name": "Metformin", "dosage": "500mg", "contraindications": []}],
+                "conditions": [
+                    {"name": "Type 2 Diabetes", "severity": "High"}
+                ],
+                "medications": [
+                    {
+                        "name": "Metformin",
+                        "dosage": "500mg",
+                        "contraindications": [],
+                    }
+                ],
                 "allergies": ["shellfish"],
                 "nutrition_goals": ["lower_sugar", "heart_health"],
                 "preferred_cuisines": ["teochew"],
@@ -138,10 +169,16 @@ def test_daily_suggestions_use_profile_history_and_snapshot(sqlite_health_profil
         ]
     )
     assert "shellfish" not in combined_titles
-    assert all("lard" not in reason.lower() for item in body["bundle"]["suggestions"].values() for reason in item["why_it_fits"])
+    assert all(
+        "lard" not in reason.lower()
+        for item in body["bundle"]["suggestions"].values()
+        for reason in item["why_it_fits"]
+    )
 
 
-def test_daily_suggestions_flag_incomplete_profile_with_fallback(sqlite_health_profile_env: None) -> None:
+def test_daily_suggestions_flag_incomplete_profile_with_fallback(
+    sqlite_health_profile_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -156,7 +193,9 @@ def test_daily_suggestions_flag_incomplete_profile_with_fallback(sqlite_health_p
     assert body["bundle"]["suggestions"]["breakfast"]["confidence"] < 0.9
 
 
-def test_health_profile_onboarding_defaults_patch_and_complete(sqlite_health_profile_env: None) -> None:
+def test_health_profile_onboarding_defaults_patch_and_complete(
+    sqlite_health_profile_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 

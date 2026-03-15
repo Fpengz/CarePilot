@@ -1,8 +1,13 @@
 """Tests for inference engine event text capture."""
 
-from pydantic_ai.messages import PartDeltaEvent, PartEndEvent, TextPart, TextPartDelta
+from pydantic_ai.messages import (
+    PartDeltaEvent,
+    PartEndEvent,
+    TextPart,
+    TextPartDelta,
+)
 
-from dietary_guardian.agent.runtime.inference_engine import _collect_text_from_events
+from care_pilot.agent.runtime.inference_engine import _collect_text_from_events
 
 
 def test_collect_text_from_events() -> None:

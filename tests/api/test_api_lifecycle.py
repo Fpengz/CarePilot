@@ -3,11 +3,11 @@
 from collections.abc import Generator
 
 import pytest
-from apps.api.dietary_api.deps import build_app_context, close_app_context
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.deps import build_app_context, close_app_context
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -15,7 +15,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_lifecycle_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_lifecycle_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -24,10 +26,16 @@ def sqlite_lifecycle_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator
     _reset_settings_cache()
 
 
-def test_app_lifecycle_closes_resources_on_shutdown(sqlite_lifecycle_env: None) -> None:
+def test_app_lifecycle_closes_resources_on_shutdown(
+    sqlite_lifecycle_env: None,
+) -> None:
     app = create_app()
     ctx = app.state.ctx
-    closed = {"repository": False, "auth_store": False, "household_store": False}
+    closed = {
+        "repository": False,
+        "auth_store": False,
+        "household_store": False,
+    }
 
     def close_repository() -> None:
         closed["repository"] = True
@@ -46,14 +54,23 @@ def test_app_lifecycle_closes_resources_on_shutdown(sqlite_lifecycle_env: None) 
         response = client.get("/api/v1/health/live")
         assert response.status_code == 200
 
-    assert closed == {"repository": True, "auth_store": True, "household_store": True}
+    assert closed == {
+        "repository": True,
+        "auth_store": True,
+        "household_store": True,
+    }
 
 
-def test_app_rebuilds_owned_context_on_lifespan_restart(sqlite_lifecycle_env: None) -> None:
+def test_app_rebuilds_owned_context_on_lifespan_restart(
+    sqlite_lifecycle_env: None,
+) -> None:
     app = create_app()
 
     with TestClient(app) as client:
-        first_login = client.post("/api/v1/auth/login", json={"email": "member@example.com", "password": "member-pass"})
+        first_login = client.post(
+            "/api/v1/auth/login",
+            json={"email": "member@example.com", "password": "member-pass"},
+        )
         assert first_login.status_code == 200
 
     with TestClient(app) as client:
@@ -64,10 +81,16 @@ def test_app_rebuilds_owned_context_on_lifespan_restart(sqlite_lifecycle_env: No
         assert second_login.status_code == 200
 
 
-def test_app_does_not_close_caller_managed_context(sqlite_lifecycle_env: None) -> None:
+def test_app_does_not_close_caller_managed_context(
+    sqlite_lifecycle_env: None,
+) -> None:
     caller_ctx = build_app_context()
     app = create_app(caller_ctx)
-    closed = {"repository": False, "auth_store": False, "household_store": False}
+    closed = {
+        "repository": False,
+        "auth_store": False,
+        "household_store": False,
+    }
 
     def close_repository() -> None:
         closed["repository"] = True
@@ -86,11 +109,17 @@ def test_app_does_not_close_caller_managed_context(sqlite_lifecycle_env: None) -
         response = client.get("/api/v1/health/live")
         assert response.status_code == 200
 
-    assert closed == {"repository": False, "auth_store": False, "household_store": False}
+    assert closed == {
+        "repository": False,
+        "auth_store": False,
+        "household_store": False,
+    }
     close_app_context(caller_ctx)
 
 
-def test_app_context_exposes_runtime_store_aliases(sqlite_lifecycle_env: None) -> None:
+def test_app_context_exposes_runtime_store_aliases(
+    sqlite_lifecycle_env: None,
+) -> None:
     ctx = build_app_context()
     try:
         assert ctx.app_store is not None
@@ -101,7 +130,9 @@ def test_app_context_exposes_runtime_store_aliases(sqlite_lifecycle_env: None) -
         close_app_context(ctx)
 
 
-def test_cors_uses_configured_methods_and_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cors_uses_configured_methods_and_headers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("API_CORS_METHODS", "GET,POST")
     monkeypatch.setenv("API_CORS_HEADERS", "Content-Type")
     _reset_settings_cache()
@@ -118,8 +149,12 @@ def test_cors_uses_configured_methods_and_headers(monkeypatch: pytest.MonkeyPatc
     _reset_settings_cache()
 
     assert response.status_code == 200
-    allow_methods = response.headers.get("access-control-allow-methods", "").upper()
-    allow_headers = response.headers.get("access-control-allow-headers", "").lower()
+    allow_methods = response.headers.get(
+        "access-control-allow-methods", ""
+    ).upper()
+    allow_headers = response.headers.get(
+        "access-control-allow-headers", ""
+    ).lower()
     assert "POST" in allow_methods
     assert "DELETE" not in allow_methods
     assert "content-type" in allow_headers

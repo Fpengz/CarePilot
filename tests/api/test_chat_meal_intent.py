@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dietary_guardian.features.companion.chat.meal_intent import (
+from care_pilot.features.companion.chat.meal_intent import (
     MealLogIntentResult,
     detect_meal_log_intent,
 )

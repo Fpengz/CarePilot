@@ -2,16 +2,21 @@
 
 from pydantic import BaseModel
 
-from dietary_guardian.agent.runtime.inference_engine import InferenceEngine
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.agent.runtime.inference_types import InferenceModality, InferenceRequest
+from care_pilot.agent.runtime.inference_engine import InferenceEngine
+from care_pilot.config.app import get_settings
+from care_pilot.agent.runtime.inference_types import (
+    InferenceModality,
+    InferenceRequest,
+)
 
 
 class _DummyOutput(BaseModel):
     value: str = "ok"
 
 
-def test_local_provider_defaults_output_validation_retries_to_zero(monkeypatch) -> None:
+def test_local_provider_defaults_output_validation_retries_to_zero(
+    monkeypatch,
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
@@ -20,7 +25,9 @@ def test_local_provider_defaults_output_validation_retries_to_zero(monkeypatch) 
     get_settings.cache_clear()
 
 
-def test_inference_engine_logs_retry_exhaustion_with_estimated_request_count(monkeypatch, caplog) -> None:
+def test_inference_engine_logs_retry_exhaustion_with_estimated_request_count(
+    monkeypatch, caplog
+) -> None:
     class FakeResult:
         output = _DummyOutput()
 
@@ -30,9 +37,13 @@ def test_inference_engine_logs_retry_exhaustion_with_estimated_request_count(mon
 
         async def run(self, prompt: str):  # noqa: ANN201
             del prompt
-            raise RuntimeError("Exceeded maximum retries (1) for output validation")
+            raise RuntimeError(
+                "Exceeded maximum retries (1) for output validation"
+            )
 
-    monkeypatch.setattr("dietary_guardian.agent.runtime.inference_engine.Agent", FakeAgent)
+    monkeypatch.setattr(
+        "care_pilot.agent.runtime.inference_engine.Agent", FakeAgent
+    )
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
     monkeypatch.setenv("LOCAL_OUTPUT_VALIDATION_RETRIES", "0")

@@ -5,14 +5,14 @@ from typing import Any, cast
 
 import pytest
 
-from dietary_guardian.features.recommendations.ports import BuildUserProfileFn
-from dietary_guardian.features.recommendations.use_cases import (
+from care_pilot.features.recommendations.ports import BuildUserProfileFn
+from care_pilot.features.recommendations.use_cases import (
     MissingActiveHouseholdError,
     NoMealRecordsError,
     generate_suggestion_from_report,
     list_suggestions_for_session,
 )
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
@@ -27,20 +27,30 @@ class FakeRepository:
     def list_meal_records(self, user_id: str, limit: int = 20) -> list[Any]:
         return self.meals.get(user_id, [])[:limit]
 
-    def save_biomarker_readings(self, user_id: str, readings: list[Any]) -> None:
+    def save_biomarker_readings(
+        self, user_id: str, readings: list[Any]
+    ) -> None:
         return None
 
-    def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
+    def save_recommendation(
+        self, user_id: str, payload: dict[str, Any]
+    ) -> None:
         return None
 
-    def save_suggestion_record(self, user_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    def save_suggestion_record(
+        self, user_id: str, payload: dict[str, Any]
+    ) -> dict[str, Any]:
         self.suggestions.setdefault(user_id, []).append(payload)
         return payload
 
-    def list_suggestion_records(self, user_id: str, limit: int = 20) -> list[dict[str, Any]]:
+    def list_suggestion_records(
+        self, user_id: str, limit: int = 20
+    ) -> list[dict[str, Any]]:
         return list(self.suggestions.get(user_id, []))[:limit]
 
-    def get_suggestion_record(self, user_id: str, suggestion_id: str) -> dict[str, Any] | None:
+    def get_suggestion_record(
+        self, user_id: str, suggestion_id: str
+    ) -> dict[str, Any] | None:
         for item in self.suggestions.get(user_id, []):
             if item.get("suggestion_id") == suggestion_id:
                 return item
@@ -94,7 +104,9 @@ class FakeHouseholdStore:
         return list(self.members.get(household_id, []))
 
 
-def _session(user_id: str = "user_001", display_name: str = "Member") -> dict[str, Any]:
+def _session(
+    user_id: str = "user_001", display_name: str = "Member"
+) -> dict[str, Any]:
     return {
         "user_id": user_id,
         "display_name": display_name,
@@ -128,7 +140,9 @@ def test_generate_suggestion_escalates_on_red_flag_without_meal() -> None:
         text="I have chest pain and trouble breathing",
         request_id="req-1",
         correlation_id="corr-1",
-        build_user_profile=cast(BuildUserProfileFn, _build_user_profile),  # not used in escalation path
+        build_user_profile=cast(
+            BuildUserProfileFn, _build_user_profile
+        ),  # not used in escalation path
         event_timeline=events,
     )
 
@@ -137,9 +151,15 @@ def test_generate_suggestion_escalates_on_red_flag_without_meal() -> None:
     assert result["workflow"]["request_id"] == "req-1"
     assert result["workflow"]["correlation_id"] == "corr-1"
     timeline = result["workflow"]["timeline_events"]
-    assert [event["event_type"] for event in timeline] == ["workflow_started", "workflow_escalated"]
+    assert [event["event_type"] for event in timeline] == [
+        "workflow_started",
+        "workflow_escalated",
+    ]
     suggestion_id = result["suggestion_id"]
-    assert all(event["payload"]["suggestion_id"] == suggestion_id for event in timeline)
+    assert all(
+        event["payload"]["suggestion_id"] == suggestion_id
+        for event in timeline
+    )
 
 
 def test_generate_suggestion_requires_meal_when_no_red_flag() -> None:
@@ -161,15 +181,33 @@ def test_generate_suggestion_requires_meal_when_no_red_flag() -> None:
 def test_list_suggestions_household_scope_merges_members() -> None:
     repo = FakeRepository(
         suggestions={
-            "user_001": [{"suggestion_id": "s1", "created_at": "2026-01-01T00:00:00+00:00"}],
-            "care_001": [{"suggestion_id": "s2", "created_at": "2026-01-02T00:00:00+00:00"}],
+            "user_001": [
+                {
+                    "suggestion_id": "s1",
+                    "created_at": "2026-01-01T00:00:00+00:00",
+                }
+            ],
+            "care_001": [
+                {
+                    "suggestion_id": "s2",
+                    "created_at": "2026-01-02T00:00:00+00:00",
+                }
+            ],
         }
     )
     households = FakeHouseholdStore(
         members={
             "hh_1": [
-                {"user_id": "user_001", "display_name": "Member", "role": "owner"},
-                {"user_id": "care_001", "display_name": "Helper", "role": "member"},
+                {
+                    "user_id": "user_001",
+                    "display_name": "Member",
+                    "role": "owner",
+                },
+                {
+                    "user_id": "care_001",
+                    "display_name": "Helper",
+                    "role": "member",
+                },
             ]
         }
     )
@@ -185,21 +223,42 @@ def test_list_suggestions_household_scope_merges_members() -> None:
     )
 
     assert [item["suggestion_id"] for item in items] == ["s2", "s1"]
-    assert {item["source_user_id"] for item in items} == {"user_001", "care_001"}
+    assert {item["source_user_id"] for item in items} == {
+        "user_001",
+        "care_001",
+    }
 
 
 def test_list_suggestions_household_scope_can_filter_source_user() -> None:
     repo = FakeRepository(
         suggestions={
-            "user_001": [{"suggestion_id": "s1", "created_at": "2026-01-01T00:00:00+00:00"}],
-            "care_001": [{"suggestion_id": "s2", "created_at": "2026-01-02T00:00:00+00:00"}],
+            "user_001": [
+                {
+                    "suggestion_id": "s1",
+                    "created_at": "2026-01-01T00:00:00+00:00",
+                }
+            ],
+            "care_001": [
+                {
+                    "suggestion_id": "s2",
+                    "created_at": "2026-01-02T00:00:00+00:00",
+                }
+            ],
         }
     )
     households = FakeHouseholdStore(
         members={
             "hh_1": [
-                {"user_id": "user_001", "display_name": "Member", "role": "owner"},
-                {"user_id": "care_001", "display_name": "Helper", "role": "member"},
+                {
+                    "user_id": "user_001",
+                    "display_name": "Member",
+                    "role": "owner",
+                },
+                {
+                    "user_id": "care_001",
+                    "display_name": "Helper",
+                    "role": "member",
+                },
             ]
         }
     )

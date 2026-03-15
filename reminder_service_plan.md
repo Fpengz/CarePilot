@@ -28,9 +28,9 @@ Architecture alignment with `refactor_plan.md`:
 Status: `mostly implemented`
 
 Implemented:
-- added structured reminder domain types in `src/dietary_guardian/features/reminders/domain/models.py`
-- added deterministic generation helpers in `src/dietary_guardian/features/reminders/domain/generation.py`
-- added reminder use cases in `src/dietary_guardian/features/reminders/use_cases/structured.py`
+- added structured reminder domain types in `src/care_pilot/features/reminders/domain/models.py`
+- added deterministic generation helpers in `src/care_pilot/features/reminders/domain/generation.py`
+- added reminder use cases in `src/care_pilot/features/reminders/use_cases/structured.py`
 - added persistence support for:
   - `reminder_definitions`
   - `reminder_occurrences`

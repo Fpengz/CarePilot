@@ -7,10 +7,10 @@
 - Expand chat prompt context with full health profile details.
 
 ## Files touched
-- `apps/api/dietary_api/routers/chat.py`
-- `apps/api/dietary_api/services/chat_meal_intent.py`
+- `apps/api/carepilot_api/routers/chat.py`
+- `apps/api/carepilot_api/services/chat_meal_intent.py`
 - `apps/web/app/chat/page.tsx`
-- `src/dietary_guardian/features/companion/core/chat_context.py`
+- `src/care_pilot/features/companion/core/chat_context.py`
 - `tests/api/test_chat_meal_intent.py`
 - `tests/api/test_chat_meal_confirm.py`
 - `tests/api/test_chat_context.py`

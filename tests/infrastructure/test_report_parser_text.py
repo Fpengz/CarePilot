@@ -1,7 +1,7 @@
 """Tests for report parser text."""
 
-from dietary_guardian.features.companion.core.health.models import ReportInput
-from dietary_guardian.features.reports.domain import parse_report_input
+from care_pilot.features.companion.core.health.models import ReportInput
+from care_pilot.features.reports.domain import parse_report_input
 
 
 def test_parse_text_report_extracts_key_biomarkers() -> None:

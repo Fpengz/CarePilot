@@ -6,11 +6,11 @@ from collections.abc import Generator
 from datetime import datetime, timezone
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.meals.domain.models import NutritionRiskProfile
+from care_pilot.config.app import get_settings
+from care_pilot.features.meals.domain.models import NutritionRiskProfile
 
 
 def _reset_settings_cache() -> None:
@@ -18,7 +18,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_meal_weekly_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_meal_weekly_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -27,12 +29,26 @@ def sqlite_meal_weekly_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generat
     _reset_settings_cache()
 
 
-def _login(client: TestClient, email: str = "member@example.com", password: str = "member-pass") -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(
+    client: TestClient,
+    email: str = "member@example.com",
+    password: str = "member-pass",
+) -> None:
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
-def _seed_meal(app, *, meal_id: str, captured_at: datetime, calories: float, sugar_g: float, sodium_mg: float) -> None:
+def _seed_meal(
+    app,
+    *,
+    meal_id: str,
+    captured_at: datetime,
+    calories: float,
+    sugar_g: float,
+    sodium_mg: float,
+) -> None:
     app.state.ctx.app_store.save_nutrition_risk_profile(
         NutritionRiskProfile(
             profile_id=meal_id,
@@ -51,7 +67,9 @@ def _seed_meal(app, *, meal_id: str, captured_at: datetime, calories: float, sug
     )
 
 
-def test_meal_weekly_summary_returns_rollup(sqlite_meal_weekly_env: None) -> None:
+def test_meal_weekly_summary_returns_rollup(
+    sqlite_meal_weekly_env: None,
+) -> None:
     app = create_app()
     client = TestClient(app)
     _login(client)

@@ -1,12 +1,17 @@
 """Tests for agent registry."""
 
-from dietary_guardian.agent.core import build_default_agent_registry
-from dietary_guardian.platform.observability.workflows.domain.models import WorkflowName
+from care_pilot.agent.core import build_default_agent_registry
+from care_pilot.platform.observability.workflows.domain.models import (
+    WorkflowName,
+)
 
 
 def test_default_agent_registry_exposes_core_workflow_contracts() -> None:
     registry = build_default_agent_registry()
-    workflow_names = {contract.workflow_name for contract in registry.list_workflow_contracts()}
+    workflow_names = {
+        contract.workflow_name
+        for contract in registry.list_workflow_contracts()
+    }
 
     assert WorkflowName.MEAL_ANALYSIS in workflow_names
     assert WorkflowName.ALERT_ONLY in workflow_names

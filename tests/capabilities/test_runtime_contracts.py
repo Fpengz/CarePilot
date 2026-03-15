@@ -5,10 +5,14 @@ import sys
 from pathlib import Path
 from typing import get_args, get_type_hints
 
-from dietary_guardian.platform import persistence
-from dietary_guardian.core.contracts.notifications import AlertRepositoryProtocol
-from dietary_guardian.platform.observability.tooling.platform_registry import build_platform_tool_registry
-from dietary_guardian.platform.scheduling.schedulers.reminder_scheduler import run_reminder_scheduler_once
+from care_pilot.platform import persistence
+from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
+from care_pilot.platform.observability.tooling.platform_registry import (
+    build_platform_tool_registry,
+)
+from care_pilot.platform.scheduling.schedulers.reminder_scheduler import (
+    run_reminder_scheduler_once,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -20,20 +24,32 @@ def test_persistence_exports_backend_neutral_builder_and_contracts() -> None:
 
 
 def test_platform_tool_registry_accepts_alert_repository_protocol() -> None:
-    assert get_type_hints(build_platform_tool_registry)["repository"] is AlertRepositoryProtocol
+    assert (
+        get_type_hints(build_platform_tool_registry)["repository"]
+        is AlertRepositoryProtocol
+    )
 
 
-def test_reminder_scheduler_depends_on_backend_neutral_repository_contract() -> None:
+def test_reminder_scheduler_depends_on_backend_neutral_repository_contract() -> (
+    None
+):
     repository_hint = get_type_hints(run_reminder_scheduler_once)["repository"]
     hint_args = get_args(repository_hint)
-    assert any(getattr(item, "__name__", "") == "ReminderSchedulerRepository" for item in hint_args)
+    assert any(
+        getattr(item, "__name__", "") == "ReminderSchedulerRepository"
+        for item in hint_args
+    )
 
 
-def test_alert_models_and_reminder_scheduler_import_without_circular_dependency() -> None:
+def test_alert_models_and_reminder_scheduler_import_without_circular_dependency() -> (
+    None
+):
     command = [
         sys.executable,
         "-c",
-        "import dietary_guardian.features.safety.domain.alerts.models; import dietary_guardian.platform.scheduling.schedulers.reminder_scheduler",
+        "import care_pilot.features.safety.domain.alerts.models; import care_pilot.platform.scheduling.schedulers.reminder_scheduler",
     ]
-    result = subprocess.run(command, cwd=REPO_ROOT, capture_output=True, text=True, check=False)
+    result = subprocess.run(
+        command, cwd=REPO_ROOT, capture_output=True, text=True, check=False
+    )
     assert result.returncode == 0, result.stderr

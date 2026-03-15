@@ -2,10 +2,14 @@
 
 from datetime import datetime
 
-from dietary_guardian.features.meals.domain import EnrichedMealEvent, MealNutritionProfile, MealPerception
-from dietary_guardian.platform.persistence import SQLiteRepository
-from dietary_guardian.features.meals.domain.models import MealState, Nutrition
-from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.meals.domain import (
+    EnrichedMealEvent,
+    MealNutritionProfile,
+    MealPerception,
+)
+from care_pilot.platform.persistence import SQLiteRepository
+from care_pilot.features.meals.domain.models import MealState, Nutrition
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 
 
 def test_meal_record_round_trip(tmp_path) -> None:
@@ -20,7 +24,14 @@ def test_meal_record_round_trip(tmp_path) -> None:
             confidence_score=0.9,
             identification_method="AI_Flash",
             ingredients=[],
-            nutrition=Nutrition(calories=550, carbs_g=60, sugar_g=6, protein_g=18, fat_g=25, sodium_mg=1400),
+            nutrition=Nutrition(
+                calories=550,
+                carbs_g=60,
+                sugar_g=6,
+                protein_g=18,
+                fat_g=25,
+                sodium_mg=1400,
+            ),
         ),
         meal_perception=MealPerception.model_validate(
             {
@@ -29,7 +40,11 @@ def test_meal_record_round_trip(tmp_path) -> None:
                     {
                         "label": "Laksa",
                         "candidate_aliases": ["Laksa"],
-                        "portion_estimate": {"amount": 1.0, "unit": "bowl", "confidence": 0.9},
+                        "portion_estimate": {
+                            "amount": 1.0,
+                            "unit": "bowl",
+                            "confidence": 0.9,
+                        },
                         "confidence": 0.9,
                     }
                 ],

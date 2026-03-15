@@ -4,7 +4,7 @@ This document defines the canonical food dataset format used to normalize
 meal perception results. The dataset is stored under:
 
 ```
-src/dietary_guardian/data/food/
+src/care_pilot/data/food/
 ```
 
 The system merges:

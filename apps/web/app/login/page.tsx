@@ -34,7 +34,7 @@ export default function LoginPage() {
         description={
           SHOW_DEMO_ACCOUNTS
             ? "Use demo accounts to test session cookies, role/scopes, and the account panel flows."
-            : "Sign in with your account to access the Dietary Guardian workspace."
+            : "Sign in with your account to access the CarePilot workspace."
         }
 
       />

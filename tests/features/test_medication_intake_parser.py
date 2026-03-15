@@ -4,9 +4,17 @@ from datetime import date
 
 import pytest
 
-from dietary_guardian.agent.runtime.inference_types import InferenceResponse, ProviderMetadata
-from dietary_guardian.features.medications.intake import build_plain_text_source, parse_medication_instructions
-from dietary_guardian.features.medications.intake.models import MedicationParseOutputLoose
+from care_pilot.agent.runtime.inference_types import (
+    InferenceResponse,
+    ProviderMetadata,
+)
+from care_pilot.features.medications.intake import (
+    build_plain_text_source,
+    parse_medication_instructions,
+)
+from care_pilot.features.medications.intake.models import (
+    MedicationParseOutputLoose,
+)
 
 
 class _FakeInferenceEngine:
@@ -39,14 +47,18 @@ class _FakeInferenceEngine:
             structured_output=self.output,
             confidence=self.output.confidence_score,
             latency_ms=5.0,
-            provider_metadata=ProviderMetadata(provider="test", model="test-model", endpoint="default"),
+            provider_metadata=ProviderMetadata(
+                provider="test", model="test-model", endpoint="default"
+            ),
         )
 
 
 @pytest.mark.anyio
 async def test_parse_before_meal_duration_instruction() -> None:
     result = await parse_medication_instructions(
-        source=build_plain_text_source("Take Metformin 500mg twice daily before meals for 5 days"),
+        source=build_plain_text_source(
+            "Take Metformin 500mg twice daily before meals for 5 days"
+        ),
         today=date(2026, 3, 14),
     )
 
@@ -91,7 +103,9 @@ async def test_parse_unknown_text_returns_ambiguity() -> None:
 @pytest.mark.anyio
 async def test_parse_prefers_llm_structured_output_when_available() -> None:
     result = await parse_medication_instructions(
-        source=build_plain_text_source("Take Metformin 500mg twice daily before meals for 5 days"),
+        source=build_plain_text_source(
+            "Take Metformin 500mg twice daily before meals for 5 days"
+        ),
         today=date(2026, 3, 14),
         inference_engine=_FakeInferenceEngine(
             MedicationParseOutputLoose.model_validate(
@@ -107,7 +121,12 @@ async def test_parse_prefers_llm_structured_output_when_available() -> None:
                             "frequency_times_per_day": 2,
                             "slot_scope": ["breakfast", "dinner"],
                             "offset_minutes": 30,
-                            "time_rules": [{"kind": "before_meal", "slots": ["breakfast", "dinner"]}],
+                            "time_rules": [
+                                {
+                                    "kind": "before_meal",
+                                    "slots": ["breakfast", "dinner"],
+                                }
+                            ],
                             "duration_days": 5,
                             "start_date": "2026-03-14",
                             "end_date": "2026-03-18",
@@ -131,7 +150,9 @@ async def test_parse_falls_back_to_deterministic_when_llm_fails() -> None:
     result = await parse_medication_instructions(
         source=build_plain_text_source("Amlodipine 5mg every morning"),
         today=date(2026, 3, 14),
-        inference_engine=_FakeInferenceEngine(should_fail=True, expected_schema=MedicationParseOutputLoose),
+        inference_engine=_FakeInferenceEngine(
+            should_fail=True, expected_schema=MedicationParseOutputLoose
+        ),
     )
 
     assert result.instructions[0].medication_name_raw == "Amlodipine"
@@ -163,7 +184,9 @@ async def test_parse_coerces_llm_invalid_fields() -> None:
     result = await parse_medication_instructions(
         source=build_plain_text_source("Gabapentin 300mg three times daily"),
         today=date(2026, 3, 14),
-        inference_engine=_FakeInferenceEngine(output, expected_schema=MedicationParseOutputLoose),
+        inference_engine=_FakeInferenceEngine(
+            output, expected_schema=MedicationParseOutputLoose
+        ),
     )
 
     instruction = result.instructions[0]

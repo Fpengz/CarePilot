@@ -8,11 +8,11 @@ from typing import Any, TypedDict, cast
 import pytest
 from fastapi.testclient import TestClient
 
-from apps.api.dietary_api.main import create_app
-from dietary_guardian.agent.chat.schemas import ChatStreamEvent
-from dietary_guardian.agent.runtime.chat_runtime import ChatStreamRuntime
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.companion.chat.orchestrator import ChatOrchestrator
+from apps.api.carepilot_api.main import create_app
+from care_pilot.agent.chat.schemas import ChatStreamEvent
+from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
+from care_pilot.config.app import get_settings
+from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
 
 
 class _StreamEvent(TypedDict):
@@ -41,7 +41,9 @@ def _login(client: TestClient) -> None:
     assert response.status_code == 200
 
 
-def test_meal_command_stream_continues(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_meal_command_stream_continues(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     app = create_app()
     client = TestClient(app)
     _login(client)
@@ -57,7 +59,9 @@ def test_meal_command_stream_continues(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(ChatStreamRuntime, "stream", _fake_stream)
 
-    response = client.post("/api/v1/chat", json={"message": "[meal] Nasi Goreng"})
+    response = client.post(
+        "/api/v1/chat", json={"message": "[meal] Nasi Goreng"}
+    )
     assert response.status_code == 200
 
     tokens: list[str] = []
@@ -73,7 +77,9 @@ def test_meal_command_stream_continues(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "Next guidance." in combined
 
 
-def test_chat_stream_continues_when_text_emotion_inference_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_chat_stream_continues_when_text_emotion_inference_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("EMOTION_INFERENCE_ENABLED", "true")
     _reset_settings_cache()
 
@@ -83,7 +89,9 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(monkeypatch: py
 
     app.state.ctx.emotion_agent._inference_enabled = True
 
-    def _raise_emotion_failure(*, text: str, language: str | None = None, context: Any = None):
+    def _raise_emotion_failure(
+        *, text: str, language: str | None = None, context: Any = None
+    ):
         del text, language, context
         raise RuntimeError("broken fusion model")
 
@@ -96,7 +104,9 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(monkeypatch: py
         del self, messages, model_id
         yield "Hello back."
 
-    monkeypatch.setattr(app.state.ctx.emotion_agent, "infer_text", _raise_emotion_failure)
+    monkeypatch.setattr(
+        app.state.ctx.emotion_agent, "infer_text", _raise_emotion_failure
+    )
     monkeypatch.setattr(ChatStreamRuntime, "stream", _fake_stream)
 
     response = client.post("/api/v1/chat", json={"message": "Hi"})
@@ -113,7 +123,9 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(monkeypatch: py
     assert all(event["event"] != "error" for event in events)
 
 
-def test_chat_audio_continues_when_speech_emotion_inference_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_chat_audio_continues_when_speech_emotion_inference_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("EMOTION_INFERENCE_ENABLED", "true")
     monkeypatch.setenv("EMOTION_SPEECH_ENABLED", "true")
     _reset_settings_cache()
@@ -138,7 +150,14 @@ def test_chat_audio_continues_when_speech_emotion_inference_fails(monkeypatch: p
         language: str | None = None,
         context: Any = None,
     ):
-        del audio_bytes, filename, content_type, transcription, language, context
+        del (
+            audio_bytes,
+            filename,
+            content_type,
+            transcription,
+            language,
+            context,
+        )
         raise RuntimeError("broken fusion model")
 
     async def _fake_stream_events(
@@ -153,8 +172,16 @@ def test_chat_audio_continues_when_speech_emotion_inference_fails(monkeypatch: p
         yield ChatStreamEvent(event="token", data={"text": "Audio reply."})
         yield ChatStreamEvent(event="done", data={"status": "complete"})
 
-    monkeypatch.setattr(app.state.ctx.chat_audio_agent, "transcribe_bytes", _fake_transcribe_bytes)
-    monkeypatch.setattr(app.state.ctx.emotion_agent, "infer_speech", _raise_speech_emotion_failure)
+    monkeypatch.setattr(
+        app.state.ctx.chat_audio_agent,
+        "transcribe_bytes",
+        _fake_transcribe_bytes,
+    )
+    monkeypatch.setattr(
+        app.state.ctx.emotion_agent,
+        "infer_speech",
+        _raise_speech_emotion_failure,
+    )
     monkeypatch.setattr(ChatOrchestrator, "stream_events", _fake_stream_events)
 
     response = client.post(
@@ -169,7 +196,11 @@ def test_chat_audio_continues_when_speech_emotion_inference_fails(monkeypatch: p
             continue
         events.append(cast(_StreamEvent, json.loads(line[6:])))
 
-    assert [event["event"] for event in events] == ["transcribed", "token", "done"]
+    assert [event["event"] for event in events] == [
+        "transcribed",
+        "token",
+        "done",
+    ]
     assert cast(str, events[0]["data"]["text"]) == "Hello from audio"
     assert cast(str, events[1]["data"]["text"]) == "Audio reply."
     assert all(event["event"] != "error" for event in events)

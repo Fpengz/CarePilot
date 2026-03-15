@@ -5,19 +5,21 @@ from io import BytesIO
 import pytest
 from PIL import Image
 
-from dietary_guardian.agent.meal_analysis import HawkerVisionModule
-from dietary_guardian.agent.runtime.inference_types import (
+from care_pilot.agent.meal_analysis import HawkerVisionModule
+from care_pilot.agent.runtime.inference_types import (
     InferenceModality,
     InferenceRequest,
     InferenceResponse,
     ProviderMetadata,
 )
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.meals.domain.models import ImageInput, MealPerception
+from care_pilot.config.app import get_settings
+from care_pilot.features.meals.domain.models import ImageInput, MealPerception
 
 
 @pytest.mark.anyio
-async def test_binary_image_input_returns_safe_clarification_in_test_mode() -> None:
+async def test_binary_image_input_returns_safe_clarification_in_test_mode() -> (
+    None
+):
     module = HawkerVisionModule(provider="test")
     image_input = ImageInput(
         source="upload",
@@ -49,7 +51,9 @@ async def test_binary_image_input_passes_image_bytes_to_inference_engine(
         model_name = "stub-model"
 
     class StubEngine:
-        def __init__(self, provider=None, model_name=None, model=None):  # noqa: ANN001
+        def __init__(
+            self, provider=None, model_name=None, model=None
+        ):  # noqa: ANN001
             del model_name
             self.provider = provider or "stub"
             self.model = model or _StubModel()
@@ -63,7 +67,11 @@ async def test_binary_image_input_passes_image_bytes_to_inference_engine(
                         {
                             "label": "Char Kway Teow",
                             "candidate_aliases": ["Char Kway Teow"],
-                            "portion_estimate": {"amount": 1.0, "unit": "plate", "confidence": 0.9},
+                            "portion_estimate": {
+                                "amount": 1.0,
+                                "unit": "plate",
+                                "confidence": 0.9,
+                            },
                             "preparation": "fried",
                             "confidence": 0.9,
                         }
@@ -86,7 +94,10 @@ async def test_binary_image_input_passes_image_bytes_to_inference_engine(
                 ),
             )
 
-    monkeypatch.setattr("dietary_guardian.agent.meal_analysis.vision_module.InferenceEngine", StubEngine)
+    monkeypatch.setattr(
+        "care_pilot.agent.meal_analysis.vision_module.InferenceEngine",
+        StubEngine,
+    )
 
     module = HawkerVisionModule(provider="qwen")
     image_input = ImageInput(
@@ -122,7 +133,9 @@ async def test_webp_input_converts_to_jpeg_for_inference_engine(
         model_name = "stub-model"
 
     class StubEngine:
-        def __init__(self, provider=None, model_name=None, model=None):  # noqa: ANN001
+        def __init__(
+            self, provider=None, model_name=None, model=None
+        ):  # noqa: ANN001
             del model_name
             self.provider = provider or "stub"
             self.model = model or _StubModel()
@@ -136,7 +149,11 @@ async def test_webp_input_converts_to_jpeg_for_inference_engine(
                         {
                             "label": "Char Kway Teow",
                             "candidate_aliases": ["Char Kway Teow"],
-                            "portion_estimate": {"amount": 1.0, "unit": "plate", "confidence": 0.9},
+                            "portion_estimate": {
+                                "amount": 1.0,
+                                "unit": "plate",
+                                "confidence": 0.9,
+                            },
                             "preparation": "fried",
                             "confidence": 0.9,
                         }
@@ -159,7 +176,10 @@ async def test_webp_input_converts_to_jpeg_for_inference_engine(
                 ),
             )
 
-    monkeypatch.setattr("dietary_guardian.agent.meal_analysis.vision_module.InferenceEngine", StubEngine)
+    monkeypatch.setattr(
+        "care_pilot.agent.meal_analysis.vision_module.InferenceEngine",
+        StubEngine,
+    )
 
     buffer = BytesIO()
     Image.new("RGB", (2, 2), color=(120, 60, 30)).save(buffer, format="WEBP")
@@ -204,7 +224,11 @@ async def test_debug_logging_emits_inference_payload_details(
                         {
                             "label": "Char Kway Teow",
                             "candidate_aliases": ["Char Kway Teow"],
-                            "portion_estimate": {"amount": 1.0, "unit": "plate", "confidence": 0.9},
+                            "portion_estimate": {
+                                "amount": 1.0,
+                                "unit": "plate",
+                                "confidence": 0.9,
+                            },
                             "preparation": "fried",
                             "confidence": 0.9,
                         }

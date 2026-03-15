@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 type ViewMode = "all" | "protein" | "carbs" | "fat";
 
 const FUEL_COLORS = {
-  protein: "#D2C4B4", // Soft Clay
-  carbs: "#F3E3D0",   // Warm Cream
-  fat: "#AACDDC",     // Soft Sky
+  carbs: "#00a6ed",   // Warm Cream
+  protein: "#f6511d", // Soft Clay
+  fat: "#ffb400",     // Soft Sky
 };
 
 export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi }) {

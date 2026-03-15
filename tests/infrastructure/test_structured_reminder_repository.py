@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from dietary_guardian.features.reminders.domain.models import (
+from care_pilot.features.reminders.domain.models import (
     ReminderActionRecord,
     ReminderDefinition,
     ReminderOccurrence,
     ReminderScheduleRule,
 )
-from dietary_guardian.platform.persistence import SQLiteAppStore
+from care_pilot.platform.persistence import SQLiteAppStore
 
 
 def test_structured_reminder_repository_round_trip(tmp_path) -> None:
@@ -53,7 +53,9 @@ def test_structured_reminder_repository_round_trip(tmp_path) -> None:
     saved_occurrence = repo.save_reminder_occurrence(occurrence)
 
     assert saved_occurrence.id == occurrence.id
-    upcoming = repo.list_reminder_occurrences(user_id="user_001", status="scheduled")
+    upcoming = repo.list_reminder_occurrences(
+        user_id="user_001", status="scheduled"
+    )
     assert [item.id for item in upcoming] == ["occ_001"]
 
     action = ReminderActionRecord(
@@ -72,7 +74,9 @@ def test_structured_reminder_repository_round_trip(tmp_path) -> None:
         action="taken",
     )
 
-    history = repo.list_reminder_occurrences(user_id="user_001", status="completed")
+    history = repo.list_reminder_occurrences(
+        user_id="user_001", status="completed"
+    )
     assert [item.id for item in history] == ["occ_001"]
     assert history[0].action == "taken"
     actions = repo.list_reminder_actions(occurrence_id="occ_001")

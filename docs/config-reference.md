@@ -1,6 +1,6 @@
 # Backend Config Reference
 
-Source of truth: `src/dietary_guardian/config/app.py` and `src/dietary_guardian/config/runtime.py`
+Source of truth: `src/care_pilot/config/app.py` and `src/care_pilot/config/runtime.py`
 
 Related guides:
 - developer setup and extension: `docs/developer-guide.md`
@@ -11,7 +11,7 @@ Environment loading conventions:
 - Web commands (`pnpm web:*`) load root `.env` first, then optional `apps/web/.env` overrides.
 
 ## Auth / Session
-- `API_SQLITE_DB_PATH` (default: `dietary_guardian_api.db`) — application data / household persistence
+- `API_SQLITE_DB_PATH` (default: `care_pilot_api.db`) — application data / household persistence
 - `APP_ENV` (default: `dev`) — runtime profile (`dev`, `staging`, `prod`)
 - `SESSION_SECRET` (default: `dev-insecure-session-secret-change-me`)
 - `COOKIE_SECURE` (default: `false`)
@@ -19,12 +19,12 @@ Environment loading conventions:
 - `AUTH_PASSWORD_HASH_SCHEME` (default: `pbkdf2_sha256`)
 - `AUTH_SEED_DEMO_USERS` (default: profile-derived; `true` in `dev`, `false` in `staging`/`prod`)
 - `AUTH_STORE_BACKEND` (default: `sqlite`) — `sqlite` or `in_memory`
-- `AUTH_SQLITE_DB_PATH` (default: `dietary_guardian_auth.db`)
+- `AUTH_SQLITE_DB_PATH` (default: `care_pilot_auth.db`)
 - `APP_DATA_BACKEND` (default: `sqlite`) — SQLite-only in the hackathon runtime
 - `HOUSEHOLD_STORE_BACKEND` (default: `sqlite`) — SQLite-only in the hackathon runtime
 - `EPHEMERAL_STATE_BACKEND` (default: `in_memory`) — `in_memory` or `redis`
 - `REDIS_URL` (required when `EPHEMERAL_STATE_BACKEND=redis`)
-- `REDIS_NAMESPACE` (default: `dietary_guardian`)
+- `REDIS_NAMESPACE` (default: `care_pilot`)
 - `REDIS_DEFAULT_TTL_SECONDS` (default: `300`)
 - `REDIS_LOCK_TTL_SECONDS` (default: `30`)
 - `REDIS_WORKER_SIGNAL_CHANNEL` (default: `workers.ready`)
@@ -105,11 +105,11 @@ Deployment guardrails:
 - `EMAIL_SMTP_USERNAME`
 - `EMAIL_SMTP_PASSWORD`
 - `EMAIL_SMTP_USE_TLS` (default: `true`)
-- `EMAIL_FROM_ADDRESS` (default: `noreply@dietary-guardian.local`)
+- `EMAIL_FROM_ADDRESS` (default: `noreply@care-pilot.local`)
 - `SMS_DEV_MODE` (default: `true`)
 - `SMS_WEBHOOK_URL`
 - `SMS_API_KEY`
-- `SMS_SENDER_ID` (default: `DietaryGuardian`)
+- `SMS_SENDER_ID` (default: `CarePilot`)
 - `REMINDER_SCHEDULER_INTERVAL_SECONDS` (default: `30`)
 - `REMINDER_SCHEDULER_BATCH_SIZE` (default: `100`)
 

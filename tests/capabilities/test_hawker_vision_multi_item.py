@@ -2,8 +2,8 @@
 
 import pytest
 
-from dietary_guardian.agent.meal_analysis import HawkerVisionModule
-from dietary_guardian.features.meals.domain.models import ImageInput
+from care_pilot.agent.meal_analysis import HawkerVisionModule
+from care_pilot.features.meals.domain.models import ImageInput
 
 
 @pytest.mark.anyio

@@ -2,13 +2,20 @@
 
 import pytest
 
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.meals.domain.models import Ingredient, MealEvent, Nutrition
-from dietary_guardian.features.safety.domain.engine import SafetyEngine, SafetyViolation
+from care_pilot.features.meals.domain.models import (
+    Ingredient,
+    MealEvent,
+    Nutrition,
+)
+from care_pilot.features.safety.domain.engine import (
+    SafetyEngine,
+    SafetyViolation,
+)
 
 
 @pytest.fixture
@@ -19,7 +26,9 @@ def mr_tan():
         age=68,
         conditions=[MedicalCondition(name="Hypertension", severity="Medium")],
         medications=[
-            Medication(name="Warfarin", dosage="5mg", contraindications={"Spinach"})
+            Medication(
+                name="Warfarin", dosage="5mg", contraindications={"Spinach"}
+            )
         ],
     )
 
@@ -48,7 +57,12 @@ def test_medication_violation(mr_tan):
         name="Spinach Salad",
         ingredients=[Ingredient(name="Spinach")],
         nutrition=Nutrition(
-            calories=50, carbs_g=5, sugar_g=1, protein_g=2, fat_g=0, sodium_mg=100
+            calories=50,
+            carbs_g=5,
+            sugar_g=1,
+            protein_g=2,
+            fat_g=0,
+            sodium_mg=100,
         ),
     )
     with pytest.raises(SafetyViolation) as excinfo:

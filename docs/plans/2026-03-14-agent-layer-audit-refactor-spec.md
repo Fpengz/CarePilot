@@ -1,15 +1,15 @@
-# Agent Layer Audit + Refactor Spec (Dietary Guardian)
+# Agent Layer Audit + Refactor Spec (CarePilot)
 
 **Date:** March 14, 2026  
 **Owner:** Principal AI Systems Architect / Staff Backend Engineer  
 **Constraint:** modular monolith, hackathon-ready + production credible  
-**Scope:** clarify + harden `src/dietary_guardian/agent/**` and its boundaries
+**Scope:** clarify + harden `src/care_pilot/agent/**` and its boundaries
 
 ---
 
 ## 0) Executive summary (what changes, what doesn’t)
 
-**What changes:** we treat the agent layer as the *only* home for model-powered reasoning/interpretation. Any direct model plumbing outside `dietary_guardian.agent` is a boundary violation and must be refactored behind the agent runtime.
+**What changes:** we treat the agent layer as the *only* home for model-powered reasoning/interpretation. Any direct model plumbing outside `care_pilot.agent` is a boundary violation and must be refactored behind the agent runtime.
 
 **What doesn’t:** workflows stay in `features/**`, deterministic business logic stays in `features/**/domain` (and uses platform repos/ports), and infrastructure stays in `platform/**`.
 
@@ -30,9 +30,9 @@
 
 The repo already has a strong intended architecture:
 
-- **Agent layer:** `src/dietary_guardian/agent/**` (meal analysis, dietary reasoning, emotion, recommendations, chat)
-- **Feature layer:** `src/dietary_guardian/features/**` (companion, meals, meds, reminders, etc.)
-- **Platform layer:** `src/dietary_guardian/platform/**` (persistence, storage, auth, observability)
+- **Agent layer:** `src/care_pilot/agent/**` (meal analysis, dietary reasoning, emotion, recommendations, chat)
+- **Feature layer:** `src/care_pilot/features/**` (companion, meals, meds, reminders, etc.)
+- **Platform layer:** `src/care_pilot/platform/**` (persistence, storage, auth, observability)
 
 The biggest real risk is **LLM/model plumbing leaking outside the agent layer** (especially into “API-ish” feature modules). When that happens you lose:
 
@@ -40,9 +40,9 @@ The biggest real risk is **LLM/model plumbing leaking outside the agent layer** 
 - consistent trace metadata (provider/model/capability/latency)
 - a single choke point for cost controls and safety policy
 
-**Concrete leak fixed in this refactor:** `src/dietary_guardian/features/meals/api_service.py` previously imported `pydantic_ai.Agent` and called `LLMFactory.get_model()` directly for label arbitration. That is now moved behind a typed agent-layer helper:
+**Concrete leak fixed in this refactor:** `src/care_pilot/features/meals/api_service.py` previously imported `pydantic_ai.Agent` and called `LLMFactory.get_model()` directly for label arbitration. That is now moved behind a typed agent-layer helper:
 
-- `src/dietary_guardian/agent/meal_analysis/arbitration.py`
+- `src/care_pilot/agent/meal_analysis/arbitration.py`
 
 ---
 
@@ -57,7 +57,7 @@ The biggest real risk is **LLM/model plumbing leaking outside the agent layer** 
 7) **Deterministic policy is the final gate** (LLM may propose; policy decides).
 
 **Standardization choices (refactor accelerators):**
-- Use `pydantic_ai` for inference agents (through `src/dietary_guardian/agent/runtime/*` only).
+- Use `pydantic_ai` for inference agents (through `src/care_pilot/agent/runtime/*` only).
 - Use `pydantic-graph` for declared multi-step workflows.
 - Reserve LangGraph for future workflows that require checkpointed persistence, interrupts, or long-lived thread state.
 
@@ -121,21 +121,21 @@ Use **perception + reasoning + communication** as first-class. Keep planning opt
 
 ## 6) Layer boundaries (sharp rules)
 
-### Agent layer (`src/dietary_guardian/agent/**`)
+### Agent layer (`src/care_pilot/agent/**`)
 - May: inference calls via `InferenceEngine`; parse/validate to Pydantic outputs.
 - Must: return `AgentResult` and include confidence + warnings/errors.
 - Must not: durable writes; scheduling; multi-step orchestration; HTTP concepts.
 
-### Workflow/application (`src/dietary_guardian/features/**`)
+### Workflow/application (`src/care_pilot/features/**`)
 - May: orchestrate sequences; call agents + domain services; emit timeline events.
 - Must: own idempotency + retries at the orchestration level.
 - Must not: instantiate `pydantic_ai.Agent` or call `LLMFactory.get_model()` directly.
 
-### Domain/services (`src/dietary_guardian/features/**/domain`)
+### Domain/services (`src/care_pilot/features/**/domain`)
 - Must: deterministic; unit testable; persistence via platform ports.
 - Must not: call LLMs or embed prompts.
 
-### Platform/tools (`src/dietary_guardian/platform/**`)
+### Platform/tools (`src/care_pilot/platform/**`)
 - Must: infra-only; no product logic; no imports from `features` or `agent`.
 
 ---
@@ -176,15 +176,15 @@ It makes agents testable (golden inputs), debuggable (trace + schema), and safe 
 ### Immediate (hackathon cleanup)
 
 - [x] Move ad-hoc model plumbing out of features:
-  - ✅ `src/dietary_guardian/features/meals/api_service.py` → `src/dietary_guardian/agent/meal_analysis/arbitration.py`
+  - ✅ `src/care_pilot/features/meals/api_service.py` → `src/care_pilot/agent/meal_analysis/arbitration.py`
 - [x] Enforce boundary with a simple architecture test:
   - ✅ `tests/meta/test_agent_layer_boundaries.py`
 - [ ] Inventory all agent packages; confirm each exposes 1 public entrypoint and typed contracts:
-  - `src/dietary_guardian/agent/meal_analysis/agent.py`
-  - `src/dietary_guardian/agent/dietary/agent.py`
-  - `src/dietary_guardian/agent/emotion/agent.py`
-  - `src/dietary_guardian/agent/recommendation/agent.py`
-  - `src/dietary_guardian/agent/chat/agent.py`
+  - `src/care_pilot/agent/meal_analysis/agent.py`
+  - `src/care_pilot/agent/dietary/agent.py`
+  - `src/care_pilot/agent/emotion/agent.py`
+  - `src/care_pilot/agent/recommendation/agent.py`
+  - `src/care_pilot/agent/chat/agent.py`
 
 ### Next (post-demo hardening)
 

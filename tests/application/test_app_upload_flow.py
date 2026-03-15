@@ -5,8 +5,8 @@ from io import BytesIO
 
 from PIL import Image
 
-from dietary_guardian.features.meals.domain.models import ImageInput
-from dietary_guardian.platform.storage.media.upload import build_image_input
+from care_pilot.features.meals.domain.models import ImageInput
+from care_pilot.platform.storage.media.upload import build_image_input
 
 
 @dataclass
@@ -97,7 +97,9 @@ def test_build_image_input_downscale_applies_exif_orientation() -> None:
     exif[274] = 6  # Rotate 90° CW for display
     buf = BytesIO()
     img.save(buf, format="JPEG", exif=exif)
-    uploaded = FakeUploadedFile("meal_rotated.jpg", "image/jpeg", buf.getvalue())
+    uploaded = FakeUploadedFile(
+        "meal_rotated.jpg", "image/jpeg", buf.getvalue()
+    )
 
     image_input, error = build_image_input(
         uploaded,

@@ -26,10 +26,10 @@ jobs:
         run: uv run ruff check .
 
       - name: Type check
-        run: uv run ty check src/dietary_guardian apps/api/dietary_api --extra-search-path src --output-format concise
+        run: uv run ty check src/care_pilot apps/api/carepilot_api --extra-search-path src --output-format concise
 
       - name: Tests with coverage gate
-        run: uv run pytest --cov=src/dietary_guardian --cov=apps/api/dietary_api --cov-report=term-missing --cov-fail-under=70 -q
+        run: uv run pytest --cov=src/care_pilot --cov=apps/api/carepilot_api --cov-report=term-missing --cov-fail-under=70 -q
 
   web:
     runs-on: ubuntu-latest

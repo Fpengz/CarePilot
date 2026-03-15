@@ -4,7 +4,7 @@ import os
 import pytest
 from pydantic import ValidationError
 
-from dietary_guardian.config.app import AppSettings as Settings, get_settings
+from care_pilot.config.app import AppSettings as Settings, get_settings
 
 
 def _build_settings(**overrides: object) -> Settings:
@@ -55,7 +55,13 @@ def test_settings_cache_clear_reloads_env(monkeypatch) -> None:
 
 def test_gemini_provider_requires_key() -> None:
     with pytest.raises(ValidationError):
-        _build_settings(llm={"provider": "gemini", "gemini_api_key": None, "google_api_key": None})
+        _build_settings(
+            llm={
+                "provider": "gemini",
+                "gemini_api_key": None,
+                "google_api_key": None,
+            }
+        )
 
 
 def test_local_provider_allows_missing_gemini_key() -> None:
@@ -82,7 +88,9 @@ def test_openai_provider_requires_key() -> None:
 
 
 def test_openai_provider_allows_with_key() -> None:
-    settings = _build_settings(llm={"provider": "openai", "openai_api_key": "test-openai-key"})
+    settings = _build_settings(
+        llm={"provider": "openai", "openai_api_key": "test-openai-key"}
+    )
     assert settings.llm.provider == "openai"
 
 
@@ -92,14 +100,19 @@ def test_qwen_provider_requires_key() -> None:
 
 
 def test_qwen_provider_allows_with_key() -> None:
-    settings = _build_settings(llm={"provider": "qwen", "qwen_api_key": "test-qwen-key"})
+    settings = _build_settings(
+        llm={"provider": "qwen", "qwen_api_key": "test-qwen-key"}
+    )
     assert settings.llm.provider == "qwen"
 
 
 def test_runtime_backend_settings_support_sqlite_and_optional_redis() -> None:
     settings = _build_settings(
         llm={"provider": "test"},
-        storage={"ephemeral_state_backend": "redis", "redis_url": "redis://localhost:6379/0"},
+        storage={
+            "ephemeral_state_backend": "redis",
+            "redis_url": "redis://localhost:6379/0",
+        },
     )
     assert settings.storage.app_data_backend == "sqlite"
     assert settings.auth.store_backend == "sqlite"
@@ -108,7 +121,9 @@ def test_runtime_backend_settings_support_sqlite_and_optional_redis() -> None:
 
 
 def test_app_env_defaults_readiness_strictness_by_profile() -> None:
-    dev_settings = _build_settings(llm={"provider": "test"}, app={"env": "dev"})
+    dev_settings = _build_settings(
+        llm={"provider": "test"}, app={"env": "dev"}
+    )
     prod_settings = _build_settings(
         llm={"provider": "test"},
         app={"env": "prod"},
@@ -169,7 +184,9 @@ def test_cookie_samesite_none_requires_secure_cookie() -> None:
 
 
 def test_auth_seed_demo_users_default_and_non_dev_guardrails() -> None:
-    dev_settings = _build_settings(llm={"provider": "test"}, app={"env": "dev"})
+    dev_settings = _build_settings(
+        llm={"provider": "test"}, app={"env": "dev"}
+    )
     assert dev_settings.auth.seed_demo_users is True
 
     prod_settings = _build_settings(
@@ -183,7 +200,11 @@ def test_auth_seed_demo_users_default_and_non_dev_guardrails() -> None:
         _build_settings(
             llm={"provider": "test"},
             app={"env": "prod"},
-            auth={"session_secret": "prod-secret", "cookie_secure": True, "seed_demo_users": True},
+            auth={
+                "session_secret": "prod-secret",
+                "cookie_secure": True,
+                "seed_demo_users": True,
+            },
         )
 
 
@@ -200,11 +221,18 @@ def test_prod_normalizes_tool_policy_mode_to_enforce() -> None:
 def test_legacy_postgres_backend_settings_are_removed() -> None:
     assert "postgres_dsn" not in Settings.model_fields
     with pytest.raises(ValidationError):
-        _build_settings(llm={"provider": "test"}, storage={"app_data_backend": "postgres"})
+        _build_settings(
+            llm={"provider": "test"}, storage={"app_data_backend": "postgres"}
+        )
     with pytest.raises(ValidationError):
-        _build_settings(llm={"provider": "test"}, auth={"store_backend": "postgres"})
+        _build_settings(
+            llm={"provider": "test"}, auth={"store_backend": "postgres"}
+        )
     with pytest.raises(ValidationError):
-        _build_settings(llm={"provider": "test"}, storage={"household_store_backend": "postgres"})
+        _build_settings(
+            llm={"provider": "test"},
+            storage={"household_store_backend": "postgres"},
+        )
 
 
 def test_external_worker_mode_requires_redis_ephemeral_backend() -> None:
@@ -218,6 +246,9 @@ def test_external_worker_mode_requires_redis_ephemeral_backend() -> None:
     settings = _build_settings(
         llm={"provider": "test"},
         workers={"worker_mode": "external"},
-        storage={"ephemeral_state_backend": "redis", "redis_url": "redis://localhost:6379/0"},
+        storage={
+            "ephemeral_state_backend": "redis",
+            "redis_url": "redis://localhost:6379/0",
+        },
     )
     assert settings.workers.worker_mode == "external"

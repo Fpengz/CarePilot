@@ -23,7 +23,7 @@ export function TopBar() {
       <div className="flex w-full items-center justify-between">
         <div className="min-w-0">
           <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)] opacity-70">
-            <span>Dietary Guardian</span>
+            <span>CarePilot</span>
             <ChevronRight className="h-2.5 w-2.5 opacity-40" aria-hidden />
             <span>{breadcrumb}</span>
           </div>

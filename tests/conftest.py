@@ -3,7 +3,7 @@
 import sys
 from pathlib import Path
 
-# Ensure src-layout package imports (dietary_guardian.*) work under plain `uv run pytest`.
+# Ensure src-layout package imports (care_pilot.*) work under plain `uv run pytest`.
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 src_str = str(SRC)

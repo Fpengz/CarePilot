@@ -16,7 +16,7 @@ export default function EditorialSamplePage() {
       <div className="mx-auto max-w-6xl space-y-12">
         <header className="grid gap-8 lg:grid-cols-[1.4fr_0.9fr] lg:items-end">
           <div className="space-y-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-[#6b5f4f]">Dietary Guardian — Editorial</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-[#6b5f4f]">CarePilot — Editorial</p>
             <h1 className="text-5xl leading-[1.05]">
               A clinical companion that reads like a magazine, not a dashboard.
             </h1>

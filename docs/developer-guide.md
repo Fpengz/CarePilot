@@ -45,28 +45,28 @@ uv run python scripts/cli.py infra up
 ```
 
 ## Repository map
-- `apps/api/dietary_api/`: FastAPI app, routers, API services, schemas
+- `apps/api/carepilot_api/`: FastAPI app, routers, API services, schemas
 - `apps/web/`: Next.js app, components, typed API clients, e2e coverage
 - `apps/workers/`: external worker runtime
-- `src/dietary_guardian/core/`: tiny shared primitives
-- `src/dietary_guardian/features/`: product behavior and feature entrypoints
-- `src/dietary_guardian/agent/`: bounded model/provider logic
-- `src/dietary_guardian/platform/`: persistence and external adapters
+- `src/care_pilot/core/`: tiny shared primitives
+- `src/care_pilot/features/`: product behavior and feature entrypoints
+- `src/care_pilot/agent/`: bounded model/provider logic
+- `src/care_pilot/platform/`: persistence and external adapters
 - `tests/` and `apps/api/tests/`: repository and API tests
 
 ## Extension patterns
 
 ### Add or change an API feature
-1. Update schema contracts in `apps/api/dietary_api/schemas/` if the API shape changes.
-2. Implement request handling in `apps/api/dietary_api/services/<feature>.py`.
-3. Keep the route in `apps/api/dietary_api/routers/<feature>.py` transport-only.
+1. Update schema contracts in `apps/api/carepilot_api/schemas/` if the API shape changes.
+2. Implement request handling in `apps/api/carepilot_api/services/<feature>.py`.
+3. Keep the route in `apps/api/carepilot_api/routers/<feature>.py` transport-only.
 4. Add or update API tests in `apps/api/tests/`.
 5. Update typed web client code in `apps/web/lib/api/` and UI consumers in `apps/web/app/`.
 
 ### Add or change core behavior
-1. Prefer `src/dietary_guardian/features/` for new use cases and orchestration.
+1. Prefer `src/care_pilot/features/` for new use cases and orchestration.
 2. Extend feature-local contracts before wiring platform adapters.
-3. Add infrastructure adapters under `src/dietary_guardian/platform/` only after the port or contract is clear.
+3. Add infrastructure adapters under `src/care_pilot/platform/` only after the port or contract is clear.
 4. Keep agents behind typed contracts and out of durable-state ownership.
 
 ### Add or change persistence/runtime infrastructure

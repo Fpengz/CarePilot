@@ -5,13 +5,16 @@ import asyncio
 import pytest
 from rich.console import Console
 
-from dietary_guardian.agent.dietary.agent import SYSTEM_PROMPT
+from care_pilot.agent.dietary.agent import SYSTEM_PROMPT
 
 console = Console()
 
+
 @pytest.mark.anyio
 async def test_uncle_persona():
-    console.print("[bold yellow]Vibe Check: Testing 'Uncle Guardian' Persona Logic[/bold yellow]")
+    console.print(
+        "[bold yellow]Vibe Check: Testing 'Uncle Guardian' Persona Logic[/bold yellow]"
+    )
 
     assert "Uncle Guardian" in SYSTEM_PROMPT
     assert "Singlish" in SYSTEM_PROMPT

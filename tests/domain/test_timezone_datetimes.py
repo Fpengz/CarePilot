@@ -2,10 +2,10 @@
 
 from datetime import timezone
 
-from dietary_guardian.features.companion.core.health.models import ReportInput
-from dietary_guardian.features.meals.domain.models import MealState, Nutrition
-from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
-from dietary_guardian.features.reports.domain import parse_report_input
+from care_pilot.features.companion.core.health.models import ReportInput
+from care_pilot.features.meals.domain.models import MealState, Nutrition
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.reports.domain import parse_report_input
 
 
 def _sample_meal_state() -> MealState:
@@ -35,19 +35,27 @@ def test_meal_record_default_captured_at_is_timezone_aware() -> None:
     )
 
     assert record.captured_at.tzinfo is not None
-    assert record.captured_at.utcoffset() == timezone.utc.utcoffset(record.captured_at)
+    assert record.captured_at.utcoffset() == timezone.utc.utcoffset(
+        record.captured_at
+    )
 
 
 def test_report_input_default_uploaded_at_is_timezone_aware() -> None:
     report = ReportInput(source="pasted_text", text="HbA1c: 6.7")
 
     assert report.uploaded_at.tzinfo is not None
-    assert report.uploaded_at.utcoffset() == timezone.utc.utcoffset(report.uploaded_at)
+    assert report.uploaded_at.utcoffset() == timezone.utc.utcoffset(
+        report.uploaded_at
+    )
 
 
 def test_report_parser_measured_at_is_timezone_aware() -> None:
-    readings = parse_report_input(ReportInput(source="pasted_text", text="LDL: 4.2"))
+    readings = parse_report_input(
+        ReportInput(source="pasted_text", text="LDL: 4.2")
+    )
     assert readings
     assert readings[0].measured_at is not None
     assert readings[0].measured_at.tzinfo is not None
-    assert readings[0].measured_at.utcoffset() == timezone.utc.utcoffset(readings[0].measured_at)
+    assert readings[0].measured_at.utcoffset() == timezone.utc.utcoffset(
+        readings[0].measured_at
+    )

@@ -130,11 +130,11 @@ export function DashboardIterationWorkspace() {
                 calories={overview.charts.calories.points} 
                 risk={overview.charts.glycemic_risk.points} 
               />
-              <div className="h-24">
-                <InsightsSidebar 
-                  recommendation={overview.insights.recommendations[0] ?? "Keep tracking your meals to reveal deeper insights."} 
-                />
-              </div>
+              {/*<div className="h-24">*/}
+              {/*  <InsightsSidebar */}
+              {/*    recommendation={overview.insights.recommendations[0] ?? "Keep tracking your meals to reveal deeper insights."} */}
+              {/*  />*/}
+              {/*</div>*/}
             </div>
 
             {/* Bottom Row */}

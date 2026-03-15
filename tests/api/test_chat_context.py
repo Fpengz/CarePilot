@@ -2,13 +2,25 @@
 
 from dataclasses import dataclass
 
-from dietary_guardian.features.companion.core.domain import CaseSnapshot
-from dietary_guardian.features.meals.domain.models import Ingredient, MealState, Nutrition, PortionSize
-from dietary_guardian.features.meals.domain.recognition import MealRecognitionRecord
-from dietary_guardian.features.companion.core.chat_context import format_chat_context
-from dietary_guardian.features.companion.core.health.models import HealthProfileRecord
-from dietary_guardian.features.profiles.domain.models import MedicalCondition, Medication
-from dietary_guardian.platform.observability.workflows.domain.models import WorkflowTimelineEvent
+from care_pilot.features.companion.core.domain import CaseSnapshot
+from care_pilot.features.meals.domain.models import (
+    Ingredient,
+    MealState,
+    Nutrition,
+    PortionSize,
+)
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.companion.core.chat_context import format_chat_context
+from care_pilot.features.companion.core.health.models import (
+    HealthProfileRecord,
+)
+from care_pilot.features.profiles.domain.models import (
+    MedicalCondition,
+    Medication,
+)
+from care_pilot.platform.observability.workflows.domain.models import (
+    WorkflowTimelineEvent,
+)
 
 
 def test_format_chat_context_includes_profile_and_meals() -> None:
@@ -35,11 +47,20 @@ def test_format_chat_context_includes_profile_and_meals() -> None:
         confidence_score=0.8,
         identification_method="AI_Flash",
         ingredients=[Ingredient(name="chicken"), Ingredient(name="rice")],
-        nutrition=Nutrition(calories=620, carbs_g=80, sugar_g=4, protein_g=25, fat_g=20, sodium_mg=900),
+        nutrition=Nutrition(
+            calories=620,
+            carbs_g=80,
+            sugar_g=4,
+            protein_g=25,
+            fat_g=20,
+            sodium_mg=900,
+        ),
         portion_size=PortionSize.STANDARD,
     )
     meals = [
-        MealRecognitionRecord(id="m1", user_id="u1", source="chat", meal_state=meal_state),
+        MealRecognitionRecord(
+            id="m1", user_id="u1", source="chat", meal_state=meal_state
+        ),
     ]
 
     context = format_chat_context(snapshot=snapshot, recent_meals=meals)
@@ -76,7 +97,9 @@ def test_format_chat_context_includes_tool_summary() -> None:
     )
     tool = _ToolSummary(name="trigger_alert", purpose="Send a safety alert")
 
-    context = format_chat_context(snapshot=snapshot, recent_meals=[], tool_specs=[tool])
+    context = format_chat_context(
+        snapshot=snapshot, recent_meals=[], tool_specs=[tool]
+    )
 
     assert "Available tools:" in context
     assert "trigger_alert" in context
@@ -112,7 +135,9 @@ def test_format_chat_context_includes_recent_activity() -> None:
         ),
     ]
 
-    context = format_chat_context(snapshot=snapshot, recent_meals=[], recent_events=events)
+    context = format_chat_context(
+        snapshot=snapshot, recent_meals=[], recent_events=events
+    )
 
     assert "Recent activity:" in context
     assert "meal_analysis" in context
@@ -154,7 +179,9 @@ def test_format_chat_context_includes_health_profile_details() -> None:
         budget_tier="budget",
     )
 
-    context = format_chat_context(snapshot=snapshot, recent_meals=[], health_profile=profile)
+    context = format_chat_context(
+        snapshot=snapshot, recent_meals=[], health_profile=profile
+    )
 
     assert "Age: 67" in context
     assert "Allergies: peanuts" in context

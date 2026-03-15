@@ -11,10 +11,10 @@ uv run python scripts/cli.py ingest canonical --reset
 ```
 
 ## Files touched
-- `src/dietary_guardian/data/food/canonical_foods.json`
-- `src/dietary_guardian/platform/persistence/food/ingestion.py`
-- `src/dietary_guardian/platform/persistence/food/__init__.py`
-- `src/dietary_guardian/features/recommendations/domain/canonical_food_matching.py`
+- `src/care_pilot/data/food/canonical_foods.json`
+- `src/care_pilot/platform/persistence/food/ingestion.py`
+- `src/care_pilot/platform/persistence/food/__init__.py`
+- `src/care_pilot/features/recommendations/domain/canonical_food_matching.py`
 - `scripts/cli.py`
 - `tests/platform/test_food_ingestion.py`
 - `tests/domain/test_canonical_food_service.py`

@@ -6,18 +6,21 @@ from collections.abc import Generator
 from datetime import UTC, date, datetime, time, timedelta
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.companion.core.health.models import (
+from care_pilot.config.app import get_settings
+from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     HealthProfileRecord,
     MedicationAdherenceEvent,
 )
-from dietary_guardian.features.meals.domain.models import NutritionRiskProfile, ValidatedMealEvent
-from dietary_guardian.features.reminders.domain.models import ReminderEvent
+from care_pilot.features.meals.domain.models import (
+    NutritionRiskProfile,
+    ValidatedMealEvent,
+)
+from care_pilot.features.reminders.domain.models import ReminderEvent
 
 
 def _reset_settings_cache() -> None:
@@ -25,7 +28,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_dashboard_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_dashboard_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -34,8 +39,14 @@ def sqlite_dashboard_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator
     _reset_settings_cache()
 
 
-def _login(client: TestClient, email: str = "member@example.com", password: str = "member-pass") -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(
+    client: TestClient,
+    email: str = "member@example.com",
+    password: str = "member-pass",
+) -> None:
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
@@ -144,16 +155,38 @@ def _seed_dashboard_state(client: TestClient) -> None:
     stores.biomarkers.save_biomarker_readings(
         "user_001",
         [
-            BiomarkerReading(name="hba1c", value=7.5, measured_at=datetime(2026, 1, 20, tzinfo=UTC)),
-            BiomarkerReading(name="hba1c", value=7.1, measured_at=datetime(2026, 2, 20, tzinfo=UTC)),
-            BiomarkerReading(name="hba1c", value=6.8, measured_at=datetime(2026, 3, 12, tzinfo=UTC)),
-            BiomarkerReading(name="ldl", value=4.2, measured_at=datetime(2026, 1, 20, tzinfo=UTC)),
-            BiomarkerReading(name="ldl", value=3.9, measured_at=datetime(2026, 3, 12, tzinfo=UTC)),
+            BiomarkerReading(
+                name="hba1c",
+                value=7.5,
+                measured_at=datetime(2026, 1, 20, tzinfo=UTC),
+            ),
+            BiomarkerReading(
+                name="hba1c",
+                value=7.1,
+                measured_at=datetime(2026, 2, 20, tzinfo=UTC),
+            ),
+            BiomarkerReading(
+                name="hba1c",
+                value=6.8,
+                measured_at=datetime(2026, 3, 12, tzinfo=UTC),
+            ),
+            BiomarkerReading(
+                name="ldl",
+                value=4.2,
+                measured_at=datetime(2026, 1, 20, tzinfo=UTC),
+            ),
+            BiomarkerReading(
+                name="ldl",
+                value=3.9,
+                measured_at=datetime(2026, 3, 12, tzinfo=UTC),
+            ),
         ],
     )
 
 
-def test_dashboard_overview_requires_authentication(sqlite_dashboard_env: None) -> None:
+def test_dashboard_overview_requires_authentication(
+    sqlite_dashboard_env: None,
+) -> None:
     client = TestClient(create_app())
 
     response = client.get("/api/v1/dashboard?range=30d")
@@ -161,7 +194,9 @@ def test_dashboard_overview_requires_authentication(sqlite_dashboard_env: None) 
     assert response.status_code == 401
 
 
-def test_dashboard_overview_returns_daily_analytics_for_last_30_days(sqlite_dashboard_env: None) -> None:
+def test_dashboard_overview_returns_daily_analytics_for_last_30_days(
+    sqlite_dashboard_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
     _seed_dashboard_state(client)
@@ -174,7 +209,11 @@ def test_dashboard_overview_returns_daily_analytics_for_last_30_days(sqlite_dash
     assert body["range"]["bucket"] == "day"
     assert body["summary"]["nutrition_goal_score"]["value"] >= 0
     assert body["summary"]["adherence_score"]["value"] >= 0
-    assert body["summary"]["glycemic_risk"]["status"] in {"stable", "watch", "elevated"}
+    assert body["summary"]["glycemic_risk"]["status"] in {
+        "stable",
+        "watch",
+        "elevated",
+    }
     assert body["alerts"]
     assert body["charts"]["calories"]["bucket"] == "day"
     assert body["charts"]["macros"]["bucket"] == "day"
@@ -185,7 +224,9 @@ def test_dashboard_overview_returns_daily_analytics_for_last_30_days(sqlite_dash
     assert body["links"]["meals"] == "/meals"
 
 
-def test_dashboard_overview_uses_hourly_buckets_for_today(sqlite_dashboard_env: None) -> None:
+def test_dashboard_overview_uses_hourly_buckets_for_today(
+    sqlite_dashboard_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
     _seed_dashboard_state(client)
@@ -197,16 +238,25 @@ def test_dashboard_overview_uses_hourly_buckets_for_today(sqlite_dashboard_env: 
     assert body["range"]["key"] == "today"
     assert body["range"]["bucket"] == "hour"
     assert body["charts"]["calories"]["bucket"] == "hour"
-    assert any(point["value"] > 0 for point in body["charts"]["calories"]["points"])
-    assert any(bin_item["count"] > 0 for bin_item in body["charts"]["meal_timing"]["bins"])
+    assert any(
+        point["value"] > 0 for point in body["charts"]["calories"]["points"]
+    )
+    assert any(
+        bin_item["count"] > 0
+        for bin_item in body["charts"]["meal_timing"]["bins"]
+    )
 
 
-def test_dashboard_overview_supports_custom_ranges_and_weekly_rollups(sqlite_dashboard_env: None) -> None:
+def test_dashboard_overview_supports_custom_ranges_and_weekly_rollups(
+    sqlite_dashboard_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
     _seed_dashboard_state(client)
 
-    response = client.get("/api/v1/dashboard?range=custom&from=2026-01-01&to=2026-03-14")
+    response = client.get(
+        "/api/v1/dashboard?range=custom&from=2026-01-01&to=2026-03-14"
+    )
 
     assert response.status_code == 200
     body = response.json()

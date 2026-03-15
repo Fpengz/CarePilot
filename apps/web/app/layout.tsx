@@ -4,8 +4,8 @@ import { AppShell } from "@/components/app/app-shell";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "Dietary Guardian Web",
-  description: "Production web client for Dietary Guardian",
+  title: "CarePilot Web",
+  description: "Production web client for CarePilot",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

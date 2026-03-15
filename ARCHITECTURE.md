@@ -1,7 +1,7 @@
 # Architecture
 
 ## Purpose
-This is the canonical architecture reference for Dietary Guardian. It describes the current modular-monolith structure, the ownership boundaries that contributors must preserve, and the forward direction for the hackathon branch.
+This is the canonical architecture reference for CarePilot. It describes the current modular-monolith structure, the ownership boundaries that contributors must preserve, and the forward direction for the hackathon branch.
 
 Related docs:
 - `README.md`
@@ -12,10 +12,10 @@ Related docs:
 
 ## System shape
 
-Dietary Guardian is a **feature-first modular monolith**: one codebase, strict layer ownership, no shared mutable globals. The legacy layered packages (`application/`, `domain/`, `infrastructure/`, `capabilities/`) have been removed. All new work targets the four canonical surfaces below.
+CarePilot is a **feature-first modular monolith**: one codebase, strict layer ownership, no shared mutable globals. The legacy layered packages (`application/`, `domain/`, `infrastructure/`, `capabilities/`) have been removed. All new work targets the four canonical surfaces below.
 
 ```
-src/dietary_guardian/
+src/care_pilot/
 ├── features/      product behavior and business entrypoints
 ├── agent/         bounded model-powered capabilities
 ├── platform/      infrastructure and runtime adapters
@@ -31,7 +31,7 @@ src/dietary_guardian/
 - Next.js 14 app router; typed API clients auto-generated from FastAPI schemas.
 - Future messaging channels (WhatsApp, Telegram) integrate through the same API and workflow contracts.
 
-### API layer — `apps/api/dietary_api/`
+### API layer — `apps/api/carepilot_api/`
 - Owns HTTP transport, session auth, policy enforcement (`policy.py`), request validation, error mapping, and correlation IDs.
 - Route handlers are transport-only: they validate, check policy, extract a scoped deps dataclass, and call a feature use-case function.
 - **Never** put business logic in routers or router-level `Depends` chains.
@@ -40,7 +40,7 @@ src/dietary_guardian/
 - Independent process consuming the reminder scheduler and alert outbox.
 - Uses distributed locks from `platform/scheduling/coordination/` to prevent duplicate delivery.
 
-### Feature layer — `src/dietary_guardian/features/`
+### Feature layer — `src/care_pilot/features/`
 - Owns all product behavior. Each sub-package contains `domain/` (pure types + rules) and `use_cases.py` (orchestration).
 - Feature code may call `agent/` and `platform/`, but `apps/` must not bypass feature use cases for business actions.
 
@@ -69,7 +69,7 @@ src/dietary_guardian/
 | `impact/` | Health trend analysis and impact metrics |
 | `interactions/` | Patient–companion interaction history |
 
-### Agent layer — `src/dietary_guardian/agent/`
+### Agent layer — `src/care_pilot/agent/`
 - Bounded reasoning helpers. Agents propose; they never authorize delivery or write durable state directly.
 - All agents inherit `BaseAgent[InputT, OutputT]` from `agent/core/` and return `AgentResult[OutputT]`.
 - Retrieved by name from `AgentRegistry`; never instantiated ad-hoc in feature code.
@@ -85,7 +85,7 @@ src/dietary_guardian/
 | `meal_analysis/` | `HawkerVisionModule` — image → `MealPerception` |
 | `chat/` | `ChatAgent`, `QueryRouter`, SSE streaming, audio, `[TRACK]` parsing |
 
-### Platform layer — `src/dietary_guardian/platform/`
+### Platform layer — `src/care_pilot/platform/`
 - Infrastructure adapters. Feature code only touches platform through typed protocols or store interfaces.
 
 | Sub-package | Responsibility |
@@ -98,13 +98,13 @@ src/dietary_guardian/
 | `observability/` | Structured logging, readiness probes, workflow contracts, tool policy registry |
 | `storage/` | Media upload pipeline + ingestion hooks |
 
-### Config layer — `src/dietary_guardian/config/`
+### Config layer — `src/care_pilot/config/`
 - Single composition root (`app.py` → `AppSettings`).
 - `LLMSettings` exposes four typed `@property` frozen-dataclass views: `.gemini`, `.openai`, `.local`, `.inference`.
   Never read flat provider fields directly in agent or feature code.
 - `get_settings()` validates cross-field constraints (secrets required in prod, Redis required for external workers).
 
-### Core layer — `src/dietary_guardian/core/`
+### Core layer — `src/care_pilot/core/`
 - Pure primitives: IDs, base errors, domain-neutral events, clock/time helpers, config bootstrap shims.
 - **No I/O, no infrastructure imports.**
 
@@ -116,7 +116,7 @@ src/dietary_guardian/
 Client
   │
   ▼
-apps/api/dietary_api/  ← authenticate session, check policy, validate input
+apps/api/carepilot_api/  ← authenticate session, check policy, validate input
   │
   ▼
 features/<feature>/use_cases.py  ← load CaseSnapshot, orchestrate domain logic
@@ -177,7 +177,7 @@ apps/workers/  ← process reminders, outbox, background tasks
 ## Runtime model
 
 ### Local (default)
-- SQLite for durable storage (`dietary_guardian.db`, `dietary_guardian_auth.db`, `clinical_safety.db`)
+- SQLite for durable storage (`care_pilot.db`, `care_pilot_auth.db`, `clinical_safety.db`)
 - In-memory fallbacks for cache and coordination when Redis is absent
 - API and worker share the same local SQLite stores
 - Chat memory and vector stores persist under `data/runtime/` and `data/vectorstore/`

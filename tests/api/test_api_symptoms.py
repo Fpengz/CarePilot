@@ -5,10 +5,10 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import get_settings
+from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:
@@ -16,7 +16,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture
-def sqlite_symptoms_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def sqlite_symptoms_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
@@ -25,12 +27,20 @@ def sqlite_symptoms_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[
     _reset_settings_cache()
 
 
-def _login(client: TestClient, email: str = "member@example.com", password: str = "member-pass") -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(
+    client: TestClient,
+    email: str = "member@example.com",
+    password: str = "member-pass",
+) -> None:
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
-def test_symptom_checkin_create_list_summary(sqlite_symptoms_env: None) -> None:
+def test_symptom_checkin_create_list_summary(
+    sqlite_symptoms_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 
@@ -57,7 +67,9 @@ def test_symptom_checkin_create_list_summary(sqlite_symptoms_env: None) -> None:
     assert body["top_symptoms"][0]["code"] == "headache"
 
 
-def test_symptom_checkin_red_flag_is_counted(sqlite_symptoms_env: None) -> None:
+def test_symptom_checkin_red_flag_is_counted(
+    sqlite_symptoms_env: None,
+) -> None:
     client = TestClient(create_app())
     _login(client)
 

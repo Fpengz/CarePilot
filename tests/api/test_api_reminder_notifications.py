@@ -5,14 +5,14 @@ from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from apps.api.dietary_api.main import create_app
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.reminders.notifications.reminder_materialization import (
+from care_pilot.config.app import get_settings
+from care_pilot.features.reminders.notifications.reminder_materialization import (
     dispatch_due_reminder_notifications,
 )
-from dietary_guardian.platform.messaging.alert_outbox import OutboxWorker
+from care_pilot.platform.messaging.alert_outbox import OutboxWorker
 
 
 def _reset_settings_cache() -> None:
@@ -20,7 +20,9 @@ def _reset_settings_cache() -> None:
 
 
 @pytest.fixture(autouse=True)
-def _isolated_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def _isolated_env(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
     monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.db"))
     monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.db"))
@@ -30,12 +32,20 @@ def _isolated_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, 
     _reset_settings_cache()
 
 
-def _login(client: TestClient, email: str = "member@example.com", password: str = "member-pass") -> None:
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+def _login(
+    client: TestClient,
+    email: str = "member@example.com",
+    password: str = "member-pass",
+) -> None:
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     assert response.status_code == 200
 
 
-def test_notification_preferences_round_trip_and_generation_materializes_schedule() -> None:
+def test_notification_preferences_round_trip_and_generation_materializes_schedule() -> (
+    None
+):
     app = create_app()
     client = TestClient(app)
     _login(client)
@@ -56,30 +66,43 @@ def test_notification_preferences_round_trip_and_generation_materializes_schedul
 
     listed = client.get("/api/v1/reminder-notification-preferences")
     assert listed.status_code == 200
-    assert {item["channel"] for item in listed.json()["preferences"]} == {"in_app", "email"}
+    assert {item["channel"] for item in listed.json()["preferences"]} == {
+        "in_app",
+        "email",
+    }
 
     generated = client.post("/api/v1/reminders/generate")
     assert generated.status_code == 200
     reminder_id = generated.json()["reminders"][0]["id"]
 
-    schedules = client.get(f"/api/v1/reminders/{reminder_id}/notification-schedules")
+    schedules = client.get(
+        f"/api/v1/reminders/{reminder_id}/notification-schedules"
+    )
     assert schedules.status_code == 200
     scheduled = schedules.json()["items"]
     assert len(scheduled) == 2
-    assert {(item["channel"], item["offset_minutes"]) for item in scheduled} == {
+    assert {
+        (item["channel"], item["offset_minutes"]) for item in scheduled
+    } == {
         ("in_app", -30),
         ("email", 0),
     }
 
 
-def test_dispatch_due_notifications_enqueues_and_delivers_due_schedule() -> None:
+def test_dispatch_due_notifications_enqueues_and_delivers_due_schedule() -> (
+    None
+):
     app = create_app()
     client = TestClient(app)
     _login(client)
 
     pref = client.put(
         "/api/v1/reminder-notification-preferences/default",
-        json={"rules": [{"channel": "in_app", "offset_minutes": 0, "enabled": True}]},
+        json={
+            "rules": [
+                {"channel": "in_app", "offset_minutes": 0, "enabled": True}
+            ]
+        },
     )
     assert pref.status_code == 200
 
@@ -91,9 +114,13 @@ def test_dispatch_due_notifications_enqueues_and_delivers_due_schedule() -> None
     schedules = repo.list_scheduled_notifications(reminder_id=reminder_id)
     assert schedules
     schedule_id = schedules[0].id
-    repo.set_scheduled_notification_trigger_at(schedule_id, datetime.now(timezone.utc) - timedelta(minutes=1))
+    repo.set_scheduled_notification_trigger_at(
+        schedule_id, datetime.now(timezone.utc) - timedelta(minutes=1)
+    )
 
-    queued = dispatch_due_reminder_notifications(repository=repo, now=datetime.now(timezone.utc))
+    queued = dispatch_due_reminder_notifications(
+        repository=repo, now=datetime.now(timezone.utc)
+    )
     assert [item.scheduled_notification_id for item in queued] == [schedule_id]
 
     worker = OutboxWorker(repo, max_attempts=2, concurrency=2)
@@ -114,7 +141,11 @@ def test_confirming_reminder_cancels_future_pending_notifications() -> None:
 
     pref = client.put(
         "/api/v1/reminder-notification-preferences/default",
-        json={"rules": [{"channel": "in_app", "offset_minutes": 0, "enabled": True}]},
+        json={
+            "rules": [
+                {"channel": "in_app", "offset_minutes": 0, "enabled": True}
+            ]
+        },
     )
     assert pref.status_code == 200
 
@@ -122,19 +153,30 @@ def test_confirming_reminder_cancels_future_pending_notifications() -> None:
     assert generated.status_code == 200
     reminder_id = generated.json()["reminders"][0]["id"]
 
-    schedules_before = client.get(f"/api/v1/reminders/{reminder_id}/notification-schedules")
+    schedules_before = client.get(
+        f"/api/v1/reminders/{reminder_id}/notification-schedules"
+    )
     assert schedules_before.status_code == 200
     assert schedules_before.json()["items"][0]["status"] == "pending"
 
-    confirmed = client.post(f"/api/v1/reminders/{reminder_id}/confirm", json={"confirmed": True})
+    confirmed = client.post(
+        f"/api/v1/reminders/{reminder_id}/confirm", json={"confirmed": True}
+    )
     assert confirmed.status_code == 200
 
-    schedules_after = client.get(f"/api/v1/reminders/{reminder_id}/notification-schedules")
+    schedules_after = client.get(
+        f"/api/v1/reminders/{reminder_id}/notification-schedules"
+    )
     assert schedules_after.status_code == 200
-    assert all(item["status"] == "cancelled" for item in schedules_after.json()["items"])
+    assert all(
+        item["status"] == "cancelled"
+        for item in schedules_after.json()["items"]
+    )
 
 
-def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> None:
+def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> (
+    None
+):
     app = create_app()
     client = TestClient(app)
     _login(client)
@@ -143,13 +185,23 @@ def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> 
         "/api/v1/reminder-notification-endpoints",
         json={
             "endpoints": [
-                {"channel": "email", "destination": "member@example.com", "verified": True},
-                {"channel": "sms", "destination": "+15551234567", "verified": False},
+                {
+                    "channel": "email",
+                    "destination": "member@example.com",
+                    "verified": True,
+                },
+                {
+                    "channel": "sms",
+                    "destination": "+15551234567",
+                    "verified": False,
+                },
             ]
         },
     )
     assert endpoint_update.status_code == 200
-    assert {item["channel"] for item in endpoint_update.json()["endpoints"]} == {"email", "sms"}
+    assert {
+        item["channel"] for item in endpoint_update.json()["endpoints"]
+    } == {"email", "sms"}
 
     endpoint_list = client.get("/api/v1/reminder-notification-endpoints")
     assert endpoint_list.status_code == 200
@@ -157,7 +209,11 @@ def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> 
 
     pref = client.put(
         "/api/v1/reminder-notification-preferences/default",
-        json={"rules": [{"channel": "email", "offset_minutes": 0, "enabled": True}]},
+        json={
+            "rules": [
+                {"channel": "email", "offset_minutes": 0, "enabled": True}
+            ]
+        },
     )
     assert pref.status_code == 200
 
@@ -167,9 +223,17 @@ def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> 
 
     repo = app.state.ctx.app_store
     schedule = repo.list_scheduled_notifications(reminder_id=reminder_id)[0]
-    repo.set_scheduled_notification_trigger_at(schedule.id, datetime.now(timezone.utc) - timedelta(minutes=1))
-    dispatch_due_reminder_notifications(repository=repo, now=datetime.now(timezone.utc))
-    asyncio.run(OutboxWorker(repo, max_attempts=2, concurrency=2).process_once(alert_id=schedule.id))
+    repo.set_scheduled_notification_trigger_at(
+        schedule.id, datetime.now(timezone.utc) - timedelta(minutes=1)
+    )
+    dispatch_due_reminder_notifications(
+        repository=repo, now=datetime.now(timezone.utc)
+    )
+    asyncio.run(
+        OutboxWorker(repo, max_attempts=2, concurrency=2).process_once(
+            alert_id=schedule.id
+        )
+    )
 
     logs = client.get(f"/api/v1/reminders/{reminder_id}/notification-logs")
     assert logs.status_code == 200

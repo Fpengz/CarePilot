@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from dietary_guardian.features.households.policies import (
+from care_pilot.features.households.policies import (
     HouseholdAccessForbiddenError,
     HouseholdAccessNotFoundError,
     ensure_household_member,
@@ -30,16 +30,36 @@ class FakeHouseholdStore:
 
 def test_ensure_household_member_returns_role_for_member() -> None:
     store = FakeHouseholdStore(
-        members={"hh_1": [{"user_id": "user_001", "display_name": "Alex", "role": "owner"}]}
+        members={
+            "hh_1": [
+                {
+                    "user_id": "user_001",
+                    "display_name": "Alex",
+                    "role": "owner",
+                }
+            ]
+        }
     )
 
-    role = ensure_household_member(store, household_id="hh_1", user_id="user_001")
+    role = ensure_household_member(
+        store, household_id="hh_1", user_id="user_001"
+    )
 
     assert role == "owner"
 
 
 def test_ensure_household_member_raises_not_found_for_non_member() -> None:
-    store = FakeHouseholdStore(members={"hh_1": [{"user_id": "user_001", "display_name": "Alex", "role": "owner"}]})
+    store = FakeHouseholdStore(
+        members={
+            "hh_1": [
+                {
+                    "user_id": "user_001",
+                    "display_name": "Alex",
+                    "role": "owner",
+                }
+            ]
+        }
+    )
 
     with pytest.raises(HouseholdAccessNotFoundError):
         ensure_household_member(store, household_id="hh_1", user_id="care_001")
@@ -47,7 +67,15 @@ def test_ensure_household_member_raises_not_found_for_non_member() -> None:
 
 def test_ensure_household_owner_raises_forbidden_for_non_owner() -> None:
     store = FakeHouseholdStore(
-        members={"hh_1": [{"user_id": "care_001", "display_name": "Casey", "role": "member"}]}
+        members={
+            "hh_1": [
+                {
+                    "user_id": "care_001",
+                    "display_name": "Casey",
+                    "role": "member",
+                }
+            ]
+        }
     )
 
     with pytest.raises(HouseholdAccessForbiddenError):
@@ -58,8 +86,16 @@ def test_household_source_members_returns_ids_and_display_names() -> None:
     store = FakeHouseholdStore(
         members={
             "hh_1": [
-                {"user_id": "user_001", "display_name": "Alex", "role": "owner"},
-                {"user_id": "care_001", "display_name": "Casey", "role": "member"},
+                {
+                    "user_id": "user_001",
+                    "display_name": "Alex",
+                    "role": "owner",
+                },
+                {
+                    "user_id": "care_001",
+                    "display_name": "Casey",
+                    "role": "member",
+                },
             ]
         }
     )

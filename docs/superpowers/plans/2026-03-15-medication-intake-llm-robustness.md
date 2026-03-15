@@ -15,8 +15,8 @@
 ### Task 1: Add failing tests for output recovery
 
 **Files:**
-- Modify: `/Users/zhoufuwang/Projects/dietary_tools/tests/capabilities/test_inference_engine.py`
-- Modify: `/Users/zhoufuwang/Projects/dietary_tools/tests/features/test_medication_intake_parser.py`
+- Modify: `/Users/zhoufuwang/Projects/care_pilots/tests/capabilities/test_inference_engine.py`
+- Modify: `/Users/zhoufuwang/Projects/care_pilots/tests/features/test_medication_intake_parser.py`
 
 - [ ] **Step 1: Write failing test for JSON recovery in inference engine**
 
@@ -34,7 +34,7 @@ async def test_inference_engine_recovers_json_from_chatty_output(monkeypatch):
                 await event_stream_handler(None, _emit())
             raise RuntimeError("Exceeded maximum retries (1) for output validation")
 
-    monkeypatch.setattr("dietary_guardian.agent.runtime.inference_engine.Agent", FakeAgent)
+    monkeypatch.setattr("care_pilot.agent.runtime.inference_engine.Agent", FakeAgent)
     engine = InferenceEngine(provider="test")
     engine.provider = "openai"
     engine.strategy.provider_name = "openai"
@@ -53,7 +53,7 @@ async def test_inference_engine_recovers_json_from_chatty_output(monkeypatch):
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pytest /Users/zhoufuwang/Projects/dietary_tools/tests/capabilities/test_inference_engine.py::test_inference_engine_recovers_json_from_chatty_output -v`
+Run: `pytest /Users/zhoufuwang/Projects/care_pilots/tests/capabilities/test_inference_engine.py::test_inference_engine_recovers_json_from_chatty_output -v`
 
 Expected: FAIL with "Exceeded maximum retries" or type error due to no recovery.
 
@@ -79,14 +79,14 @@ async def test_parse_llm_output_list_wrapper_is_coerced() -> None:
 
 - [ ] **Step 4: Run test to verify it fails (if needed)**
 
-Run: `pytest /Users/zhoufuwang/Projects/dietary_tools/tests/features/test_medication_intake_parser.py::test_parse_llm_output_list_wrapper_is_coerced -v`
+Run: `pytest /Users/zhoufuwang/Projects/care_pilots/tests/features/test_medication_intake_parser.py::test_parse_llm_output_list_wrapper_is_coerced -v`
 
 Expected: FAIL if parser rejects LLM wrapper or schema mismatch.
 
 ### Task 2: Implement JSON recovery in inference engine
 
 **Files:**
-- Modify: `/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/agent/runtime/inference_engine.py`
+- Modify: `/Users/zhoufuwang/Projects/care_pilots/src/care_pilot/agent/runtime/inference_engine.py`
 
 - [ ] **Step 1: Implement JSON extraction helper**
 
@@ -135,14 +135,14 @@ except Exception as exc:
 
 - [ ] **Step 4: Run the tests**
 
-Run: `pytest /Users/zhoufuwang/Projects/dietary_tools/tests/capabilities/test_inference_engine.py::test_inference_engine_recovers_json_from_chatty_output -v`
+Run: `pytest /Users/zhoufuwang/Projects/care_pilots/tests/capabilities/test_inference_engine.py::test_inference_engine_recovers_json_from_chatty_output -v`
 
 Expected: PASS
 
 ### Task 3: Harden medication parse prompt
 
 **Files:**
-- Modify: `/Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/features/medications/intake/parser.py`
+- Modify: `/Users/zhoufuwang/Projects/care_pilots/src/care_pilot/features/medications/intake/parser.py`
 
 - [ ] **Step 1: Update system prompt with strict wrapper schema**
 
@@ -159,7 +159,7 @@ Do not include markdown fences or explanations.
 
 - [ ] **Step 3: Run parser tests**
 
-Run: `pytest /Users/zhoufuwang/Projects/dietary_tools/tests/features/test_medication_intake_parser.py -v`
+Run: `pytest /Users/zhoufuwang/Projects/care_pilots/tests/features/test_medication_intake_parser.py -v`
 
 Expected: PASS
 
@@ -168,8 +168,8 @@ Expected: PASS
 ### Task 4: Add failing test for request.error logs
 
 **Files:**
-- Modify: `/Users/zhoufuwang/Projects/dietary_tools/apps/web/lib/console-safe.test.ts`
-- Modify: `/Users/zhoufuwang/Projects/dietary_tools/apps/web/lib/api/core.ts`
+- Modify: `/Users/zhoufuwang/Projects/care_pilots/apps/web/lib/console-safe.test.ts`
+- Modify: `/Users/zhoufuwang/Projects/care_pilots/apps/web/lib/api/core.ts`
 
 - [ ] **Step 1: Write failing test ensuring ApiRequestError is logged with details**
 
@@ -192,7 +192,7 @@ Expected: FAIL if payload is empty after normalization.
 ### Task 5: Normalize error payloads before logging
 
 **Files:**
-- Modify: `/Users/zhoufuwang/Projects/dietary_tools/apps/web/lib/api/core.ts`
+- Modify: `/Users/zhoufuwang/Projects/care_pilots/apps/web/lib/api/core.ts`
 
 - [ ] **Step 1: Add helper to serialize errors into plain objects**
 
@@ -234,7 +234,7 @@ Expected: PASS
 
 - [ ] **Step 1: Backend tests**
 
-Run: `SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 uv run pytest /Users/zhoufuwang/Projects/dietary_tools/tests/capabilities/test_inference_engine.py /Users/zhoufuwang/Projects/dietary_tools/tests/features/test_medication_intake_parser.py -q`
+Run: `SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 uv run pytest /Users/zhoufuwang/Projects/care_pilots/tests/capabilities/test_inference_engine.py /Users/zhoufuwang/Projects/care_pilots/tests/features/test_medication_intake_parser.py -q`
 
 Expected: PASS
 
@@ -247,12 +247,12 @@ Expected: PASS
 - [ ] **Step 3: Commit**
 
 ```bash
-git add /Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/agent/runtime/inference_engine.py \
-  /Users/zhoufuwang/Projects/dietary_tools/src/dietary_guardian/features/medications/intake/parser.py \
-  /Users/zhoufuwang/Projects/dietary_tools/apps/web/lib/api/core.ts \
-  /Users/zhoufuwang/Projects/dietary_tools/tests/capabilities/test_inference_engine.py \
-  /Users/zhoufuwang/Projects/dietary_tools/tests/features/test_medication_intake_parser.py \
-  /Users/zhoufuwang/Projects/dietary_tools/apps/web/lib/console-safe.test.ts
+git add /Users/zhoufuwang/Projects/care_pilot/src/care_pilot/agent/runtime/inference_engine.py \
+  /Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/medications/intake/parser.py \
+  /Users/zhoufuwang/Projects/care_pilot/apps/web/lib/api/core.ts \
+  /Users/zhoufuwang/Projects/care_pilot/tests/capabilities/test_inference_engine.py \
+  /Users/zhoufuwang/Projects/care_pilot/tests/features/test_medication_intake_parser.py \
+  /Users/zhoufuwang/Projects/care_pilot/apps/web/lib/console-safe.test.ts
 
 git commit -m "fix: harden medication intake parsing and error logging"
 ```

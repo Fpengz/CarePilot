@@ -2,11 +2,13 @@
 
 from datetime import date
 
-from dietary_guardian.features.reminders.domain.models import MedicationRegimen
-from dietary_guardian.platform.persistence import SQLiteRepository
+from care_pilot.features.reminders.domain.models import MedicationRegimen
+from care_pilot.platform.persistence import SQLiteRepository
 
 
-def test_medication_repository_persists_extended_regimen_fields(tmp_path) -> None:
+def test_medication_repository_persists_extended_regimen_fields(
+    tmp_path,
+) -> None:
     repo = SQLiteRepository(str(tmp_path / "medications.db"))
     regimen = MedicationRegimen(
         id="reg-1",
@@ -17,7 +19,13 @@ def test_medication_repository_persists_extended_regimen_fields(tmp_path) -> Non
         timing_type="pre_meal",
         frequency_type="fixed_slots",
         frequency_times_per_day=2,
-        time_rules=[{"kind": "before_meal", "slots": ["breakfast", "dinner"], "offset_minutes": 30}],
+        time_rules=[
+            {
+                "kind": "before_meal",
+                "slots": ["breakfast", "dinner"],
+                "offset_minutes": 30,
+            }
+        ],
         offset_minutes=30,
         slot_scope=["breakfast", "dinner"],
         max_daily_doses=2,

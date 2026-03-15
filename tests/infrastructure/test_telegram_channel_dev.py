@@ -3,9 +3,9 @@
 from datetime import datetime, timezone
 from urllib import request
 
-from dietary_guardian.config.app import get_settings
-from dietary_guardian.features.reminders.domain.models import ReminderEvent
-from dietary_guardian.platform.messaging.channels.telegram import TelegramChannel
+from care_pilot.config.app import get_settings
+from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.platform.messaging.channels.telegram import TelegramChannel
 
 
 def _event() -> ReminderEvent:
@@ -25,7 +25,9 @@ def test_telegram_dev_mode_skips_network(monkeypatch) -> None:
     monkeypatch.setenv("TELEGRAM_DEV_MODE", "1")
 
     def _never_called(*args, **kwargs):
-        raise AssertionError("urlopen should not be called in TELEGRAM_DEV_MODE")
+        raise AssertionError(
+            "urlopen should not be called in TELEGRAM_DEV_MODE"
+        )
 
     monkeypatch.setattr(request, "urlopen", _never_called)
 
@@ -60,7 +62,13 @@ def test_telegram_payload_formats_local_timezone(monkeypatch) -> None:
     monkeypatch.setenv("APP_TIMEZONE", "Asia/Singapore")
 
     channel = TelegramChannel()
-    event = _event().model_copy(update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3, tzinfo=timezone.utc)})
+    event = _event().model_copy(
+        update={
+            "scheduled_at": datetime(
+                2026, 2, 25, 9, 48, 3, tzinfo=timezone.utc
+            )
+        }
+    )
     payload = channel._build_payload(event, channel._resolve_chat_id(None))
 
     assert "+08:00" in payload["text"]
@@ -68,7 +76,9 @@ def test_telegram_payload_formats_local_timezone(monkeypatch) -> None:
     get_settings.cache_clear()
 
 
-def test_telegram_payload_preserves_naive_local_wall_clock(monkeypatch) -> None:
+def test_telegram_payload_preserves_naive_local_wall_clock(
+    monkeypatch,
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "chat")
@@ -76,7 +86,9 @@ def test_telegram_payload_preserves_naive_local_wall_clock(monkeypatch) -> None:
     monkeypatch.setenv("APP_TIMEZONE", "Asia/Singapore")
 
     channel = TelegramChannel()
-    event = _event().model_copy(update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3)})
+    event = _event().model_copy(
+        update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3)}
+    )
     payload = channel._build_payload(event, channel._resolve_chat_id(None))
 
     assert "09:48:03+08:00" in payload["text"]

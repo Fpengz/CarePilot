@@ -7,7 +7,7 @@ notifications on a cadence.
 
 import asyncio
 
-from dietary_guardian.platform.scheduling import run_reminder_scheduler_loop
+from care_pilot.platform.scheduling import run_reminder_scheduler_loop
 
 
 def main() -> None:

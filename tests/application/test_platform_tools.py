@@ -1,8 +1,12 @@
 """Tests for platform tools."""
 
-from dietary_guardian.platform.persistence import SQLiteRepository
-from dietary_guardian.platform.observability.tooling.domain.models import ToolPolicyContext
-from dietary_guardian.platform.observability.tooling.platform_registry import build_platform_tool_registry
+from care_pilot.platform.persistence import SQLiteRepository
+from care_pilot.platform.observability.tooling.domain.models import (
+    ToolPolicyContext,
+)
+from care_pilot.platform.observability.tooling.platform_registry import (
+    build_platform_tool_registry,
+)
 
 
 def test_trigger_alert_tool_allows_admin_scope(tmp_path) -> None:
@@ -17,7 +21,12 @@ def test_trigger_alert_tool_allows_admin_scope(tmp_path) -> None:
             "message": "Manual end-to-end alert verification",
             "destinations": ["in_app"],
         },
-        context=ToolPolicyContext(account_role="admin", scopes=["alert:trigger"], environment="dev", user_id="u1"),
+        context=ToolPolicyContext(
+            account_role="admin",
+            scopes=["alert:trigger"],
+            environment="dev",
+            user_id="u1",
+        ),
     )
 
     assert result.success is True
@@ -36,7 +45,9 @@ def test_trigger_alert_tool_blocks_member_without_scope(tmp_path) -> None:
             "message": "Manual end-to-end alert verification",
             "destinations": ["in_app"],
         },
-        context=ToolPolicyContext(account_role="member", scopes=[], environment="dev", user_id="u1"),
+        context=ToolPolicyContext(
+            account_role="member", scopes=[], environment="dev", user_id="u1"
+        ),
     )
 
     assert result.success is False

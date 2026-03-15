@@ -11,25 +11,32 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.panel import Panel
 
-from dietary_guardian.agent.dietary.agent import analyze_dietary_request
-from dietary_guardian.agent.dietary.schemas import DietaryAgentInput
-from dietary_guardian.agent.runtime.llm_factory import LLMFactory
-from dietary_guardian.config.app import AppSettings as Settings, get_settings
-from dietary_guardian.features.profiles.domain.models import (
+from care_pilot.agent.dietary.agent import analyze_dietary_request
+from care_pilot.agent.dietary.schemas import DietaryAgentInput
+from care_pilot.agent.runtime.llm_factory import LLMFactory
+from care_pilot.config.app import AppSettings as Settings, get_settings
+from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from dietary_guardian.features.meals.domain.models import Ingredient, MealEvent, Nutrition
-from dietary_guardian.features.safety.domain.engine import SafetyEngine
+from care_pilot.features.meals.domain.models import (
+    Ingredient,
+    MealEvent,
+    Nutrition,
+)
+from care_pilot.features.safety.domain.engine import SafetyEngine
 
 console = Console()
+
 
 def _runtime_summary(settings: Settings) -> str:
     provider = getattr(settings.llm.provider, "value", settings.llm.provider)
     destination = "unavailable"
     try:
-        model = LLMFactory.get_model(settings=settings, capability=settings.llm.default_capability)
+        model = LLMFactory.get_model(
+            settings=settings, capability=settings.llm.default_capability
+        )
         destination = LLMFactory.describe_model_destination(model)
     except Exception:  # noqa: BLE001
         destination = "unavailable"
@@ -46,7 +53,9 @@ def bootstrap_runtime_settings() -> Settings:
 
 
 async def main(settings: Settings):
-    console.print(Panel(_runtime_summary(settings), title="Runtime Configuration"))
+    console.print(
+        Panel(_runtime_summary(settings), title="Runtime Configuration")
+    )
 
     # Setup Mr. Tan
     mr_tan = UserProfile(
@@ -59,7 +68,9 @@ async def main(settings: Settings):
         ],
         medications=[
             Medication(
-                name="Warfarin", dosage="5mg", contraindications={"Spinach", "Kale", "Ginkgo"}
+                name="Warfarin",
+                dosage="5mg",
+                contraindications={"Spinach", "Kale", "Ginkgo"},
             )
         ],
     )
@@ -85,12 +96,16 @@ async def main(settings: Settings):
         ),
     )
 
-    console.print(Panel(f"[bold blue]Scenario 1: {mr_tan.name} eating {laksa.name}[/bold blue]"))
+    console.print(
+        Panel(
+            f"[bold blue]Scenario 1: {mr_tan.name} eating {laksa.name}[/bold blue]"
+        )
+    )
     warnings = safety.validate_meal(laksa)
     input_data = DietaryAgentInput(
         user_name=mr_tan.name,
-        health_goals=[], # Add health goals if any
-        dietary_restrictions=[], # Add dietary restrictions if any
+        health_goals=[],  # Add health goals if any
+        dietary_restrictions=[],  # Add dietary restrictions if any
         meal_name=laksa.name,
         ingredients=[item.name for item in laksa.ingredients],
         portion_size="Standard",
@@ -119,7 +134,9 @@ async def main(settings: Settings):
     )
 
     console.print(
-        Panel(f"\n[bold red]Scenario 2: {mr_tan.name} eating {spinach_soup.name}[/bold red]")
+        Panel(
+            f"\n[bold red]Scenario 2: {mr_tan.name} eating {spinach_soup.name}[/bold red]"
+        )
     )
     warnings = safety.validate_meal(spinach_soup)
     input_data = DietaryAgentInput(
