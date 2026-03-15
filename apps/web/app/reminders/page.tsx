@@ -150,11 +150,14 @@ export default function RemindersPage() {
         schedule.start_date = newReminder.oneTimeDate;
         schedule.times = [newReminder.time];
       } else if (newReminder.pattern === "daily_fixed_times") {
+        schedule.start_date = newReminder.oneTimeDate;
         schedule.times = [newReminder.time];
       } else if (newReminder.pattern === "every_x_hours") {
+        schedule.start_date = newReminder.oneTimeDate;
         schedule.interval_hours = newReminder.interval_hours;
         schedule.times = [newReminder.time];
       } else if (newReminder.pattern === "specific_weekdays") {
+        schedule.start_date = newReminder.oneTimeDate;
         schedule.weekdays = newReminder.weekdays;
         schedule.times = [newReminder.time];
       }
@@ -276,6 +279,18 @@ export default function RemindersPage() {
                   <Label htmlFor="one-time-date">Date</Label>
                   <Input 
                     id="one-time-date"
+                    type="date"
+                    value={newReminder.oneTimeDate}
+                    onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
+                  />
+                </div>
+              )}
+              
+              {newReminder.pattern !== "one_time" && (
+                <div className="space-y-2">
+                  <Label htmlFor="start-date">Start date</Label>
+                  <Input 
+                    id="start-date"
                     type="date"
                     value={newReminder.oneTimeDate}
                     onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
