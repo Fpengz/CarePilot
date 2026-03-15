@@ -159,6 +159,7 @@ def reminder_occurrences_upcoming(
     return ReminderOccurrenceListResponse(
         items=list_upcoming_occurrences_for_user(
             context=get_context(request),
+            session=session,
             user_id=str(session["user_id"]),
         )
     )
