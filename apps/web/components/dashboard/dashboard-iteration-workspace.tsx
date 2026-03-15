@@ -213,7 +213,7 @@ export function DashboardIterationWorkspace() {
       {loading && !overview ? <DashboardSkeleton /> : null}
 
       {overview ? (
-        <>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
           <ClinicalSummary
             adherence={overview.summary.adherence_score.value}
             risk={overview.summary.glycemic_risk.value}
@@ -221,36 +221,30 @@ export function DashboardIterationWorkspace() {
             recommendation={overview.insights.recommendations[0] ?? "Keep tracking your meals to reveal deeper insights."}
           />
 
-          <div className="page-grid">
-            <div className="space-y-8">
-              <TrendPanel
-                title={overview.charts.calories.title}
-                description="Calories logged by period."
-              >
-                <MetricLineChart chart={overview.charts.calories} tint="#c2410c" detailLabel="Calories logged" />
-              </TrendPanel>
-              
-              <TrendPanel
-                title={overview.charts.glycemic_risk.title}
-                description="Risk score over time with threshold bands."
-              >
-                <MetricLineChart chart={overview.charts.glycemic_risk} tint="#dc2626" detailLabel="Risk score" />
-              </TrendPanel>
-            </div>
+          <TrendPanel
+            title={overview.charts.calories.title}
+            description="Calories logged by period."
+          >
+            <MetricLineChart chart={overview.charts.calories} tint="#c2410c" detailLabel="Calories logged" />
+          </TrendPanel>
+          
+          <TrendPanel
+            title={overview.charts.glycemic_risk.title}
+            description="Risk score over time with threshold bands."
+          >
+            <MetricLineChart chart={overview.charts.glycemic_risk} tint="#dc2626" detailLabel="Risk score" />
+          </TrendPanel>
 
-            <div className="space-y-8">
-              <SummaryStrip
-                metrics={[
-                  overview.summary.adherence_score,
-                  overview.summary.glycemic_risk,
-                  overview.summary.nutrition_goal_score,
-                ]}
-              />
-              <NutritionBalanceChart chart={overview.charts.macros} />
-              <MealTimingHistogram chart={overview.charts.meal_timing} />
-            </div>
-          </div>
-        </>
+          <SummaryStrip
+            metrics={[
+              overview.summary.adherence_score,
+              overview.summary.glycemic_risk,
+              overview.summary.nutrition_goal_score,
+            ]}
+          />
+          <NutritionBalanceChart chart={overview.charts.macros} />
+          <MealTimingHistogram chart={overview.charts.meal_timing} />
+        </div>
       ) : null}
     </div>
   );
