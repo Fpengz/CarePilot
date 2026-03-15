@@ -19,17 +19,20 @@ import sqlite3
 import subprocess
 import sys
 import time
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Annotated, Mapping, MutableMapping, cast
+from uuid import uuid4
 
 import typer
 from dotenv import dotenv_values
 
 from dietary_guardian.config.app import get_settings
 from dietary_guardian.dev.synthetic_data import SyntheticProfile, seed_synthetic_data
+from dietary_guardian.features.reminders.domain.models import ReminderEvent
 from dietary_guardian.features.recommendations.domain.canonical_food_matching import normalize_text
 from dietary_guardian.features.recommendations.domain.models import CanonicalFoodRecord
+from dietary_guardian.platform.messaging.channels.telegram import TelegramChannel
 from dietary_guardian.platform.persistence.food import (
     FoodInfoIngester,
     load_default_canonical_food_records,
@@ -633,6 +636,57 @@ def command_readiness(
         raise typer.Exit(1)
     if status_value == "degraded" and strict_warnings:
         raise typer.Exit(1)
+
+
+@app.command("telegram-test")
+def command_telegram_test(
+    message: Annotated[str, typer.Option("--message", "-m", help="Text to include in the reminder payload.")] = "Test reminder",
+    bot_token: Annotated[str | None, typer.Option("--bot-token", help="Override TELEGRAM_BOT_TOKEN.")] = None,
+    chat_id: Annotated[str | None, typer.Option("--chat-id", help="Override TELEGRAM_CHAT_ID.")] = None,
+    dev_mode: Annotated[
+        bool | None,
+        typer.Option("--dev-mode/--no-dev-mode", help="Override TELEGRAM_DEV_MODE."),
+    ] = None,
+) -> None:
+    load_root_env()
+    settings = get_settings()
+    token = bot_token or settings.channels.telegram_bot_token or ""
+    destination = chat_id or settings.channels.telegram_chat_id or ""
+    use_dev_mode = settings.channels.telegram_dev_mode if dev_mode is None else dev_mode
+
+    if not token or not destination:
+        error("Missing Telegram configuration. Provide --bot-token and --chat-id or set TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID.")
+        raise typer.Exit(1)
+
+    channel = TelegramChannel()
+    channel.bot_token = token
+    channel.chat_id = destination
+    channel.dev_mode = use_dev_mode
+
+    reminder = ReminderEvent(
+        id=str(uuid4()),
+        user_id="cli",
+        reminder_definition_id=None,
+        occurrence_id=None,
+        regimen_id=None,
+        reminder_type="medication",
+        title="Telegram test reminder",
+        body=message,
+        medication_name=message,
+        scheduled_at=datetime.now(timezone.utc),
+        slot=None,
+        dosage_text="",
+        status="sent",
+        meal_confirmation="unknown",
+        sent_at=None,
+        ack_at=None,
+    )
+    result = channel.send(reminder, destination=f"telegram://{destination}")
+    if result.success:
+        info("Telegram test dispatched successfully.")
+        return
+    error(f"Telegram test failed: {result.error or 'unknown error'}")
+    raise typer.Exit(1)
 
 
 @test_app.command("backend", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})

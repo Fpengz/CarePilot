@@ -17,6 +17,26 @@ function statusTone(status: ReminderOccurrenceApi["status"]) {
   return "bg-[color:var(--accent)]/5 text-[color:var(--foreground)] border-[color:var(--border-soft)]";
 }
 
+function scheduleSummary(definition?: ReminderDefinitionApi): string | null {
+  if (!definition) return null;
+  const { schedule } = definition;
+  if (schedule.pattern === "daily_fixed_times") {
+    return schedule.times.length ? `Daily · ${schedule.times.join(", ")}` : "Daily";
+  }
+  if (schedule.pattern === "one_time") {
+    const date = schedule.start_date ? ` on ${schedule.start_date}` : "";
+    const time = schedule.times[0] ? ` at ${schedule.times[0]}` : "";
+    return `One-time${date}${time}`;
+  }
+  if (schedule.pattern === "every_x_hours") {
+    return schedule.interval_hours ? `Every ${schedule.interval_hours}h` : "Every X hours";
+  }
+  if (schedule.pattern === "specific_weekdays") {
+    return schedule.weekdays.length ? `Weekly · ${schedule.weekdays.join(", ")}` : "Weekly";
+  }
+  return "Scheduled";
+}
+
 export function ReminderListItem({ 
   definition, 
   occurrence,
@@ -37,6 +57,7 @@ export function ReminderListItem({
   const title = definition?.title ?? occurrence?.reminder_definition_id ?? "Reminder";
   const body = definition?.body ?? definition?.instructions_text ?? "Instructions";
   const time = occurrence ? timestampFormatter.format(new Date(occurrence.trigger_at)) : null;
+  const schedule = scheduleSummary(definition);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -71,6 +92,11 @@ export function ReminderListItem({
                 <Calendar className="h-3 w-3" /> {time}
               </span>
             )}
+            {!time && schedule && (
+              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-60">
+                <Calendar className="h-3 w-3" /> {schedule}
+              </span>
+            )}
             {definition?.timezone && (
               <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-60">
                 <MapPin className="h-3 w-3" /> {definition.timezone}
@@ -80,7 +106,7 @@ export function ReminderListItem({
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-[150px] items-center justify-end gap-3">
         {occurrence ? (
           <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", statusTone(occurrence.status))}>
             {occurrence.status}
