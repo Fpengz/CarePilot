@@ -61,8 +61,13 @@ class ChatOrchestrator:
             yield ChatStreamEvent(event="done", data={"status": "tracked"})
             return
 
-        del extra_context
-        
+        context_blocks: list[str] = []
+        if extra_context:
+            context_blocks.append(extra_context)
+        if emotion_context:
+            context_blocks.append(emotion_context)
+        context_prefix = "\n\n".join(context_blocks) if context_blocks else None
+
         # Build prompt context from memory
         ctx = self.memory.build_prompt_context()
         history = ctx["short_term"]
@@ -78,7 +83,7 @@ class ChatOrchestrator:
             response = await run_chat(
                 message=user_message,
                 history=history,
-                system_prompt_override=emotion_context,
+                system_prompt_override=context_prefix,
             )
             # Simulate streaming for now if needed, or just yield the whole response
             yield ChatStreamEvent(event="token", data={"text": response})

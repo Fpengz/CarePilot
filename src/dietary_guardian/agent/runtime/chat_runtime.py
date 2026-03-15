@@ -9,11 +9,12 @@ timeout configuration.
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any, cast
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, BadRequestError
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
@@ -91,19 +92,118 @@ class ChatStreamRuntime:
             max_retries=settings.llm.openai.transport_max_retries,
         )
 
+    @staticmethod
+    def _is_non_retryable(exc: Exception) -> bool:
+        if isinstance(exc, BadRequestError):
+            message = str(exc).lower()
+            if "roles must alternate" in message:
+                return True
+        return False
+
+    def _requires_user_only_payload(self, model: str) -> bool:
+        base_url = (self._config.base_url or "").lower()
+        if "sea-lion.ai" in base_url:
+            return True
+        return "sea-lion" in model.lower()
+
+    @staticmethod
+    def _safe_preview(text: str, *, limit: int = 160) -> str:
+        preview = text[:limit].replace("\n", " ")
+        preview = re.sub(r"[0-9]", "x", preview)
+        preview = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "[redacted-email]", preview)
+        return preview
+
+    def _normalize_messages_for_sealion(
+        self,
+        messages: list[ChatCompletionMessageParam],
+    ) -> tuple[list[ChatCompletionMessageParam], bool, str | None]:
+        normalized = [dict(message) for message in messages]
+        system_chunks = [
+            str(message.get("content"))
+            for message in normalized
+            if message.get("role") == "system" and message.get("content")
+        ]
+        if not system_chunks:
+            return messages, False, None
+
+        system_context = "\n\n".join(system_chunks)
+        non_system = [message for message in normalized if message.get("role") != "system"]
+        if not non_system:
+            non_system = [{"role": "user", "content": f"[System context]\n{system_context}"}]
+        else:
+            first = non_system[0]
+            if first.get("role") != "user":
+                non_system.insert(0, {"role": "user", "content": ""})
+                first = non_system[0]
+            existing = str(first.get("content") or "")
+            prefix = f"[System context]\n{system_context}"
+            first["content"] = f"{prefix}\n\n{existing}" if existing else prefix
+        preview = self._safe_preview(system_context)
+        return cast(list[ChatCompletionMessageParam], non_system), True, preview
+
+    def _log_request(self, *, model: str, messages: list[ChatCompletionMessageParam]) -> None:
+        if not messages:
+            return
+        first = messages[0]
+        content = str(first.get("content") or "")
+        logger.info(
+            "chat_api_request model=%s role=%s content_preview=%s",
+            model,
+            first.get("role"),
+            self._safe_preview(content),
+        )
+
+    def _log_response(self, *, model: str, content: str) -> None:
+        if not content:
+            return
+        logger.info(
+            "chat_api_response model=%s content_len=%s preview=%s",
+            model,
+            len(content),
+            self._safe_preview(content),
+        )
+
     async def complete(self, *, messages: list[dict[str, Any]], model_id: str | None = None) -> str:
         model = model_id or self._config.model_id
         typed_messages = cast(list[ChatCompletionMessageParam], messages)
-        response = await self._client.chat.completions.create(
-            model=model,
-            messages=typed_messages,
-        )
-        return (response.choices[0].message.content or "").strip()
+        if self._requires_user_only_payload(model):
+            typed_messages, applied, preview = self._normalize_messages_for_sealion(typed_messages)
+            if applied:
+                logger.info(
+                    "chat_payload_normalized applied=%s model=%s preview=%s",
+                    applied,
+                    model,
+                    preview or "",
+                )
+        self._log_request(model=model, messages=typed_messages)
+        try:
+            response = await self._client.chat.completions.create(
+                model=model,
+                messages=typed_messages,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("chat_complete_failed error=%s", exc)
+            raise
+        content = (response.choices[0].message.content or "").strip()
+        self._log_response(model=model, content=content)
+        return content
 
     async def stream(self, *, messages: list[dict[str, Any]], model_id: str | None = None) -> AsyncIterator[str]:
         model = model_id or self._config.model_id
         attempts = self._config.stream_max_retries + 1
         typed_messages = cast(list[ChatCompletionMessageParam], messages)
+        applied = False
+        preview: str | None = None
+        if self._requires_user_only_payload(model):
+            typed_messages, applied, preview = self._normalize_messages_for_sealion(typed_messages)
+            if applied:
+                logger.info(
+                    "chat_payload_normalized applied=%s model=%s preview=%s",
+                    applied,
+                    model,
+                    preview or "",
+                )
+        self._log_request(model=model, messages=typed_messages)
         for attempt in range(1, attempts + 1):
             try:
                 stream = await self._client.chat.completions.create(
@@ -111,14 +211,26 @@ class ChatStreamRuntime:
                     messages=typed_messages,
                     stream=True,
                 )
+                aggregated = ""
                 async for chunk in stream:
                     token = (chunk.choices[0].delta.content or "") if chunk.choices else ""
                     if token:
+                        aggregated += token
                         yield token
+                self._log_response(model=model, content=aggregated)
                 return
             except Exception as exc:  # noqa: BLE001
                 if attempt >= attempts:
                     logger.exception("chat_stream_failed attempt=%s/%s error=%s", attempt, attempts, exc)
+                    raise
+                if self._is_non_retryable(exc):
+                    logger.exception(
+                        "chat_stream_non_retryable attempt=%s/%s error=%s normalized=%s",
+                        attempt,
+                        attempts,
+                        exc,
+                        applied,
+                    )
                     raise
                 logger.warning("chat_stream_retry attempt=%s/%s error=%s", attempt, attempts, exc)
                 await asyncio.sleep(self._config.stream_backoff_seconds * attempt)
