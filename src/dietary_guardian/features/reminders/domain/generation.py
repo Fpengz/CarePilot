@@ -110,6 +110,32 @@ def occurrences_for_definition(
     if definition.schedule.pattern == "daily_fixed_times":
         for item in definition.schedule.times:
             trigger_times.append(_combine_local(target_date=target_date, value=item, timezone_name=timezone_name))
+    elif definition.schedule.pattern == "one_time":
+        if definition.schedule.start_date and definition.schedule.start_date != target_date:
+            return []
+        for item in definition.schedule.times:
+            trigger_times.append(_combine_local(target_date=target_date, value=item, timezone_name=timezone_name))
+    elif definition.schedule.pattern == "specific_weekdays":
+        if not definition.schedule.weekdays:
+            return []
+        if (target_date.weekday() + 1) not in definition.schedule.weekdays:
+            return []
+        for item in definition.schedule.times:
+            trigger_times.append(_combine_local(target_date=target_date, value=item, timezone_name=timezone_name))
+    elif definition.schedule.pattern == "every_x_hours":
+        interval = definition.schedule.interval_hours or 0
+        if interval <= 0:
+            return []
+        anchor = definition.schedule.times[0] if definition.schedule.times else "08:00"
+        cursor = _combine_local(target_date=target_date, value=anchor, timezone_name=timezone_name)
+        end_of_day = _combine_local(
+            target_date=target_date + timedelta(days=1),
+            value="00:00",
+            timezone_name=timezone_name,
+        )
+        while cursor < end_of_day:
+            trigger_times.append(cursor)
+            cursor += timedelta(hours=interval)
     elif definition.schedule.pattern == "meal_relative":
         raw_scope = definition.schedule.metadata.get("slot_scope")
         slot_scope = list(raw_scope) if isinstance(raw_scope, list) and raw_scope else (

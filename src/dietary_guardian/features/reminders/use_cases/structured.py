@@ -132,11 +132,26 @@ def list_reminder_definitions_for_user(*, context: "AppContext", user_id: str) -
 def create_reminder_definition_for_user(
     *,
     context: "AppContext",
-    user_id: str,
+    session: dict[str, object],
     definition: ReminderDefinition,
 ) -> ReminderDefinition:
+    user_id = str(session["user_id"])
     definition.user_id = user_id
-    return context.stores.reminders.save_reminder_definition(definition)
+    saved = context.stores.reminders.save_reminder_definition(definition)
+    if not saved.active:
+        return saved
+
+    user_profile: UserProfile = build_user_profile_from_session(session, context.stores.profiles)
+    existing_keys = _existing_occurrence_keys(context=context, user_id=user_profile.id)
+    target_date = datetime.now(timezone.utc).date()
+    for occurrence in occurrences_for_definition(definition=saved, target_date=target_date, user_profile=user_profile):
+        dedupe_key = (occurrence.reminder_definition_id, occurrence.scheduled_for.isoformat())
+        if dedupe_key in existing_keys:
+            continue
+        saved_occurrence = context.stores.reminders.save_reminder_occurrence(occurrence)
+        _sync_occurrence_projection(context=context, definition=saved, occurrence=saved_occurrence)
+        existing_keys.add(dedupe_key)
+    return saved
 
 
 def update_reminder_definition_for_user(

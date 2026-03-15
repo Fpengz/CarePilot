@@ -104,7 +104,7 @@ def reminder_definitions_create(
     require_action(session, "reminders.confirm")
     item = create_reminder_definition_for_user(
         context=get_context(request),
-        user_id=str(session["user_id"]),
+        session=session,
         definition=ReminderDefinition(
             id=str(uuid4()),
             user_id=str(session["user_id"]),
