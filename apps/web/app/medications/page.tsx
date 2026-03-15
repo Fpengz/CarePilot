@@ -105,7 +105,8 @@ export default function MedicationsPage() {
     metricsLoading;
 
   return (
-    <div className="section-stack">
+    <div className="section-stack relative isolate">
+      <div className="dashboard-grounding" />
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Care Plan Adherence</h1>
         <p className="text-[color:var(--muted-foreground)] leading-relaxed max-w-2xl text-sm">
@@ -123,8 +124,8 @@ export default function MedicationsPage() {
 
       {error && <ErrorCard message={error} />}
 
-      <div className="page-grid items-start gap-6 lg:gap-8">
-        <div className="space-y-8">
+      <div className="grid grid-cols-12 gap-6 items-start">
+        <div className="col-span-12 lg:col-span-8 space-y-8">
           <MedicationIntakeWizard 
             onTextIntake={(text) => intakeTextMutation.mutate(text)}
             onFileUpload={(file) => intakeUploadMutation.mutate(file)}
@@ -132,21 +133,21 @@ export default function MedicationsPage() {
           />
 
           {intakeResult && (
-            <Card className="border-[color:var(--accent)]/20 shadow-sm animate-in zoom-in-95">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Normalization Review</CardTitle>
-                <CardDescription>Verify the AI-parsed instructions before confirming.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="glass-card border-health-teal/20 animate-in zoom-in-95">
+              <div className="mb-4">
+                <h3 className="text-base font-bold">Normalization Review</h3>
+                <p className="text-xs text-[color:var(--muted-foreground)]">Verify the AI-parsed instructions before confirming.</p>
+              </div>
+              <div className="space-y-4">
                 <div className="space-y-3">
                   {intakeResult.normalized_instructions.map((instruction, index) => (
-                    <div key={index} className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4">
+                    <div key={index} className="rounded-xl border border-[color:var(--border-soft)] bg-white/20 dark:bg-black/20 p-4">
                       <div className="font-bold">{instruction.medication_name_raw}</div>
                       <div className="mt-1 text-sm text-[color:var(--muted-foreground)]">
                         {instruction.dosage_text} · {instruction.timing_type} {instruction.fixed_time ? `at ${instruction.fixed_time}` : ""}
                       </div>
                       {instruction.ambiguities.length > 0 && (
-                        <div className="mt-2 rounded-lg bg-amber-50 p-2 text-[10px] text-amber-700 font-medium">
+                        <div className="mt-2 rounded-lg bg-health-amber-soft p-2 text-[10px] text-health-amber font-medium">
                           ⚠ {instruction.ambiguities.join(" ")}
                         </div>
                       )}
@@ -155,38 +156,42 @@ export default function MedicationsPage() {
                 </div>
                 <div className="flex gap-2">
                   <Button 
-                    className="flex-1"
+                    className="flex-1 rounded-xl h-11"
                     disabled={confirmIntakeMutation.isPending}
                     onClick={() => confirmIntakeMutation.mutate({ draft_id: intakeResult.draft_id })}
                   >
                     Confirm & Create Reminders
                   </Button>
-                  <Button variant="secondary" onClick={() => setIntakeResult(null)}>Discard</Button>
+                  <Button variant="secondary" className="rounded-xl h-11" onClick={() => setIntakeResult(null)}>Discard</Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Pill className="h-4 w-4 text-[color:var(--muted-foreground)]" />
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Active Regimens</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">Active Regimens</h4>
             </div>
             <div className="grid gap-3">
               {regimens.map((regimen) => (
-                <div key={regimen.id} className="data-list-row group" aria-label={`Regimen for ${regimen.medication_name}`}>
+                <div key={regimen.id} className="glass-card !p-4 group" aria-label={`Regimen for ${regimen.medication_name}`}>
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="font-bold tracking-tight">{regimen.medication_name}</div>
                       <div className="text-xs text-[color:var(--muted-foreground)] mt-0.5">{regimen.dosage_text}</div>
-                      <div className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-60">
-                        {regimen.timing_type} {regimen.fixed_time ? `• ${regimen.fixed_time}` : ""}
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="status-chip status-chip-slate">
+                          {regimen.timing_type} {regimen.fixed_time ? `• ${regimen.fixed_time}` : ""}
+                        </span>
+                        {!regimen.active && <span className="status-chip status-chip-rose">Paused</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         variant="secondary"
+                        className="rounded-lg"
                         onClick={() => updateRegimenMutation.mutate({ regimenId: regimen.id, active: !regimen.active })}
                       >
                         {regimen.active ? "Pause" : "Resume"}
@@ -196,33 +201,37 @@ export default function MedicationsPage() {
                 </div>
               ))}
               {regimens.length === 0 && !regimensLoading && (
-                <p className="py-8 text-center text-xs text-[color:var(--muted-foreground)] opacity-60">No active regimens found.</p>
+                <div className="glass-card py-12 text-center">
+                  <p className="text-xs text-[color:var(--muted-foreground)] opacity-60">No active regimens found.</p>
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="space-y-8 lg:sticky lg:top-28">
+        <div className="col-span-12 lg:col-span-4 space-y-8 lg:sticky lg:top-28">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <History className="h-4 w-4 text-[color:var(--muted-foreground)]" />
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Recent Events</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">Recent Events</h4>
             </div>
             <div className="grid gap-3">
-              {adherenceEvents.slice(0, 5).map((event) => (
-                <div key={event.id} className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-3 shadow-sm">
+              {adherenceEvents.slice(0, 8).map((event) => (
+                <div key={event.id} className="glass-card !p-3">
                   <div className="flex items-center justify-between">
                     <span className={cn(
-                      "rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
-                      event.status === "taken" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
+                      "status-chip",
+                      event.status === "taken" ? "status-chip-teal" : "status-chip-rose"
                     )}>
                       {event.status}
                     </span>
-                    <span className="text-[10px] text-[color:var(--muted-foreground)]">
+                    <span className="text-[10px] font-medium text-[color:var(--muted-foreground)]">
                       {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "numeric" }).format(new Date(event.scheduled_at))}
                     </span>
                   </div>
-                  <div className="mt-1 text-xs font-semibold truncate">{regimens.find(r => r.id === event.regimen_id)?.medication_name ?? "Medication"}</div>
+                  <div className="mt-2 text-xs font-bold truncate">
+                    {regimens.find(r => r.id === event.regimen_id)?.medication_name ?? "Medication"}
+                  </div>
                 </div>
               ))}
             </div>

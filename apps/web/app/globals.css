@@ -28,6 +28,16 @@
   --chart-gradient-end: rgba(255, 255, 255, 0.55);
   --chart-bg: oklch(0.99 0.01 240);
 
+  /* Semantic Health Colors */
+  --health-teal: #047857;
+  --health-teal-soft: rgba(4, 120, 87, 0.1);
+  --health-amber: #f59e0b;
+  --health-amber-soft: rgba(245, 158, 11, 0.1);
+  --health-slate: #475569;
+  --health-slate-soft: rgba(71, 85, 105, 0.1);
+  --health-rose: #e11d48;
+  --health-rose-soft: rgba(225, 29, 72, 0.1);
+
   color-scheme: light;
 }
 
@@ -57,6 +67,16 @@
   --chart-gradient-end: rgba(25, 27, 30, 0.4);
   --chart-bg: oklch(0.16 0.01 240);
 
+  /* Semantic Health Colors - Dark */
+  --health-teal: #10b981;
+  --health-teal-soft: rgba(16, 185, 129, 0.15);
+  --health-amber: #fbbf24;
+  --health-amber-soft: rgba(251, 191, 36, 0.15);
+  --health-slate: #94a3b8;
+  --health-slate-soft: rgba(148, 163, 184, 0.15);
+  --health-rose: #fb7185;
+  --health-rose-soft: rgba(251, 113, 133, 0.15);
+
   color-scheme: dark;
 }
 
@@ -70,6 +90,10 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-health-teal: var(--health-teal);
+  --color-health-amber: var(--health-amber);
+  --color-health-slate: var(--health-slate);
+  --color-health-rose: var(--health-rose);
 }
 
 @layer base {
@@ -302,6 +326,22 @@
 
   .status-chip {
     @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider;
+  }
+
+  .status-chip-teal {
+    @apply bg-health-teal-soft text-health-teal;
+  }
+
+  .status-chip-amber {
+    @apply bg-health-amber-soft text-health-amber;
+  }
+
+  .status-chip-slate {
+    @apply bg-health-slate-soft text-health-slate;
+  }
+
+  .status-chip-rose {
+    @apply bg-health-rose-soft text-health-rose;
   }
 }
 

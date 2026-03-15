@@ -555,15 +555,16 @@ export default function ChatPage() {
   };
 
   return (
-    <div className={`flex flex-col gap-6 lg:flex-row lg:items-start ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
-      <section className="flex flex-1 min-h-[calc(100vh-14rem)] lg:min-h-[75vh] flex-col rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 sm:p-8 shadow-[0_8px_32px_rgba(15,23,42,0.03)]">
+    <div className={`flex flex-col gap-6 lg:flex-row lg:items-start relative isolate ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
+      <div className="dashboard-grounding" />
+      <section className="flex flex-1 min-h-[calc(100vh-14rem)] lg:min-h-[75vh] flex-col glass-card !p-4 sm:!p-8">
         <ChatHeader onClear={clearHistory} />
 
-        <div className="my-6 h-px w-full bg-[color:var(--border-soft)] opacity-60" />
+        <div className="my-6 h-px w-full bg-white/10 opacity-60" />
 
         {messageViews.length === 0 && (
-          <div className="rounded-xl border border-dashed border-[color:var(--border-soft)] bg-[color:var(--panel)] px-6 py-8 text-center text-sm text-[color:var(--muted-foreground)]">
-            <p>Start a conversation with your health companion.</p>
+          <div className="rounded-xl border border-dashed border-white/20 bg-white/5 px-6 py-12 text-center text-sm text-[color:var(--muted-foreground)]">
+            <p className="font-bold text-[color:var(--foreground)]">Start a conversation with your health companion.</p>
             <p className="mt-2 text-xs opacity-60">Log meals, ask about nutrition, or check your adherence status.</p>
           </div>
         )}

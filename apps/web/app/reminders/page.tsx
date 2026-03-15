@@ -202,7 +202,8 @@ export default function RemindersPage() {
   }
 
   return (
-    <div className="section-stack">
+    <div className="section-stack relative isolate">
+      <div className="dashboard-grounding" />
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Care Coordination</h1>
@@ -212,7 +213,7 @@ export default function RemindersPage() {
         </div>
         {!showCreateForm && (
           <Button 
-            className="h-11 rounded-xl px-6 font-bold shadow-sm gap-2"
+            className="h-11 rounded-xl px-6 font-bold shadow-md gap-2 bg-health-teal hover:bg-health-teal/90"
             onClick={() => setShowCreateForm(true)}
           >
             <Plus className="h-4 w-4" /> Create Reminder
@@ -221,193 +222,198 @@ export default function RemindersPage() {
       </div>
 
       {showCreateForm && (
-        <Card className="border-[color:var(--accent)]/20 shadow-lg animate-in fade-in slide-in-from-top-4">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold tracking-tight">{editingDefinitionId ? "Edit Reminder" : "Create Manual Reminder"}</h2>
-              <Button 
-                variant="ghost" 
-                className="h-8 w-8 rounded-full p-0"
-                onClick={() => {
-                  setShowCreateForm(false);
-                  setEditingDefinitionId(null);
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+        <div className="glass-card border-health-teal/20 shadow-lg animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold tracking-tight">{editingDefinitionId ? "Edit Reminder" : "Create Manual Reminder"}</h2>
+            <Button 
+              variant="ghost" 
+              className="h-8 w-8 rounded-full p-0"
+              onClick={() => {
+                setShowCreateForm(false);
+                setEditingDefinitionId(null);
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="reminder-title" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Title / Name</Label>
+              <Input 
+                id="reminder-title"
+                placeholder="e.g., Metformin 500mg" 
+                value={newReminder.title}
+                onChange={(e) => setNewReminder({ ...newReminder, title: e.target.value })}
+                className="rounded-lg"
+              />
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="reminder-type" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Type</Label>
+              <Select
+                id="reminder-type"
+                value={newReminder.reminder_type}
+                onChange={(e) => setNewReminder({ ...newReminder, reminder_type: e.target.value as any })}
+                className="rounded-lg"
+              >
+                <option value="medication">Medication</option>
+                <option value="mobility">Mobility / Task</option>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reminder-pattern" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Schedule Type</Label>
+              <Select
+                id="reminder-pattern"
+                value={newReminder.pattern}
+                onChange={(e) => setNewReminder({ ...newReminder, pattern: e.target.value as any })}
+                className="rounded-lg"
+              >
+                <option value="daily_fixed_times">Daily (Fixed Time)</option>
+                <option value="every_x_hours">Interval (Every X hours)</option>
+                <option value="specific_weekdays">Weekly (Specific Days)</option>
+                <option value="one_time">One-time</option>
+              </Select>
+            </div>
+
+            {newReminder.pattern === "one_time" && (
               <div className="space-y-2">
-                <Label htmlFor="reminder-title">Title / Name</Label>
+                <Label htmlFor="one-time-date" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Date</Label>
                 <Input 
-                  id="reminder-title"
-                  placeholder="e.g., Metformin 500mg" 
-                  value={newReminder.title}
-                  onChange={(e) => setNewReminder({ ...newReminder, title: e.target.value })}
+                  id="one-time-date"
+                  type="date"
+                  value={newReminder.oneTimeDate}
+                  onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
+                  className="rounded-lg"
                 />
               </div>
-
+            )}
+            
+            {newReminder.pattern !== "one_time" && (
               <div className="space-y-2">
-                <Label htmlFor="reminder-type">Type</Label>
-                <Select
-                  id="reminder-type"
-                  value={newReminder.reminder_type}
-                  onChange={(e) => setNewReminder({ ...newReminder, reminder_type: e.target.value as any })}
-                >
-                  <option value="medication">Medication</option>
-                  <option value="mobility">Mobility / Task</option>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="reminder-pattern">Schedule Type</Label>
-                <Select
-                  id="reminder-pattern"
-                  value={newReminder.pattern}
-                  onChange={(e) => setNewReminder({ ...newReminder, pattern: e.target.value as any })}
-                >
-                  <option value="daily_fixed_times">Daily (Fixed Time)</option>
-                  <option value="every_x_hours">Interval (Every X hours)</option>
-                  <option value="specific_weekdays">Weekly (Specific Days)</option>
-                  <option value="one_time">One-time</option>
-                </Select>
-              </div>
-
-              {newReminder.pattern === "one_time" && (
-                <div className="space-y-2">
-                  <Label htmlFor="one-time-date">Date</Label>
-                  <Input 
-                    id="one-time-date"
-                    type="date"
-                    value={newReminder.oneTimeDate}
-                    onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
-                  />
-                </div>
-              )}
-              
-              {newReminder.pattern !== "one_time" && (
-                <div className="space-y-2">
-                  <Label htmlFor="start-date">Start date</Label>
-                  <Input 
-                    id="start-date"
-                    type="date"
-                    value={newReminder.oneTimeDate}
-                    onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
-                  />
-                </div>
-              )}
-
-              {newReminder.pattern === "every_x_hours" && (
-                <div className="space-y-2">
-                  <Label htmlFor="interval-hours">Interval (Hours)</Label>
-                  <Input 
-                    id="interval-hours"
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={newReminder.interval_hours}
-                    onChange={(e) => setNewReminder({ ...newReminder, interval_hours: parseInt(e.target.value) || 1 })}
-                  />
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="reminder-time">Time</Label>
+                <Label htmlFor="start-date" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Start date</Label>
                 <Input 
-                  id="reminder-time"
-                  type="time"
-                  value={newReminder.time}
-                  onChange={(e) => setNewReminder({ ...newReminder, time: e.target.value })}
+                  id="start-date"
+                  type="date"
+                  value={newReminder.oneTimeDate}
+                  onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
+                  className="rounded-lg"
                 />
               </div>
+            )}
 
-              {newReminder.pattern === "specific_weekdays" && (
-                <div className="space-y-3 md:col-span-2">
-                  <Label>Repeat on</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => {
-                      const dayNum = idx + 1;
-                      const isSelected = newReminder.weekdays.includes(dayNum);
-                      return (
-                        <button
-                          key={day}
-                          onClick={() => {
-                            const next = isSelected 
-                              ? newReminder.weekdays.filter(d => d !== dayNum) 
-                              : [...newReminder.weekdays, dayNum];
-                            setNewReminder({ ...newReminder, weekdays: next.sort() });
-                          }}
-                          className={cn(
-                            "h-10 w-12 rounded-lg border text-xs font-bold transition-all",
-                            isSelected 
-                              ? "bg-[color:var(--accent)] text-white border-[color:var(--accent)]" 
-                              : "border-[color:var(--border-soft)] hover:bg-[color:var(--panel-soft)]"
-                          )}
-                        >
-                          {day}
-                        </button>
-                      );
-                    })}
-                  </div>
+            {newReminder.pattern === "every_x_hours" && (
+              <div className="space-y-2">
+                <Label htmlFor="interval-hours" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Interval (Hours)</Label>
+                <Input 
+                  id="interval-hours"
+                  type="number"
+                  min="1"
+                  max="24"
+                  value={newReminder.interval_hours}
+                  onChange={(e) => setNewReminder({ ...newReminder, interval_hours: parseInt(e.target.value) || 1 })}
+                  className="rounded-lg"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="reminder-time" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Time</Label>
+              <Input 
+                id="reminder-time"
+                type="time"
+                value={newReminder.time}
+                onChange={(e) => setNewReminder({ ...newReminder, time: e.target.value })}
+                className="rounded-lg"
+              />
+            </div>
+
+            {newReminder.pattern === "specific_weekdays" && (
+              <div className="space-y-3 md:col-span-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-60">Repeat on</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => {
+                    const dayNum = idx + 1;
+                    const isSelected = newReminder.weekdays.includes(dayNum);
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => {
+                          const next = isSelected 
+                            ? newReminder.weekdays.filter(d => d !== dayNum) 
+                            : [...newReminder.weekdays, dayNum];
+                          setNewReminder({ ...newReminder, weekdays: next.sort() });
+                        }}
+                        className={cn(
+                          "h-10 w-12 rounded-lg border text-xs font-bold transition-all",
+                          isSelected 
+                            ? "bg-health-teal text-white border-health-teal" 
+                            : "border-[color:var(--border-soft)] hover:bg-white/10 dark:hover:bg-black/10"
+                        )}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="reminder-body">Instructions / Notes (Optional)</Label>
-                <Textarea 
-                  id="reminder-body"
-                  placeholder="Take with food, avoid caffeine..."
-                  value={newReminder.body}
-                  onChange={(e) => setNewReminder({ ...newReminder, body: e.target.value })}
-                  className="min-h-[80px]"
-                />
               </div>
-            </div>
+            )}
 
-            <div className="mt-8 flex items-center justify-end gap-3 border-t border-[color:var(--border-soft)] pt-6">
-              <Button 
-                variant="secondary" 
-                onClick={() => {
-                  setShowCreateForm(false);
-                  setEditingDefinitionId(null);
-                }}
-                className="h-11 px-6 rounded-xl"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleCreateReminder}
-                disabled={loading}
-                className="h-11 px-8 rounded-xl font-bold shadow-md bg-[color:var(--accent)] hover:bg-[color:var(--accent)]/90"
-              >
-                {loading ? (editingDefinitionId ? "Updating..." : "Creating...") : (editingDefinitionId ? "Update Reminder" : "Save Reminder")}
-              </Button>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="reminder-body" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Instructions / Notes (Optional)</Label>
+              <Textarea 
+                id="reminder-body"
+                placeholder="Take with food, avoid caffeine..."
+                value={newReminder.body}
+                onChange={(e) => setNewReminder({ ...newReminder, body: e.target.value })}
+                className="min-h-[80px] rounded-lg"
+              />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="mt-8 flex items-center justify-end gap-3 border-t border-white/10 pt-6">
+            <Button 
+              variant="secondary" 
+              onClick={() => {
+                setShowCreateForm(false);
+                setEditingDefinitionId(null);
+              }}
+              className="h-11 px-6 rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateReminder}
+              disabled={loading}
+              className="h-11 px-8 rounded-xl font-bold shadow-md bg-health-teal hover:bg-health-teal/90"
+            >
+              {loading ? (editingDefinitionId ? "Updating..." : "Creating...") : (editingDefinitionId ? "Update Reminder" : "Save Reminder")}
+            </Button>
+          </div>
+        </div>
       )}
 
       {error && <ErrorCard message={error} />}
 
       <Tabs defaultValue="today" className="w-full space-y-6 md:space-y-8">
-        <div className="flex flex-col gap-4 border-b border-[color:var(--border-soft)] pb-1 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 border-b border-white/10 pb-1 lg:flex-row lg:items-center lg:justify-between">
           <TabsList className="bg-transparent h-auto p-0 gap-4 md:gap-8 overflow-x-auto scrollbar-hide flex-nowrap justify-start">
             <TabsTrigger 
               value="today" 
-              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:bg-transparent data-[state=active]:text-[color:var(--foreground)] shadow-none shrink-0"
+              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-health-teal data-[state=active]:bg-transparent data-[state=active]:text-health-teal shadow-none shrink-0"
             >
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 <span>Due Today</span>
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--accent)]/10 text-[10px] text-[color:var(--accent)]">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-health-teal-soft text-[10px] text-health-teal font-bold">
                   {todaysOccurrences.length}
                 </span>
               </div>
             </TabsTrigger>
             <TabsTrigger 
               value="planned" 
-              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:bg-transparent data-[state=active]:text-[color:var(--foreground)] shadow-none shrink-0"
+              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-health-teal data-[state=active]:bg-transparent data-[state=active]:text-health-teal shadow-none shrink-0"
             >
               <div className="flex items-center gap-2">
                 <ListTodo className="h-4 w-4" />
@@ -416,7 +422,7 @@ export default function RemindersPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="history" 
-              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-[color:var(--accent)] data-[state=active]:bg-transparent data-[state=active]:text-[color:var(--foreground)] shadow-none shrink-0"
+              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-0 text-sm font-semibold text-[color:var(--muted-foreground)] transition-all data-[state=active]:border-health-teal data-[state=active]:bg-transparent data-[state=active]:text-health-teal shadow-none shrink-0"
             >
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4" />
@@ -432,7 +438,7 @@ export default function RemindersPage() {
                 type="text" 
                 placeholder="Search schedule..."
                 aria-label="Search schedule"
-                className="h-9 w-full rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] pl-9 pr-4 text-xs focus:border-[color:var(--accent)] focus:outline-none"
+                className="h-9 w-full rounded-lg border border-white/10 bg-white/5 pl-9 pr-4 text-xs focus:border-health-teal focus:outline-none"
               />
             </div>
           </div>
@@ -455,8 +461,8 @@ export default function RemindersPage() {
                 />
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--accent)]/5 text-[color:var(--accent)]/40">
+              <div className="flex flex-col items-center justify-center py-20 text-center space-y-3 glass-card">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-health-teal-soft text-health-teal/40">
                   <Calendar className="h-6 w-6" />
                 </div>
                 <div className="space-y-1">
@@ -481,7 +487,7 @@ export default function RemindersPage() {
                 />
               ))
             ) : (
-              <div className="text-center py-20 text-[color:var(--muted-foreground)]">No planned reminders.</div>
+              <div className="text-center py-20 text-[color:var(--muted-foreground)] glass-card">No planned reminders.</div>
             )}
           </div>
         </TabsContent>
@@ -503,7 +509,7 @@ export default function RemindersPage() {
                 />
               ))
             ) : (
-              <div className="text-center py-20 text-[color:var(--muted-foreground)]">No historical records found.</div>
+              <div className="text-center py-20 text-[color:var(--muted-foreground)] glass-card">No historical records found.</div>
             )}
           </div>
         </TabsContent>

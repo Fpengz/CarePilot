@@ -12,7 +12,8 @@ export default function MealsPage() {
   const [lastAnalysis, setLastAnalysis] = useState<MealAnalyzeApiResponse | null>(null);
 
   return (
-    <div className="section-stack">
+    <div className="section-stack relative isolate">
+      <div className="dashboard-grounding" />
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Nutrition Intelligence</h1>
         <p className="text-[color:var(--muted-foreground)] leading-relaxed max-w-2xl">
@@ -20,13 +21,13 @@ export default function MealsPage() {
         </p>
       </div>
 
-      <div className="page-grid items-start gap-6 lg:gap-8">
-        <div className="space-y-8">
+      <div className="grid grid-cols-12 gap-6 items-start">
+        <div className="col-span-12 lg:col-span-8 space-y-8">
           <MealAnalyzer onSuccess={setLastAnalysis} />
           <MealRecordsList />
         </div>
 
-        <div className="space-y-8 lg:sticky lg:top-28">
+        <div className="col-span-12 lg:col-span-4 space-y-8 lg:sticky lg:top-28">
           <NutritionProgress />
         </div>
       </div>

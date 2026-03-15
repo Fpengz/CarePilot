@@ -70,7 +70,8 @@ export default function SymptomsPage() {
   };
 
   return (
-    <div className="section-stack">
+    <div className="section-stack relative isolate">
+      <div className="dashboard-grounding" />
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Symptom Monitoring</h1>
@@ -78,19 +79,19 @@ export default function SymptomsPage() {
             Log physical signals to help your AI companion detect patterns and provide safer clinical guidance.
           </p>
         </div>
-        <Button variant="secondary" size="sm" onClick={refreshData} className="gap-2">
+        <Button variant="secondary" size="sm" onClick={refreshData} className="gap-2 rounded-xl h-10 px-4">
           <RefreshCcw className="h-3.5 w-3.5" /> Sync Data
         </Button>
       </div>
 
       {error && <ErrorCard message={error} />}
 
-      <div className="page-grid items-start">
-        <div className="space-y-8">
-          <div className="clinical-card space-y-8">
+      <div className="grid grid-cols-12 gap-6 items-start">
+        <div className="col-span-12 lg:col-span-8 space-y-8">
+          <div className="glass-card space-y-8">
             <div className="space-y-1">
-              <h3 className="clinical-subtitle">Active Check-In</h3>
-              <p className="clinical-body">How are you feeling right now?</p>
+              <h3 className="text-base font-bold">Active Check-In</h3>
+              <p className="text-xs text-[color:var(--muted-foreground)]">How are you feeling right now?</p>
             </div>
 
             <div className="space-y-6">
@@ -98,8 +99,8 @@ export default function SymptomsPage() {
                 <div className="flex items-center justify-between">
                   <Label className="text-[10px] font-bold uppercase tracking-widest opacity-70">Intensity</Label>
                   <span className={cn(
-                    "text-xs font-bold px-2 py-0.5 rounded-full",
-                    severity >= 4 ? "bg-rose-500/10 text-rose-600" : "bg-[color:var(--accent)]/10 text-[color:var(--accent)]"
+                    "status-chip",
+                    severity >= 4 ? "status-chip-rose" : "status-chip-teal"
                   )}>Level {severity}</span>
                 </div>
                 <div className="flex gap-2">
@@ -110,8 +111,8 @@ export default function SymptomsPage() {
                       className={cn(
                         "flex-1 h-12 rounded-xl border-2 transition-all font-bold",
                         severity === val 
-                          ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white shadow-sm" 
-                          : "border-[color:var(--border-soft)] bg-[color:var(--surface)] text-[color:var(--muted-foreground)] hover:border-[color:var(--border)]"
+                          ? "border-health-teal bg-health-teal text-white shadow-sm" 
+                          : "border-white/10 bg-white/5 text-[color:var(--muted-foreground)] hover:border-white/20"
                       )}
                     >
                       {val}
@@ -128,10 +129,10 @@ export default function SymptomsPage() {
                       key={s}
                       onClick={() => toggleSymptom(s)}
                       className={cn(
-                        "clinical-chip transition-all",
+                        "status-chip border-2 transition-all",
                         selectedSymptoms.includes(s) 
-                          ? "bg-[color:var(--accent)] text-white border-[color:var(--accent)]" 
-                          : "hover:bg-[color:var(--muted)]"
+                          ? "status-chip-teal border-health-teal bg-health-teal text-white" 
+                          : "status-chip-slate border-white/10 hover:border-white/20"
                       )}
                     >
                       {s}
@@ -146,12 +147,12 @@ export default function SymptomsPage() {
                   placeholder="Describe timing, duration, or triggers..."
                   value={freeText}
                   onChange={(e) => setFreeText(e.target.value)}
-                  className="rounded-xl min-h-[100px]"
+                  className="rounded-xl min-h-[100px] bg-white/5 border-white/10"
                 />
               </div>
 
               <Button 
-                className="w-full h-12 rounded-xl font-bold shadow-sm" 
+                className="w-full h-12 rounded-xl font-bold shadow-md bg-health-teal hover:bg-health-teal/90" 
                 onClick={handleSubmit}
                 disabled={loading}
               >
@@ -163,16 +164,16 @@ export default function SymptomsPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <History className="h-4 w-4 text-[color:var(--muted-foreground)]" />
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Recent Records</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">Recent Records</h4>
             </div>
             <div className="grid gap-3">
               {checkIns.slice(0, 5).map((item) => (
-                <div key={item.id} className="data-list-row group">
-                  <div className="flex items-center justify-between">
+                <div key={item.id} className="glass-card !p-4 group">
+                  <div className="flex items-center justify-between text-left">
                     <div className="flex items-center gap-3">
                       <div className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-lg border",
-                        item.severity >= 4 ? "bg-rose-500/10 text-rose-600 border-rose-200" : "bg-emerald-500/10 text-emerald-600 border-emerald-200"
+                        "flex h-8 w-8 items-center justify-center rounded-lg border border-white/10",
+                        item.severity >= 4 ? "bg-health-rose-soft text-health-rose" : "bg-health-teal-soft text-health-teal"
                       )}>
                         <Thermometer className="h-4 w-4" />
                       </div>
@@ -183,18 +184,17 @@ export default function SymptomsPage() {
                         </div>
                       </div>
                     </div>
-                    <Badge 
-                      variant="outline" 
+                    <span 
                       className={cn(
-                        "text-[10px] uppercase tracking-tighter",
-                        item.safety.decision === "escalate" ? "bg-rose-50 text-rose-600 border-rose-200" : ""
+                        "status-chip",
+                        item.safety.decision === "escalate" ? "status-chip-rose" : "status-chip-slate"
                       )}
                     >
                       {item.safety.decision}
-                    </Badge>
+                    </span>
                   </div>
                   {item.free_text && (
-                    <p className="mt-2 text-xs text-[color:var(--muted-foreground)] line-clamp-2 italic">&quot;{item.free_text}&quot;</p>
+                    <p className="mt-3 text-xs text-[color:var(--muted-foreground)] leading-relaxed italic border-l-2 border-white/10 pl-3">&quot;{item.free_text}&quot;</p>
                   )}
                 </div>
               ))}
@@ -202,11 +202,11 @@ export default function SymptomsPage() {
           </div>
         </div>
 
-        <div className="space-y-8 lg:sticky lg:top-28">
-          <div className="clinical-card bg-[color:var(--accent)]/5 border-[color:var(--accent)]/10">
-            <div className="flex items-center gap-2 text-[color:var(--accent)] mb-4">
+        <div className="col-span-12 lg:col-span-4 space-y-8 lg:sticky lg:top-28">
+          <div className="glass-card bg-health-amber-soft border-health-amber/20 shadow-[0_8px_32px_rgba(245,158,11,0.1)]">
+            <div className="flex items-center gap-2 text-health-amber mb-4">
               <Info className="h-4 w-4" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Aggregate Insights</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Aggregate Insights</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -219,9 +219,9 @@ export default function SymptomsPage() {
               </div>
             </div>
             {summary?.red_flag_count ? (
-              <div className="mt-6 rounded-lg bg-rose-50 p-3 border border-rose-100 flex items-center gap-3">
-                <AlertTriangle className="h-4 w-4 text-rose-600" />
-                <span className="text-xs font-bold text-rose-700">{summary.red_flag_count} Critical Red Flags Detected</span>
+              <div className="mt-6 rounded-lg bg-health-rose-soft p-3 border border-health-rose/20 flex items-center gap-3 animate-pulse">
+                <AlertTriangle className="h-4 w-4 text-health-rose" />
+                <span className="text-xs font-bold text-health-rose">{summary.red_flag_count} Critical Red Flags Detected</span>
               </div>
             ) : null}
           </div>
@@ -229,13 +229,13 @@ export default function SymptomsPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Activity className="h-4 w-4 text-[color:var(--muted-foreground)]" />
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Prevalent Signals</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">Prevalent Signals</h4>
             </div>
             <div className="flex flex-wrap gap-2">
               {summary?.top_symptoms.map((s) => (
-                <div key={s.code} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] text-xs font-medium">
+                <div key={s.code} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-bold shadow-sm">
                   <span className="capitalize">{s.code}</span>
-                  <span className="text-[10px] font-bold text-[color:var(--accent)] bg-[color:var(--accent)]/5 px-1.5 py-0.5 rounded-md">{s.count}</span>
+                  <span className="text-[10px] font-bold text-health-teal bg-health-teal-soft px-1.5 py-0.5 rounded-md">{s.count}</span>
                 </div>
               ))}
             </div>
