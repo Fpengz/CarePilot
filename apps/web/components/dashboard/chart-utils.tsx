@@ -25,7 +25,7 @@ export const formatChartValue = (value: number) => {
 export const ClinicalTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-xl border border-[color:var(--chart-grid)] bg-[color:var(--chart-bg)] p-3 shadow-xl backdrop-blur-md">
+      <div className="rounded-xl border border-white/20 bg-white/40 dark:bg-black/40 p-3 shadow-2xl backdrop-blur-[20px]">
         <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)]">{label}</p>
         <div className="space-y-1.5">
           {payload.map((entry) => (

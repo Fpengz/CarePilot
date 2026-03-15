@@ -20,13 +20,13 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
   ];
 
   return (
-    <section className="glass-card">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="text-sm font-semibold text-[color:var(--foreground)]">{chart.title}</div>
-          <p className="mt-1 text-xs text-[color:var(--muted-foreground)]">Daily macro balance breakdown.</p>
+    <div className="glass-card h-full">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+        <div className="flex flex-col items-start gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Nutrient Profile</span>
+          <h3 className="text-lg font-bold tracking-tight">{chart.title}</h3>
         </div>
-        <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-lg">
+        <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-lg self-start">
           {modes.map((m) => (
             <button
               key={m.id}
@@ -42,12 +42,12 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
         </div>
       </div>
 
-      <div className="mt-6 h-64 w-full">
+      <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeOpacity={0.4} />
-            <XAxis dataKey="label" {...COMMON_AXIS_PROPS} tickMargin={10} />
-            <YAxis {...COMMON_AXIS_PROPS} tickMargin={10} />
+          <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeOpacity={0.5} />
+            <XAxis dataKey="label" {...COMMON_AXIS_PROPS} />
+            <YAxis {...COMMON_AXIS_PROPS} />
             <Tooltip content={<ClinicalTooltip />} cursor={{ fill: "var(--chart-grid)", fillOpacity: 0.1 }} />
             
             {(view === "all" || view === "protein") && (
@@ -62,6 +62,6 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </section>
+    </div>
   );
 }
