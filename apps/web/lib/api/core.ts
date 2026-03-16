@@ -644,6 +644,16 @@ export async function analyzeMeal(formData: FormData): Promise<MealAnalyzeApiRes
   return json;
 }
 
+export async function confirmMealCandidate(payload: {
+  candidate_id: string;
+  action: "confirm" | "skip";
+}): Promise<{ status: string; candidate_id: string; meal_name?: string | null }> {
+  return request(`/api/v1/meal/confirm`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function listMealRecords(limit?: number): Promise<MealRecordsApiResponse> {
   const query = typeof limit === "number" ? `?limit=${Math.max(1, Math.floor(limit))}` : "";
   return request<MealRecordsApiResponse>(`/api/v1/meal/records${query}`);

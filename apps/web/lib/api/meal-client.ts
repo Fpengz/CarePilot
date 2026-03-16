@@ -1,5 +1,6 @@
 export {
   analyzeMeal,
+  confirmMealCandidate,
   listMealRecords,
   getMealDailySummary,
   getMealWeeklySummary,

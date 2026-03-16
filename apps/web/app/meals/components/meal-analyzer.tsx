@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { AsyncLabel } from "@/components/app/async-label";
-import { analyzeMeal } from "@/lib/api/meal-client";
+import { analyzeMeal, confirmMealCandidate } from "@/lib/api/meal-client";
 import type { MealAnalyzeApiResponse } from "@/lib/types";
 import { MealAnalysisResult } from "./meal-analysis-result";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<MealAnalyzeApiResponse | null>(null);
+  const [confirmationStatus, setConfirmationStatus] = useState<"confirmed" | "skipped" | null>(null);
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
 
   useEffect(() => {
@@ -34,15 +35,33 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
     mutationFn: (formData: FormData) => analyzeMeal(formData),
     onSuccess: (data) => {
       setResult(data);
+      setConfirmationStatus(null);
       onSuccess(data);
       void queryClient.invalidateQueries({ queryKey: ["meal-daily-summary"] });
       void queryClient.invalidateQueries({ queryKey: ["meal-records"] });
     },
   });
 
+  const confirmMutation = useMutation({
+    mutationFn: (action: "confirm" | "skip") => {
+      if (!result?.candidate_id) throw new Error("Missing candidate id");
+      return confirmMealCandidate({ candidate_id: result.candidate_id, action });
+    },
+    onSuccess: (data) => {
+      const status = data.status === "confirmed" ? "confirmed" : "skipped";
+      setConfirmationStatus(status);
+      if (status === "confirmed") {
+        void queryClient.invalidateQueries({ queryKey: ["meal-daily-summary"] });
+        void queryClient.invalidateQueries({ queryKey: ["meal-records"] });
+        void queryClient.invalidateQueries({ queryKey: ["meal-weekly-summary"] });
+      }
+    },
+  });
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFile(e.target.files?.[0] ?? null);
     setResult(null);
+    setConfirmationStatus(null);
   };
 
   const handleAnalyze = () => {
@@ -57,6 +76,7 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
   const handleClear = () => {
     setFile(null);
     setResult(null);
+    setConfirmationStatus(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -150,7 +170,15 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
           </div>
         )}
 
-        {result && <MealAnalysisResult data={result} />}
+        {result && (
+          <MealAnalysisResult
+            data={result}
+            onConfirm={() => confirmMutation.mutate("confirm")}
+            onSkip={() => confirmMutation.mutate("skip")}
+            confirmationPending={confirmMutation.isPending}
+            confirmationStatus={confirmationStatus}
+          />
+        )}
       </div>
     </div>
   );

@@ -580,7 +580,7 @@ export default function ChatPage() {
           bottomRef={bottomRef}
         />
 
-        {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}
+        {menuOpen && <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />}
 
         <StickyComposer
           input={input}

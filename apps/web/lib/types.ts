@@ -360,8 +360,11 @@ export interface AlertTimelineApiResponse {
 
 export interface MealAnalyzeApiResponse {
   raw_observation: Record<string, unknown>;
-  validated_event: Record<string, unknown>;
-  nutrition_profile: Record<string, unknown>;
+  candidate_event: Record<string, unknown>;
+  candidate_id: string;
+  confirmation_required: boolean;
+  validated_event: Record<string, unknown> | null;
+  nutrition_profile: Record<string, unknown> | null;
   output_envelope: Record<string, unknown> | null;
   workflow: WorkflowExecutionResult;
 }
