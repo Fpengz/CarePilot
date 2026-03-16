@@ -8,6 +8,7 @@ confirmation handling.
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import Protocol
 from uuid import uuid4
 
@@ -40,9 +41,10 @@ def _parse_hhmm(value: str) -> time:
     return time(hour=int(hh), minute=int(mm))
 
 
-def _at(d: date, hhmm: str) -> datetime:
+def _at(d: date, hhmm: str, *, timezone_name: str) -> datetime:
     t = _parse_hhmm(hhmm)
-    return datetime.combine(d, t)
+    local = datetime.combine(d, t)
+    return local.replace(tzinfo=ZoneInfo(timezone_name)).astimezone(timezone.utc)
 
 
 def _find_slot_window(user: UserProfile, slot: str) -> MealScheduleWindow | None:
@@ -89,7 +91,11 @@ def generate_daily_reminders(
                     title="Medication Reminder",
                     body=f"{regimen.medication_name} {regimen.dosage_text}".strip(),
                     medication_name=regimen.medication_name,
-                    scheduled_at=_at(target_date, regimen.fixed_time),
+                    scheduled_at=_at(
+                        target_date,
+                        regimen.fixed_time,
+                        timezone_name=regimen.timezone,
+                    ),
                     slot=None,
                     dosage_text=regimen.dosage_text,
                     status="sent",
@@ -109,11 +115,19 @@ def generate_daily_reminders(
                 )
                 continue
             if regimen.timing_type == "pre_meal":
-                scheduled = _at(target_date, window.start_time) - timedelta(
+                scheduled = _at(
+                    target_date,
+                    window.start_time,
+                    timezone_name=regimen.timezone,
+                ) - timedelta(
                     minutes=regimen.offset_minutes
                 )
             else:
-                scheduled = _at(target_date, window.end_time) + timedelta(
+                scheduled = _at(
+                    target_date,
+                    window.end_time,
+                    timezone_name=regimen.timezone,
+                ) + timedelta(
                     minutes=regimen.offset_minutes
                 )
             reminders.append(

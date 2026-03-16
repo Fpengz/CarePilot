@@ -8,6 +8,7 @@ and endpoints.
 import json
 import sqlite3
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from typing import Any, cast
 
 from care_pilot.features.reminders.domain.models import (
@@ -22,9 +23,20 @@ from care_pilot.features.reminders.domain.models import (
     ReminderNotificationPreference,
     ScheduledReminderNotification,
 )
+from care_pilot.config.app import get_settings
 from care_pilot.platform.observability.setup import get_logger
 
 logger = get_logger(__name__)
+
+
+def _parse_datetime(value: str | None) -> datetime | None:
+    if value is None:
+        return None
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        settings = get_settings()
+        parsed = parsed.replace(tzinfo=ZoneInfo(settings.app.timezone)).astimezone(timezone.utc)
+    return parsed
 
 
 class SQLiteReminderRepository:
@@ -105,8 +117,8 @@ class SQLiteReminderRepository:
             timezone=row[14],
             schedule=ReminderScheduleRule.model_validate(json.loads(cast(str, row[15]))),
             active=bool(row[16]),
-            created_at=datetime.fromisoformat(row[17]),
-            updated_at=datetime.fromisoformat(row[18]),
+            created_at=cast(datetime, _parse_datetime(row[17])),
+            updated_at=cast(datetime, _parse_datetime(row[18])),
         )
 
     def list_reminder_definitions(
@@ -142,8 +154,8 @@ class SQLiteReminderRepository:
                 timezone=row[14],
                 schedule=ReminderScheduleRule.model_validate(json.loads(cast(str, row[15]))),
                 active=bool(row[16]),
-                created_at=datetime.fromisoformat(row[17]),
-                updated_at=datetime.fromisoformat(row[18]),
+                created_at=cast(datetime, _parse_datetime(row[17])),
+                updated_at=cast(datetime, _parse_datetime(row[18])),
             )
             for row in rows
         ]
@@ -202,18 +214,18 @@ class SQLiteReminderRepository:
             id=row[0],
             reminder_definition_id=row[1],
             user_id=row[2],
-            scheduled_for=datetime.fromisoformat(row[3]),
-            trigger_at=datetime.fromisoformat(row[4]),
+            scheduled_for=cast(datetime, _parse_datetime(row[3])),
+            trigger_at=cast(datetime, _parse_datetime(row[4])),
             status=row[5],
             action=row[6],
             action_outcome=row[7],
-            acted_at=datetime.fromisoformat(row[8]) if row[8] else None,
+            acted_at=_parse_datetime(row[8]),
             grace_window_minutes=row[9],
             retry_count=row[10],
             last_delivery_status=row[11],
             metadata=json.loads(cast(str, row[12])),
-            created_at=datetime.fromisoformat(row[13]),
-            updated_at=datetime.fromisoformat(row[14]),
+            created_at=cast(datetime, _parse_datetime(row[13])),
+            updated_at=cast(datetime, _parse_datetime(row[14])),
         )
 
     def list_reminder_occurrences(
@@ -245,18 +257,18 @@ class SQLiteReminderRepository:
                 id=row[0],
                 reminder_definition_id=row[1],
                 user_id=row[2],
-                scheduled_for=datetime.fromisoformat(row[3]),
-                trigger_at=datetime.fromisoformat(row[4]),
+                scheduled_for=cast(datetime, _parse_datetime(row[3])),
+                trigger_at=cast(datetime, _parse_datetime(row[4])),
                 status=row[5],
                 action=row[6],
                 action_outcome=row[7],
-                acted_at=datetime.fromisoformat(row[8]) if row[8] else None,
+                acted_at=_parse_datetime(row[8]),
                 grace_window_minutes=row[9],
                 retry_count=row[10],
                 last_delivery_status=row[11],
                 metadata=json.loads(cast(str, row[12])),
-                created_at=datetime.fromisoformat(row[13]),
-                updated_at=datetime.fromisoformat(row[14]),
+                created_at=cast(datetime, _parse_datetime(row[13])),
+                updated_at=cast(datetime, _parse_datetime(row[14])),
             )
             for row in rows
         ]
@@ -313,7 +325,7 @@ class SQLiteReminderRepository:
                 reminder_definition_id=row[2],
                 user_id=row[3],
                 action=row[4],
-                acted_at=datetime.fromisoformat(row[5]),
+                acted_at=cast(datetime, _parse_datetime(row[5])),
                 snooze_minutes=row[6],
                 metadata=json.loads(cast(str, row[7])),
             )
@@ -410,13 +422,13 @@ class SQLiteReminderRepository:
             title=row[6],
             body=row[7],
             medication_name=row[8],
-            scheduled_at=datetime.fromisoformat(row[9]),
+            scheduled_at=cast(datetime, _parse_datetime(row[9])),
             slot=row[10],
             dosage_text=row[11],
             status=row[12],
             meal_confirmation=row[13],
-            sent_at=datetime.fromisoformat(row[14]) if row[14] else None,
-            ack_at=datetime.fromisoformat(row[15]) if row[15] else None,
+            sent_at=_parse_datetime(row[14]),
+            ack_at=_parse_datetime(row[15]),
         )
 
     def list_reminder_events(self, user_id: str) -> list[ReminderEvent]:
@@ -439,13 +451,13 @@ class SQLiteReminderRepository:
                 title=r[6],
                 body=r[7],
                 medication_name=r[8],
-                scheduled_at=datetime.fromisoformat(r[9]),
+                scheduled_at=cast(datetime, _parse_datetime(r[9])),
                 slot=r[10],
                 dosage_text=r[11],
                 status=r[12],
                 meal_confirmation=r[13],
-                sent_at=datetime.fromisoformat(r[14]) if r[14] else None,
-                ack_at=datetime.fromisoformat(r[15]) if r[15] else None,
+                sent_at=_parse_datetime(r[14]),
+                ack_at=_parse_datetime(r[15]),
             )
             for r in rows
         ]
@@ -526,8 +538,8 @@ class SQLiteReminderRepository:
                 channel=row[4],
                 offset_minutes=row[5],
                 enabled=bool(row[6]),
-                created_at=datetime.fromisoformat(row[7]),
-                updated_at=datetime.fromisoformat(row[8]),
+                created_at=cast(datetime, _parse_datetime(row[7])),
+                updated_at=cast(datetime, _parse_datetime(row[8])),
             )
             for row in rows
         ]
@@ -601,19 +613,19 @@ class SQLiteReminderRepository:
             reminder_id=row[1],
             user_id=row[2],
             channel=row[3],
-            trigger_at=datetime.fromisoformat(row[4]),
+            trigger_at=cast(datetime, _parse_datetime(row[4])),
             offset_minutes=row[5],
             preference_id=row[6],
             status=row[7],
             attempt_count=row[8],
-            next_attempt_at=datetime.fromisoformat(row[9]) if row[9] else None,
-            queued_at=datetime.fromisoformat(row[10]) if row[10] else None,
-            delivered_at=datetime.fromisoformat(row[11]) if row[11] else None,
+            next_attempt_at=_parse_datetime(row[9]),
+            queued_at=_parse_datetime(row[10]),
+            delivered_at=_parse_datetime(row[11]),
             last_error=row[12],
             payload=json.loads(cast(str, row[13])),
             idempotency_key=row[14],
-            created_at=datetime.fromisoformat(row[15]),
-            updated_at=datetime.fromisoformat(row[16]),
+            created_at=cast(datetime, _parse_datetime(row[15])),
+            updated_at=cast(datetime, _parse_datetime(row[16])),
         )
 
     def list_scheduled_notifications(
@@ -643,19 +655,19 @@ class SQLiteReminderRepository:
                 reminder_id=row[1],
                 user_id=row[2],
                 channel=row[3],
-                trigger_at=datetime.fromisoformat(row[4]),
+                trigger_at=cast(datetime, _parse_datetime(row[4])),
                 offset_minutes=row[5],
                 preference_id=row[6],
                 status=row[7],
                 attempt_count=row[8],
-                next_attempt_at=(datetime.fromisoformat(row[9]) if row[9] else None),
-                queued_at=datetime.fromisoformat(row[10]) if row[10] else None,
-                delivered_at=(datetime.fromisoformat(row[11]) if row[11] else None),
+                next_attempt_at=_parse_datetime(row[9]),
+                queued_at=_parse_datetime(row[10]),
+                delivered_at=_parse_datetime(row[11]),
                 last_error=row[12],
                 payload=json.loads(cast(str, row[13])),
                 idempotency_key=row[14],
-                created_at=datetime.fromisoformat(row[15]),
-                updated_at=datetime.fromisoformat(row[16]),
+                created_at=cast(datetime, _parse_datetime(row[15])),
+                updated_at=cast(datetime, _parse_datetime(row[16])),
             )
             for row in rows
         ]
@@ -886,8 +898,8 @@ class SQLiteReminderRepository:
                 channel=row[2],
                 destination=row[3],
                 verified=bool(row[4]),
-                created_at=datetime.fromisoformat(row[5]),
-                updated_at=datetime.fromisoformat(row[6]),
+                created_at=cast(datetime, _parse_datetime(row[5])),
+                updated_at=cast(datetime, _parse_datetime(row[6])),
             )
             for row in rows
         ]
@@ -915,8 +927,8 @@ class SQLiteReminderRepository:
             channel=row[2],
             destination=row[3],
             verified=bool(row[4]),
-            created_at=datetime.fromisoformat(row[5]),
-            updated_at=datetime.fromisoformat(row[6]),
+            created_at=cast(datetime, _parse_datetime(row[5])),
+            updated_at=cast(datetime, _parse_datetime(row[6])),
         )
 
     def list_notification_logs(
@@ -950,7 +962,7 @@ class SQLiteReminderRepository:
                 event_type=row[6],
                 error_message=row[7],
                 metadata=json.loads(cast(str, row[8])),
-                created_at=datetime.fromisoformat(row[9]),
+                created_at=cast(datetime, _parse_datetime(row[9])),
             )
             for row in rows
         ]
