@@ -11,3 +11,16 @@ repos:
         entry: uv run ty check --extra-search-path src --output-format concise
         language: system
         types: [python]
+      - id: web-check
+        name: web-check
+        entry: pnpm web:lint && pnpm web:typecheck
+        language: system
+        files: ^apps/web/
+        pass_filenames: false
+      - id: web-e2e
+        name: web-e2e
+        entry: pnpm web:e2e
+        language: system
+        files: ^apps/web/
+        pass_filenames: false
+        stages: [manual, push]
