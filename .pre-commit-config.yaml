@@ -23,4 +23,4 @@ repos:
         language: system
         files: ^apps/web/
         pass_filenames: false
-        stages: [manual, push]
+        stages: [manual, pre-push]
