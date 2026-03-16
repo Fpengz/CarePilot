@@ -78,6 +78,9 @@ POLICY_RULES: dict[str, PolicyRule] = {
     "impact.summary.read": PolicyRule(
         required_scopes=frozenset({"meal:read", "reminder:read", "report:read"})
     ),
+    "companion.patient_card.read": PolicyRule(
+        required_scopes=frozenset({"report:read", "recommendation:generate"})
+    ),
     "households.care.read_members": PolicyRule(required_scopes=frozenset()),
     "households.care.read_profile": PolicyRule(required_scopes=frozenset()),
     "households.care.read_meals": PolicyRule(required_scopes=frozenset({"meal:read"})),

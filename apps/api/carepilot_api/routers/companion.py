@@ -5,24 +5,31 @@ This router defines companion-facing routes for daily guidance, interactions,
 and clinician views, delegating orchestration to API services.
 """
 
+from datetime import date
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
-from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
-    ClinicianDigestEnvelopeResponse,
-    CompanionInteractionRequest,
-    CompanionInteractionResponse,
-    CompanionTodayResponse,
-    ImpactSummaryResponse,
-)
 from .._companion_orchestration import (
+    get_blood_pressure_chart,
+    get_blood_pressure_summary,
     get_clinician_digest,
     get_companion_today,
     get_impact_summary,
     handle_companion_interaction,
 )
+from ..routes_shared import current_session, get_context, require_action
+from ..schemas import (
+    BloodPressureChartResponse,
+    BloodPressureSummaryEnvelopeResponse,
+    ClinicianDigestEnvelopeResponse,
+    CompanionInteractionRequest,
+    CompanionInteractionResponse,
+    CompanionTodayResponse,
+    ImpactSummaryResponse,
+    PatientMedicalCardResponse,
+)
+from ..services.patient_card import generate_patient_medical_card_for_session
 
 router = APIRouter(tags=["companion"])
 
@@ -34,6 +41,44 @@ def companion_today(
 ) -> CompanionTodayResponse:
     require_action(session, "companion.today.read")
     return get_companion_today(context=get_context(request), session=session)
+
+
+@router.get(
+    "/api/v1/companion/blood-pressure",
+    response_model=BloodPressureSummaryEnvelopeResponse,
+)
+def companion_blood_pressure_summary(
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> BloodPressureSummaryEnvelopeResponse:
+    require_action(session, "companion.today.read")
+    return get_blood_pressure_summary(context=get_context(request), session=session)
+
+
+@router.get(
+    "/api/v1/companion/blood-pressure-chart",
+    response_model=BloodPressureChartResponse,
+)
+def companion_blood_pressure_chart(
+    request: Request,
+    range: str = "30d",
+    from_date: str | None = None,
+    to_date: str | None = None,
+    session: dict[str, object] = Depends(current_session),
+) -> BloodPressureChartResponse:
+    require_action(session, "companion.today.read")
+    parsed_from = date.fromisoformat(from_date) if from_date else None
+    parsed_to = date.fromisoformat(to_date) if to_date else None
+    try:
+        return get_blood_pressure_chart(
+            context=get_context(request),
+            session=session,
+            range_key=range,
+            from_date=parsed_from,
+            to_date=parsed_to,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/api/v1/companion/interactions", response_model=CompanionInteractionResponse)
@@ -70,3 +115,17 @@ def impact_summary(
 ) -> ImpactSummaryResponse:
     require_action(session, "impact.summary.read")
     return get_impact_summary(context=get_context(request), session=session)
+
+
+@router.get(
+    "/api/v1/companion/patient-card",
+    response_model=PatientMedicalCardResponse,
+)
+async def patient_medical_card(
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> PatientMedicalCardResponse:
+    require_action(session, "companion.patient_card.read")
+    return await generate_patient_medical_card_for_session(
+        context=get_context(request), session=session
+    )

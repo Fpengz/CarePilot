@@ -8,32 +8,35 @@ including agent registry, persistence, and platform adapters.
 import os
 from dataclasses import dataclass
 
-from care_pilot.features.companion.chat.memory import MemoryManager
-from care_pilot.features.companion.chat.router import QueryRouter
-from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
-from care_pilot.features.companion.chat.audio_adapter import AudioAgent
-from care_pilot.features.companion.chat.code_adapter import CodeAgent
-from care_pilot.features.companion.chat.search_adapter import SearchAgent
-from care_pilot.features.companion.chat.health_tracker import HealthTracker
+from care_pilot.agent.core import AgentRegistry, build_default_agent_registry
 from care_pilot.agent.emotion.agent import EmotionAgent
 from care_pilot.agent.emotion.schemas import (
     EmotionInferenceResult,
     EmotionRuntimeHealth,
 )
 from care_pilot.agent.recommendation.agent import RecommendationAgent
-from care_pilot.agent.core import AgentRegistry, build_default_agent_registry
-from care_pilot.agent.runtime.inference_engine import InferenceEngine
 from care_pilot.agent.runtime.chat_runtime import (
     ChatRuntimeConfig,
     ChatStreamRuntime,
     build_chat_inference_engine,
     build_chat_runtime_config,
 )
+from care_pilot.agent.runtime.inference_engine import InferenceEngine
+from care_pilot.config.app import AppSettings as Settings
+from care_pilot.config.app import get_settings
 from care_pilot.config.llm import LLMCapability
-from care_pilot.platform.observability.tooling.platform_registry import (
-    build_platform_tool_registry,
+from care_pilot.features.companion.chat.audio_adapter import AudioAgent
+from care_pilot.features.companion.chat.code_adapter import CodeAgent
+from care_pilot.features.companion.chat.health_tracker import HealthTracker
+from care_pilot.features.companion.chat.memory import MemoryManager
+from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
+from care_pilot.features.companion.chat.router import QueryRouter
+from care_pilot.features.companion.chat.search_adapter import SearchAgent
+from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
+from care_pilot.features.companion.emotion.runtime import (
+    InProcessEmotionRuntime,
 )
-from care_pilot.config.app import AppSettings as Settings, get_settings
+from care_pilot.features.meals.deps import MealDeps  # noqa: F401
 from care_pilot.platform.auth import (
     InMemoryAuthStore,
     SessionSigner,
@@ -46,24 +49,23 @@ from care_pilot.platform.cache import (
     ProfileMemoryService,
     RedisCacheStore,
 )
+from care_pilot.platform.memory import MemoryStore, build_memory_store
+from care_pilot.platform.observability.tooling.platform_registry import (
+    build_platform_tool_registry,
+)
+from care_pilot.platform.observability.tooling.registry import ToolRegistry
 from care_pilot.platform.persistence import (
     AppStoreBackend,
     AppStores,
     build_app_store,
     build_app_stores,
 )
+from care_pilot.platform.persistence.health_metrics import ChatHealthMetricsRepository
+from care_pilot.platform.persistence.household import SQLiteHouseholdStore
 from care_pilot.platform.scheduling.coordination import (
     InMemoryCoordinationStore,
     RedisCoordinationStore,
 )
-from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
-from care_pilot.features.companion.emotion.runtime import (
-    InProcessEmotionRuntime,
-)
-from care_pilot.platform.persistence.household import SQLiteHouseholdStore
-from care_pilot.platform.observability.tooling.registry import ToolRegistry
-from care_pilot.features.meals.deps import MealDeps  # noqa: F401
-from care_pilot.platform.memory import MemoryStore, build_memory_store
 
 from .services.notifications import NotificationReadStateStore
 
@@ -148,6 +150,7 @@ class AlertDeps:
 @dataclass(frozen=True)
 class ClinicalCardDeps:
     stores: AppStores
+    health_metrics: ChatHealthMetricsRepository
 
 
 @dataclass(frozen=True)
@@ -388,4 +391,4 @@ def alert_deps(ctx: AppContext) -> AlertDeps:
 
 
 def clinical_card_deps(ctx: AppContext) -> ClinicalCardDeps:
-    return ClinicalCardDeps(stores=ctx.stores)
+    return ClinicalCardDeps(stores=ctx.stores, health_metrics=ChatHealthMetricsRepository())

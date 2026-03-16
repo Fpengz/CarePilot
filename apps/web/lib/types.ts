@@ -1012,6 +1012,14 @@ export interface DashboardMealTimingBinApi {
   count: number;
 }
 
+export interface DashboardBloodPressurePointApi {
+  bucket_start: string;
+  bucket_end: string;
+  label: string;
+  systolic: number;
+  diastolic: number;
+}
+
 export interface DashboardMetricChartApi {
   title: string;
   bucket: DashboardBucket;
@@ -1029,12 +1037,19 @@ export interface DashboardMealTimingChartApi {
   bins: DashboardMealTimingBinApi[];
 }
 
+export interface DashboardBloodPressureChartApi {
+  title: string;
+  bucket: DashboardBucket;
+  points: DashboardBloodPressurePointApi[];
+}
+
 export interface DashboardChartsApi {
   calories: DashboardMetricChartApi;
   macros: DashboardMacroChartApi;
   glycemic_risk: DashboardMetricChartApi;
   adherence: DashboardMetricChartApi;
   meal_timing: DashboardMealTimingChartApi;
+  blood_pressure: DashboardBloodPressureChartApi;
 }
 
 export interface DashboardSummaryApi {
@@ -1082,7 +1097,63 @@ export interface CompanionSnapshotApi {
   average_symptom_severity: number;
   biomarker_summary: Record<string, number>;
   active_risk_flags: string[];
+  blood_pressure_summary?: BloodPressureSummaryApi | null;
   generated_at: string;
+}
+
+export interface BloodPressureStatsApi {
+  avg_systolic: number;
+  avg_diastolic: number;
+  min_systolic: number;
+  max_systolic: number;
+  min_diastolic: number;
+  max_diastolic: number;
+  total_readings: number;
+  start_date: string;
+  end_date: string;
+}
+
+export interface BloodPressureTrendApi {
+  direction: "increase" | "decrease" | "flat";
+  delta_systolic: number;
+}
+
+export interface BloodPressureAbnormalApi {
+  recorded_at: string;
+  systolic: number;
+  diastolic: number;
+  level: "elevated" | "high";
+}
+
+export interface BloodPressureSummaryApi {
+  stats: BloodPressureStatsApi;
+  trend: BloodPressureTrendApi;
+  target_systolic: number;
+  target_diastolic: number;
+  above_target: boolean;
+  has_high_bp: boolean;
+  abnormal_readings: BloodPressureAbnormalApi[];
+}
+
+export interface BloodPressureSummaryEnvelopeApi {
+  user_id: string;
+  summary: BloodPressureSummaryApi | null;
+  generated_at: string;
+}
+
+export interface BloodPressureChartPointApi {
+  bucket_start: string;
+  bucket_end: string;
+  label: string;
+  systolic: number;
+  diastolic: number;
+}
+
+export interface BloodPressureChartApi {
+  user_id: string;
+  range: "7d" | "30d" | "3m" | "1y" | "custom";
+  generated_at: string;
+  points: BloodPressureChartPointApi[];
 }
 
 export interface CompanionEngagementApi {
@@ -1098,6 +1169,7 @@ export interface CompanionEvidenceCitationApi {
   source_type: string;
   relevance: string;
   confidence: number;
+  url?: string | null;
 }
 
 export interface CompanionCarePlanApi {
@@ -1163,6 +1235,13 @@ export interface CompanionInteractionApiResponse {
   clinician_digest_preview: ClinicianDigestApi;
   impact: ImpactSummaryApi;
   workflow: WorkflowExecutionResult;
+}
+
+export interface PatientMedicalCardApi {
+  markdown: string;
+  generated_at: string;
+  evidence_query: string | null;
+  citations: CompanionEvidenceCitationApi[];
 }
 
 export type CarePlan = CompanionCarePlanApi;

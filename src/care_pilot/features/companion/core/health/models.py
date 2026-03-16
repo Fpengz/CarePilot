@@ -7,7 +7,7 @@ medication tracking in the companion health subdomain.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -48,11 +48,51 @@ class MetricTrend(BaseModel):
     direction: Literal["increase", "decrease", "flat"] = "flat"
 
 
+class BloodPressureReading(BaseModel):
+    recorded_at: datetime
+    systolic: float
+    diastolic: float
+
+
+class BloodPressureStats(BaseModel):
+    avg_systolic: float
+    avg_diastolic: float
+    min_systolic: float
+    max_systolic: float
+    min_diastolic: float
+    max_diastolic: float
+    total_readings: int
+    start_date: date
+    end_date: date
+
+
+class BloodPressureTrend(BaseModel):
+    direction: Literal["increase", "decrease", "flat"] = "flat"
+    delta_systolic: float = 0.0
+
+
+class BloodPressureAbnormal(BaseModel):
+    recorded_at: datetime
+    systolic: float
+    diastolic: float
+    level: Literal["elevated", "high"]
+
+
+class BloodPressureSummary(BaseModel):
+    stats: BloodPressureStats
+    trend: BloodPressureTrend
+    target_systolic: int
+    target_diastolic: int
+    above_target: bool = False
+    has_high_bp: bool = False
+    abnormal_readings: list[BloodPressureAbnormal] = Field(default_factory=list)
+
+
 class ReportInput(BaseModel):
     source: Literal["pdf", "pasted_text"]
     content_bytes: bytes | None = None
     text: str | None = None
-    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class BiomarkerReading(BaseModel):
@@ -79,7 +119,7 @@ class SymptomSafety(BaseModel):
 class SymptomCheckIn(BaseModel):
     id: str
     user_id: str
-    recorded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    recorded_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     severity: int = Field(ge=1, le=5)
     symptom_codes: list[str] = Field(default_factory=list)
     free_text: str | None = None
@@ -114,7 +154,7 @@ class MedicationAdherenceEvent(BaseModel):
     taken_at: datetime | None = None
     source: AdherenceSource = "manual"
     metadata: dict[str, object] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class MedicationAdherenceMetrics(BaseModel):
