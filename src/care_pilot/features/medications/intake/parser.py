@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
 import logging
 import re
+from datetime import date, timedelta
 from typing import cast
 
 from care_pilot.agent.runtime.inference_types import (
@@ -12,6 +12,7 @@ from care_pilot.agent.runtime.inference_types import (
     InferenceRequest,
     InferenceResponse,
 )
+from care_pilot.config.app import get_settings
 from care_pilot.config.llm import LLMCapability
 from care_pilot.features.profiles.domain.models import MealSlot
 
@@ -414,9 +415,11 @@ async def parse_medication_instructions(
     *,
     source: MedicationIntakeSource,
     today: date,
-    timezone_name: str = "Asia/Singapore",
+    timezone_name: str | None = None,
     inference_engine: MedicationInferenceEngineProtocol | None = None,
 ) -> MedicationIntakeParseResult:
+    if timezone_name is None:
+        timezone_name = get_settings().app.timezone
     provider_name = (
         getattr(inference_engine, "provider", None) if inference_engine is not None else None
     )

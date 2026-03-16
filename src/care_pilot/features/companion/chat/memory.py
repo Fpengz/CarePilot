@@ -10,12 +10,11 @@ from __future__ import annotations
 import asyncio
 import sqlite3
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-
-from care_pilot.agent.chat.schemas import ChatSummaryOutput
 from typing import Protocol, cast
 
+from care_pilot.agent.chat.schemas import ChatSummaryOutput
 from care_pilot.agent.runtime.inference_types import (
     InferenceModality,
     InferenceRequest,
@@ -27,6 +26,8 @@ from care_pilot.platform.observability import get_logger
 # ---------------------------------------------------------------------------
 SHORT_TERM_SIZE = 3  # messages kept in the prompt window
 SUMMARIZE_EVERY = 3  # trigger summarisation after N new out-of-window msgs
+# User-scoped history uses a fixed session id to keep the schema unchanged.
+USER_HISTORY_SESSION_ID = "user"
 
 BASE_DIR = Path(__file__).resolve().parents[4]
 DB_PATH = BASE_DIR / "data" / "runtime" / "chat_memory.db"
@@ -66,7 +67,8 @@ class MemoryManager:
         db_path: Path = DB_PATH,
     ) -> None:
         self._user_id = user_id
-        self._session_id = session_id
+        # Persist history per user, not per session.
+        self._session_id = USER_HISTORY_SESSION_ID
         self._engine = inference_engine
         self._db_path = db_path
         self._logger = get_logger(__name__)
@@ -83,7 +85,7 @@ class MemoryManager:
         self._logger.info(
             "chat_memory_ready user_id=%s session=%s messages=%s summarized_up_to=%s",
             user_id,
-            session_id,
+            self._session_id,
             len(self._messages),
             self._summarized_up_to,
         )
@@ -248,7 +250,7 @@ class MemoryManager:
         return row["summarized_up_to"] if row else 0
 
     def _persist_message(self, role: str, content: str) -> None:
-        now = datetime.now().isoformat(timespec="seconds")
+        now = datetime.now(UTC).isoformat(timespec="seconds")
         with self._connect() as conn:
             conn.execute(
                 "INSERT INTO chat_messages (user_id, session_id, role, content, created_at) "
@@ -257,7 +259,7 @@ class MemoryManager:
             )
 
     def _save_summary(self) -> None:
-        now = datetime.now().isoformat(timespec="seconds")
+        now = datetime.now(UTC).isoformat(timespec="seconds")
         with self._connect() as conn:
             conn.execute(
                 """INSERT INTO chat_summaries (user_id, session_id, summary, summarized_up_to, updated_at)

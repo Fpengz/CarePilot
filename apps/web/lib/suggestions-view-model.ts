@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/time";
 import type { SuggestionItemApi } from "@/lib/types";
 
 export type SuggestionScope = "self" | "household";
@@ -22,16 +23,10 @@ export interface SuggestionDetailViewModel {
   partialReasons: string[];
 }
 
-export function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
-}
-
 export function buildSuggestionSummaries(items: SuggestionItemApi[]): SuggestionSummaryViewModel[] {
   return items.map((item) => ({
     id: item.suggestion_id,
-    createdAtLabel: formatDate(item.created_at),
+    createdAtLabel: formatDateTime(item.created_at),
     sourceUserId: item.source_user_id,
     sourceDisplayName: item.source_display_name,
     safetyDecision: item.safety.decision,

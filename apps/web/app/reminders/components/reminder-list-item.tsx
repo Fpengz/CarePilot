@@ -3,12 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, Clock, MapPin, Calendar, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/time";
 import type { ReminderDefinitionApi, ReminderOccurrenceApi } from "@/lib/types";
-
-const timestampFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
 
 function statusTone(status: ReminderOccurrenceApi["status"]) {
   if (status === "completed" || status === "taken") return "status-chip-teal";
@@ -56,7 +52,7 @@ export function ReminderListItem({
 }) {
   const title = definition?.title ?? occurrence?.reminder_definition_id ?? "Reminder";
   const body = definition?.body ?? definition?.instructions_text ?? "Instructions";
-  const time = occurrence ? timestampFormatter.format(new Date(occurrence.trigger_at)) : null;
+  const time = occurrence ? formatDateTime(occurrence.trigger_at) : null;
   const schedule = scheduleSummary(definition);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);

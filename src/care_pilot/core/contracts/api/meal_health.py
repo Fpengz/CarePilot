@@ -13,50 +13,13 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, EmailStr, Field, RootModel
 
-from care_pilot.features.safety.domain.alerts.models import OutboxState
-from care_pilot.features.companion.core.health.models import (
-    BiomarkerReading,
-    ClinicalProfileSnapshot,
-)
-from care_pilot.features.profiles.domain.models import (
-    AccountRole,
-    MealScheduleWindow,
-    MealSlot,
-    ProfileMode,
-)
-from care_pilot.features.reminders.domain.models import ReminderEvent
-from care_pilot.features.recommendations.domain.models import (
-    InteractionEventType,
-    RecommendationOutput,
-)
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
 from care_pilot.agent.emotion.schemas import (
     EmotionConfidenceBand,
     EmotionLabel,
     EmotionRuntimeHealth,
 )
-from care_pilot.features.meals.domain.models import (
-    NutritionRiskProfile,
-    RawObservationBundle,
-    ValidatedMealEvent,
-)
-from care_pilot.features.households.schemas import (  # noqa: F401
-    HouseholdCareMealSummaryResponse,
-    HouseholdCareProfileResponse,
-    HouseholdCareReminderListResponse,
-)
-from care_pilot.features.meals.schemas import (  # noqa: F401
-    DailyNutritionInsightResponse,
-    DailyNutritionTotalsResponse,
-    MealDailySummaryResponse,
-)
-from care_pilot.platform.observability.tooling.domain.models import (
-    ToolExecutionResult,
-)
-
+from care_pilot.config.app import get_settings
+from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
 from care_pilot.core.contracts.api.core import (
     CursorPageResponse,
     HealthProfileResponseItem,
@@ -64,14 +27,66 @@ from care_pilot.core.contracts.api.core import (
 )
 from care_pilot.core.contracts.api.notifications import ScheduledReminderNotificationItemResponse
 from care_pilot.core.contracts.api.workflows import WorkflowResponse
+from care_pilot.features.companion.core.health.analytics import (
+    EngagementMetrics,
+)
+from care_pilot.features.companion.core.health.models import (
+    BiomarkerReading,
+    ClinicalProfileSnapshot,
+)
+from care_pilot.features.households.schemas import (  # noqa: F401
+    HouseholdCareMealSummaryResponse,
+    HouseholdCareProfileResponse,
+    HouseholdCareReminderListResponse,
+)
+from care_pilot.features.meals.domain.models import (
+    CandidateMealEvent,
+    NutritionRiskProfile,
+    RawObservationBundle,
+    ValidatedMealEvent,
+)
+from care_pilot.features.meals.schemas import (  # noqa: F401
+    DailyNutritionInsightResponse,
+    DailyNutritionTotalsResponse,
+    MealDailySummaryResponse,
+)
+from care_pilot.features.profiles.domain.models import (
+    AccountRole,
+    MealScheduleWindow,
+    MealSlot,
+    ProfileMode,
+)
+from care_pilot.features.recommendations.domain.models import (
+    InteractionEventType,
+    RecommendationOutput,
+)
+from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.features.safety.domain.alerts.models import OutboxState
+from care_pilot.platform.observability.tooling.domain.models import (
+    ToolExecutionResult,
+)
 
 
 class MealAnalyzeResponse(BaseModel):
     raw_observation: RawObservationBundle
-    validated_event: ValidatedMealEvent
-    nutrition_profile: NutritionRiskProfile
+    candidate_event: CandidateMealEvent
+    candidate_id: str
+    confirmation_required: bool = False
+    validated_event: ValidatedMealEvent | None = None
+    nutrition_profile: NutritionRiskProfile | None = None
     output_envelope: AgentOutputEnvelope | None = None
-    workflow: "WorkflowResponse"
+    workflow: WorkflowResponse
+
+
+class MealConfirmRequest(BaseModel):
+    candidate_id: str
+    action: Literal["confirm", "skip"]
+
+
+class MealConfirmResponse(BaseModel):
+    status: Literal["confirmed", "skipped"]
+    candidate_id: str
+    meal_name: str | None = None
 
 
 class MealRecordsResponse(BaseModel):
@@ -112,7 +127,7 @@ class MedicationRegimenCreateRequest(BaseModel):
     source_filename: str | None = None
     start_date: date | None = None
     end_date: date | None = None
-    timezone: str = "Asia/Singapore"
+    timezone: str = Field(default_factory=lambda: get_settings().app.timezone)
     parse_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     active: bool = True
 
@@ -157,9 +172,9 @@ class MedicationRegimenResponse(BaseModel):
     source_filename: str | None = None
     start_date: date | None = None
     end_date: date | None = None
-    timezone: str = "Asia/Singapore"
+    timezone: str = Field(default_factory=lambda: get_settings().app.timezone)
     parse_confidence: float | None = None
-    active: bool
+    active: bool = True
 
 
 class MedicationRegimenEnvelopeResponse(BaseModel):

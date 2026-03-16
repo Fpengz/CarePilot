@@ -23,6 +23,7 @@ import type {
   ReminderDefinitionApi,
   ReminderOccurrenceApi,
 } from "@/lib/types";
+import { APP_TIMEZONE, formatDate } from "@/lib/time";
 import { ReminderListItem } from "./components/reminder-list-item";
 import { cn } from "@/lib/utils";
 
@@ -48,9 +49,9 @@ export default function RemindersPage() {
   });
 
   const definitionMap = useMemo(() => new Map(definitions.map((item) => [item.id, item])), [definitions]);
-  const todayKey = new Date().toDateString();
+  const todayKey = useMemo(() => formatDate(new Date()), []);
   const todaysOccurrences = useMemo(
-    () => upcoming.filter((occurrence) => new Date(occurrence.trigger_at).toDateString() === todayKey),
+    () => upcoming.filter((occurrence) => formatDate(occurrence.trigger_at) === todayKey),
     [todayKey, upcoming],
   );
 
@@ -137,7 +138,7 @@ export default function RemindersPage() {
     setLoading(true);
     setError(null);
     try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const timezone = APP_TIMEZONE;
       const schedule: any = {
         pattern: newReminder.pattern,
         timezone,

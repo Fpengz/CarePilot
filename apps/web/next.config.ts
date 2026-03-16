@@ -24,6 +24,9 @@ const allowedDevOrigins = normalizeAllowedDevOrigins(
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   allowedDevOrigins,
+  env: {
+    NEXT_PUBLIC_APP_TIMEZONE: process.env.APP_TIMEZONE || "Asia/Singapore",
+  },
 };
 
 export default nextConfig;

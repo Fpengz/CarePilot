@@ -11,6 +11,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from care_pilot.config.app import get_settings
+
 AccountRole = Literal["member", "admin"]
 ProfileMode = Literal["self", "caregiver"]
 PermissionScope = Literal[
@@ -46,7 +48,7 @@ class MealScheduleWindow(BaseModel):
     slot: MealSlot
     start_time: str  # HH:MM
     end_time: str  # HH:MM
-    timezone: str = "Asia/Singapore"
+    timezone: str = Field(default_factory=lambda: get_settings().app.timezone)
 
 
 class MedicalCondition(BaseModel):

@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from care_pilot.config.app import get_settings
 from care_pilot.features.profiles.domain.models import MealSlot
 
 
@@ -56,8 +57,8 @@ class ReminderNotificationEndpoint(BaseModel):
     channel: ReminderNotificationChannel
     destination: str
     verified: bool = False
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class ReminderNotificationPreference(BaseModel):
@@ -68,8 +69,8 @@ class ReminderNotificationPreference(BaseModel):
     channel: ReminderNotificationChannel
     offset_minutes: int = 0
     enabled: bool = True
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class ScheduledReminderNotification(BaseModel):
@@ -88,15 +89,15 @@ class ScheduledReminderNotification(BaseModel):
     idempotency_key: str
     last_error: str | None = None
     delivered_at: datetime | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class QueuedReminderNotification(BaseModel):
     scheduled_notification_id: str
     reminder_id: str
     channel: ReminderNotificationChannel
-    queued_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    queued_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class ReminderNotificationLogEntry(BaseModel):
@@ -109,7 +110,7 @@ class ReminderNotificationLogEntry(BaseModel):
     event_type: NotificationLogEventType
     error_message: str | None = None
     metadata: dict[str, object] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 TimingType = Literal["pre_meal", "post_meal", "fixed_time"]
@@ -166,7 +167,7 @@ class ReminderScheduleRule(BaseModel):
     meal_slot: MealSlot | None = None
     relative_direction: Literal["before", "after"] | None = None
     offset_minutes: int = 0
-    timezone: str = "Asia/Singapore"
+    timezone: str = Field(default_factory=lambda: get_settings().app.timezone)
     start_date: date | None = None
     end_date: date | None = None
     duration_days: int | None = None
@@ -193,11 +194,11 @@ class ReminderDefinition(BaseModel):
     special_notes: str | None = None
     treatment_duration: str | None = None
     channels: list[ReminderNotificationChannel] = Field(default_factory=lambda: ["in_app"])
-    timezone: str = "Asia/Singapore"
+    timezone: str = Field(default_factory=lambda: get_settings().app.timezone)
     schedule: ReminderScheduleRule
     active: bool = True
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class ReminderOccurrence(BaseModel):
@@ -214,8 +215,8 @@ class ReminderOccurrence(BaseModel):
     retry_count: int = 0
     last_delivery_status: str | None = None
     metadata: dict[str, object] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class ReminderActionRecord(BaseModel):
@@ -224,7 +225,7 @@ class ReminderActionRecord(BaseModel):
     reminder_definition_id: str
     user_id: str
     action: ReminderActionType
-    acted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    acted_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     snooze_minutes: int | None = None
     metadata: dict[str, object] = Field(default_factory=dict)
 
@@ -262,7 +263,7 @@ class MedicationRegimen(BaseModel):
     source_hash: str | None = None
     start_date: date | None = None
     end_date: date | None = None
-    timezone: str = "Asia/Singapore"
+    timezone: str = Field(default_factory=lambda: get_settings().app.timezone)
     parse_confidence: float | None = None
     active: bool = True
 

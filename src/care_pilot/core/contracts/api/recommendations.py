@@ -13,16 +13,34 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, EmailStr, Field, RootModel
 
-from care_pilot.features.safety.domain.alerts.models import OutboxState
+from care_pilot.agent.emotion.schemas import (
+    EmotionConfidenceBand,
+    EmotionLabel,
+    EmotionRuntimeHealth,
+)
+from care_pilot.config.app import get_settings
+from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
+from care_pilot.core.contracts.api.core import HealthProfileResponseItem, JsonValue
+from care_pilot.core.contracts.api.meal_health import SymptomSummaryResponse
+from care_pilot.core.contracts.api.workflows import WorkflowResponse
+from care_pilot.features.companion.core.health.analytics import (
+    EngagementMetrics,
+)
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
 )
+from care_pilot.features.meals.domain.models import VisionResult
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import (
     AccountRole,
     MealScheduleWindow,
     MealSlot,
     ProfileMode,
+)
+from care_pilot.features.recommendations.domain.models import (
+    InteractionEventType,
+    RecommendationOutput,
 )
 from care_pilot.features.reminders.domain.models import (
     ReminderDefinition,
@@ -30,28 +48,10 @@ from care_pilot.features.reminders.domain.models import (
     ReminderOccurrence,
     ReminderScheduleRule,
 )
-from care_pilot.features.recommendations.domain.models import (
-    InteractionEventType,
-    RecommendationOutput,
-)
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
-from care_pilot.agent.emotion.schemas import (
-    EmotionConfidenceBand,
-    EmotionLabel,
-    EmotionRuntimeHealth,
-)
-from care_pilot.features.meals.domain.models import VisionResult
-from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.safety.domain.alerts.models import OutboxState
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolExecutionResult,
 )
-
-from care_pilot.core.contracts.api.core import HealthProfileResponseItem, JsonValue
-from care_pilot.core.contracts.api.meal_health import SymptomSummaryResponse
-from care_pilot.core.contracts.api.workflows import WorkflowResponse
 
 
 class ReportParseRequest(BaseModel):
@@ -331,7 +331,7 @@ class ReminderDefinitionCreateRequest(BaseModel):
             "wechat",
         ]
     ] = Field(default_factory=lambda: ["in_app"])
-    timezone: str = "Asia/Singapore"
+    timezone: str = Field(default_factory=lambda: get_settings().app.timezone)
     schedule: ReminderScheduleRule
     active: bool = True
 
