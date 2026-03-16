@@ -24,7 +24,11 @@ export function MealAnalysisResult({
   const nutrition = data.nutrition_profile as any;
   const observation = data.raw_observation as any;
 
+  const canonicalItems = validated?.canonical_items || candidate?.normalized_items || [];
+  const firstItem = canonicalItems[0];
+  const detectedLabel = firstItem?.detected_label;
   const mealName = validated?.meal_name || candidate?.meal_name || "Meal";
+  const isUnrecognized = mealName === "DishNotRecognised";
   const calories = Math.round(nutrition?.calories || candidate?.total_nutrition?.calories || 0);
   const confidence = Math.round((observation?.confidence_score || 0) * 100);
   const showConfirmation = data.confirmation_required && !confirmationStatus;
@@ -45,7 +49,14 @@ export function MealAnalysisResult({
               <Activity className="h-3.5 w-3.5" />
               <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">Identification</span>
             </div>
-            <div className="text-sm font-semibold truncate">{mealName}</div>
+            <div className="text-sm font-semibold truncate">
+              {isUnrecognized ? "Dish not recognised" : mealName}
+            </div>
+            {isUnrecognized && detectedLabel ? (
+              <div className="text-[11px] text-[color:var(--muted-foreground)]">
+                Model saw: {detectedLabel}
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 space-y-2">
@@ -67,8 +78,13 @@ export function MealAnalysisResult({
 
         <div className="rounded-xl bg-[color:var(--accent)]/5 p-4 border border-[color:var(--accent)]/10">
           <p className="text-xs leading-relaxed text-[color:var(--muted-foreground)]">
-            <span className="font-bold text-[color:var(--accent)] uppercase tracking-tighter mr-2">Companion Insight:</span>
-            {observation?.summary_narrative || "Analysis complete. This meal has been logged to your daily record."}
+            <span className="font-bold text-[color:var(--accent)] uppercase tracking-tighter mr-2">
+              Companion Insight:
+            </span>
+            {isUnrecognized && detectedLabel
+              ? `Dish not recognised. Model saw: ${detectedLabel}.`
+              : observation?.summary_narrative ||
+                "Analysis complete. This meal has been logged to your daily record."}
           </p>
         </div>
 
@@ -79,6 +95,11 @@ export function MealAnalysisResult({
               <div className="text-xs text-[color:var(--muted-foreground)]">
                 We need a quick confirmation before logging.
               </div>
+              {isUnrecognized && detectedLabel ? (
+                <div className="text-xs text-[color:var(--muted-foreground)]">
+                  Model saw: {detectedLabel}
+                </div>
+              ) : null}
             </div>
             <div className="ml-auto flex gap-2">
               <Button
