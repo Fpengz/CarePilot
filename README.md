@@ -2,54 +2,35 @@
 
 CarePilot is an AI health companion for chronic-condition support outside the clinic. It combines meal analysis, reminders, adherence tracking, symptoms, reports, clinician-facing digests, and impact tracking in a modular-monolith architecture.
 
-## What the system does
-- builds a longitudinal patient view from meals, reminders, adherence events, symptoms, biomarkers, and profile context
-- personalizes companion guidance for `chat`, `meal_review`, `check_in`, `report_follow_up`, and `adherence_follow_up`
-- runs deterministic evidence and safety checks before returning care guidance
-- generates clinician digests and impact summaries from the same underlying case state
-- supports Singapore-local meal reasoning with deterministic canonical-food normalization
+## What the System Does
+- Builds a longitudinal patient view from meals, reminders, adherence events, symptoms, biomarkers, and profile context.
+- Personalizes companion guidance for `chat`, `meal_review`, `check_in`, `report_follow_up`, and `adherence_follow_up`.
+- Runs deterministic evidence and safety checks before returning care guidance.
+- Generates clinician digests and impact summaries from the same underlying case state.
+- Supports Singapore-local meal reasoning with deterministic canonical-food normalization.
 
-## Companion chat + dashboard (refactored)
-- streaming chat with audio transcription and emotion context injection
-- `[TRACK]` parsing with health-metric chart data and trend computation
-- RAG routing for drug/food/general queries and local Singapore food retrieval
-- E2B sandboxed calculations for dashboard trends
-Endpoint surface:
-- `/api/v1/chat` + `/api/v1/chat/audio` + `/api/v1/chat/history`
-- `/api/v1/dashboard/entries` + `/api/v1/dashboard/chart-data` + `/api/v1/dashboard/trend`
+## Current Status (Phase 4 Active)
+- **Phase 3 Complete**: All API schemas moved to `src/care_pilot/core/contracts/api/`. Cross-feature orchestration moved to the API layer. Circular imports resolved.
+- **Companion Spine**: `features/companion/**` is the product spine, coordinating chat, recommendations, and emotion.
+- **Workflows**: Multi-step journeys for meals and medications are managed via `pydantic-graph`.
+- **Inference**: Agents are bounded, inference-only components using `pydantic_ai`.
 
-## Repository shape
+## Repository Shape
 
 ```text
 apps/
-  api/        FastAPI transport layer
-  web/        Next.js frontend
-  workers/    async worker runtime
+  api/        FastAPI transport layer (transport-only routers)
+  web/        Next.js frontend (Next.js 14 App Router)
+  workers/    Async worker runtime (reminders, outbox)
 src/
   care_pilot/
-    core/            tiny shared primitives and canonical API contracts
-    features/        product behavior and service entrypoints
-    agent/           bounded model/provider logic
-    platform/        persistence, auth, scheduling, storage, observability
-docs/         canonical docs and focused references
-tests/        repository-level tests
+    core/            Shared primitives and canonical API contracts
+    features/        Product behavior, use-cases, and domain logic
+    agent/           Bounded inference-only agents
+    platform/        Infrastructure adapters (persistence, auth, messaging)
+docs/         Canonical documentation and refactor history
+tests/        Repository-level tests and meta-guardrails
 ```
-
-## Architecture in one view
-- `apps/web` is the main patient and admin interface
-- `apps/api` keeps routers thin and handles cross-feature screen orchestration
-- `src/care_pilot/core/contracts/api` defines the stable schemas used by all layers
-- `src/care_pilot/features` owns domain logic and use cases
-- `src/care_pilot/platform` owns persistence and external integrations
-- `apps/workers` runs reminder, outbox, and related async processing
-- `src/care_pilot/agent` stays bounded behind typed inputs and outputs
-
-## Merge provenance
-This branch merges prior work from:
-- **Ervin branch**: chat pipeline, health dashboard, and API chat/dashboard routes
-- **Xiangqi branch**: hybrid food retrieval (vector + keyword rerank) and ingestion work
-
-See `CODEBASE_MAP.md` for the detailed mapping of merged components.
 
 ## Quickstart
 
@@ -73,20 +54,6 @@ Run the default local stack:
 uv run python scripts/cli.py dev
 ```
 
-Useful variants:
-
-```bash
-uv run python scripts/cli.py dev --no-web
-uv run python scripts/cli.py dev --no-api
-uv run python scripts/cli.py dev --no-scheduler
-```
-
-Hackathon local stack:
-
-```bash
-uv run python scripts/cli.py infra up
-```
-
 ## Validation
 
 Backend:
@@ -105,22 +72,9 @@ pnpm web:typecheck
 pnpm web:build
 ```
 
-Full stack:
-
-```bash
-uv run python scripts/cli.py test comprehensive
-```
-
-Ingestion:
-- ChromaDB hawker/drinks: `uv run python scripts/cli.py ingest local`
-- USDA JSON → SQLite: `uv run python scripts/cli.py ingest usda <path> [--reset]`
-- Open Food Facts JSON → SQLite: `uv run python scripts/cli.py ingest off <path> [--reset]`
-
-## Canonical documentation
-- `ARCHITECTURE.md`: system architecture, boundaries, and runtime model
-- `SYSTEM_ROADMAP.md`: current status, delivered capabilities, and next phases
-- `CONTRIBUTING.md`: contributor workflow, branch/merge rules, validation, and review expectations
-- `docs/README.md`: index of the remaining focused docs
-- `docs/developer-guide.md`: local development and extension patterns
-- `docs/operations-runbook.md`: runtime operations and incident workflow
-- `docs/user-manual.md`: end-user and admin/operator flows
+## Canonical Documentation
+- `ARCHITECTURE.md`: Detailed system architecture, boundaries, and rules.
+- `docs/refactor_plan.md`: Refactor history, phases, and active naming cleanup.
+- `SYSTEM_ROADMAP.md`: Current status, delivered capabilities, and next phases.
+- `CONTRIBUTING.md`: Contributor workflow and review expectations.
+- `docs/README.md`: Index of focused references.
