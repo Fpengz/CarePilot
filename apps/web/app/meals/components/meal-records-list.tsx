@@ -11,11 +11,14 @@ export function MealRecordsList() {
     queryFn: () => listMealRecords(),
   });
 
-  const recordItems = (recordsResult as { records?: Array<Record<string, unknown>> } | null)?.records ?? [];
+  const recordItems = useMemo(
+    () => (recordsResult as { records?: Array<Record<string, unknown>> } | null)?.records ?? [],
+    [recordsResult]
+  );
   const groupedRecords = useMemo(() => {
     const grouped: Record<string, Array<Record<string, unknown>>> = {};
     for (const record of recordItems) {
-      const rawDate = record.captured_at ?? record.created_at;
+      const rawDate = (record.captured_at ?? record.created_at) as string;
       const key = rawDate ? formatDate(rawDate) : "Unknown date";
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(record);
@@ -50,7 +53,7 @@ export function MealRecordsList() {
                             <div className="truncate text-sm font-bold">{String(record.meal_name ?? "Meal record")}</div>
                             <div className="mt-1 text-[10px] font-medium text-[color:var(--muted-foreground)] opacity-60">
                               {record.captured_at || record.created_at
-                                ? formatDateTime(record.captured_at ?? record.created_at!)
+                                ? formatDateTime((record.captured_at ?? record.created_at!) as string)
                                 : "Unknown capture time"}
                             </div>
                           </div>

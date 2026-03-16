@@ -15,7 +15,7 @@ export function NutritionProgress() {
   const latestDateKey = useMemo(() => {
     const record = latestRecords?.records?.[0];
     const raw = record?.captured_at ?? record?.created_at;
-    return raw ? formatDateKey(raw) : formatDateKey(new Date());
+    return raw ? formatDateKey(raw as string) : formatDateKey(new Date());
   }, [latestRecords]);
 
   const { data: summary } = useQuery({

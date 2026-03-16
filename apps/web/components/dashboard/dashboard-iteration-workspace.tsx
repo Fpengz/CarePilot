@@ -79,7 +79,7 @@ export function DashboardIterationWorkspace() {
         if (cancelled) return;
         const record = latest.records?.[0];
         const raw = record?.captured_at ?? record?.created_at;
-        const latestKey = raw ? formatDateKey(raw) : formatDateKey(new Date());
+        const latestKey = raw ? formatDateKey(raw as string) : formatDateKey(new Date());
         setCustomRange({
           from: shiftDateKey(latestKey, -29),
           to: latestKey,

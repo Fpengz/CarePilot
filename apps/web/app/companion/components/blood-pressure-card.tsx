@@ -98,7 +98,7 @@ export function BloodPressureCard({ summary, loading = false, chart }: BloodPres
                           borderColor: "var(--border-soft)",
                           fontSize: "10px",
                         }}
-                        formatter={(value: number, name: string) => [`${value} mmHg`, name]}
+                        formatter={(value: any, name: any) => [`${value} mmHg`, name]}
                       />
                       <Line type="monotone" dataKey="systolic" name="Systolic" stroke="#dc2626" strokeWidth={2} dot={false} />
                       <Line type="monotone" dataKey="diastolic" name="Diastolic" stroke="#2563eb" strokeWidth={2} dot={false} />

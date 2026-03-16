@@ -51,7 +51,7 @@ export function BloodPressureChart({
                   borderColor: "var(--border-soft)",
                   fontSize: "10px",
                 }}
-                formatter={(value: number, name: string) => [`${value} mmHg`, name]}
+                formatter={(value: any, name: any) => [`${value} mmHg`, name]}
               />
               <Line
                 type="monotone"
