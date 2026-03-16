@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { ComponentType, SVGProps } from "react";
 import {
   Activity,
   Bell,
@@ -18,6 +18,7 @@ import {
   ShieldAlert,
   Workflow,
 } from "lucide-react";
+import { CompanionIcon } from "@/components/icons/companion-icon";
 
 export type NavGroup = "main" | "admin" | "auth";
 export type SidebarSectionId = "companion" | "monitoring" | "records" | "account" | "admin";
@@ -28,7 +29,7 @@ export interface RouteMeta {
   pageTitle: string;
   breadcrumbLabel: string;
   group: NavGroup;
-  icon: LucideIcon;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   showInSidebar: boolean;
   mobileTab: boolean;
   sidebarSection?: SidebarSectionId;
@@ -166,7 +167,7 @@ export const ROUTE_META: RouteMeta[] = [
     pageTitle: "Dashboard",
     breadcrumbLabel: "Dashboard",
     group: "main",
-    icon: Workflow,
+    icon: CompanionIcon,
     showInSidebar: false,
     mobileTab: false,
   },
