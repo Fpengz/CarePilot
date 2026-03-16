@@ -51,6 +51,12 @@ class MealStore:
     def list_meal_observations(self, user_id: str) -> list[Any]:
         return self._store.list_meal_observations(user_id)
 
+    def save_meal_candidate(self, record: Any) -> None:
+        self._store.save_meal_candidate(record)
+
+    def get_meal_candidate(self, user_id: str, candidate_id: str) -> Any | None:
+        return self._store.get_meal_candidate(user_id, candidate_id)
+
     def save_validated_meal_event(self, event: Any) -> None:
         self._store.save_validated_meal_event(event)
 

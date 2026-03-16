@@ -152,6 +152,25 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS meal_candidates (
+        candidate_id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        captured_at TEXT NOT NULL,
+        confirmation_status TEXT NOT NULL,
+        candidate_event_json TEXT NOT NULL,
+        observation_id TEXT,
+        request_id TEXT,
+        correlation_id TEXT,
+        source TEXT,
+        meal_text TEXT,
+        confirmed_at TEXT,
+        skipped_at TEXT,
+        validated_event_json TEXT,
+        nutrition_profile_json TEXT
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS meal_nutrition_risk_profiles (
         profile_id TEXT PRIMARY KEY,
         event_id TEXT NOT NULL,

@@ -14,6 +14,8 @@ from care_pilot.features.meals.domain import (
     MealPerception,
 )
 from care_pilot.features.meals.domain.models import (
+    CandidateMealEvent,
+    MealCandidateRecord,
     MealState,
     Nutrition,
     NutritionRiskProfile,
@@ -242,6 +244,69 @@ class SQLiteMealRepository:
             "save_meal_observation id=%s user_id=%s",
             observation.observation_id,
             observation.user_id,
+        )
+
+    def save_meal_candidate(self, record: MealCandidateRecord) -> None:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO meal_candidates
+                (candidate_id, user_id, created_at, captured_at, confirmation_status, candidate_event_json, observation_id, request_id, correlation_id, source, meal_text, confirmed_at, skipped_at, validated_event_json, nutrition_profile_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    record.candidate_id,
+                    record.user_id,
+                    record.created_at.isoformat(),
+                    record.captured_at.isoformat(),
+                    record.confirmation_status,
+                    record.candidate_event.model_dump_json(),
+                    record.observation_id,
+                    record.request_id,
+                    record.correlation_id,
+                    record.source,
+                    record.meal_text,
+                    record.confirmed_at.isoformat() if record.confirmed_at else None,
+                    record.skipped_at.isoformat() if record.skipped_at else None,
+                    record.validated_event.model_dump_json() if record.validated_event else None,
+                    record.nutrition_profile.model_dump_json() if record.nutrition_profile else None,
+                ),
+            )
+            conn.commit()
+        logger.info(
+            "save_meal_candidate id=%s user_id=%s status=%s",
+            record.candidate_id,
+            record.user_id,
+            record.confirmation_status,
+        )
+
+    def get_meal_candidate(self, user_id: str, candidate_id: str) -> MealCandidateRecord | None:
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT candidate_id, user_id, created_at, captured_at, confirmation_status, candidate_event_json, observation_id, request_id, correlation_id, source, meal_text, confirmed_at, skipped_at, validated_event_json, nutrition_profile_json
+                FROM meal_candidates WHERE user_id = ? AND candidate_id = ?
+                """,
+                (user_id, candidate_id),
+            ).fetchone()
+        if row is None:
+            return None
+        return MealCandidateRecord(
+            candidate_id=row[0],
+            user_id=row[1],
+            created_at=datetime.fromisoformat(row[2]),
+            captured_at=datetime.fromisoformat(row[3]),
+            confirmation_status=row[4],
+            candidate_event=CandidateMealEvent.model_validate_json(row[5]),
+            observation_id=row[6],
+            request_id=row[7],
+            correlation_id=row[8],
+            source=row[9] or "unknown",
+            meal_text=row[10],
+            confirmed_at=datetime.fromisoformat(row[11]) if row[11] else None,
+            skipped_at=datetime.fromisoformat(row[12]) if row[12] else None,
+            validated_event=ValidatedMealEvent.model_validate_json(row[13]) if row[13] else None,
+            nutrition_profile=NutritionRiskProfile.model_validate_json(row[14]) if row[14] else None,
         )
 
     def list_meal_observations(self, user_id: str) -> list[RawObservationBundle]:

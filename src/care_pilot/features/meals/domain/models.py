@@ -18,6 +18,7 @@ ImageQuality = Literal["poor", "fair", "good", "unknown"]
 MatchStrategy = Literal[
     "exact_alias", "partial_alias", "fuzzy_alias", "fallback_label", "unmatched"
 ]
+ConfirmationStatus = Literal["pending", "confirmed", "skipped"]
 
 
 # ---------------------------------------------------------------------------
@@ -294,6 +295,35 @@ class EnrichedMealEvent(BaseModel):
     summary: str | None = None
 
 
+class CandidateMealEvent(BaseModel):
+    meal_name: str
+    normalized_items: list[NormalizedMealItem] = Field(default_factory=list)
+    total_nutrition: MealNutritionProfile = Field(default_factory=MealNutritionProfile)
+    risk_tags: list[str] = Field(default_factory=list)
+    unresolved_items: list[str] = Field(default_factory=list)
+    source_records: list[RawFoodSourceRecord] = Field(default_factory=list)
+    needs_manual_review: bool = False
+    summary: str | None = None
+
+
+class MealCandidateRecord(BaseModel):
+    candidate_id: str = Field(default_factory=lambda: uuid4().hex)
+    user_id: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    confirmation_status: ConfirmationStatus = "pending"
+    candidate_event: CandidateMealEvent
+    observation_id: str | None = None
+    request_id: str | None = None
+    correlation_id: str | None = None
+    source: Literal["upload", "camera", "unknown"] = "unknown"
+    meal_text: str | None = None
+    confirmed_at: datetime | None = None
+    skipped_at: datetime | None = None
+    validated_event: "ValidatedMealEvent | None" = None
+    nutrition_profile: "NutritionRiskProfile | None" = None
+
+
 class VisionResult(BaseModel):
     """Wrapper for the vision pipeline result."""
 
@@ -392,3 +422,6 @@ class MealAnalysisResult(BaseModel):
     raw_observation: RawObservationBundle
     validated_event: ValidatedMealEvent
     nutrition_profile: NutritionRiskProfile
+
+
+MealCandidateRecord.model_rebuild()

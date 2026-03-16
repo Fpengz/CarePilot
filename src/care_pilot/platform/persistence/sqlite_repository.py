@@ -174,6 +174,25 @@ class SQLiteRepository:
                 )
                 """)
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS meal_candidates (
+                    candidate_id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    captured_at TEXT NOT NULL,
+                    confirmation_status TEXT NOT NULL,
+                    candidate_event_json TEXT NOT NULL,
+                    observation_id TEXT,
+                    request_id TEXT,
+                    correlation_id TEXT,
+                    source TEXT,
+                    meal_text TEXT,
+                    confirmed_at TEXT,
+                    skipped_at TEXT,
+                    validated_event_json TEXT,
+                    nutrition_profile_json TEXT
+                )
+                """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS meal_nutrition_risk_profiles (
                     profile_id TEXT PRIMARY KEY,
                     event_id TEXT NOT NULL,
@@ -453,6 +472,9 @@ class SQLiteRepository:
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_meal_events_user_time ON meal_validated_events(user_id, captured_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_meal_candidates_user_time ON meal_candidates(user_id, captured_at)"
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_meal_nutrition_user_time ON meal_nutrition_risk_profiles(user_id, captured_at)"
@@ -792,6 +814,12 @@ class SQLiteRepository:
 
     def list_meal_observations(self, *args: Any, **kwargs: Any) -> Any:
         return self.meals.list_meal_observations(*args, **kwargs)
+
+    def save_meal_candidate(self, *args: Any, **kwargs: Any) -> Any:
+        return self.meals.save_meal_candidate(*args, **kwargs)
+
+    def get_meal_candidate(self, *args: Any, **kwargs: Any) -> Any:
+        return self.meals.get_meal_candidate(*args, **kwargs)
 
     def save_validated_meal_event(self, *args: Any, **kwargs: Any) -> Any:
         return self.meals.save_validated_meal_event(*args, **kwargs)
