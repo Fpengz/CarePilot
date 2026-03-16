@@ -59,9 +59,9 @@ export default function PatientCardPage() {
 
       {error ? <ErrorCard message={error} /> : null}
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-8">
-          <div className="clinical-panel p-10 space-y-8">
+      <div className="grid gap-8 lg:grid-cols-[1fr_300px] lg:items-stretch">
+        <div className="flex flex-col h-full">
+          <div className="clinical-panel p-10 space-y-8 h-full flex flex-col">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between border-b border-[color:var(--border-soft)] pb-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
@@ -98,7 +98,7 @@ export default function PatientCardPage() {
             </div>
 
             {card?.markdown ? (
-              <div className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-6">
+              <div className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-6 flex-1 min-h-0 overflow-y-auto">
                 <ReactMarkdown className="chat-markdown prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed">
                   {card.markdown}
                 </ReactMarkdown>
@@ -111,15 +111,15 @@ export default function PatientCardPage() {
           </div>
         </div>
 
-        <div className="space-y-8">
-          <div className="space-y-4">
+        <div className="flex flex-col h-full">
+          <div className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 flex flex-col h-full">
             <div className="flex items-center gap-2">
               <History className="h-4 w-4 text-[color:var(--muted-foreground)]" />
               <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)] opacity-70">
                 Supporting Evidence
               </h4>
             </div>
-            <div className="max-h-[420px] overflow-y-auto pr-1 space-y-4">
+            <div className="mt-4 flex-1 min-h-0 overflow-y-auto pr-1 space-y-4">
               {card?.citations?.length ? (
                 card.citations.map((cite, index) => (
                   <div

@@ -59,9 +59,9 @@ def _build_patient_summary(snapshot: CaseSnapshot) -> str:
     if bp is not None:
         stats = bp.stats
         bp_lines.append(
-            f"- Avg BP: {stats.avg_systolic}/{stats.avg_diastolic} mmHg "
-            f"(range {stats.min_systolic}-{stats.max_systolic} / "
-            f"{stats.min_diastolic}-{stats.max_diastolic})"
+            f"- Avg BP: {stats.avg_systolic:.2f}/{stats.avg_diastolic:.2f} mmHg "
+            f"(range {stats.min_systolic:.2f}-{stats.max_systolic:.2f} / "
+            f"{stats.min_diastolic:.2f}-{stats.max_diastolic:.2f})"
         )
         bp_lines.append(
             f"- Trend: {bp.trend.direction} (Δ{bp.trend.delta_systolic:+.1f} systolic)"
@@ -79,9 +79,9 @@ def _build_patient_summary(snapshot: CaseSnapshot) -> str:
     medication_text = ", ".join(snapshot.medications) if snapshot.medications else "none"
     return "\n".join(
         [
-            f"Patient: {snapshot.profile_name}",
-            f"Conditions: {condition_text}",
-            f"Medications: {medication_text}",
+            f"- Patient: {snapshot.profile_name}",
+            f"- Conditions: {condition_text}",
+            f"- Medications: {medication_text}",
             *bp_lines,
         ]
     )
@@ -99,10 +99,30 @@ def _build_evidence_text(evidence: EvidenceBundle) -> str:
     return "\n".join(lines)
 
 
-def _ensure_disclaimer(markdown: str) -> str:
-    if _DISCLAIMER in markdown:
-        return markdown
-    return f"{markdown.rstrip()}\n\n{_DISCLAIMER}"
+def _build_reference_links(evidence: EvidenceBundle) -> str:
+    if not evidence.citations:
+        return "No external references available."
+    lines = []
+    for item in evidence.citations[:6]:
+        summary = item.summary.strip()
+        if len(summary) > 240:
+            summary = summary[:237].rstrip() + "..."
+        if item.url:
+            lines.append(f"- [{item.title}]({item.url}): {summary}")
+        else:
+            lines.append(f"- {item.title}: {summary}")
+    return "\n".join(lines)
+
+
+def _strip_disclaimer(markdown: str) -> str:
+    return markdown.replace(_DISCLAIMER, "").rstrip()
+
+
+def _finalize_markdown(markdown: str, evidence: EvidenceBundle) -> str:
+    cleaned = _strip_disclaimer(markdown)
+    references = _build_reference_links(evidence)
+    combined = f"{cleaned}\n\n## References\n{references}"
+    return f"{combined.rstrip()}\n\n{_DISCLAIMER}"
 
 
 def _fallback_markdown(snapshot: CaseSnapshot, evidence: EvidenceBundle) -> str:
@@ -138,7 +158,7 @@ def _fallback_markdown(snapshot: CaseSnapshot, evidence: EvidenceBundle) -> str:
             _build_evidence_text(evidence),
         ]
     )
-    return _ensure_disclaimer(markdown)
+    return _finalize_markdown(markdown, evidence)
 
 
 async def generate_patient_medical_card(
@@ -162,11 +182,14 @@ async def generate_patient_medical_card(
             "Output requirements:",
             "1. Sections: ## Data Overview, ## Risk Advisory, "
             "## Personalized Recommendations, ## Follow-up Monitoring Advice",
-            "2. Recommendations must be specific and actionable.",
-            f"3. Maintain a {personalization.preferred_tone} but professional tone.",
-            "4. Do not include citations in the body; keep it easy to read.",
-            "5. Do not use emojis.",
-            f"6. Include this disclaimer at the end: {_DISCLAIMER}",
+            "2. Under Data Overview, use a bullet list (one item per line).",
+            "3. Use short paragraphs for the other sections (2-3 sentences max).",
+            "4. Keep sentences under ~20 words.",
+            "5. Recommendations must be specific and actionable.",
+            f"6. Maintain a {personalization.preferred_tone} but professional tone.",
+            "7. Do not include citations in the body; keep it easy to read.",
+            "8. Do not use emojis.",
+            f"9. Include this disclaimer at the end: {_DISCLAIMER}",
         ]
     )
     request = InferenceRequest(
@@ -187,7 +210,7 @@ async def generate_patient_medical_card(
         try:
             response = await inference_engine.infer(request)
             output = response.structured_output
-            markdown = _ensure_disclaimer(getattr(output, "markdown", ""))
+            markdown = _finalize_markdown(getattr(output, "markdown", ""), evidence)
             if not markdown.strip():
                 markdown = _fallback_markdown(snapshot, evidence)
         except Exception:

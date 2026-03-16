@@ -55,7 +55,7 @@ export default function ClinicianDigestPage() {
 
       {error && <ErrorCard message={error} />}
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
+      <div className="grid gap-8 lg:grid-cols-[1fr_300px] lg:items-stretch">
         <div className="space-y-8">
           {/* Main Document Section */}
           <div className="clinical-panel bg-white dark:bg-slate-900 shadow-xl border-[color:var(--border-soft)] p-10 space-y-10">
@@ -143,13 +143,13 @@ export default function ClinicianDigestPage() {
         </div>
 
         {/* Sidebar / Evidence */}
-        <div className="space-y-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
+        <div className="flex flex-col h-full">
+          <div className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 flex flex-col h-full">
+            <div className="flex items-center gap-2 pb-3 border-b border-[color:var(--border-soft)]">
               <History className="h-4 w-4 text-[color:var(--muted-foreground)]" />
               <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)] opacity-70">Supporting Evidence</h4>
             </div>
-            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+            <div className="mt-4 flex-1 min-h-0 overflow-y-auto pr-1 space-y-4">
               {digest?.citations.map((cite, i) => (
                 <div key={i} className="group rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 transition-all hover:border-[color:var(--accent)] hover:shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
