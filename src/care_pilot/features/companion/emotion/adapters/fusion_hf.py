@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from transformers import pipeline
 
+from care_pilot.config.app import get_settings
 from care_pilot.features.companion.emotion.ports import FusionPort
 from care_pilot.agent.emotion.schemas import (
     EmotionContextFeatures,
@@ -16,6 +17,7 @@ from care_pilot.agent.emotion.schemas import (
     FusionTrace,
 )
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.payloads import pretty_json_payload
 
 logger = get_logger(__name__)
 
@@ -83,6 +85,7 @@ class HFFusion(FusionPort):
         speech_branch: SpeechEmotionBranchResult | None,
         context: EmotionContextFeatures,
     ) -> tuple[EmotionFusionOutput, FusionTrace]:
+        settings = get_settings()
         text_scores = text_branch.emotion_scores if text_branch else {}
         speech_scores = speech_branch.emotion_scores if speech_branch else {}
         features = {
@@ -93,6 +96,12 @@ class HFFusion(FusionPort):
                 "trend": context.trend,
             },
         }
+        if settings.observability.log_hf_payloads:
+            outbound_payload = {
+                "model_id": self._model_id,
+                "features": features,
+            }
+            logger.info("hf_api_outbound payload=%s", pretty_json_payload(outbound_payload))
         prompt = f"Fusion features: {features}"
         self._ensure_pipeline()
         assert self._pipeline is not None
@@ -142,6 +151,13 @@ class HFFusion(FusionPort):
             conflict_resolution="argmax",
             final_decision_reason=f"Top fused score was {top_score:.2f} for {top_label.value}",
         )
+        if settings.observability.log_hf_payloads:
+            inbound_payload = {
+                "model_id": self._model_id,
+                "output": output.model_dump(mode="json"),
+                "trace": trace.model_dump(mode="json"),
+            }
+            logger.info("hf_api_inbound payload=%s", pretty_json_payload(inbound_payload))
         return output, trace
 
 

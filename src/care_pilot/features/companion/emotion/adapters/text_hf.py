@@ -5,12 +5,14 @@ from __future__ import annotations
 import re
 from transformers import pipeline
 
+from care_pilot.config.app import get_settings
 from care_pilot.features.companion.emotion.ports import TextEmotionPort
 from care_pilot.agent.emotion.schemas import (
     EmotionLabel,
     TextEmotionBranchResult,
 )
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.payloads import pretty_json_payload
 
 logger = get_logger(__name__)
 
@@ -61,6 +63,14 @@ class HFTextEmotion(TextEmotionPort):
         del language
         self._ensure_pipeline()
         assert self._pipeline is not None
+        settings = get_settings()
+        if settings.observability.log_hf_payloads:
+            outbound_payload = {
+                "model_id": self._model_id,
+                "text": text,
+                "text_len": len(text),
+            }
+            logger.info("hf_api_outbound payload=%s", pretty_json_payload(outbound_payload))
         logger.info(
             "emotion_text_request model=%s text_len=%s preview=%s",
             self._model_id,
@@ -89,7 +99,7 @@ class HFTextEmotion(TextEmotionPort):
             top_label.value,
             top_score,
         )
-        return TextEmotionBranchResult(
+        result = TextEmotionBranchResult(
             transcript_or_text=text,
             emotion_scores=scores,
             predicted_emotion=top_label,
@@ -97,6 +107,13 @@ class HFTextEmotion(TextEmotionPort):
             model_name=self._model_id,
             metadata={"adapter": "hf"},
         )
+        if settings.observability.log_hf_payloads:
+            inbound_payload = {
+                "model_id": self._model_id,
+                "output": result.model_dump(mode="json"),
+            }
+            logger.info("hf_api_inbound payload=%s", pretty_json_payload(inbound_payload))
+        return result
 
 
 __all__ = ["HFTextEmotion"]

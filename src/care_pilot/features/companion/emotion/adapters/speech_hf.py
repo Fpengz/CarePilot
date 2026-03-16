@@ -9,12 +9,14 @@ import numpy as np
 import soundfile as sf
 from transformers import pipeline
 
+from care_pilot.config.app import get_settings
 from care_pilot.features.companion.emotion.ports import SpeechEmotionPort
 from care_pilot.agent.emotion.schemas import (
     EmotionLabel,
     SpeechEmotionBranchResult,
 )
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.payloads import pretty_json_payload
 
 logger = get_logger(__name__)
 
@@ -66,6 +68,14 @@ class HFSpeechEmotion(SpeechEmotionPort):
         *,
         transcript: str | None,
     ) -> SpeechEmotionBranchResult:
+        settings = get_settings()
+        if settings.observability.log_hf_payloads:
+            outbound_payload = {
+                "model_id": self._model_id,
+                "audio_bytes_len": len(audio_bytes),
+                "transcript": transcript,
+            }
+            logger.info("hf_api_outbound payload=%s", pretty_json_payload(outbound_payload))
         data, sample_rate = sf.read(io.BytesIO(audio_bytes))
         if isinstance(data, np.ndarray) and data.ndim > 1:
             data = np.mean(data, axis=1)
@@ -109,7 +119,7 @@ class HFSpeechEmotion(SpeechEmotionPort):
             top_label.value,
             top_score,
         )
-        return SpeechEmotionBranchResult(
+        result = SpeechEmotionBranchResult(
             raw_audio_reference=None,
             transcription=transcript,
             acoustic_scores=acoustic_summary,
@@ -120,6 +130,13 @@ class HFSpeechEmotion(SpeechEmotionPort):
             model_name=self._model_id,
             metadata={"adapter": "hf"},
         )
+        if settings.observability.log_hf_payloads:
+            inbound_payload = {
+                "model_id": self._model_id,
+                "output": result.model_dump(mode="json"),
+            }
+            logger.info("hf_api_inbound payload=%s", pretty_json_payload(inbound_payload))
+        return result
 
 
 __all__ = ["HFSpeechEmotion"]

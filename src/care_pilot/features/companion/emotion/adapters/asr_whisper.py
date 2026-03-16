@@ -10,8 +10,10 @@ import numpy as np
 import soundfile as sf
 from transformers import pipeline
 
+from care_pilot.config.app import get_settings
 from care_pilot.features.companion.emotion.ports import ASRPort
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.payloads import pretty_json_payload
 
 logger = get_logger(__name__)
 
@@ -51,6 +53,15 @@ class WhisperASR(ASRPort):
         filename: str | None,
         language: str | None,
     ) -> str:
+        settings = get_settings()
+        if settings.observability.log_hf_payloads:
+            outbound_payload = {
+                "model_id": self._repo_id,
+                "audio_bytes_len": len(audio_bytes),
+                "filename": filename,
+                "language": language or "auto",
+            }
+            logger.info("hf_api_outbound payload=%s", pretty_json_payload(outbound_payload))
         logger.info(
             "emotion_asr_request repo_id=%s bytes=%s filename=%s language=%s",
             self._repo_id,
@@ -84,6 +95,13 @@ class WhisperASR(ASRPort):
             len(text),
             _safe_preview(text),
         )
+        if settings.observability.log_hf_payloads:
+            inbound_payload = {
+                "model_id": self._repo_id,
+                "transcript": text,
+                "transcript_len": len(text),
+            }
+            logger.info("hf_api_inbound payload=%s", pretty_json_payload(inbound_payload))
         return text
 
 

@@ -23,6 +23,7 @@ from care_pilot.agent.runtime.inference_engine import InferenceEngine
 from care_pilot.config.app import AppSettings
 from care_pilot.config.llm import LLMCapability, ModelProvider
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.payloads import pretty_json_payload
 
 logger = get_logger(__name__)
 
@@ -84,6 +85,7 @@ class ChatStreamRuntime:
     """Execute SEA-LION chat completions with retry and streaming support."""
 
     def __init__(self, settings: AppSettings) -> None:
+        self._settings = settings
         self._config = build_chat_runtime_config(settings)
         self._client = AsyncOpenAI(
             api_key=self._config.api_key,
@@ -153,6 +155,12 @@ class ChatStreamRuntime:
     def _log_request(self, *, model: str, messages: list[ChatCompletionMessageParam]) -> None:
         if not messages:
             return
+        if self._settings.observability.log_llm_payloads:
+            payload = {
+                "model": model,
+                "messages": messages,
+            }
+            logger.info("llm_api_outbound payload=%s", pretty_json_payload(payload))
         first = messages[0]
         content = str(first.get("content") or "")
         logger.info(
@@ -165,6 +173,13 @@ class ChatStreamRuntime:
     def _log_response(self, *, model: str, content: str) -> None:
         if not content:
             return
+        if self._settings.observability.log_llm_payloads:
+            payload = {
+                "model": model,
+                "content": content,
+                "content_len": len(content),
+            }
+            logger.info("llm_api_inbound payload=%s", pretty_json_payload(payload))
         logger.info(
             "chat_api_response model=%s content_len=%s preview=%s",
             model,

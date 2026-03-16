@@ -26,6 +26,7 @@ from care_pilot.config.app import AppSettings, get_settings
 from care_pilot.config.llm import LLMCapability, ModelProvider
 from care_pilot.agent.runtime.llm_factory import LLMFactory, ModelType
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.payloads import pretty_json_payload
 from care_pilot.agent.runtime.inference_types import (
     InferenceHealth,
     InferenceModality,
@@ -184,6 +185,24 @@ class _BaseStrategy:
         prompt = request.payload.get("prompt", "")
         image_bytes = request.payload.get("image_bytes")
         image_mime_type = request.payload.get("image_mime_type") or "image/jpeg"
+        settings = get_settings()
+        if settings.observability.log_llm_payloads:
+            outbound_payload = {
+                "request_id": request.request_id,
+                "provider": self.provider_name,
+                "model": self._provider_metadata().model,
+                "endpoint": self._provider_metadata().endpoint,
+                "capability": self.capability or "none",
+                "modality": request.modality,
+                "system_prompt": request.system_prompt,
+                "payload": {
+                    "prompt": request.payload.get("prompt"),
+                    "image_mime_type": image_mime_type,
+                    "image_bytes_len": len(image_bytes) if image_bytes else 0,
+                    "payload_keys": sorted(request.payload.keys()),
+                },
+            }
+            logger.info("llm_api_outbound payload=%s", pretty_json_payload(outbound_payload))
         logger.debug(
             "inference_engine_payload modality=%s mime_type=%s image_bytes=%s payload_keys=%s",
             request.modality,
@@ -276,6 +295,16 @@ class _BaseStrategy:
         if not isinstance(result.output, request.output_schema):
             raise TypeError("Inference output does not match requested schema")
         latency_ms = (time.perf_counter() - started) * 1000.0
+        if settings.observability.log_llm_payloads:
+            inbound_payload = {
+                "request_id": request.request_id,
+                "provider": self.provider_name,
+                "model": self._provider_metadata().model,
+                "endpoint": self._provider_metadata().endpoint,
+                "latency_ms": latency_ms,
+                "structured_output": result.output.model_dump(mode="json"),
+            }
+            logger.info("llm_api_inbound payload=%s", pretty_json_payload(inbound_payload))
         confidence = cast(float | None, getattr(result.output, "confidence_score", None))
         return InferenceResponse(
             request_id=request.request_id,

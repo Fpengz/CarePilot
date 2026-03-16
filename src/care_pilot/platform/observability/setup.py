@@ -67,10 +67,19 @@ def setup_logging(project_name: str = "care-pilot") -> logging.Logger:
     level = getattr(logging, level_name, logging.INFO)
     root.setLevel(level)
     if not _has_logfire_handler():
-        handler = cast(logging.Handler, logfire.LogfireLoggingHandler())
-        setattr(handler, _HANDLER_MARKER, True)
+        use_logfire_handler = os.getenv("CARE_PILOT_USE_LOGFIRE_HANDLER", "0") == "1"
+        if use_logfire_handler:
+            handler = cast(logging.Handler, logfire.LogfireLoggingHandler())
+            setattr(handler, _HANDLER_MARKER, True)
+        else:
+            handler = logging.StreamHandler()
         handler.setLevel(level)
-        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+        handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s %(levelname)s [%(name)s] %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        )
         root.addHandler(handler)
     _dedupe_logfire_handlers()
     logger = logging.getLogger(project_name)
