@@ -3,11 +3,11 @@ repos:
     hooks:
       - id: ruff-check
         name: ruff-check
-        entry: uv run ruff check .
+        entry: uv run ruff check
         language: system
-        pass_filenames: false
+        types: [python]
       - id: ty-check
         name: ty-check
-        entry: uv run ty check . --extra-search-path src --output-format concise
+        entry: uv run ty check --extra-search-path src --output-format concise
         language: system
-        pass_filenames: false
+        types: [python]
