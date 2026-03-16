@@ -324,6 +324,7 @@ def meal_deps(ctx: AppContext) -> MealDeps:
         settings=ctx.settings,
         stores=ctx.stores,
         event_timeline=ctx.event_timeline,
+        memory_store=ctx.memory_store,
     )
 
 

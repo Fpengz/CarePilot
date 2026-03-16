@@ -35,9 +35,11 @@ class LLMFactory:
     def _attach_model_name(model: ModelType, model_name: str) -> ModelType:
         with suppress(Exception):
             if hasattr(model, 'model_name'):
-                model.model_name = model_name
+                attr = 'model_name'
+                setattr(model, attr, model_name)
             elif hasattr(model, 'model'):
-                model.model = model_name
+                attr = 'model'
+                setattr(model, attr, model_name)
         return model
 
     @staticmethod

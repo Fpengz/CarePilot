@@ -6,7 +6,7 @@ to meal API services for orchestration.
 """
 
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
@@ -34,11 +34,11 @@ router = APIRouter(tags=["meals"])
 @router.post("/api/v1/meal/analyze", response_model=MealAnalyzeResponse)
 async def meal_analyze(
     request: Request,
-    file: UploadFile = File(...),
-    runtime_mode: str = Form("local"),
-    provider: str | None = Form(default=None),
-    meal_text: str | None = Form(default=None),
-    session: dict[str, object] = Depends(current_session),
+    file: Annotated[UploadFile, File(...)],
+    runtime_mode: Annotated[str, Form()] = "local",
+    provider: Annotated[str | None, Form()] = None,
+    meal_text: Annotated[str | None, Form()] = None,
+    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
 ) -> MealAnalyzeResponse:
     del runtime_mode
     require_action(session, "meal.analyze")
@@ -56,8 +56,8 @@ async def meal_analyze(
 def meal_records(
     request: Request,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
-    cursor: str | None = Query(default=None),
-    session: dict[str, object] = Depends(current_session),
+    cursor: Annotated[str | None, Query()] = None,
+    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
 ) -> MealRecordsResponse:
     require_action(session, "meal.records.read")
     return list_meal_records(
@@ -71,8 +71,8 @@ def meal_records(
 @router.get("/api/v1/meal/daily-summary", response_model=MealDailySummaryResponse)
 def meal_daily_summary(
     request: Request,
-    summary_date: date = Query(alias="date"),
-    session: dict[str, object] = Depends(current_session),
+    summary_date: Annotated[date, Query(alias="date")],
+    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
 ) -> MealDailySummaryResponse:
     require_action(session, "meal.records.read")
     return get_daily_summary(
@@ -85,8 +85,8 @@ def meal_daily_summary(
 @router.get("/api/v1/meal/weekly-summary", response_model=MealWeeklySummaryResponse)
 def meal_weekly_summary(
     request: Request,
-    week_start: date = Query(),
-    session: dict[str, object] = Depends(current_session),
+    week_start: Annotated[date, Query()],
+    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
 ) -> MealWeeklySummaryResponse:
     require_action(session, "meal.records.read")
     return get_weekly_summary(
@@ -97,16 +97,18 @@ def meal_weekly_summary(
 
 
 @router.post("/api/v1/meal/confirm", response_model=MealConfirmResponse)
-def meal_confirm(
+async def meal_confirm(
     payload: MealConfirmRequest,
     request: Request,
-    session: dict[str, object] = Depends(current_session),
+    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
 ) -> MealConfirmResponse:
     require_action(session, "meal.confirm")
-    result = confirm_meal(
+    result = await confirm_meal(
         deps=meal_deps(get_context(request)),
         user_id=str(session["user_id"]),
         candidate_id=payload.candidate_id,
         action=payload.action,
+        session_id=str(session.get("session_id")) if session.get("session_id") else None,
+        user_name=str(session.get("display_name")) if session.get("display_name") else None,
     )
     return MealConfirmResponse.model_validate(result)

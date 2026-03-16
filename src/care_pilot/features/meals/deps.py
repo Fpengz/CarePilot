@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from care_pilot.config.app import AppSettings as Settings
 from care_pilot.platform.cache import EventTimelineService
+from care_pilot.platform.memory import MemoryStore
 from care_pilot.platform.persistence import AppStores
 
 
@@ -18,3 +19,4 @@ class MealDeps:
     settings: Settings
     stores: AppStores
     event_timeline: EventTimelineService
+    memory_store: MemoryStore

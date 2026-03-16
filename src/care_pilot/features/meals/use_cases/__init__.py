@@ -6,6 +6,7 @@ from .confirm_meal import (
     MealCandidateNotFoundError,
     confirm_meal_candidate,
 )
+from .context import build_context_snapshot
 from .records import MealRecordsPage, list_meal_records_page
 from .summaries import MealWeeklySummaryData, get_daily_summary_data, get_weekly_summary_data
 
@@ -17,6 +18,7 @@ __all__ = [
     "get_daily_summary_data",
     "get_weekly_summary_data",
     "MealWeeklySummaryData",
+    "build_context_snapshot",
     "confirm_meal_candidate",
     "MealCandidateInvalidStateError",
     "MealCandidateNotFoundError",

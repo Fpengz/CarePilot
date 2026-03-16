@@ -4,9 +4,13 @@ Define household feature ports.
 This module declares interfaces used by household application workflows.
 """
 
+from __future__ import annotations
+
 from typing import Any, Protocol
 
 from care_pilot.config.app import AppSettings as Settings
+from care_pilot.platform.cache import EventTimelineService
+from care_pilot.platform.memory import MemoryStore
 from care_pilot.platform.persistence import AppStores
 
 
@@ -46,3 +50,9 @@ class HouseholdContext(Protocol):
 
     @property
     def auth_store(self) -> AuthStorePort: ...
+
+    @property
+    def event_timeline(self) -> EventTimelineService: ...
+
+    @property
+    def memory_store(self) -> MemoryStore: ...

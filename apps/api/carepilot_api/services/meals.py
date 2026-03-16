@@ -23,11 +23,12 @@ from care_pilot.core.contracts.api import (
     WorkflowResponse,
 )
 from care_pilot.features.meals.deps import MealDeps
-from care_pilot.features.meals.domain.models import ContextSnapshot, ImageInput
+from care_pilot.features.meals.domain.models import ImageInput
 from care_pilot.features.meals.use_cases import (
     MealCandidateInvalidStateError,
     MealCandidateNotFoundError,
     analyze_meal_upload,
+    build_context_snapshot,
     confirm_meal_candidate,
     get_daily_summary_data,
     get_weekly_summary_data,
@@ -41,15 +42,6 @@ from care_pilot.platform.storage.media.ingestion import (
     should_suppress_duplicate_capture,
 )
 from care_pilot.platform.storage.media.upload import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
-
-
-def _context_snapshot(*, session: dict[str, object]) -> ContextSnapshot:
-    return ContextSnapshot(
-        user_context_snapshot={
-            "profile_mode": str(session.get("profile_mode", "")),
-            "display_name": str(session.get("display_name", "")),
-        }
-    )
 
 
 async def analyze_meal(
@@ -120,6 +112,27 @@ async def analyze_meal(
         else (None if deps.settings.llm.capability_map else deps.settings.llm.provider)
     )
 
+    context_snapshot = build_context_snapshot(
+        session=session,
+        request_id=capture.request_id,
+        correlation_id=capture.correlation_id,
+        user_agent=request.headers.get("user-agent"),
+        client_ip=request.client.host if request.client else None,
+    )
+    deps.event_timeline.append(
+        event_type="context_ingested",
+        workflow_name="meal_analysis",
+        correlation_id=capture.correlation_id,
+        request_id=capture.request_id,
+        user_id=user_profile.id,
+        payload={
+            "profile_mode": str(session.get("profile_mode", "")),
+            "display_name": str(session.get("display_name", "")),
+            "user_agent": context_snapshot.user_agent,
+            "client_ip": context_snapshot.client_ip,
+        },
+    )
+
     try:
         latency_ms, workflow_output = await analyze_meal_upload(
             deps=deps,
@@ -132,7 +145,7 @@ async def analyze_meal(
                 image_input=image_input,
                 provider=routed_provider,
                 meal_text=meal_text,
-                context=_context_snapshot(session=session),
+                context=context_snapshot,
             ),
         )
     except TimeoutError as exc:
@@ -161,21 +174,28 @@ async def analyze_meal(
     )
 
 
-def confirm_meal(
+async def confirm_meal(
     *,
     deps: MealDeps,
     user_id: str,
     candidate_id: str,
     action: str,
+    session_id: str | None,
+    user_name: str | None,
 ) -> dict[str, object]:
     try:
-        record = confirm_meal_candidate(
-            deps=deps, user_id=user_id, candidate_id=candidate_id, action=action
+        record = await confirm_meal_candidate(
+            deps=deps,
+            user_id=user_id,
+            candidate_id=candidate_id,
+            action=action,
+            session_id=session_id,
+            user_name=user_name,
         )
     except MealCandidateNotFoundError as exc:
-        raise build_api_error(status_code=404, code="meal.candidate.not_found", message=str(exc))
+        raise build_api_error(status_code=404, code="meal.candidate.not_found", message=str(exc)) from exc
     except MealCandidateInvalidStateError as exc:
-        raise build_api_error(status_code=400, code="meal.candidate.invalid", message=str(exc))
+        raise build_api_error(status_code=400, code="meal.candidate.invalid", message=str(exc)) from exc
 
     return {
         "status": record.confirmation_status,

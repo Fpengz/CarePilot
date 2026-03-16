@@ -369,11 +369,15 @@ class DietaryClaims(BaseModel):
 
 class ContextSnapshot(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    request_id: str | None = None
+    correlation_id: str | None = None
     meal_window: str | None = None
     location_cluster: str | None = None
     vendor_candidates: list[str] = Field(default_factory=list)
     regional_food_prior: list[str] = Field(default_factory=list)
     user_context_snapshot: dict[str, object] = Field(default_factory=dict)
+    user_agent: str | None = None
+    client_ip: str | None = None
 
 
 class RawObservationBundle(BaseModel):

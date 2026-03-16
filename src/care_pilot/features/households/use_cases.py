@@ -38,7 +38,6 @@ from care_pilot.features.profiles.domain.health_profile import (
     compute_profile_completeness,
     get_or_create_health_profile,
 )
-from care_pilot.platform.cache import EventTimelineService
 
 from .ports import HouseholdContext, HouseholdStorePort
 
@@ -117,7 +116,7 @@ def list_household_members_for_user(
     try:
         ensure_household_member(household_store, household_id=household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
-        raise HouseholdNotFoundError
+        raise HouseholdNotFoundError from None
     return household_store.list_members(household_id)
 
 
@@ -127,9 +126,9 @@ def create_household_invite_for_owner(
     try:
         ensure_household_owner(household_store, household_id=household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
-        raise HouseholdNotFoundError
+        raise HouseholdNotFoundError from None
     except HouseholdAccessForbiddenError:
-        raise HouseholdForbiddenError
+        raise HouseholdForbiddenError from None
     return household_store.create_invite(household_id=household_id, created_by_user_id=user_id)
 
 
@@ -164,15 +163,15 @@ def remove_household_member_for_owner(
     try:
         ensure_household_owner(household_store, household_id=household_id, user_id=actor_user_id)
     except HouseholdAccessNotFoundError:
-        raise HouseholdNotFoundError
+        raise HouseholdNotFoundError from None
     except HouseholdAccessForbiddenError:
-        raise HouseholdForbiddenError
+        raise HouseholdForbiddenError from None
     try:
         target_role = ensure_household_member(
             household_store, household_id=household_id, user_id=target_user_id
         )
     except HouseholdAccessNotFoundError:
-        raise HouseholdNotFoundError
+        raise HouseholdNotFoundError from None
     if target_role == "owner":
         raise HouseholdForbiddenError
     removed = household_store.remove_member(household_id=household_id, user_id=target_user_id)
@@ -186,7 +185,7 @@ def leave_household_for_member(
     try:
         role = ensure_household_member(household_store, household_id=household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
-        raise HouseholdNotFoundError
+        raise HouseholdNotFoundError from None
     if role == "owner":
         raise HouseholdOwnerLeaveForbiddenError
     removed = household_store.remove_member(household_id=household_id, user_id=user_id)
@@ -204,9 +203,9 @@ def rename_household_for_owner(
     try:
         ensure_household_owner(household_store, household_id=household_id, user_id=actor_user_id)
     except HouseholdAccessNotFoundError:
-        raise HouseholdNotFoundError
+        raise HouseholdNotFoundError from None
     except HouseholdAccessForbiddenError:
-        raise HouseholdForbiddenError
+        raise HouseholdForbiddenError from None
     household = household_store.rename_household(household_id=household_id, name=name)
     if household is None:
         raise HouseholdNotFoundError
@@ -224,7 +223,7 @@ def validate_active_household_for_user(
     try:
         ensure_household_member(household_store, household_id=household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
-        raise HouseholdNotFoundError
+        raise HouseholdNotFoundError from None
     return household_id
 
 
@@ -656,7 +655,8 @@ def get_household_care_member_daily_summary(
         deps=MealDeps(
             settings=context.settings,
             stores=context.stores,
-            event_timeline=EventTimelineService(),
+            event_timeline=context.event_timeline,
+            memory_store=context.memory_store,
         ),
         user_id=subject_user_id,
         summary_date=summary_date,
