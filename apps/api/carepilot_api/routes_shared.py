@@ -45,9 +45,7 @@ def _is_valid_session_payload(session: object) -> bool:
         if not isinstance(payload.get(key), str):
             return False
     scopes = payload.get("scopes")
-    if not isinstance(scopes, list) or not all(isinstance(item, str) for item in scopes):
-        return False
-    return True
+    return not (not isinstance(scopes, list) or not all(isinstance(item, str) for item in scopes))
 
 
 def _session_cookie_candidates(request: Request, session_cookie: str | None) -> list[str]:

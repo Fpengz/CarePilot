@@ -13,38 +13,37 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, EmailStr, Field, RootModel
 
-from care_pilot.features.safety.domain.alerts.models import OutboxState
+from care_pilot.agent.emotion.schemas import (
+    EmotionConfidenceBand,
+    EmotionLabel,
+    EmotionRuntimeHealth,
+)
+from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
+from care_pilot.core.contracts.api.core import JsonValue
+from care_pilot.features.companion.core.health.analytics import (
+    EngagementMetrics,
+)
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
 )
+from care_pilot.features.meals.domain.models import VisionResult
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import (
     AccountRole,
     MealScheduleWindow,
     MealSlot,
     ProfileMode,
 )
-from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.recommendations.domain.models import (
     InteractionEventType,
     RecommendationOutput,
 )
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
-from care_pilot.agent.emotion.schemas import (
-    EmotionConfidenceBand,
-    EmotionLabel,
-    EmotionRuntimeHealth,
-)
-from care_pilot.features.meals.domain.models import VisionResult
-from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.features.safety.domain.alerts.models import OutboxState
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolExecutionResult,
 )
-
-from care_pilot.core.contracts.api.core import JsonValue
 
 
 class AlertTriggerRequest(BaseModel):

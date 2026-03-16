@@ -5,21 +5,22 @@ Applies safety checks, biomarker context, and preference signals to produce
 is rule-based — no LLM calls here.
 """
 
+import logging
+
 from care_pilot.features.companion.core.health.models import (
     ClinicalProfileSnapshot,
 )
-from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.meals.domain.meal_record_accessors import (
     meal_display_name,
     meal_ingredients,
     meal_nutrition,
 )
+from care_pilot.features.meals.domain.models import MealEvent
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.recommendations.domain.models import (
     RecommendationOutput,
 )
-import logging
-from care_pilot.features.meals.domain.models import MealEvent
-from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.safety.domain.engine import (
     SafetyEngine,
     SafetyViolation,

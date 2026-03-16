@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-import logfire
 from pydantic_ai import Agent
 
+import logfire
 from care_pilot.agent.dietary.schemas import (
     DietaryAgentInput,
     DietaryAgentOutput,

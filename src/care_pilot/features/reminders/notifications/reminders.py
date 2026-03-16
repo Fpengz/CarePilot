@@ -7,11 +7,12 @@ setting workflows.
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from uuid import uuid4
 
 from apps.api.carepilot_api.deps import AppContext
 from apps.api.carepilot_api.errors import build_api_error
+
 from care_pilot.core.contracts.api import (
     MobilityReminderSettingsEnvelopeResponse,
     MobilityReminderSettingsRequest,
@@ -20,8 +21,11 @@ from care_pilot.core.contracts.api import (
     ReminderGenerateResponse,
     ReminderListResponse,
 )
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
+from care_pilot.features.companion.core.health.analytics import (
+    EngagementMetrics,
+)
+from care_pilot.features.companion.core.health.models import (
+    MedicationAdherenceEvent,
 )
 from care_pilot.features.medications.domain import (
     compute_mcr,
@@ -33,12 +37,6 @@ from care_pilot.features.medications.domain import (
 from care_pilot.features.reminders.domain.models import (
     MobilityReminderSettings,
 )
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.features.companion.core.health.models import (
-    MedicationAdherenceEvent,
-)
 from care_pilot.features.reminders.notifications.reminder_materialization import (
     cancel_reminder_notifications,
     materialize_reminder_notifications,
@@ -47,13 +45,16 @@ from care_pilot.features.reminders.use_cases.structured import (
     apply_occurrence_action_for_session,
     generate_structured_reminders_for_session,
 )
+from care_pilot.platform.auth.session_context import (
+    build_user_profile_from_session,
+)
 
 
 def _sort_at(item) -> datetime:  # noqa: ANN001
     value = item.scheduled_at
     if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value.astimezone(timezone.utc)
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 def generate_reminders_for_session(
@@ -140,7 +141,7 @@ def confirm_reminder_for_session(
     updated = mark_meal_confirmation(
         event_id,
         confirmed,
-        datetime.now(timezone.utc),
+        datetime.now(UTC),
         context.stores.reminders,
     )
     if updated.regimen_id is not None:
@@ -204,7 +205,7 @@ def update_mobility_settings_for_session(
         interval_minutes=payload.interval_minutes,
         active_start_time=payload.active_start_time,
         active_end_time=payload.active_end_time,
-        updated_at=datetime.now(timezone.utc).isoformat(),
+        updated_at=datetime.now(UTC).isoformat(),
     )
     context.stores.reminders.save_mobility_reminder_settings(settings)
     return MobilityReminderSettingsEnvelopeResponse(

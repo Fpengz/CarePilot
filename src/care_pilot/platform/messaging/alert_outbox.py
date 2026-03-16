@@ -14,17 +14,17 @@ from __future__ import annotations
 
 import asyncio
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import cast
 
 from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
+from care_pilot.features.reminders.domain.models import (
+    ReminderNotificationChannel,
+)
 from care_pilot.features.safety.domain.alerts import (
     AlertDeliveryResult,
     AlertMessage,
     OutboxRecord,
-)
-from care_pilot.features.reminders.domain.models import (
-    ReminderNotificationChannel,
 )
 from care_pilot.platform.messaging.channels.base import (
     SinkAdapter,
@@ -84,7 +84,7 @@ class OutboxWorker:
         }
 
     async def process_once(self, alert_id: str | None = None) -> list[AlertDeliveryResult]:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         leased = self._repository.lease_alert_records(
             now=now,
             lease_owner=self._lease_owner,
@@ -195,7 +195,7 @@ class OutboxWorker:
             return result.model_copy(update={"attempt": attempt})
 
         delay_seconds = (2**attempt) + random.randint(0, 2)
-        next_attempt = datetime.now(timezone.utc) + timedelta(seconds=delay_seconds)
+        next_attempt = datetime.now(UTC) + timedelta(seconds=delay_seconds)
         self._sync_reminder_notification_retry(
             record=record,
             attempt=attempt,

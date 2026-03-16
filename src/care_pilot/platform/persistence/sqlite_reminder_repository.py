@@ -7,23 +7,23 @@ and endpoints.
 
 import json
 import sqlite3
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
+from datetime import UTC, datetime
 from typing import Any, cast
+from zoneinfo import ZoneInfo
 
+from care_pilot.config.app import get_settings
 from care_pilot.features.reminders.domain.models import (
     MobilityReminderSettings,
     ReminderActionRecord,
     ReminderDefinition,
     ReminderEvent,
-    ReminderOccurrence,
-    ReminderScheduleRule,
     ReminderNotificationEndpoint,
     ReminderNotificationLogEntry,
     ReminderNotificationPreference,
+    ReminderOccurrence,
+    ReminderScheduleRule,
     ScheduledReminderNotification,
 )
-from care_pilot.config.app import get_settings
 from care_pilot.platform.observability.setup import get_logger
 
 logger = get_logger(__name__)
@@ -35,7 +35,7 @@ def _parse_datetime(value: str | None) -> datetime | None:
     parsed = datetime.fromisoformat(value)
     if parsed.tzinfo is None:
         settings = get_settings()
-        parsed = parsed.replace(tzinfo=ZoneInfo(settings.app.timezone)).astimezone(timezone.utc)
+        parsed = parsed.replace(tzinfo=ZoneInfo(settings.app.timezone)).astimezone(UTC)
     return parsed
 
 
@@ -342,7 +342,7 @@ class SQLiteReminderRepository:
         action_outcome: str | None = None,
         trigger_at: datetime | None = None,
     ) -> ReminderOccurrence | None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -721,7 +721,7 @@ class SQLiteReminderRepository:
                 (
                     trigger_at.isoformat(),
                     trigger_at.isoformat(),
-                    datetime.now(timezone.utc).isoformat(),
+                    datetime.now(UTC).isoformat(),
                     notification_id,
                 ),
             )
@@ -730,7 +730,7 @@ class SQLiteReminderRepository:
     def mark_scheduled_notification_processing(
         self, notification_id: str, attempt_count: int
     ) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -745,7 +745,7 @@ class SQLiteReminderRepository:
     def mark_scheduled_notification_delivered(
         self, notification_id: str, attempt_count: int
     ) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -770,7 +770,7 @@ class SQLiteReminderRepository:
         next_attempt_at: datetime,
         error: str,
     ) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -795,7 +795,7 @@ class SQLiteReminderRepository:
         attempt_count: int,
         error: str,
     ) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -808,7 +808,7 @@ class SQLiteReminderRepository:
             conn.commit()
 
     def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with sqlite3.connect(self.db_path) as conn:
             result = conn.execute(
                 """

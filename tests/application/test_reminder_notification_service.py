@@ -1,13 +1,13 @@
 """Tests for reminder notification service."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from care_pilot.features.reminders.domain import ReminderEvent
-from care_pilot.platform.persistence import SQLiteAppStore
 from care_pilot.features.reminders.notifications.reminder_materialization import (
     dispatch_due_reminder_notifications,
     materialize_reminder_notifications,
 )
+from care_pilot.platform.persistence import SQLiteAppStore
 
 
 def _event() -> ReminderEvent:
@@ -15,7 +15,7 @@ def _event() -> ReminderEvent:
         id="rem_001",
         user_id="user_001",
         medication_name="Metformin",
-        scheduled_at=datetime(2026, 2, 28, 12, 0, tzinfo=timezone.utc),
+        scheduled_at=datetime(2026, 2, 28, 12, 0, tzinfo=UTC),
         dosage_text="500mg",
     )
 

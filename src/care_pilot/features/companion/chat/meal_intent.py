@@ -8,8 +8,9 @@ LLM fallback for ambiguous messages.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Literal, Tuple, cast
+from typing import Literal, cast
 
 from pydantic import BaseModel, Field
 
@@ -126,7 +127,7 @@ def detect_meal_log_intent(
 
 def heuristic_meal_log_intent(
     message: str,
-) -> Tuple[MealLogIntentResult, bool]:
+) -> tuple[MealLogIntentResult, bool]:
     return _heuristic_intent(message)
 
 

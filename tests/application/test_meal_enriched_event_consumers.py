@@ -1,18 +1,14 @@
 """Tests for meal enriched event consumers."""
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any, cast
 
-from care_pilot.features.companion.core.snapshot import build_case_snapshot
 from care_pilot.features.companion.core.health.models import (
     ClinicalProfileSnapshot,
     HealthProfileRecord,
 )
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
+from care_pilot.features.companion.core.snapshot import build_case_snapshot
+from care_pilot.features.companion.impact.domain import meal_calorie_points
 from care_pilot.features.meals.domain import (
     EnrichedMealEvent,
     MealNutritionProfile,
@@ -21,18 +17,22 @@ from care_pilot.features.meals.domain import (
     build_daily_nutrition_summary,
     build_weekly_nutrition_summary,
 )
-from care_pilot.features.recommendations.domain import (
-    CanonicalFoodRecord,
-    PreferenceSnapshot,
-    RecommendationInteraction,
-)
 from care_pilot.features.meals.domain.models import (
     Ingredient,
     MealState,
     Nutrition,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.companion.impact.domain import meal_calorie_points
+from care_pilot.features.profiles.domain.models import (
+    MedicalCondition,
+    Medication,
+    UserProfile,
+)
+from care_pilot.features.recommendations.domain import (
+    CanonicalFoodRecord,
+    PreferenceSnapshot,
+    RecommendationInteraction,
+)
 from care_pilot.features.recommendations.domain.engine import (
     _snapshot_from_history,
     build_substitution_plan,
@@ -97,7 +97,7 @@ def _record(*, enriched: bool = True) -> MealRecognitionRecord:
     return MealRecognitionRecord(
         id="meal-1",
         user_id="u1",
-        captured_at=datetime(2026, 3, 1, 12, 0, tzinfo=timezone.utc),
+        captured_at=datetime(2026, 3, 1, 12, 0, tzinfo=UTC),
         source="upload",
         meal_state=meal_state,
         enriched_event=enriched_event,
@@ -254,6 +254,7 @@ def test_case_snapshot_uses_enriched_meal_context() -> None:
         adherence_events=[],
         symptoms=[],
         biomarker_readings=[],
+        blood_pressure_readings=[],
         clinical_snapshot=ClinicalProfileSnapshot(biomarkers={"ldl": 3.8}),
     )
 

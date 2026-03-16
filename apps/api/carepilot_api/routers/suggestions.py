@@ -7,17 +7,18 @@ suggestion services for orchestration.
 
 from fastapi import APIRouter, Depends, Query, Request
 
+from care_pilot.features.recommendations.service import (
+    generate_from_report,
+    get_for_session,
+    list_for_session,
+)
+
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
     SuggestionDetailResponse,
     SuggestionGenerateFromReportRequest,
     SuggestionGenerateFromReportResponse,
     SuggestionListResponse,
-)
-from care_pilot.features.recommendations.service import (
-    generate_from_report,
-    get_for_session,
-    list_for_session,
 )
 
 router = APIRouter(tags=["suggestions"])

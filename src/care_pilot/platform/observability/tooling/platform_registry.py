@@ -11,13 +11,13 @@ from pydantic import BaseModel
 
 from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
 from care_pilot.features.safety.domain.alerts.models import AlertSeverity
-from care_pilot.platform.observability.tooling.registry import ToolRegistry
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolPolicyContext,
     ToolSensitivity,
     ToolSideEffect,
     ToolSpec,
 )
+from care_pilot.platform.observability.tooling.registry import ToolRegistry
 
 
 class TriggerAlertToolInput(BaseModel):

@@ -15,6 +15,8 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.models.test import TestModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
+from care_pilot.agent.runtime.llm_routing import LLMCapabilityRouter
+from care_pilot.agent.runtime.llm_types import ResolvedModelRuntime
 from care_pilot.config.app import AppSettings, get_settings
 from care_pilot.config.llm import (
     LLMCapability,
@@ -22,8 +24,6 @@ from care_pilot.config.llm import (
     LocalModelProfile,
     ModelProvider,
 )
-from care_pilot.agent.runtime.llm_routing import LLMCapabilityRouter
-from care_pilot.agent.runtime.llm_types import ResolvedModelRuntime
 from care_pilot.platform.observability import get_logger
 
 ModelType = GoogleModel | OpenAIChatModel | TestModel
@@ -34,7 +34,10 @@ class LLMFactory:
     @staticmethod
     def _attach_model_name(model: ModelType, model_name: str) -> ModelType:
         with suppress(Exception):
-            setattr(model, "model_name", model_name)
+            if hasattr(model, 'model_name'):
+                model.model_name = model_name
+            elif hasattr(model, 'model'):
+                model.model = model_name
         return model
 
     @staticmethod

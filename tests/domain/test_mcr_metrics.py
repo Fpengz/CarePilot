@@ -2,8 +2,8 @@
 
 from datetime import datetime
 
-from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.medications.domain import compute_mcr
+from care_pilot.features.reminders.domain.models import ReminderEvent
 
 
 def test_compute_mcr_zero_denominator() -> None:

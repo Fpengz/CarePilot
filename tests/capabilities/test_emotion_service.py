@@ -6,28 +6,28 @@ import time
 
 import pytest
 
-from care_pilot.features.companion.emotion.ports import (
-    EmotionInferencePort,
-)
-from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
-from care_pilot.features.companion.emotion.pipeline import EmotionPipeline
-from care_pilot.features.companion.emotion.runtime import (
-    InProcessEmotionRuntime,
-)
+from care_pilot.agent.emotion import EmotionAgent
 from care_pilot.agent.emotion.schemas import (
     EmotionContextFeatures,
+    EmotionFusionOutput,
     EmotionInferenceResult,
     EmotionLabel,
     EmotionProductState,
+    EmotionRuntimeHealth,
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,
-    EmotionRuntimeHealth,
+    FusionTrace,
     SpeechEmotionBranchResult,
     TextEmotionBranchResult,
-    EmotionFusionOutput,
-    FusionTrace,
 )
-from care_pilot.agent.emotion import EmotionAgent
+from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
+from care_pilot.features.companion.emotion.pipeline import EmotionPipeline
+from care_pilot.features.companion.emotion.ports import (
+    EmotionInferencePort,
+)
+from care_pilot.features.companion.emotion.runtime import (
+    InProcessEmotionRuntime,
+)
 
 
 class _StubASR:

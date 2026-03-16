@@ -7,7 +7,7 @@ or persistence imports.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Protocol
 
 from care_pilot.features.companion.core.health.models import (
@@ -91,7 +91,7 @@ def default_health_profile_onboarding_state(
 ) -> HealthProfileOnboardingState:
     return HealthProfileOnboardingState(
         user_id=user_id,
-        updated_at=datetime.now(timezone.utc).isoformat(),
+        updated_at=datetime.now(UTC).isoformat(),
     )
 
 
@@ -129,7 +129,7 @@ def update_health_profile_onboarding(
         current_step=current_step,
         completed_steps=completed_steps,
         is_complete=state.is_complete,
-        updated_at=datetime.now(timezone.utc).isoformat(),
+        updated_at=datetime.now(UTC).isoformat(),
     )
     return repository.save_health_profile_onboarding_state(next_state), profile
 
@@ -145,7 +145,7 @@ def complete_health_profile_onboarding(
         current_step="review",
         completed_steps=list(ONBOARDING_STEP_IDS),
         is_complete=True,
-        updated_at=datetime.now(timezone.utc).isoformat(),
+        updated_at=datetime.now(UTC).isoformat(),
     )
     return repository.save_health_profile_onboarding_state(state), profile
 

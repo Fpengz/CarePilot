@@ -2,7 +2,7 @@
 
 # ruff: noqa: F401
 from .analytics import EngagementMetrics
-from .clinical_card import ClinicalCardRecord, ClinicalCardFormat
+from .clinical_card import ClinicalCardFormat, ClinicalCardRecord
 from .emotion import (
     EmotionConfidenceBand,
     EmotionContextFeatures,

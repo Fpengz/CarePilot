@@ -11,6 +11,8 @@ from .companion_orchestration import (
     get_clinician_digest,
     get_companion_today,
     get_impact_summary,
+)
+from .companion_orchestration import (
     handle_companion_interaction as run_companion_interaction,
 )
 

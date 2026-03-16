@@ -10,18 +10,19 @@ from datetime import date, timedelta
 from uuid import uuid4
 
 from apps.api.carepilot_api.deps import AppContext
+
 from care_pilot.core.contracts.api import (
     ReportParseRequest,
     ReportParseResponse,
     SymptomSummaryWindowResponse,
 )
-from care_pilot.features.symptoms.use_cases import (
-    summarize_checkins_for_session,
-)
 from care_pilot.features.companion.core.health.models import ReportInput
 from care_pilot.features.reports.domain import (
     build_clinical_snapshot,
     parse_report_input,
+)
+from care_pilot.features.symptoms.use_cases import (
+    summarize_checkins_for_session,
 )
 from care_pilot.platform.observability.workflows.domain.models import (
     WorkflowName,

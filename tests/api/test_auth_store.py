@@ -1,6 +1,6 @@
 """Module for test auth store."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from care_pilot.config.app import AppSettings as Settings
 from care_pilot.platform.auth import InMemoryAuthStore
@@ -13,7 +13,7 @@ def test_get_session_drops_expired_sessions() -> None:
     assert user is not None
     session = store.create_session(user)
     session_id = str(session["session_id"])
-    session["issued_at"] = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
+    session["issued_at"] = (datetime.now(UTC) - timedelta(seconds=10)).isoformat()
 
     looked_up = store.get_session(session_id)
 

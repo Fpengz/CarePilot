@@ -21,7 +21,10 @@ import { CorrelationChart } from "@/components/dashboard/correlation-chart";
 import { MealClock } from "@/components/dashboard/meal-clock";
 import { RangeSelector, type RangeKey } from "@/components/dashboard/range-selector";
 import { NutritionBalanceChart } from "@/components/dashboard/nutrition-balance-chart";
+import { BloodPressureChart } from "@/components/dashboard/blood-pressure-chart";
 import { getDashboardOverview } from "@/lib/api/dashboard-client";
+import { listMealRecords } from "@/lib/api/meal-client";
+import { formatDateKey, parseDateKey } from "@/lib/time";
 import type {
   DashboardOverviewApiResponse,
 } from "@/lib/types";
@@ -34,6 +37,13 @@ function getDefaultCustomRange() {
     from: from.toISOString().slice(0, 10),
     to: to.toISOString().slice(0, 10),
   };
+}
+
+function shiftDateKey(dateKey: string, days: number): string {
+  const parsed = parseDateKey(dateKey);
+  if (!parsed) return formatDateKey(new Date());
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return formatDateKey(parsed);
 }
 
 function DashboardSkeleton() {
@@ -53,11 +63,38 @@ export function DashboardIterationWorkspace() {
   const { status } = useSession();
   const [range, setRange] = useState<RangeKey>("30d");
   const [customRange, setCustomRange] = useState(getDefaultCustomRange);
+  const [autoRangeApplied, setAutoRangeApplied] = useState(false);
   const [overview, setOverview] = useState<DashboardOverviewApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const deferredRange = useDeferredValue(range);
   const deferredCustomRange = useDeferredValue(customRange);
+
+  useEffect(() => {
+    if (status !== "authenticated" || autoRangeApplied) return;
+    let cancelled = false;
+    async function loadLatestRange() {
+      try {
+        const latest = await listMealRecords(1);
+        if (cancelled) return;
+        const record = latest.records?.[0];
+        const raw = record?.captured_at ?? record?.created_at;
+        const latestKey = raw ? formatDateKey(raw) : formatDateKey(new Date());
+        setCustomRange({
+          from: shiftDateKey(latestKey, -29),
+          to: latestKey,
+        });
+        setRange("custom");
+        setAutoRangeApplied(true);
+      } catch (err) {
+        if (!cancelled) setAutoRangeApplied(true);
+      }
+    }
+    void loadLatestRange();
+    return () => {
+      cancelled = true;
+    };
+  }, [autoRangeApplied, status]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -143,6 +180,9 @@ export function DashboardIterationWorkspace() {
             </div>
             <div className="col-span-12 lg:col-span-6">
               <MealClock bins={overview.charts.meal_timing.bins} />
+            </div>
+            <div className="col-span-12">
+              <BloodPressureChart chart={overview?.charts.blood_pressure} loading={loading} />
             </div>
           </div>
         </div>

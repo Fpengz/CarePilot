@@ -9,11 +9,12 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from ..routes_shared import current_session, get_context, require_action
-from ..schemas import MetricTrendListResponse
 from care_pilot.features.companion.impact.metrics.use_cases import (
     list_metric_trends_for_session,
 )
+
+from ..routes_shared import current_session, get_context, require_action
+from ..schemas import MetricTrendListResponse
 
 router = APIRouter(tags=["metrics"])
 

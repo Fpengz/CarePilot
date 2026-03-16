@@ -35,13 +35,14 @@ test("getConsolePrinter keeps console method invocation safe", () => {
 test("request.error logs structured payload without empty details", async () => {
   const originalEnv = process.env.NEXT_PUBLIC_DEV_LOG_FRONTEND;
   const originalFetch = globalThis.fetch;
-  const originalWindow = (globalThis as typeof globalThis & { window?: unknown }).window;
+  const globalWithWindow = globalThis as typeof globalThis & { window?: unknown };
+  const originalWindow = globalWithWindow.window;
   const originalInfo = console.info;
   const originalError = console.error;
   const calls: Array<{ level: string; args: unknown[] }> = [];
 
   process.env.NEXT_PUBLIC_DEV_LOG_FRONTEND = "true";
-  (globalThis as typeof globalThis & { window?: unknown }).window = {};
+  globalWithWindow.window = {} as unknown as Window & typeof globalThis;
   console.info = (...args: unknown[]) => calls.push({ level: "info", args });
   console.error = (...args: unknown[]) => calls.push({ level: "error", args });
   globalThis.fetch = async () =>
@@ -83,11 +84,7 @@ test("request.error logs structured payload without empty details", async () => 
   } finally {
     process.env.NEXT_PUBLIC_DEV_LOG_FRONTEND = originalEnv;
     globalThis.fetch = originalFetch;
-    if (originalWindow === undefined) {
-      delete (globalThis as typeof globalThis & { window?: unknown }).window;
-    } else {
-      (globalThis as typeof globalThis & { window?: unknown }).window = originalWindow;
-    }
+    globalWithWindow.window = originalWindow;
     console.info = originalInfo;
     console.error = originalError;
   }

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -36,7 +36,7 @@ class WorkflowTimelineEvent(BaseModel):
     correlation_id: str
     user_id: str | None = None
     payload: dict[str, object] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class WorkflowExecutionResult(BaseModel):
@@ -49,7 +49,7 @@ class WorkflowExecutionResult(BaseModel):
     tool_results: list[ToolExecutionResult] = Field(default_factory=list)
     timeline_events: list[WorkflowTimelineEvent] = Field(default_factory=list)
     replayed: bool = False
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class AgentContract(BaseModel):

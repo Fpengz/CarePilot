@@ -8,17 +8,20 @@ emotion pipeline and model adapters.
 from __future__ import annotations
 
 import os
+from typing import cast
+
 import torch
 
-from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
-from care_pilot.features.companion.emotion.pipeline import EmotionPipeline
+from care_pilot.agent.emotion.schemas import (
+    EmotionInferenceResult,
+    EmotionRuntimeHealth,
+    EmotionSpeechAgentInput,
+    EmotionTextAgentInput,
+)
 from care_pilot.features.companion.emotion.adapters.asr_whisper import (
     WhisperASR,
 )
 from care_pilot.features.companion.emotion.adapters.fusion_hf import HFFusion
-from care_pilot.features.companion.emotion.fusion.heuristic_fusion import (
-    HeuristicFusion,
-)
 from care_pilot.features.companion.emotion.adapters.speech_hf import (
     HFSpeechEmotion,
 )
@@ -28,18 +31,18 @@ from care_pilot.features.companion.emotion.adapters.text_hf import (
 from care_pilot.features.companion.emotion.audio_preprocessor import (
     preprocess_audio,
 )
+from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
+from care_pilot.features.companion.emotion.context.context_feature_extractor import (
+    TimelineContextFeatureExtractor,
+    TimelineServiceProtocol,
+)
+from care_pilot.features.companion.emotion.fusion.heuristic_fusion import (
+    HeuristicFusion,
+)
+from care_pilot.features.companion.emotion.pipeline import EmotionPipeline
 from care_pilot.features.companion.emotion.ports import (
     EmotionInferencePort,
     FusionPort,
-)
-from care_pilot.features.companion.emotion.context.context_feature_extractor import (
-    TimelineContextFeatureExtractor,
-)
-from care_pilot.agent.emotion.schemas import (
-    EmotionInferenceResult,
-    EmotionRuntimeHealth,
-    EmotionSpeechAgentInput,
-    EmotionTextAgentInput,
 )
 
 
@@ -61,7 +64,8 @@ class InProcessEmotionRuntime(EmotionInferencePort):
             text=HFTextEmotion(config.text_model_id, device),
             speech=HFSpeechEmotion(config.speech_model_id, device),
             context=TimelineContextFeatureExtractor(
-                event_timeline, history_window=config.history_window
+                cast(TimelineServiceProtocol, event_timeline),
+                history_window=config.history_window,
             ),
             fusion=self._build_fusion(config, device=device),
         )

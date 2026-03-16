@@ -13,41 +13,40 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, EmailStr, Field, RootModel
 
-from care_pilot.features.safety.domain.alerts.models import OutboxState
+from care_pilot.agent.emotion.schemas import (
+    EmotionConfidenceBand,
+    EmotionLabel,
+    EmotionRuntimeHealth,
+)
+from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
+from care_pilot.core.contracts.api.core import JsonValue
+from care_pilot.core.contracts.api.notifications import (
+    AlertTimelineItemResponse,
+    WorkflowTimelineEventPayloadResponse,
+)
+from care_pilot.features.companion.core.health.analytics import (
+    EngagementMetrics,
+)
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
 )
+from care_pilot.features.meals.domain.models import VisionResult
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import (
     AccountRole,
     MealScheduleWindow,
     MealSlot,
     ProfileMode,
 )
-from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.recommendations.domain.models import (
     InteractionEventType,
     RecommendationOutput,
 )
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
-from care_pilot.agent.emotion.schemas import (
-    EmotionConfidenceBand,
-    EmotionLabel,
-    EmotionRuntimeHealth,
-)
-from care_pilot.features.meals.domain.models import VisionResult
-from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.features.safety.domain.alerts.models import OutboxState
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolExecutionResult,
-)
-
-from care_pilot.core.contracts.api.core import JsonValue
-from care_pilot.core.contracts.api.notifications import (
-    AlertTimelineItemResponse,
-    WorkflowTimelineEventPayloadResponse,
 )
 
 
@@ -142,6 +141,61 @@ class CompanionInteractionInfoResponse(BaseModel):
     emotion_signal: str | None = None
 
 
+class BloodPressureStatsResponse(BaseModel):
+    avg_systolic: float
+    avg_diastolic: float
+    min_systolic: float
+    max_systolic: float
+    min_diastolic: float
+    max_diastolic: float
+    total_readings: int
+    start_date: date
+    end_date: date
+
+
+class BloodPressureTrendResponse(BaseModel):
+    direction: Literal["increase", "decrease", "flat"]
+    delta_systolic: float
+
+
+class BloodPressureAbnormalResponse(BaseModel):
+    recorded_at: datetime
+    systolic: float
+    diastolic: float
+    level: Literal["elevated", "high"]
+
+
+class BloodPressureSummaryResponse(BaseModel):
+    stats: BloodPressureStatsResponse
+    trend: BloodPressureTrendResponse
+    target_systolic: int
+    target_diastolic: int
+    above_target: bool
+    has_high_bp: bool
+    abnormal_readings: list[BloodPressureAbnormalResponse] = Field(default_factory=list)
+
+
+class BloodPressureSummaryEnvelopeResponse(BaseModel):
+    user_id: str
+    summary: BloodPressureSummaryResponse | None = None
+    generated_at: datetime
+
+
+class BloodPressureChartPointResponse(BaseModel):
+    bucket_start: datetime
+    bucket_end: datetime
+    label: str
+    systolic: float
+    diastolic: float
+
+
+class BloodPressureChartResponse(BaseModel):
+    user_id: str
+    range: Literal["7d", "30d", "3m", "1y", "custom"]
+    generated_at: datetime
+    points: list[BloodPressureChartPointResponse] = Field(default_factory=list)
+
+
 class CompanionSnapshotResponse(BaseModel):
     user_id: str
     profile_name: str
@@ -158,6 +212,7 @@ class CompanionSnapshotResponse(BaseModel):
     average_symptom_severity: float
     biomarker_summary: dict[str, float] = Field(default_factory=dict)
     active_risk_flags: list[str] = Field(default_factory=list)
+    blood_pressure_summary: BloodPressureSummaryResponse | None = None
     generated_at: datetime
 
 
@@ -174,6 +229,7 @@ class CompanionEvidenceCitationResponse(BaseModel):
     source_type: str
     relevance: str
     confidence: float
+    url: str | None = None
 
 
 class CompanionCarePlanResponse(BaseModel):
@@ -232,6 +288,13 @@ class CompanionInteractionResponse(BaseModel):
     clinician_digest_preview: ClinicianDigestResponse
     impact: ImpactSummaryPayloadResponse
     workflow: WorkflowResponse
+
+
+class PatientMedicalCardResponse(BaseModel):
+    markdown: str
+    generated_at: datetime
+    evidence_query: str | None = None
+    citations: list[CompanionEvidenceCitationResponse] = Field(default_factory=list)
 
 
 class ClinicianDigestEnvelopeResponse(BaseModel):

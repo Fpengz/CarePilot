@@ -7,10 +7,11 @@ This module provides workflows for symptom check-ins, listing, and summaries.
 from __future__ import annotations
 
 from collections import Counter
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 from uuid import uuid4
 
 from apps.api.carepilot_api.deps import AppContext
+
 from care_pilot.core.contracts.api import (
     SymptomCheckInEnvelopeResponse,
     SymptomCheckInListResponse,
@@ -72,8 +73,8 @@ def list_checkins_for_session(
     to_date: date | None,
     limit: int,
 ) -> SymptomCheckInListResponse:
-    start_at = datetime.combine(from_date, time.min, tzinfo=timezone.utc) if from_date else None
-    end_at = datetime.combine(to_date, time.max, tzinfo=timezone.utc) if to_date else None
+    start_at = datetime.combine(from_date, time.min, tzinfo=UTC) if from_date else None
+    end_at = datetime.combine(to_date, time.max, tzinfo=UTC) if to_date else None
     items = context.stores.symptoms.list_symptom_checkins(
         user_id=user_id,
         start_at=start_at,
@@ -90,8 +91,8 @@ def summarize_checkins_for_session(
     from_date: date | None,
     to_date: date | None,
 ) -> SymptomSummaryResponse:
-    start_at = datetime.combine(from_date, time.min, tzinfo=timezone.utc) if from_date else None
-    end_at = datetime.combine(to_date, time.max, tzinfo=timezone.utc) if to_date else None
+    start_at = datetime.combine(from_date, time.min, tzinfo=UTC) if from_date else None
+    end_at = datetime.combine(to_date, time.max, tzinfo=UTC) if to_date else None
     items = context.stores.symptoms.list_symptom_checkins(
         user_id=user_id,
         start_at=start_at,

@@ -7,7 +7,7 @@ the meals presenter, and infrastructure adapters (media ingestion, notifications
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -31,7 +31,7 @@ class DomainDecision(BaseModel):
     policy_flags: list[str] = Field(default_factory=list)
     data: dict[str, Any] = Field(default_factory=dict)
     evidence_items: list[EvidenceItem] = Field(default_factory=list)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class PresentationMessage(BaseModel):
@@ -41,7 +41,7 @@ class PresentationMessage(BaseModel):
     body: str
     severity: str = "info"
     metadata: dict[str, str] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class AuditRecord(BaseModel):
@@ -53,7 +53,7 @@ class AuditRecord(BaseModel):
     source: str
     confidence: float | None = None
     trace_metadata: dict[str, str] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class AgentExecutionTrace(BaseModel):
@@ -65,7 +65,7 @@ class AgentExecutionTrace(BaseModel):
     agent_name: str
     tool_calls: list[str] = Field(default_factory=list)
     trace_metadata: dict[str, str] = Field(default_factory=dict)
-    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    started_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     finished_at: datetime | None = None
 
 
@@ -79,7 +79,7 @@ class AgentInputEnvelope(BaseModel):
     modality: str
     payload: dict[str, Any] = Field(default_factory=dict)
     policy_flags: list[str] = Field(default_factory=list)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class CaptureEnvelope(BaseModel):
@@ -94,7 +94,7 @@ class CaptureEnvelope(BaseModel):
     filename: str | None = None
     content_sha256: str
     metadata: dict[str, str] = Field(default_factory=dict)
-    captured_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class AgentOutputEnvelope(BaseModel):
@@ -107,7 +107,7 @@ class AgentOutputEnvelope(BaseModel):
     presentation_messages: list[PresentationMessage] = Field(default_factory=list)
     audit_record: AuditRecord
     trace: AgentExecutionTrace
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class AgentHandoff(BaseModel):
@@ -119,7 +119,7 @@ class AgentHandoff(BaseModel):
     confidence: float | None = None
     obligations: list[str] = Field(default_factory=list)
     payload: dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 __all__ = [

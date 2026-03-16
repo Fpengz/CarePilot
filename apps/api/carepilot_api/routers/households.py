@@ -9,6 +9,22 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Request
 
+from care_pilot.features.households.use_cases import (
+    create_household,
+    create_household_invite,
+    get_current_household,
+    get_household_care_member_daily_summary,
+    get_household_care_member_profile,
+    join_household,
+    leave_household,
+    list_household_care_member_reminders,
+    list_household_care_members,
+    list_household_members,
+    remove_household_member,
+    rename_household,
+    set_active_household,
+)
+
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
     HouseholdActiveUpdateRequest,
@@ -25,21 +41,6 @@ from ..schemas import (
     HouseholdMemberRemoveResponse,
     HouseholdMembersResponse,
     HouseholdUpdateRequest,
-)
-from care_pilot.features.households.use_cases import (
-    create_household,
-    create_household_invite,
-    get_current_household,
-    get_household_care_member_daily_summary,
-    get_household_care_member_profile,
-    join_household,
-    leave_household,
-    list_household_care_member_reminders,
-    list_household_care_members,
-    list_household_members,
-    remove_household_member,
-    rename_household,
-    set_active_household,
 )
 
 router = APIRouter(tags=["households"])

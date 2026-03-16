@@ -6,7 +6,7 @@ This module implements a simple in-process cache for local usage.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from threading import Lock
 from typing import Any
 
@@ -22,14 +22,14 @@ class InMemoryCacheStore:
             if entry is None:
                 return None
             expires_at, value = entry
-            if expires_at is not None and datetime.now(timezone.utc) >= expires_at:
+            if expires_at is not None and datetime.now(UTC) >= expires_at:
                 self._items.pop(key, None)
                 return None
             return value
 
     def set_json(self, key: str, value: Any, *, ttl_seconds: int | None = None) -> None:
         expires_at = (
-            datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
+            datetime.now(UTC) + timedelta(seconds=ttl_seconds)
             if ttl_seconds is not None
             else None
         )

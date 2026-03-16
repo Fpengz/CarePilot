@@ -3,11 +3,11 @@
 from pydantic import BaseModel
 
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
-from care_pilot.config.app import get_settings
 from care_pilot.agent.runtime.inference_types import (
     InferenceModality,
     InferenceRequest,
 )
+from care_pilot.config.app import get_settings
 
 
 class _DummyOutput(BaseModel):

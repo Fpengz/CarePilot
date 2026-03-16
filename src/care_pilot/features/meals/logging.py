@@ -7,7 +7,7 @@ ensuring consistent field names across the pipeline.
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from care_pilot.config.llm import LLMCapability, LLMSettings, ModelProvider
 from care_pilot.platform.observability import get_logger

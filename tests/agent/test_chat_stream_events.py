@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 
-from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
-from care_pilot.features.companion.chat.memory import MemoryManager
 from care_pilot.agent.chat.schemas import ChatStreamEvent
+from care_pilot.features.companion.chat.memory import MemoryManager
+from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
 
 
 class _DummyInferenceEngine:

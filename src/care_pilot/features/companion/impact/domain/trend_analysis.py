@@ -8,10 +8,11 @@ summaries.
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
+    BloodPressureReading,
     MedicationAdherenceEvent,
     MetricPoint,
     MetricTrend,
@@ -34,10 +35,7 @@ def build_metric_trend(metric: str, points: list[MetricPoint]) -> MetricTrend:
     first = ordered[0].value
     last = ordered[-1].value
     delta = round(last - first, 4)
-    if first == 0:
-        percent_change = None
-    else:
-        percent_change = round(((last - first) / abs(first)) * 100.0, 4)
+    percent_change = None if first == 0 else round((last - first) / abs(first) * 100.0, 4)
     slope = round((last - first) / max(len(ordered) - 1, 1), 4)
     direction = "flat"
     if delta > 0:
@@ -60,7 +58,7 @@ def biomarker_points(readings: list[BiomarkerReading], *, biomarker_name: str) -
     for reading in readings:
         if reading.name.lower() != target:
             continue
-        measured_at = reading.measured_at or datetime.now(timezone.utc)
+        measured_at = reading.measured_at or datetime.now(UTC)
         out.append(MetricPoint(timestamp=measured_at, value=float(reading.value)))
     return out
 
@@ -102,4 +100,18 @@ def adherence_rate_points(
                 value=round(rate, 4),
             )
         )
+    return _sorted_points(points)
+
+
+def blood_pressure_points(
+    readings: list[BloodPressureReading],
+    *,
+    metric: str,
+) -> list[MetricPoint]:
+    if metric not in {"systolic", "diastolic"}:
+        raise ValueError("metric must be 'systolic' or 'diastolic'")
+    points: list[MetricPoint] = []
+    for reading in readings:
+        value = reading.systolic if metric == "systolic" else reading.diastolic
+        points.append(MetricPoint(timestamp=reading.recorded_at, value=float(value)))
     return _sorted_points(points)

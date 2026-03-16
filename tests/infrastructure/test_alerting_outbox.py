@@ -1,15 +1,15 @@
 """Tests for alerting outbox."""
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from care_pilot.features.safety.domain.alerts.models import AlertMessage
-from care_pilot.platform.persistence import SQLiteRepository
 from care_pilot.platform.messaging.alert_outbox import (
     AlertPublisher,
     OutboxWorker,
 )
+from care_pilot.platform.persistence import SQLiteRepository
 
 
 def test_alert_publish_persists_to_outbox(tmp_path) -> None:
@@ -116,7 +116,7 @@ def test_outbox_worker_persists_incremented_attempt_count_on_success(
     repo.reschedule_alert(
         message.alert_id,
         "in_app",
-        next_attempt_at=datetime.now(timezone.utc) - timedelta(seconds=1),
+        next_attempt_at=datetime.now(UTC) - timedelta(seconds=1),
         attempt_count=1,
         error="first attempt failed",
     )

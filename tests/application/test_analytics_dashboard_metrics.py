@@ -5,10 +5,11 @@ from datetime import datetime
 from apps.api.carepilot_api.routers._companion_views import (
     build_analytics_summary,
 )
-from care_pilot.features.reminders.domain import ReminderEvent
+
 from care_pilot.features.companion.core.health.analytics import (
     EngagementMetrics,
 )
+from care_pilot.features.reminders.domain import ReminderEvent
 
 
 def test_dashboard_metrics_summary() -> None:

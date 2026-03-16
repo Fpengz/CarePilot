@@ -7,15 +7,15 @@ for downstream use cases.
 
 from typing import Any, cast
 
-from care_pilot.features.profiles.domain.models import (
-    AccountRole,
-    ProfileMode,
-    UserProfile,
-)
 from care_pilot.features.profiles.domain.health_profile import (
     HealthProfileRepository,
     build_user_profile_from_health_profile,
     default_health_profile,
+)
+from care_pilot.features.profiles.domain.models import (
+    AccountRole,
+    ProfileMode,
+    UserProfile,
 )
 from care_pilot.platform.observability.tooling.domain.authorization import (
     default_profile_mode_for_role,

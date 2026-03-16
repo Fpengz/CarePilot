@@ -9,8 +9,8 @@ from __future__ import annotations
 from typing import Any, cast
 
 import logfire
-from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.meals.domain.models import MealEvent, MealState
+from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.safety.domain.exceptions import SafetyViolation
 from care_pilot.features.safety.domain.ports import DrugInteractionRepository
 from care_pilot.features.safety.domain.thresholds import (

@@ -9,17 +9,17 @@ import hashlib
 import hmac
 import os
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from uuid import uuid4
 
 from care_pilot.config.app import AppSettings as Settings
 from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
+from care_pilot.platform.auth.demo_defaults import build_demo_user_seeds
+from care_pilot.platform.observability.setup import get_logger
 from care_pilot.platform.observability.tooling.domain.authorization import (
     scopes_for_account_role,
 )
-from care_pilot.platform.auth.demo_defaults import build_demo_user_seeds
-from care_pilot.platform.observability.setup import get_logger
 
 logger = get_logger(__name__)
 
@@ -152,8 +152,8 @@ class InMemoryAuthStore:
             self._login_failures.pop(email, None)
             return False
         if lockout_until.tzinfo is None:
-            lockout_until = lockout_until.replace(tzinfo=timezone.utc)
-        if datetime.now(timezone.utc) >= lockout_until.astimezone(timezone.utc):
+            lockout_until = lockout_until.replace(tzinfo=UTC)
+        if datetime.now(UTC) >= lockout_until.astimezone(UTC):
             state["lockout_until"] = None
             state["failed_count"] = 0
             state["window_started_at"] = None
@@ -161,7 +161,7 @@ class InMemoryAuthStore:
         return True
 
     def record_login_failure(self, email: str) -> bool:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         state = self._login_failures.get(email)
         if state is None:
             state = {
@@ -176,9 +176,9 @@ class InMemoryAuthStore:
             try:
                 window_started = datetime.fromisoformat(window_started_raw)
                 if window_started.tzinfo is None:
-                    window_started = window_started.replace(tzinfo=timezone.utc)
+                    window_started = window_started.replace(tzinfo=UTC)
                 reset_window = (
-                    now - window_started.astimezone(timezone.utc)
+                    now - window_started.astimezone(UTC)
                 ).total_seconds() > self._login_failure_window_seconds
             except ValueError:
                 reset_window = True
@@ -215,7 +215,7 @@ class InMemoryAuthStore:
             "event_type": event_type,
             "email": email,
             "user_id": user_id,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "metadata": dict(metadata or {}),
         }
         self._auth_audit_events.insert(0, event)
@@ -284,7 +284,7 @@ class InMemoryAuthStore:
             "profile_mode": user.profile_mode,
             "scopes": scopes_for_account_role(user.account_role),
             "display_name": user.display_name,
-            "issued_at": datetime.now(timezone.utc).isoformat(),
+            "issued_at": datetime.now(UTC).isoformat(),
             "subject_user_id": user.user_id,
             "active_household_id": None,
         }
@@ -305,9 +305,9 @@ class InMemoryAuthStore:
             self.destroy_session(session_id)
             return None
         if issued_at.tzinfo is None:
-            issued_at = issued_at.replace(tzinfo=timezone.utc)
+            issued_at = issued_at.replace(tzinfo=UTC)
         age_seconds = (
-            datetime.now(timezone.utc) - issued_at.astimezone(timezone.utc)
+            datetime.now(UTC) - issued_at.astimezone(UTC)
         ).total_seconds()
         if age_seconds > self._session_ttl_seconds:
             self.destroy_session(session_id)

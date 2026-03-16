@@ -7,15 +7,15 @@ No I/O, no persistence — callers supply the ``ReportInput`` and receive
 structured ``BiomarkerReading`` / ``ClinicalProfileSnapshot`` results.
 """
 
+import logging
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
     ReportInput,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ def parse_report_input(report_input: ReportInput) -> list[BiomarkerReading]:
             BiomarkerReading(
                 name=canonical_name,
                 value=value,
-                measured_at=datetime.now(timezone.utc),
+                measured_at=datetime.now(UTC),
                 source_doc_id="uploaded_report",
             )
         )

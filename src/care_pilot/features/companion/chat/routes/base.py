@@ -6,6 +6,7 @@ route handlers that enrich chat context.
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 from care_pilot.agent.chat.schemas import ChatRouteLabel

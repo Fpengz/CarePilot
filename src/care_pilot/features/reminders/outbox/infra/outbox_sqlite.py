@@ -7,9 +7,9 @@ This module implements the outbox repository used by the reminder service.
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, Optional
 
 from care_pilot.features.reminders.outbox.enums import ReminderType
 from care_pilot.features.reminders.outbox.models import ReminderEvent
@@ -124,7 +124,7 @@ class SQLiteOutboxRepository:
             for row in rows
         ]
 
-    def mark_sent(self, event_id: str, provider_msg_id: Optional[str] = None) -> None:
+    def mark_sent(self, event_id: str, provider_msg_id: str | None = None) -> None:
         with self._connect() as conn:
             conn.execute(
                 """
@@ -149,7 +149,7 @@ class SQLiteOutboxRepository:
                 (reason, event_id),
             )
 
-    def retry_failed(self, *, event_id: Optional[str] = None) -> int:
+    def retry_failed(self, *, event_id: str | None = None) -> int:
         with self._connect() as conn:
             if event_id:
                 cursor = conn.execute(
@@ -170,7 +170,7 @@ class SQLiteOutboxRepository:
                     """)
             return cursor.rowcount
 
-    def get_event_status(self, event_id: str) -> Optional[dict[str, str | None]]:
+    def get_event_status(self, event_id: str) -> dict[str, str | None] | None:
         with self._connect() as conn:
             row = conn.execute(
                 """

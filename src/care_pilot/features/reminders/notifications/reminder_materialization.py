@@ -20,14 +20,13 @@ records via ``AppContext``.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, TypeAlias, cast
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
 from care_pilot.core.contracts.notifications import (
     ReminderNotificationRepository,
 )
-from care_pilot.features.safety.domain.alerts import AlertMessage
 from care_pilot.features.reminders.domain import ReminderEvent
 from care_pilot.features.reminders.domain.models import (
     NotificationPreferenceScope,
@@ -37,14 +36,16 @@ from care_pilot.features.reminders.domain.models import (
     ReminderNotificationPreference,
     ScheduledReminderNotification,
 )
+from care_pilot.features.safety.domain.alerts import AlertMessage
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence import AppStoreBackend
 from care_pilot.platform.persistence.domain_stores import ReminderStore
-from care_pilot.platform.observability import get_logger
 
 if TYPE_CHECKING:
     from apps.api.carepilot_api.deps import AppContext
 
 from apps.api.carepilot_api.errors import build_api_error
+
 from care_pilot.core.contracts.api import (
     ReminderNotificationEndpointListResponse,
     ReminderNotificationEndpointRequest,
@@ -63,7 +64,7 @@ logger = get_logger(__name__)
 SYSTEM_DEFAULT_CHANNEL = "in_app"
 SYSTEM_DEFAULT_OFFSET_MINUTES = 0
 
-ReminderNotificationRepo: TypeAlias = (
+type ReminderNotificationRepo = (
     ReminderNotificationRepository | AppStoreBackend | ReminderStore
 )
 
@@ -95,7 +96,7 @@ def resolve_notification_preferences(
     enabled_defaults = [item for item in defaults if item.enabled]
     if enabled_defaults:
         return enabled_defaults
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return [
         ReminderNotificationPreference(
             id=f"system-default-{user_id}",
@@ -137,7 +138,7 @@ def materialize_reminder_notifications(
     created: list[ScheduledReminderNotification] = []
     for preference in preferences:
         trigger_at = reminder_event.scheduled_at + timedelta(minutes=preference.offset_minutes)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         scheduled = ScheduledReminderNotification(
             id=str(uuid4()),
             reminder_id=reminder_event.id,
@@ -204,7 +205,7 @@ def dispatch_due_reminder_notifications(
     max_late_minutes: int | None = None,
 ) -> list[QueuedReminderNotification]:
     """Lease due scheduled notifications and enqueue them into the alert outbox."""
-    dispatch_at = now or datetime.now(timezone.utc)
+    dispatch_at = now or datetime.now(UTC)
     due_items = repository.lease_due_scheduled_notifications(now=dispatch_at, limit=limit)
     if not due_items:
         return []
@@ -356,7 +357,7 @@ __all__ = [
 
 def list_notification_preferences(
     *,
-    context: "AppContext",
+    context: AppContext,
     user_id: str,
     scope_type: str | None = None,
     scope_key: str | None = None,
@@ -384,14 +385,14 @@ def list_notification_preferences(
 
 def replace_notification_preferences(
     *,
-    context: "AppContext",
+    context: AppContext,
     user_id: str,
     scope_type: str,
     scope_key: str | None,
     rules: list[ReminderNotificationPreferenceRuleRequest],
 ) -> ReminderNotificationPreferenceListResponse:
     seen: set[tuple[str, int]] = set()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     preferences: list[ReminderNotificationPreference] = []
     for rule in rules:
         key = (rule.channel, rule.offset_minutes)
@@ -439,7 +440,7 @@ def replace_notification_preferences(
 
 def list_reminder_notification_schedules(
     *,
-    context: "AppContext",
+    context: AppContext,
     user_id: str,
     reminder_id: str,
 ) -> ScheduledReminderNotificationListResponse:
@@ -470,7 +471,7 @@ def list_reminder_notification_schedules(
 
 
 def list_notification_endpoints(
-    *, context: "AppContext", user_id: str
+    *, context: AppContext, user_id: str
 ) -> ReminderNotificationEndpointListResponse:
     items = context.stores.reminders.list_reminder_notification_endpoints(user_id=user_id)
     return ReminderNotificationEndpointListResponse(
@@ -489,12 +490,12 @@ def list_notification_endpoints(
 
 def replace_notification_endpoints(
     *,
-    context: "AppContext",
+    context: AppContext,
     user_id: str,
     endpoints: list[ReminderNotificationEndpointRequest],
 ) -> ReminderNotificationEndpointListResponse:
     seen: set[str] = set()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows: list[ReminderNotificationEndpoint] = []
     for endpoint in endpoints:
         if endpoint.channel in seen:
@@ -534,7 +535,7 @@ def replace_notification_endpoints(
 
 def list_reminder_notification_logs(
     *,
-    context: "AppContext",
+    context: AppContext,
     user_id: str,
     reminder_id: str,
 ) -> ReminderNotificationLogListResponse:

@@ -7,6 +7,8 @@ snippets safely with a configurable timeout.
 
 from __future__ import annotations
 
+import contextlib
+
 from e2b_code_interpreter import Sandbox
 
 
@@ -24,7 +26,7 @@ class CodeAgent:
         sandbox on completion.
         """
         if not self._api_key:
-            raise EnvironmentError(
+            raise OSError(
                 "E2B_API_KEY is not configured. "
                 "Set it in the API runtime configuration before calling CodeAgent."
             )
@@ -62,7 +64,5 @@ class CodeAgent:
 
         finally:
             if sandbox is not None:
-                try:
+                with contextlib.suppress(Exception):
                     sandbox.kill()
-                except Exception:
-                    pass

@@ -19,10 +19,20 @@ from care_pilot.features.companion.core.health.models import (
 )
 from care_pilot.features.meals.domain import meal_display_name, meal_nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.profiles.domain.models import MealSlot, UserProfile
 from care_pilot.features.profiles.domain.health_profile import (
     compute_bmi,
     compute_profile_completeness,
+)
+from care_pilot.features.profiles.domain.models import MealSlot, UserProfile
+from care_pilot.features.recommendations.domain.canonical_food_matching import (
+    normalize_text,
+)
+from care_pilot.features.recommendations.domain.context import (
+    _apply_affinity_update,
+    _ensure_snapshot,
+    _now,
+    _snapshot_from_history,  # noqa: F401 — re-exported for callers that import from engine
+    build_temporal_context,  # noqa: F401 — re-exported for callers that import from engine
 )
 from care_pilot.features.recommendations.domain.models import (
     AgentProfileState,
@@ -36,16 +46,6 @@ from care_pilot.features.recommendations.domain.models import (
     SourceMealSummary,
     SubstitutionAlternative,
     SubstitutionPlan,
-)
-from care_pilot.features.recommendations.domain.context import (
-    _apply_affinity_update,
-    _ensure_snapshot,
-    _now,
-    _snapshot_from_history,  # noqa: F401 — re-exported for callers that import from engine
-    build_temporal_context,  # noqa: F401 — re-exported for callers that import from engine
-)
-from care_pilot.features.recommendations.domain.canonical_food_matching import (
-    normalize_text,
 )
 from care_pilot.features.recommendations.domain.scoring import (
     FoodItem,

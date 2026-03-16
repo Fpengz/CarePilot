@@ -1,26 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { getMealWeeklySummary } from "@/lib/api/meal-client";
-
-function isoDate(value: Date): string {
-  return value.toISOString().slice(0, 10);
-}
+import { getMealWeeklySummary, listMealRecords } from "@/lib/api/meal-client";
+import { formatDate, formatDateKey, parseDateKey } from "@/lib/time";
 
 function resolveWeekStart(today: Date): string {
   const normalized = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
   const weekday = normalized.getUTCDay();
   const daysSinceMonday = (weekday + 6) % 7;
   normalized.setUTCDate(normalized.getUTCDate() - daysSinceMonday);
-  return isoDate(normalized);
+  return formatDateKey(normalized);
+}
+
+function resolveWeekStartFromDateKey(dateKey: string): string {
+  const parsed = parseDateKey(dateKey);
+  if (!parsed) return resolveWeekStart(new Date());
+  return resolveWeekStart(parsed);
 }
 
 export function WeeklyPattern() {
-  const initialWeekStart = resolveWeekStart(new Date());
-  const [weekStart, setWeekStart] = useState(initialWeekStart);
+  const { data: latestRecords } = useQuery({
+    queryKey: ["meal-records-latest"],
+    queryFn: () => listMealRecords(1),
+  });
+
+  const latestDateKey = useMemo(() => {
+    const record = latestRecords?.records?.[0];
+    const raw = record?.captured_at ?? record?.created_at;
+    return raw ? formatDateKey(raw) : formatDateKey(new Date());
+  }, [latestRecords]);
+
+  const [weekStart, setWeekStart] = useState(() => resolveWeekStart(new Date()));
+
+  useEffect(() => {
+    if (!latestDateKey) return;
+    setWeekStart(resolveWeekStartFromDateKey(latestDateKey));
+  }, [latestDateKey]);
 
   const { data: summary } = useQuery({
     queryKey: ["meal-weekly-summary", weekStart],
@@ -45,7 +63,7 @@ export function WeeklyPattern() {
             type="date"
             value={weekStart}
             onChange={(event) => setWeekStart(event.target.value)}
-            max={isoDate(new Date())}
+            max={latestDateKey ?? formatDateKey(new Date())}
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -66,7 +84,7 @@ export function WeeklyPattern() {
                 .sort(([left], [right]) => left.localeCompare(right))
                 .map(([day, values]) => (
                   <div key={day} className="data-list-row sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-sm font-medium">{day}</div>
+                    <div className="text-sm font-medium">{formatDate(day)}</div>
                     <div className="app-muted text-xs">
                       {values.meal_count} meal(s) • {Math.round(values.calories)} kcal
                     </div>

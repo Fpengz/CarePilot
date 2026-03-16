@@ -7,8 +7,9 @@ aggregation, and record construction used by meal workflows.
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -22,23 +23,23 @@ from care_pilot.features.meals.domain import (
     PortionReference,
     RawFoodSourceRecord,
 )
-from care_pilot.features.recommendations.domain.canonical_food_matching import (
-    normalize_text,
-    rank_food_candidates,
-)
 from care_pilot.features.meals.domain.models import (
     GlycemicIndexLevel,
     ImageInput,
     Ingredient,
     LocalizationDetails,
-    NutritionRiskProfile,
     MealState,
     Nutrition,
+    NutritionRiskProfile,
     PortionSize,
     ValidatedMealEvent,
     VisionResult,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.recommendations.domain.canonical_food_matching import (
+    normalize_text,
+    rank_food_candidates,
+)
 
 _UNIT_GRAMS = {
     "bowl": 400.0,
@@ -525,15 +526,13 @@ def build_meal_record(
     if isinstance(image_input, ImageInput):
         raw = image_input.metadata.get("multi_item_count")
         if raw is not None:
-            try:
+            with contextlib.suppress(ValueError):
                 multi_item_count = max(multi_item_count, int(raw))
-            except ValueError:
-                pass
     del request_id
     return MealRecognitionRecord(
         id=str(uuid4()),
         user_id=user_id,
-        captured_at=datetime.now(timezone.utc),
+        captured_at=datetime.now(UTC),
         source=getattr(image_input, "source", "unknown"),
         meal_state=vision_result.primary_state,
         meal_perception=vision_result.perception,
@@ -588,7 +587,7 @@ def log_meal_from_text(
         image_quality="unknown",
         uncertainties=[],
     )
-    default_time = captured_at or datetime.now(timezone.utc)
+    default_time = captured_at or datetime.now(UTC)
     primary_state = MealState(
         dish_name=labels[0].title(),
         confidence_score=0.6,

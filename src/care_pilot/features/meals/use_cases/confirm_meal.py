@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from care_pilot.features.meals.deps import MealDeps
 from care_pilot.features.meals.domain.models import MealCandidateRecord
@@ -29,7 +29,7 @@ def confirm_meal_candidate(
     if record.confirmation_status != "pending":
         raise MealCandidateInvalidStateError("meal candidate already resolved")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if action == "skip":
         updated = record.model_copy(update={"confirmation_status": "skipped", "skipped_at": now})
         deps.stores.meals.save_meal_candidate(updated)

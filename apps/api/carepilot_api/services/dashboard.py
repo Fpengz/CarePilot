@@ -7,11 +7,14 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from statistics import mean
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
 
+from care_pilot.features.companion.core.health.blood_pressure import build_bp_chart_points
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
+    BloodPressureReading,
     HealthProfileRecord,
     MedicationAdherenceEvent,
 )
@@ -20,10 +23,13 @@ from care_pilot.features.meals.domain.models import (
     ValidatedMealEvent,
 )
 from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.platform.persistence.health_metrics import ChatHealthMetricsRepository
 
 from ..deps import AppContext
 from ..schemas import (
     DashboardAlertResponse,
+    DashboardBloodPressureChartResponse,
+    DashboardBloodPressurePointResponse,
     DashboardBucket,
     DashboardChartsResponse,
     DashboardInsightsResponse,
@@ -38,6 +44,8 @@ from ..schemas import (
     DashboardSummaryMetricResponse,
     DashboardSummaryResponse,
 )
+
+_HEALTH_METRICS = ChatHealthMetricsRepository()
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,8 +71,8 @@ class _ResolvedRange:
         )
 
 
-def _start_of_day(value: date) -> datetime:
-    return datetime.combine(value, time.min, tzinfo=UTC)
+def _start_of_day(value: date, timezone_name: str) -> datetime:
+    return datetime.combine(value, time.min, tzinfo=ZoneInfo(timezone_name))
 
 
 def _end_of_day(value: date) -> datetime:
@@ -136,14 +144,14 @@ def _comparison_range(current: _ResolvedRange) -> _ResolvedRange:
     )
 
 
-def _bucket_start(value: datetime, bucket: DashboardBucket) -> datetime:
-    ts = value.astimezone(UTC)
+def _bucket_start(value: datetime, bucket: DashboardBucket, timezone_name: str) -> datetime:
+    ts = value.astimezone(ZoneInfo(timezone_name))
     if bucket == "hour":
         return ts.replace(minute=0, second=0, microsecond=0)
     if bucket == "day":
         return ts.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = _start_of_week(ts.date())
-    return _start_of_day(week_start)
+    return datetime.combine(week_start, time.min, tzinfo=ZoneInfo(timezone_name))
 
 
 def _bucket_end(start: datetime, bucket: DashboardBucket) -> datetime:
@@ -163,17 +171,20 @@ def _bucket_label(start: datetime, bucket: DashboardBucket) -> str:
     return f"{start.strftime('%b %d')} - {week_end.strftime('%b %d')}"
 
 
-def _series_windows(current: _ResolvedRange) -> list[datetime]:
+def _series_windows(current: _ResolvedRange, *, timezone_name: str) -> list[datetime]:
     if current.bucket == "hour":
-        anchor = _start_of_day(current.start)
+        anchor = _start_of_day(current.start, timezone_name)
         return [anchor + timedelta(hours=hour) for hour in range(24)]
     if current.bucket == "day":
         anchor = current.start
-        return [_start_of_day(anchor + timedelta(days=offset)) for offset in range(current.days)]
+        return [
+            _start_of_day(anchor + timedelta(days=offset), timezone_name)
+            for offset in range(current.days)
+        ]
 
     windows: list[datetime] = []
-    cursor = _start_of_day(_start_of_week(current.start))
-    final = _start_of_day(_start_of_week(current.end))
+    cursor = _start_of_day(_start_of_week(current.start), timezone_name)
+    final = _start_of_day(_start_of_week(current.end), timezone_name)
     while cursor <= final:
         windows.append(cursor)
         cursor += timedelta(days=7)
@@ -185,8 +196,10 @@ def _filter_profiles(
     *,
     start: date,
     end: date,
+    timezone_name: str,
 ) -> list[NutritionRiskProfile]:
-    return [item for item in profiles if start <= item.captured_at.astimezone(UTC).date() <= end]
+    tz = ZoneInfo(timezone_name)
+    return [item for item in profiles if start <= item.captured_at.astimezone(tz).date() <= end]
 
 
 def _filter_events(
@@ -195,11 +208,13 @@ def _filter_events(
     start: date,
     end: date,
     accessor: str,
+    timezone_name: str,
 ) -> list:
     out = []
+    tz = ZoneInfo(timezone_name)
     for item in events:
         value = getattr(item, accessor)
-        if start <= value.astimezone(UTC).date() <= end:
+        if start <= value.astimezone(tz).date() <= end:
             out.append(item)
     return out
 
@@ -245,10 +260,11 @@ def _build_calorie_chart(
     profiles: list[NutritionRiskProfile],
     *,
     calorie_target: float,
+    timezone_name: str,
 ) -> DashboardMetricChartResponse:
     totals: dict[datetime, float] = defaultdict(float)
     for item in profiles:
-        totals[_bucket_start(item.captured_at, bucket)] += float(item.calories)
+        totals[_bucket_start(item.captured_at, bucket, timezone_name)] += float(item.calories)
     points = [
         DashboardSeriesPointResponse(
             bucket_start=start,
@@ -266,12 +282,13 @@ def _build_macro_chart(
     windows: list[datetime],
     bucket: DashboardBucket,
     profiles: list[NutritionRiskProfile],
+    timezone_name: str,
 ) -> DashboardMacroChartResponse:
     totals: dict[datetime, dict[str, float]] = defaultdict(
         lambda: {"protein": 0.0, "carbs": 0.0, "fat": 0.0, "calories": 0.0}
     )
     for item in profiles:
-        bucket_key = _bucket_start(item.captured_at, bucket)
+        bucket_key = _bucket_start(item.captured_at, bucket, timezone_name)
         totals[bucket_key]["protein"] += float(item.protein_g)
         totals[bucket_key]["carbs"] += float(item.carbs_g)
         totals[bucket_key]["fat"] += float(item.fat_g)
@@ -295,10 +312,11 @@ def _build_risk_chart(
     windows: list[datetime],
     bucket: DashboardBucket,
     profiles: list[NutritionRiskProfile],
+    timezone_name: str,
 ) -> DashboardMetricChartResponse:
     grouped: dict[datetime, list[float]] = defaultdict(list)
     for item in profiles:
-        grouped[_bucket_start(item.captured_at, bucket)].append(_risk_score(item))
+        grouped[_bucket_start(item.captured_at, bucket, timezone_name)].append(_risk_score(item))
     points = [
         DashboardSeriesPointResponse(
             bucket_start=start,
@@ -315,10 +333,11 @@ def _build_adherence_chart(
     windows: list[datetime],
     bucket: DashboardBucket,
     events: list[MedicationAdherenceEvent],
+    timezone_name: str,
 ) -> DashboardMetricChartResponse:
     grouped: dict[datetime, dict[str, int]] = defaultdict(lambda: {"taken": 0, "total": 0})
     for item in events:
-        bucket_key = _bucket_start(item.scheduled_at, bucket)
+        bucket_key = _bucket_start(item.scheduled_at, bucket, timezone_name)
         grouped[bucket_key]["total"] += 1
         if item.status == "taken":
             grouped[bucket_key]["taken"] += 1
@@ -340,15 +359,36 @@ def _build_adherence_chart(
 
 def _build_meal_timing_chart(
     meals: list[ValidatedMealEvent],
+    timezone_name: str,
 ) -> DashboardMealTimingChartResponse:
     counts = [0] * 24
+    tz = ZoneInfo(timezone_name)
     for meal in meals:
-        counts[meal.captured_at.astimezone(UTC).hour] += 1
+        counts[meal.captured_at.astimezone(tz).hour] += 1
     bins = [
         DashboardMealTimingBinResponse(hour=hour, label=f"{hour:02d}:00", count=count)
         for hour, count in enumerate(counts)
     ]
     return DashboardMealTimingChartResponse(title="Meal Timing Distribution", bins=bins)
+
+
+def _build_bp_chart(
+    readings: list[BloodPressureReading],
+    *,
+    start: date,
+    end: date,
+    bucket: DashboardBucket,
+    timezone_name: str,
+) -> DashboardBloodPressureChartResponse:
+    bp_bucket = "day" if bucket in {"hour", "day"} else "week"
+    points = build_bp_chart_points(
+        readings, start=start, end=end, timezone_name=timezone_name, bucket=bp_bucket
+    )
+    return DashboardBloodPressureChartResponse(
+        title="Blood Pressure Trend",
+        bucket=bucket,
+        points=[DashboardBloodPressurePointResponse.model_validate(item) for item in points],
+    )
 
 
 def _average_daily_calories(profiles: list[NutritionRiskProfile], days: int) -> float:
@@ -555,6 +595,7 @@ def get_dashboard_overview(
     from_date: date | None = None,
     to_date: date | None = None,
 ) -> DashboardOverviewResponse:
+    timezone_name = context.settings.app.timezone
     current = _resolve_range(range_key=range_key, from_date=from_date, to_date=to_date)
     comparison = _comparison_range(current)
 
@@ -568,29 +609,41 @@ def get_dashboard_overview(
     all_reminders = context.stores.reminders.list_reminder_events(user_id)
     all_meals = context.stores.meals.list_validated_meal_events(user_id)
     readings = context.stores.biomarkers.list_biomarker_readings(user_id)
+    bp_readings = _HEALTH_METRICS.list_blood_pressure_readings(user_id=user_id)
 
-    current_profiles = _filter_profiles(all_profiles, start=current.start, end=current.end)
-    previous_profiles = _filter_profiles(all_profiles, start=comparison.start, end=comparison.end)
+    current_profiles = _filter_profiles(
+        all_profiles, start=current.start, end=current.end, timezone_name=timezone_name
+    )
+    previous_profiles = _filter_profiles(
+        all_profiles, start=comparison.start, end=comparison.end, timezone_name=timezone_name
+    )
     current_adherence = _filter_events(
         all_adherence,
         start=current.start,
         end=current.end,
         accessor="scheduled_at",
+        timezone_name=timezone_name,
     )
     previous_adherence = _filter_events(
         all_adherence,
         start=comparison.start,
         end=comparison.end,
         accessor="scheduled_at",
+        timezone_name=timezone_name,
     )
     current_reminders = _filter_events(
         all_reminders,
         start=current.start,
         end=current.end,
         accessor="scheduled_at",
+        timezone_name=timezone_name,
     )
     current_meals = _filter_events(
-        all_meals, start=current.start, end=current.end, accessor="captured_at"
+        all_meals,
+        start=current.start,
+        end=current.end,
+        accessor="captured_at",
+        timezone_name=timezone_name,
     )
 
     summary = _build_summary(
@@ -602,18 +655,32 @@ def get_dashboard_overview(
         calorie_target=calorie_target,
         days=current.days,
     )
-    windows = _series_windows(current)
+    windows = _series_windows(current, timezone_name=timezone_name)
     charts = DashboardChartsResponse(
         calories=_build_calorie_chart(
             windows,
             current.bucket,
             current_profiles,
             calorie_target=calorie_target,
+            timezone_name=timezone_name,
         ),
-        macros=_build_macro_chart(windows, current.bucket, current_profiles),
-        glycemic_risk=_build_risk_chart(windows, current.bucket, current_profiles),
-        adherence=_build_adherence_chart(windows, current.bucket, current_adherence),
-        meal_timing=_build_meal_timing_chart(current_meals),
+        macros=_build_macro_chart(
+            windows, current.bucket, current_profiles, timezone_name=timezone_name
+        ),
+        glycemic_risk=_build_risk_chart(
+            windows, current.bucket, current_profiles, timezone_name=timezone_name
+        ),
+        adherence=_build_adherence_chart(
+            windows, current.bucket, current_adherence, timezone_name=timezone_name
+        ),
+        meal_timing=_build_meal_timing_chart(current_meals, timezone_name=timezone_name),
+        blood_pressure=_build_bp_chart(
+            bp_readings,
+            start=current.start,
+            end=current.end,
+            bucket=current.bucket,
+            timezone_name=timezone_name,
+        ),
     )
     return DashboardOverviewResponse(
         range=current.to_response(),

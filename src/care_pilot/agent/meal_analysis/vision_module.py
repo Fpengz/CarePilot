@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
 
-from pydantic_ai import Agent
 from PIL import Image, UnidentifiedImageError
+from pydantic_ai import Agent
 
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
 from care_pilot.agent.runtime.inference_types import (
@@ -32,13 +32,11 @@ from care_pilot.features.meals.domain.models import (
 )
 from care_pilot.features.meals.domain.normalization import (
     build_clarification_response,
+    build_meal_record,
+    normalize_vision_result,
     perception_to_meal_state,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.meals.domain.normalization import (
-    build_meal_record,
-    normalize_vision_result,
-)
 from care_pilot.features.recommendations.domain.canonical_food_matching import (
     build_default_canonical_food_records,
 )
@@ -283,7 +281,7 @@ class HawkerVisionModule:
             destination = "unknown"
             try:
                 destination = LLMFactory.describe_model_destination(
-                    getattr(self.inference_engine, "model")
+                    self.inference_engine.model
                 )
             except Exception:  # noqa: BLE001
                 destination = "unknown"
@@ -344,13 +342,13 @@ class HawkerVisionModule:
                 )
             else:
                 result = await self.agent.run(prompt)
-            perception = cast(MealPerception, getattr(result, "output"))
+            perception = cast(MealPerception, result.output)
             raw = perception.model_dump_json()
 
         destination = "unknown"
         try:
             destination = LLMFactory.describe_model_destination(
-                getattr(self.inference_engine, "model")
+                self.inference_engine.model
             )
         except Exception:  # noqa: BLE001
             destination = "unknown"

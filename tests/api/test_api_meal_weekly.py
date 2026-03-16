@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from apps.api.carepilot_api.main import create_app
@@ -75,7 +75,7 @@ def test_meal_weekly_summary_returns_rollup(
     _seed_meal(
         app,
         meal_id="meal_w_1",
-        captured_at=datetime(2026, 3, 2, 8, tzinfo=timezone.utc),
+        captured_at=datetime(2026, 3, 2, 8, tzinfo=UTC),
         calories=600,
         sugar_g=9,
         sodium_mg=900,
@@ -83,7 +83,7 @@ def test_meal_weekly_summary_returns_rollup(
     _seed_meal(
         app,
         meal_id="meal_w_2",
-        captured_at=datetime(2026, 3, 4, 12, tzinfo=timezone.utc),
+        captured_at=datetime(2026, 3, 4, 12, tzinfo=UTC),
         calories=700,
         sugar_g=11,
         sodium_mg=1100,

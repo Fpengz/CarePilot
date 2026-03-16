@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
+from care_pilot.agent.emotion.schemas import (
+    EmotionInferenceResult,
+)
 from care_pilot.features.companion.emotion.ports import (
     ASRPort,
+    ContextFeaturePort,
     FusionPort,
     SpeechEmotionPort,
     TextEmotionPort,
-    ContextFeaturePort,
-)
-from care_pilot.agent.emotion.schemas import (
-    EmotionInferenceResult,
 )
 
 

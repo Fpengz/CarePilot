@@ -7,8 +7,8 @@ per-channel capabilities.  Transport adapters call
 
 from pydantic import BaseModel
 
-from care_pilot.features.safety.domain.alerts.models import AlertMessage
 from care_pilot.core.contracts.agent_envelopes import PresentationMessage
+from care_pilot.features.safety.domain.alerts.models import AlertMessage
 
 
 class ChannelCapability(BaseModel):

@@ -4,7 +4,7 @@ Provide a WhatsApp reminder notification adapter stub.
 This module defines the WhatsApp channel adapter placeholder for future wiring.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.platform.messaging.channels.base import ChannelResult
@@ -26,6 +26,6 @@ class WhatsAppChannel:
         return ChannelResult(
             channel=self.name,
             success=True,
-            delivered_at=datetime.now(timezone.utc),
+            delivered_at=datetime.now(UTC),
             destination="whatsapp://stub",
         )

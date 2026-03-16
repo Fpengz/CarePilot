@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from care_pilot.features.reminders.domain.models import (
     ReminderActionRecord,
@@ -46,8 +46,8 @@ def test_structured_reminder_repository_round_trip(tmp_path) -> None:
         id="occ_001",
         reminder_definition_id=definition.id,
         user_id="user_001",
-        scheduled_for=datetime(2026, 3, 14, 8, 0, tzinfo=timezone.utc),
-        trigger_at=datetime(2026, 3, 14, 8, 0, tzinfo=timezone.utc),
+        scheduled_for=datetime(2026, 3, 14, 8, 0, tzinfo=UTC),
+        trigger_at=datetime(2026, 3, 14, 8, 0, tzinfo=UTC),
         status="scheduled",
     )
     saved_occurrence = repo.save_reminder_occurrence(occurrence)
@@ -62,7 +62,7 @@ def test_structured_reminder_repository_round_trip(tmp_path) -> None:
         reminder_definition_id="def_001",
         user_id="user_001",
         action="taken",
-        acted_at=datetime(2026, 3, 14, 8, 5, tzinfo=timezone.utc),
+        acted_at=datetime(2026, 3, 14, 8, 5, tzinfo=UTC),
     )
     repo.append_reminder_action(action)
     repo.update_reminder_occurrence_status(

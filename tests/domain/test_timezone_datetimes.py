@@ -1,6 +1,6 @@
 """Tests for timezone datetimes."""
 
-from datetime import timezone
+from datetime import UTC
 
 from care_pilot.features.companion.core.health.models import ReportInput
 from care_pilot.features.meals.domain.models import MealState, Nutrition
@@ -35,14 +35,14 @@ def test_meal_record_default_captured_at_is_timezone_aware() -> None:
     )
 
     assert record.captured_at.tzinfo is not None
-    assert record.captured_at.utcoffset() == timezone.utc.utcoffset(record.captured_at)
+    assert record.captured_at.utcoffset() == UTC.utcoffset(record.captured_at)
 
 
 def test_report_input_default_uploaded_at_is_timezone_aware() -> None:
     report = ReportInput(source="pasted_text", text="HbA1c: 6.7")
 
     assert report.uploaded_at.tzinfo is not None
-    assert report.uploaded_at.utcoffset() == timezone.utc.utcoffset(report.uploaded_at)
+    assert report.uploaded_at.utcoffset() == UTC.utcoffset(report.uploaded_at)
 
 
 def test_report_parser_measured_at_is_timezone_aware() -> None:
@@ -50,4 +50,4 @@ def test_report_parser_measured_at_is_timezone_aware() -> None:
     assert readings
     assert readings[0].measured_at is not None
     assert readings[0].measured_at.tzinfo is not None
-    assert readings[0].measured_at.utcoffset() == timezone.utc.utcoffset(readings[0].measured_at)
+    assert readings[0].measured_at.utcoffset() == UTC.utcoffset(readings[0].measured_at)

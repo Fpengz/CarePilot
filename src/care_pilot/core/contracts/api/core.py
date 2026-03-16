@@ -8,44 +8,29 @@ emotion, profile, and household endpoints.
 from __future__ import annotations
 
 # ruff: noqa: F401
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime, timezone
 from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, EmailStr, Field, RootModel
 
-from care_pilot.features.safety.domain.alerts.models import OutboxState
-from care_pilot.features.companion.core.health.models import (
-    BiomarkerReading,
-    ClinicalProfileSnapshot,
-)
-from care_pilot.features.profiles.domain.models import (
-    AccountRole,
-    MealScheduleWindow,
-    MealSlot,
-    ProfileMode,
-)
-from care_pilot.features.reminders.domain.models import ReminderEvent
-from care_pilot.features.recommendations.domain.models import (
-    InteractionEventType,
-    RecommendationOutput,
-)
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
 from care_pilot.agent.emotion.schemas import (
     EmotionContextFeatures,
     EmotionFusionOutput,
     EmotionLabel,
-    EmotionRuntimeHealth,
-    TextEmotionBranchResult,
-    SpeechEmotionBranchResult,
-    FusionTrace,
     EmotionProductState,
+    EmotionRuntimeHealth,
+    FusionTrace,
+    SpeechEmotionBranchResult,
+    TextEmotionBranchResult,
 )
-from care_pilot.features.meals.domain.models import VisionResult
-
-from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
+from care_pilot.features.companion.core.health.analytics import (
+    EngagementMetrics,
+)
+from care_pilot.features.companion.core.health.models import (
+    BiomarkerReading,
+    ClinicalProfileSnapshot,
+)
 from care_pilot.features.households.schemas import (  # noqa: F401
     HouseholdActiveUpdateRequest,
     HouseholdActiveUpdateResponse,
@@ -63,19 +48,33 @@ from care_pilot.features.households.schemas import (  # noqa: F401
     HouseholdResponse,
     HouseholdUpdateRequest,
 )
+from care_pilot.features.meals.domain.models import VisionResult
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.profiles.domain.models import (
+    AccountRole,
+    MealScheduleWindow,
+    MealSlot,
+    ProfileMode,
+)
 from care_pilot.features.profiles.schemas import (  # noqa: F401
     HealthProfileCompletenessResponse,
     HealthProfileCondition,
     HealthProfileMedication,
     HealthProfileResponseItem,
 )
+from care_pilot.features.recommendations.domain.models import (
+    InteractionEventType,
+    RecommendationOutput,
+)
+from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.features.safety.domain.alerts.models import OutboxState
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolExecutionResult,
 )
 
-JsonScalar: TypeAlias = str | int | float | bool | None
-JsonObjectValue: TypeAlias = JsonScalar | list[JsonScalar]
-JsonValue: TypeAlias = JsonObjectValue | dict[str, JsonObjectValue]
+type JsonScalar = str | int | float | bool | None
+type JsonObjectValue = JsonScalar | list[JsonScalar]
+type JsonValue = JsonObjectValue | dict[str, JsonObjectValue]
 
 
 class ApiError(BaseModel):
@@ -108,7 +107,7 @@ class SessionUser(BaseModel):
 
 class SessionInfo(BaseModel):
     session_id: str
-    issued_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    issued_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class AuthLoginResponse(BaseModel):

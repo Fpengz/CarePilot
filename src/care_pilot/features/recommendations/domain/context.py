@@ -8,7 +8,7 @@ orchestration layer in ``engine.py``.
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from care_pilot.features.meals.domain import meal_display_name
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _current_slot(now: datetime | None = None) -> MealSlot:

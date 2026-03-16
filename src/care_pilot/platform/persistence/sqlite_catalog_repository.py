@@ -7,11 +7,13 @@ recommendations, and suggestions.
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, cast
 
 from care_pilot.features.recommendations.domain.canonical_food_matching import (
     find_food_by_name as _find_food_by_name_impl,
+)
+from care_pilot.features.recommendations.domain.canonical_food_matching import (
     normalize_text,
 )
 from care_pilot.features.recommendations.domain.models import (
@@ -38,7 +40,7 @@ class SQLiteCatalogRepository:
                 """,
                 (
                     user_id,
-                    datetime.now(timezone.utc).isoformat(),
+                    datetime.now(UTC).isoformat(),
                     json.dumps(payload),
                 ),
             )

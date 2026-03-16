@@ -10,12 +10,6 @@ from __future__ import annotations
 import asyncio
 import uuid
 
-from care_pilot.features.companion.chat.search_adapter import SearchAgent
-from care_pilot.features.companion.chat.routes.base import RouteResult
-from care_pilot.features.companion.chat.routes.drug_route import DrugRoute
-from care_pilot.features.companion.chat.routes.food_route import FoodRoute
-from care_pilot.features.companion.chat.routes.code_route import CodeRoute
-from care_pilot.features.companion.chat.code_adapter import CodeAgent
 from care_pilot.agent.chat.schemas import (
     ChatClassificationOutput,
     ChatRouteLabel,
@@ -25,6 +19,12 @@ from care_pilot.agent.runtime.inference_types import (
     InferenceModality,
     InferenceRequest,
 )
+from care_pilot.features.companion.chat.code_adapter import CodeAgent
+from care_pilot.features.companion.chat.routes.base import RouteResult
+from care_pilot.features.companion.chat.routes.code_route import CodeRoute
+from care_pilot.features.companion.chat.routes.drug_route import DrugRoute
+from care_pilot.features.companion.chat.routes.food_route import FoodRoute
+from care_pilot.features.companion.chat.search_adapter import SearchAgent
 from care_pilot.platform.observability import get_logger
 
 _CLASSIFICATION_PROMPT = """\

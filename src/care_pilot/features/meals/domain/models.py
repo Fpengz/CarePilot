@@ -6,8 +6,8 @@ This module contains core meal data models and helpers.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import re
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Literal
 from uuid import uuid4
@@ -309,8 +309,8 @@ class CandidateMealEvent(BaseModel):
 class MealCandidateRecord(BaseModel):
     candidate_id: str = Field(default_factory=lambda: uuid4().hex)
     user_id: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    captured_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     confirmation_status: ConfirmationStatus = "pending"
     candidate_event: CandidateMealEvent
     observation_id: str | None = None
@@ -320,8 +320,8 @@ class MealCandidateRecord(BaseModel):
     meal_text: str | None = None
     confirmed_at: datetime | None = None
     skipped_at: datetime | None = None
-    validated_event: "ValidatedMealEvent | None" = None
-    nutrition_profile: "NutritionRiskProfile | None" = None
+    validated_event: ValidatedMealEvent | None = None
+    nutrition_profile: NutritionRiskProfile | None = None
 
 
 class VisionResult(BaseModel):
@@ -368,7 +368,7 @@ class DietaryClaims(BaseModel):
 
 
 class ContextSnapshot(BaseModel):
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     meal_window: str | None = None
     location_cluster: str | None = None
     vendor_candidates: list[str] = Field(default_factory=list)
@@ -379,7 +379,7 @@ class ContextSnapshot(BaseModel):
 class RawObservationBundle(BaseModel):
     observation_id: str = Field(default_factory=lambda: uuid4().hex)
     user_id: str
-    captured_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     source: Literal["upload", "camera", "unknown"] = "unknown"
     vision_result: VisionResult
     dietary_claims: DietaryClaims
@@ -392,7 +392,7 @@ class RawObservationBundle(BaseModel):
 class ValidatedMealEvent(BaseModel):
     event_id: str = Field(default_factory=lambda: uuid4().hex)
     user_id: str
-    captured_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     meal_name: str
     consumption_fraction: float = Field(default=1.0, ge=0.0, le=1.0)
     canonical_items: list[NormalizedMealItem] = Field(default_factory=list)
@@ -406,7 +406,7 @@ class NutritionRiskProfile(BaseModel):
     profile_id: str = Field(default_factory=lambda: uuid4().hex)
     event_id: str
     user_id: str
-    captured_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     calories: float = Field(default=0.0, ge=0.0)
     carbs_g: float = Field(default=0.0, ge=0.0)
     sugar_g: float = Field(default=0.0, ge=0.0)

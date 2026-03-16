@@ -7,8 +7,8 @@ and adherence metrics.
 
 from __future__ import annotations
 
-from datetime import date, datetime, time, timezone
 import re
+from datetime import UTC, date, datetime, time
 from time import perf_counter
 from typing import TYPE_CHECKING, cast
 from uuid import uuid4
@@ -16,16 +16,15 @@ from zoneinfo import ZoneInfo
 
 if TYPE_CHECKING:
     from apps.api.carepilot_api.deps import AppContext
-from care_pilot.core.errors import build_api_error
 from care_pilot.core.contracts.api.meal_health import (
     MedicationAdherenceEventCreateRequest,
     MedicationAdherenceEventEnvelopeResponse,
     MedicationAdherenceEventResponse,
+    MedicationAdherenceMetricsResponse,
+    MedicationAdherenceTotalsResponse,
     MedicationDraftDeleteResponse,
     MedicationDraftInstructionUpdateRequest,
     MedicationIntakeConfirmRequest,
-    MedicationAdherenceMetricsResponse,
-    MedicationAdherenceTotalsResponse,
     MedicationIntakeResponse,
     MedicationIntakeSourceResponse,
     MedicationIntakeTextRequest,
@@ -40,6 +39,12 @@ from care_pilot.core.contracts.api.meal_health import (
 from care_pilot.core.contracts.api.notifications import (
     ScheduledReminderNotificationItemResponse,
 )
+from care_pilot.core.errors import build_api_error
+from care_pilot.features.companion.core.health.models import (
+    MedicationAdherenceEvent,
+    MedicationAdherenceMetrics,
+)
+from care_pilot.features.medications.domain import generate_daily_reminders
 from care_pilot.features.medications.intake import (
     build_plain_text_source,
     extract_upload_source,
@@ -51,12 +56,8 @@ from care_pilot.features.medications.intake.models import (
     MedicationIntakeParseResult,
     NormalizedMedicationInstruction,
 )
-from care_pilot.features.medications.domain import generate_daily_reminders
-from care_pilot.features.companion.core.health.models import (
-    MedicationAdherenceEvent,
-    MedicationAdherenceMetrics,
-)
-from care_pilot.features.reminders.domain.models import MedicationRegimen
+from care_pilot.features.profiles.domain.models import MealSlot
+from care_pilot.features.reminders.domain.models import MedicationRegimen, ReminderEvent
 from care_pilot.features.reminders.notifications.reminder_materialization import (
     cancel_reminder_notifications,
     materialize_reminder_notifications,
@@ -65,14 +66,12 @@ from care_pilot.features.workflows.trace_emitter import (
     WorkflowTraceContext,
     WorkflowTraceEmitter,
 )
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowName,
-)
 from care_pilot.platform.auth.session_context import (
     build_user_profile_from_session,
 )
-from care_pilot.features.profiles.domain.models import MealSlot
-from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.platform.observability.workflows.domain.models import (
+    WorkflowName,
+)
 
 _DOSAGE_TEXT_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|iu|unit|units)\b", re.IGNORECASE)
 _GENERIC_MEDICATION_NAMES = {
@@ -122,7 +121,7 @@ def _to_adherence_response(
 def _to_notification_response(
     item: object,
 ) -> ScheduledReminderNotificationItemResponse:
-    payload = getattr(item, "model_dump")(mode="json") if hasattr(item, "model_dump") else item
+    payload = item.model_dump(mode="json") if hasattr(item, "model_dump") else item
     return ScheduledReminderNotificationItemResponse.model_validate(payload)
 
 
@@ -655,8 +654,8 @@ def adherence_metrics_for_session(
     from_date: date | None,
     to_date: date | None,
 ) -> MedicationAdherenceMetricsResponse:
-    start_at = datetime.combine(from_date, time.min, tzinfo=timezone.utc) if from_date else None
-    end_at = datetime.combine(to_date, time.max, tzinfo=timezone.utc) if to_date else None
+    start_at = datetime.combine(from_date, time.min, tzinfo=UTC) if from_date else None
+    end_at = datetime.combine(to_date, time.max, tzinfo=UTC) if to_date else None
     events = context.stores.medications.list_medication_adherence_events(
         user_id=user_id,
         start_at=start_at,

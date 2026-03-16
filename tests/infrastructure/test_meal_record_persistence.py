@@ -7,9 +7,9 @@ from care_pilot.features.meals.domain import (
     MealNutritionProfile,
     MealPerception,
 )
-from care_pilot.platform.persistence import SQLiteRepository
 from care_pilot.features.meals.domain.models import MealState, Nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.platform.persistence import SQLiteRepository
 
 
 def test_meal_record_round_trip(tmp_path) -> None:

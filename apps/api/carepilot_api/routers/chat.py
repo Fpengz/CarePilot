@@ -10,7 +10,8 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from typing import Literal, Mapping, TypedDict, cast
+from collections.abc import Mapping
+from typing import Literal, TypedDict, cast
 from uuid import uuid4
 
 from fastapi import (
@@ -25,19 +26,15 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from ..deps import AppContext, chat_deps, meal_deps
-from ..routes_shared import current_session, get_context, require_action
-from care_pilot.agent.emotion.schemas import EmotionInferenceResult
+from apps.api.carepilot_api.services.companion_orchestration import (
+    load_companion_inputs,
+)
 from care_pilot.agent.emotion import (
     EmotionAgentDisabledError,
     EmotionSpeechDisabledError,
 )
-from care_pilot.features.meals.domain.normalization import log_meal_from_text
-from care_pilot.features.companion.core.snapshot import build_case_snapshot
-from apps.api.carepilot_api.services.companion_orchestration import (
-    load_companion_inputs,
-)
-from care_pilot.platform.persistence import AppStores
+from care_pilot.agent.emotion.schemas import EmotionInferenceResult
+from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
 from care_pilot.features.companion.chat.meal_intent import (
     classify_meal_log_intent,
     heuristic_meal_log_intent,
@@ -49,8 +46,13 @@ from care_pilot.features.companion.chat.memory_store import (
     record_chat_turn,
 )
 from care_pilot.features.companion.core.chat_context import format_chat_context
-from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
+from care_pilot.features.companion.core.snapshot import build_case_snapshot
+from care_pilot.features.meals.domain.normalization import log_meal_from_text
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.persistence import AppStores
+
+from ..deps import AppContext, chat_deps, meal_deps
+from ..routes_shared import current_session, get_context, require_action
 
 router = APIRouter(tags=["chat"])
 logger = get_logger(__name__)
@@ -111,6 +113,7 @@ def _build_extra_context(ctx: AppContext, session: dict[str, object]) -> str:
         adherence_events=inputs.adherence_events,
         symptoms=inputs.symptoms,
         biomarker_readings=inputs.biomarker_readings,
+        blood_pressure_readings=inputs.blood_pressure_readings,
         clinical_snapshot=inputs.clinical_snapshot,
     )
     return format_chat_context(

@@ -24,7 +24,7 @@ class EmotionRuntimeConfig:
     model_cache_dir: str | None
 
     @classmethod
-    def from_settings(cls, settings: Settings) -> "EmotionRuntimeConfig":
+    def from_settings(cls, settings: Settings) -> EmotionRuntimeConfig:
         return cls(
             text_model_id=settings.emotion.text_model_id,
             speech_model_id=settings.emotion.speech_model_id,

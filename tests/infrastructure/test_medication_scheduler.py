@@ -2,6 +2,10 @@
 
 from datetime import date, datetime
 
+from care_pilot.features.medications.domain import (
+    generate_daily_reminders,
+    mark_meal_confirmation,
+)
 from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
@@ -12,10 +16,6 @@ from care_pilot.features.reminders.domain.models import (
     ReminderEvent,
 )
 from care_pilot.platform.persistence import SQLiteRepository
-from care_pilot.features.medications.domain import (
-    generate_daily_reminders,
-    mark_meal_confirmation,
-)
 
 
 def _user() -> UserProfile:

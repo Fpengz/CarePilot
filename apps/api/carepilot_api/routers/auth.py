@@ -17,6 +17,7 @@ from fastapi import (
     Response,
 )
 
+from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
 from care_pilot.platform.auth.use_cases import (
     MIN_PASSWORD_LENGTH,
     DuplicateEmailError,
@@ -26,7 +27,6 @@ from care_pilot.platform.auth.use_cases import (
     login_and_create_session,
     signup_member_and_create_session,
 )
-from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
 
 from ..routes_shared import (
     SESSION_COOKIE,

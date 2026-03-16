@@ -7,9 +7,10 @@ report services for orchestration.
 
 from fastapi import APIRouter, Depends, Request
 
+from care_pilot.features.reports.service import parse_report_for_session
+
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import ReportParseRequest, ReportParseResponse
-from care_pilot.features.reports.service import parse_report_for_session
 
 router = APIRouter(tags=["reports"])
 

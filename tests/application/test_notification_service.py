@@ -1,15 +1,10 @@
 """Tests for notification service."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.safety.domain.alerts.models import (
-    AlertDeliveryResult,
-    AlertMessage,
-)
 from care_pilot.features.reminders.domain.models import ReminderEvent
-from care_pilot.platform.persistence import SQLiteRepository
 from care_pilot.features.reminders.notifications.alert_dispatch import (
     dispatch_reminder,
     dispatch_reminder_async,
@@ -17,6 +12,11 @@ from care_pilot.features.reminders.notifications.alert_dispatch import (
     send_push,
     trigger_alert,
 )
+from care_pilot.features.safety.domain.alerts.models import (
+    AlertDeliveryResult,
+    AlertMessage,
+)
+from care_pilot.platform.persistence import SQLiteRepository
 
 
 def _event() -> ReminderEvent:
@@ -117,7 +117,7 @@ def test_trigger_alert_returns_only_current_alert_deliveries(monkeypatch, tmp_pa
     repo.reschedule_alert(
         old_alert.alert_id,
         "in_app",
-        datetime.now(timezone.utc) - timedelta(seconds=5),
+        datetime.now(UTC) - timedelta(seconds=5),
         attempt_count=0,
         error="",
     )

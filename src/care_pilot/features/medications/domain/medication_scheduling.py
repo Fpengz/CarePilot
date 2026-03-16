@@ -7,11 +7,15 @@ confirmation handling.
 
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta, timezone
-from zoneinfo import ZoneInfo
+import logging
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Protocol
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
+from care_pilot.features.companion.core.health.analytics import (
+    EngagementMetrics,
+)
 from care_pilot.features.profiles.domain.models import (
     MealScheduleWindow,
     UserProfile,
@@ -19,10 +23,6 @@ from care_pilot.features.profiles.domain.models import (
 from care_pilot.features.reminders.domain.models import (
     MedicationRegimen,
     ReminderEvent,
-)
-import logging
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def _parse_hhmm(value: str) -> time:
 def _at(d: date, hhmm: str, *, timezone_name: str) -> datetime:
     t = _parse_hhmm(hhmm)
     local = datetime.combine(d, t)
-    return local.replace(tzinfo=ZoneInfo(timezone_name)).astimezone(timezone.utc)
+    return local.replace(tzinfo=ZoneInfo(timezone_name)).astimezone(UTC)
 
 
 def _find_slot_window(user: UserProfile, slot: str) -> MealScheduleWindow | None:
@@ -174,11 +174,11 @@ def mark_meal_confirmation(
     if confirmed:
         event.meal_confirmation = "yes"
         event.status = "acknowledged"
-        event.ack_at = confirmed_at or datetime.now(timezone.utc)
+        event.ack_at = confirmed_at or datetime.now(UTC)
     else:
         event.meal_confirmation = "no"
         event.status = "missed"
-        event.ack_at = confirmed_at or datetime.now(timezone.utc)
+        event.ack_at = confirmed_at or datetime.now(UTC)
 
     repository.save_reminder_event(event)
     logger.info(

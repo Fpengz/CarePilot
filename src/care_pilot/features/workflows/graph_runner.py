@@ -23,7 +23,7 @@ TState = TypeVar("TState")
 TResult = TypeVar("TResult")
 
 
-async def run_graph(
+async def run_graph[TState](
     *,
     workflow_name: str,
     correlation_id: str,
@@ -48,7 +48,7 @@ async def run_graph(
     timer = emitter.step_timer()
     emitter.workflow_started(ctx, payload=payload_started)
     try:
-        if hasattr(graph, "run") and callable(getattr(graph, "run")):
+        if hasattr(graph, "run") and callable(graph.run):
             result = await graph.run(state, deps=deps)
             emitter.workflow_completed(
                 ctx,

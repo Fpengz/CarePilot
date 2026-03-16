@@ -8,15 +8,17 @@ personalization and engagement workflows.
 from __future__ import annotations
 
 from care_pilot.features.companion.core.domain import CaseSnapshot
+from care_pilot.features.companion.core.health.blood_pressure import (
+    summarize_blood_pressure,
+)
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
+    BloodPressureReading,
     ClinicalProfileSnapshot,
     HealthProfileRecord,
     MedicationAdherenceEvent,
     SymptomCheckIn,
 )
-from care_pilot.features.profiles.domain.models import UserProfile
-from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.meals.domain import (
     meal_confidence,
     meal_display_name,
@@ -24,6 +26,8 @@ from care_pilot.features.meals.domain import (
     meal_nutrition,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.profiles.domain.models import UserProfile
+from care_pilot.features.reminders.domain.models import ReminderEvent
 
 
 def _meal_is_risky(record: MealRecognitionRecord) -> bool:
@@ -75,6 +79,7 @@ def build_case_snapshot(
     adherence_events: list[MedicationAdherenceEvent],
     symptoms: list[SymptomCheckIn],
     biomarker_readings: list[BiomarkerReading],
+    blood_pressure_readings: list[BloodPressureReading],
     clinical_snapshot: ClinicalProfileSnapshot | None,
 ) -> CaseSnapshot:
     biomarker_summary = (
@@ -101,6 +106,9 @@ def build_case_snapshot(
         medication_names = [item.name for item in health_profile.medications]
 
     latest_meal_name = meal_display_name(meals[-1]) if meals else None
+    bp_summary = summarize_blood_pressure(blood_pressure_readings, conditions=condition_names)
+    if bp_summary and bp_summary.has_high_bp:
+        active_risk_flags.append("high_bp")
     return CaseSnapshot(
         user_id=user_profile.id,
         profile_name=user_profile.name,
@@ -117,4 +125,5 @@ def build_case_snapshot(
         average_symptom_severity=_average_symptom_severity(symptoms),
         biomarker_summary=biomarker_summary,
         active_risk_flags=sorted(set(active_risk_flags)),
+        blood_pressure_summary=bp_summary,
     )

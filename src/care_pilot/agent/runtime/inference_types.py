@@ -5,7 +5,7 @@ This module contains typed request/response contracts used by the agent
 runtime for model execution.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -45,7 +45,7 @@ class InferenceResponse(BaseModel):
     provider_metadata: ProviderMetadata
     warnings: list[str] = Field(default_factory=list)
     raw_reference: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class InferenceHealth(BaseModel):

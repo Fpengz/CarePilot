@@ -4,10 +4,10 @@ from fastapi import FastAPI
 
 from .alerts import router as alerts_router
 from .auth import router as auth_router
+from .chat import router as chat_router
 from .clinical_cards import router as clinical_cards_router
 from .companion import router as companion_router
 from .dashboard import router as dashboard_router
-from .chat import router as chat_router
 from .emotions import router as emotions_router
 from .health import router as health_router
 from .health_profiles import router as health_profiles_router

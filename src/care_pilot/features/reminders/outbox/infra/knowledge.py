@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class JsonDrugKnowledgeRepository:
@@ -99,12 +99,12 @@ class JsonDrugKnowledgeRepository:
 
         return best
 
-    def get_drug_info(self, query: str) -> Optional[dict[str, Any]]:
+    def get_drug_info(self, query: str) -> dict[str, Any] | None:
         query = query.strip()
         if not query:
             return None
 
-        best_record: Optional[dict[str, Any]] = None
+        best_record: dict[str, Any] | None = None
         best_score = -1
 
         for record in self._records:
@@ -126,5 +126,5 @@ class EmptyDrugKnowledgeRepository:
     Null-object fallback repository.
     """
 
-    def get_drug_info(self, query: str) -> Optional[dict[str, Any]]:
+    def get_drug_info(self, query: str) -> dict[str, Any] | None:
         return None

@@ -9,17 +9,18 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 
+from apps.api.carepilot_api.services.emotion_session import (
+    get_emotion_health,
+    infer_speech_for_session,
+    infer_text_for_session,
+)
+
 from ..deps import emotion_deps
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
     EmotionHealthResponse,
     EmotionInferenceResponse,
     EmotionTextRequest,
-)
-from apps.api.carepilot_api.services.emotion_session import (
-    get_emotion_health,
-    infer_speech_for_session,
-    infer_text_for_session,
 )
 
 router = APIRouter(tags=["emotions"])

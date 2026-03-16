@@ -26,11 +26,11 @@ from care_pilot.features.meals.domain.models import (
     RawObservationBundle,
     ValidatedMealEvent,
 )
-from care_pilot.features.meals.presenters.api import build_meal_analysis_output
 from care_pilot.features.meals.domain.normalization import (
     build_meal_record,
     normalize_vision_result,
 )
+from care_pilot.features.meals.presenters.api import build_meal_analysis_output
 from care_pilot.features.workflows.trace_emitter import (
     WorkflowTraceContext,
     WorkflowTraceEmitter,

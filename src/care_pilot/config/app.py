@@ -17,8 +17,8 @@ from care_pilot.config.llm import LLMSettings
 from care_pilot.config.runtime import (
     APISettings,
     AuthSettings,
-    ChatSettings,
     ChannelSettings,
+    ChatSettings,
     EmotionSettings,
     MemorySettings,
     ObservabilitySettings,
@@ -56,7 +56,7 @@ class AppSettings(BaseModel):
     workers: WorkerSettings = Field(default_factory=WorkerSettings)
 
     @model_validator(mode="after")
-    def normalize_and_validate(self) -> "AppSettings":
+    def normalize_and_validate(self) -> AppSettings:
         # Provider credential checks are enforced in LLMSettings._validate_provider_credentials.
         # Capability key/type checks are enforced by the dict[LLMCapability, ...] annotation.
         # This validator handles cross-group (multi-section) business rules only.
@@ -97,7 +97,7 @@ class AppSettings(BaseModel):
         return self.llm.effective_google_api_key
 
     @classmethod
-    def from_environment(cls) -> "AppSettings":
+    def from_environment(cls) -> AppSettings:
         return cls(
             app=AppIdentitySettings(),
             api=APISettings(),

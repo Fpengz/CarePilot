@@ -3,8 +3,8 @@
 import pytest
 
 from care_pilot.agent.meal_analysis.vision_module import HawkerVisionModule
-from care_pilot.platform.persistence import SQLiteRepository
 from care_pilot.features.meals.domain.models import ImageInput
+from care_pilot.platform.persistence import SQLiteRepository
 
 
 @pytest.mark.anyio

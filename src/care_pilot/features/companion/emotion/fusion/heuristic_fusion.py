@@ -4,16 +4,16 @@ Heuristic-based emotion fusion.
 
 from __future__ import annotations
 
-from care_pilot.features.companion.emotion.ports import FusionPort
 from care_pilot.agent.emotion.schemas import (
     EmotionContextFeatures,
+    EmotionFusionOutput,
     EmotionLabel,
     EmotionProductState,
-    TextEmotionBranchResult,
-    SpeechEmotionBranchResult,
-    EmotionFusionOutput,
     FusionTrace,
+    SpeechEmotionBranchResult,
+    TextEmotionBranchResult,
 )
+from care_pilot.features.companion.emotion.ports import FusionPort
 
 
 def _product_state_for_label(label: EmotionLabel, *, trend: str) -> EmotionProductState:
@@ -45,12 +45,12 @@ class HeuristicFusion(FusionPort):
         context: EmotionContextFeatures,
     ) -> tuple[EmotionFusionOutput, FusionTrace]:
         text_scores = (
-            text_branch.emotion_scores if text_branch else {label: 0.0 for label in EmotionLabel}
+            text_branch.emotion_scores if text_branch else dict.fromkeys(EmotionLabel, 0.0)
         )
         speech_scores = (
             speech_branch.emotion_scores
             if speech_branch
-            else {label: 0.0 for label in EmotionLabel}
+            else dict.fromkeys(EmotionLabel, 0.0)
         )
 
         # Weighted average of logits/probabilities

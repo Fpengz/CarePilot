@@ -7,7 +7,7 @@ import { formatDateTime } from "@/lib/time";
 import type { ReminderDefinitionApi, ReminderOccurrenceApi } from "@/lib/types";
 
 function statusTone(status: ReminderOccurrenceApi["status"]) {
-  if (status === "completed" || status === "taken") return "status-chip-teal";
+  if (status === "completed") return "status-chip-teal";
   if (status === "missed" || status === "skipped") return "status-chip-rose";
   if (status === "snoozed") return "status-chip-amber";
   return "status-chip-slate";
@@ -74,7 +74,7 @@ export function ReminderListItem({
       <div className="flex items-start gap-4">
         <div className={cn(
           "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10",
-          occurrence ? (occurrence.status === "completed" || occurrence.status === "taken" ? "bg-health-teal-soft text-health-teal" : "bg-health-rose-soft text-health-rose") : "bg-health-amber-soft text-health-amber"
+          occurrence ? (occurrence.status === "completed" ? "bg-health-teal-soft text-health-teal" : "bg-health-rose-soft text-health-rose") : "bg-health-amber-soft text-health-amber"
         )}>
           {occurrence ? <Clock className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
         </div>

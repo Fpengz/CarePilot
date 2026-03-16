@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import difflib
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Optional, Protocol
+from datetime import UTC, datetime
+from typing import Any, Protocol
 
 from care_pilot.features.reminders.outbox.enums import (
     MetricType,
@@ -33,14 +33,14 @@ from care_pilot.features.reminders.outbox.models import (
 class ReminderRepository(Protocol):
     def save_reminder(self, reminder: Reminder) -> None: ...
     def update_state(self, reminder_id: str, state: ReminderState) -> None: ...
-    def get_reminder(self, reminder_id: str) -> Optional[dict[str, Any]]: ...
+    def get_reminder(self, reminder_id: str) -> dict[str, Any] | None: ...
     def log_confirmation(self, reminder_id: str, is_taken: bool, timestamp: str) -> None: ...
 
 
 class OutboxRepository(Protocol):
     def enqueue(self, event: ReminderEvent) -> None: ...
     def fetch_due_events(self, now: str, limit: int = 50) -> list[ReminderEvent]: ...
-    def mark_sent(self, event_id: str, provider_msg_id: Optional[str] = None) -> None: ...
+    def mark_sent(self, event_id: str, provider_msg_id: str | None = None) -> None: ...
     def mark_failed(self, event_id: str, reason: str) -> None: ...
 
 
@@ -48,14 +48,14 @@ class MetricReadingRepository(Protocol):
     def log_metric_reading(self, reading: MetricReading) -> None: ...
     def get_last_metric_reading(
         self, user_id: str, metric_type: str
-    ) -> Optional[dict[str, Any]]: ...
+    ) -> dict[str, Any] | None: ...
 
 
 class FoodRecordRepository(Protocol):
     def log_food_record(self, record: FoodRecord) -> None: ...
     def get_latest_food_record(
-        self, user_id: str, meal_type: Optional[str] = None
-    ) -> Optional[dict[str, Any]]: ...
+        self, user_id: str, meal_type: str | None = None
+    ) -> dict[str, Any] | None: ...
 
 
 class DeliveryPort(Protocol):
@@ -63,7 +63,7 @@ class DeliveryPort(Protocol):
 
 
 class DrugKnowledgePort(Protocol):
-    def get_drug_info(self, query: str) -> Optional[dict[str, Any]]: ...
+    def get_drug_info(self, query: str) -> dict[str, Any] | None: ...
 
 
 @dataclass(slots=True)
@@ -82,10 +82,10 @@ class ReminderService:
         user_id: str,
         reminder_type: ReminderType,
         message: str,
-        scheduled_at: Optional[str] = None,
-        payload: Optional[dict[str, Any]] = None,
-        correlation_id: Optional[str] = None,
-        channel: Optional[str] = None,
+        scheduled_at: str | None = None,
+        payload: dict[str, Any] | None = None,
+        correlation_id: str | None = None,
+        channel: str | None = None,
     ) -> Reminder:
         reminder = Reminder.create(
             user_id=user_id,
@@ -131,8 +131,8 @@ class ReminderService:
 
     def generate_medication_message(
         self,
-        drug_info: Optional[dict[str, Any]],
-        custom_dose: Optional[str] = None,
+        drug_info: dict[str, Any] | None,
+        custom_dose: str | None = None,
     ) -> str:
         if not drug_info:
             return "请记得服用您的药物。"
@@ -155,11 +155,11 @@ class ReminderService:
         *,
         drug_query: str,
         user_id: str,
-        custom_dose: Optional[str] = None,
-        scheduled_at: Optional[str] = None,
-        correlation_id: Optional[str] = None,
-        channel: Optional[str] = None,
-    ) -> Optional[Reminder]:
+        custom_dose: str | None = None,
+        scheduled_at: str | None = None,
+        correlation_id: str | None = None,
+        channel: str | None = None,
+    ) -> Reminder | None:
         drug_info = self.drug_knowledge.get_drug_info(drug_query)
         if not drug_info:
             return None
@@ -187,13 +187,13 @@ class ReminderService:
         user_id: str,
         metric_type: MetricType | str,
         value: float,
-        measured_at: Optional[str] = None,
+        measured_at: str | None = None,
         source: str = "manual",
-        custom_rule: Optional[ThresholdRule] = None,
-        raw_payload: Optional[dict[str, Any]] = None,
-        correlation_id: Optional[str] = None,
-        channel: Optional[str] = None,
-    ) -> Optional[Reminder]:
+        custom_rule: ThresholdRule | None = None,
+        raw_payload: dict[str, Any] | None = None,
+        correlation_id: str | None = None,
+        channel: str | None = None,
+    ) -> Reminder | None:
         metric_enum = (
             metric_type if isinstance(metric_type, MetricType) else MetricType(metric_type)
         )
@@ -247,10 +247,10 @@ class ReminderService:
         *,
         user_id: str,
         metric_type: MetricType | str,
-        scheduled_at: Optional[str] = None,
-        note: Optional[str] = None,
-        correlation_id: Optional[str] = None,
-        channel: Optional[str] = None,
+        scheduled_at: str | None = None,
+        note: str | None = None,
+        correlation_id: str | None = None,
+        channel: str | None = None,
     ) -> Reminder:
         metric_enum = (
             metric_type if isinstance(metric_type, MetricType) else MetricType(metric_type)
@@ -279,15 +279,15 @@ class ReminderService:
         user_id: str,
         metric_type: MetricType | str,
         max_gap_hours: int,
-        scheduled_at: Optional[str] = None,
-        correlation_id: Optional[str] = None,
-        channel: Optional[str] = None,
-    ) -> Optional[Reminder]:
+        scheduled_at: str | None = None,
+        correlation_id: str | None = None,
+        channel: str | None = None,
+    ) -> Reminder | None:
         metric_enum = (
             metric_type if isinstance(metric_type, MetricType) else MetricType(metric_type)
         )
         last_reading = self.metric_repo.get_last_metric_reading(user_id, metric_enum.value)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if not last_reading:
             return self.schedule_measurement_reminder(
@@ -318,8 +318,8 @@ class ReminderService:
         user_id: str,
         meal_type: str,
         foods: list[str],
-        note: Optional[str] = None,
-        recorded_at: Optional[str] = None,
+        note: str | None = None,
+        recorded_at: str | None = None,
     ) -> None:
         record = FoodRecord.create(
             user_id=user_id,
@@ -335,10 +335,10 @@ class ReminderService:
         *,
         user_id: str,
         meal_type: str,
-        scheduled_at: Optional[str] = None,
+        scheduled_at: str | None = None,
         call_agent_name: str = "饮食记录agent",
-        correlation_id: Optional[str] = None,
-        channel: Optional[str] = None,
+        correlation_id: str | None = None,
+        channel: str | None = None,
     ) -> Reminder:
         meal_cn = self._meal_label_cn(meal_type)
         message = f"请记录本次{meal_cn}饮食内容；如需分析，可调用 {call_agent_name}。"
@@ -362,12 +362,12 @@ class ReminderService:
         user_id: str,
         meal_type: str,
         max_gap_hours: int = 6,
-        scheduled_at: Optional[str] = None,
-        correlation_id: Optional[str] = None,
-        channel: Optional[str] = None,
-    ) -> Optional[Reminder]:
+        scheduled_at: str | None = None,
+        correlation_id: str | None = None,
+        channel: str | None = None,
+    ) -> Reminder | None:
         last_record = self.food_repo.get_latest_food_record(user_id, meal_type)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if not last_record:
             return self.schedule_food_record_reminder(
@@ -395,7 +395,7 @@ class ReminderService:
         *,
         food_input: str,
         user_meds: list[str],
-    ) -> Optional[dict[str, str]]:
+    ) -> dict[str, str] | None:
         if not food_input:
             return None
 
@@ -438,7 +438,7 @@ class ReminderService:
     def dispatch_due_events(
         self,
         *,
-        now: Optional[str] = None,
+        now: str | None = None,
         limit: int = 50,
     ) -> list[ReminderDispatchResult]:
         dispatch_time = now or utc_now_iso()

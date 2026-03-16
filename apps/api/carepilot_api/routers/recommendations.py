@@ -7,6 +7,13 @@ recommendation services for orchestration.
 
 from fastapi import APIRouter, Depends, Request
 
+from care_pilot.features.recommendations.service import (
+    generate_recommendation_for_session,
+    get_daily_agent_for_session,
+    get_substitutions_for_session,
+    record_interaction_for_session,
+)
+
 from ..deps import recommendation_agent_deps, recommendation_deps
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
@@ -16,12 +23,6 @@ from ..schemas import (
     RecommendationInteractionResponse,
     RecommendationSubstitutionRequest,
     RecommendationSubstitutionResponse,
-)
-from care_pilot.features.recommendations.service import (
-    generate_recommendation_for_session,
-    get_daily_agent_for_session,
-    get_substitutions_for_session,
-    record_interaction_for_session,
 )
 
 router = APIRouter(tags=["recommendations"])

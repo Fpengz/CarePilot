@@ -7,15 +7,16 @@ wrapping the inference runtime port.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
-from typing import Callable, TypeVar
+from typing import TypeVar
 
 from care_pilot.agent.emotion.schemas import (
+    EmotionInferenceResult,
+    EmotionRuntimeHealth,
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,
-    EmotionRuntimeHealth,
-    EmotionInferenceResult,
 )
 from care_pilot.features.companion.emotion.ports import EmotionInferencePort
 
@@ -34,7 +35,7 @@ class EmotionSpeechDisabledError(RuntimeError):
     """Raised when speech emotion inference is disabled via feature flag."""
 
 
-def _run_with_timeout(action: Callable[[], T], timeout_seconds: float) -> T:
+def _run_with_timeout[T](action: Callable[[], T], timeout_seconds: float) -> T:
     with ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.submit(action)
         try:

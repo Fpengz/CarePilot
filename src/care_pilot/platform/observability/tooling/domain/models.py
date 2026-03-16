@@ -4,7 +4,7 @@ Define tooling domain models.
 This module contains data models used by the tooling registry.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -70,4 +70,4 @@ class ToolExecutionResult(BaseModel):
     error: ToolExecutionError | None = None
     latency_ms: float = 0.0
     trace_metadata: dict[str, str] = Field(default_factory=dict)
-    executed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    executed_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

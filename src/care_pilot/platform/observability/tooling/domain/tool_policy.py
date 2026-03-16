@@ -6,7 +6,7 @@ This module defines policy evaluation used to authorize agent tool access.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal, TypedDict, cast
 from uuid import uuid4
 
@@ -36,7 +36,7 @@ def create_tool_policy_record(
     priority: int = 0,
     enabled: bool = True,
 ) -> ToolRolePolicyRecord:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return ToolRolePolicyRecord(
         id=f"tp-{uuid4().hex}",
         role=role,
@@ -80,7 +80,7 @@ def apply_tool_policy_patch(
         priority=priority,
         enabled=enabled,
         created_at=record.created_at,
-        updated_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(UTC),
     )
 
 

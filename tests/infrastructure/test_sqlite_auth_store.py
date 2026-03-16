@@ -1,7 +1,7 @@
 """Tests for sqlite auth store."""
 
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from care_pilot.config.app import AppSettings as Settings
 from care_pilot.platform.auth.sqlite_store import SQLiteAuthStore
@@ -51,7 +51,7 @@ def test_sqlite_auth_store_expires_sessions(tmp_path) -> None:
         conn.execute(
             "UPDATE auth_sessions SET issued_at = ? WHERE session_id = ?",
             (
-                (datetime.now(timezone.utc) - timedelta(seconds=5)).isoformat(),
+                (datetime.now(UTC) - timedelta(seconds=5)).isoformat(),
                 session_id,
             ),
         )

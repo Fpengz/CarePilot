@@ -6,14 +6,14 @@ from typing import Protocol
 
 from care_pilot.agent.emotion.schemas import (
     EmotionContextFeatures,
-    EmotionTextAgentInput,
-    EmotionSpeechAgentInput,
+    EmotionFusionOutput,
     EmotionInferenceResult,
     EmotionRuntimeHealth,
-    TextEmotionBranchResult,
-    SpeechEmotionBranchResult,
-    EmotionFusionOutput,
+    EmotionSpeechAgentInput,
+    EmotionTextAgentInput,
     FusionTrace,
+    SpeechEmotionBranchResult,
+    TextEmotionBranchResult,
 )
 
 

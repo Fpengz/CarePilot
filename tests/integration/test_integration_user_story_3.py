@@ -3,13 +3,13 @@
 from datetime import datetime
 
 from care_pilot.features.companion.core.health.models import ReportInput
+from care_pilot.features.meals.domain.models import MealState, Nutrition
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
-from care_pilot.features.meals.domain.models import MealState, Nutrition
-from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.recommendations.domain.meal_recommendations import (
     generate_recommendation,
 )

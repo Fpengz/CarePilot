@@ -9,8 +9,8 @@ from __future__ import annotations
 from care_pilot.features.companion.core.use_cases import (  # noqa: F401
     CompanionRuntimeState,
     CompanionStateInputs,
-    build_companion_today_bundle,
     build_companion_runtime_state,
+    build_companion_today_bundle,
     run_companion_interaction,
 )
 

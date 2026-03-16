@@ -1,5 +1,6 @@
 """Module for test api typed contracts."""
 
+from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
 from care_pilot.core.contracts.api import (
     AlertTimelineItemResponse,
     AlertTimelineResponse,
@@ -23,18 +24,16 @@ from care_pilot.core.contracts.api import (
     WorkflowTimelineEventPayloadResponse,
     WorkflowTimelineEventResponse,
 )
-
-from care_pilot.features.reminders.domain import ReminderEvent
-from care_pilot.features.recommendations.domain import RecommendationOutput
 from care_pilot.features.companion.core.health.analytics import (
     EngagementMetrics,
 )
-from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
 from care_pilot.features.meals.domain.models import (
     NutritionRiskProfile,
     RawObservationBundle,
     ValidatedMealEvent,
 )
+from care_pilot.features.recommendations.domain import RecommendationOutput
+from care_pilot.features.reminders.domain import ReminderEvent
 
 
 def test_meal_contract_responses_use_typed_models() -> None:

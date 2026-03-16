@@ -1,6 +1,6 @@
 """Tests for telegram channel dev."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib import request
 
 from care_pilot.config.app import get_settings
@@ -61,7 +61,7 @@ def test_telegram_payload_formats_local_timezone(monkeypatch) -> None:
 
     channel = TelegramChannel()
     event = _event().model_copy(
-        update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3, tzinfo=timezone.utc)}
+        update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3, tzinfo=UTC)}
     )
     payload = channel._build_payload(event, channel._resolve_chat_id(None))
 

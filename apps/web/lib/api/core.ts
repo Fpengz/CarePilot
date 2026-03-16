@@ -39,6 +39,9 @@ import type {
   RecommendationGenerateApiResponse,
   CompanionInteractionApiResponse,
   CompanionTodayApiResponse,
+  BloodPressureSummaryEnvelopeApi,
+  BloodPressureChartApi,
+  PatientMedicalCardApi,
   ClinicianDigestEnvelopeApiResponse,
   ImpactSummaryEnvelopeApiResponse,
   ClinicalCardEnvelopeApiResponse,
@@ -203,7 +206,11 @@ function buildErrorLogPayload(error: ApiRequestError): Record<string, unknown> {
   };
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+type RequestOptions = {
+  suppressErrorLog?: boolean;
+};
+
+async function request<T>(path: string, init?: RequestInit, options?: RequestOptions): Promise<T> {
   const method = init?.method ?? "GET";
   const startedAt = performance.now();
   const bodyPreview =
@@ -222,17 +229,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     const text = await response.text();
     const error = buildApiRequestError(response, text);
-    logFrontendApi("request.error", {
-      method,
-      path,
-      status: response.status,
-      duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
-      response: FRONTEND_API_LOG_VERBOSE ? redactSensitive(parseJsonMaybe(text)) : text.slice(0, 200),
-      request_id: error.requestId,
-      correlation_id: error.correlationId,
-      error_code: error.error.code,
-      error: buildErrorLogPayload(error),
-    });
+    if (!options?.suppressErrorLog) {
+      logFrontendApi("request.error", {
+        method,
+        path,
+        status: response.status,
+        duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
+        response: FRONTEND_API_LOG_VERBOSE ? redactSensitive(parseJsonMaybe(text)) : text.slice(0, 200),
+        request_id: error.requestId,
+        correlation_id: error.correlationId,
+        error_code: error.error.code,
+        error: buildErrorLogPayload(error),
+      });
+    }
     throw error;
   }
   const json = (await response.json()) as T;
@@ -1105,6 +1114,40 @@ export async function getDashboardOverview(params?: {
 
 export async function getCompanionToday(): Promise<CompanionTodayApiResponse> {
   return request<CompanionTodayApiResponse>("/api/v1/companion/today");
+}
+
+export async function getCompanionBloodPressureSummary(): Promise<BloodPressureSummaryEnvelopeApi> {
+  return request<BloodPressureSummaryEnvelopeApi>("/api/v1/companion/blood-pressure");
+}
+
+export async function getCompanionBloodPressureChart(params?: {
+  range?: "7d" | "30d" | "3m" | "1y" | "custom";
+  from?: string;
+  to?: string;
+}): Promise<BloodPressureChartApi> {
+  const query = new URLSearchParams();
+  if (params?.range) query.set("range", params.range);
+  if (params?.from) query.set("from_date", params.from);
+  if (params?.to) query.set("to_date", params.to);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  try {
+    return await request<BloodPressureChartApi>(
+      `/api/v1/companion/blood-pressure-chart${suffix}`,
+      undefined,
+      { suppressErrorLog: true },
+    );
+  } catch {
+    return {
+      user_id: "",
+      range: params?.range ?? "30d",
+      generated_at: new Date().toISOString(),
+      points: [],
+    };
+  }
+}
+
+export async function getPatientMedicalCard(): Promise<PatientMedicalCardApi> {
+  return request<PatientMedicalCardApi>("/api/v1/companion/patient-card");
 }
 
 export async function runCompanionInteraction(payload: {

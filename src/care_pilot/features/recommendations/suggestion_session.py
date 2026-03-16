@@ -13,15 +13,13 @@ from typing import cast
 
 from apps.api.carepilot_api.deps import AppContext
 from apps.api.carepilot_api.errors import build_api_error
+
 from care_pilot.core.contracts.api import (
     SuggestionDetailResponse,
     SuggestionGenerateFromReportRequest,
     SuggestionGenerateFromReportResponse,
     SuggestionItemResponse,
     SuggestionListResponse,
-)
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
 )
 from care_pilot.features.recommendations.ports import (
     BuildUserProfileFn,
@@ -36,6 +34,9 @@ from care_pilot.features.recommendations.use_cases import (
     generate_suggestion_from_report,
     get_suggestion_for_session,
     list_suggestions_for_session,
+)
+from care_pilot.platform.auth.session_context import (
+    build_user_profile_from_session,
 )
 
 

@@ -7,7 +7,8 @@ block that can be injected into chat prompts.
 
 from __future__ import annotations
 
-from typing import Iterable, Protocol
+from collections.abc import Iterable
+from typing import Protocol
 
 from care_pilot.features.companion.core.domain import CaseSnapshot
 from care_pilot.features.companion.core.health.models import (
@@ -60,6 +61,19 @@ def format_chat_context(
         )
     if snapshot.active_risk_flags:
         lines.append(f"Active risk flags: {', '.join(snapshot.active_risk_flags)}")
+
+    if snapshot.blood_pressure_summary is not None:
+        stats = snapshot.blood_pressure_summary.stats
+        trend = snapshot.blood_pressure_summary.trend
+        lines.append(
+            "Blood pressure avg: "
+            f"{stats.avg_systolic}/{stats.avg_diastolic} mmHg "
+            f"(range {stats.min_systolic}-{stats.max_systolic} / "
+            f"{stats.min_diastolic}-{stats.max_diastolic})"
+        )
+        lines.append(
+            f"BP trend: {trend.direction} ({trend.delta_systolic:+.1f} systolic)"
+        )
 
     if snapshot.biomarker_summary:
         biomarker_items = list(snapshot.biomarker_summary.items())[:max_biomarkers]

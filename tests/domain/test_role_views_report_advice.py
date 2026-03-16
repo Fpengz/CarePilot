@@ -3,6 +3,7 @@
 from apps.api.carepilot_api.routers._companion_views import (
     build_profile_mode_report_advice_view,
 )
+
 from care_pilot.features.recommendations.domain.models import (
     RecommendationOutput,
 )

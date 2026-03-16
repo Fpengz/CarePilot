@@ -8,7 +8,7 @@ and the ``RankedCandidate`` dataclass used throughout the ranking pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from math import exp
 
 from care_pilot.features.companion.core.health.models import (
@@ -45,7 +45,7 @@ def _clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
 
 
 def _infer_slot(captured_at: datetime) -> MealSlot:
-    hour = captured_at.astimezone(timezone.utc).hour
+    hour = captured_at.astimezone(UTC).hour
     if 5 <= hour < 11:
         return "breakfast"
     if 11 <= hour < 16:

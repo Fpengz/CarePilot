@@ -6,19 +6,19 @@ This module provides auth storage backed by a SQLite database.
 
 import json
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from threading import RLock
 from typing import Any, cast
 from uuid import uuid4
 
 from care_pilot.config.app import AppSettings as Settings
 from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
-from care_pilot.platform.observability.tooling.domain.authorization import (
-    scopes_for_account_role,
-)
 from care_pilot.platform.auth.demo_defaults import build_demo_user_seeds
 from care_pilot.platform.auth.in_memory import AuthUserRecord, PasswordHasher
 from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability.tooling.domain.authorization import (
+    scopes_for_account_role,
+)
 
 logger = get_logger(__name__)
 
@@ -129,7 +129,7 @@ class SQLiteAuthStore:
                             account_role,
                             profile_mode,
                             self._hasher.hash(password),
-                            datetime.now(timezone.utc).isoformat(),
+                            datetime.now(UTC).isoformat(),
                         ),
                     )
                 conn.commit()
@@ -193,7 +193,7 @@ class SQLiteAuthStore:
                             user.account_role,
                             user.profile_mode,
                             user.password_hash,
-                            datetime.now(timezone.utc).isoformat(),
+                            datetime.now(UTC).isoformat(),
                         ),
                     )
                     conn.commit()
@@ -226,17 +226,16 @@ class SQLiteAuthStore:
         try:
             lockout_until = datetime.fromisoformat(lockout_until_raw)
         except ValueError:
-            with self._lock:
-                with self._connect() as conn:
-                    conn.execute(
-                        "DELETE FROM auth_login_failures WHERE email = ?",
-                        (email,),
-                    )
-                    conn.commit()
+            with self._lock, self._connect() as conn:
+                conn.execute(
+                    "DELETE FROM auth_login_failures WHERE email = ?",
+                    (email,),
+                )
+                conn.commit()
             return False
         if lockout_until.tzinfo is None:
-            lockout_until = lockout_until.replace(tzinfo=timezone.utc)
-        if datetime.now(timezone.utc) >= lockout_until.astimezone(timezone.utc):
+            lockout_until = lockout_until.replace(tzinfo=UTC)
+        if datetime.now(UTC) >= lockout_until.astimezone(UTC):
             with self._lock:
                 with self._connect() as conn:
                     conn.execute(
@@ -248,7 +247,7 @@ class SQLiteAuthStore:
         return True
 
     def record_login_failure(self, email: str) -> bool:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         state = self._read_failure_state(email) or {
             "failed_count": 0,
             "window_started_at": None,
@@ -260,9 +259,9 @@ class SQLiteAuthStore:
             try:
                 window_started = datetime.fromisoformat(window_started_raw)
                 if window_started.tzinfo is None:
-                    window_started = window_started.replace(tzinfo=timezone.utc)
+                    window_started = window_started.replace(tzinfo=UTC)
                 reset_window = (
-                    now - window_started.astimezone(timezone.utc)
+                    now - window_started.astimezone(UTC)
                 ).total_seconds() > self._login_failure_window_seconds
             except ValueError:
                 reset_window = True
@@ -296,10 +295,9 @@ class SQLiteAuthStore:
         return lockout_until is not None
 
     def record_login_success(self, email: str) -> None:
-        with self._lock:
-            with self._connect() as conn:
-                conn.execute("DELETE FROM auth_login_failures WHERE email = ?", (email,))
-                conn.commit()
+        with self._lock, self._connect() as conn:
+            conn.execute("DELETE FROM auth_login_failures WHERE email = ?", (email,))
+            conn.commit()
 
     def append_auth_audit_event(
         self,
@@ -321,7 +319,7 @@ class SQLiteAuthStore:
                         event_type,
                         email,
                         user_id,
-                        datetime.now(timezone.utc).isoformat(),
+                        datetime.now(UTC).isoformat(),
                         json.dumps(metadata or {}),
                     ),
                 )
@@ -344,17 +342,16 @@ class SQLiteAuthStore:
 
     def list_auth_audit_events(self, *, limit: int = 50) -> list[dict[str, Any]]:
         bounded = max(1, min(int(limit), 200))
-        with self._lock:
-            with self._connect() as conn:
-                rows = conn.execute(
-                    """
+        with self._lock, self._connect() as conn:
+            rows = conn.execute(
+                """
                     SELECT event_id, event_type, email, user_id, created_at, metadata_json
                     FROM auth_audit_events
                     ORDER BY created_at DESC
                     LIMIT ?
                     """,
-                    (bounded,),
-                ).fetchall()
+                (bounded,),
+            ).fetchall()
         return [
             {
                 "event_id": str(row["event_id"]),
@@ -389,17 +386,16 @@ class SQLiteAuthStore:
         current = self._row_to_user(cast(sqlite3.Row, row))
         new_display_name = display_name if display_name is not None else current.display_name
         new_profile_mode = profile_mode if profile_mode is not None else current.profile_mode
-        with self._lock:
-            with self._connect() as conn:
-                conn.execute(
-                    "UPDATE auth_users SET display_name = ?, profile_mode = ? WHERE user_id = ?",
-                    (new_display_name, new_profile_mode, user_id),
-                )
-                conn.execute(
-                    "UPDATE auth_sessions SET display_name = ?, profile_mode = ? WHERE user_id = ?",
-                    (new_display_name, new_profile_mode, user_id),
-                )
-                conn.commit()
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                "UPDATE auth_users SET display_name = ?, profile_mode = ? WHERE user_id = ?",
+                (new_display_name, new_profile_mode, user_id),
+            )
+            conn.execute(
+                "UPDATE auth_sessions SET display_name = ?, profile_mode = ? WHERE user_id = ?",
+                (new_display_name, new_profile_mode, user_id),
+            )
+            conn.commit()
         return AuthUserRecord(
             user_id=current.user_id,
             email=current.email,
@@ -428,13 +424,12 @@ class SQLiteAuthStore:
         user = self._row_to_user(cast(sqlite3.Row, row))
         if not self._hasher.verify(current_password, user.password_hash):
             return (False, 0)
-        with self._lock:
-            with self._connect() as conn:
-                conn.execute(
-                    "UPDATE auth_users SET password_hash = ? WHERE user_id = ?",
-                    (self._hasher.hash(new_password), user_id),
-                )
-                conn.commit()
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                "UPDATE auth_users SET password_hash = ? WHERE user_id = ?",
+                (self._hasher.hash(new_password), user_id),
+            )
+            conn.commit()
         revoked_count = self.revoke_other_sessions(user_id, keep_session_id=keep_session_id)
         return (True, revoked_count)
 
@@ -447,7 +442,7 @@ class SQLiteAuthStore:
             "profile_mode": user.profile_mode,
             "scopes": scopes_for_account_role(user.account_role),
             "display_name": user.display_name,
-            "issued_at": datetime.now(timezone.utc).isoformat(),
+            "issued_at": datetime.now(UTC).isoformat(),
             "subject_user_id": user.user_id,
             "active_household_id": None,
         }
@@ -497,12 +492,11 @@ class SQLiteAuthStore:
         }
 
     def get_session(self, session_id: str) -> dict[str, Any] | None:
-        with self._lock:
-            with self._connect() as conn:
-                row = conn.execute(
-                    "SELECT * FROM auth_sessions WHERE session_id = ?",
-                    (session_id,),
-                ).fetchone()
+        with self._lock, self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM auth_sessions WHERE session_id = ?",
+                (session_id,),
+            ).fetchone()
         if row is None:
             return None
         try:
@@ -520,9 +514,9 @@ class SQLiteAuthStore:
             self.destroy_session(session_id)
             return None
         if issued_at.tzinfo is None:
-            issued_at = issued_at.replace(tzinfo=timezone.utc)
+            issued_at = issued_at.replace(tzinfo=UTC)
         age_seconds = (
-            datetime.now(timezone.utc) - issued_at.astimezone(timezone.utc)
+            datetime.now(UTC) - issued_at.astimezone(UTC)
         ).total_seconds()
         if age_seconds > self._session_ttl_seconds:
             self.destroy_session(session_id)
@@ -530,21 +524,19 @@ class SQLiteAuthStore:
         return session
 
     def destroy_session(self, session_id: str) -> None:
-        with self._lock:
-            with self._connect() as conn:
-                conn.execute(
-                    "DELETE FROM auth_sessions WHERE session_id = ?",
-                    (session_id,),
-                )
-                conn.commit()
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                "DELETE FROM auth_sessions WHERE session_id = ?",
+                (session_id,),
+            )
+            conn.commit()
 
     def list_sessions_for_user(self, user_id: str) -> list[dict[str, Any]]:
-        with self._lock:
-            with self._connect() as conn:
-                rows = conn.execute(
-                    "SELECT * FROM auth_sessions WHERE user_id = ? ORDER BY issued_at DESC",
-                    (user_id,),
-                ).fetchall()
+        with self._lock, self._connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM auth_sessions WHERE user_id = ? ORDER BY issued_at DESC",
+                (user_id,),
+            ).fetchall()
         items: list[dict[str, Any]] = []
         for row in rows:
             session = self.get_session(str(row["session_id"]))
@@ -560,32 +552,29 @@ class SQLiteAuthStore:
         return str(user_id) if isinstance(user_id, str) else None
 
     def revoke_other_sessions(self, user_id: str, *, keep_session_id: str) -> int:
-        with self._lock:
-            with self._connect() as conn:
-                rows = conn.execute(
-                    "SELECT session_id FROM auth_sessions WHERE user_id = ? AND session_id != ?",
-                    (user_id, keep_session_id),
-                ).fetchall()
+        with self._lock, self._connect() as conn:
+            rows = conn.execute(
+                "SELECT session_id FROM auth_sessions WHERE user_id = ? AND session_id != ?",
+                (user_id, keep_session_id),
+            ).fetchall()
         session_ids = [str(row["session_id"]) for row in rows]
         if not session_ids:
             return 0
-        with self._lock:
-            with self._connect() as conn:
-                conn.executemany(
-                    "DELETE FROM auth_sessions WHERE session_id = ?",
-                    [(sid,) for sid in session_ids],
-                )
-                conn.commit()
+        with self._lock, self._connect() as conn:
+            conn.executemany(
+                "DELETE FROM auth_sessions WHERE session_id = ?",
+                [(sid,) for sid in session_ids],
+            )
+            conn.commit()
         return len(session_ids)
 
     def set_active_household_for_session(
         self, session_id: str, *, active_household_id: str | None
     ) -> dict[str, Any] | None:
-        with self._lock:
-            with self._connect() as conn:
-                conn.execute(
-                    "UPDATE auth_sessions SET active_household_id = ? WHERE session_id = ?",
-                    (active_household_id, session_id),
-                )
-                conn.commit()
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                "UPDATE auth_sessions SET active_household_id = ? WHERE session_id = ?",
+                (active_household_id, session_id),
+            )
+            conn.commit()
         return self.get_session(session_id)

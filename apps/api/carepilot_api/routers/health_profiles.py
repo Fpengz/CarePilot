@@ -7,14 +7,6 @@ health profile API services.
 
 from fastapi import APIRouter, Depends, Request
 
-from ..routes_shared import current_session, get_context
-from ..schemas import (
-    DailySuggestionsResponse,
-    HealthProfileEnvelopeResponse,
-    HealthProfileOnboardingEnvelopeResponse,
-    HealthProfileOnboardingPatchRequest,
-    HealthProfileUpdateRequest,
-)
 from care_pilot.features.profiles.use_cases import (
     complete_profile_onboarding,
     get_daily_suggestions,
@@ -22,6 +14,15 @@ from care_pilot.features.profiles.use_cases import (
     get_profile_onboarding,
     patch_profile,
     patch_profile_onboarding,
+)
+
+from ..routes_shared import current_session, get_context
+from ..schemas import (
+    DailySuggestionsResponse,
+    HealthProfileEnvelopeResponse,
+    HealthProfileOnboardingEnvelopeResponse,
+    HealthProfileOnboardingPatchRequest,
+    HealthProfileUpdateRequest,
 )
 
 router = APIRouter(tags=["health-profile"])

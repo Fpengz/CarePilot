@@ -6,13 +6,13 @@ This module contains food catalog, preference, and suggestion bundle models.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from care_pilot.features.meals.domain.models import Nutrition, PortionReference
 from care_pilot.features.profiles.domain.models import MealSlot
-from care_pilot.features.meals.domain.models import PortionReference, Nutrition
 
 InteractionEventType = Literal[
     "viewed",
@@ -73,13 +73,13 @@ class RecommendationInteraction(BaseModel):
     slot: MealSlot
     source_meal_id: str | None = None
     selected_meal_id: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, object] = Field(default_factory=dict)
 
 
 class PreferenceSnapshot(BaseModel):
     user_id: str
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     interaction_count: int = 0
     accepted_count: int = 0
     dismissed_count: int = 0
@@ -143,7 +143,7 @@ class SubstitutionPlan(BaseModel):
 
 class TemporalContext(BaseModel):
     current_slot: MealSlot
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     meal_history_count: int
     interaction_count: int
     recent_repeat_titles: list[str] = Field(default_factory=list)

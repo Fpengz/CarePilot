@@ -5,31 +5,12 @@ This router defines reminder scheduling and confirmation routes and delegates
 to reminder services for orchestration.
 """
 
+from datetime import UTC, datetime
+from uuid import uuid4
+
 from fastapi import APIRouter, Depends, Request
 
-from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
-    ReminderDefinitionCreateRequest,
-    ReminderDefinitionEnvelopeResponse,
-    ReminderDefinitionListResponse,
-    ReminderDefinitionPatchRequest,
-    MobilityReminderSettingsEnvelopeResponse,
-    ReminderOccurrenceActionRequest,
-    ReminderOccurrenceActionResponse,
-    ReminderOccurrenceListResponse,
-    MobilityReminderSettingsRequest,
-    ReminderConfirmRequest,
-    ReminderConfirmResponse,
-    ReminderGenerateResponse,
-    ReminderListResponse,
-    ReminderNotificationEndpointListResponse,
-    ReminderNotificationEndpointUpdateRequest,
-    ReminderNotificationLogListResponse,
-    ReminderNotificationPreferenceListResponse,
-    ReminderNotificationPreferenceUpdateRequest,
-    ScheduledReminderNotificationListResponse,
-)
-from ..errors import build_api_error
+from care_pilot.features.reminders.domain.models import ReminderDefinition
 from care_pilot.features.reminders.notifications.reminder_materialization import (
     list_notification_endpoints,
     list_notification_preferences,
@@ -53,9 +34,30 @@ from care_pilot.features.reminders.use_cases import (
     list_upcoming_occurrences_for_user,
     update_reminder_definition_for_user,
 )
-from care_pilot.features.reminders.domain.models import ReminderDefinition
-from datetime import datetime, timezone
-from uuid import uuid4
+
+from ..errors import build_api_error
+from ..routes_shared import current_session, get_context, require_action
+from ..schemas import (
+    MobilityReminderSettingsEnvelopeResponse,
+    MobilityReminderSettingsRequest,
+    ReminderConfirmRequest,
+    ReminderConfirmResponse,
+    ReminderDefinitionCreateRequest,
+    ReminderDefinitionEnvelopeResponse,
+    ReminderDefinitionListResponse,
+    ReminderDefinitionPatchRequest,
+    ReminderGenerateResponse,
+    ReminderListResponse,
+    ReminderNotificationEndpointListResponse,
+    ReminderNotificationEndpointUpdateRequest,
+    ReminderNotificationLogListResponse,
+    ReminderNotificationPreferenceListResponse,
+    ReminderNotificationPreferenceUpdateRequest,
+    ReminderOccurrenceActionRequest,
+    ReminderOccurrenceActionResponse,
+    ReminderOccurrenceListResponse,
+    ScheduledReminderNotificationListResponse,
+)
 
 router = APIRouter(tags=["reminders"])
 
@@ -129,8 +131,8 @@ def reminder_definitions_create(
             timezone=payload.timezone,
             schedule=payload.schedule,
             active=payload.active,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         ),
     )
     return ReminderDefinitionEnvelopeResponse(item=item)

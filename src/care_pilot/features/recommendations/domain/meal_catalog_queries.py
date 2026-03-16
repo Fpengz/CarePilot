@@ -7,8 +7,8 @@ provide normalised-text lookup over the catalog.
 
 from __future__ import annotations
 
-from care_pilot.features.recommendations.domain.models import MealCatalogItem
 from care_pilot.features.meals.domain.models import Nutrition
+from care_pilot.features.recommendations.domain.models import MealCatalogItem
 
 DEFAULT_MEAL_CATALOG: tuple[MealCatalogItem, ...] = (
     MealCatalogItem(

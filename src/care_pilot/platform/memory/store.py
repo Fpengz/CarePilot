@@ -102,10 +102,7 @@ class Mem0MemoryStore:
             result = self._client.search(query, filters={"user_id": user_id})
 
         items: list[dict]
-        if isinstance(result, dict):
-            items = list(result.get("results", []))
-        else:
-            items = list(result)
+        items = list(result.get("results", [])) if isinstance(result, dict) else list(result)
 
         snippets: list[MemorySnippet] = []
         for raw in items[:limit]:

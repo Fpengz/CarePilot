@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
-from typing import Iterable, cast
+from collections.abc import Iterable
+from typing import cast
 
 import pytest
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from apps.api.carepilot_api.main import create_app
 from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
 from care_pilot.config.app import get_settings
 from care_pilot.platform.memory import MemorySnippet, MemoryStore

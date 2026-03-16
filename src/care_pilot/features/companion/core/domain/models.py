@@ -6,10 +6,12 @@ This module contains core data models used by the companion care loop.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+from care_pilot.features.companion.core.health.models import BloodPressureSummary
 
 RiskLevel = Literal["low", "medium", "high"]
 EngagementMode = Literal["supportive", "accountability", "follow_up", "escalate"]
@@ -38,7 +40,8 @@ class CaseSnapshot(BaseModel):
     average_symptom_severity: float = 0.0
     biomarker_summary: dict[str, float] = Field(default_factory=dict)
     active_risk_flags: list[str] = Field(default_factory=list)
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    blood_pressure_summary: BloodPressureSummary | None = None
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class PersonalizationContext(BaseModel):
@@ -65,6 +68,7 @@ class EvidenceCitation(BaseModel):
     source_type: str = "curated_guidance"
     relevance: str
     confidence: float = 0.7
+    url: str | None = None
 
 
 class EvidenceBundle(BaseModel):

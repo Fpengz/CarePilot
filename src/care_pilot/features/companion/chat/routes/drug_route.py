@@ -6,22 +6,23 @@ to improve responses for chronic disease management.
 """
 
 from __future__ import annotations
+
 import asyncio
 import uuid
 
-from care_pilot.features.companion.chat.search_adapter import (
-    SearchAgent,
-    SearchResult,
+from care_pilot.agent.chat.schemas import ChatRouteLabel, ChatSearchQueryOutput
+from care_pilot.agent.runtime.inference_engine import InferenceEngine
+from care_pilot.agent.runtime.inference_types import (
+    InferenceModality,
+    InferenceRequest,
 )
 from care_pilot.features.companion.chat.routes.base import (
     BaseRoute,
     RouteResult,
 )
-from care_pilot.agent.chat.schemas import ChatSearchQueryOutput, ChatRouteLabel
-from care_pilot.agent.runtime.inference_engine import InferenceEngine
-from care_pilot.agent.runtime.inference_types import (
-    InferenceModality,
-    InferenceRequest,
+from care_pilot.features.companion.chat.search_adapter import (
+    SearchAgent,
+    SearchResult,
 )
 from care_pilot.platform.observability import get_logger
 

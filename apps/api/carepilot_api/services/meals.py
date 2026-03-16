@@ -6,8 +6,7 @@ feature logic to care_pilot.features.meals.use_cases.
 
 from __future__ import annotations
 
-import asyncio
-from datetime import date
+from datetime import date, datetime
 from typing import Any, cast
 
 from fastapi import Request, UploadFile
@@ -136,7 +135,7 @@ async def analyze_meal(
                 context=_context_snapshot(session=session),
             ),
         )
-    except asyncio.TimeoutError as exc:
+    except TimeoutError as exc:
         raise build_api_error(
             status_code=504,
             code="llm.timeout",
@@ -228,7 +227,9 @@ def get_daily_summary(
     return MealDailySummaryResponse(
         date=summary.date,
         meal_count=summary.meal_count,
-        last_logged_at=summary.last_logged_at,
+        last_logged_at=datetime.fromisoformat(summary.last_logged_at)
+        if summary.last_logged_at
+        else None,
         consumed=DailyNutritionTotalsResponse.model_validate(summary.consumed.model_dump()),
         targets=DailyNutritionTotalsResponse.model_validate(summary.targets.model_dump()),
         remaining=DailyNutritionTotalsResponse.model_validate(summary.remaining.model_dump()),

@@ -1,17 +1,18 @@
 """Tests for chat meal logging confirmation."""
 
 from __future__ import annotations
+
 from uuid import uuid4
 
 import pytest
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from apps.api.carepilot_api.main import create_app
+from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
+from care_pilot.config.app import get_settings
 from care_pilot.features.companion.chat.meal_intent import (
     meal_proposal_cache_key,
 )
-from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
-from care_pilot.config.app import get_settings
 
 
 def _reset_settings_cache() -> None:

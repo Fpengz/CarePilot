@@ -6,7 +6,7 @@ This module implements coordination primitives for local execution.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from threading import Condition, Lock
 from typing import Any
 
@@ -19,7 +19,7 @@ class InMemoryCoordinationStore:
         self._condition = Condition(self._lock)
 
     def acquire_lock(self, key: str, *, owner: str, ttl_seconds: int) -> bool:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires_at = now + timedelta(seconds=ttl_seconds)
         with self._lock:
             existing = self._locks.get(key)

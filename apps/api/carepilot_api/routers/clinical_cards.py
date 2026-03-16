@@ -9,17 +9,18 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, Request
 
+from care_pilot.features.companion.clinician_digest.clinical_cards.use_cases import (
+    generate_clinical_card_for_session,
+    get_clinical_card_for_session,
+    list_clinical_cards_for_session,
+)
+
 from ..deps import clinical_card_deps
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
     ClinicalCardEnvelopeResponse,
     ClinicalCardGenerateRequest,
     ClinicalCardListResponse,
-)
-from care_pilot.features.companion.clinician_digest.clinical_cards.use_cases import (
-    generate_clinical_card_for_session,
-    get_clinical_card_for_session,
-    list_clinical_cards_for_session,
 )
 
 router = APIRouter(tags=["clinical-cards"])

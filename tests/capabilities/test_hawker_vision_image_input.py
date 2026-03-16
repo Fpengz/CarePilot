@@ -1,6 +1,5 @@
-from typing import Any, cast
-
 from io import BytesIO
+from typing import Any, cast
 
 import pytest
 from PIL import Image

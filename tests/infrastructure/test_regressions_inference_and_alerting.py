@@ -12,11 +12,11 @@ from care_pilot.features.safety.domain.alerts.models import (
     AlertDeliveryResult,
     AlertMessage,
 )
-from care_pilot.platform.persistence import SQLiteRepository
 from care_pilot.platform.messaging.alert_outbox import (
     AlertPublisher,
     OutboxWorker,
 )
+from care_pilot.platform.persistence import SQLiteRepository
 
 
 @pytest.mark.anyio

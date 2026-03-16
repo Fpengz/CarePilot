@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 from typing import get_args, get_type_hints
 
-from care_pilot.platform import persistence
 from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
+from care_pilot.platform import persistence
 from care_pilot.platform.observability.tooling.platform_registry import (
     build_platform_tool_registry,
 )

@@ -4,15 +4,29 @@ Extract context features for emotion fusion.
 
 from __future__ import annotations
 
-from care_pilot.features.companion.emotion.ports import ContextFeaturePort
+from collections.abc import Iterable
+from datetime import datetime
+from typing import Any, Protocol
+
 from care_pilot.agent.emotion.schemas import (
     EmotionContextFeatures,
     EmotionLabel,
 )
+from care_pilot.features.companion.emotion.ports import ContextFeaturePort
+
+
+class TimelineEvent(Protocol):
+    created_at: datetime
+    payload: dict[str, Any]
+    event_type: str
+
+class TimelineServiceProtocol(Protocol):
+    def get_events(self, *, user_id: str | None) -> Iterable[TimelineEvent]:
+        ...
 
 
 class TimelineContextFeatureExtractor(ContextFeaturePort):
-    def __init__(self, event_timeline: object, history_window: int = 5) -> None:
+    def __init__(self, event_timeline: TimelineServiceProtocol, history_window: int = 5) -> None:
         """
         :param event_timeline: An EventTimelineService instance.
         :param history_window: Number of recent events to consider.
@@ -28,10 +42,10 @@ class TimelineContextFeatureExtractor(ContextFeaturePort):
 
         # We duck-type the timeline service to avoid circular imports.
         # Assuming event_timeline.get_events(user_id) -> Iterable[TimelineEvent]
-        all_events = getattr(self._timeline, "get_events")(user_id=user_id)
+        all_events = self._timeline.get_events(user_id=user_id)
 
         history = [e for e in all_events if getattr(e, "event_type", "") == "emotion_observed"]
-        history = sorted(history, key=lambda e: getattr(e, "created_at"))
+        history = sorted(history, key=lambda e: e.created_at)
         recent = history[-self._history_window :]
 
         recent_labels: list[EmotionLabel] = []

@@ -297,7 +297,7 @@ class LLMSettings(BaseSettings):
         return self.gemini.effective_api_key
 
     @model_validator(mode="after")
-    def _validate_provider_credentials(self) -> "LLMSettings":
+    def _validate_provider_credentials(self) -> LLMSettings:
         """Enforce that each non-test provider has required credentials or endpoints."""
         if self.provider == ModelProvider.GEMINI and not self.gemini.effective_api_key:
             raise ValueError(

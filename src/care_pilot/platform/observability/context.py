@@ -6,9 +6,9 @@ This module defines helpers for building and propagating logging context.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator
 
 _correlation_id_var: ContextVar[str | None] = ContextVar("care_pilot_correlation_id", default=None)
 _request_id_var: ContextVar[str | None] = ContextVar("care_pilot_request_id", default=None)

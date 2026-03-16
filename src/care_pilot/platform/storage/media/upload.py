@@ -9,9 +9,9 @@ from typing import Protocol
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from care_pilot.platform.storage.media.ingestion import compute_content_sha256
-from care_pilot.platform.observability.setup import get_logger
 from care_pilot.features.meals.domain.models import ImageInput
+from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.storage.media.ingestion import compute_content_sha256
 
 SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 logger = get_logger(__name__)

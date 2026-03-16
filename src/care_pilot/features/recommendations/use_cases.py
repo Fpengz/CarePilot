@@ -6,7 +6,7 @@ This module contains the application workflows for recommendations.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, TypedDict
 from uuid import uuid4
 
@@ -15,6 +15,7 @@ from apps.api.carepilot_api.deps import (
     RecommendationDeps,
 )
 from apps.api.carepilot_api.errors import build_api_error
+
 from care_pilot.core.contracts.api import (
     RecommendationAgentResponse,
     RecommendationGenerateResponse,
@@ -24,18 +25,12 @@ from care_pilot.core.contracts.api import (
     RecommendationSubstitutionResponse,
     WorkflowResponse,
 )
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
-)
+from care_pilot.features.companion.core.health.models import ReportInput
 from care_pilot.features.households.policies import (
     HouseholdAccessNotFoundError,
     ensure_household_member,
     household_source_members,
 )
-from care_pilot.features.recommendations.domain.schemas import (
-    RecommendationAgentInput,
-)
-from care_pilot.features.companion.core.health.models import ReportInput
 from care_pilot.features.profiles.domain.health_profile import (
     resolve_user_profile,
 )
@@ -47,11 +42,17 @@ from care_pilot.features.recommendations.domain.engine import (
 from care_pilot.features.recommendations.domain.meal_recommendations import (
     generate_recommendation,
 )
+from care_pilot.features.recommendations.domain.schemas import (
+    RecommendationAgentInput,
+)
 from care_pilot.features.reports.domain import (
     build_clinical_snapshot,
     parse_report_input,
 )
 from care_pilot.features.safety.domain.triage import evaluate_text_safety
+from care_pilot.platform.auth.session_context import (
+    build_user_profile_from_session,
+)
 
 from .ports import (
     BuildUserProfileFn,
@@ -91,12 +92,12 @@ class SuggestionNotFoundError(Exception):
 
 
 def _iso_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _event_to_json(event: object) -> dict[str, object]:
     if hasattr(event, "model_dump"):
-        return dict(getattr(event, "model_dump")(mode="json"))
+        return dict(event.model_dump(mode="json"))
     if isinstance(event, dict):
         return {str(k): v for k, v in event.items()}
     return {"event_type": "unknown"}

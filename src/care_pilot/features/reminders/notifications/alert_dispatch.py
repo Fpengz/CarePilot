@@ -8,19 +8,19 @@ notification to a user.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from pydantic import BaseModel
 
-from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
 from care_pilot.config.app import get_settings
+from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
+from care_pilot.features.reminders.domain import ReminderEvent
 from care_pilot.features.safety.domain.alerts import (
     AlertDeliveryResult,
     AlertMessage,
     AlertSeverity,
 )
-from care_pilot.features.reminders.domain import ReminderEvent
 from care_pilot.platform.messaging.alert_outbox import (
     AlertPublisher,
     OutboxWorker,
@@ -63,7 +63,7 @@ def send_in_app(reminder_event: ReminderEvent) -> DeliveryResult:
         event_id=reminder_event.id,
         channel="in_app",
         success=True,
-        delivered_at=datetime.now(timezone.utc),
+        delivered_at=datetime.now(UTC),
         destination=destination,
     )
 
@@ -96,7 +96,7 @@ def send_push(reminder_event: ReminderEvent, force_fail: bool = False) -> Delive
         event_id=reminder_event.id,
         channel="push",
         success=True,
-        delivered_at=datetime.now(timezone.utc),
+        delivered_at=datetime.now(UTC),
         destination=destination,
     )
 
@@ -284,7 +284,7 @@ def dispatch_reminder_async(
             attempts=result.attempt,
             error=result.error,
             destination=result.destination,
-            delivered_at=(datetime.now(timezone.utc) if result.success else None),
+            delivered_at=(datetime.now(UTC) if result.success else None),
         )
         for result in channel_results
         if result.alert_id == message.alert_id
@@ -336,7 +336,7 @@ def trigger_alert(
             attempts=item.attempt,
             error=item.error,
             destination=item.destination,
-            delivered_at=datetime.now(timezone.utc) if item.success else None,
+            delivered_at=datetime.now(UTC) if item.success else None,
         )
         for item in channel_results
     ]
@@ -363,7 +363,7 @@ def _drain_alert_for_sync_delivery(
         if not pending:
             break
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if any(record.next_attempt_at <= now for record in pending):
             continue
 

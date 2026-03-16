@@ -6,10 +6,10 @@ This module contains enums for reminder states, metrics, and delivery channels.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class ReminderState(str, Enum):
+class ReminderState(StrEnum):
     SCHEDULED = "SCHEDULED"
     ENQUEUED = "ENQUEUED"
     SENT = "SENT"
@@ -21,19 +21,19 @@ class ReminderState(str, Enum):
     ESCALATED = "ESCALATED"
 
 
-class ReminderType(str, Enum):
+class ReminderType(StrEnum):
     MEDICATION = "MEDICATION"
     THRESHOLD_ALERT = "THRESHOLD_ALERT"
     MEASUREMENT = "MEASUREMENT"
     FOOD_RECORD = "FOOD_RECORD"
 
 
-class MetricType(str, Enum):
+class MetricType(StrEnum):
     HEART_RATE = "heart_rate"
     BLOOD_GLUCOSE = "blood_glucose"
 
 
-class ReminderChannel(str, Enum):
+class ReminderChannel(StrEnum):
     TELEGRAM = "telegram"
     WHATSAPP = "whatsapp"
     SMS = "sms"
@@ -41,7 +41,7 @@ class ReminderChannel(str, Enum):
     IN_APP = "in_app"
 
 
-class MealType(str, Enum):
+class MealType(StrEnum):
     BREAKFAST = "breakfast"
     LUNCH = "lunch"
     DINNER = "dinner"

@@ -36,6 +36,7 @@ class StaticEvidenceRetriever:
                     summary="Favor a lower-sodium, less oily swap and keep gravy/fried add-ons limited at the next meal.",
                     relevance="Supports one realistic next-meal adjustment in Singapore hawker settings.",
                     confidence=0.81,
+                    url=None,
                 )
             )
         if interaction_type == "adherence_follow_up" or "med" in lowered or "dose" in lowered:
@@ -45,6 +46,7 @@ class StaticEvidenceRetriever:
                     summary="Missed-dose recovery works better when the patient commits to one friction-reducing reminder or placement change.",
                     relevance="Supports a single-step medication adherence recovery plan.",
                     confidence=0.84,
+                    url=None,
                 )
             )
         if interaction_type == "report_follow_up" or any(
@@ -56,6 +58,7 @@ class StaticEvidenceRetriever:
                     summary="Abnormal biomarker patterns should be translated into concise follow-up priorities and clinician-visible next steps.",
                     relevance="Supports report and biomarker follow-up planning.",
                     confidence=0.86,
+                    url=None,
                 )
             )
         if not citations:
@@ -65,6 +68,7 @@ class StaticEvidenceRetriever:
                     summary="Use the smallest practical behavior change that matches the patient’s current barriers and readiness.",
                     relevance="Supports general check-in and coaching guidance.",
                     confidence=0.72,
+                    url=None,
                 )
             )
 

@@ -1,17 +1,17 @@
 """Tests for reminder scheduler."""
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
 
 from care_pilot.features.reminders.domain.models import ReminderEvent
-from care_pilot.platform.persistence import SQLiteAppStore
-from care_pilot.platform.scheduling.schedulers import reminder_scheduler
 from care_pilot.features.reminders.notifications.reminder_materialization import (
     materialize_reminder_notifications,
 )
+from care_pilot.platform.persistence import SQLiteAppStore
+from care_pilot.platform.scheduling.schedulers import reminder_scheduler
 from care_pilot.platform.scheduling.schedulers.reminder_scheduler import (
     run_reminder_scheduler_once,
 )
@@ -25,7 +25,7 @@ def test_run_reminder_scheduler_once_dispatches_and_delivers_due_notifications(
         id="rem_sched_001",
         user_id="user_001",
         medication_name="Amlodipine",
-        scheduled_at=datetime.now(timezone.utc),
+        scheduled_at=datetime.now(UTC),
         dosage_text="5mg",
     )
     repo.save_reminder_event(event)

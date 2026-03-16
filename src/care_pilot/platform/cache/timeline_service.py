@@ -7,14 +7,14 @@ to trace multi-step execution for debugging and observability.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Protocol
 from uuid import uuid4
 
+from care_pilot.platform.observability.setup import get_logger
 from care_pilot.platform.observability.workflows.domain.models import (
     WorkflowTimelineEvent,
 )
-from care_pilot.platform.observability.setup import get_logger
 
 logger = get_logger(__name__)
 
@@ -63,7 +63,7 @@ class EventTimelineService:
             correlation_id=correlation_id,
             user_id=user_id,
             payload=payload,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         self._events.append(event)
         if self._persistence_enabled and self._repository is not None:

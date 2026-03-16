@@ -108,7 +108,7 @@ class DrugInteractionDB:
         ]
         cursor.executemany(
             """
-            INSERT OR IGNORE INTO contraindications (med_id, restricted_item, reason, severity) 
+            INSERT OR IGNORE INTO contraindications (med_id, restricted_item, reason, severity)
             VALUES (?, ?, ?, ?)
         """,
             contra_data,

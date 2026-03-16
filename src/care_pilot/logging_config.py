@@ -17,8 +17,8 @@ from care_pilot.platform.observability.setup import (
     _has_logfire_handler,
     _resolve_log_level_name,
     get_logger,
-    logger,
     logfire_api,
+    logger,
     setup_logging,
 )
 

@@ -6,7 +6,7 @@ This module implements SQLite persistence for alert outbox data.
 
 import json
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from care_pilot.features.safety.domain.alerts.models import (
@@ -24,7 +24,7 @@ class SQLiteAlertRepository:
 
     def enqueue_alert(self, message: AlertMessage) -> list[OutboxRecord]:
         created: list[OutboxRecord] = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with sqlite3.connect(self.db_path) as conn:
             for sink in message.destinations:
                 idempotency_key = f"{message.alert_id}:{sink}"

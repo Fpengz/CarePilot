@@ -17,8 +17,9 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
-from care_pilot.features.profiles.domain.models import MealSlot
 from care_pilot.features.meals.domain import PortionReference
+from care_pilot.features.meals.domain.models import Nutrition
+from care_pilot.features.profiles.domain.models import MealSlot
 from care_pilot.features.recommendations.domain.meal_catalog_queries import (
     DEFAULT_MEAL_CATALOG,
 )
@@ -28,7 +29,6 @@ from care_pilot.features.recommendations.domain.models import (
     CanonicalFoodRecord,
     MealCatalogItem,
 )
-from care_pilot.features.meals.domain.models import Nutrition
 
 
 def normalize_text(value: str) -> str:

@@ -15,8 +15,8 @@ from care_pilot.features.companion.core.domain import (
 from care_pilot.features.companion.core.health.models import (
     HealthProfileRecord,
 )
-from care_pilot.features.profiles.domain.models import ProfileMode, UserProfile
 from care_pilot.features.meals.domain.models import MealState
+from care_pilot.features.profiles.domain.models import ProfileMode, UserProfile
 from care_pilot.features.profiles.domain.profile_tools import (
     CaregiverToolState,
     ClinicalSummaryToolState,
@@ -53,6 +53,8 @@ def build_personalization_context(
     focus_areas: list[str] = []
     if snapshot.active_risk_flags:
         focus_areas.extend(snapshot.active_risk_flags)
+    if snapshot.blood_pressure_summary is not None:
+        focus_areas.append("blood_pressure")
     if snapshot.meal_risk_streak >= 1:
         focus_areas.append("meal_pattern")
     if snapshot.reminder_count:
@@ -65,6 +67,8 @@ def build_personalization_context(
         barrier_hints.append("reminder follow-through is low")
     if snapshot.meal_risk_streak >= 2:
         barrier_hints.append("repeat risky meal choices")
+    if snapshot.blood_pressure_summary is not None and snapshot.blood_pressure_summary.above_target:
+        barrier_hints.append("blood pressure above target range")
     if emotion_signal in {"sad", "frustrated", "anxious", "confused"}:
         barrier_hints.append("patient may need a more supportive tone")
 

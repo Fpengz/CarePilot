@@ -64,7 +64,7 @@ class FoodInfoRetriever:
         for doc, meta, dist in zip(
             documents,
             metadatas,
-            distances,
+            distances, strict=False,
         ):
             hits.append({"text": doc, "metadata": meta, "distance": dist})
 

@@ -3,9 +3,10 @@
 from pathlib import Path
 
 from apps.api.carepilot_api.routers.chat import (
-    _parse_meal_command,
     _log_meal_command,
+    _parse_meal_command,
 )
+
 from care_pilot.platform.persistence.domain_stores import build_app_stores
 from care_pilot.platform.persistence.sqlite_app_store import SQLiteAppStore
 

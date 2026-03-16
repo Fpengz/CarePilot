@@ -22,11 +22,6 @@ from pydantic_ai.messages import (
     TextPartDelta,
 )
 
-from care_pilot.config.app import AppSettings, get_settings
-from care_pilot.config.llm import LLMCapability, ModelProvider
-from care_pilot.agent.runtime.llm_factory import LLMFactory, ModelType
-from care_pilot.platform.observability import get_logger
-from care_pilot.platform.observability.payloads import pretty_json_payload
 from care_pilot.agent.runtime.inference_types import (
     InferenceHealth,
     InferenceModality,
@@ -35,6 +30,11 @@ from care_pilot.agent.runtime.inference_types import (
     ModalityCapabilityProfile,
     ProviderMetadata,
 )
+from care_pilot.agent.runtime.llm_factory import LLMFactory, ModelType
+from care_pilot.config.app import AppSettings, get_settings
+from care_pilot.config.llm import LLMCapability, ModelProvider
+from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.payloads import pretty_json_payload
 
 logger = get_logger(__name__)
 QWEN_PROVIDER = getattr(ModelProvider, "QWEN", ModelProvider.OPENAI)
@@ -135,12 +135,7 @@ class _BaseStrategy:
     model: ModelType
 
     def supports(self, modality: InferenceModality) -> bool:
-        if self.provider_name == ModelProvider.TEST.value and modality in {
-            InferenceModality.IMAGE,
-            InferenceModality.MIXED,
-        }:
-            return False
-        return True
+        return not (self.provider_name == ModelProvider.TEST.value and modality in {InferenceModality.IMAGE, InferenceModality.MIXED})
 
     def _provider_metadata(self) -> ProviderMetadata:
         destination = LLMFactory.describe_model_destination(self.model)

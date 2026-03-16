@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Generic, TypeVar
+from datetime import UTC, datetime
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
@@ -26,12 +26,12 @@ class AgentContext:
     session_id: str | None = None
     request_id: str | None = None
     correlation_id: str | None = None
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
-class AgentResult(Generic[OutputT]):
+class AgentResult[OutputT]:
     """Standardized result envelope returned by canonical agents."""
 
     success: bool
@@ -44,7 +44,7 @@ class AgentResult(Generic[OutputT]):
     raw: dict[str, Any] | None = None
 
 
-class BaseAgent(ABC, Generic[InputT, OutputT]):
+class BaseAgent[InputT, OutputT](ABC):
     """Abstract base class for agentic runtime units.
 
     Subclasses must declare:

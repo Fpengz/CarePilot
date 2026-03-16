@@ -7,8 +7,9 @@ This module provides logging setup utilities used across the runtime.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any
 
 from care_pilot.platform.observability.setup import get_logger, logger, setup_logging  # noqa: F401
 

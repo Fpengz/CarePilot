@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, Optional
+from typing import Any
 
 from care_pilot.features.reminders.outbox.enums import (
     ReminderState,
@@ -161,7 +162,7 @@ class SQLiteReminderRepository:
                 (state.value, reminder_id),
             )
 
-    def get_reminder(self, reminder_id: str) -> Optional[dict[str, Any]]:
+    def get_reminder(self, reminder_id: str) -> dict[str, Any] | None:
         with self._connect() as conn:
             row = conn.execute(
                 """
@@ -190,9 +191,9 @@ class SQLiteReminderRepository:
     def list_reminders(
         self,
         *,
-        user_id: Optional[str] = None,
-        state: Optional[ReminderState] = None,
-        reminder_type: Optional[ReminderType] = None,
+        user_id: str | None = None,
+        state: ReminderState | None = None,
+        reminder_type: ReminderType | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         clauses: list[str] = []
@@ -248,7 +249,7 @@ class SQLiteReminderRepository:
                 (reminder_id, int(is_taken), timestamp),
             )
 
-    def get_latest_confirmation(self, reminder_id: str) -> Optional[dict[str, Any]]:
+    def get_latest_confirmation(self, reminder_id: str) -> dict[str, Any] | None:
         with self._connect() as conn:
             row = conn.execute(
                 """
@@ -294,7 +295,7 @@ class SQLiteReminderRepository:
                 ),
             )
 
-    def get_last_metric_reading(self, user_id: str, metric_type: str) -> Optional[dict[str, Any]]:
+    def get_last_metric_reading(self, user_id: str, metric_type: str) -> dict[str, Any] | None:
         with self._connect() as conn:
             row = conn.execute(
                 """
@@ -324,7 +325,7 @@ class SQLiteReminderRepository:
         self,
         *,
         user_id: str,
-        metric_type: Optional[str] = None,
+        metric_type: str | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         clauses = ["user_id = ?"]
@@ -387,8 +388,8 @@ class SQLiteReminderRepository:
             )
 
     def get_latest_food_record(
-        self, user_id: str, meal_type: Optional[str] = None
-    ) -> Optional[dict[str, Any]]:
+        self, user_id: str, meal_type: str | None = None
+    ) -> dict[str, Any] | None:
         if meal_type:
             sql = """
                 SELECT *
@@ -426,7 +427,7 @@ class SQLiteReminderRepository:
         self,
         *,
         user_id: str,
-        meal_type: Optional[str] = None,
+        meal_type: str | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         clauses = ["user_id = ?"]

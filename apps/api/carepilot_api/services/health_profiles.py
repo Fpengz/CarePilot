@@ -12,6 +12,8 @@ from care_pilot.features.profiles.use_cases import (  # noqa: F401
     get_profile_onboarding,
     patch_profile,
     patch_profile_onboarding,
+)
+from care_pilot.features.profiles.use_cases import (
     to_profile_response as _to_profile_response,
 )
 

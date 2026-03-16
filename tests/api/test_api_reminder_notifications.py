@@ -2,7 +2,7 @@
 
 import asyncio
 from collections.abc import Generator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from apps.api.carepilot_api.main import create_app
@@ -99,10 +99,10 @@ def test_dispatch_due_notifications_enqueues_and_delivers_due_schedule() -> None
     assert schedules
     schedule_id = schedules[0].id
     repo.set_scheduled_notification_trigger_at(
-        schedule_id, datetime.now(timezone.utc) - timedelta(minutes=1)
+        schedule_id, datetime.now(UTC) - timedelta(minutes=1)
     )
 
-    queued = dispatch_due_reminder_notifications(repository=repo, now=datetime.now(timezone.utc))
+    queued = dispatch_due_reminder_notifications(repository=repo, now=datetime.now(UTC))
     queued_ids = [item.scheduled_notification_id for item in queued]
     assert schedule_id in queued_ids
     worker = OutboxWorker(repo, max_attempts=2, concurrency=2)
@@ -185,9 +185,9 @@ def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> 
     repo = app.state.ctx.app_store
     schedule = repo.list_scheduled_notifications(reminder_id=reminder_id)[0]
     repo.set_scheduled_notification_trigger_at(
-        schedule.id, datetime.now(timezone.utc) - timedelta(minutes=1)
+        schedule.id, datetime.now(UTC) - timedelta(minutes=1)
     )
-    dispatch_due_reminder_notifications(repository=repo, now=datetime.now(timezone.utc))
+    dispatch_due_reminder_notifications(repository=repo, now=datetime.now(UTC))
     asyncio.run(
         OutboxWorker(repo, max_attempts=2, concurrency=2).process_once(alert_id=schedule.id)
     )

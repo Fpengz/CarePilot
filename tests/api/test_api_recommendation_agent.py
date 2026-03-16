@@ -1,7 +1,7 @@
 """Module for test api recommendation agent."""
 
 from collections.abc import Generator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from apps.api.carepilot_api.main import create_app
@@ -71,7 +71,7 @@ def _seed_profile(client: TestClient) -> None:
 
 def _seed_meal_history(app, *, user_id: str = "user_001") -> None:
     repo = app.state.ctx.app_store
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     seeded = [
         (
             "breakfast",

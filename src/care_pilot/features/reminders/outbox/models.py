@@ -10,14 +10,14 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from .enums import MetricType, ReminderChannel, ReminderState, ReminderType
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def utc_now_iso() -> str:
@@ -27,12 +27,12 @@ def utc_now_iso() -> str:
 @dataclass(slots=True, frozen=True)
 class ThresholdRule:
     metric_type: MetricType
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
+    min_value: float | None = None
+    max_value: float | None = None
     unit: str = ""
     alert_title: str = ""
 
-    def evaluate(self, value: float) -> Optional[str]:
+    def evaluate(self, value: float) -> str | None:
         if self.max_value is not None and value > self.max_value:
             return f"高于阈值 {self.max_value}{self.unit}"
         if self.min_value is not None and value < self.min_value:
@@ -79,10 +79,10 @@ class ReminderEvent:
         reminder_id: str,
         reminder_type: ReminderType,
         payload: dict[str, Any] | str,
-        scheduled_at: Optional[str] = None,
+        scheduled_at: str | None = None,
         channel: str | ReminderChannel = ReminderChannel.TELEGRAM,
-        correlation_id: Optional[str] = None,
-    ) -> "ReminderEvent":
+        correlation_id: str | None = None,
+    ) -> ReminderEvent:
         now_str = utc_now_iso()
         payload_text = (
             payload if isinstance(payload, str) else json.dumps(payload, ensure_ascii=False)
@@ -120,10 +120,10 @@ class Reminder:
         user_id: str,
         reminder_type: ReminderType,
         message: str,
-        scheduled_at: Optional[str] = None,
-        payload: Optional[dict[str, Any]] = None,
-        reminder_id: Optional[str] = None,
-    ) -> "Reminder":
+        scheduled_at: str | None = None,
+        payload: dict[str, Any] | None = None,
+        reminder_id: str | None = None,
+    ) -> Reminder:
         now_str = utc_now_iso()
         return cls(
             reminder_id=reminder_id or f"REM-{uuid.uuid4().hex[:8].upper()}",
@@ -170,10 +170,10 @@ class MetricReading:
         metric_type: MetricType,
         metric_value: float,
         unit: str,
-        measured_at: Optional[str] = None,
+        measured_at: str | None = None,
         source: str = "manual",
-        raw_payload: Optional[dict[str, Any]] = None,
-    ) -> "MetricReading":
+        raw_payload: dict[str, Any] | None = None,
+    ) -> MetricReading:
         return cls(
             user_id=user_id,
             metric_type=metric_type,
@@ -200,9 +200,9 @@ class FoodRecord:
         user_id: str,
         meal_type: str,
         foods: list[str],
-        recorded_at: Optional[str] = None,
-        note: Optional[str] = None,
-    ) -> "FoodRecord":
+        recorded_at: str | None = None,
+        note: str | None = None,
+    ) -> FoodRecord:
         return cls(
             user_id=user_id,
             meal_type=meal_type,
@@ -215,5 +215,5 @@ class FoodRecord:
 @dataclass(slots=True, frozen=True)
 class ReminderDispatchResult:
     success: bool
-    provider_msg_id: Optional[str] = None
-    error: Optional[str] = None
+    provider_msg_id: str | None = None
+    error: str | None = None

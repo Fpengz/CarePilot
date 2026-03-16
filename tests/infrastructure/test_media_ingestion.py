@@ -1,6 +1,6 @@
 """Tests for media ingestion."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from care_pilot.features.meals.domain.models import ImageInput
 from care_pilot.platform.storage.media.ingestion import (
@@ -53,7 +53,7 @@ def test_duplicate_capture_suppression_expires_after_window() -> None:
     envelope = build_capture_envelope(image, user_id="u1")
     session_state = {
         "capture_dedupe:default": {
-            envelope.content_sha256: datetime(2020, 1, 1, tzinfo=timezone.utc).isoformat(),
+            envelope.content_sha256: datetime(2020, 1, 1, tzinfo=UTC).isoformat(),
         }
     }
 

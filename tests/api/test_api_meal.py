@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from collections.abc import Generator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO
 from uuid import uuid4
 
@@ -16,10 +16,10 @@ from care_pilot.config.app import get_settings
 from care_pilot.features.meals.domain.models import (
     MealState,
     Nutrition,
+    NutritionRiskProfile,
     VisionResult,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.meals.domain.models import NutritionRiskProfile
 
 
 @pytest.fixture
@@ -305,7 +305,7 @@ def test_meal_analyze_uses_settings_provider_when_form_provider_missing(
                 MealRecognitionRecord(
                     id=str(uuid4()),
                     user_id="member_001",
-                    captured_at=datetime.now(timezone.utc),
+                    captured_at=datetime.now(UTC),
                     source="upload",
                     meal_state=state,
                 ),
@@ -366,7 +366,7 @@ def test_meal_analyze_defers_provider_selection_when_capability_routing_is_confi
                 MealRecognitionRecord(
                     id=str(uuid4()),
                     user_id="member_001",
-                    captured_at=datetime.now(timezone.utc),
+                    captured_at=datetime.now(UTC),
                     source="upload",
                     meal_state=state,
                 ),
@@ -476,11 +476,11 @@ def test_meal_daily_summary_aggregates_targets_remaining_and_pattern_insights(
     repo = app.state.ctx.app_store
     user_id = "user_001"
     for captured_at in [
-        datetime(2026, 2, 27, 12, 0, tzinfo=timezone.utc),
-        datetime(2026, 3, 1, 12, 0, tzinfo=timezone.utc),
-        datetime(2026, 3, 2, 12, 0, tzinfo=timezone.utc),
-        datetime(2026, 3, 3, 8, 0, tzinfo=timezone.utc),
-        datetime(2026, 3, 3, 13, 0, tzinfo=timezone.utc),
+        datetime(2026, 2, 27, 12, 0, tzinfo=UTC),
+        datetime(2026, 3, 1, 12, 0, tzinfo=UTC),
+        datetime(2026, 3, 2, 12, 0, tzinfo=UTC),
+        datetime(2026, 3, 3, 8, 0, tzinfo=UTC),
+        datetime(2026, 3, 3, 13, 0, tzinfo=UTC),
     ]:
         repo.save_nutrition_risk_profile(
             _nutrition_profile(

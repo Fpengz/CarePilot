@@ -7,7 +7,9 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from typing import Literal
+from zoneinfo import ZoneInfo
 
+from care_pilot.config import get_settings
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     HealthProfileRecord,
@@ -42,6 +44,7 @@ class SyntheticSeedSummary:
     adherence_events: int
     reminders: int
     regimens: int
+    chat_bp_readings: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,8 +63,9 @@ class SyntheticProfileConfig:
     goals: tuple[str, ...]
 
 
-def _dt(day: date, hour: int, minute: int = 0) -> datetime:
-    return datetime.combine(day, time(hour=hour, minute=minute, tzinfo=UTC))
+def _dt(day: date, hour: int, minute: int = 0, *, timezone_name: str) -> datetime:
+    local_dt = datetime.combine(day, time(hour=hour, minute=minute, tzinfo=ZoneInfo(timezone_name)))
+    return local_dt.astimezone(UTC)
 
 
 def _latest_seeded_day(db_path: str, user_id: str) -> date | None:
@@ -112,6 +116,81 @@ def reset_synthetic_data(*, db_path: str, user_id: str) -> None:
     with sqlite3.connect(db_path) as conn:
         for statement in statements:
             conn.execute(statement, (user_id,))
+        conn.commit()
+
+
+def _init_chat_metrics_schema(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS health_parsed_metrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_id INTEGER NOT NULL,
+            user_id TEXT NOT NULL,
+            session_id TEXT NOT NULL,
+            metric_type TEXT NOT NULL,
+            value REAL NOT NULL,
+            unit TEXT,
+            label TEXT,
+            recorded_at TEXT NOT NULL,
+            UNIQUE (message_id, metric_type, user_id)
+        )
+        """
+    )
+
+
+def _reset_chat_metrics(*, chat_db_path: str, user_id: str) -> None:
+    with sqlite3.connect(chat_db_path) as conn:
+        _init_chat_metrics_schema(conn)
+        conn.execute("DELETE FROM health_parsed_metrics WHERE user_id = ?", (user_id,))
+        conn.commit()
+
+
+def _next_message_id(conn: sqlite3.Connection) -> int:
+    row = conn.execute("SELECT MAX(message_id) FROM health_parsed_metrics").fetchone()
+    max_id = row[0] if row and row[0] is not None else 0
+    return int(max_id) + 1
+
+
+def _seed_chat_bp_reading(
+    *,
+    chat_db_path: str,
+    user_id: str,
+    recorded_at: datetime,
+    systolic: float,
+    diastolic: float,
+) -> None:
+    with sqlite3.connect(chat_db_path) as conn:
+        _init_chat_metrics_schema(conn)
+        message_id = _next_message_id(conn)
+        conn.executemany(
+            """
+            INSERT OR IGNORE INTO health_parsed_metrics
+            (message_id, user_id, session_id, metric_type, value, unit, label, recorded_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    message_id,
+                    user_id,
+                    "synthetic",
+                    "blood_pressure_systolic",
+                    float(systolic),
+                    "mmHg",
+                    "Systolic BP",
+                    recorded_at.isoformat(),
+                ),
+                (
+                    message_id,
+                    user_id,
+                    "synthetic",
+                    "blood_pressure_diastolic",
+                    float(diastolic),
+                    "mmHg",
+                    "Diastolic BP",
+                    recorded_at.isoformat(),
+                ),
+            ],
+        )
         conn.commit()
 
 
@@ -296,6 +375,8 @@ def seed_synthetic_data(
     reset: bool,
     append: bool,
     start_date: date | None = None,
+    chat_db_path: str | None = None,
+    timezone_name: str | None = None,
 ) -> SyntheticSeedSummary:
     if reset == append:
         raise ValueError("choose exactly one of --reset or --append")
@@ -303,8 +384,12 @@ def seed_synthetic_data(
         raise ValueError("days must be >= 1")
 
     repo = SQLiteRepository(db_path)
+    if timezone_name is None:
+        timezone_name = get_settings().app.timezone
     if reset:
         reset_synthetic_data(db_path=db_path, user_id=user_id)
+        if chat_db_path:
+            _reset_chat_metrics(chat_db_path=chat_db_path, user_id=user_id)
 
     start, end = _resolve_window(
         db_path=db_path,
@@ -323,6 +408,7 @@ def seed_synthetic_data(
     biomarker_count = 0
     adherence_count = 0
     reminder_count = 0
+    chat_bp_count = 0
     total_days = max(days - 1, 1)
 
     slot_blueprints = _slot_blueprints(profile)
@@ -335,7 +421,9 @@ def seed_synthetic_data(
         for slot_index, (slot, hour, base_calories, base_carbs) in enumerate(
             slot_blueprints[:daily_meal_count]
         ):
-            slot_time = _dt(current_day, hour, 0 if slot != "snack" else 15)
+            slot_time = _dt(
+                current_day, hour, 0 if slot != "snack" else 15, timezone_name=timezone_name
+            )
             trend_adjustment = 0.0
             if profile == "improving":
                 trend_adjustment = (1.0 - progress) * 120.0
@@ -412,8 +500,8 @@ def seed_synthetic_data(
             "taken" if rng.random() > (0.20 if profile != "volatile" else 0.34) else "missed"
         )
         adherence_specs = [
-            (regimens[0], _dt(current_day, 9), morning_status),
-            (regimens[1], _dt(current_day, 21), night_status),
+            (regimens[0], _dt(current_day, 9, timezone_name=timezone_name), morning_status),
+            (regimens[1], _dt(current_day, 21, timezone_name=timezone_name), night_status),
         ]
         for regimen, scheduled_at, status in adherence_specs:
             reminder_id = f"synthetic-{user_id}-reminder-{current_day.isoformat()}-{regimen.id}"
@@ -459,28 +547,38 @@ def seed_synthetic_data(
                 -3.0, 3.0
             )
             diastolic = max(78.0, systolic - rng.uniform(46.0, 54.0))
+            bp_timestamp = _dt(current_day, 7, 35, timezone_name=timezone_name)
             readings = [
                 BiomarkerReading(
                     name="weight_kg",
                     value=round(weight, 2),
                     unit="kg",
-                    measured_at=_dt(current_day, 7, 30),
+                    measured_at=_dt(current_day, 7, 30, timezone_name=timezone_name),
                 ),
                 BiomarkerReading(
                     name="systolic_bp",
                     value=round(systolic, 2),
                     unit="mmHg",
-                    measured_at=_dt(current_day, 7, 35),
+                    measured_at=bp_timestamp,
                 ),
                 BiomarkerReading(
                     name="diastolic_bp",
                     value=round(diastolic, 2),
                     unit="mmHg",
-                    measured_at=_dt(current_day, 7, 35),
+                    measured_at=bp_timestamp,
                 ),
             ]
             repo.save_biomarker_readings(user_id, readings)
             biomarker_count += len(readings)
+            if chat_db_path:
+                _seed_chat_bp_reading(
+                    chat_db_path=chat_db_path,
+                    user_id=user_id,
+                    recorded_at=bp_timestamp,
+                    systolic=systolic,
+                    diastolic=diastolic,
+                )
+                chat_bp_count += 1
 
         if offset % 28 == 0 or offset == days - 1:
             hba1c = _interpolate(config.hba1c_start, config.hba1c_end, progress) + rng.uniform(
@@ -494,13 +592,13 @@ def seed_synthetic_data(
                     name="hba1c",
                     value=round(hba1c, 2),
                     unit="%",
-                    measured_at=_dt(current_day, 8, 30),
+                    measured_at=_dt(current_day, 8, 30, timezone_name=timezone_name),
                 ),
                 BiomarkerReading(
                     name="ldl",
                     value=round(ldl, 2),
                     unit="mmol/L",
-                    measured_at=_dt(current_day, 8, 30),
+                    measured_at=_dt(current_day, 8, 30, timezone_name=timezone_name),
                 ),
             ]
             repo.save_biomarker_readings(user_id, readings)
@@ -517,4 +615,5 @@ def seed_synthetic_data(
         adherence_events=adherence_count,
         reminders=reminder_count,
         regimens=len(regimens),
+        chat_bp_readings=chat_bp_count,
     )

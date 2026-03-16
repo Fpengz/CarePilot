@@ -11,13 +11,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Protocol
 
-from care_pilot.features.safety.domain.alerts import AlertMessage, OutboxRecord
 from care_pilot.features.reminders.domain import (
     ReminderNotificationEndpoint,
     ReminderNotificationLogEntry,
     ReminderNotificationPreference,
     ScheduledReminderNotification,
 )
+from care_pilot.features.safety.domain.alerts import AlertMessage, OutboxRecord
 
 
 class AlertRepositoryProtocol(Protocol):

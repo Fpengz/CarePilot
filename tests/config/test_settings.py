@@ -1,10 +1,12 @@
 """Tests for settings."""
 
 import os
+
 import pytest
 from pydantic import ValidationError
 
-from care_pilot.config.app import AppSettings as Settings, get_settings
+from care_pilot.config.app import AppSettings as Settings
+from care_pilot.config.app import get_settings
 
 
 def _build_settings(**overrides: object) -> Settings:

@@ -9,12 +9,12 @@ import numpy as np
 import soundfile as sf
 from transformers import pipeline
 
-from care_pilot.config.app import get_settings
-from care_pilot.features.companion.emotion.ports import SpeechEmotionPort
 from care_pilot.agent.emotion.schemas import (
     EmotionLabel,
     SpeechEmotionBranchResult,
 )
+from care_pilot.config.app import get_settings
+from care_pilot.features.companion.emotion.ports import SpeechEmotionPort
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.observability.payloads import pretty_json_payload
 
@@ -95,7 +95,7 @@ class HFSpeechEmotion(SpeechEmotionPort):
             _safe_preview(transcript),
         )
         outputs = self._pipeline(audio_array, sampling_rate=sample_rate)
-        scores: dict[EmotionLabel, float] = {label: 0.0 for label in EmotionLabel}
+        scores: dict[EmotionLabel, float] = dict.fromkeys(EmotionLabel, 0.0)
         for item in outputs:
             label = str(item.get("label", "")).lower()
             mapped = _LABEL_MAP.get(label)

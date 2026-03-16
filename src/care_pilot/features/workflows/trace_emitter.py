@@ -83,7 +83,7 @@ class WorkflowTraceEmitter:
             payload=payload,
         )
 
-    def step_timer(self) -> "WorkflowStepTimer":
+    def step_timer(self) -> WorkflowStepTimer:
         return WorkflowStepTimer()
 
 

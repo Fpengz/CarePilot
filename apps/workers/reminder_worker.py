@@ -15,9 +15,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
-from care_pilot.features.reminders.outbox.service import ReminderService
 from care_pilot.features.reminders.outbox.infra.delivery import (
     build_delivery_adapter,
 )
@@ -31,6 +29,7 @@ from care_pilot.features.reminders.outbox.infra.outbox_sqlite import (
 from care_pilot.features.reminders.outbox.infra.repository import (
     SQLiteReminderRepository,
 )
+from care_pilot.features.reminders.outbox.service import ReminderService
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +70,7 @@ class ReminderWorkerConfig:
     use_empty_knowledge_fallback: bool
 
     @classmethod
-    def from_env(cls) -> "ReminderWorkerConfig":
+    def from_env(cls) -> ReminderWorkerConfig:
         base_data_dir = os.getenv("DATA_DIR", "data")
 
         db_path = os.getenv(
@@ -169,7 +168,7 @@ class ReminderWorker:
     4. Update outbox/reminder states via ReminderService
     """
 
-    def __init__(self, config: Optional[ReminderWorkerConfig] = None) -> None:
+    def __init__(self, config: ReminderWorkerConfig | None = None) -> None:
         self.config = config or ReminderWorkerConfig.from_env()
         self._running = False
         self.service = build_service(self.config)

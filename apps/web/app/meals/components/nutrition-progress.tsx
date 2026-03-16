@@ -1,24 +1,37 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getMealDailySummary } from "@/lib/api/meal-client";
+import { getMealDailySummary, listMealRecords } from "@/lib/api/meal-client";
 import { cn } from "@/lib/utils";
-
-function isoDate(value: Date): string {
-  return value.toISOString().slice(0, 10);
-}
+import { formatDate, formatDateKey } from "@/lib/time";
 
 export function NutritionProgress() {
+  const { data: latestRecords } = useQuery({
+    queryKey: ["meal-records-latest"],
+    queryFn: () => listMealRecords(1),
+  });
+
+  const latestDateKey = useMemo(() => {
+    const record = latestRecords?.records?.[0];
+    const raw = record?.captured_at ?? record?.created_at;
+    return raw ? formatDateKey(raw) : formatDateKey(new Date());
+  }, [latestRecords]);
+
   const { data: summary } = useQuery({
-    queryKey: ["meal-daily-summary"],
-    queryFn: () => getMealDailySummary(isoDate(new Date())),
+    queryKey: ["meal-daily-summary", latestDateKey],
+    queryFn: () => getMealDailySummary(latestDateKey),
+    enabled: Boolean(latestDateKey),
   });
 
   return (
     <div className="glass-card">
       <div className="mb-6">
-        <h3 className="text-base font-bold">Today’s Nutrition Progress</h3>
+        <h3 className="text-base font-bold">Nutrition Progress</h3>
         <p className="text-xs text-[color:var(--muted-foreground)]">Consumed, remaining, and target values update as you log meals.</p>
+        <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">
+          {latestDateKey ? formatDate(latestDateKey) : "Latest logged day"}
+        </div>
       </div>
       <div className="space-y-6">
         <div className="grid gap-3 sm:grid-cols-2">

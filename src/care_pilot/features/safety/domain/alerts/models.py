@@ -7,7 +7,7 @@ workflows.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -23,7 +23,7 @@ class AlertMessage(BaseModel):
     payload: dict[str, str]
     destinations: list[str]
     correlation_id: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class OutboxRecord(BaseModel):
@@ -33,10 +33,10 @@ class OutboxRecord(BaseModel):
     severity: AlertSeverity
     payload: dict[str, str]
     correlation_id: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     state: OutboxState = "pending"
     attempt_count: int = 0
-    next_attempt_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    next_attempt_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_error: str | None = None
     lease_owner: str | None = None
     lease_until: datetime | None = None

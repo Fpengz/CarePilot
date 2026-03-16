@@ -3,19 +3,20 @@
 from __future__ import annotations
 
 import re
+
 from transformers import pipeline
 
-from care_pilot.config.app import get_settings
-from care_pilot.features.companion.emotion.ports import FusionPort
 from care_pilot.agent.emotion.schemas import (
     EmotionContextFeatures,
+    EmotionFusionOutput,
     EmotionLabel,
     EmotionProductState,
-    TextEmotionBranchResult,
-    SpeechEmotionBranchResult,
-    EmotionFusionOutput,
     FusionTrace,
+    SpeechEmotionBranchResult,
+    TextEmotionBranchResult,
 )
+from care_pilot.config.app import get_settings
+from care_pilot.features.companion.emotion.ports import FusionPort
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.observability.payloads import pretty_json_payload
 
@@ -111,7 +112,7 @@ class HFFusion(FusionPort):
             _safe_preview(prompt),
         )
         outputs = self._pipeline(prompt)
-        logits: dict[EmotionLabel, float] = {label: 0.0 for label in EmotionLabel}
+        logits: dict[EmotionLabel, float] = dict.fromkeys(EmotionLabel, 0.0)
         top_label = EmotionLabel.NEUTRAL
         top_score = 0.0
         for item in outputs[0]:

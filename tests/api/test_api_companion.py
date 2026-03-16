@@ -78,22 +78,21 @@ def _set_subject_user_id(app_client: TestClient, *, session_id: str, subject_use
     app = app_client.app
     assert isinstance(app, FastAPI)
     auth_store = app.state.ctx.auth_store
-    with auth_store._lock:
-        with auth_store._connect() as conn:
-            row = conn.execute(
-                "SELECT * FROM auth_sessions WHERE session_id = ?",
-                (session_id,),
-            ).fetchone()
-            assert isinstance(row, Row)
-            conn.execute(
-                """
+    with auth_store._lock, auth_store._connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM auth_sessions WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+        assert isinstance(row, Row)
+        conn.execute(
+            """
                 UPDATE auth_sessions
                 SET subject_user_id = ?
                 WHERE session_id = ?
                 """,
-                (subject_user_id, session_id),
-            )
-            conn.commit()
+            (subject_user_id, session_id),
+        )
+        conn.commit()
 
 
 def test_companion_today_returns_priorities_and_snapshot(

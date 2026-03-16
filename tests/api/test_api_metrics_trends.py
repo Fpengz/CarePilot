@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from apps.api.carepilot_api.main import create_app
@@ -47,12 +47,12 @@ def test_metrics_trends_for_biomarkers(sqlite_metrics_env: None) -> None:
             BiomarkerReading(
                 name="ldl",
                 value=4.5,
-                measured_at=datetime(2026, 3, 1, tzinfo=timezone.utc),
+                measured_at=datetime(2026, 3, 1, tzinfo=UTC),
             ),
             BiomarkerReading(
                 name="ldl",
                 value=3.8,
-                measured_at=datetime(2026, 3, 5, tzinfo=timezone.utc),
+                measured_at=datetime(2026, 3, 5, tzinfo=UTC),
             ),
         ],
     )

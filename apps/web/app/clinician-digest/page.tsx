@@ -149,14 +149,27 @@ export default function ClinicianDigestPage() {
               <History className="h-4 w-4 text-[color:var(--muted-foreground)]" />
               <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)] opacity-70">Supporting Evidence</h4>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
               {digest?.citations.map((cite, i) => (
                 <div key={i} className="group rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 transition-all hover:border-[color:var(--accent)] hover:shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <LinkIcon className="h-3 w-3 text-[color:var(--accent)]" />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter text-[color:var(--accent)]">{cite.relevance}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-tighter text-[color:var(--accent)]">
+                      Supporting Evidence
+                    </span>
                   </div>
-                  <div className="text-xs font-bold leading-snug group-hover:text-[color:var(--accent)] transition-colors">{cite.title}</div>
+                  {cite.url ? (
+                    <a
+                      href={cite.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-bold leading-snug group-hover:text-[color:var(--accent)] transition-colors"
+                    >
+                      {cite.title}
+                    </a>
+                  ) : (
+                    <div className="text-xs font-bold leading-snug group-hover:text-[color:var(--accent)] transition-colors">{cite.title}</div>
+                  )}
                   <p className="mt-2 text-[10px] leading-relaxed text-[color:var(--muted-foreground)] line-clamp-3 opacity-80">{cite.summary}</p>
                 </div>
               ))}

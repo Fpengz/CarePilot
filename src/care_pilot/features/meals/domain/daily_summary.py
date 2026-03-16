@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from datetime import date, timedelta
 
+from care_pilot.core.time import local_date_for
 from care_pilot.features.companion.core.health.models import (
     HealthProfileRecord,
 )
@@ -17,7 +18,6 @@ from care_pilot.features.meals.domain.nutrition_models import (
     NutritionTotals,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.core.time import local_date_for
 
 from .meal_record_accessors import meal_display_name, meal_nutrition
 

@@ -14,6 +14,8 @@ from uuid import uuid4
 
 from apps.api.carepilot_api.deps import AlertDeps
 from apps.api.carepilot_api.errors import build_api_error
+
+from care_pilot.core.contracts.agent_envelopes import AgentHandoff
 from care_pilot.core.contracts.api import (
     AlertTimelineResponse,
     AlertTriggerRequest,
@@ -25,7 +27,6 @@ from care_pilot.platform.auth.session_context import (
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolPolicyContext,
 )
-from care_pilot.core.contracts.agent_envelopes import AgentHandoff
 from care_pilot.platform.observability.workflows.domain.models import (
     WorkflowExecutionResult,
     WorkflowName,

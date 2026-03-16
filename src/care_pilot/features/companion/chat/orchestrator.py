@@ -8,18 +8,18 @@ from __future__ import annotations
 
 import asyncio
 import sqlite3
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from care_pilot.agent.chat.agent import run_chat
-from care_pilot.features.companion.chat.memory import MemoryManager
-from care_pilot.features.companion.chat.router import QueryRouter
-from care_pilot.features.companion.chat.routes.base import RouteResult
 from care_pilot.agent.chat.schemas import (
     ChatInput,
     ChatOutput,
     ChatRouteLabel,
     ChatStreamEvent,
 )
+from care_pilot.features.companion.chat.memory import MemoryManager
+from care_pilot.features.companion.chat.router import QueryRouter
+from care_pilot.features.companion.chat.routes.base import RouteResult
 from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)

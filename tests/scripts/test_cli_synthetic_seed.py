@@ -5,13 +5,13 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
+from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
+from scripts.cli import app
 from typer.testing import CliRunner
 
-from apps.api.carepilot_api.main import create_app
 from care_pilot.config.app import get_settings
 from care_pilot.platform.persistence.sqlite_repository import SQLiteRepository
-from scripts.cli import app
 
 runner = CliRunner()
 

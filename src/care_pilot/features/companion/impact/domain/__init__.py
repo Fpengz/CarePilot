@@ -3,6 +3,7 @@
 from .trend_analysis import (
     adherence_rate_points,
     biomarker_points,
+    blood_pressure_points,
     build_metric_trend,
     meal_calorie_points,
 )
@@ -10,6 +11,7 @@ from .trend_analysis import (
 __all__ = [
     "adherence_rate_points",
     "biomarker_points",
+    "blood_pressure_points",
     "build_metric_trend",
     "meal_calorie_points",
 ]

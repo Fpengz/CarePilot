@@ -14,22 +14,6 @@ from care_pilot.features.companion.care_plans.care_plan import (
 from care_pilot.features.companion.clinician_digest.digest import (
     build_clinician_digest,
 )
-from care_pilot.features.companion.engagement.engagement import (
-    assess_engagement,
-)
-from care_pilot.features.companion.impact.impact import build_impact_summary
-from care_pilot.features.companion.personalization.personalization import (
-    build_personalization_context,
-)
-from care_pilot.features.companion.core.snapshot import build_case_snapshot
-from care_pilot.features.companion.core.evidence import (
-    EvidenceRetrievalPort,
-    retrieve_supporting_evidence,
-)
-from care_pilot.features.safety.service import (
-    apply_safety_decision,
-    review_care_plan,
-)
 from care_pilot.features.companion.core.domain import (
     CaseSnapshot,
     ClinicianDigest,
@@ -39,16 +23,33 @@ from care_pilot.features.companion.core.domain import (
     ImpactSummary,
     PersonalizationContext,
 )
+from care_pilot.features.companion.core.evidence import (
+    EvidenceRetrievalPort,
+    retrieve_supporting_evidence,
+)
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
+    BloodPressureReading,
     ClinicalProfileSnapshot,
     HealthProfileRecord,
     MedicationAdherenceEvent,
     SymptomCheckIn,
 )
+from care_pilot.features.companion.core.snapshot import build_case_snapshot
+from care_pilot.features.companion.engagement.engagement import (
+    assess_engagement,
+)
+from care_pilot.features.companion.impact.impact import build_impact_summary
+from care_pilot.features.companion.personalization.personalization import (
+    build_personalization_context,
+)
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.reminders.domain.models import ReminderEvent
-from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.safety.service import (
+    apply_safety_decision,
+    review_care_plan,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +61,7 @@ class CompanionStateInputs:
     adherence_events: list[MedicationAdherenceEvent]
     symptoms: list[SymptomCheckIn]
     biomarker_readings: list[BiomarkerReading]
+    blood_pressure_readings: list[BloodPressureReading]
     clinical_snapshot: ClinicalProfileSnapshot | None
     emotion_signal: str | None
 
@@ -84,6 +86,7 @@ def build_companion_runtime_state(
         adherence_events=inputs.adherence_events,
         symptoms=inputs.symptoms,
         biomarker_readings=inputs.biomarker_readings,
+        blood_pressure_readings=inputs.blood_pressure_readings,
         clinical_snapshot=inputs.clinical_snapshot,
     )
     personalization = build_personalization_context(

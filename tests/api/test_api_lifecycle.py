@@ -35,18 +35,18 @@ def test_app_lifecycle_closes_resources_on_shutdown(
         "household_store": False,
     }
 
-    def close_repository() -> None:
+    def close_repository(*args: object, **kwargs: object) -> None:
         closed["repository"] = True
 
-    def close_auth_store() -> None:
+    def close_auth_store(*args: object, **kwargs: object) -> None:
         closed["auth_store"] = True
 
-    def close_household_store() -> None:
+    def close_household_store(*args: object, **kwargs: object) -> None:
         closed["household_store"] = True
 
-    ctx.app_store.close = close_repository
-    ctx.auth_store.close = close_auth_store
-    ctx.household_store.close = close_household_store
+    ctx.app_store.close = close_repository  # type: ignore[assignment]
+    ctx.auth_store.close = close_auth_store  # type: ignore[assignment]
+    ctx.household_store.close = close_household_store  # type: ignore[assignment]
 
     with TestClient(app) as client:
         response = client.get("/api/v1/health/live")
@@ -90,18 +90,18 @@ def test_app_does_not_close_caller_managed_context(
         "household_store": False,
     }
 
-    def close_repository() -> None:
+    def close_repository(*args: object, **kwargs: object) -> None:
         closed["repository"] = True
 
-    def close_auth_store() -> None:
+    def close_auth_store(*args: object, **kwargs: object) -> None:
         closed["auth_store"] = True
 
-    def close_household_store() -> None:
+    def close_household_store(*args: object, **kwargs: object) -> None:
         closed["household_store"] = True
 
-    setattr(caller_ctx.app_store, "close", close_repository)
-    setattr(caller_ctx.auth_store, "close", close_auth_store)
-    setattr(caller_ctx.household_store, "close", close_household_store)
+    caller_ctx.app_store.close = close_repository  # type: ignore[assignment]
+    caller_ctx.auth_store.close = close_auth_store  # type: ignore[assignment]
+    caller_ctx.household_store.close = close_household_store  # type: ignore[assignment]
 
     with TestClient(app) as client:
         response = client.get("/api/v1/health/live")

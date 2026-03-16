@@ -3,13 +3,13 @@
 import pytest
 
 from care_pilot.agent.meal_analysis import HawkerVisionModule
-from care_pilot.config.llm import LocalModelProfile
-from care_pilot.config.app import get_settings
-from care_pilot.features.meals.domain import MealPerception
 from care_pilot.agent.runtime.inference_types import (
     InferenceResponse,
     ProviderMetadata,
 )
+from care_pilot.config.app import get_settings
+from care_pilot.config.llm import LocalModelProfile
+from care_pilot.features.meals.domain import MealPerception
 from care_pilot.features.meals.domain.models import ImageInput
 
 
@@ -134,7 +134,7 @@ def test_hawker_vision_uses_profile_built_model_for_inference_engine(
     HawkerVisionModule(local_profile=profile)
 
     assert StubEngine.seen_model is not None
-    assert getattr(StubEngine.seen_model, "provider").base_url == "http://profile-specific:9000/v1"
+    assert StubEngine.seen_model.provider.base_url == "http://profile-specific:9000/v1"
 
 
 @pytest.mark.anyio

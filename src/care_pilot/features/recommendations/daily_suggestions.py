@@ -8,15 +8,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
     HealthProfileRecord,
 )
-from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.recommendations.domain.models import (
     DailySuggestionBundle,
     DailySuggestionItem,
@@ -129,9 +129,9 @@ def _score_candidate(
 ) -> tuple[float, list[str]]:
     score = 0.45
     why: list[str] = []
-    goals = set(goal.lower() for goal in health_profile.nutrition_goals)
-    cuisines = set(cuisine.lower() for cuisine in health_profile.preferred_cuisines)
-    traits = set(item.lower() for item in candidate.traits)
+    goals = {goal.lower() for goal in health_profile.nutrition_goals}
+    cuisines = {cuisine.lower() for cuisine in health_profile.preferred_cuisines}
+    traits = {item.lower() for item in candidate.traits}
 
     matched_goals = sorted(goals.intersection(traits))
     if matched_goals:
@@ -139,7 +139,7 @@ def _score_candidate(
         why.append(f"Matches your nutrition goals: {', '.join(matched_goals)}.")
 
     matched_cuisines = sorted(
-        cuisines.intersection(set(item.lower() for item in candidate.cuisines))
+        cuisines.intersection({item.lower() for item in candidate.cuisines})
     )
     if matched_cuisines:
         score += 0.12
@@ -179,10 +179,7 @@ def build_daily_suggestions(
     biomarker_history: Sequence[BiomarkerReading],
     fallback_mode: bool,
 ) -> DailySuggestionBundle:
-    if health_profile.locale != "en-SG":
-        locale = health_profile.locale
-    else:
-        locale = "en-SG"
+    locale = health_profile.locale if health_profile.locale != "en-SG" else "en-SG"
 
     blocked_terms = {
         item.strip().lower()
@@ -273,7 +270,7 @@ def build_daily_suggestions(
 
     bundle = DailySuggestionBundle(
         locale=locale,
-        generated_at=datetime.now(timezone.utc).isoformat(),
+        generated_at=datetime.now(UTC).isoformat(),
         warnings=warnings,
         data_sources={
             "meal_history_count": len(meal_history),

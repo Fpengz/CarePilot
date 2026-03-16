@@ -15,16 +15,16 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+from care_pilot.config.app import get_settings
 from care_pilot.core.contracts.notifications import ReminderSchedulerRepository
 from care_pilot.features.reminders.notifications.reminder_materialization import (
     dispatch_due_reminder_notifications,
 )
-from care_pilot.config.app import get_settings
 from care_pilot.platform.messaging.alert_outbox import OutboxWorker
-from care_pilot.platform.persistence import AppStoreBackend
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.persistence import AppStoreBackend
 from care_pilot.platform.persistence.runtime_bootstrap import (
     build_reminder_scheduler_repository,
 )
@@ -46,7 +46,7 @@ async def run_reminder_scheduler_once(
     """Dispatch due reminders and process the outbox once."""
     settings = get_settings()
     repo = repository or build_reminder_scheduler_repository(settings)
-    dispatch_at = now or datetime.now(timezone.utc)
+    dispatch_at = now or datetime.now(UTC)
     queued = dispatch_due_reminder_notifications(
         repository=repo,
         now=dispatch_at,

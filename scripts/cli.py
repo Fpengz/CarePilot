@@ -19,9 +19,10 @@ import sqlite3
 import subprocess
 import sys
 import time
-from datetime import date, datetime, timezone
+from collections.abc import Mapping, MutableMapping
+from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Annotated, Mapping, MutableMapping, cast
+from typing import Annotated, cast
 from uuid import uuid4
 
 import typer
@@ -29,13 +30,13 @@ from dotenv import dotenv_values
 
 from care_pilot.config.app import get_settings
 from care_pilot.dev.synthetic_data import SyntheticProfile, seed_synthetic_data
-from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.recommendations.domain.canonical_food_matching import (
     normalize_text,
 )
 from care_pilot.features.recommendations.domain.models import (
     CanonicalFoodRecord,
 )
+from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.platform.messaging.channels.telegram import TelegramChannel
 from care_pilot.platform.persistence.food import (
     FoodInfoIngester,
@@ -731,7 +732,7 @@ def command_telegram_test(
         title="Telegram test reminder",
         body=message,
         medication_name=message,
-        scheduled_at=datetime.now(timezone.utc),
+        scheduled_at=datetime.now(UTC),
         slot=None,
         dosage_text="",
         status="sent",
@@ -784,8 +785,7 @@ def command_reminders_diagnose(
 
     typer.echo(f"db_path={db_path}")
     typer.echo(
-        "telegram_config token=%s chat_id=%s dev_mode=%s"
-        % (
+        "telegram_config token={} chat_id={} dev_mode={}".format(
             _mask_token(settings.channels.telegram_bot_token),
             "present" if settings.channels.telegram_chat_id else "missing",
             settings.channels.telegram_dev_mode,
@@ -1023,6 +1023,13 @@ def seed_synthetic(
             help="Append synthetic data after the latest generated day.",
         ),
     ] = False,
+    chat_db: Annotated[
+        str | None,
+        typer.Option(
+            "--chat-db",
+            help="Optional chat memory DB path for BP tracking (default: data/runtime/chat_memory.db).",
+        ),
+    ] = None,
 ) -> None:
     load_root_env()
     if reset == append:
@@ -1040,6 +1047,9 @@ def seed_synthetic(
             error("start-date must use YYYY-MM-DD")
             raise typer.Exit(2) from None
 
+    resolved_chat_db = chat_db or str(REPO_ROOT / "data" / "runtime" / "chat_memory.db")
+    if resolved_chat_db:
+        Path(resolved_chat_db).expanduser().parent.mkdir(parents=True, exist_ok=True)
     summary = seed_synthetic_data(
         db_path=_resolve_app_db_path(),
         user_id=user_id,
@@ -1049,6 +1059,7 @@ def seed_synthetic(
         reset=reset,
         append=append,
         start_date=parsed_start_date,
+        chat_db_path=resolved_chat_db,
     )
     typer.echo("seed.synthetic.complete")
     typer.echo(f"db_path={summary.db_path}")
@@ -1060,6 +1071,7 @@ def seed_synthetic(
     typer.echo(f"adherence_events={summary.adherence_events}")
     typer.echo(f"reminders={summary.reminders}")
     typer.echo(f"regimens={summary.regimens}")
+    typer.echo(f"chat_bp_readings={summary.chat_bp_readings}")
 
 
 def main() -> None:

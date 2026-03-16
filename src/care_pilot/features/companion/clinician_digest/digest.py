@@ -39,6 +39,14 @@ def build_clinician_digest(
         changed.append(
             f"Symptoms logged: {snapshot.symptom_count} with average severity {snapshot.average_symptom_severity}."
         )
+    if snapshot.blood_pressure_summary is not None:
+        stats = snapshot.blood_pressure_summary.stats
+        trend = snapshot.blood_pressure_summary.trend
+        changed.append(
+            "Blood pressure avg "
+            f"{stats.avg_systolic}/{stats.avg_diastolic} mmHg "
+            f"(trend {trend.direction}, Δ{trend.delta_systolic:+.1f} systolic)."
+        )
 
     why_now = care_plan.why_now
     if interaction.interaction_type == "report_follow_up":

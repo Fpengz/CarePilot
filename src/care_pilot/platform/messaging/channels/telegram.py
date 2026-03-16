@@ -5,7 +5,7 @@ This module implements the Telegram channel adapter for reminder delivery.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib import error, request
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -35,7 +35,7 @@ class TelegramChannel:
         try:
             local_tz = ZoneInfo(self.app_timezone)
         except ZoneInfoNotFoundError:
-            local_tz = timezone.utc
+            local_tz = UTC
         dt = value if value.tzinfo is not None else value.replace(tzinfo=local_tz)
         local_dt = dt.astimezone(local_tz)
         return local_dt.isoformat(timespec="seconds")
@@ -89,7 +89,7 @@ class TelegramChannel:
             result = ChannelResult(
                 channel=self.name,
                 success=True,
-                delivered_at=datetime.now(timezone.utc),
+                delivered_at=datetime.now(UTC),
                 destination=destination or endpoint,
             )
             logger.info(
@@ -127,7 +127,7 @@ class TelegramChannel:
             result = ChannelResult(
                 channel=self.name,
                 success=True,
-                delivered_at=datetime.now(timezone.utc),
+                delivered_at=datetime.now(UTC),
                 destination=destination or endpoint,
             )
             logger.info(

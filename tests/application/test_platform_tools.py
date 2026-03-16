@@ -1,12 +1,12 @@
 """Tests for platform tools."""
 
-from care_pilot.platform.persistence import SQLiteRepository
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolPolicyContext,
 )
 from care_pilot.platform.observability.tooling.platform_registry import (
     build_platform_tool_registry,
 )
+from care_pilot.platform.persistence import SQLiteRepository
 
 
 def test_trigger_alert_tool_allows_admin_scope(tmp_path) -> None:

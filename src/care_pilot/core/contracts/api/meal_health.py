@@ -404,7 +404,7 @@ class MetricTrendListResponse(BaseModel):
     items: list[MetricTrendResponse] = Field(default_factory=list)
 
 
-DashboardBucket: TypeAlias = Literal["hour", "day", "week"]
+type DashboardBucket = Literal["hour", "day", "week"]
 
 
 class DashboardRangeResponse(BaseModel):
@@ -458,6 +458,20 @@ class DashboardMealTimingBinResponse(BaseModel):
     count: int
 
 
+class DashboardBloodPressurePointResponse(BaseModel):
+    bucket_start: datetime
+    bucket_end: datetime
+    label: str
+    systolic: float
+    diastolic: float
+
+
+class DashboardBloodPressureChartResponse(BaseModel):
+    title: str
+    bucket: DashboardBucket
+    points: list[DashboardBloodPressurePointResponse] = Field(default_factory=list)
+
+
 class DashboardMetricChartResponse(BaseModel):
     title: str
     bucket: DashboardBucket
@@ -481,6 +495,7 @@ class DashboardChartsResponse(BaseModel):
     glycemic_risk: DashboardMetricChartResponse
     adherence: DashboardMetricChartResponse
     meal_timing: DashboardMealTimingChartResponse
+    blood_pressure: DashboardBloodPressureChartResponse
 
 
 class DashboardInsightsResponse(BaseModel):

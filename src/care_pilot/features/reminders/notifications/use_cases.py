@@ -152,13 +152,13 @@ def _notification_from_event(
 
 
 def _user_notification_events(
-    *, context: "AppContext", user_id: str
+    *, context: AppContext, user_id: str
 ) -> list[WorkflowTimelineEvent]:
     events = context.event_timeline.get_events(user_id=user_id)
     return [event for event in events if event.event_type == "workflow_completed"]
 
 
-def list_notifications(*, context: "AppContext", user_id: str) -> NotificationListResponse:
+def list_notifications(*, context: AppContext, user_id: str) -> NotificationListResponse:
     events = _user_notification_events(context=context, user_id=user_id)
     items = [
         _notification_from_event(event=event, reads=context.notification_reads, user_id=user_id)
@@ -170,7 +170,7 @@ def list_notifications(*, context: "AppContext", user_id: str) -> NotificationLi
 
 def mark_notification_read(
     *,
-    context: "AppContext",
+    context: AppContext,
     user_id: str,
     notification_id: str,
 ) -> NotificationMarkReadResponse | None:
@@ -185,7 +185,7 @@ def mark_notification_read(
 
 
 def mark_all_notifications_read(
-    *, context: "AppContext", user_id: str
+    *, context: AppContext, user_id: str
 ) -> NotificationMarkAllReadResponse:
     existing = list_notifications(context=context, user_id=user_id)
     updated_count = context.notification_reads.mark_all(

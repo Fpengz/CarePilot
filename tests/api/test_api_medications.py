@@ -7,12 +7,12 @@ import pytest
 from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from care_pilot.config.app import get_settings
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
 from care_pilot.agent.runtime.inference_types import (
     InferenceResponse,
     ProviderMetadata,
 )
+from care_pilot.config.app import get_settings
 from care_pilot.features.medications.intake.models import (
     LLMNormalizedMedicationInstruction,
     MedicationParseOutput,

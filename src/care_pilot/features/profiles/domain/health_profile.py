@@ -7,7 +7,7 @@ use cases.  No persistence imports — callers inject the repository.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Protocol, cast
 
 from care_pilot.features.companion.core.health.models import (
@@ -76,7 +76,7 @@ def update_health_profile(
         **current.model_dump(mode="json"),
         **updates,
         "user_id": user_id,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(UTC).isoformat(),
     }
     merged = HealthProfileRecord.model_validate(merged_payload)
     return repository.save_health_profile(merged)

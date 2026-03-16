@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from care_pilot.features.recommendations.domain.models import (
-    CanonicalFoodRecord,
-)
 from care_pilot.features.meals.domain.models import Nutrition
 from care_pilot.features.recommendations.domain.canonical_food_matching import (
     build_default_canonical_food_records,
     find_food_by_name,
     rank_food_candidates,
+)
+from care_pilot.features.recommendations.domain.models import (
+    CanonicalFoodRecord,
 )
 
 

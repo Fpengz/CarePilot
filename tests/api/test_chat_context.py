@@ -2,7 +2,11 @@
 
 from dataclasses import dataclass
 
+from care_pilot.features.companion.core.chat_context import format_chat_context
 from care_pilot.features.companion.core.domain import CaseSnapshot
+from care_pilot.features.companion.core.health.models import (
+    HealthProfileRecord,
+)
 from care_pilot.features.meals.domain.models import (
     Ingredient,
     MealState,
@@ -10,10 +14,6 @@ from care_pilot.features.meals.domain.models import (
     PortionSize,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.companion.core.chat_context import format_chat_context
-from care_pilot.features.companion.core.health.models import (
-    HealthProfileRecord,
-)
 from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,

@@ -7,8 +7,8 @@ from datetime import date
 
 from care_pilot.core.time import local_date_for
 from care_pilot.features.meals.deps import MealDeps
-from care_pilot.features.meals.domain.nutrition_models import DailyNutritionSummary, NutritionTotals
 from care_pilot.features.meals.domain.models import NutritionRiskProfile
+from care_pilot.features.meals.domain.nutrition_models import DailyNutritionSummary, NutritionTotals
 from care_pilot.features.profiles.domain.health_profile import get_or_create_health_profile
 
 
@@ -41,14 +41,14 @@ def get_daily_summary_data(
     sodium = sum(item.sodium_mg for item in daily)
     protein = sum(item.protein_g for item in daily)
     fiber = sum(item.fiber_g for item in daily)
+
+    max_captured_at = max((item.captured_at for item in daily), default=None)
+    last_logged_at = max_captured_at.isoformat() if max_captured_at is not None else None
+
     return DailyNutritionSummary(
         date=str(summary_date),
         meal_count=len(daily),
-        last_logged_at=(
-            max((item.captured_at for item in daily), default=None).isoformat()
-            if daily
-            else None
-        ),
+        last_logged_at=last_logged_at,
         consumed=NutritionTotals(
             calories=calories,
             sugar_g=sugar,

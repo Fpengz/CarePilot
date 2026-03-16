@@ -2,21 +2,21 @@
 
 from datetime import date, datetime
 
+from care_pilot.features.medications.domain import (
+    compute_mcr,
+    generate_daily_reminders,
+    mark_meal_confirmation,
+)
 from care_pilot.features.profiles.domain.models import (
     MedicalCondition,
     Medication,
     UserProfile,
 )
 from care_pilot.features.reminders.domain.models import MedicationRegimen
-from care_pilot.platform.persistence import SQLiteRepository
-from care_pilot.features.medications.domain import (
-    compute_mcr,
-    generate_daily_reminders,
-    mark_meal_confirmation,
-)
 from care_pilot.features.reminders.notifications.alert_dispatch import (
     dispatch_reminder,
 )
+from care_pilot.platform.persistence import SQLiteRepository
 
 
 def test_user_story_1_schedule_notify_confirm(tmp_path) -> None:

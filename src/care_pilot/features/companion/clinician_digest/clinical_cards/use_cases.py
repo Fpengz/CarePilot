@@ -7,26 +7,29 @@ used by the digest view.
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from uuid import uuid4
 
 from apps.api.carepilot_api.deps import ClinicalCardDeps
 from apps.api.carepilot_api.errors import build_api_error
+
 from care_pilot.core.contracts.api import (
     ClinicalCardEnvelopeResponse,
     ClinicalCardGenerateRequest,
     ClinicalCardListResponse,
     ClinicalCardResponse,
 )
+from care_pilot.features.companion.core.health.blood_pressure import summarize_blood_pressure
+from care_pilot.features.companion.core.health.clinical_card import (
+    ClinicalCardRecord,
+)
 from care_pilot.features.companion.core.health.models import MetricTrend
 from care_pilot.features.companion.impact.domain import (
     adherence_rate_points,
     biomarker_points,
+    blood_pressure_points,
     build_metric_trend,
     meal_calorie_points,
-)
-from care_pilot.features.companion.core.health.clinical_card import (
-    ClinicalCardRecord,
 )
 
 
@@ -78,6 +81,7 @@ def generate_clinical_card_for_session(
     start_date, end_date = _resolve_date_window(payload)
     meal_records = deps.stores.meals.list_meal_records(user_id)
     biomarker_readings = deps.stores.biomarkers.list_biomarker_readings(user_id)
+    bp_readings = deps.health_metrics.list_blood_pressure_readings(user_id=user_id)
     symptom_items = deps.stores.symptoms.list_symptom_checkins(user_id=user_id, limit=500)
     adherence_items = deps.stores.medications.list_medication_adherence_events(user_id=user_id)
 
@@ -94,6 +98,11 @@ def generate_clinical_card_for_session(
         item
         for item in biomarker_readings
         if item.measured_at is not None and start_date <= item.measured_at.date() <= end_date
+    ]
+    in_window_bp = [
+        item
+        for item in bp_readings
+        if start_date <= item.recorded_at.date() <= end_date
     ]
 
     calories_now = sum(float(item.meal_state.nutrition.calories) for item in in_window_meals)
@@ -118,7 +127,25 @@ def generate_clinical_card_for_session(
     )
     calorie_trend = build_metric_trend("meal:calories", meal_calorie_points(meal_records))
     adherence_trend = build_metric_trend("adherence:rate", adherence_rate_points(adherence_items))
+    bp_summary = summarize_blood_pressure(in_window_bp, conditions=[])
+    systolic_trend = build_metric_trend(
+        "bp:systolic", blood_pressure_points(bp_readings, metric="systolic")
+    )
+    diastolic_trend = build_metric_trend(
+        "bp:diastolic", blood_pressure_points(bp_readings, metric="diastolic")
+    )
 
+    bp_section = (
+        "Blood pressure: no paired readings in this window."
+        if bp_summary is None
+        else (
+            f"Blood pressure avg {bp_summary.stats.avg_systolic}/{bp_summary.stats.avg_diastolic} mmHg "
+            f"(range {bp_summary.stats.min_systolic}-{bp_summary.stats.max_systolic} / "
+            f"{bp_summary.stats.min_diastolic}-{bp_summary.stats.max_diastolic}). "
+            f"Trend {bp_summary.trend.direction} (Δ{bp_summary.trend.delta_systolic:+.1f} systolic). "
+            f"Abnormal readings: {len(bp_summary.abnormal_readings)}."
+        )
+    )
     sections = {
         "subjective": (
             f"User reported {len(in_window_symptoms)} symptom check-ins in this window. "
@@ -127,12 +154,14 @@ def generate_clinical_card_for_session(
         "objective": (
             f"Meals logged: {len(in_window_meals)}. Total estimated calories: {round(calories_now, 2)}. "
             f"Biomarker readings in window: {len(in_window_biomarkers)}. "
-            f"Adherence events in window: {len(in_window_adherence)}."
+            f"Adherence events in window: {len(in_window_adherence)}. "
+            f"{bp_section}"
         ),
         "assessment": (
             f"LDL trend: {ldl_trend.direction} ({ldl_trend.delta}). "
             f"HbA1c trend: {hba1c_trend.direction} ({hba1c_trend.delta}). "
-            f"Adherence trend: {adherence_trend.direction} ({adherence_trend.delta})."
+            f"Adherence trend: {adherence_trend.direction} ({adherence_trend.delta}). "
+            f"Systolic BP trend: {systolic_trend.direction} ({systolic_trend.delta})."
         ),
         "plan": (
             "Continue meal and symptom logging daily; review high-risk entries promptly; "
@@ -144,11 +173,13 @@ def generate_clinical_card_for_session(
         "biomarker:hba1c": _trend_json(hba1c_trend),
         "meal:calories": _trend_json(calorie_trend),
         "adherence:rate": _trend_json(adherence_trend),
+        "bp:systolic": _trend_json(systolic_trend),
+        "bp:diastolic": _trend_json(diastolic_trend),
     }
     card = ClinicalCardRecord(
         id=str(uuid4()),
         user_id=user_id,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         start_date=start_date,
         end_date=end_date,
         format=payload.format,
@@ -160,6 +191,7 @@ def generate_clinical_card_for_session(
             "symptom_checkin_count": len(symptom_items),
             "biomarker_reading_count": len(biomarker_readings),
             "adherence_event_count": len(adherence_items),
+            "bp_reading_count": len(bp_readings),
         },
     )
     saved = deps.stores.clinical_cards.save_clinical_card(card)

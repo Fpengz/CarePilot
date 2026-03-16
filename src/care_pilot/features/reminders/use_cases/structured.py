@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from apps.api.carepilot_api.routes_shared import default_demo_regimens
-from care_pilot.features.companion.core.health.models import (
-    MedicationAdherenceEvent,
-)
+
 from care_pilot.features.companion.core.health.analytics import (
     EngagementMetrics,
+)
+from care_pilot.features.companion.core.health.models import (
+    MedicationAdherenceEvent,
 )
 from care_pilot.features.medications.domain import compute_mcr
 from care_pilot.features.profiles.domain.models import UserProfile
@@ -23,8 +24,8 @@ from care_pilot.features.reminders.domain.models import (
     ReminderActionRecord,
     ReminderDefinition,
     ReminderEvent,
-    ReminderOccurrence,
     ReminderNotificationLogEntry,
+    ReminderOccurrence,
 )
 from care_pilot.features.reminders.notifications.reminder_materialization import (
     cancel_reminder_notifications,
@@ -48,7 +49,7 @@ def _definition_summary(definition: ReminderDefinition) -> str:
 
 
 def _find_definition_for_regimen(
-    *, context: "AppContext", user_id: str, regimen_id: str
+    *, context: AppContext, user_id: str, regimen_id: str
 ) -> ReminderDefinition | None:
     for item in context.stores.reminders.list_reminder_definitions(user_id, active_only=False):
         if item.regimen_id == regimen_id:
@@ -87,7 +88,7 @@ def _event_from_occurrence(
 
 def _upsert_definition_from_regimen(
     *,
-    context: "AppContext",
+    context: AppContext,
     regimen,
 ) -> ReminderDefinition:
     existing = _find_definition_for_regimen(
@@ -100,14 +101,14 @@ def _upsert_definition_from_regimen(
     return context.stores.reminders.save_reminder_definition(candidate)
 
 
-def _existing_occurrence_keys(*, context: "AppContext", user_id: str) -> set[tuple[str, str]]:
+def _existing_occurrence_keys(*, context: AppContext, user_id: str) -> set[tuple[str, str]]:
     items = context.stores.reminders.list_reminder_occurrences(user_id=user_id, limit=1000)
     return {(item.reminder_definition_id, item.scheduled_for.isoformat()) for item in items}
 
 
 def _sync_occurrence_projection(
     *,
-    context: "AppContext",
+    context: AppContext,
     definition: ReminderDefinition,
     occurrence: ReminderOccurrence,
 ) -> None:
@@ -122,7 +123,7 @@ def _sync_occurrence_projection(
 
 def generate_structured_reminders_for_session(
     *,
-    context: "AppContext",
+    context: AppContext,
     session: dict[str, object],
 ) -> tuple[list[ReminderEvent], EngagementMetrics]:
     user_profile: UserProfile = build_user_profile_from_session(session, context.stores.profiles)
@@ -136,7 +137,7 @@ def generate_structured_reminders_for_session(
 
     existing_keys = _existing_occurrence_keys(context=context, user_id=user_profile.id)
     created_events: list[ReminderEvent] = []
-    target_date = datetime.now(timezone.utc).date()
+    target_date = datetime.now(UTC).date()
     for regimen in regimens:
         definition = _upsert_definition_from_regimen(context=context, regimen=regimen)
         for occurrence in occurrences_for_definition(
@@ -172,14 +173,14 @@ def generate_structured_reminders_for_session(
 
 
 def list_reminder_definitions_for_user(
-    *, context: "AppContext", user_id: str
+    *, context: AppContext, user_id: str
 ) -> list[ReminderDefinition]:
     return context.stores.reminders.list_reminder_definitions(user_id, active_only=True)
 
 
 def create_reminder_definition_for_user(
     *,
-    context: "AppContext",
+    context: AppContext,
     session: dict[str, object],
     definition: ReminderDefinition,
 ) -> ReminderDefinition:
@@ -191,7 +192,7 @@ def create_reminder_definition_for_user(
 
     user_profile: UserProfile = build_user_profile_from_session(session, context.stores.profiles)
     existing_keys = _existing_occurrence_keys(context=context, user_id=user_profile.id)
-    target_date = datetime.now(timezone.utc).date()
+    target_date = datetime.now(UTC).date()
     for occurrence in occurrences_for_definition(
         definition=saved, target_date=target_date, user_profile=user_profile
     ):
@@ -209,7 +210,7 @@ def create_reminder_definition_for_user(
 
 def update_reminder_definition_for_user(
     *,
-    context: "AppContext",
+    context: AppContext,
     user_id: str,
     session: dict[str, object] | None = None,
     reminder_definition_id: str,
@@ -221,12 +222,12 @@ def update_reminder_definition_for_user(
     schedule_changed = "schedule" in updates and updates["schedule"] is not None
     payload = existing.model_dump(mode="json")
     payload.update({key: value for key, value in updates.items() if value is not None})
-    payload["updated_at"] = datetime.now(timezone.utc)
+    payload["updated_at"] = datetime.now(UTC)
     updated = ReminderDefinition.model_validate(payload)
     saved = context.stores.reminders.save_reminder_definition(updated)
 
     if schedule_changed:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         occurrences = context.stores.reminders.list_reminder_occurrences(
             user_id=user_id,
             reminder_definition_id=reminder_definition_id,
@@ -282,14 +283,14 @@ def update_reminder_definition_for_user(
 
 
 def _ensure_today_occurrences_for_session(
-    *, context: "AppContext", session: dict[str, object]
+    *, context: AppContext, session: dict[str, object]
 ) -> None:
     user_profile: UserProfile = build_user_profile_from_session(session, context.stores.profiles)
     definitions = context.stores.reminders.list_reminder_definitions(
         user_profile.id, active_only=True
     )
     existing_keys = _existing_occurrence_keys(context=context, user_id=user_profile.id)
-    target_date = datetime.now(timezone.utc).date()
+    target_date = datetime.now(UTC).date()
     for definition in definitions:
         for occurrence in occurrences_for_definition(
             definition=definition,
@@ -313,7 +314,7 @@ def _ensure_today_occurrences_for_session(
 
 def list_upcoming_occurrences_for_user(
     *,
-    context: "AppContext",
+    context: AppContext,
     session: dict[str, object],
     user_id: str,
 ) -> list[ReminderOccurrence]:
@@ -323,7 +324,7 @@ def list_upcoming_occurrences_for_user(
 
 
 def list_history_occurrences_for_user(
-    *, context: "AppContext", user_id: str
+    *, context: AppContext, user_id: str
 ) -> list[ReminderOccurrence]:
     items = context.stores.reminders.list_reminder_occurrences(user_id=user_id, limit=200)
     return [item for item in items if item.status not in {"scheduled", "queued", "processing"}]
@@ -331,7 +332,7 @@ def list_history_occurrences_for_user(
 
 def apply_occurrence_action_for_session(
     *,
-    context: "AppContext",
+    context: AppContext,
     user_id: str,
     occurrence_id: str,
     action: str,
@@ -344,7 +345,7 @@ def apply_occurrence_action_for_session(
     if definition is None:
         raise KeyError("reminder definition not found")
 
-    acted_at = datetime.now(timezone.utc)
+    acted_at = datetime.now(UTC)
     context.stores.reminders.append_reminder_action(
         ReminderActionRecord(
             id=str(uuid4()),

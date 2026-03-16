@@ -2,9 +2,9 @@
 
 from typing import cast
 
-from care_pilot.config.llm import LocalModelProfile, LLMSettings
-from care_pilot.config.app import get_settings
 from care_pilot.agent.runtime import LLMFactory
+from care_pilot.config.app import get_settings
+from care_pilot.config.llm import LLMSettings, LocalModelProfile
 
 
 def test_default_local_model_profiles_are_available() -> None:

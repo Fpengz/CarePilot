@@ -5,7 +5,7 @@ duplicate capture submissions within a session state window.
 """
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -39,7 +39,7 @@ def build_capture_envelope(
         filename=image_input.filename,
         content_sha256=content_sha256,
         metadata={**image_input.metadata},
-        captured_at=datetime.now(timezone.utc),
+        captured_at=datetime.now(UTC),
     )
 
 
@@ -61,13 +61,13 @@ def should_suppress_duplicate_capture(
     if not content_hash:
         return False
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     seen_raw = bucket.get(content_hash)
     if isinstance(seen_raw, str):
         try:
             seen_at = datetime.fromisoformat(seen_raw)
             if seen_at.tzinfo is None:
-                seen_at = seen_at.replace(tzinfo=timezone.utc)
+                seen_at = seen_at.replace(tzinfo=UTC)
             if (now - seen_at).total_seconds() <= window_seconds:
                 return True
         except ValueError:

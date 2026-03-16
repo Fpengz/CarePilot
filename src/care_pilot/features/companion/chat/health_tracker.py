@@ -17,15 +17,15 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")  # headless — no display needed
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 
 from care_pilot.agent.chat.schemas import ChatMetricsOutput
-from care_pilot.features.companion.chat.memory import InferenceEngineProtocol
 from care_pilot.agent.runtime.inference_types import (
     InferenceModality,
     InferenceRequest,
 )
+from care_pilot.features.companion.chat.memory import InferenceEngineProtocol
 from care_pilot.platform.observability import get_logger
 
 # ---------------------------------------------------------------------------
@@ -319,7 +319,7 @@ class HealthTracker:
             y=1.01,
         )
 
-        for ax, (metric_type, pts) in zip(axes[:, 0], groups.items()):
+        for ax, (_metric_type, pts) in zip(axes[:, 0], groups.items(), strict=False):
             dates = [p[0] for p in pts]
             values = [p[1] for p in pts]
             label = pts[0][3]
@@ -347,7 +347,7 @@ class HealthTracker:
                 ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d %H:%M"))
 
             # Annotate each point with its value
-            for d, v in zip(dates, values):
+            for d, v in zip(dates, values, strict=False):
                 ax.annotate(
                     f"{v:g} {unit}".strip(),
                     (d, v),

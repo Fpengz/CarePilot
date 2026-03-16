@@ -6,7 +6,7 @@ This module stores household records in the SQLite persistence layer.
 
 import secrets
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -65,7 +65,7 @@ class SQLiteHouseholdStore:
         self._conn.commit()
 
     def _now(self) -> datetime:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
     def get_household_for_user(self, user_id: str) -> dict[str, Any] | None:
         row = self._conn.execute(
@@ -215,8 +215,8 @@ class SQLiteHouseholdStore:
         except ValueError:
             return None
         if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        if self._now() >= expires_at.astimezone(timezone.utc):
+            expires_at = expires_at.replace(tzinfo=UTC)
+        if self._now() >= expires_at.astimezone(UTC):
             return None
 
         household_id = str(invite["household_id"])
