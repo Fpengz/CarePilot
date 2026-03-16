@@ -138,7 +138,7 @@
           <mxGeometry x="180" y="243" width="215" height="65" as="geometry" />
         </mxCell>
 
-        <mxCell id="da" value="⚙  Dietary Agent"
+        <mxCell id="da" value="⚙  Dietary Agent (handoff)"
           style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
                  html=1;fontStyle=1;fontSize=12;strokeWidth=2;
                  verticalAlign=middle;"
@@ -147,7 +147,7 @@
           <mxGeometry x="690" y="243" width="215" height="65" as="geometry" />
         </mxCell>
 
-        <mxCell id="cis" value="Context Ingestion Service"
+        <mxCell id="cis" value="Context Ingestion Service (planned)"
           style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
                  html=1;fontSize=12;strokeWidth=2;verticalAlign=middle;"
           vertex="1" parent="1">
@@ -208,7 +208,7 @@
           <mxGeometry x="683" y="578" width="195" height="75" as="geometry" />
         </mxCell>
 
-        <mxCell id="ums" value="User Memory Store"
+        <mxCell id="ums" value="User Memory Store (planned)"
           style="rounded=0;fillColor=#ffffff;strokeColor=#666666;
                  html=1;fontSize=12;fontStyle=1;strokeWidth=1.5;
                  verticalAlign=middle;"
@@ -224,7 +224,7 @@
              All within T5 (y=731–896).
         ───────────────────────────────────────────── -->
 
-        <mxCell id="hsi" value="Health-State Interpretation"
+        <mxCell id="hsi" value="Health-State Interpretation (downstream)"
           style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
                  html=1;fontStyle=1;fontSize=12;strokeWidth=2;
                  verticalAlign=middle;"
@@ -233,7 +233,7 @@
           <mxGeometry x="155" y="762" width="270" height="65" as="geometry" />
         </mxCell>
 
-        <mxCell id="reng" value="Recommendation Engine"
+        <mxCell id="reng" value="Recommendation Engine (downstream)"
           style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
                  html=1;fontStyle=1;fontSize=12;strokeWidth=2;
                  verticalAlign=middle;"
@@ -242,7 +242,7 @@
           <mxGeometry x="640" y="762" width="280" height="65" as="geometry" />
         </mxCell>
 
-        <mxCell id="presp" value="Patient Response"
+        <mxCell id="presp" value="Patient Response (downstream)"
           style="rounded=1;arcSize=20;fillColor=#ffffff;strokeColor=#1a1a1a;
                  html=1;fontStyle=1;fontSize=12;strokeWidth=2;
                  verticalAlign=middle;"
@@ -477,7 +477,7 @@
              all node text.
         ───────────────────────────────────────────── -->
 
-        <mxCell id="e-feedback" value="Preference Learning"
+        <mxCell id="e-feedback" value="Preference Learning (planned)"
           style="edgeStyle=orthogonalEdgeStyle;html=1;
                  strokeColor=#1a1a1a;strokeWidth=2;
                  dashed=1;dashPattern=8 4;

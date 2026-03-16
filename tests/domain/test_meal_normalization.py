@@ -1,6 +1,6 @@
 """Tests for meal normalization."""
 
-from care_pilot.features.meals.use_cases import normalize_vision_result
+from care_pilot.features.meals.domain.normalization import normalize_vision_result
 from care_pilot.features.meals.domain import MealPerception
 from care_pilot.features.recommendations.domain.models import (
     CanonicalFoodRecord,
@@ -207,6 +207,167 @@ def test_normalize_vision_result_uses_component_refinement_for_ambiguous_label()
     assert normalized.enriched_event.normalized_items[0].canonical_food_id == "ckt"
     assert normalized.enriched_event.normalized_items[0].match_confidence >= 0.85
     assert normalized.primary_state.dish_name == "Char Kway Teow"
+
+
+def test_normalize_vision_result_filters_conflicting_aliases() -> None:
+    store = _StubFoodStore(
+        CanonicalFoodRecord(
+            food_id="hcr",
+            title="Hainanese Chicken Rice",
+            aliases=["Chicken Rice"],
+            aliases_normalized=["hainanese chicken rice", "chicken rice"],
+            slot="lunch",
+            venue_type="hawker",
+            cuisine_tags=["local"],
+            ingredient_tags=["chicken", "rice"],
+            preparation_tags=["steamed"],
+            nutrition=Nutrition(
+                calories=520,
+                carbs_g=60,
+                sugar_g=2,
+                protein_g=32,
+                fat_g=12,
+                sodium_mg=720,
+            ),
+        ),
+        CanonicalFoodRecord(
+            food_id="biryani",
+            title="Biryani (Chicken)",
+            aliases=["Biryani (Chicken)", "Nasi Briyani Ayam"],
+            aliases_normalized=["biryani chicken", "nasi briyani ayam"],
+            slot="lunch",
+            venue_type="hawker",
+            cuisine_tags=["local"],
+            ingredient_tags=["chicken", "basmati rice", "spices"],
+            preparation_tags=["baked"],
+            nutrition=Nutrition(
+                calories=680,
+                carbs_g=75,
+                sugar_g=4,
+                protein_g=28,
+                fat_g=18,
+                sodium_mg=880,
+            ),
+        ),
+    )
+    vision_result = VisionResult(
+        primary_state=MealState(
+            dish_name="Chicken Biryani",
+            confidence_score=0.9,
+            identification_method="AI_Flash",
+            ingredients=[],
+            nutrition=Nutrition(
+                calories=0,
+                carbs_g=0,
+                sugar_g=0,
+                protein_g=0,
+                fat_g=0,
+                sodium_mg=0,
+            ),
+        ),
+        raw_ai_output="{}",
+        perception=MealPerception.model_validate(
+            {
+                "meal_detected": True,
+                "items": [
+                    {
+                        "label": "Chicken Biryani",
+                        "candidate_aliases": [
+                            "Chicken Biryani Dish",
+                            "Spiced Chicken Rice",
+                        ],
+                        "portion_estimate": {
+                            "amount": 1.0,
+                            "unit": "plate",
+                            "confidence": 0.8,
+                        },
+                        "preparation": "layered and baked",
+                        "confidence": 0.9,
+                    }
+                ],
+                "image_quality": "good",
+                "confidence_score": 0.9,
+            }
+        ),
+    )
+
+    normalized = normalize_vision_result(
+        vision_result=vision_result, food_store=store, locale="en-SG"
+    )
+
+    assert normalized.enriched_event is not None
+    assert normalized.enriched_event.normalized_items[0].canonical_food_id == "biryani"
+    assert normalized.primary_state.dish_name == "Biryani (Chicken)"
+
+
+def test_normalize_vision_result_leaves_unmatched_when_only_token_overlap() -> None:
+    store = _StubFoodStore(
+        CanonicalFoodRecord(
+            food_id="mee-rebus",
+            title="Mee Rebus",
+            aliases=["Mee Rebus"],
+            aliases_normalized=["mee rebus"],
+            slot="lunch",
+            venue_type="hawker",
+            cuisine_tags=["local"],
+            ingredient_tags=["noodles", "gravy"],
+            preparation_tags=["stewed"],
+            nutrition=Nutrition(
+                calories=520,
+                carbs_g=70,
+                sugar_g=8,
+                protein_g=15,
+                fat_g=18,
+                sodium_mg=950,
+            ),
+        )
+    )
+    vision_result = VisionResult(
+        primary_state=MealState(
+            dish_name="Hokkien Mee",
+            confidence_score=0.85,
+            identification_method="AI_Flash",
+            ingredients=[],
+            nutrition=Nutrition(
+                calories=0,
+                carbs_g=0,
+                sugar_g=0,
+                protein_g=0,
+                fat_g=0,
+                sodium_mg=0,
+            ),
+        ),
+        raw_ai_output="{}",
+        perception=MealPerception.model_validate(
+            {
+                "meal_detected": True,
+                "items": [
+                    {
+                        "label": "Hokkien Mee",
+                        "candidate_aliases": ["Hokkien Mee"],
+                        "portion_estimate": {
+                            "amount": 1.0,
+                            "unit": "plate",
+                            "confidence": 0.8,
+                        },
+                        "preparation": "stir-fried",
+                        "confidence": 0.85,
+                    }
+                ],
+                "image_quality": "good",
+                "confidence_score": 0.85,
+            }
+        ),
+    )
+
+    normalized = normalize_vision_result(
+        vision_result=vision_result, food_store=store, locale="en-SG"
+    )
+
+    assert normalized.enriched_event is not None
+    assert normalized.enriched_event.normalized_items[0].canonical_food_id is None
+    assert normalized.enriched_event.normalized_items[0].canonical_name == "Hokkien Mee"
+    assert normalized.primary_state.dish_name == "Hokkien Mee"
 
 
 def test_normalize_vision_result_marks_ambiguous_component_mismatch_for_manual_review() -> None:
