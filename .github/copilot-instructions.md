@@ -28,7 +28,7 @@ pnpm web:build
 
 **Full-stack dev server:**
 ```bash
-uv run python scripts/dg.py dev
+uv run python scripts/cli.py dev
 ```
 
 **`SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0` is required** for all backend commands because the package uses `hatch-vcs` (version from git tags) and won't build without a tag or this override.
