@@ -49,9 +49,9 @@ from care_pilot.platform.observability.tooling.domain.models import (
     ToolExecutionResult,
 )
 
-from .core import HealthProfileResponseItem, JsonValue
-from .meal_health import SymptomSummaryResponse
-from .workflows import WorkflowResponse
+from care_pilot.core.contracts.api.core import HealthProfileResponseItem, JsonValue
+from care_pilot.core.contracts.api.meal_health import SymptomSummaryResponse
+from care_pilot.core.contracts.api.workflows import WorkflowResponse
 
 
 class ReportParseRequest(BaseModel):

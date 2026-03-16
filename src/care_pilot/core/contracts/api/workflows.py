@@ -44,8 +44,8 @@ from care_pilot.platform.observability.tooling.domain.models import (
     ToolExecutionResult,
 )
 
-from .core import JsonValue
-from .notifications import (
+from care_pilot.core.contracts.api.core import JsonValue
+from care_pilot.core.contracts.api.notifications import (
     AlertTimelineItemResponse,
     WorkflowTimelineEventPayloadResponse,
 )

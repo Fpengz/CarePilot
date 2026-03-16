@@ -34,10 +34,8 @@ Current baseline versus target direction:
 Current hardening emphasis:
 - stabilize typed API contracts and frontend error handling
 - reduce opaque orchestration and broad service-locator patterns
-- strengthen runtime topology validation for the SQLite plus optional Redis path
-- improve observability and safety behavior on real request paths before adding more surface area
-- establish `features/`, `agent/`, `platform/`, and `core/` as the canonical backend import surfaces
-- completed architecture refactor: removed legacy layered packages, consolidated observability, and added SafetyPort and typed agent schema contracts
+- establish `features/`, `agent/`, `platform/`, `core/`, and `core/contracts/api/` as the canonical backend surfaces
+- completed architecture refactor: removed legacy layered packages, relocated API schemas to core contracts, and stabilized the persistence layer.
 
 ## Delivered phases
 
@@ -50,56 +48,22 @@ Delivered:
   - `GET /api/v1/clinician/digest`
   - `GET /api/v1/impact/summary`
 
-### Phase 2: Interaction intelligence
+### Phase 2: Structural hardening and contracts
 Delivered:
-- application-layer interaction orchestration
-- deterministic evidence retrieval boundary and adapter
-- deterministic safety review before response serialization
-- interaction-type-specific planning for `chat`, `meal_review`, `check_in`, `report_follow_up`, and `adherence_follow_up`
-- clinician digests with priority, change summary, interventions attempted, and citations
-- impact summaries with baseline/comparison windows and delta-oriented metrics
-- companion-first web pages for `/companion`, `/clinician-digest`, and `/impact`
+- relocation of all API schemas to `src/care_pilot/core/contracts/api/`
+- decoupling of feature logic from the API app layer
+- extraction of cross-feature orchestration to API services
+- stabilization of the SQLite persistence layer with a central bootstrap mechanism
+- resolution of circular import patterns across domain and workflow models
 
-## Current feature status
-- `meal analysis and weekly nutrition patterns`: complete baseline
-- `recommendation agent and substitution flows`: complete baseline, still being hardened
-- `medication tracking and reminder automation`: complete baseline
-- `symptom check-ins and report context`: complete baseline
-- `clinical cards and metric trends`: complete baseline
-- `emotion inference API`: implemented behind feature flags
-- `community/caregiver monitoring`: complete baseline for current care flows
-
-## Next phases
-
-### Phase 3: Proactive engagement
+### Phase 3: Proactive engagement (ACTIVE)
 - turn reminder and adherence signals into explicit proactive outreach triggers
 - add inactivity, repeated risky meal, and worsening symptom triggers
 - persist intervention outcomes for replay and evaluation
 
-### Phase 4: Evidence and reasoning upgrade
-- replace deterministic evidence packs with a fuller retrieval backend behind the existing evidence port
-- improve provenance, citation quality, and multi-condition support
-- harden prompt assembly and agent contract consistency where agents are still used
-
-### Phase 5: Runtime hardening
-- strengthen the SQLite-first topology as the standard target-aligned stack
-- improve observability, readiness, and failure recovery around worker and provider flows
-- keep the modular monolith intact until runtime split is justified by real constraints
-
-## Execution posture
-- fold new capabilities behind the feature-first modular-monolith boundaries instead of creating parallel systems
-- prefer incremental migration of important flows over clean-slate rewrites
-- retire duplicate architecture or planning artifacts once their useful content has been absorbed into canonical docs and code
-
-## Success criteria for this branch
-- the demo shows proactive guidance rather than passive CRUD
-- personalization clearly uses more than one source of truth
-- clinician output explains what changed, why it matters, and what to do next
-- impact output shows measured change over time
-
 ## Related references
 - `README.md`
 - `ARCHITECTURE.md`
-- `docs/hackathon-answer.md`
+- `docs/developer-guide.md`
 - `docs/meal-analysis-agents.md`
 - `docs/operations-runbook.md`

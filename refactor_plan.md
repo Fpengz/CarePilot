@@ -428,91 +428,30 @@ Gates:
 - `ruff`, `ty`, `pytest` pass.
 - Note: pytest emits a non-fatal warning about a background `transformers` auto-conversion thread attempting network access.
 
-### Phase 3 — companion spine cleanup (FULL)
+### Phase 3 — companion spine and contract cleanup (DONE)
 
 Goal: make `features/companion/**` the clear “product spine” with consistent feature shape, and keep `agent/**` as inference-only support.
 
-#### Phase 3.0 — Task Contract
+Completed in Phase 3:
 
-- **Goal:** eliminate hidden orchestration in route handlers, normalize companion module ownership, and slim `agent/chat/**` to inference-only.
-- **Scope:** `features/companion/**`, chat API handlers, recommendation/emotion composition surfaces, meta-tests.
-- **Files (expected):**
-  - Move logic out of: `apps/api/carepilot_api/routers/chat.py`
-  - New/expanded: `src/care_pilot/features/companion/chat/use_cases/**`
-  - Normalize: `src/care_pilot/features/companion/{core,chat,emotion,recommendations,care_plans,clinician_digest,engagement,personalization,impact}/**`
-  - Slim: `src/care_pilot/agent/chat/**`
-  - Guardrails: `tests/meta/**`
-- **Validation:** run `ruff`, `ty`, `pytest` on each chunk; keep tests green continuously.
-- **Risk:** chat streaming regressions, session scoping bugs, accidental LLM calls during tests, import-cycle regressions.
+- **Canonical Contracts**: Relocated all API schemas from `apps/api/` to `src/care_pilot/core/contracts/api/`. Features now depend on these contracts instead of the API app, breaking reverse dependencies.
+- **Orchestration Relocation**: Moved `context_loader.py` (now `companion_orchestration.py`) from the core feature layer to `apps/api/carepilot_api/services/`, correctly placing cross-feature aggregation in the API layer.
+- **God Class Refactor**: Simplified `SQLiteRepository` by delegating to specialized domain repositories and centralizing schema bootstrap in `sqlite_bootstrap.py`.
+- **Circular Import Resolution**: Extracted tool policy models to break the cycle between workflows and tooling domain models.
+- **Infrastructure Stability**: Reconciled SQLite schemas with repository expectations and added missing delegation methods to satisfy domain store protocols.
+- **Shared Utility Consolidation**: Moved timezone and clock helpers from `shared/time` to `core/time`, removing the redundant `shared/` package.
 
-#### Phase 3.1 — Extract chat behavior from API routes (Chunk 1)
+Gates:
 
-Target outcome:
+- `ruff`, `ty`, `pytest` pass.
+- All 14 medication intake API tests and core integration flows are stable.
 
-- `apps/api/carepilot_api/routers/chat.py` becomes transport-only: parse input, auth, call feature entrypoints, stream tokens.
-- Chat product behavior lives in feature-owned entrypoints:
-  - meal command parsing + proposal confirm flow
-  - memory injection formatting + persistence
-  - follow-up response composition
-  - “track” message parsing and impact hooks
+### Phase 4 — naming and file cleanup (ACTIVE)
 
-Concrete moves:
+- Replace generic `service.py` / `use_cases.py` / `presenter.py` where too broad.
+- Standardize presenters/mappers to use `core/contracts/api/`.
+- Clean up documentation and remove obsolete design artifacts.
 
-- Create `src/care_pilot/features/companion/chat/use_cases/stream_chat.py`
-  - defines a typed input (user_id/session_id/message/request_id/correlation_id)
-  - returns an async iterator of “token/error/done” events for the router to format.
-- Create `src/care_pilot/features/companion/chat/use_cases/confirm_meal_proposal.py`
-  - feature-owned validation + meal logging call + follow-up generation.
-- Keep `ChatStreamRuntime` as the streaming tool; keep memory store interactions in a feature-owned helper module.
-
-#### Phase 3.2 — Normalize companion structure and delete dead stubs (Chunk 2)
-
-Target outcome:
-
-- Companion subfeatures match a consistent shape:
-  - `domain/` deterministic models/rules
-  - `use_cases/` public entrypoints
-  - `presenters/` feature view models (not API schemas)
-  - `ports.py` where needed
-- Delete or replace empty/legacy stubs that hide ownership:
-  - remove `features/companion/interactions/**` (currently empty) or replace with real feature packages.
-- Rename vague modules where needed (`service.py`, `use_cases.py` split as they grow).
-
-#### Phase 3.3 — Slim `agent/chat/**` to inference-only (Chunk 3)
-
-Target outcome:
-
-- `src/care_pilot/agent/chat/**` contains only:
-  - schemas for chat inference IO (if still useful)
-  - prompt(s) and a `pydantic_ai` agent wrapper (if used)
-- No routing, memory management, meal intent, or health tracking logic in `agent/chat/**`.
-- `features/companion/chat/**` owns orchestration and composition.
-
-#### Phase 3.4 — Make composition feature-owned (Chunk 4)
-
-Target outcome:
-
-- Recommendation/emotion/chat composition is owned by `features/companion/**`:
-  - emotion signals flow into chat prompts via feature code
-  - recommendations are generated via feature domain services; any LLM synthesis stays in `agent/recommendation/**`
-  - clinician digest uses feature-owned deterministic assembly + (optional) agent summarization behind a narrow port
-
-#### Phase 3.5 — Guardrails (Chunk 5)
-
-Add/adjust meta-tests:
-
-- no orchestration in `apps/api/carepilot_api/routers/**` (allow only request parsing + calling feature entrypoints)
-- forbid `pydantic_ai` usage outside `src/care_pilot/agent/**`
-- forbid `pydantic_graph` usage outside `src/care_pilot/features/**/workflows/**`
-- enforce import direction: platform never imports features/agent
-
-Deliverable: Phase 3 ends with a repo that is “companion-spine first” and easy to extend without guessing where logic belongs.
-
-### Phase 4 — naming and file cleanup
-
-- replace generic `service.py` / `use_cases.py` / `presenter.py` where too broad
-- remove legacy adapters no longer used
-- standardize presenters/mappers
 
 ---
 

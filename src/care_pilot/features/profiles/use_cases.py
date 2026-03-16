@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from apps.api.carepilot_api.deps import AppContext
 from apps.api.carepilot_api.errors import build_api_error
-from apps.api.carepilot_api.schemas import (
+from care_pilot.core.contracts.api import (
     DailySuggestionBundleResponse,
     DailySuggestionsResponse,
     GuidedHealthStepResponse,

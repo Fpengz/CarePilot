@@ -15,7 +15,7 @@ from fastapi import Request, UploadFile
 
 from care_pilot.features.meals.deps import MealDeps
 from apps.api.carepilot_api.errors import build_api_error
-from apps.api.carepilot_api.schemas import (
+from care_pilot.core.contracts.api import (
     CursorPageResponse,
     MealAnalyzeResponse,
     DailyNutritionTotalsResponse,
@@ -47,7 +47,7 @@ from care_pilot.features.meals.workflows.meal_upload_graph import (
     run_meal_upload_workflow,
 )
 from care_pilot.features.meals.workflows.meal_upload_state import MealUploadState
-from care_pilot.shared.time import local_date_for
+from care_pilot.core.time import local_date_for
 
 
 def _context_snapshot(*, session: dict[str, object]) -> ContextSnapshot:

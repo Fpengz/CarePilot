@@ -101,9 +101,9 @@ pnpm web:build
 
 Full stack:
 ```bash
-uv run python scripts/dg.py test backend
-uv run python scripts/dg.py test web
-uv run python scripts/dg.py test comprehensive
+uv run python scripts/cli.py test backend
+uv run python scripts/cli.py test web
+uv run python scripts/cli.py test comprehensive
 ```
 
 ## Definition of Done

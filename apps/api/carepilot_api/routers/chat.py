@@ -34,7 +34,7 @@ from care_pilot.agent.emotion import (
 )
 from care_pilot.features.meals.use_cases import log_meal_from_text
 from care_pilot.features.companion.core.snapshot import build_case_snapshot
-from care_pilot.features.companion.core.context_loader import (
+from apps.api.carepilot_api.services.companion_orchestration import (
     load_companion_inputs,
 )
 from care_pilot.platform.persistence import AppStores

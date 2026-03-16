@@ -7,11 +7,7 @@ clinician digest reads, and impact summary responses.
 
 from __future__ import annotations
 
-from care_pilot.features.companion.core.use_cases import (  # noqa: F401
-    build_companion_today_bundle as _build_companion_today_bundle,
-    run_companion_interaction as _run_companion_interaction,
-)
-from care_pilot.features.companion.core.context_loader import (  # noqa: F401
+from .companion_orchestration import (
     get_clinician_digest,
     get_companion_today,
     get_impact_summary,

@@ -816,11 +816,20 @@ class SQLiteRepository:
     def save_biomarker_readings(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.save_biomarker_readings(*args, **kwargs)
 
+    def save_biomarker_reading(self, *args: Any, **kwargs: Any) -> Any:
+        return self.clinical.save_biomarker_reading(*args, **kwargs)
+
     def list_biomarker_readings(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.list_biomarker_readings(*args, **kwargs)
 
     def save_symptom_checkin(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.save_symptom_checkin(*args, **kwargs)
+
+    def save_health_profile(self, *args: Any, **kwargs: Any) -> Any:
+        return self.clinical.save_health_profile(*args, **kwargs)
+
+    def get_health_profile(self, *args: Any, **kwargs: Any) -> Any:
+        return self.clinical.get_health_profile(*args, **kwargs)
 
     def list_symptom_checkins(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.list_symptom_checkins(*args, **kwargs)
@@ -837,14 +846,14 @@ class SQLiteRepository:
     def get_health_profile(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.get_health_profile(*args, **kwargs)
 
-    def save_health_profile(self, *args: Any, **kwargs: Any) -> Any:
-        return self.clinical.save_health_profile(*args, **kwargs)
-
     def get_health_profile_onboarding_state(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.get_health_profile_onboarding_state(*args, **kwargs)
 
     def save_health_profile_onboarding_state(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.save_health_profile_onboarding_state(*args, **kwargs)
+
+    def get_health_profile_for_user(self, *args: Any, **kwargs: Any) -> Any:
+        return self.clinical.get_health_profile(*args, **kwargs)
 
     # --- Catalog ---
 

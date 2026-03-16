@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from apps.api.carepilot_api.deps import WorkflowDeps
-from apps.api.carepilot_api.schemas.workflows import (
+from care_pilot.core.contracts.api.workflows import (
     WorkflowListItem,
     WorkflowListResponse,
     WorkflowResponse,

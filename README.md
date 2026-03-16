@@ -27,23 +27,22 @@ apps/
   workers/    async worker runtime
 src/
   care_pilot/
-    core/            tiny shared primitives and base contracts
+    core/            tiny shared primitives and canonical API contracts
     features/        product behavior and service entrypoints
     agent/           bounded model/provider logic
     platform/        persistence, auth, scheduling, storage, observability
-    shared/          shared utilities (time, etc.)
 docs/         canonical docs and focused references
 tests/        repository-level tests
 ```
 
 ## Architecture in one view
 - `apps/web` is the main patient and admin interface
-- `apps/api` keeps routers thin and maps HTTP requests into feature services
-- `src/care_pilot/features` owns companion logic such as case snapshots, personalization, engagement, care plans, clinician digests, impact, and safety
+- `apps/api` keeps routers thin and handles cross-feature screen orchestration
+- `src/care_pilot/core/contracts/api` defines the stable schemas used by all layers
+- `src/care_pilot/features` owns domain logic and use cases
 - `src/care_pilot/platform` owns persistence and external integrations
 - `apps/workers` runs reminder, outbox, and related async processing
-- `src/care_pilot/agent` stays bounded behind typed inputs and outputs; deterministic logic remains the source of truth for durable health state
-- chat-specific agents live under `src/care_pilot/agent/chat/`
+- `src/care_pilot/agent` stays bounded behind typed inputs and outputs
 
 ## Merge provenance
 This branch merges prior work from:

@@ -51,7 +51,7 @@ def test_feature_first_backend_packages_exist() -> None:
 def test_api_service_shims_delegate_to_feature_services() -> None:
     expected_imports = {
         "apps/api/carepilot_api/services/companion.py": (
-            "from care_pilot.features.companion.core.use_cases import"
+            "from .companion_orchestration import"
         ),
         "apps/api/carepilot_api/services/meals.py": "from care_pilot.features.meals.service import",
         "apps/api/carepilot_api/services/recommendations.py": (

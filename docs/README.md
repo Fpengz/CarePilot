@@ -10,30 +10,23 @@ This directory contains focused documentation that supplements the three root ca
 - `docs/operations-runbook.md`
 - `docs/user-manual.md`
 - `docs/config-reference.md`
-- `docs/workflows.md` — orchestration standard (`pydantic-graph`) + LangGraph deferral policy
+- `docs/workflows.md` — orchestration standard (`pydantic-graph`)
 
-## Codebase maps
-- `CODEBASE_MAP.md` — current structure overview
-- `CODEBASE_INDEX.md` — doc index across root and docs
+## API contracts and policy
+- `docs/api/auth.md`
+- `docs/api/emotions.md`
+- `docs/api/recommendation-agent.md`
+- `docs/api/suggestions.md`
+- `docs/api/rbac.md`
 
-## Auth and policy references
-- `docs/api-auth-contract.md`
-- `docs/rbac-matrix.md`
-
-## Focused subsystem notes
-- `docs/meal-analysis-agents.md`
-- `docs/agent-modules.md` — agent layer module reference + standards
+## Architecture deep-dives
+- `docs/architecture/emotion-pipeline.md`
+- `docs/architecture/meal-analysis.md`
+- `docs/architecture/agent-layer-reference.md`
 - `docs/plans/2026-03-14-agent-layer-audit-refactor-spec.md` — agent layer boundaries + checklist
 
-## Product and pitch notes
-- `docs/hackathon-answer.md`
-  This is judge-facing and narrative-focused. It is not the canonical engineering source of truth.
-
-## API contract references
-- `docs/api-emotions-contract.md`
-- `docs/api-recommendation-agent-contract.md`
-- `docs/api-suggestions-contract.md`
-- `docs/api-auth-contract.md`
+## Feature-specific notes
+- `docs/features/food-normalization.md`
 
 Runtime API discovery:
 - FastAPI interactive docs: `http://localhost:8001/docs`

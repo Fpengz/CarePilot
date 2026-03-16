@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from threading import Lock
 from typing import TYPE_CHECKING, Literal
 
-from apps.api.carepilot_api.schemas import (
+from care_pilot.core.contracts.api import (
     NotificationItem,
     NotificationListResponse,
     NotificationMarkAllReadResponse,

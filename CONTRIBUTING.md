@@ -64,14 +64,14 @@ Configuration rules:
 Run the full local stack:
 
 ```bash
-uv run python scripts/dg.py dev
+uv run python scripts/cli.py dev
 ```
 
 Useful variants:
 
 ```bash
-uv run python scripts/dg.py dev --no-web
-uv run python scripts/dg.py dev --no-api
+uv run python scripts/cli.py dev --no-web
+uv run python scripts/cli.py dev --no-api
 pnpm dev:scheduler
 ```
 
@@ -172,7 +172,7 @@ A contribution is not complete if it only works locally but is opaque to operate
 High-risk shared-file areas:
 - `.github/workflows/*`
 - `pyproject.toml`, `package.json`, `pnpm-lock.yaml`
-- `src/care_pilot/config/settings.py`
+- `src/care_pilot/config/app.py`
 - `src/care_pilot/platform/persistence/*`
 - `src/care_pilot/platform/auth/*`
 - `apps/api/carepilot_api/policy.py`
@@ -407,7 +407,7 @@ uv run pytest -q
 pnpm web:lint
 pnpm web:typecheck
 pnpm --dir apps/web test:e2e
-uv run python scripts/dg.py test comprehensive
+uv run python scripts/cli.py test comprehensive
 ```
 
 ### Prompt and Agent Regression Testing

@@ -1,6 +1,6 @@
 """Module for test api typed contracts."""
 
-from apps.api.carepilot_api.schemas import (
+from care_pilot.core.contracts.api import (
     AlertTimelineItemResponse,
     AlertTimelineResponse,
     AlertTriggerResponse,

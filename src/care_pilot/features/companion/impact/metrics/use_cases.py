@@ -7,7 +7,7 @@ This module exposes lightweight metric trend queries for impact reporting.
 from __future__ import annotations
 
 from apps.api.carepilot_api.deps import AppContext
-from apps.api.carepilot_api.schemas import (
+from care_pilot.core.contracts.api import (
     MetricTrendListResponse,
     MetricTrendResponse,
 )

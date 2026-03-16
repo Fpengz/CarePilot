@@ -57,10 +57,10 @@ uv run python scripts/cli.py infra up
 ## Extension patterns
 
 ### Add or change an API feature
-1. Update schema contracts in `apps/api/carepilot_api/schemas/` if the API shape changes.
+1. Update schema contracts in `src/care_pilot/core/contracts/api/` if the API shape changes.
 2. Implement request handling in `apps/api/carepilot_api/services/<feature>.py`.
 3. Keep the route in `apps/api/carepilot_api/routers/<feature>.py` transport-only.
-4. Add or update API tests in `apps/api/tests/`.
+4. Add or update API tests in `tests/api/`.
 5. Update typed web client code in `apps/web/lib/api/` and UI consumers in `apps/web/app/`.
 
 ### Add or change core behavior

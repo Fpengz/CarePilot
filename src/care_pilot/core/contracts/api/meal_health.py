@@ -57,13 +57,13 @@ from care_pilot.platform.observability.tooling.domain.models import (
     ToolExecutionResult,
 )
 
-from .core import (
+from care_pilot.core.contracts.api.core import (
     CursorPageResponse,
     HealthProfileResponseItem,
     HouseholdCareContextResponse,
 )
-from .notifications import ScheduledReminderNotificationItemResponse
-from .workflows import WorkflowResponse
+from care_pilot.core.contracts.api.notifications import ScheduledReminderNotificationItemResponse
+from care_pilot.core.contracts.api.workflows import WorkflowResponse
 
 
 class MealAnalyzeResponse(BaseModel):

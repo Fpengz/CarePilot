@@ -55,6 +55,9 @@ class SQLiteClinicalRepository:
             len(readings),
         )
 
+    def save_biomarker_reading(self, user_id: str, reading: BiomarkerReading) -> None:
+        self.save_biomarker_readings(user_id, [reading])
+
     def list_biomarker_readings(self, user_id: str) -> list[BiomarkerReading]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(

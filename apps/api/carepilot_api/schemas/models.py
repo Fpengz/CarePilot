@@ -1,12 +1,12 @@
 """
-Re-export legacy API schema names for compatibility.
+Re-export API schema names for compatibility.
 
 This module provides a backwards-compatible import surface that forwards
-to the split schema modules.
+to the split schema modules in the core contracts package.
 """
 
-from .core import *  # noqa: F403
-from .meal_health import *  # noqa: F403
-from .notifications import *  # noqa: F403
-from .recommendations import *  # noqa: F403
-from .workflows import *  # noqa: F403
+from care_pilot.core.contracts.api.core import *  # noqa: F403
+from care_pilot.core.contracts.api.meal_health import *  # noqa: F403
+from care_pilot.core.contracts.api.notifications import *  # noqa: F403
+from care_pilot.core.contracts.api.recommendations import *  # noqa: F403
+from care_pilot.core.contracts.api.workflows import *  # noqa: F403

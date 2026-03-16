@@ -25,21 +25,18 @@ classifiers = [
 ]
 dependencies = [
     "fastapi>=0.116.1",
-    "google-genai>=1.64.0",
     "logfire>=4.25.0",
     "itsdangerous>=2.2.0",
     "pillow>=11.0.0",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.11.0",
     "pydantic-ai>=1.62.0",
-    "email-validator>=2.2.0",
     "python-dotenv>=1.2.1",
     "python-multipart>=0.0.20",
     "redis>=6.4.0",
     "rich>=14.3.3",
     "typer>=0.16.1",
     "uvicorn>=0.35.0",
-    "watchdog>=6.0.0",
     "librosa>=0.11.0",
     "numpy>=2.4.3",
     "soundfile>=0.13.1",
@@ -51,7 +48,6 @@ dependencies = [
     "e2b-code-interpreter>=2.4.1",
     "matplotlib>=3.10.8",
     "mem0ai>=1.0.0",
-    "black>=26.3.1",
 ]
 
 [project.urls]
@@ -62,6 +58,7 @@ Documentation = "README.md"
 
 [dependency-groups]
 dev = [
+    "black>=26.3.1",
     "hypothesis>=6.151.9",
     "mypy>=1.19.1",
     "pre-commit>=4.3.0",
@@ -100,11 +97,29 @@ target-version = "py312"
 line-length = 100
 src = ["src", "tests"]
 
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501", # line too long, handled by ruff format
+]
+
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
 testpaths = ["tests"]
 addopts = "-q"
 python_files = ["test_*.py"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
     "error::DeprecationWarning:care_pilot.*",
 ]

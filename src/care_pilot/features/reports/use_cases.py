@@ -10,7 +10,7 @@ from datetime import date, timedelta
 from uuid import uuid4
 
 from apps.api.carepilot_api.deps import AppContext
-from apps.api.carepilot_api.schemas import (
+from care_pilot.core.contracts.api import (
     ReportParseRequest,
     ReportParseResponse,
     SymptomSummaryWindowResponse,

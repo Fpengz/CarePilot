@@ -28,7 +28,7 @@ from care_pilot.features.reports.domain import build_clinical_snapshot
 from care_pilot.platform.persistence.evidence import StaticEvidenceRetriever
 
 from apps.api.carepilot_api.deps import AppContext
-from apps.api.carepilot_api.schemas import (
+from care_pilot.core.contracts.api import (
     ClinicianDigestEnvelopeResponse,
     ClinicianDigestResponse,
     CompanionCarePlanResponse,

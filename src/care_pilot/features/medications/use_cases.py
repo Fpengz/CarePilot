@@ -16,8 +16,8 @@ from zoneinfo import ZoneInfo
 
 if TYPE_CHECKING:
     from apps.api.carepilot_api.deps import AppContext
-from apps.api.carepilot_api.errors import build_api_error
-from apps.api.carepilot_api.schemas import (
+from care_pilot.core.errors import build_api_error
+from care_pilot.core.contracts.api.meal_health import (
     MedicationAdherenceEventCreateRequest,
     MedicationAdherenceEventEnvelopeResponse,
     MedicationAdherenceEventResponse,
@@ -36,6 +36,8 @@ from apps.api.carepilot_api.schemas import (
     MedicationRegimenPatchRequest,
     MedicationRegimenResponse,
     NormalizedMedicationInstructionResponse,
+)
+from care_pilot.core.contracts.api.notifications import (
     ScheduledReminderNotificationItemResponse,
 )
 from care_pilot.features.medications.intake import (

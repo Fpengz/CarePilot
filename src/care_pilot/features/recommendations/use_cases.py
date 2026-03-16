@@ -15,7 +15,7 @@ from apps.api.carepilot_api.deps import (
     RecommendationDeps,
 )
 from apps.api.carepilot_api.errors import build_api_error
-from apps.api.carepilot_api.schemas import (
+from care_pilot.core.contracts.api import (
     RecommendationAgentResponse,
     RecommendationGenerateResponse,
     RecommendationInteractionRequest,
