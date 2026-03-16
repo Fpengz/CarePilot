@@ -126,18 +126,17 @@ class ChatOrchestrator:
         )
 
     def clear_history(self) -> None:
-        """Delete all messages/summaries for this session."""
+        """Delete all messages/summaries for this user."""
         db_path = str(self.memory._db_path)
-        session_id = self.memory._session_id
         user_id = self.memory._user_id
         conn = sqlite3.connect(db_path)
         conn.execute(
-            "DELETE FROM chat_messages WHERE user_id = ? AND session_id = ?",
-            (user_id, session_id),
+            "DELETE FROM chat_messages WHERE user_id = ?",
+            (user_id,),
         )
         conn.execute(
-            "DELETE FROM chat_summaries WHERE user_id = ? AND session_id = ?",
-            (user_id, session_id),
+            "DELETE FROM chat_summaries WHERE user_id = ?",
+            (user_id,),
         )
         conn.commit()
         conn.close()

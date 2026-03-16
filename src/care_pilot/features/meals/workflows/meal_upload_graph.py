@@ -18,14 +18,16 @@ from care_pilot.features.meals.domain import (
     PerceivedMealItem,
 )
 from care_pilot.features.meals.domain.models import (
+    CandidateMealEvent,
     DietaryClaim,
     DietaryClaims,
+    MealCandidateRecord,
     NutritionRiskProfile,
     RawObservationBundle,
     ValidatedMealEvent,
 )
-from care_pilot.features.meals.presenter import build_meal_analysis_output
-from care_pilot.features.meals.use_cases import (
+from care_pilot.features.meals.presenters.api import build_meal_analysis_output
+from care_pilot.features.meals.domain.normalization import (
     build_meal_record,
     normalize_vision_result,
 )
@@ -217,6 +219,16 @@ class Persist(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
         enriched_event = ctx.state.vision_result.enriched_event
         if enriched_event is None:
             raise ValueError("meal analysis produced no canonical event")
+        candidate_event = CandidateMealEvent(
+            meal_name=enriched_event.meal_name,
+            normalized_items=list(enriched_event.normalized_items),
+            total_nutrition=enriched_event.total_nutrition,
+            risk_tags=list(enriched_event.risk_tags),
+            unresolved_items=list(enriched_event.unresolved_items),
+            source_records=list(enriched_event.source_records),
+            needs_manual_review=enriched_event.needs_manual_review,
+            summary=enriched_event.summary,
+        )
         validated_event = ValidatedMealEvent(
             user_id=ctx.state.user_id,
             captured_at=raw_observation.captured_at,
@@ -245,6 +257,7 @@ class Persist(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
                 enriched_event.needs_manual_review or ctx.state.unresolved_conflicts
             ),
         )
+        confirmation_required = bool(validated_event.needs_manual_review)
         total = enriched_event.total_nutrition
         uncertainty: dict[str, object] = {}
         if enriched_event.unresolved_items:
@@ -270,8 +283,29 @@ class Persist(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
         )
 
         ctx.deps.stores.meals.save_meal_observation(raw_observation)
-        ctx.deps.stores.meals.save_validated_meal_event(validated_event)
-        ctx.deps.stores.meals.save_nutrition_risk_profile(nutrition_profile)
+        candidate_record = MealCandidateRecord(
+            user_id=ctx.state.user_id,
+            captured_at=raw_observation.captured_at,
+            confirmation_status="pending",
+            candidate_event=candidate_event,
+            observation_id=raw_observation.observation_id,
+            request_id=ctx.state.request_id,
+            correlation_id=ctx.state.correlation_id,
+            source=raw_observation.source,
+            meal_text=ctx.state.meal_text,
+            validated_event=validated_event,
+            nutrition_profile=nutrition_profile,
+        )
+        if not confirmation_required:
+            candidate_record = candidate_record.model_copy(
+                update={
+                    "confirmation_status": "confirmed",
+                    "confirmed_at": raw_observation.captured_at,
+                }
+            )
+            ctx.deps.stores.meals.save_validated_meal_event(validated_event)
+            ctx.deps.stores.meals.save_nutrition_risk_profile(nutrition_profile)
+        ctx.deps.stores.meals.save_meal_candidate(candidate_record)
 
         output_envelope = build_meal_analysis_output(
             request_id=ctx.state.request_id,
@@ -340,8 +374,10 @@ class Persist(BaseNode[MealUploadState, MealUploadDeps, MealUploadOutput]):
         return End(
             MealUploadOutput(
                 raw_observation=raw_observation,
-                validated_event=validated_event,
-                nutrition_profile=nutrition_profile,
+                candidate_record=candidate_record,
+                confirmation_required=confirmation_required,
+                validated_event=None if confirmation_required else validated_event,
+                nutrition_profile=None if confirmation_required else nutrition_profile,
                 output_envelope=output_envelope,
                 workflow=workflow,
             )

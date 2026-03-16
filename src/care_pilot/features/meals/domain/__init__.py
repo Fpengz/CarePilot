@@ -11,12 +11,15 @@ from .meal_record_accessors import (
     meal_risk_tags,
 )
 from .models import (
+    CandidateMealEvent,
+    ConfirmationStatus,
     EnrichedMealEvent,
     GlycemicIndexLevel,
     ImageInput,
     Ingredient,
     LocalizationDetails,
     MealEvent,
+    MealCandidateRecord,
     MealNutritionProfile,
     MealPerception,
     MealPortionEstimate,
@@ -36,12 +39,15 @@ from .weekly_summary import build_weekly_nutrition_summary
 
 __all__ = [
     "DailyNutritionSummary",
+    "CandidateMealEvent",
+    "ConfirmationStatus",
     "EnrichedMealEvent",
     "GlycemicIndexLevel",
     "ImageInput",
     "Ingredient",
     "LocalizationDetails",
     "MealEvent",
+    "MealCandidateRecord",
     "MealNutritionProfile",
     "MealPerception",
     "MealPortionEstimate",

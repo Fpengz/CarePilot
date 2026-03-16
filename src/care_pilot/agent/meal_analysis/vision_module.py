@@ -35,7 +35,7 @@ from care_pilot.features.meals.domain.normalization import (
     perception_to_meal_state,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.meals.use_cases import (
+from care_pilot.features.meals.domain.normalization import (
     build_meal_record,
     normalize_vision_result,
 )

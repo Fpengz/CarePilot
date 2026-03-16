@@ -646,9 +646,10 @@ def get_household_care_member_daily_summary(
         viewer_user_id=viewer_user_id,
         subject_user_id=subject_user_id,
     )
-    from care_pilot.features.meals.api_service import get_daily_summary
+    from care_pilot.features.meals.use_cases import get_daily_summary_data
+    from care_pilot.features.meals.schemas import MealDailySummaryResponse, DailyNutritionTotalsResponse
 
-    summary = get_daily_summary(
+    summary_data = get_daily_summary_data(
         deps=MealDeps(
             settings=context.settings,
             stores=context.stores,
@@ -656,6 +657,16 @@ def get_household_care_member_daily_summary(
         ),
         user_id=subject_user_id,
         summary_date=summary_date,
+    )
+    summary = MealDailySummaryResponse(
+        date=summary_data.date,
+        meal_count=summary_data.meal_count,
+        last_logged_at=summary_data.last_logged_at,
+        consumed=DailyNutritionTotalsResponse.model_validate(summary_data.consumed.model_dump()),
+        targets=DailyNutritionTotalsResponse.model_validate(summary_data.targets.model_dump()),
+        remaining=DailyNutritionTotalsResponse.model_validate(summary_data.remaining.model_dump()),
+        insights=[],
+        recommendation_hints=summary_data.recommendation_hints,
     )
     return HouseholdCareMealSummaryResponse(
         context=build_care_context(
