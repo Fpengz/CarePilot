@@ -28,6 +28,7 @@ class PolicyRule:
 
 POLICY_RULES: dict[str, PolicyRule] = {
     "meal.analyze": PolicyRule(required_scopes=frozenset({"meal:write"})),
+    "meal.confirm": PolicyRule(required_scopes=frozenset({"meal:write"})),
     "meal.records.read": PolicyRule(required_scopes=frozenset({"meal:read"})),
     "reports.parse": PolicyRule(required_scopes=frozenset({"report:write"})),
     "recommendations.generate": PolicyRule(required_scopes=frozenset({"recommendation:generate"})),

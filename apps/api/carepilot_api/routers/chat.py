@@ -32,7 +32,7 @@ from care_pilot.agent.emotion import (
     EmotionAgentDisabledError,
     EmotionSpeechDisabledError,
 )
-from care_pilot.features.meals.use_cases import log_meal_from_text
+from care_pilot.features.meals.domain.normalization import log_meal_from_text
 from care_pilot.features.companion.core.snapshot import build_case_snapshot
 from apps.api.carepilot_api.services.companion_orchestration import (
     load_companion_inputs,
@@ -353,6 +353,8 @@ async def chat_stream(
             )
         yield _format_event("done", {"status": "complete"})
         if assistant_response and not had_error:
+            deps.chat_agent.memory.add_message("user", user_message)
+            deps.chat_agent.memory.add_message("assistant", assistant_response)
             await record_chat_turn(
                 memory_store=ctx.memory_store,
                 user_id=str(session.get("user_id", "")),

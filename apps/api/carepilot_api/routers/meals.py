@@ -14,12 +14,15 @@ from ..deps import meal_deps
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
     MealAnalyzeResponse,
+    MealConfirmRequest,
+    MealConfirmResponse,
     MealDailySummaryResponse,
     MealRecordsResponse,
     MealWeeklySummaryResponse,
 )
-from care_pilot.features.meals.api_service import (
+from ..services.meals import (
     analyze_meal,
+    confirm_meal,
     get_daily_summary,
     get_weekly_summary,
     list_meal_records,
@@ -91,3 +94,19 @@ def meal_weekly_summary(
         user_id=str(session["user_id"]),
         week_start=week_start,
     )
+
+
+@router.post("/api/v1/meal/confirm", response_model=MealConfirmResponse)
+def meal_confirm(
+    payload: MealConfirmRequest,
+    request: Request,
+    session: dict[str, object] = Depends(current_session),
+) -> MealConfirmResponse:
+    require_action(session, "meal.confirm")
+    result = confirm_meal(
+        deps=meal_deps(get_context(request)),
+        user_id=str(session["user_id"]),
+        candidate_id=payload.candidate_id,
+        action=payload.action,
+    )
+    return MealConfirmResponse.model_validate(result)
