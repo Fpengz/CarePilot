@@ -361,7 +361,7 @@ def _normalize_item(*, food_store: Any, locale: str, item: Any) -> NormalizedMea
         )
         return NormalizedMealItem(
             detected_label=item.label,
-            canonical_name=item.label,
+            canonical_name="DishNotRecognised",
             match_strategy="unmatched",
             match_confidence=min(item.confidence, 0.5),
             preparation=item.preparation,

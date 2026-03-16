@@ -366,8 +366,9 @@ def test_normalize_vision_result_leaves_unmatched_when_only_token_overlap() -> N
 
     assert normalized.enriched_event is not None
     assert normalized.enriched_event.normalized_items[0].canonical_food_id is None
-    assert normalized.enriched_event.normalized_items[0].canonical_name == "Hokkien Mee"
-    assert normalized.primary_state.dish_name == "Hokkien Mee"
+    assert normalized.enriched_event.normalized_items[0].canonical_name == "DishNotRecognised"
+    assert normalized.enriched_event.normalized_items[0].detected_label == "Hokkien Mee"
+    assert normalized.primary_state.dish_name == "DishNotRecognised"
 
 
 def test_normalize_vision_result_marks_ambiguous_component_mismatch_for_manual_review() -> None:
