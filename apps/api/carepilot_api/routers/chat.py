@@ -256,6 +256,21 @@ async def chat_stream(
             except Exception as exc:  # noqa: BLE001
                 _log_suppressed_emotion_failure(request=request, phase="emotion", exc=exc)
 
+        system_context = _build_extra_context(ctx, session)
+        memory_context = None
+        if ctx.memory_store.enabled:
+            snippets = await fetch_memory_snippets(
+                memory_store=ctx.memory_store,
+                user_id=str(session.get("user_id", "")),
+                query=user_message,
+                limit=ctx.settings.memory.top_k,
+            )
+            if snippets:
+                memory_context = build_memory_context(snippets)
+        user_prompt = user_message
+        if memory_context:
+            user_prompt = f"{user_message}\n\n{memory_context}"
+        response_prefix = None
         if not meal_text:
             intent_result, needs_llm = heuristic_meal_log_intent(user_message)
             if needs_llm:
@@ -282,9 +297,8 @@ async def chat_stream(
                     },
                     ttl_seconds=600,
                 )
-                deps.chat_agent.memory.add_message("user", user_message)
                 prompt = _meal_proposal_prompt(intent_result.meal_text)
-                deps.chat_agent.memory.add_message("assistant", prompt)
+                response_prefix = f"{prompt}\n\n"
                 yield _format_event(
                     "meal_proposed",
                     {
@@ -294,24 +308,6 @@ async def chat_stream(
                         "reason": intent_result.reason,
                     },
                 )
-                yield _format_event("done", {"status": "meal_proposed"})
-                return
-
-        system_context = _build_extra_context(ctx, session)
-        memory_context = None
-        if ctx.memory_store.enabled:
-            snippets = await fetch_memory_snippets(
-                memory_store=ctx.memory_store,
-                user_id=str(session.get("user_id", "")),
-                query=user_message,
-                limit=ctx.settings.memory.top_k,
-            )
-            if snippets:
-                memory_context = build_memory_context(snippets)
-        user_prompt = user_message
-        if memory_context:
-            user_prompt = f"{user_message}\n\n{memory_context}"
-        response_prefix = None
         if meal_text:
             user_id = str(session.get("user_id", ""))
             meal_result = _log_meal_command(
@@ -391,8 +387,18 @@ async def chat_audio(
     try:
         user_message = deps.audio_agent.transcribe_bytes(raw_bytes, filename)
     except ValueError as exc:
+        logger.warning(
+            "chat_audio_transcription_failed request_id=%s error=%s",
+            getattr(request.state, "request_id", None),
+            exc,
+        )
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     except Exception as exc:
+        logger.warning(
+            "chat_audio_transcription_failed request_id=%s error=%s",
+            getattr(request.state, "request_id", None),
+            exc,
+        )
         raise HTTPException(status_code=422, detail=f"Transcription failed: {exc}") from exc
 
     if not user_message:
@@ -404,6 +410,12 @@ async def chat_audio(
 
         loop = asyncio.get_running_loop()
         emotion_ctx: str | None = None
+        logger.info(
+            "chat_emotion_speech_gate request_id=%s inference_enabled=%s speech_enabled=%s",
+            getattr(request.state, "request_id", None),
+            deps.emotion_agent.inference_enabled,
+            deps.emotion_agent.speech_enabled,
+        )
         if deps.emotion_agent.inference_enabled and deps.emotion_agent.speech_enabled:
             try:
                 inference = await loop.run_in_executor(
@@ -411,8 +423,16 @@ async def chat_audio(
                     lambda: deps.emotion_agent.infer_speech(
                         audio_bytes=raw_bytes,
                         filename=filename,
+                        content_type=audio.content_type,
                         transcription=user_message,
                     ),
+                )
+                logger.info(
+                    "chat_emotion_speech_result request_id=%s emotion=%s confidence=%s product_state=%s",
+                    getattr(request.state, "request_id", None),
+                    inference.final_emotion,
+                    inference.confidence,
+                    inference.product_state,
                 )
                 emotion_ctx = _format_emotion_context(inference)
                 yield _format_event(
@@ -428,6 +448,19 @@ async def chat_audio(
             except Exception as exc:  # noqa: BLE001
                 _log_suppressed_emotion_failure(request=request, phase="speech_emotion", exc=exc)
 
+        extra_context = _build_extra_context(ctx, session)
+        memory_context = None
+        if ctx.memory_store.enabled:
+            snippets = await fetch_memory_snippets(
+                memory_store=ctx.memory_store,
+                user_id=str(session.get("user_id", "")),
+                query=user_message,
+                limit=ctx.settings.memory.top_k,
+            )
+            if snippets:
+                memory_context = build_memory_context(snippets)
+        extra_context = _merge_context(extra_context, memory_context)
+        response_prefix = None
         if not meal_text:
             intent_result, needs_llm = heuristic_meal_log_intent(user_message)
             if needs_llm:
@@ -454,9 +487,8 @@ async def chat_audio(
                     },
                     ttl_seconds=600,
                 )
-                deps.chat_agent.memory.add_message("user", user_message)
                 prompt = _meal_proposal_prompt(intent_result.meal_text)
-                deps.chat_agent.memory.add_message("assistant", prompt)
+                response_prefix = f"{prompt}\n\n"
                 yield _format_event(
                     "meal_proposed",
                     {
@@ -466,22 +498,6 @@ async def chat_audio(
                         "reason": intent_result.reason,
                     },
                 )
-                yield _format_event("done", {"status": "meal_proposed"})
-                return
-
-        extra_context = _build_extra_context(ctx, session)
-        memory_context = None
-        if ctx.memory_store.enabled:
-            snippets = await fetch_memory_snippets(
-                memory_store=ctx.memory_store,
-                user_id=str(session.get("user_id", "")),
-                query=user_message,
-                limit=ctx.settings.memory.top_k,
-            )
-            if snippets:
-                memory_context = build_memory_context(snippets)
-        extra_context = _merge_context(extra_context, memory_context)
-        response_prefix = None
         if meal_text:
             user_id = str(session.get("user_id", ""))
             meal_result = _log_meal_command(
@@ -541,8 +557,41 @@ async def confirm_meal_log(
     if proposal is None:
         raise HTTPException(status_code=404, detail="meal proposal not found")
     if payload.action == "skip":
+        meal_text = str(proposal.get("meal_text", "")).strip()
+        extra_context = _build_extra_context(ctx, session)
+        memory_context = None
+        if ctx.memory_store.enabled:
+            snippets = await fetch_memory_snippets(
+                memory_store=ctx.memory_store,
+                user_id=user_id,
+                query=meal_text or "meal logging",
+                limit=ctx.settings.memory.top_k,
+            )
+            if snippets:
+                memory_context = build_memory_context(snippets)
+        extra_context = _merge_context(extra_context, memory_context)
+        skip_message = "Skipped logging this meal."
+        response_prefix = f"{skip_message}\n\n"
+        assistant_response = await _collect_chat_followup(
+            runtime=ctx.chat_stream_runtime,
+            user_message=f"I skipped logging this meal: {meal_text or 'meal'}.",
+            extra_context=extra_context,
+            response_prefix=response_prefix,
+        )
+        display_response = assistant_response
+        if display_response.startswith(skip_message):
+            display_response = display_response[len(skip_message) :].lstrip()
+        if assistant_response:
+            await record_chat_turn(
+                memory_store=ctx.memory_store,
+                user_id=user_id,
+                session_id=session_id,
+                user_message=f"I skipped logging this meal: {meal_text or 'meal'}.",
+                assistant_message=assistant_response,
+                metadata={"source": "chat_confirm"},
+            )
         ctx.cache_store.delete(cache_key)
-        return {"status": "skipped"}
+        return {"status": "skipped", "assistant_followup": display_response}
     if (
         str(proposal.get("user_id", "")) != user_id
         or str(proposal.get("session_id", "")) != session_id
