@@ -80,7 +80,16 @@ class HFTextEmotion(TextEmotionPort):
         )
         outputs = self._pipeline(text)
         scores: dict[EmotionLabel, float] = dict.fromkeys(EmotionLabel, 0.0)
-        for item in outputs[0]:
+        if isinstance(outputs, list) and outputs:
+            if isinstance(outputs[0], dict):
+                items = outputs
+            elif isinstance(outputs[0], list):
+                items = outputs[0]
+            else:
+                items = []
+        else:
+            items = []
+        for item in items:
             if not isinstance(item, dict):
                 continue
             label = str(item.get("label", "")).lower()

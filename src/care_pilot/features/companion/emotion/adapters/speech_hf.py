@@ -60,6 +60,12 @@ class HFSpeechEmotion(SpeechEmotionPort):
             model=self._model_id,
             device=self._device,
             return_all_scores=True,
+            trust_remote_code=True,
+            model_kwargs={
+                # Avoid meta-tensor init paths that can break custom models.
+                "low_cpu_mem_usage": False,
+                "device_map": None,
+            },
         )
 
     def predict(
