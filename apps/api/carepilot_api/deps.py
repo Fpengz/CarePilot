@@ -286,9 +286,19 @@ def build_app_context() -> AppContext:
         reasoning_engine=chat_reasoning_engine,
     )
     chat_stream_runtime = ChatStreamRuntime(settings)
+    transcription_provider = os.environ.get("TRANSCRIPTION_PROVIDER")
+    transcription_api_key = os.environ.get("TRANSCRIPTION_API_KEY") or os.environ.get("QWEN_API_KEY")
+    transcription_base_url = os.environ.get("TRANSCRIPTION_BASE_URL") or os.environ.get(
+        "QWEN_BASE_URL"
+    )
+    transcription_model_id = os.environ.get("TRANSCRIPTION_MODEL_ID")
     chat_audio_agent = AudioAgent(
         repo_id=os.environ.get("TRANSCRIPTION_MODEL_ID"),
         groq_api_key=os.environ.get("GROQ_API_KEY"),
+        provider=transcription_provider,
+        api_key=transcription_api_key,
+        base_url=transcription_base_url,
+        model_id=transcription_model_id,
     )
     ctx = AppContext(
         settings=settings,

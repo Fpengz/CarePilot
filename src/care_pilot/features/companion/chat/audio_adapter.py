@@ -9,7 +9,10 @@ Example:
     text = agent.transcribe_groq(audio_input)
 """
 
+import base64
 import io
+import logging
+import mimetypes
 
 import librosa
 import numpy as np
@@ -28,11 +31,24 @@ logger = get_logger(__name__)
 
 
 class AudioAgent:
-    """Agent that transcribes audio to text using Groq Whisper or MERaLiON."""
+    """Agent that transcribes audio to text using OpenAI-compatible ASR or MERaLiON."""
 
-    def __init__(self, repo_id: str | None = None, groq_api_key: str | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        repo_id: str | None = None,
+        groq_api_key: str | None = None,
+        provider: str | None = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model_id: str | None = None,
+    ) -> None:
         self.repo_id = repo_id or "MERaLiON/MERaLiON-2-3B"
         self._groq_api_key = groq_api_key
+        self._provider = (provider or "").strip().lower()
+        self._api_key = api_key
+        self._base_url = base_url
+        self._model_id = model_id
         self.device = "mps" if torch.backends.mps.is_available() else "cpu"
         self.torch_dtype = torch.float16 if torch.backends.mps.is_available() else torch.float32
         self.processor = None
@@ -109,21 +125,110 @@ class AudioAgent:
     # ------------------------------------------------------------------
 
     def transcribe_bytes(self, raw_bytes: bytes, filename: str = "audio.webm") -> str:
-        """Transcribe raw audio bytes (webm/mp3/wav/ogg) via Groq Whisper.
+        """Transcribe raw audio bytes (webm/mp3/wav/ogg) via OpenAI-compatible ASR."""
+        provider = self._provider
+        if provider in {"groq"}:
+            return self._transcribe_groq(raw_bytes, filename=filename)
+        if provider in {"qwen", "openai", "openai-compatible", "compatible"}:
+            return self._transcribe_openai_compatible(raw_bytes, filename=filename)
+        if self._api_key:
+            return self._transcribe_openai_compatible(raw_bytes, filename=filename)
+        if self._groq_api_key:
+            return self._transcribe_groq(raw_bytes, filename=filename)
+        raise ValueError("No transcription provider configured (set TRANSCRIPTION_API_KEY)")
 
-        This is the preferred method for the FastAPI backend where the browser
-        sends a webm blob directly — no NumPy / sample-rate conversion needed.
+    def _transcribe_openai_compatible(self, raw_bytes: bytes, *, filename: str) -> str:
+        from openai import OpenAI
 
-        Args:
-            raw_bytes: Raw audio file content from the HTTP upload.
-            filename:  Original filename (used to hint the codec to Groq).
+        api_key = self._api_key
+        if not api_key:
+            raise ValueError("TRANSCRIPTION_API_KEY not provided for audio transcription")
 
-        Returns:
-            Transcribed text string.
+        model_id = self._model_id or "qwen3-asr-flash"
+        mime_type = mimetypes.guess_type(filename)[0] or "audio/webm"
+        data_url = "data:{};base64,{}".format(
+            mime_type, base64.b64encode(raw_bytes).decode("utf-8")
+        )
 
-        Raises:
-            ValueError: If the Groq API key is not configured or transcription fails.
-        """
+        client = OpenAI(api_key=api_key, base_url=self._base_url)
+        openai_logger = logging.getLogger("openai")
+        openai_base_logger = logging.getLogger("openai._base_client")
+        httpx_logger = logging.getLogger("httpx")
+        httpcore_logger = logging.getLogger("httpcore")
+        prev_levels = {
+            "openai": openai_logger.level,
+            "openai._base_client": openai_base_logger.level,
+            "httpx": httpx_logger.level,
+            "httpcore": httpcore_logger.level,
+        }
+        # Avoid logging full audio payloads in debug traces.
+        openai_logger.setLevel(logging.INFO)
+        openai_base_logger.setLevel(logging.INFO)
+        httpx_logger.setLevel(logging.INFO)
+        httpcore_logger.setLevel(logging.INFO)
+        logger.info(
+            "audio_agent_openai_compatible_request model=%s bytes=%s filename=%s base_url=%s",
+            model_id,
+            len(raw_bytes),
+            filename,
+            self._base_url,
+        )
+        try:
+            from typing import Any
+
+            messages: list[Any] = [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Singlish, Singapore English.",
+                        }
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_audio",
+                            "input_audio": {"data": data_url},
+                        }
+                    ],
+                },
+            ]
+            completion = client.chat.completions.create(
+                model=model_id,
+                messages=messages,
+                extra_body={"asr_options": {"language": "en"}},
+            )
+        finally:
+            openai_logger.setLevel(prev_levels["openai"])
+            openai_base_logger.setLevel(prev_levels["openai._base_client"])
+            httpx_logger.setLevel(prev_levels["httpx"])
+            httpcore_logger.setLevel(prev_levels["httpcore"])
+
+        message = completion.choices[0].message if completion.choices else None
+        content = ""
+        if message is not None:
+            if getattr(message, "content", None):
+                if isinstance(message.content, str):
+                    content = message.content
+                elif isinstance(message.content, list):
+                    parts = []
+                    for item in message.content:
+                        if isinstance(item, dict) and item.get("text"):
+                            parts.append(str(item["text"]))
+                    content = " ".join(parts)
+            if not content:
+                audio = getattr(message, "audio", None)
+                transcript = getattr(audio, "transcript", None) if audio is not None else None
+                if isinstance(transcript, str):
+                    content = transcript
+
+        logger.info("audio_agent_openai_compatible_response length=%s", len(content or ""))
+        return (content or "").strip()
+
+    def _transcribe_groq(self, raw_bytes: bytes, *, filename: str) -> str:
         from groq import Groq
 
         api_key = self._groq_api_key
