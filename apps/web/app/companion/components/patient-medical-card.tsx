@@ -21,8 +21,8 @@ function PatientMedicalCardBase({ card, showFullLink = false, loading = false }:
     : "Live Summary";
 
   return (
-    <Card className="p-0 overflow-hidden">
-      <CardContent className="p-0 h-full flex flex-col">
+    <Card className="p-0 overflow-hidden h-[520px] flex flex-col">
+      <CardContent className="p-0 h-full flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--border-soft)] bg-[color:var(--panel-soft)]">
         <div className="min-w-0">
           <div className="text-sm font-bold text-[color:var(--foreground)]">Patient Medical Card</div>
@@ -38,7 +38,7 @@ function PatientMedicalCardBase({ card, showFullLink = false, loading = false }:
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 max-h-[420px] overflow-y-auto p-5 space-y-4 custom-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 custom-scrollbar">
         {card?.markdown ? (
           <div className="chat-markdown prose prose-slate max-w-none prose-sm prose-headings:text-[color:var(--foreground)] prose-headings:font-bold prose-p:text-[color:var(--muted-foreground)] prose-p:leading-relaxed break-words">
             <ReactMarkdown>{markdown}</ReactMarkdown>
