@@ -10,7 +10,7 @@ interface ClinicianDigestCardProps {
 
 export function ClinicianDigestCard({ digest }: ClinicianDigestCardProps) {
   return (
-    <Card className="shadow-sm rounded-xl overflow-hidden">
+    <Card className="shadow-sm rounded-xl overflow-hidden h-full flex flex-col">
       <CardHeader className="bg-[color:var(--panel-soft)] border-b border-[color:var(--border-soft)] pb-4">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-health-teal-soft text-health-teal">
@@ -22,7 +22,7 @@ export function ClinicianDigestCard({ digest }: ClinicianDigestCardProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-6 space-y-6">
+      <CardContent className="p-6 space-y-6 flex-1 min-h-0">
         <div className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 shadow-sm">
           <div className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)] mb-2">Executive Summary</div>
           <p className="text-sm font-bold text-[color:var(--foreground)] leading-relaxed">

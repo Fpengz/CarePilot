@@ -4,11 +4,11 @@ const eslintConfig = [
   ...nextCoreWebVitals,
   {
     ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/out/**",
+      "**/build/**",
+      "**/next-env.d.ts",
     ],
   },
 ];

@@ -40,7 +40,7 @@ export function MessageItem({
   proposalLoadingId: string | null;
 }) {
   const isUser = message.role === "user";
-  const content = message.content || (isStreaming ? streamDraft : "");
+  const content = isStreaming ? `${message.content ?? ""}${streamDraft}` : message.content || "";
 
   if (isUser) {
     return (

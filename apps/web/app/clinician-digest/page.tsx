@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FileHeart, ShieldAlert, History, Link as LinkIcon, RefreshCcw, UserCircle, Download } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
@@ -16,6 +16,8 @@ export default function ClinicianDigestPage() {
   const [digest, setDigest] = useState<ClinicianDigestApi | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const digestRef = useRef<HTMLDivElement | null>(null);
+  const [evidenceHeight, setEvidenceHeight] = useState<number | null>(null);
 
   async function refresh() {
     setError(null);
@@ -33,6 +35,16 @@ export default function ClinicianDigestPage() {
   useEffect(() => {
     void refresh();
   }, []);
+
+  useLayoutEffect(() => {
+    const update = () => {
+      const height = digestRef.current?.getBoundingClientRect().height ?? null;
+      setEvidenceHeight(height);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [digest, loading, error]);
 
   return (
     <div className="section-stack max-w-5xl mx-auto">
@@ -55,10 +67,13 @@ export default function ClinicianDigestPage() {
 
       {error && <ErrorCard message={error} />}
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_300px] lg:items-stretch">
-        <div className="space-y-8">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+        <div className="flex flex-col gap-8 h-full">
           {/* Main Document Section */}
-          <div className="clinical-panel bg-white dark:bg-slate-900 shadow-xl border-[color:var(--border-soft)] p-10 space-y-10">
+          <div
+            ref={digestRef}
+            className="clinical-panel bg-white dark:bg-slate-900 shadow-xl border-[color:var(--border-soft)] p-10 space-y-10 flex-1 h-full"
+          >
             {/* Header / Meta */}
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between border-b border-[color:var(--border-soft)] pb-8">
               <div className="space-y-4">
@@ -143,8 +158,11 @@ export default function ClinicianDigestPage() {
         </div>
 
         {/* Sidebar / Evidence */}
-        <div className="flex flex-col h-full">
-          <div className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 flex flex-col h-full">
+        <div className="flex flex-col h-full self-stretch">
+          <div
+            className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-4 flex flex-col h-full"
+            style={evidenceHeight ? { height: evidenceHeight } : undefined}
+          >
             <div className="flex items-center gap-2 pb-3 border-b border-[color:var(--border-soft)]">
               <History className="h-4 w-4 text-[color:var(--muted-foreground)]" />
               <h4 className="text-xs font-bold uppercase tracking-widest text-[color:var(--muted-foreground)] opacity-70">Supporting Evidence</h4>

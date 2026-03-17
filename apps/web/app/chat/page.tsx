@@ -207,7 +207,6 @@ export default function ChatPage() {
                 if (idx >= 0 && msgs[idx].role === "assistant") {
                   msgs[idx] = {
                     ...msgs[idx],
-                    content: data.prompt ?? "I can log this meal. Confirm?",
                     mealProposal: {
                       proposalId: data.proposal_id,
                       mealText: data.meal_text,
@@ -246,9 +245,12 @@ export default function ChatPage() {
                 streamBufferRef.current = "";
                 setMessages((prev) => {
                   const msgs = [...prev];
+                  const last = msgs[msgs.length - 1];
+                  const merged =
+                    last && last.content ? `${last.content}${finalText}` : finalText;
                   msgs[msgs.length - 1] = {
                     ...msgs[msgs.length - 1],
-                    content: finalText,
+                    content: merged,
                   };
                   return msgs;
                 });
@@ -282,9 +284,11 @@ export default function ChatPage() {
         streamBufferRef.current = "";
         setMessages((prev) => {
           const msgs = [...prev];
+          const last = msgs[msgs.length - 1];
+          const merged = last && last.content ? `${last.content}${finalText}` : finalText;
           msgs[msgs.length - 1] = {
             ...msgs[msgs.length - 1],
-            content: finalText,
+            content: merged,
           };
           return msgs;
         });
@@ -472,6 +476,22 @@ export default function ChatPage() {
                 return msgs;
               });
             }
+            if (event === "meal_proposed") {
+              setMessages((prev) => {
+                const msgs = [...prev];
+                const idx = msgs.length - 1;
+                if (idx >= 0 && msgs[idx].role === "assistant") {
+                  msgs[idx] = {
+                    ...msgs[idx],
+                    mealProposal: {
+                      proposalId: data.proposal_id,
+                      mealText: data.meal_text,
+                    },
+                  };
+                }
+                return msgs;
+              });
+            }
             if (event === "token") {
               streamBufferRef.current += data.text;
               if (!streamFlushRef.current) {
@@ -501,9 +521,12 @@ export default function ChatPage() {
                 streamBufferRef.current = "";
                 setMessages((prev) => {
                   const msgs = [...prev];
+                  const last = msgs[msgs.length - 1];
+                  const merged =
+                    last && last.content ? `${last.content}${finalText}` : finalText;
                   msgs[msgs.length - 1] = {
                     ...msgs[msgs.length - 1],
-                    content: finalText,
+                    content: merged,
                   };
                   return msgs;
                 });
@@ -537,9 +560,11 @@ export default function ChatPage() {
         streamBufferRef.current = "";
         setMessages((prev) => {
           const msgs = [...prev];
+          const last = msgs[msgs.length - 1];
+          const merged = last && last.content ? `${last.content}${finalText}` : finalText;
           msgs[msgs.length - 1] = {
             ...msgs[msgs.length - 1],
-            content: finalText,
+            content: merged,
           };
           return msgs;
         });

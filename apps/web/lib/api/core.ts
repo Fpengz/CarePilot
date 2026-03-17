@@ -121,7 +121,8 @@ function parseJsonMaybe(body: string): unknown {
 
 function logFrontendApi(event: string, payload: Record<string, unknown>) {
   if (!FRONTEND_API_LOG_ENABLED || typeof window === "undefined") return;
-  const printer = getConsolePrinter(console, event);
+  const printer =
+    event === "request.error" ? console.info.bind(console) : getConsolePrinter(console, event);
   printer(`[frontend-api] ${event}`, redactSensitive(payload));
 }
 

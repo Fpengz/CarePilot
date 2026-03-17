@@ -11,9 +11,9 @@ interface SupportingEvidenceCardProps {
 
 export function SupportingEvidenceCard({ citations }: SupportingEvidenceCardProps) {
   return (
-    <Card className="p-0 overflow-hidden">
-      <CardContent className="p-0 h-full flex flex-col">
-      <div className="flex-1 max-h-[420px] overflow-y-auto p-5 space-y-4 custom-scrollbar">
+    <Card className="p-0 overflow-hidden h-full flex flex-col">
+      <CardContent className="p-0 h-full flex flex-col flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 custom-scrollbar">
         {citations.length ? (
           citations.map((item, idx) => (
             <div
