@@ -16,8 +16,9 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   // Load initial state from localStorage if available
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
-    if (saved !== null) {
-      setCollapsed(saved === "true");
+    if (saved === "true") {
+      const timer = setTimeout(() => setCollapsed(true), 0);
+      return () => clearTimeout(timer);
     }
   }, []);
 

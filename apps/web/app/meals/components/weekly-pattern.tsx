@@ -33,12 +33,8 @@ export function WeeklyPattern() {
     return raw ? formatDateKey(raw as string) : formatDateKey(new Date());
   }, [latestRecords]);
 
-  const [weekStart, setWeekStart] = useState(() => resolveWeekStart(new Date()));
-
-  useEffect(() => {
-    if (!latestDateKey) return;
-    setWeekStart(resolveWeekStartFromDateKey(latestDateKey));
-  }, [latestDateKey]);
+  const [selectedWeekStart, setSelectedWeekStart] = useState<string | null>(null);
+  const weekStart = selectedWeekStart ?? resolveWeekStartFromDateKey(latestDateKey);
 
   const { data: summary } = useQuery({
     queryKey: ["meal-weekly-summary", weekStart],
@@ -62,7 +58,7 @@ export function WeeklyPattern() {
             id="meal-week-start"
             type="date"
             value={weekStart}
-            onChange={(event) => setWeekStart(event.target.value)}
+            onChange={(event) => setSelectedWeekStart(event.target.value)}
             max={latestDateKey ?? formatDateKey(new Date())}
           />
         </div>

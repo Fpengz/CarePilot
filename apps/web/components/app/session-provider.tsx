@@ -52,15 +52,24 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const shouldBootstrapSession = !PUBLIC_AUTH_ROUTES.has(pathname);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
-  useEffect(() => {
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     if (!shouldBootstrapSession) {
       setStatus("unauthenticated");
       setUser(null);
       setError(null);
-      return;
     }
-    void refreshSession();
+  }
+
+  useEffect(() => {
+    if (shouldBootstrapSession) {
+      const timer = setTimeout(() => {
+        void refreshSession();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
   }, [refreshSession, shouldBootstrapSession]);
 
   const value = useMemo<SessionContextValue>(

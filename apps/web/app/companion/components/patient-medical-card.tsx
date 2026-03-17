@@ -6,7 +6,7 @@ import { Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PatientMedicalCardApi } from "@/lib/types";
-import { memo, useMemo } from "react";
+import { memo } from "react";
 
 interface PatientMedicalCardProps {
   card: PatientMedicalCardApi | null | undefined;
@@ -15,11 +15,10 @@ interface PatientMedicalCardProps {
 }
 
 function PatientMedicalCardBase({ card, showFullLink = false, loading = false }: PatientMedicalCardProps) {
-  const markdown = useMemo(() => card?.markdown ?? "", [card?.markdown]);
-  const generatedLabel = useMemo(
-    () => (card?.generated_at ? new Date(card.generated_at).toLocaleString() : "Live Summary"),
-    [card?.generated_at]
-  );
+  const markdown = card?.markdown ?? "";
+  const generatedLabel = card?.generated_at
+    ? new Date(card.generated_at).toLocaleString()
+    : "Live Summary";
 
   return (
     <Card className="p-0 overflow-hidden">

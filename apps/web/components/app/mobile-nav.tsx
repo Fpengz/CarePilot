@@ -23,9 +23,12 @@ export function MobileNav() {
   const mainSections = getSidebarSections("main");
   const adminSections = getSidebarSections("admin");
 
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   useDialogA11y({
     open,
