@@ -47,7 +47,9 @@ async def confirm_meal_candidate(
         raise MealCandidateInvalidStateError("invalid confirmation action")
 
     if record.validated_event is None or record.nutrition_profile is None:
-        raise MealCandidateInvalidStateError("candidate missing validated event or nutrition profile")
+        raise MealCandidateInvalidStateError(
+            "candidate missing validated event or nutrition profile"
+        )
 
     deps.stores.meals.save_validated_meal_event(record.validated_event)
     deps.stores.meals.save_nutrition_risk_profile(record.nutrition_profile)
@@ -94,7 +96,9 @@ async def confirm_meal_candidate(
                 },
             )
     except Exception as exc:  # noqa: BLE001
-        logger.warning("meal_memory_write_failed error=%s candidate_id=%s", exc, updated.candidate_id)
+        logger.warning(
+            "meal_memory_write_failed error=%s candidate_id=%s", exc, updated.candidate_id
+        )
     return updated
 
 

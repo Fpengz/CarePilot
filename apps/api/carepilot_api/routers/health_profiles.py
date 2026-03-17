@@ -7,7 +7,7 @@ health profile API services.
 
 from fastapi import APIRouter, Depends, Request
 
-from care_pilot.features.profiles.use_cases import (
+from care_pilot.features.profiles.profile_service import (
     complete_profile_onboarding,
     get_daily_suggestions,
     get_profile,

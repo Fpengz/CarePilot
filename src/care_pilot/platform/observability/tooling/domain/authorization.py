@@ -37,5 +37,5 @@ def has_scopes(current_scopes: list[str], required_scopes: set[str]) -> bool:
     return required_scopes.issubset(set(current_scopes))
 
 
-def default_profile_mode_for_role(account_role: AccountRole) -> ProfileMode:
+def default_profile_mode_for_role(_account_role: AccountRole) -> ProfileMode:
     return "self"

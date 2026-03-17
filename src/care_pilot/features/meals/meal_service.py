@@ -10,7 +10,10 @@ from care_pilot.features.meals.domain.normalization import (
 )
 from care_pilot.features.meals.presenters.api import build_meal_analysis_output
 from care_pilot.features.meals.use_cases import (
+    MealCandidateInvalidStateError,
+    MealCandidateNotFoundError,
     analyze_meal_upload,
+    build_context_snapshot,
     confirm_meal_candidate,
     get_daily_summary_data,
     get_weekly_summary_data,
@@ -19,7 +22,10 @@ from care_pilot.features.meals.use_cases import (
 )
 
 __all__ = [
+    "MealCandidateInvalidStateError",
+    "MealCandidateNotFoundError",
     "analyze_meal_upload",
+    "build_context_snapshot",
     "build_meal_analysis_output",
     "build_meal_record",
     "confirm_meal_candidate",

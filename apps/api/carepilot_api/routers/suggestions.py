@@ -7,7 +7,7 @@ suggestion services for orchestration.
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from care_pilot.features.recommendations.service import (
+from care_pilot.features.recommendations.recommendation_engine import (
     generate_from_report,
     get_for_session,
     list_for_session,

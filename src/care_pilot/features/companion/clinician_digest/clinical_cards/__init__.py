@@ -6,7 +6,7 @@ and retrieval.
 
 from __future__ import annotations
 
-from care_pilot.features.companion.clinician_digest.clinical_cards.use_cases import (
+from care_pilot.features.companion.clinician_digest.clinical_cards.clinical_card_service import (
     generate_clinical_card_for_session,
     get_clinical_card_for_session,
     list_clinical_cards_for_session,

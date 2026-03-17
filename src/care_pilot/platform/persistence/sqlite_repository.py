@@ -871,9 +871,6 @@ class SQLiteRepository:
     def get_clinical_card(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.get_clinical_card(*args, **kwargs)
 
-    def get_health_profile(self, *args: Any, **kwargs: Any) -> Any:
-        return self.clinical.get_health_profile(*args, **kwargs)
-
     def get_health_profile_onboarding_state(self, *args: Any, **kwargs: Any) -> Any:
         return self.clinical.get_health_profile_onboarding_state(*args, **kwargs)
 

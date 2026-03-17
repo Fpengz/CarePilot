@@ -66,6 +66,7 @@ class MemoryManager:
         inference_engine: InferenceEngineProtocol,
         db_path: Path = DB_PATH,
     ) -> None:
+        del session_id
         self._user_id = user_id
         # Persist history per user, not per session.
         self._session_id = USER_HISTORY_SESSION_ID

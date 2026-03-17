@@ -26,7 +26,7 @@ def log_event(logger: logging.Logger, level: int, event: str, /, **fields: Any) 
 
 
 @contextmanager
-def observability_span(name: str, /, **context: Any) -> Iterator[None]:
+def observability_span(_name: str, /, **context: Any) -> Iterator[None]:
     correlation_id = context.get("correlation_id")
     request_id = context.get("request_id")
     with bind_observability_context(correlation_id=correlation_id, request_id=request_id):

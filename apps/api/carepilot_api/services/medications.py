@@ -1,12 +1,12 @@
 """API helpers for medication regimens, adherence events, and adherence metrics.
 
 Shim: business logic lives in
-``care_pilot.features.medications.use_cases``.
+``care_pilot.features.medications.medication_management``.
 """
 
 from __future__ import annotations
 
-from care_pilot.features.medications.use_cases import (  # noqa: F401
+from care_pilot.features.medications.medication_management import (  # noqa: F401
     adherence_metrics_for_session,
     cancel_intake_draft_for_session,
     confirm_intake_for_session,

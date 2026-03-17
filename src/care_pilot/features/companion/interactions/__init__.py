@@ -1,6 +1,6 @@
 """Companion interactions package."""
 
-from care_pilot.features.companion.core.use_cases import (
+from care_pilot.features.companion.core.companion_core_service import (
     run_companion_interaction,
 )
 

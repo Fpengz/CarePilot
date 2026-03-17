@@ -23,11 +23,11 @@ def test_feature_first_backend_packages_exist() -> None:
         "src/care_pilot/features/companion/interactions/__init__.py",
         "src/care_pilot/features/companion/clinician_digest/__init__.py",
         "src/care_pilot/features/companion/impact/__init__.py",
-        "src/care_pilot/features/meals/service.py",
-        "src/care_pilot/features/recommendations/service.py",
-        "src/care_pilot/features/reminders/service.py",
-        "src/care_pilot/features/reports/service.py",
-        "src/care_pilot/features/safety/service.py",
+        "src/care_pilot/features/meals/meal_service.py",
+        "src/care_pilot/features/recommendations/recommendation_engine.py",
+        "src/care_pilot/features/reminders/reminder_service.py",
+        "src/care_pilot/features/reports/report_service.py",
+        "src/care_pilot/features/safety/safety_engine.py",
         "src/care_pilot/agent/__init__.py",
         "src/care_pilot/agent/core/__init__.py",
         "src/care_pilot/agent/runtime/__init__.py",
@@ -53,12 +53,12 @@ def test_api_service_shims_delegate_to_feature_services() -> None:
         "apps/api/carepilot_api/services/companion.py": (
             "from .companion_orchestration import"
         ),
-        "apps/api/carepilot_api/services/meals.py": "from care_pilot.features.meals.service import",
+        "apps/api/carepilot_api/services/meals.py": "from care_pilot.features.meals.meal_service import",
         "apps/api/carepilot_api/services/recommendations.py": (
-            "from care_pilot.features.recommendations.service import"
+            "from care_pilot.features.recommendations.recommendation_engine import"
         ),
         "apps/api/carepilot_api/services/reminders.py": (
-            "from care_pilot.features.reminders.service import"
+            "from care_pilot.features.reminders.reminder_service import"
         ),
     }
     offenders: list[str] = []

@@ -1,9 +1,9 @@
 """API orchestration for report-driven and session-scoped suggestions.
 
-Re-exports from :mod:`care_pilot.features.recommendations.service`.
+Re-exports from :mod:`care_pilot.features.recommendations.recommendation_engine`.
 """
 
-from care_pilot.features.recommendations.service import (
+from care_pilot.features.recommendations.recommendation_engine import (
     generate_from_report,
     get_for_session,
     list_for_session,

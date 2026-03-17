@@ -11,7 +11,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from care_pilot.features.symptoms.use_cases import (
+from care_pilot.features.symptoms.symptom_service import (
     create_checkin_for_session,
     list_checkins_for_session,
     summarize_checkins_for_session,

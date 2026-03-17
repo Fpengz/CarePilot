@@ -44,9 +44,9 @@ def test_app_lifecycle_closes_resources_on_shutdown(
     def close_household_store(*args: object, **kwargs: object) -> None:
         closed["household_store"] = True
 
-    ctx.app_store.close = close_repository  # type: ignore[assignment]
-    ctx.auth_store.close = close_auth_store  # type: ignore[assignment]
-    ctx.household_store.close = close_household_store  # type: ignore[assignment]
+    ctx.app_store.close = close_repository
+    ctx.auth_store.close = close_auth_store
+    ctx.household_store.close = close_household_store
 
     with TestClient(app) as client:
         response = client.get("/api/v1/health/live")

@@ -18,7 +18,7 @@ from fastapi import (
 )
 
 from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
-from care_pilot.platform.auth.use_cases import (
+from care_pilot.platform.auth.auth_service import (
     MIN_PASSWORD_LENGTH,
     DuplicateEmailError,
     InvalidCredentialsError,

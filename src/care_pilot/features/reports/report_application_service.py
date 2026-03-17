@@ -21,7 +21,7 @@ from care_pilot.features.reports.domain import (
     build_clinical_snapshot,
     parse_report_input,
 )
-from care_pilot.features.symptoms.use_cases import (
+from care_pilot.features.symptoms.symptom_service import (
     summarize_checkins_for_session,
 )
 from care_pilot.platform.observability.workflows.domain.models import (

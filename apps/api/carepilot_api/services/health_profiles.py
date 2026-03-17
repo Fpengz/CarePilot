@@ -1,11 +1,11 @@
 """API orchestration entry points for health-profile and onboarding workflows.
 
-Shim: business logic lives in care_pilot.features.profiles.use_cases.
+Shim: business logic lives in care_pilot.features.profiles.profile_service.
 """
 
 from __future__ import annotations
 
-from care_pilot.features.profiles.use_cases import (  # noqa: F401
+from care_pilot.features.profiles.profile_service import (  # noqa: F401
     complete_profile_onboarding,
     get_daily_suggestions,
     get_profile,
@@ -13,7 +13,7 @@ from care_pilot.features.profiles.use_cases import (  # noqa: F401
     patch_profile,
     patch_profile_onboarding,
 )
-from care_pilot.features.profiles.use_cases import (
+from care_pilot.features.profiles.profile_service import (
     to_profile_response as _to_profile_response,
 )
 

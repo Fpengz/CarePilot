@@ -31,6 +31,11 @@ from care_pilot.core.contracts.api import (
     WorkflowTimelineEventResponse,
 )
 from care_pilot.features.companion.chat.search_adapter import SearchAgent
+from care_pilot.features.companion.core.companion_core_service import (
+    CompanionStateInputs,
+    build_companion_today_bundle,
+    run_companion_interaction,
+)
 from care_pilot.features.companion.core.domain.models import (
     CompanionInteraction,
 )
@@ -43,11 +48,6 @@ from care_pilot.features.companion.core.health.blood_pressure import (
 )
 from care_pilot.features.companion.core.health.models import (
     ClinicalProfileSnapshot,
-)
-from care_pilot.features.companion.core.use_cases import (
-    CompanionStateInputs,
-    build_companion_today_bundle,
-    run_companion_interaction,
 )
 from care_pilot.features.reports.domain import build_clinical_snapshot
 from care_pilot.platform.auth.session_context import (
@@ -241,7 +241,10 @@ def get_blood_pressure_chart(
     )
     return BloodPressureChartResponse(
         user_id=subject_user_id,
-        range=cast(Literal["7d", "30d", "3m", "1y", "custom"], range_key if range_key in {"7d", "30d", "3m", "1y", "custom"} else "30d"),
+        range=cast(
+            Literal["7d", "30d", "3m", "1y", "custom"],
+            range_key if range_key in {"7d", "30d", "3m", "1y", "custom"} else "30d",
+        ),
         generated_at=datetime.now(UTC),
         points=points,  # type: ignore[arg-type]
     )

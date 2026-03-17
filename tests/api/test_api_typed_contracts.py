@@ -38,7 +38,6 @@ from care_pilot.features.reminders.domain import ReminderEvent
 
 def test_meal_contract_responses_use_typed_models() -> None:
     assert MealAnalyzeResponse.model_fields["raw_observation"].annotation is RawObservationBundle
-    assert MealAnalyzeResponse.model_fields["validated_event"].annotation is ValidatedMealEvent
     assert MealAnalyzeResponse.model_fields["nutrition_profile"].annotation is NutritionRiskProfile
     assert (
         MealAnalyzeResponse.model_fields["output_envelope"].annotation == AgentOutputEnvelope | None

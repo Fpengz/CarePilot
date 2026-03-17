@@ -7,7 +7,7 @@ This module contains the application workflows for recommendations.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 from uuid import uuid4
 
 from apps.api.carepilot_api.deps import (
@@ -97,7 +97,7 @@ def _iso_now() -> str:
 
 def _event_to_json(event: object) -> dict[str, object]:
     if hasattr(event, "model_dump"):
-        return dict(event.model_dump(mode="json"))
+        return dict(cast(Any, event).model_dump(mode="json"))
     if isinstance(event, dict):
         return {str(k): v for k, v in event.items()}
     return {"event_type": "unknown"}
@@ -141,7 +141,7 @@ def _source_scope(
     try:
         ensure_household_member(household_store, household_id=active_household_id, user_id=user_id)
     except HouseholdAccessNotFoundError:
-        raise SuggestionForbiddenError
+        raise SuggestionForbiddenError from None
     return household_source_members(household_store, household_id=active_household_id)
 
 

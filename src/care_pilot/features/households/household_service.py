@@ -608,7 +608,7 @@ def get_household_care_member_profile(
     subject_user_id: str,
 ) -> HouseholdCareProfileResponse:
     """Read a household member's health profile through caregiver access rules."""
-    from care_pilot.features.profiles.use_cases import (
+    from care_pilot.features.profiles.profile_service import (
         to_profile_response,
     )  # noqa: PLC0415
 
@@ -664,7 +664,9 @@ def get_household_care_member_daily_summary(
     summary = MealDailySummaryResponse(
         date=summary_data.date,
         meal_count=summary_data.meal_count,
-        last_logged_at=datetime.fromisoformat(summary_data.last_logged_at) if summary_data.last_logged_at else None,
+        last_logged_at=datetime.fromisoformat(summary_data.last_logged_at)
+        if summary_data.last_logged_at
+        else None,
         consumed=DailyNutritionTotalsResponse.model_validate(summary_data.consumed.model_dump()),
         targets=DailyNutritionTotalsResponse.model_validate(summary_data.targets.model_dump()),
         remaining=DailyNutritionTotalsResponse.model_validate(summary_data.remaining.model_dump()),

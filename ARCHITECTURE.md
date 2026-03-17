@@ -52,18 +52,20 @@ src/care_pilot/
 - Uses distributed locks from `platform/scheduling/coordination/` to prevent duplicate delivery.
 
 ### Feature Layer — `src/care_pilot/features/`
-- Owns all product behavior. Every feature converges on:
+- Owns all product behavior. Every feature converges on a job-based naming convention (e.g., `meal_service.py`, `reminder_service.py`):
   ```text
   features/<feature>/
-    domain/         # models, rules, deterministic services (incl. persistence writes)
-    workflows/      # pydantic-graph workflows (multi-step journeys)
-    use_cases/      # entrypoints/application services (single-step or thin workflow entrypoints)
-    presenters/     # feature-level domain → view models (NOT apps/api schemas)
-    ports.py        # feature-facing interfaces (protocols/ports)
+    <feature_job>_service.py # Core feature entrypoint (formerly generic service.py)
+    domain/                  # models, rules, deterministic services (incl. persistence writes)
+    workflows/               # pydantic-graph workflows (multi-step journeys)
+    use_cases/               # granular entrypoint implementations (single-step or thin workflow entrypoints)
+    presenters/              # feature-level domain → view models (NOT apps/api schemas)
+    ports.py                 # feature-facing interfaces (protocols/ports)
   ```
+- **Job-based Services** (e.g., `medication_management.py`) are the primary entrypoints for the API layer.
 - **Workflows** coordinate steps, branching, idempotency, and tracing.
 - **Domain** decides and writes (deterministic rules; persistence via stores).
-- **Use cases** are the feature entrypoints the API calls.
+- **Use cases** provide specific implementation logic for complex features.
 - **Presenters** map domain → feature view models (API mapping stays in API layer).
 
 ### Agent Layer — `src/care_pilot/agent/`
@@ -106,7 +108,7 @@ Client
 apps/api/carepilot_api/  ← authenticate session, check policy, validate input
   │
   ▼
-features/<feature>/use_cases.py  ← load CaseSnapshot, orchestrate domain logic
+features/<feature>/<job>_service.py  ← orchestrate domain logic (e.g., meal_service.py)
   │              │
   │              ▼
   │        features/safety/  ← deterministic safety screen
@@ -127,8 +129,8 @@ apps/workers/  ← process reminders, outbox, background tasks
 
 ## Key Architectural Rules
 
-1. **Route handlers are transport-only.** Auth check → policy check → scoped deps → call use case.
-2. **Business logic lives in feature use cases/domain**, not in routers or UI glue.
+1. **Route handlers are transport-only.** Auth check → policy check → scoped deps → call job-based service.
+2. **Business logic lives in job-based services/domain** (e.g., `meal_service.py`), not in routers or UI glue.
 3. **Domain layer is pure.** `features/*/domain/` has no I/O and no infrastructure imports.
 4. **Agents are bounded helpers.** They receive typed input, return `AgentResult`, and never touch stores.
 5. **Safety is deterministic.** `features/safety/domain/engine.py` runs before any LLM output is accepted.

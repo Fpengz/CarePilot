@@ -20,9 +20,9 @@ class TimelineEvent(Protocol):
     payload: dict[str, Any]
     event_type: str
 
+
 class TimelineServiceProtocol(Protocol):
-    def get_events(self, *, user_id: str | None) -> Iterable[TimelineEvent]:
-        ...
+    def get_events(self, *, user_id: str | None) -> Iterable[TimelineEvent]: ...
 
 
 class TimelineContextFeatureExtractor(ContextFeaturePort):

@@ -8,9 +8,9 @@ from apps.api.carepilot_api.deps import AppContext
 from care_pilot.config.app import get_settings
 from care_pilot.core.contracts.api import PatientMedicalCardResponse
 from care_pilot.features.companion.chat.search_adapter import SearchAgent
+from care_pilot.features.companion.core.companion_core_service import build_companion_runtime_state
 from care_pilot.features.companion.core.domain import CompanionInteraction
 from care_pilot.features.companion.core.evidence import retrieve_supporting_evidence
-from care_pilot.features.companion.core.use_cases import build_companion_runtime_state
 from care_pilot.features.companion.patient_card import generate_patient_medical_card
 from care_pilot.platform.persistence.evidence import SearchEvidenceRetriever
 
@@ -30,7 +30,11 @@ async def generate_patient_medical_card_for_session(
     session: dict[str, object],
 ) -> PatientMedicalCardResponse:
     raw_subject = session.get("subject_user_id")
-    user_id = str(raw_subject) if isinstance(raw_subject, str) and raw_subject else str(session.get("user_id"))
+    user_id = (
+        str(raw_subject)
+        if isinstance(raw_subject, str) and raw_subject
+        else str(session.get("user_id"))
+    )
     cached = context.cache_store.get_json(_cache_key(user_id))
     if cached is not None:
         return PatientMedicalCardResponse.model_validate(cached)

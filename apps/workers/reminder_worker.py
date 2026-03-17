@@ -29,7 +29,7 @@ from care_pilot.features.reminders.outbox.infra.outbox_sqlite import (
 from care_pilot.features.reminders.outbox.infra.repository import (
     SQLiteReminderRepository,
 )
-from care_pilot.features.reminders.outbox.service import ReminderService
+from care_pilot.features.reminders.outbox.outbox_service import ReminderService
 
 logger = logging.getLogger(__name__)
 

@@ -1,11 +1,11 @@
 """API helper for single recommendation generation flows.
 
-Shim: canonical logic lives in ``care_pilot.features.recommendations.service``.
+Shim: canonical logic lives in ``care_pilot.features.recommendations.recommendation_engine``.
 """
 
 from __future__ import annotations
 
-from care_pilot.features.recommendations.service import (  # noqa: F401
+from care_pilot.features.recommendations.recommendation_engine import (  # noqa: F401
     generate_recommendation_for_session,
 )
 

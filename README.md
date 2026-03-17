@@ -9,8 +9,9 @@ CarePilot is an AI health companion for chronic-condition support outside the cl
 - Generates clinician digests and impact summaries from the same underlying case state.
 - Supports Singapore-local meal reasoning with deterministic canonical-food normalization.
 
-## Current Status (Phase 4 Active)
-- **Phase 3 Complete**: All API schemas moved to `src/care_pilot/core/contracts/api/`. Cross-feature orchestration moved to the API layer. Circular imports resolved.
+## Current Status (Phase 5 Active)
+- **Phase 4 Complete**: Structural hardening and feature-first refactor finished. 21+ files renamed to job-based conventions (e.g., `meal_service.py`).
+- **Modular Monolith**: Strict layer ownership established across `features/`, `agent/`, `platform/`, `core/`, and `config/`.
 - **Companion Spine**: `features/companion/**` is the product spine, coordinating chat, recommendations, and emotion.
 - **Workflows**: Multi-step journeys for meals and medications are managed via `pydantic-graph`.
 - **Inference**: Agents are bounded, inference-only components using `pydantic_ai`.
@@ -25,9 +26,10 @@ apps/
 src/
   care_pilot/
     core/            Shared primitives and canonical API contracts
-    features/        Product behavior, use-cases, and domain logic
+    features/        Product behavior, job-based services, and domain logic
     agent/           Bounded inference-only agents
     platform/        Infrastructure adapters (persistence, auth, messaging)
+    config/          Settings composition root
 docs/         Canonical documentation and refactor history
 tests/        Repository-level tests and meta-guardrails
 ```

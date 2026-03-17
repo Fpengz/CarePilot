@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from care_pilot.features.companion.impact.metrics.use_cases import (
+from care_pilot.features.companion.impact.metrics.impact_metric_service import (
     list_metric_trends_for_session,
 )
 

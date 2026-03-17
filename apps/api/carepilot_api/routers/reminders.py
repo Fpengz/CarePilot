@@ -19,7 +19,7 @@ from care_pilot.features.reminders.notifications.reminder_materialization import
     replace_notification_endpoints,
     replace_notification_preferences,
 )
-from care_pilot.features.reminders.service import (
+from care_pilot.features.reminders.reminder_service import (
     confirm_reminder_for_session,
     generate_reminders_for_session,
     get_mobility_settings_for_session,

@@ -40,6 +40,12 @@ def _meal_upload(client: TestClient) -> None:
         data={"runtime_mode": "local", "provider": "test"},
     )
     assert response.status_code == 200
+    candidate_id = response.json()["candidate_id"]
+    confirm = client.post(
+        "/api/v1/meal/confirm",
+        json={"candidate_id": candidate_id, "action": "confirm"},
+    )
+    assert confirm.status_code == 200
 
 
 def test_reports_parse_text_returns_readings_and_snapshot(
@@ -68,6 +74,7 @@ def test_recommendations_generate_uses_latest_meal_and_snapshot(
 ) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
     parse_resp = client.post(
         "/api/v1/reports/parse",
@@ -103,6 +110,7 @@ def test_recommendations_generate_requires_clinical_snapshot(
 ) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
 
     response = client.post("/api/v1/recommendations/generate")
@@ -120,6 +128,7 @@ def test_recommendations_generate_rate_limited(
     _reset_settings_cache()
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
     parsed = client.post(
         "/api/v1/reports/parse",

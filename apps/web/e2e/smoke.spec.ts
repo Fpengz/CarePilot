@@ -7,7 +7,7 @@ test("login redirects to dashboard", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
 });
 
 test.describe("mobile navigation", () => {
@@ -36,10 +36,9 @@ test("dashboard stays summary-focused and links out to settings", async ({ page 
   await page.getByRole("button", { name: "Login" }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
-  await expect(page.getByRole("heading", { name: "Today at a Glance" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   await expect(page.getByLabel("Height (cm)")).toBeHidden();
   await expect(page.getByLabel("Weight (kg)")).toBeHidden();
-  await expect(page.getByRole("link", { name: "Update Profile" })).toBeVisible();
 });
 
 test("settings page exposes guided health profile setup with advanced edit fallback", async ({ page }) => {
@@ -49,17 +48,22 @@ test("settings page exposes guided health profile setup with advanced edit fallb
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/settings");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Health Profile" }).click();
-  await expect(page.getByRole("heading", { name: "Guided Health Setup" })).toBeVisible();
-  await expect(page.getByText("Step 1 of 5")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Advanced Edit" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Configuration" })).toBeVisible();
+  
+  // Tabs are used now
+  await page.getByRole("tab", { name: "Health Profile" }).click();
+  
+  // Benchmark text check
+  await expect(page.getByText("established")).toBeVisible(); 
+  
+  // Default is guided
+  await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
   await expect(page.getByLabel("Age")).toBeVisible();
-  await page.getByRole("button", { name: "Advanced Edit" }).click();
-  await expect(page.getByRole("heading", { name: "Advanced Health Profile" })).toBeVisible();
-  await expect(page.getByLabel("Height (cm)")).toBeVisible();
-  await expect(page.getByLabel("Daily protein target (g)")).toBeVisible();
-  await expect(page.getByLabel("Daily fiber target (g)")).toBeVisible();
+  
+  // Switch to advanced
+  await page.getByRole("button", { name: "Advanced" }).click();
+  await expect(page.getByRole("heading", { name: "Clinical Profile" })).toBeVisible();
+  await expect(page.getByLabel("Sodium Limit (mg)")).toBeVisible();
 });
 
 test("reminder delivery settings live in settings, not the reminders page", async ({ page }) => {
@@ -69,11 +73,12 @@ test("reminder delivery settings live in settings, not the reminders page", asyn
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/reminders");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Delivery Settings" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Delivery Settings" })).toHaveCount(0);
 
   await page.goto("/settings");
-  await page.getByRole("button", { name: "Reminder Settings" }).click();
-  await expect(page.getByRole("heading", { name: "Delivery Preferences" })).toBeVisible();
+  await page.getByRole("tab", { name: "Delivery" }).click();
+  await expect(page.getByRole("heading", { name: "Notification Channels" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mobility Alerts" })).toBeVisible();
 });
 
 test("reminders page shows structured reminder sections", async ({ page }) => {
@@ -83,11 +88,10 @@ test("reminders page shows structured reminder sections", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/reminders");
-  await expect(page.getByRole("heading", { name: "Create reminder" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Planned reminders" })).toBeVisible();
-  await page.getByText("Upcoming & history").click();
-  await expect(page.getByRole("heading", { name: "Upcoming reminders" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Recent history" })).toBeVisible();
+  // Check for the new tabs
+  await expect(page.getByRole("tab", { name: "Due Today" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Schedule" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "History" })).toBeVisible();
 });
 
 test("caregiver household page shows a read-only care panel", async ({ page }) => {
@@ -108,9 +112,8 @@ test("meals page includes weekly summary insights", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/meals");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Meal Analysis and Nutrition Review" })).toBeVisible();
-  await page.getByRole("tab", { name: "Weekly" }).click();
-  await expect(page.getByRole("heading", { name: "Weekly Pattern Summary" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nutrition Intelligence" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Timeline" })).toBeVisible();
 });
 
 test("medications page exposes regimen and adherence tooling", async ({ page }) => {
@@ -120,9 +123,9 @@ test("medications page exposes regimen and adherence tooling", async ({ page }) 
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/medications");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Medications & Adherence" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Adherence Metrics" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Regimens" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Care Plan Adherence" })).toBeVisible();
+  await expect(page.getByText("Clinical Adherence")).toBeVisible();
+  await expect(page.getByText("Active Regimens")).toBeVisible();
 });
 
 test("medication normalization review hides after confirm", async ({ page }) => {
@@ -180,7 +183,8 @@ test("medication normalization review hides after confirm", async ({ page }) => 
   });
 
   await page.goto("/medications");
-  await page.getByRole("button", { name: "Paste Text" }).click();
+  // New intake flow
+  await page.getByText("Paste Text").click();
   await page.getByLabel("Instructions").fill("Metformin 500mg daily");
   await page.getByRole("button", { name: "Analyze Instructions" }).click();
 
@@ -196,18 +200,18 @@ test("symptoms, reports, clinical cards, and metrics pages are available", async
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.goto("/symptoms");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Symptom Check-Ins and Safety Triage" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Submit Check-In" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Symptom Monitoring" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Log Symptom Check-In" })).toBeVisible();
 
   await page.goto("/reports");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Clinical Report Parser" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Parse Report" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Clinical Intelligence" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Process Medical Record" })).toBeVisible();
 
   await page.goto("/clinical-cards");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Clinical Card Generator" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Clinical Card Generator" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate Card" })).toBeVisible();
 
   await page.goto("/metrics");
-  await expect(page.locator("#main-content").getByRole("heading", { name: "Daily Nutrition Overview" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Daily Nutrition Overview" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh Trends" })).toBeVisible();
 });

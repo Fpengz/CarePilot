@@ -71,9 +71,7 @@ def format_chat_context(
             f"(range {stats.min_systolic}-{stats.max_systolic} / "
             f"{stats.min_diastolic}-{stats.max_diastolic})"
         )
-        lines.append(
-            f"BP trend: {trend.direction} ({trend.delta_systolic:+.1f} systolic)"
-        )
+        lines.append(f"BP trend: {trend.direction} ({trend.delta_systolic:+.1f} systolic)")
 
     if snapshot.biomarker_summary:
         biomarker_items = list(snapshot.biomarker_summary.items())[:max_biomarkers]

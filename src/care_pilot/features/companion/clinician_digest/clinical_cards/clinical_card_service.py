@@ -100,9 +100,7 @@ def generate_clinical_card_for_session(
         if item.measured_at is not None and start_date <= item.measured_at.date() <= end_date
     ]
     in_window_bp = [
-        item
-        for item in bp_readings
-        if start_date <= item.recorded_at.date() <= end_date
+        item for item in bp_readings if start_date <= item.recorded_at.date() <= end_date
     ]
 
     calories_now = sum(float(item.meal_state.nutrition.calories) for item in in_window_meals)

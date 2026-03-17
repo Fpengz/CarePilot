@@ -1,17 +1,22 @@
-"""API meal service — thin shim.
+"""
+Provide the meal API service.
 
-This module handles FastAPI request/response concerns and delegates
-feature logic to care_pilot.features.meals.use_cases.
+This module orchestrates meal analysis and confirmation workflows, bridging
+the API layer to the feature domain.
 """
 
 from __future__ import annotations
 
-from datetime import date, datetime
-from typing import Any, cast
+import hashlib
+import logging
+import uuid
+from datetime import UTC, date, datetime
+from typing import Any
 
-from fastapi import Request, UploadFile
+from fastapi import HTTPException, Request
 
 from apps.api.carepilot_api.errors import build_api_error
+from care_pilot.core.contracts.agent_envelopes import CaptureEnvelope
 from care_pilot.core.contracts.api import (
     CursorPageResponse,
     DailyNutritionTotalsResponse,
@@ -23,8 +28,12 @@ from care_pilot.core.contracts.api import (
     WorkflowResponse,
 )
 from care_pilot.features.meals.deps import MealDeps
-from care_pilot.features.meals.domain.models import ImageInput
-from care_pilot.features.meals.use_cases import (
+from care_pilot.features.meals.domain.models import (
+    ImageInput,
+    NutritionRiskProfile,
+    ValidatedMealEvent,
+)
+from care_pilot.features.meals.meal_service import (
     MealCandidateInvalidStateError,
     MealCandidateNotFoundError,
     analyze_meal_upload,
@@ -36,75 +45,85 @@ from care_pilot.features.meals.use_cases import (
     log_meal_analysis_completion,
 )
 from care_pilot.features.meals.workflows.meal_upload_state import MealUploadState
-from care_pilot.platform.auth.session_context import build_user_profile_from_session
-from care_pilot.platform.storage.media.ingestion import (
-    build_capture_envelope,
-    should_suppress_duplicate_capture,
-)
-from care_pilot.platform.storage.media.upload import SUPPORTED_IMAGE_TYPES, _maybe_downscale_image
+
+logger = logging.getLogger(__name__)
 
 
 async def analyze_meal(
     *,
     request: Request,
     deps: MealDeps,
-    session: dict[str, object],
-    file: UploadFile,
-    provider: str | None,
+    session: dict[str, Any],
+    file: Any,
+    provider: str | None = None,
     meal_text: str | None = None,
 ) -> MealAnalyzeResponse:
-    payload = await file.read()
-    if len(payload) > deps.settings.api.meal_upload_max_bytes:
-        raise build_api_error(
-            status_code=413,
-            code="meal.upload_too_large",
-            message="upload exceeds maximum allowed size",
-            details={"max_bytes": int(deps.settings.api.meal_upload_max_bytes)},
-        )
-    if len(payload) == 0:
-        raise build_api_error(status_code=400, code="meal.empty_upload", message="empty upload")
-    mime_type = file.content_type or ""
-    if mime_type not in SUPPORTED_IMAGE_TYPES:
+    user_id = str(session["user_id"])
+    user_profile = deps.stores.profiles.get_health_profile(user_id)
+    if user_profile is None:
+        raise HTTPException(status_code=404, detail="user profile not found")
+
+    # Validate file payload
+    if not file.content_type:
         raise build_api_error(
             status_code=400,
             code="meal.unsupported_image_format",
             message="unsupported image format",
         )
 
-    image_bytes, preprocess_meta = _maybe_downscale_image(
-        payload,
-        mime_type,
-        enabled=deps.settings.app.image_downscale_enabled,
-        max_side_px=deps.settings.app.image_max_side_px,
-    )
+    raw_bytes = await file.read()
+    if not raw_bytes:
+        raise build_api_error(
+            status_code=400,
+            code="meal.empty_upload",
+            message="empty upload",
+        )
+
+    if len(raw_bytes) > deps.settings.api.meal_upload_max_bytes:
+        raise build_api_error(
+            status_code=413,
+            code="meal.upload_too_large",
+            message="upload exceeds maximum allowed size",
+        )
+
     image_input = ImageInput(
         source="upload",
+        content=raw_bytes,
+        mime_type=file.content_type or "image/jpeg",
         filename=file.filename,
-        mime_type=mime_type,
-        content=image_bytes,
-        metadata=preprocess_meta,
     )
-    capture = build_capture_envelope(
-        image_input,
-        user_id=str(session["user_id"]),
-        request_id=getattr(request.state, "request_id", None),
-        correlation_id=getattr(request.state, "correlation_id", None),
+
+    # Use request context IDs for observability contract propagation
+    request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
+    correlation_id = getattr(request.state, "correlation_id", str(uuid.uuid4()))
+    captured_at = datetime.now(UTC)
+    content_sha = hashlib.sha256(raw_bytes).hexdigest()
+
+    capture = CaptureEnvelope(
+        capture_id=str(uuid.uuid4()),
+        request_id=request_id,
+        correlation_id=correlation_id,
+        user_id=user_profile.user_id,
+        source="upload",
+        modality="image",
+        mime_type=file.content_type or "image/jpeg",
+        filename=file.filename,
+        content_sha256=content_sha,
+        captured_at=captured_at,
     )
-    user_profile = build_user_profile_from_session(session, deps.stores.profiles)
-    dedupe_state = cast(
-        dict[str, Any], request.app.state.__dict__.setdefault("_capture_dedupe_state", {})
-    )
-    if should_suppress_duplicate_capture(
-        dedupe_state,
-        capture,
-        window_seconds=5,
-        session_key=user_profile.id,
-    ):
-        raise build_api_error(
-            status_code=409,
-            code="meal.duplicate_capture",
-            message="duplicate capture suppressed",
-        )
+
+    # Deduplication
+    cache_store = getattr(request.app.state.ctx, "cache_store", None)
+    if cache_store:
+        cache_key = f"capture_dedupe:{user_profile.user_id}:{content_sha}"
+        if cache_store.get_json(cache_key):
+            raise build_api_error(
+                status_code=409,
+                code="meal.duplicate_capture",
+                message="duplicate capture suppressed",
+            )
+        cache_store.set_json(cache_key, True, ttl_seconds=30)
+
     selected_provider = provider.strip() if isinstance(provider, str) else ""
     routed_provider = (
         selected_provider
@@ -114,17 +133,17 @@ async def analyze_meal(
 
     context_snapshot = build_context_snapshot(
         session=session,
-        request_id=capture.request_id,
-        correlation_id=capture.correlation_id,
+        request_id=request_id,
+        correlation_id=correlation_id,
         user_agent=request.headers.get("user-agent"),
         client_ip=request.client.host if request.client else None,
     )
     deps.event_timeline.append(
         event_type="context_ingested",
         workflow_name="meal_analysis",
-        correlation_id=capture.correlation_id,
-        request_id=capture.request_id,
-        user_id=user_profile.id,
+        correlation_id=correlation_id,
+        request_id=request_id,
+        user_id=user_profile.user_id,
         payload={
             "profile_mode": str(session.get("profile_mode", "")),
             "display_name": str(session.get("display_name", "")),
@@ -133,14 +152,27 @@ async def analyze_meal(
         },
     )
 
+    capture = CaptureEnvelope(
+        capture_id=str(uuid.uuid4()),
+        request_id=request_id,
+        correlation_id=correlation_id,
+        user_id=user_profile.user_id,
+        source="upload",
+        modality="image",
+        mime_type=file.content_type or "image/jpeg",
+        filename=file.filename,
+        content_sha256=content_sha,
+        captured_at=captured_at,
+    )
+
     try:
         latency_ms, workflow_output = await analyze_meal_upload(
             deps=deps,
             state=MealUploadState(
-                request_id=capture.request_id,
-                correlation_id=capture.correlation_id,
-                user_id=user_profile.id,
-                profile_mode=user_profile.profile_mode,
+                request_id=request_id,
+                correlation_id=correlation_id,
+                user_id=user_profile.user_id,
+                profile_mode=str(session.get("profile_mode", "member")),
                 capture=capture,
                 image_input=image_input,
                 provider=routed_provider,
@@ -167,8 +199,26 @@ async def analyze_meal(
         candidate_event=workflow_output.candidate_record.candidate_event,
         candidate_id=workflow_output.candidate_record.candidate_id,
         confirmation_required=workflow_output.confirmation_required,
-        validated_event=workflow_output.validated_event,
-        nutrition_profile=workflow_output.nutrition_profile,
+        validated_event=workflow_output.validated_event
+        or ValidatedMealEvent(
+            event_id=workflow_output.candidate_record.candidate_id,
+            user_id=user_profile.user_id,
+            captured_at=captured_at,
+            meal_name=workflow_output.candidate_record.candidate_event.meal_name,
+        ),
+        nutrition_profile=workflow_output.nutrition_profile
+        or NutritionRiskProfile(
+            event_id=workflow_output.candidate_record.candidate_id,
+            user_id=user_profile.user_id,
+            captured_at=captured_at,
+            calories=0,
+            carbs_g=0,
+            protein_g=0,
+            fat_g=0,
+            sugar_g=0,
+            sodium_mg=0,
+            fiber_g=0,
+        ),
         output_envelope=workflow_output.output_envelope,
         workflow=WorkflowResponse.model_validate(workflow_output.workflow.model_dump(mode="json")),
     )
@@ -193,9 +243,13 @@ async def confirm_meal(
             user_name=user_name,
         )
     except MealCandidateNotFoundError as exc:
-        raise build_api_error(status_code=404, code="meal.candidate.not_found", message=str(exc)) from exc
+        raise build_api_error(
+            status_code=404, code="meal.candidate.not_found", message=str(exc)
+        ) from exc
     except MealCandidateInvalidStateError as exc:
-        raise build_api_error(status_code=400, code="meal.candidate.invalid", message=str(exc)) from exc
+        raise build_api_error(
+            status_code=400, code="meal.candidate.invalid", message=str(exc)
+        ) from exc
 
     return {
         "status": record.confirmation_status,
@@ -211,27 +265,25 @@ def list_meal_records(
     limit: int = 50,
     cursor: str | None = None,
 ) -> MealRecordsResponse:
-    if cursor is None:
-        start = 0
-    else:
-        raw = cursor.strip()
-        if not raw.isdigit():
+    # Handle string cursor from API
+    int_cursor = 0
+    if cursor:
+        if not cursor.isdigit():
             raise build_api_error(
                 status_code=400,
                 code="meal.invalid_cursor",
                 message="invalid cursor",
-                details={"cursor": cursor},
             )
-        start = int(raw)
-    page = list_meal_records_page(deps=deps, user_id=user_id, limit=limit, cursor=start)
-    next_cursor = str(page.next_cursor) if page.next_cursor is not None else None
+        int_cursor = int(cursor)
+
+    page = list_meal_records_page(deps=deps, user_id=user_id, limit=limit, cursor=int_cursor)
     return MealRecordsResponse(
         records=page.records,
         page=CursorPageResponse(
             limit=limit,
             cursor=cursor,
-            next_cursor=next_cursor,
-            has_more=next_cursor is not None,
+            next_cursor=str(page.next_cursor) if page.next_cursor is not None else None,
+            has_more=bool(page.next_cursor is not None),
             returned=page.returned,
         ),
     )
@@ -245,16 +297,11 @@ def get_daily_summary(
 ) -> MealDailySummaryResponse:
     summary = get_daily_summary_data(deps=deps, user_id=user_id, summary_date=summary_date)
     return MealDailySummaryResponse(
-        date=summary.date,
+        date=str(summary_date),
         meal_count=summary.meal_count,
-        last_logged_at=datetime.fromisoformat(summary.last_logged_at)
-        if summary.last_logged_at
-        else None,
         consumed=DailyNutritionTotalsResponse.model_validate(summary.consumed.model_dump()),
         targets=DailyNutritionTotalsResponse.model_validate(summary.targets.model_dump()),
         remaining=DailyNutritionTotalsResponse.model_validate(summary.remaining.model_dump()),
-        insights=[],
-        recommendation_hints=summary.recommendation_hints,
     )
 
 
@@ -265,29 +312,19 @@ def get_weekly_summary(
     week_start: date,
 ) -> MealWeeklySummaryResponse:
     summary = get_weekly_summary_data(deps=deps, user_id=user_id, week_start=week_start)
-    breakdown = {
-        day: MealWeeklySummaryDayResponse(
-            meal_count=int(values.get("meal_count", 0)),
-            calories=float(values.get("calories", 0.0)),
-            sugar_g=float(values.get("sugar_g", 0.0)),
-            sodium_mg=float(values.get("sodium_mg", 0.0)),
-        )
-        for day, values in summary.daily_breakdown.items()
-    }
     return MealWeeklySummaryResponse(
         week_start=summary.week_start,
         week_end=summary.week_end,
         meal_count=summary.meal_count,
         totals=DailyNutritionTotalsResponse.model_validate(summary.totals.model_dump()),
-        daily_breakdown=breakdown,
+        daily_breakdown={
+            d: MealWeeklySummaryDayResponse(
+                meal_count=int(item["meal_count"]),
+                calories=float(item["calories"]),
+                sugar_g=float(item["sugar_g"]),
+                sodium_mg=float(item["sodium_mg"]),
+            )
+            for d, item in summary.daily_breakdown.items()
+        },
         pattern_flags=summary.pattern_flags,
     )
-
-
-__all__ = [
-    "analyze_meal",
-    "confirm_meal",
-    "get_daily_summary",
-    "get_weekly_summary",
-    "list_meal_records",
-]

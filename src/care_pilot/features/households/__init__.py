@@ -43,7 +43,7 @@ __all__ = [
 
 def __getattr__(name: str) -> object:
     if name in __all__:
-        from . import use_cases
+        from . import household_service
 
-        return getattr(use_cases, name)
+        return getattr(household_service, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

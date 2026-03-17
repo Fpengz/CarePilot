@@ -391,9 +391,9 @@ async def chat_audio(
     try:
         user_message = deps.audio_agent.transcribe_bytes(raw_bytes, filename)
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=422, detail=f"Transcription failed: {exc}")
+        raise HTTPException(status_code=422, detail=f"Transcription failed: {exc}") from exc
 
     if not user_message:
         raise HTTPException(status_code=422, detail="Transcription returned empty text")

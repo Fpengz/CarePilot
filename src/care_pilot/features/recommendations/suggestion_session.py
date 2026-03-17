@@ -26,7 +26,7 @@ from care_pilot.features.recommendations.ports import (
     HouseholdStorePort,
     SuggestionRepositoryPort,
 )
-from care_pilot.features.recommendations.use_cases import (
+from care_pilot.features.recommendations.recommendation_service import (
     MissingActiveHouseholdError,
     NoMealRecordsError,
     SuggestionForbiddenError,

@@ -38,7 +38,7 @@ async def meal_analyze(
     runtime_mode: Annotated[str, Form()] = "local",
     provider: Annotated[str | None, Form()] = None,
     meal_text: Annotated[str | None, Form()] = None,
-    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
+    session: Annotated[dict[str, Any], Depends(current_session)] = None,  # type: ignore
 ) -> MealAnalyzeResponse:
     del runtime_mode
     require_action(session, "meal.analyze")
@@ -57,7 +57,7 @@ def meal_records(
     request: Request,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     cursor: Annotated[str | None, Query()] = None,
-    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
+    session: Annotated[dict[str, Any], Depends(current_session)] = None,  # type: ignore
 ) -> MealRecordsResponse:
     require_action(session, "meal.records.read")
     return list_meal_records(
@@ -72,7 +72,7 @@ def meal_records(
 def meal_daily_summary(
     request: Request,
     summary_date: Annotated[date, Query(alias="date")],
-    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
+    session: Annotated[dict[str, Any], Depends(current_session)] = None,  # type: ignore
 ) -> MealDailySummaryResponse:
     require_action(session, "meal.records.read")
     return get_daily_summary(
@@ -86,7 +86,7 @@ def meal_daily_summary(
 def meal_weekly_summary(
     request: Request,
     week_start: Annotated[date, Query()],
-    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
+    session: Annotated[dict[str, Any], Depends(current_session)] = None,  # type: ignore
 ) -> MealWeeklySummaryResponse:
     require_action(session, "meal.records.read")
     return get_weekly_summary(
@@ -100,7 +100,7 @@ def meal_weekly_summary(
 async def meal_confirm(
     payload: MealConfirmRequest,
     request: Request,
-    session: Annotated[dict[str, Any], Depends(current_session)] = None, # type: ignore
+    session: Annotated[dict[str, Any], Depends(current_session)] = None,  # type: ignore
 ) -> MealConfirmResponse:
     require_action(session, "meal.confirm")
     result = await confirm_meal(

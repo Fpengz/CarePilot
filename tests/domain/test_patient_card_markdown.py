@@ -10,7 +10,7 @@ from care_pilot.features.companion.core.health.models import (
     BloodPressureSummary,
     BloodPressureTrend,
 )
-from care_pilot.features.companion.patient_card import use_cases
+from care_pilot.features.companion.patient_card import patient_card_service
 
 
 def test_build_patient_summary_formats_bp_to_two_decimals() -> None:
@@ -40,7 +40,7 @@ def test_build_patient_summary_formats_bp_to_two_decimals() -> None:
         generated_at=datetime.now(UTC),
     )
 
-    summary = use_cases._build_patient_summary(snapshot)
+    summary = patient_card_service._build_patient_summary(snapshot)
 
     assert "Avg BP: 137.11/89.44 mmHg (range 135.11-139.05 / 86.13-92.77)" in summary
 
@@ -59,7 +59,7 @@ def test_finalize_markdown_appends_references_and_disclaimer() -> None:
         ],
     )
 
-    markdown = use_cases._finalize_markdown("## Data Overview\n- Patient: Mei", evidence)
+    markdown = patient_card_service._finalize_markdown("## Data Overview\n- Patient: Mei", evidence)
 
     assert "## References" in markdown
     assert (
@@ -67,4 +67,4 @@ def test_finalize_markdown_appends_references_and_disclaimer() -> None:
         "Hypertension occurs frequently in patients with diabetes."
         in markdown
     )
-    assert markdown.rstrip().endswith(use_cases._DISCLAIMER)
+    assert markdown.rstrip().endswith(patient_card_service._DISCLAIMER)

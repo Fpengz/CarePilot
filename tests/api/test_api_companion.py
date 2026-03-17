@@ -49,9 +49,16 @@ def _meal_upload(client: TestClient) -> None:
         data={"provider": "test"},
     )
     assert response.status_code == 200
+    candidate_id = response.json()["candidate_id"]
+    confirm = client.post(
+        "/api/v1/meal/confirm",
+        json={"candidate_id": candidate_id, "action": "confirm"},
+    )
+    assert confirm.status_code == 200
 
 
 def _seed_companion_state(client: TestClient) -> None:
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
     report = client.post(
         "/api/v1/reports/parse",

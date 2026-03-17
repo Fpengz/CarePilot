@@ -18,7 +18,7 @@ from care_pilot.features.reminders.outbox.models import (
     utc_now,
     utc_now_iso,
 )
-from care_pilot.features.reminders.outbox.service import ReminderService
+from care_pilot.features.reminders.outbox.outbox_service import ReminderService
 
 __all__ = [
     "DEFAULT_THRESHOLD_RULES",

@@ -151,9 +151,7 @@ def _notification_from_event(
     )
 
 
-def _user_notification_events(
-    *, context: AppContext, user_id: str
-) -> list[WorkflowTimelineEvent]:
+def _user_notification_events(*, context: AppContext, user_id: str) -> list[WorkflowTimelineEvent]:
     events = context.event_timeline.get_events(user_id=user_id)
     return [event for event in events if event.event_type == "workflow_completed"]
 

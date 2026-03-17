@@ -421,8 +421,18 @@ def test_household_caregiver_reads_member_summary_and_reminders(
     assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
 
     assert member_client.post("/api/v1/reminders/generate").status_code == 200
+    # Initialize profile so analyze_meal doesn't 404
+    member_client.patch(
+        "/api/v1/profile/health",
+        json={
+            "age": 54,
+            "locale": "en-SG",
+            "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
+        },
+    )
     from tests.api.test_api_health_profiles import _meal_upload
 
+    member_client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(member_client)
 
     summary = helper_client.get(

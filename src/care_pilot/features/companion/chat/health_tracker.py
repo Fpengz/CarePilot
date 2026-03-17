@@ -25,7 +25,10 @@ from care_pilot.agent.runtime.inference_types import (
     InferenceModality,
     InferenceRequest,
 )
-from care_pilot.features.companion.chat.memory import InferenceEngineProtocol
+from care_pilot.features.companion.chat.memory import (
+    USER_HISTORY_SESSION_ID,
+    InferenceEngineProtocol,
+)
 from care_pilot.platform.observability import get_logger
 
 # ---------------------------------------------------------------------------
@@ -77,8 +80,9 @@ class HealthTracker:
         inference_engine: InferenceEngineProtocol,
         db_path: Path = DB_PATH,
     ) -> None:
+        del session_id
         self._user_id = user_id
-        self._session_id = session_id
+        self._session_id = USER_HISTORY_SESSION_ID
         self._engine = inference_engine
         self._db_path = db_path
         self._logger = get_logger(__name__)
@@ -87,7 +91,7 @@ class HealthTracker:
         self._logger.info(
             "chat_health_tracker_ready user_id=%s session=%s",
             user_id,
-            session_id,
+            self._session_id,
         )
 
     # ------------------------------------------------------------------ #

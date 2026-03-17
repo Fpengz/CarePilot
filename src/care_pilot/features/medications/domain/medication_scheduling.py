@@ -119,17 +119,13 @@ def generate_daily_reminders(
                     target_date,
                     window.start_time,
                     timezone_name=regimen.timezone,
-                ) - timedelta(
-                    minutes=regimen.offset_minutes
-                )
+                ) - timedelta(minutes=regimen.offset_minutes)
             else:
                 scheduled = _at(
                     target_date,
                     window.end_time,
                     timezone_name=regimen.timezone,
-                ) + timedelta(
-                    minutes=regimen.offset_minutes
-                )
+                ) + timedelta(minutes=regimen.offset_minutes)
             reminders.append(
                 ReminderEvent(
                     id=str(uuid4()),

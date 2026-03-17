@@ -126,5 +126,5 @@ class EmptyDrugKnowledgeRepository:
     Null-object fallback repository.
     """
 
-    def get_drug_info(self, query: str) -> dict[str, Any] | None:
+    def get_drug_info(self, _query: str) -> dict[str, Any] | None:
         return None

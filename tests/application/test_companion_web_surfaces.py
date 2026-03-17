@@ -20,9 +20,9 @@ def test_route_meta_advertises_companion_surfaces() -> None:
     assert 'href: "/impact"' in route_meta
 
 
-def test_companion_page_redirects_to_dashboard() -> None:
+def test_companion_page_has_workspace_title() -> None:
     companion_page = (WEB_ROOT / "app" / "companion" / "page.tsx").read_text(encoding="utf-8")
-    assert 'redirect("/dashboard")' in companion_page
+    assert "Companion Workspace" in companion_page
 
 
 def test_clinician_and_impact_pages_no_longer_lead_with_raw_json() -> None:

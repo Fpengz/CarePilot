@@ -138,9 +138,7 @@ def _score_candidate(
         score += 0.18
         why.append(f"Matches your nutrition goals: {', '.join(matched_goals)}.")
 
-    matched_cuisines = sorted(
-        cuisines.intersection({item.lower() for item in candidate.cuisines})
-    )
+    matched_cuisines = sorted(cuisines.intersection({item.lower() for item in candidate.cuisines}))
     if matched_cuisines:
         score += 0.12
         why.append(f"Fits your preferred cuisine: {', '.join(matched_cuisines)}.")
@@ -153,10 +151,11 @@ def _score_candidate(
         if biomarkers.get("ldl", 0) >= 3.4 and "heart_health" in traits:
             score += 0.1
             why.append("Supports lower saturated-fat choices based on recent LDL.")
-        if biomarkers.get("systolic_bp", 0) >= 140 or biomarkers.get("diastolic_bp", 0) >= 90:
-            if "lower_sodium" in traits:
-                score += 0.1
-                why.append("Leans lower-sodium to match elevated blood-pressure readings.")
+        if (
+            biomarkers.get("systolic_bp", 0) >= 140 or biomarkers.get("diastolic_bp", 0) >= 90
+        ) and "lower_sodium" in traits:
+            score += 0.1
+            why.append("Leans lower-sodium to match elevated blood-pressure readings.")
 
     if profile.budget_tier == "budget" and "budget" in traits:
         score += 0.05

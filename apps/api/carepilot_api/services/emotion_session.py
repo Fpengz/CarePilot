@@ -98,7 +98,7 @@ def infer_text_for_session(
             user_id=user_id,
         )
     except Exception as exc:
-        raise _map_inference_error(exc, deps=deps)
+        raise _map_inference_error(exc, deps=deps) from exc
 
     deps.event_timeline.append(
         event_type="emotion_observed",
@@ -140,7 +140,7 @@ def infer_speech_for_session(
             user_id=user_id,
         )
     except Exception as exc:
-        raise _map_inference_error(exc, deps=deps)
+        raise _map_inference_error(exc, deps=deps) from exc
 
     deps.event_timeline.append(
         event_type="emotion_observed",

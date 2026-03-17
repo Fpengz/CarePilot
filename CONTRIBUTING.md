@@ -236,7 +236,7 @@ export async function getDailyInsights(): Promise<DailyInsight[]> {
 ## Architecture Rules for Contributors
 Mandatory rules:
 - routers are HTTP mapping only
-- orchestration belongs in feature `service.py` entrypoints
+- orchestration belongs in job-based feature service entrypoints (e.g., `meal_service.py`)
 - tools are invoked through typed registries
 - side effects should be decoupled from request-time business logic
 - persistent state transitions must be observable and testable

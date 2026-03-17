@@ -63,12 +63,8 @@ def _build_patient_summary(snapshot: CaseSnapshot) -> str:
             f"(range {stats.min_systolic:.2f}-{stats.max_systolic:.2f} / "
             f"{stats.min_diastolic:.2f}-{stats.max_diastolic:.2f})"
         )
-        bp_lines.append(
-            f"- Trend: {bp.trend.direction} (Δ{bp.trend.delta_systolic:+.1f} systolic)"
-        )
-        bp_lines.append(
-            f"- Abnormal readings: {len(bp.abnormal_readings)}"
-        )
+        bp_lines.append(f"- Trend: {bp.trend.direction} (Δ{bp.trend.delta_systolic:+.1f} systolic)")
+        bp_lines.append(f"- Abnormal readings: {len(bp.abnormal_readings)}")
     else:
         targets = resolve_bp_targets(snapshot.conditions)
         bp_lines.append(

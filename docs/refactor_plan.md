@@ -446,12 +446,21 @@ Gates:
 - `ruff`, `ty`, `pytest` pass.
 - All 14 medication intake API tests and core integration flows are stable.
 
-### Phase 4 — naming and file cleanup (ACTIVE)
+### Phase 4 — naming and file cleanup (DONE)
 
 - Replace generic `service.py` / `use_cases.py` / `presenter.py` where too broad.
 - Standardize presenters/mappers to use `core/contracts/api/`.
 - Clean up documentation and remove obsolete design artifacts.
+- **Result**: 21+ files renamed to job-based conventions (e.g., `meal_service.py`, `medication_management.py`).
 
+### Phase 5 — Documentation and Submission Prep (ACTIVE)
+
+- Generate Product + Technical Overview for Singapore Innovation Challenge.
+- Catalog all LLM prompts used in the system.
+- Draft Hackathon Submission narrative aligned with Problem Statement #1.
+- Update System Architecture diagrams (Mermaid + Draw.io instructions).
+- Final cross-check of all `*.md` files for consistency.
+- Validate system via `web-e2e` tests.
 
 ---
 
@@ -465,13 +474,16 @@ Workflows:
 
 - `*_graph.py`, `*_state.py`, `*_output.py`
 
-Application services / use-cases:
+Job-based services / Application services:
 
-- `*_application_service.py` or `use_cases/<use_case>.py`
+- `*_service.py` (e.g., `meal_service.py`, `reminder_service.py`)
+- `*_management.py` (e.g., `medication_management.py`)
+- `use_cases/<use_case>.py` for granular logic
 
 Presenters/mappers:
 
 - `presenters/api.py`, `*_mapper.py`, `*_presenter.py`
+
 
 Domain engines:
 

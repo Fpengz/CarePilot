@@ -73,7 +73,7 @@ class MealAnalyzeResponse(BaseModel):
     candidate_id: str
     confirmation_required: bool = False
     validated_event: ValidatedMealEvent | None = None
-    nutrition_profile: NutritionRiskProfile | None = None
+    nutrition_profile: NutritionRiskProfile
     output_envelope: AgentOutputEnvelope | None = None
     workflow: WorkflowResponse
 
@@ -364,6 +364,7 @@ class ClinicalCardProvenanceResponse(BaseModel):
     symptom_checkin_count: int = 0
     biomarker_reading_count: int = 0
     adherence_event_count: int = 0
+    bp_reading_count: int = 0
 
 
 class ClinicalCardResponse(BaseModel):

@@ -135,7 +135,10 @@ class _BaseStrategy:
     model: ModelType
 
     def supports(self, modality: InferenceModality) -> bool:
-        return not (self.provider_name == ModelProvider.TEST.value and modality in {InferenceModality.IMAGE, InferenceModality.MIXED})
+        return not (
+            self.provider_name == ModelProvider.TEST.value
+            and modality in {InferenceModality.IMAGE, InferenceModality.MIXED}
+        )
 
     def _provider_metadata(self) -> ProviderMetadata:
         destination = LLMFactory.describe_model_destination(self.model)

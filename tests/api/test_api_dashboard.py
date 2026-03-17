@@ -67,7 +67,7 @@ def _seed_dashboard_state(client: TestClient) -> None:
         )
     )
 
-    base_day = date(2026, 3, 15)
+    base_day = datetime.now(UTC).date()
     for offset in range(0, 42):
         current_day = base_day - timedelta(days=offset)
         breakfast_at = _dt(current_day, 8)

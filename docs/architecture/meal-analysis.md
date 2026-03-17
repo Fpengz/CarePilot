@@ -159,44 +159,44 @@ This keeps UX fast when confidence is high and safe when confidence is weak.
 
 Vision and perception
 
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/agent/meal_analysis/vision_module.py`
+- `src/care_pilot/agent/meal_analysis/vision_module.py`
 
 Domain contracts
 
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/meals/domain/models.py`
+- `src/care_pilot/features/meals/domain/models.py`
 
 Application normalization, reconciliation, and enrichment
 
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/meals/use_cases.py`
+- `src/care_pilot/features/meals/use_cases.py`
 
 Workflow orchestration
 
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/meals/workflows/meal_upload_graph.py`
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/meals/workflows/meal_upload_state.py`
+- `src/care_pilot/features/meals/workflows/meal_upload_graph.py`
+- `src/care_pilot/features/meals/workflows/meal_upload_state.py`
 
 Provider/runtime integration
 
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/agent/runtime/llm_factory.py`
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/agent/runtime/inference_engine.py`
+- `src/care_pilot/agent/runtime/llm_factory.py`
+- `src/care_pilot/agent/runtime/inference_engine.py`
 
 Canonical food search, ranking, and loading logic
 
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/recommendations/domain/canonical_food_matching.py`
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/platform/persistence/food/ingestion.py`
+- `src/care_pilot/features/recommendations/domain/canonical_food_matching.py`
+- `src/care_pilot/platform/persistence/food/ingestion.py`
 
 Persistence
 
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/platform/persistence/sqlite_repository.py`
+- `src/care_pilot/platform/persistence/sqlite_repository.py`
 
 Compatibility helpers for downstream consumers
 
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/meals/presenter.py`
+- `src/care_pilot/features/meals/presenter.py`
 
 Example downstream consumers
 
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/meals/api_service.py`
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/recommendations/use_cases.py`
-- `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/companion/core/use_cases.py`
+- `src/care_pilot/features/meals/api_service.py`
+- `src/care_pilot/features/recommendations/recommendation_service.py`
+- `src/care_pilot/features/companion/core/companion_core_service.py`
 
 Future feedback and review workflows
 
@@ -428,9 +428,9 @@ Current data sources
 The active canonical food layer is assembled from:
 
 - DEFAULT_MEAL_CATALOG
-- Singapore‑local seed data in `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/data/food/sg_hawker_food.json`
-- Optional reduced USDA data in `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/data/food/usda_foods.json`
-- Optional reduced Open Food Facts data in `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/data/food/open_food_facts_products.json`
+- Singapore‑local seed data in `src/care_pilot/data/food/sg_hawker_food.json`
+- Optional reduced USDA data in `src/care_pilot/data/food/usda_foods.json`
+- Optional reduced Open Food Facts data in `src/care_pilot/data/food/open_food_facts_products.json`
 
 Current ingestion posture
 

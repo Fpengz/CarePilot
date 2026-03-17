@@ -7,7 +7,7 @@ to notification services for orchestration.
 
 from fastapi import APIRouter, Depends, Request
 
-from care_pilot.features.reminders.notifications.use_cases import (
+from care_pilot.features.reminders.notifications.notification_service import (
     list_notifications,
     mark_all_notifications_read,
     mark_notification_read,

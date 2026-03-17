@@ -1,11 +1,11 @@
 """API helpers for reminder generation, listing, confirmation, and mobility settings.
 
-Shim: canonical logic lives in ``care_pilot.features.reminders.service``.
+Shim: canonical logic lives in ``care_pilot.features.reminders.reminder_service``.
 """
 
 from __future__ import annotations
 
-from care_pilot.features.reminders.service import (  # noqa: F401
+from care_pilot.features.reminders.reminder_service import (  # noqa: F401
     confirm_reminder_for_session,
     generate_reminders_for_session,
     get_mobility_settings_for_session,

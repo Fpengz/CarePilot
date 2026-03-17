@@ -46,7 +46,7 @@ from care_pilot.features.companion.personalization.personalization import (
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.reminders.domain.models import ReminderEvent
-from care_pilot.features.safety.service import (
+from care_pilot.features.safety.safety_engine import (
     apply_safety_decision,
     review_care_plan,
 )

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "pnpm build && playwright test"
   },

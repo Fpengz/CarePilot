@@ -6,7 +6,7 @@ adherence tracking.
 
 from __future__ import annotations
 
-from care_pilot.features.medications.use_cases import (
+from care_pilot.features.medications.medication_management import (
     adherence_metrics_for_session,
     create_regimen_for_session,
     delete_regimen_for_session,

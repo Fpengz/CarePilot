@@ -2,12 +2,12 @@
 
 .. deprecated::
     Thin re-export shim. All logic lives in
-    ``care_pilot.features.households.use_cases``.
+    ``care_pilot.features.households.household_service``.
 """
 
 from __future__ import annotations
 
-from care_pilot.features.households.use_cases import (  # noqa: F401
+from care_pilot.features.households.household_service import (  # noqa: F401
     household_bundle_response,
     household_invite_response,
     household_member_response,

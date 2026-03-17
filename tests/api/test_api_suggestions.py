@@ -46,6 +46,13 @@ def _meal_upload(client: TestClient, *, color: tuple[int, int, int] = (120, 210,
         data={"runtime_mode": "local", "provider": "test"},
     )
     assert response.status_code == 200
+    candidate_id = response.json()["candidate_id"]
+    confirm = client.post(
+        "/api/v1/meal/confirm",
+        json={"candidate_id": candidate_id, "action": "confirm"},
+    )
+
+    assert confirm.status_code == 200
 
 
 def test_suggestions_generate_from_report_persists_and_lists(
@@ -53,6 +60,16 @@ def test_suggestions_generate_from_report_persists_and_lists(
 ) -> None:
     client = TestClient(create_app())
     _login(client)
+    # Initialize profile so analyze_meal doesn't 404
+    client.patch(
+        "/api/v1/profile/health",
+        json={
+            "age": 54,
+            "locale": "en-SG",
+            "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
+        },
+    )
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
 
     create = client.post(
@@ -172,7 +189,9 @@ def test_suggestions_list_household_scope_includes_member_records(
     joined = helper_client.post("/api/v1/households/join", json={"code": code})
     assert joined.status_code == 200
 
+    member_client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(member_client, color=(120, 210, 90))
+    helper_client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(helper_client, color=(95, 120, 210))
     member_create = member_client.post(
         "/api/v1/suggestions/generate-from-report",
@@ -211,6 +230,7 @@ def test_suggestions_events_are_replayable_from_workflow_timeline(
 
     _login(member_client, "member@example.com", "member-pass")
     _login(admin_client, "admin@example.com", "admin-pass")
+    member_client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(member_client)
 
     created = member_client.post(
@@ -236,6 +256,7 @@ def test_suggestions_respect_incoming_request_and_correlation_ids(
     app = create_app()
     client = TestClient(app)
     _login(client, "member@example.com", "member-pass")
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
 
     response = client.post(
@@ -275,7 +296,9 @@ def test_suggestions_household_scope_supports_source_user_filter(
     )
     assert join.status_code == 200
 
+    member_client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(member_client, color=(120, 210, 90))
+    helper_client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(helper_client, color=(95, 120, 210))
     assert (
         member_client.post(
@@ -353,7 +376,9 @@ def test_suggestions_household_access_revoked_after_member_removed(
     code = owner_client.post(f"/api/v1/households/{household_id}/invites").json()["invite"]["code"]
     assert helper_client.post("/api/v1/households/join", json={"code": code}).status_code == 200
 
+    owner_client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(owner_client, color=(120, 210, 90))
+    helper_client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(helper_client, color=(95, 120, 210))
     owner_create = owner_client.post(
         "/api/v1/suggestions/generate-from-report",
@@ -423,6 +448,7 @@ def test_suggestions_cross_household_detail_attempt_is_hidden(
         == 200
     )
 
+    admin_client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(admin_client, color=(10, 150, 200))
     created = admin_client.post(
         "/api/v1/suggestions/generate-from-report",

@@ -9,7 +9,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from care_pilot.features.households.use_cases import (
+from care_pilot.features.households.household_service import (
     create_household,
     create_household_invite,
     get_current_household,

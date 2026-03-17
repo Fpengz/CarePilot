@@ -46,6 +46,12 @@ def _meal_upload(client: TestClient, *, color: tuple[int, int, int] = (120, 210,
         data={"runtime_mode": "local", "provider": "test"},
     )
     assert response.status_code == 200
+    candidate_id = response.json()["candidate_id"]
+    confirm = client.post(
+        "/api/v1/meal/confirm",
+        json={"candidate_id": candidate_id, "action": "confirm"},
+    )
+    assert confirm.status_code == 200
 
 
 def test_health_profile_patch_persists_across_requests(
@@ -105,6 +111,16 @@ def test_daily_suggestions_use_profile_history_and_snapshot(
 ) -> None:
     client = TestClient(create_app())
     _login(client)
+    # Initialize profile so analyze_meal doesn't 404
+    client.patch(
+        "/api/v1/profile/health",
+        json={
+            "age": 54,
+            "locale": "en-SG",
+            "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
+        },
+    )
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
     assert (
         client.post(

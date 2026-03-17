@@ -35,6 +35,7 @@ def test_notifications_requires_auth() -> None:
 def test_notifications_list_returns_user_workflow_notifications() -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
 
     response = client.get("/api/v1/notifications")
@@ -58,6 +59,7 @@ def test_notifications_list_returns_user_workflow_notifications() -> None:
 def test_mark_notification_read_updates_unread_count() -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
 
     listed = client.get("/api/v1/notifications")
@@ -80,6 +82,7 @@ def test_mark_notification_read_updates_unread_count() -> None:
 def test_mark_all_notifications_read_marks_everything_for_user() -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
     _meal_upload(client, color=(0, 255, 0))
 

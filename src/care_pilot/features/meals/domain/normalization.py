@@ -345,11 +345,11 @@ def _normalize_item(*, food_store: Any, locale: str, item: Any) -> NormalizedMea
                 matched_alias = alias
                 strategy = "partial_alias"
                 confidence = 0.82
-        if matched_alias is None and ranking_score >= 0.55:
+        if matched_alias is None and ranking_score >= 0.34:
             matched_alias = item.label
             strategy = "fuzzy_alias"
             confidence = min(0.8, ranking_score)
-        if matched_alias is None and ranking_score < 0.55:
+        if matched_alias is None and ranking_score < 0.34:
             matched = None
 
     if matched is None:

@@ -36,6 +36,7 @@ Current hardening emphasis:
 - reduce opaque orchestration and broad service-locator patterns
 - establish `features/`, `agent/`, `platform/`, `core/`, and `core/contracts/api/` as the canonical backend surfaces
 - completed architecture refactor: removed legacy layered packages, relocated API schemas to core contracts, and stabilized the persistence layer.
+- finalized feature-first modular monolith structure with job-based service naming (e.g., `meal_service.py`, `medication_management.py`).
 
 ## Delivered phases
 
@@ -56,10 +57,26 @@ Delivered:
 - stabilization of the SQLite persistence layer with a central bootstrap mechanism
 - resolution of circular import patterns across domain and workflow models
 
-### Phase 3: Proactive engagement (ACTIVE)
+### Phase 3: Proactive engagement
+Delivered:
 - turn reminder and adherence signals into explicit proactive outreach triggers
 - add inactivity, repeated risky meal, and worsening symptom triggers
 - persist intervention outcomes for replay and evaluation
+
+### Phase 4: Structural Hardening and Feature-First Refactor
+Delivered:
+- Renamed 21+ files to follow job-based naming conventions (e.g., `service.py` -> `meal_service.py`).
+- Established the "feature-first modular monolith" as the canonical architecture.
+- Refactored `src/care_pilot/features/` to ensure strict ownership and bounded contexts.
+- Consolidated agent-layer logic into `src/care_pilot/agent/`.
+- Verified system-wide stability after the structural reorganization.
+
+### Phase 5: Documentation and Submission Prep (ACTIVE)
+- Update all project documentation (`*.md` files) to reflect the finalized file structure.
+- Replace generic file references with specific job-based names across the codebase and docs.
+- Ensure ARCHITECTURE.md matches the current reality of the `src/` folder.
+- Fix broken links and verify consistency across all documentation.
+- Finalize the README and submission materials for the hackathon.
 
 ## Related references
 - `README.md`

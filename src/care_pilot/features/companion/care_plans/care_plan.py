@@ -35,6 +35,7 @@ def compose_care_plan(
     engagement: EngagementAssessment,
     evidence: EvidenceBundle,
 ) -> CarePlan:
+    del snapshot
     wants_why = _message_wants_why(interaction.message)
     wants_one_step = _message_wants_one_step(interaction.message)
     actions: list[str]

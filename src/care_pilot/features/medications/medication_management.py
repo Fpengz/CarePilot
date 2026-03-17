@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from datetime import UTC, date, datetime, time
 from time import perf_counter
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
@@ -121,7 +121,7 @@ def _to_adherence_response(
 def _to_notification_response(
     item: object,
 ) -> ScheduledReminderNotificationItemResponse:
-    payload = item.model_dump(mode="json") if hasattr(item, "model_dump") else item
+    payload = cast(Any, item).model_dump(mode="json") if hasattr(item, "model_dump") else item
     return ScheduledReminderNotificationItemResponse.model_validate(payload)
 
 

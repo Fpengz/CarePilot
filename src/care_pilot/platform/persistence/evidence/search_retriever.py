@@ -106,9 +106,7 @@ def _build_queries(*, snapshot: CaseSnapshot, message: str) -> list[str]:
             )
             queries.append(f"Lifestyle interventions for {condition} with hypertension")
         elif avg_sys >= targets.systolic or avg_dia >= targets.diastolic:
-            queries.append(
-                f"Blood pressure management for {condition} with elevated readings"
-            )
+            queries.append(f"Blood pressure management for {condition} with elevated readings")
         else:
             queries.append(
                 f"Blood pressure management for {condition} with controlled hypertension"
@@ -126,7 +124,7 @@ def _build_queries(*, snapshot: CaseSnapshot, message: str) -> list[str]:
     return list(dict.fromkeys([q for q in queries if q.strip()]))
 
 
-def _to_citations(query: str, results: list[SearchResult]) -> list[EvidenceCitation]:
+def _to_citations(_query: str, results: list[SearchResult]) -> list[EvidenceCitation]:
     citations: list[EvidenceCitation] = []
     for result in results[:3]:
         summary = (result.body or "").strip()

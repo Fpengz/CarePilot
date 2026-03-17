@@ -61,7 +61,7 @@ def test_api_services_use_canonical_session_profile_helper_import() -> None:
         "src/care_pilot/features/reminders/notifications/alert_session.py",
         "src/care_pilot/features/recommendations/suggestion_session.py",
         "src/care_pilot/features/meals/api_service.py",
-        "src/care_pilot/features/recommendations/use_cases.py",
+        "src/care_pilot/features/recommendations/recommendation_service.py",
         "src/care_pilot/features/reminders/notifications/reminder_materialization.py",
     ]
     offenders: list[str] = []

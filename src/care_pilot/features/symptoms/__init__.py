@@ -1,6 +1,6 @@
 """Package exports for symptoms application use cases."""
 
-from .use_cases import (
+from .symptom_service import (
     create_checkin_for_session,
     list_checkins_for_session,
     summarize_checkins_for_session,

@@ -64,9 +64,7 @@ logger = get_logger(__name__)
 SYSTEM_DEFAULT_CHANNEL = "in_app"
 SYSTEM_DEFAULT_OFFSET_MINUTES = 0
 
-type ReminderNotificationRepo = (
-    ReminderNotificationRepository | AppStoreBackend | ReminderStore
-)
+type ReminderNotificationRepo = ReminderNotificationRepository | AppStoreBackend | ReminderStore
 
 
 def resolve_notification_preferences(

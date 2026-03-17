@@ -668,16 +668,16 @@ export function SettingsWorkspace() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                    {/* Compact advanced fields */}
                    <div className="space-y-2">
-                    <Label>Sodium Limit (mg)</Label>
-                    <Input value={draft.daily_sodium_limit_mg} onChange={(e) => setDraft(d => ({ ...d, daily_sodium_limit_mg: e.target.value }))} className="h-11 rounded-xl" />
+                    <Label htmlFor="adv-sodium">Sodium Limit (mg)</Label>
+                    <Input id="adv-sodium" value={draft.daily_sodium_limit_mg} onChange={(e) => setDraft(d => ({ ...d, daily_sodium_limit_mg: e.target.value }))} className="h-11 rounded-xl" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Sugar Limit (g)</Label>
-                    <Input value={draft.daily_sugar_limit_g} onChange={(e) => setDraft(d => ({ ...d, daily_sugar_limit_g: e.target.value }))} className="h-11 rounded-xl" />
+                    <Label htmlFor="adv-sugar">Sugar Limit (g)</Label>
+                    <Input id="adv-sugar" value={draft.daily_sugar_limit_g} onChange={(e) => setDraft(d => ({ ...d, daily_sugar_limit_g: e.target.value }))} className="h-11 rounded-xl" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Calories Target</Label>
-                    <Input value={draft.target_calories_per_day} onChange={(e) => setDraft(d => ({ ...d, target_calories_per_day: e.target.value }))} className="h-11 rounded-xl" />
+                    <Label htmlFor="adv-calories">Calories Target</Label>
+                    <Input id="adv-calories" value={draft.target_calories_per_day} onChange={(e) => setDraft(d => ({ ...d, target_calories_per_day: e.target.value }))} className="h-11 rounded-xl" />
                   </div>
                 </div>
                 <Button onClick={handleHealthProfileSave} disabled={status !== "authenticated" || profileBusy} className="h-11 px-8 rounded-xl shadow-sm">

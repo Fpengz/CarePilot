@@ -65,8 +65,14 @@ def summarize_blood_pressure(
     midpoint = max(len(ordered) // 2, 1)
     first_half = ordered[:midpoint]
     second_half = ordered[midpoint:]
-    avg_first = sum(item.systolic for item in first_half) / len(first_half)
-    avg_second = sum(item.systolic for item in second_half) / len(second_half)
+    avg_first = (
+        sum(item.systolic for item in first_half) / len(first_half)
+        if first_half
+        else systolic_values[0]
+    )
+    avg_second = (
+        sum(item.systolic for item in second_half) / len(second_half) if second_half else avg_first
+    )
     delta = round(avg_second - avg_first, 1)
     if abs(delta) < 3:
         direction = "flat"
@@ -99,7 +105,9 @@ def summarize_blood_pressure(
         or stats.avg_diastolic >= HIGH_RISK_DIASTOLIC
         or len(abnormal) > 0
     )
-    above_target = stats.avg_systolic >= targets.systolic or stats.avg_diastolic >= targets.diastolic
+    above_target = (
+        stats.avg_systolic >= targets.systolic or stats.avg_diastolic >= targets.diastolic
+    )
     return BloodPressureSummary(
         stats=stats,
         trend=trend,
@@ -111,7 +119,9 @@ def summarize_blood_pressure(
     )
 
 
-def bp_metric_points(readings: list[BloodPressureReading], *, metric: str) -> list[tuple[datetime, float]]:
+def bp_metric_points(
+    readings: list[BloodPressureReading], *, metric: str
+) -> list[tuple[datetime, float]]:
     if metric not in {"systolic", "diastolic"}:
         raise ValueError("metric must be 'systolic' or 'diastolic'")
     ordered = sorted(readings, key=lambda item: item.recorded_at)

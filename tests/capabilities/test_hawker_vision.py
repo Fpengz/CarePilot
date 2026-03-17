@@ -117,7 +117,7 @@ def test_hawker_vision_uses_profile_built_model_for_inference_engine(
 
     monkeypatch.setattr(
         "care_pilot.agent.meal_analysis.vision_module.LLMFactory.from_profile",
-        lambda profile: FakeModel(),
+        lambda _profile: FakeModel(),
     )
     monkeypatch.setattr(
         "care_pilot.agent.meal_analysis.vision_module.InferenceEngine",

@@ -29,9 +29,7 @@ class InMemoryCacheStore:
 
     def set_json(self, key: str, value: Any, *, ttl_seconds: int | None = None) -> None:
         expires_at = (
-            datetime.now(UTC) + timedelta(seconds=ttl_seconds)
-            if ttl_seconds is not None
-            else None
+            datetime.now(UTC) + timedelta(seconds=ttl_seconds) if ttl_seconds is not None else None
         )
         with self._lock:
             self._items[key] = (expires_at, value)

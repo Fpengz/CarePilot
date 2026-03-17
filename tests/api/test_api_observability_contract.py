@@ -107,6 +107,7 @@ def test_meal_workflow_uses_incoming_correlation_contract(
 ) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG"})
     response = client.post(
         "/api/v1/meal/analyze",
         headers={

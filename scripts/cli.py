@@ -796,7 +796,7 @@ def command_reminders_diagnose(
         conn = sqlite3.connect(db_path)
     except sqlite3.Error as exc:
         error(f"Failed to open db: {exc}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from exc
 
     with conn:
         cur = conn.cursor()

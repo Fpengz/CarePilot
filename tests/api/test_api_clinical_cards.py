@@ -56,6 +56,7 @@ def test_clinical_card_generate_list_get(
 ) -> None:
     client = TestClient(create_app())
     _login(client)
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
     parsed = client.post(
         "/api/v1/reports/parse",

@@ -191,6 +191,7 @@ def _temporal_fit(
     temporal: TemporalContext,
     meal_history: list[MealRecognitionRecord],
 ) -> tuple[float, list[str]]:
+    del meal_history
     reasons: list[str] = []
     slot_count = temporal.slot_history_counts.get(candidate.slot, 0)
     slot_max = max(temporal.slot_history_counts.values(), default=1)

@@ -228,8 +228,8 @@ class InMemoryAuthStore:
 
     def update_user_profile(
         self,
-        *,
         user_id: str,
+        *,
         display_name: str | None = None,
         profile_mode: ProfileMode | None = None,
     ) -> AuthUserRecord | None:
@@ -306,9 +306,7 @@ class InMemoryAuthStore:
             return None
         if issued_at.tzinfo is None:
             issued_at = issued_at.replace(tzinfo=UTC)
-        age_seconds = (
-            datetime.now(UTC) - issued_at.astimezone(UTC)
-        ).total_seconds()
+        age_seconds = (datetime.now(UTC) - issued_at.astimezone(UTC)).total_seconds()
         if age_seconds > self._session_ttl_seconds:
             self.destroy_session(session_id)
             return None

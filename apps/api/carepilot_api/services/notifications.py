@@ -1,12 +1,12 @@
 """API helpers for workflow-derived notification feeds and read state.
 
 Shim: business logic lives in
-``care_pilot.features.reminders.notifications.use_cases``.
+``care_pilot.features.reminders.notifications.notification_service``.
 """
 
 from __future__ import annotations
 
-from care_pilot.features.reminders.notifications.use_cases import (  # noqa: F401
+from care_pilot.features.reminders.notifications.notification_service import (  # noqa: F401
     NotificationReadStateStore,
     list_notifications,
     mark_all_notifications_read,

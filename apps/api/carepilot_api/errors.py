@@ -134,7 +134,7 @@ async def handle_validation_exception(
     return JSONResponse(content=body, status_code=422)
 
 
-async def handle_unhandled_exception(request: Request, exc: Exception) -> JSONResponse:
+async def handle_unhandled_exception(request: Request, _exc: Exception) -> JSONResponse:
     logger.exception(
         "event=api_request_failed_unhandled path=%s method=%s",
         request.url.path,

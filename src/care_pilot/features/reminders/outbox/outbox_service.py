@@ -46,9 +46,7 @@ class OutboxRepository(Protocol):
 
 class MetricReadingRepository(Protocol):
     def log_metric_reading(self, reading: MetricReading) -> None: ...
-    def get_last_metric_reading(
-        self, user_id: str, metric_type: str
-    ) -> dict[str, Any] | None: ...
+    def get_last_metric_reading(self, user_id: str, metric_type: str) -> dict[str, Any] | None: ...
 
 
 class FoodRecordRepository(Protocol):

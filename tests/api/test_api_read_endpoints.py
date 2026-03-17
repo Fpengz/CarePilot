@@ -27,6 +27,7 @@ def _meal_upload(client: TestClient) -> None:
 def test_meal_records_endpoint_returns_saved_records() -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
+    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
     _meal_upload(client)
 
     response = client.get("/api/v1/meal/records")

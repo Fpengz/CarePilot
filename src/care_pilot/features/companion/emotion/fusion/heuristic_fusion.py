@@ -48,9 +48,7 @@ class HeuristicFusion(FusionPort):
             text_branch.emotion_scores if text_branch else dict.fromkeys(EmotionLabel, 0.0)
         )
         speech_scores = (
-            speech_branch.emotion_scores
-            if speech_branch
-            else dict.fromkeys(EmotionLabel, 0.0)
+            speech_branch.emotion_scores if speech_branch else dict.fromkeys(EmotionLabel, 0.0)
         )
 
         # Weighted average of logits/probabilities

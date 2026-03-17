@@ -44,7 +44,7 @@ def test_run_reminder_scheduler_once_dispatches_and_delivers_due_notifications(
 def test_run_reminder_scheduler_once_builds_configured_store_when_repository_omitted(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    fake_repo = SimpleNamespace(lease_alert_records=lambda **kwargs: [])
+    fake_repo = SimpleNamespace(lease_alert_records=lambda **_kwargs: [])
     settings = SimpleNamespace(
         workers=SimpleNamespace(
             reminder_scheduler_batch_size=25,

@@ -280,9 +280,7 @@ class HawkerVisionModule:
             )
             destination = "unknown"
             try:
-                destination = LLMFactory.describe_model_destination(
-                    self.inference_engine.model
-                )
+                destination = LLMFactory.describe_model_destination(self.inference_engine.model)
             except Exception:  # noqa: BLE001
                 destination = "unknown"
             logger.info(
@@ -347,9 +345,7 @@ class HawkerVisionModule:
 
         destination = "unknown"
         try:
-            destination = LLMFactory.describe_model_destination(
-                self.inference_engine.model
-            )
+            destination = LLMFactory.describe_model_destination(self.inference_engine.model)
         except Exception:  # noqa: BLE001
             destination = "unknown"
         logger.info(

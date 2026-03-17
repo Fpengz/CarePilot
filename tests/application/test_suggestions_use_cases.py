@@ -11,7 +11,7 @@ from care_pilot.features.profiles.domain.models import (
     UserProfile,
 )
 from care_pilot.features.recommendations.ports import BuildUserProfileFn
-from care_pilot.features.recommendations.use_cases import (
+from care_pilot.features.recommendations.recommendation_service import (
     MissingActiveHouseholdError,
     NoMealRecordsError,
     generate_suggestion_from_report,

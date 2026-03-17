@@ -7,7 +7,7 @@ recommendation services for orchestration.
 
 from fastapi import APIRouter, Depends, Request
 
-from care_pilot.features.recommendations.service import (
+from care_pilot.features.recommendations.recommendation_engine import (
     generate_recommendation_for_session,
     get_daily_agent_for_session,
     get_substitutions_for_session,

@@ -269,7 +269,9 @@ class SQLiteMealRepository:
                     record.confirmed_at.isoformat() if record.confirmed_at else None,
                     record.skipped_at.isoformat() if record.skipped_at else None,
                     record.validated_event.model_dump_json() if record.validated_event else None,
-                    record.nutrition_profile.model_dump_json() if record.nutrition_profile else None,
+                    record.nutrition_profile.model_dump_json()
+                    if record.nutrition_profile
+                    else None,
                 ),
             )
             conn.commit()
@@ -306,7 +308,9 @@ class SQLiteMealRepository:
             confirmed_at=datetime.fromisoformat(row[11]) if row[11] else None,
             skipped_at=datetime.fromisoformat(row[12]) if row[12] else None,
             validated_event=ValidatedMealEvent.model_validate_json(row[13]) if row[13] else None,
-            nutrition_profile=NutritionRiskProfile.model_validate_json(row[14]) if row[14] else None,
+            nutrition_profile=NutritionRiskProfile.model_validate_json(row[14])
+            if row[14]
+            else None,
         )
 
     def list_meal_observations(self, user_id: str) -> list[RawObservationBundle]:
