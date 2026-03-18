@@ -462,6 +462,35 @@ Gates:
 - Final cross-check of all `*.md` files for consistency.
 - Validate system via `web-e2e` tests.
 
+### Phase 6 — Multi-Agent Companion Evolution (PLANNING)
+
+Goal: Evolve from deterministic orchestration to a **multi-agent system** centered around a Supervisor/Orchestrator and specialized care-loop agents.
+
+**Key Principles:**
+- **Supervisor Agent**: Top-level "Care Companion" brain that interprets user intent, inspects state, and routes to specialists.
+- **Specialist Agents**: Bounded decision-makers for specific domains (Meal, Medication, Symptom, Trend, etc.).
+- **Blackboard Model**: Use the `CaseSnapshot` as a shared state that agents read from and contribute to.
+- **Agent Classes**:
+    - **Perception**: Unstructured → Structured (Meal Analysis, Prescription Extract).
+    - **Reasoning**: State → Recommendation (Dietary, Care Plan, Trend Insight).
+    - **Interaction**: Reasoning → User Response (Conversation, Reminder Nudging).
+- **Controlled Autonomy**: Agents recommend; deterministic services/policies execute and approve.
+
+**Proposed Agent Map:**
+1.  **Conversation Agent**: Handles tone, empathy, and continuity.
+2.  **Meal Analysis Agent**: (Existing) Interprets food and nutrition.
+3.  **Medication/Adherence Agent**: Understands regimens and detects missed doses.
+4.  **Symptom/Check-in Agent**: Handles daily wellness check-ins and red-flag routing.
+5.  **Trend/Insight Agent**: Extracts longitudinal patterns across meals, meds, and symptoms.
+6.  **Care Plan Agent**: Generates actionable next steps from multiple signals.
+7.  **Clinical Summary Agent**: Prepares doctor-ready digests.
+
+**Implementation Steps:**
+- Define shared `AgentRequest` / `AgentResponse` contracts in `agent/core/`.
+- Refactor `CompanionInteraction` to use a `pydantic-graph` based supervisor.
+- Implement explicit handoff protocols between specialists.
+- Add "Proactive Engagement" logic driven by the Trend/Adherence agents.
+
 ---
 
 ## 13) Naming Conventions (Repo-Wide)
