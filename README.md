@@ -1,5 +1,10 @@
 # CarePilot: The Proactive AI Health Companion
 
+[![Linting: Ruff](https://img.shields.io/badge/linting-ruff-614097?style=flat-square&logo=python)](https://github.com/astral-sh/ruff)
+[![Type Checking: Ty-Check](https://img.shields.io/badge/types-ty--check-blue?style=flat-square&logo=typescript)](https://github.com/pydantic/pydantic-ai)
+[![Testing: Pytest](https://img.shields.io/badge/tests-pytest-0A9EDC?style=flat-square&logo=pytest)](https://docs.pytest.org/)
+[![Coverage: 83%](https://img.shields.io/badge/coverage-83%25-green?style=flat-square)](https://github.com/Fpengz/CarePilot)
+
 CarePilot is an end-to-end AI health system that closes the loop between clinical adherence and daily behavioral health. By integrating multimodal sensing—Vision for meal analysis, Audio for emotional well-being, and Structured Reasoning for medication management—CarePilot transforms passive tracking into proactive, longitudinal care.
 
 ## 🚀 One-Liner
