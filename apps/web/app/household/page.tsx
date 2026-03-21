@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
@@ -19,13 +20,6 @@ import {
   renameHousehold,
   setActiveHousehold,
 } from "@/lib/api/household-client";
-import type {
-  HouseholdBundleApiResponse,
-  HouseholdCareMealSummaryResponse,
-  HouseholdCareProfileResponse,
-  HouseholdCareReminderListResponse,
-  HouseholdInvite,
-} from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,130 +28,125 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
-type ActionKey =
-  | "load"
-  | "create"
-  | "rename"
-  | "invite"
-  | "join"
-  | "leave"
-  | "active"
-  | "remove";
-
 export default function HouseholdPage() {
   const { status, user } = useSession();
-  const [bundle, setBundle] = useState<HouseholdBundleApiResponse | null>(null);
-  const [lastInvite, setLastInvite] = useState<HouseholdInvite | null>(null);
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [busy, setBusy] = useState<ActionKey | null>(null);
+  
   const [createName, setCreateName] = useState("My Household");
   const [renameValue, setRenameValue] = useState("");
   const [joinCode, setJoinCode] = useState("");
-  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [selectedMemberUserId, setSelectedMemberUserId] = useState<string | null>(null);
-  const [careProfile, setCareProfile] = useState<HouseholdCareProfileResponse | null>(null);
-  const [careSummary, setCareSummary] = useState<HouseholdCareMealSummaryResponse | null>(null);
-  const [careReminders, setCareReminders] = useState<HouseholdCareReminderListResponse | null>(null);
 
-  const loadCurrent = useCallback(async () => {
-    setBusy("load");
-    setError(null);
-    try {
-      const current = await getCurrentHousehold();
-      setBundle(current);
-      setRenameValue(current.household?.name ?? "");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      void loadCurrent();
-    }
-  }, [status, loadCurrent]);
+  // Main bundle query
+  const { data: bundle, isLoading: bundleLoading } = useQuery({
+    queryKey: ["household-bundle"],
+    queryFn: getCurrentHousehold,
+    enabled: status === "authenticated",
+  });
 
   const household = bundle?.household ?? null;
   const members = useMemo(() => bundle?.members ?? [], [bundle?.members]);
   const isOwner = Boolean(household && user && household.owner_user_id === user.user_id);
   const activeHouseholdId = bundle?.active_household_id ?? null;
   const canSetActive = Boolean(household);
+  const ownerMember = useMemo(() => members.find((m) => m.role === "owner") ?? null, [members]);
 
-  const ownerMember = useMemo(() => members.find((member) => member.role === "owner") ?? null, [members]);
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: createHousehold,
+    onSuccess: (next) => {
+      queryClient.setQueryData(["household-bundle"], next);
+      setRenameValue(next.household?.name ?? "");
+      setNotice("Household created.");
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
 
-  useEffect(() => {
-    if (user?.profile_mode !== "caregiver" || !household) {
-      setSelectedMemberUserId(null);
-      setCareProfile(null);
-      setCareSummary(null);
-      setCareReminders(null);
-      return;
-    }
-    if (members.length === 0) {
-      setSelectedMemberUserId(null);
-      return;
-    }
-    const currentMemberStillExists = selectedMemberUserId
-      ? members.some((member) => member.user_id === selectedMemberUserId)
-      : false;
-    if (currentMemberStillExists) return;
-    const preferred = members.find((member) => member.user_id !== user.user_id) ?? members[0];
-    setSelectedMemberUserId(preferred.user_id);
-  }, [household, members, selectedMemberUserId, user]);
+  const joinMutation = useMutation({
+    mutationFn: joinHousehold,
+    onSuccess: (next) => {
+      queryClient.setQueryData(["household-bundle"], next);
+      setRenameValue(next.household?.name ?? "");
+      setNotice("Joined household.");
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
 
-  useEffect(() => {
-    if (user?.profile_mode !== "caregiver" || !household || !selectedMemberUserId) return;
-    let cancelled = false;
-    const householdId = household.household_id;
-    const memberUserId = selectedMemberUserId;
-    async function loadCareView() {
-      try {
-        const [profile, summary, reminders] = await Promise.all([
-          getHouseholdCareMemberProfile(householdId, memberUserId),
-          getHouseholdCareMemberDailySummary(
-            householdId,
-            memberUserId,
-            new Date().toISOString().slice(0, 10),
-          ),
-          listHouseholdCareMemberReminders(householdId, memberUserId),
-        ]);
-        if (cancelled) return;
-        setCareProfile(profile);
-        setCareSummary(summary);
-        setCareReminders(reminders);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
-      }
-    }
-    void loadCareView();
-    return () => {
-      cancelled = true;
-    };
-  }, [household, selectedMemberUserId, user]);
+  const renameMutation = useMutation({
+    mutationFn: (name: string) => renameHousehold(household!.household_id, name),
+    onSuccess: (next) => {
+      queryClient.setQueryData(["household-bundle"], next);
+      setNotice("Household renamed.");
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
 
-  async function withAction(action: ActionKey, fn: () => Promise<void>) {
-    setBusy(action);
-    setError(null);
-    setNotice(null);
-    try {
-      await fn();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
-  }
+  const setActiveMutation = useMutation({
+    mutationFn: setActiveHousehold,
+    onSuccess: (result) => {
+      queryClient.setQueryData(["household-bundle"], (prev: any) => 
+        prev ? { ...prev, active_household_id: result.active_household_id } : prev
+      );
+      setNotice(result.active_household_id ? "Active household set." : "Cleared active household.");
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: () => createHouseholdInvite(household!.household_id),
+    onSuccess: () => setNotice("Invite created."),
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: () => leaveHousehold(household!.household_id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["household-bundle"] });
+      setNotice("Left household.");
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: (userId: string) => removeHouseholdMember(household!.household_id, userId),
+    onSuccess: async (_, userId) => {
+      await queryClient.invalidateQueries({ queryKey: ["household-bundle"] });
+      setNotice(`Removed member.`);
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
+
+  // Caregiver view queries
+  const effectiveSelectedId = selectedMemberUserId || (members.find(m => m.user_id !== user?.user_id)?.user_id ?? user?.user_id ?? null);
+
+  const { data: careProfile } = useQuery({
+    queryKey: ["household-care-profile", household?.household_id, effectiveSelectedId],
+    queryFn: () => getHouseholdCareMemberProfile(household!.household_id, effectiveSelectedId!),
+    enabled: !!household && !!effectiveSelectedId && user?.profile_mode === "caregiver",
+  });
+
+  const { data: careSummary } = useQuery({
+    queryKey: ["household-care-summary", household?.household_id, effectiveSelectedId],
+    queryFn: () => getHouseholdCareMemberDailySummary(household!.household_id, effectiveSelectedId!, new Date().toISOString().slice(0, 10)),
+    enabled: !!household && !!effectiveSelectedId && user?.profile_mode === "caregiver",
+  });
+
+  const { data: careReminders } = useQuery({
+    queryKey: ["household-care-reminders", household?.household_id, effectiveSelectedId],
+    queryFn: () => listHouseholdCareMemberReminders(household!.household_id, effectiveSelectedId!),
+    enabled: !!household && !!effectiveSelectedId && user?.profile_mode === "caregiver",
+  });
+
+  const lastInvite = inviteMutation.data?.invite;
 
   return (
     <div>
       <PageTitle
         eyebrow="Household"
         title="Shared Wellness Group"
-        description="Create a household, invite members, and manage a simple shared group (Apple-family-like basics for v1)."
-
+        description="Create a household, invite members, and manage a simple shared group."
       />
 
       <div className="page-grid">
@@ -181,17 +170,10 @@ export default function HouseholdPage() {
                   placeholder="My Household"
                 />
                 <Button
-                  disabled={status !== "authenticated" || busy !== null || Boolean(household)}
-                  onClick={() =>
-                    withAction("create", async () => {
-                      const next = await createHousehold(createName);
-                      setBundle(next);
-                      setRenameValue(next.household?.name ?? "");
-                      setNotice("Household created.");
-                    })
-                  }
+                  disabled={status !== "authenticated" || createMutation.isPending || Boolean(household)}
+                  onClick={() => createMutation.mutate(createName)}
                 >
-                  <AsyncLabel active={busy === "create"} loading="Creating" idle="Create Household" />
+                  <AsyncLabel active={createMutation.isPending} loading="Creating" idle="Create Household" />
                 </Button>
               </div>
 
@@ -207,17 +189,10 @@ export default function HouseholdPage() {
                 />
                 <Button
                   variant="secondary"
-                  disabled={status !== "authenticated" || busy !== null || !joinCode.trim() || Boolean(household)}
-                  onClick={() =>
-                    withAction("join", async () => {
-                      const next = await joinHousehold(joinCode.trim());
-                      setBundle(next);
-                      setRenameValue(next.household?.name ?? "");
-                      setNotice("Joined household.");
-                    })
-                  }
+                  disabled={status !== "authenticated" || joinMutation.isPending || !joinCode.trim() || Boolean(household)}
+                  onClick={() => joinMutation.mutate(joinCode.trim())}
                 >
-                  <AsyncLabel active={busy === "join"} loading="Joining" idle="Join Household" />
+                  <AsyncLabel active={joinMutation.isPending} loading="Joining" idle="Join Household" />
                 </Button>
               </div>
 
@@ -229,23 +204,16 @@ export default function HouseholdPage() {
                     <Label htmlFor="household-rename">Rename household</Label>
                     <Input
                       id="household-rename"
-                      value={renameValue}
+                      value={renameValue || (household?.name ?? "")}
                       onChange={(e) => setRenameValue(e.target.value)}
                       placeholder="Household name"
                       disabled={!isOwner}
                     />
                     <Button
-                      disabled={busy !== null || !isOwner || !renameValue.trim() || renameValue.trim() === household.name}
-                      onClick={() =>
-                        withAction("rename", async () => {
-                          const next = await renameHousehold(household.household_id, renameValue.trim());
-                          setBundle(next);
-                          setRenameValue(next.household?.name ?? "");
-                          setNotice("Household renamed.");
-                        })
-                      }
+                      disabled={renameMutation.isPending || !isOwner || !renameValue.trim() || renameValue.trim() === household.name}
+                      onClick={() => renameMutation.mutate(renameValue.trim())}
                     >
-                      <AsyncLabel active={busy === "rename"} loading="Saving" idle="Rename Household" />
+                      <AsyncLabel active={renameMutation.isPending} loading="Saving" idle="Rename Household" />
                     </Button>
                   </div>
 
@@ -254,27 +222,15 @@ export default function HouseholdPage() {
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="secondary"
-                        disabled={busy !== null || !canSetActive || activeHouseholdId === household.household_id}
-                        onClick={() =>
-                          withAction("active", async () => {
-                            const result = await setActiveHousehold(household.household_id);
-                            setBundle((prev) => (prev ? { ...prev, active_household_id: result.active_household_id } : prev));
-                            setNotice("Active household set for this session.");
-                          })
-                        }
+                        disabled={setActiveMutation.isPending || activeHouseholdId === household.household_id}
+                        onClick={() => setActiveMutation.mutate(household.household_id)}
                       >
-                        <AsyncLabel active={busy === "active"} loading="Saving" idle="Set Active" />
+                        <AsyncLabel active={setActiveMutation.isPending} loading="Saving" idle="Set Active" />
                       </Button>
                       <Button
                         variant="ghost"
-                        disabled={busy !== null || activeHouseholdId == null}
-                        onClick={() =>
-                          withAction("active", async () => {
-                            const result = await setActiveHousehold(null);
-                            setBundle((prev) => (prev ? { ...prev, active_household_id: result.active_household_id } : prev));
-                            setNotice("Cleared active household for this session.");
-                          })
-                        }
+                        disabled={setActiveMutation.isPending || activeHouseholdId == null}
+                        onClick={() => setActiveMutation.mutate(null)}
                       >
                         Clear Active
                       </Button>
@@ -286,16 +242,10 @@ export default function HouseholdPage() {
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="secondary"
-                        disabled={busy !== null || !isOwner}
-                        onClick={() =>
-                          withAction("invite", async () => {
-                            const response = await createHouseholdInvite(household.household_id);
-                            setLastInvite(response.invite);
-                            setNotice("Invite created.");
-                          })
-                        }
+                        disabled={inviteMutation.isPending || !isOwner}
+                        onClick={() => inviteMutation.mutate()}
                       >
-                        <AsyncLabel active={busy === "invite"} loading="Creating" idle="Create Invite Code" />
+                        <AsyncLabel active={inviteMutation.isPending} loading="Creating" idle="Create Invite Code" />
                       </Button>
                     </div>
                     {lastInvite ? (
@@ -316,26 +266,17 @@ export default function HouseholdPage() {
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="ghost"
-                        disabled={busy !== null}
-                        onClick={() => void loadCurrent()}
+                        disabled={bundleLoading}
+                        onClick={() => queryClient.invalidateQueries({ queryKey: ["household-bundle"] })}
                       >
-                        <AsyncLabel active={busy === "load"} loading="Refreshing" idle="Refresh Household" />
+                        <AsyncLabel active={bundleLoading} loading="Refreshing" idle="Refresh Household" />
                       </Button>
                       <Button
                         variant="ghost"
-                        disabled={busy !== null || !household || isOwner}
-                        onClick={() =>
-                          withAction("leave", async () => {
-                            await leaveHousehold(household.household_id);
-                            const next = await getCurrentHousehold();
-                            setBundle(next);
-                            setLastInvite(null);
-                            setRenameValue(next.household?.name ?? "");
-                            setNotice("Left household.");
-                          })
-                        }
+                        disabled={leaveMutation.isPending || !household || isOwner}
+                        onClick={() => leaveMutation.mutate()}
                       >
-                        <AsyncLabel active={busy === "leave"} loading="Leaving" idle="Leave Household" />
+                        <AsyncLabel active={leaveMutation.isPending} loading="Leaving" idle="Leave Household" />
                       </Button>
                     </div>
                     {!isOwner && household ? (
@@ -411,23 +352,11 @@ export default function HouseholdPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                disabled={busy !== null}
-                                onClick={() =>
-                                  withAction("remove", async () => {
-                                    setRemovingUserId(member.user_id);
-                                    try {
-                                      await removeHouseholdMember(household.household_id, member.user_id);
-                                      const next = await getCurrentHousehold();
-                                      setBundle(next);
-                                      setNotice(`Removed ${member.display_name}.`);
-                                    } finally {
-                                      setRemovingUserId(null);
-                                    }
-                                  })
-                                }
+                                disabled={removeMemberMutation.isPending}
+                                onClick={() => removeMemberMutation.mutate(member.user_id)}
                               >
                                 <AsyncLabel
-                                  active={busy === "remove" && removingUserId === member.user_id}
+                                  active={removeMemberMutation.isPending && removeMemberMutation.variables === member.user_id}
                                   loading="Removing"
                                   idle="Remove"
                                 />
@@ -471,7 +400,7 @@ export default function HouseholdPage() {
                     <Label htmlFor="care-member-select">Selected member</Label>
                     <Select
                       id="care-member-select"
-                      value={selectedMemberUserId ?? ""}
+                      value={effectiveSelectedId ?? ""}
                       onChange={(event) => setSelectedMemberUserId(event.target.value)}
                     >
                       {members.map((member) => (
@@ -481,7 +410,7 @@ export default function HouseholdPage() {
                       ))}
                     </Select>
                     <p className="app-muted text-xs">
-                      {selectedMemberUserId === user.user_id
+                      {effectiveSelectedId === user.user_id
                         ? "Viewing your own profile."
                         : "Viewing another household member in read-only mode."}
                     </p>

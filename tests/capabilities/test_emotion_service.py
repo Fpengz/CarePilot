@@ -101,6 +101,8 @@ def _runtime() -> InProcessEmotionRuntime:
             model_device="cpu",
             source_commit="9afc3f1a3a3fec71a4e5920d8f4103710b337ecc",
             model_cache_dir=None,
+            runtime_mode="in_process",
+            remote_base_url="http://localhost:8002",
         ),
         pipeline=EmotionPipeline(
             asr=_StubASR(),

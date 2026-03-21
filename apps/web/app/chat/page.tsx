@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
 import { ChatSidebar } from "./components/chat-sidebar";
 import { ChatHeader } from "@/components/chat/chat-header";
@@ -101,7 +102,8 @@ const deriveMessageView = (message: Message): MessageView => {
 };
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const queryClient = useQueryClient();
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -120,15 +122,32 @@ export default function ChatPage() {
   const streamBufferRef = useRef("");
   const streamFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    fetch(`${API_BASE}/api/v1/chat/history`)
-      .then((r) => r.json())
-      .then((data) => {
-        const history = Array.isArray(data.messages) ? data.messages : [];
-        setMessages(history.map((m: Partial<Message>, idx: number) => normalizeMessage(m, idx)));
-      })
-      .catch(console.error);
-  }, []);
+  // Fetch chat history
+  const { data: historyData } = useQuery({
+    queryKey: ["chat", "history"],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/api/v1/chat/history`);
+      if (!response.ok) throw new Error("Failed to fetch history");
+      return response.json();
+    },
+  });
+
+  // Consolidate messages: history + local session messages (rerender-derived-state-no-effect)
+  const messages = useMemo(() => {
+    const history = (historyData?.messages || []).map((m: any, idx: number) => normalizeMessage(m, idx));
+    return localMessages.length > 0 ? localMessages : history;
+  }, [historyData, localMessages]);
+
+  // Mutation for clearing history
+  const clearHistoryMutation = useMutation({
+    mutationFn: async () => {
+      await fetch(`${API_BASE}/api/v1/chat/history`, { method: "DELETE" });
+    },
+    onSuccess: () => {
+      setLocalMessages([]);
+      queryClient.invalidateQueries({ queryKey: ["chat", "history"] });
+    },
+  });
 
   useEffect(() => {
     const behavior = streamDraft ? "auto" : "smooth";
@@ -144,9 +163,9 @@ export default function ChatPage() {
     };
   }, []);
 
-  const messageViews = useMemo(() => messages.map((m) => deriveMessageView(m)), [messages]);
+  const messageViews = useMemo(() => messages.map((m: Message) => deriveMessageView(m)), [messages]);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     const messageText = input.trim();
     if (!messageText || loading) return;
 
@@ -156,11 +175,18 @@ export default function ChatPage() {
     setStreamNotice(null);
     setAudioNotice(null);
     streamBufferRef.current = "";
-    setMessages((prev) => [
-      ...prev,
-      { id: makeId(), role: "user", content: messageText },
-      { id: makeId(), role: "assistant", content: "" },
-    ]);
+    
+    const userMessageId = makeId();
+    const assistantMessageId = makeId();
+    
+    setLocalMessages((prev) => {
+      const base = prev.length > 0 ? prev : (historyData?.messages || []).map((m: any, idx: number) => normalizeMessage(m, idx));
+      return [
+        ...base,
+        { id: userMessageId, role: "user", content: messageText },
+        { id: assistantMessageId, role: "assistant", content: "" },
+      ];
+    });
 
     try {
       const response = await fetch(`${API_BASE}/api/v1/chat`, {
@@ -184,94 +210,80 @@ export default function ChatPage() {
         const chunk = decoder.decode(value, { stream: true });
         for (const line of chunk.split("\n")) {
           if (!line.startsWith("data: ")) continue;
+          
+          let payload;
           try {
-            const payload = JSON.parse(line.slice(6));
-            const { event, data } = payload;
-            if (event === "emotion") {
-              setMessages((prev) => {
-                const msgs = [...prev];
-                const userIdx = msgs.length - 2;
-                if (userIdx >= 0 && msgs[userIdx].role === "user") {
-                  msgs[userIdx] = {
-                    ...msgs[userIdx],
-                    emotion: { label: data.emotion, score: data.score },
-                  };
-                }
-                return msgs;
-              });
-            }
-            if (event === "meal_proposed") {
-              setMessages((prev) => {
-                const msgs = [...prev];
-                const idx = msgs.length - 1;
-                if (idx >= 0 && msgs[idx].role === "assistant") {
-                  msgs[idx] = {
-                    ...msgs[idx],
-                    mealProposal: {
-                      proposalId: data.proposal_id,
-                      mealText: data.meal_text,
-                    },
-                  };
-                }
-                return msgs;
-              });
-            }
-            if (event === "token") {
-              streamBufferRef.current += data.text;
-              if (!streamFlushRef.current) {
-                streamFlushRef.current = setTimeout(flushStream, 80);
-              }
-            }
-            if (event === "error") {
-              setStreamNotice(data.message || "Streaming response interrupted.");
-              setMessages((prev) => {
-                const msgs = [...prev];
-                msgs[msgs.length - 1] = {
-                  ...msgs[msgs.length - 1],
-                  role: "assistant",
-                  content: "⚠ " + (data.message || "Request failed."),
-                  tag: "error",
-                };
-                return msgs;
-              });
-            }
-            if (event === "done") {
-              if (streamFlushRef.current) {
-                clearTimeout(streamFlushRef.current);
-                streamFlushRef.current = null;
-              }
-              if (streamBufferRef.current) {
-                const finalText = streamBufferRef.current;
-                streamBufferRef.current = "";
-                setMessages((prev) => {
-                  const msgs = [...prev];
-                  const last = msgs[msgs.length - 1];
-                  const merged =
-                    last && last.content ? `${last.content}${finalText}` : finalText;
-                  msgs[msgs.length - 1] = {
-                    ...msgs[msgs.length - 1],
-                    content: merged,
-                  };
-                  return msgs;
-                });
-                setStreamDraft("");
-              }
-            }
+            payload = JSON.parse(line.slice(6));
           } catch {
-            // ignore incomplete chunk
+            continue;
+          }
+
+          const { event, data } = payload;
+          
+          if (event === "emotion") {
+            setLocalMessages((prev) => {
+              const msgs = [...prev];
+              const userIdx = msgs.findIndex(m => m.id === userMessageId);
+              if (userIdx >= 0) {
+                msgs[userIdx] = { ...msgs[userIdx], emotion: { label: data.emotion, score: data.score } };
+              }
+              return msgs;
+            });
+          } else if (event === "meal_proposed") {
+            setLocalMessages((prev) => {
+              const msgs = [...prev];
+              const idx = msgs.findIndex(m => m.id === assistantMessageId);
+              if (idx >= 0) {
+                msgs[idx] = { ...msgs[idx], mealProposal: { proposalId: data.proposal_id, mealText: data.meal_text } };
+              }
+              return msgs;
+            });
+          } else if (event === "token") {
+            streamBufferRef.current += data.text;
+            if (!streamFlushRef.current) {
+              streamFlushRef.current = setTimeout(flushStream, 80);
+            }
+          } else if (event === "error") {
+            setStreamNotice(data.message || "Streaming response interrupted.");
+            setLocalMessages((prev) => {
+              const msgs = [...prev];
+              const idx = msgs.findIndex(m => m.id === assistantMessageId);
+              if (idx >= 0) {
+                msgs[idx] = { ...msgs[idx], content: "⚠ " + (data.message || "Request failed."), tag: "error" };
+              }
+              return msgs;
+            });
+          } else if (event === "done") {
+            if (streamFlushRef.current) {
+              clearTimeout(streamFlushRef.current);
+              streamFlushRef.current = null;
+            }
+            if (streamBufferRef.current) {
+              const finalText = streamBufferRef.current;
+              streamBufferRef.current = "";
+              setLocalMessages((prev) => {
+                const msgs = [...prev];
+                const idx = msgs.findIndex(m => m.id === assistantMessageId);
+                if (idx >= 0) {
+                  const last = msgs[idx];
+                  msgs[idx] = { ...msgs[idx], content: last.content + finalText };
+                }
+                return msgs;
+              });
+              setStreamDraft("");
+            }
+            queryClient.invalidateQueries({ queryKey: ["chat", "history"] });
           }
         }
       }
     } catch {
       setStreamNotice("Unable to reach the server. Check backend status.");
-      setMessages((prev) => {
+      setLocalMessages((prev) => {
         const msgs = [...prev];
-        msgs[msgs.length - 1] = {
-          ...msgs[msgs.length - 1],
-          role: "assistant",
-          content: "⚠ Could not reach the server. Is the backend running?",
-          tag: "error",
-        };
+        const idx = msgs.findIndex(m => m.id === assistantMessageId);
+        if (idx >= 0) {
+          msgs[idx] = { ...msgs[idx], content: "⚠ Could not reach the server.", tag: "error" };
+        }
         return msgs;
       });
     } finally {
@@ -279,27 +291,12 @@ export default function ChatPage() {
         clearTimeout(streamFlushRef.current);
         streamFlushRef.current = null;
       }
-      if (streamBufferRef.current) {
-        const finalText = streamBufferRef.current;
-        streamBufferRef.current = "";
-        setMessages((prev) => {
-          const msgs = [...prev];
-          const last = msgs[msgs.length - 1];
-          const merged = last && last.content ? `${last.content}${finalText}` : finalText;
-          msgs[msgs.length - 1] = {
-            ...msgs[msgs.length - 1],
-            content: merged,
-          };
-          return msgs;
-        });
-        setStreamDraft("");
-      }
       setLoading(false);
       inputRef.current?.focus();
     }
-  };
+  }, [input, loading, historyData, queryClient]);
 
-  const handleMealProposal = async (proposalId: string, action: "confirm" | "skip") => {
+  const handleMealProposal = useCallback(async (proposalId: string, action: "confirm" | "skip") => {
     if (proposalLoadingId) return;
     setProposalLoadingId(proposalId);
     try {
@@ -312,7 +309,7 @@ export default function ChatPage() {
       if (!response.ok) {
         throw new Error(body.detail || "Could not update meal proposal.");
       }
-      setMessages((prev) => {
+      setLocalMessages((prev) => {
         const msgs = [...prev];
         const idx = msgs.findIndex((m) => m.mealProposal?.proposalId === proposalId);
         if (idx >= 0) {
@@ -331,8 +328,9 @@ export default function ChatPage() {
         }
         return msgs;
       });
+      queryClient.invalidateQueries({ queryKey: ["chat", "history"] });
     } catch {
-      setMessages((prev) => {
+      setLocalMessages((prev) => {
         const msgs = [...prev];
         const idx = msgs.findIndex((m) => m.mealProposal?.proposalId === proposalId);
         if (idx >= 0) {
@@ -348,7 +346,7 @@ export default function ChatPage() {
     } finally {
       setProposalLoadingId(null);
     }
-  };
+  }, [proposalLoadingId, queryClient]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -362,10 +360,159 @@ export default function ChatPage() {
     inputRef.current?.focus();
   };
 
-  const clearHistory = async () => {
-    await fetch(`${API_BASE}/api/v1/chat/history`, { method: "DELETE" });
-    setMessages([]);
-  };
+  const sendAudio = useCallback(async (blob: Blob, mimeType: string) => {
+    setLoading(true);
+    setStreamDraft("");
+    setStreamNotice(null);
+    setAudioNotice(null);
+    streamBufferRef.current = "";
+
+    const ext = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") ? "mp4" : "webm";
+    const form = new FormData();
+    form.append("audio", blob, `recording.${ext}`);
+    form.append("backend_name", "groq");
+
+    const userMessageId = makeId();
+    const assistantMessageId = makeId();
+
+    setLocalMessages((prev) => {
+      const base = prev.length > 0 ? prev : (historyData?.messages || []).map((m: any, idx: number) => normalizeMessage(m, idx));
+      return [
+        ...base,
+        { id: userMessageId, role: "user", content: "🎤 (audio)" },
+        { id: assistantMessageId, role: "assistant", content: "" },
+      ];
+    });
+
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/chat/audio`, {
+        method: "POST",
+        body: form,
+      });
+      if (!response.body) throw new Error("No body");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      const flushStream = () => {
+        setStreamDraft(streamBufferRef.current);
+        streamFlushRef.current = null;
+      };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split("\n")) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const payload = JSON.parse(line.slice(6));
+            const { event, data } = payload;
+            if (event === "transcribed") {
+              setLocalMessages((prev) => {
+                const msgs = [...prev];
+                const idx = msgs.findIndex(m => m.id === userMessageId);
+                if (idx >= 0) {
+                  msgs[idx] = { ...msgs[idx], content: `🎤 ${data.text}` };
+                }
+                return msgs;
+              });
+            }
+            if (event === "emotion") {
+              setLocalMessages((prev) => {
+                const msgs = [...prev];
+                const userIdx = msgs.findIndex(m => m.id === userMessageId);
+                if (userIdx >= 0) {
+                  msgs[userIdx] = {
+                    ...msgs[userIdx],
+                    emotion: { label: data.emotion, score: data.score },
+                  };
+                }
+                return msgs;
+              });
+            }
+            if (event === "meal_proposed") {
+              setLocalMessages((prev) => {
+                const msgs = [...prev];
+                const idx = msgs.findIndex(m => m.id === assistantMessageId);
+                if (idx >= 0) {
+                  msgs[idx] = {
+                    ...msgs[idx],
+                    mealProposal: {
+                      proposalId: data.proposal_id,
+                      mealText: data.meal_text,
+                    },
+                  };
+                }
+                return msgs;
+              });
+            }
+            if (event === "token") {
+              streamBufferRef.current += data.text;
+              if (!streamFlushRef.current) {
+                streamFlushRef.current = setTimeout(flushStream, 80);
+              }
+            }
+            if (event === "error") {
+              setAudioNotice(data.message || "Audio send failed.");
+              setLocalMessages((prev) => {
+                const msgs = [...prev];
+                const idx = msgs.findIndex(m => m.id === assistantMessageId);
+                if (idx >= 0) {
+                  msgs[idx] = {
+                    ...msgs[idx],
+                    content: "⚠ " + (data.message || "Audio send failed."),
+                    tag: "error",
+                  };
+                }
+                return msgs;
+              });
+            }
+            if (event === "done") {
+              if (streamFlushRef.current) {
+                clearTimeout(streamFlushRef.current);
+                streamFlushRef.current = null;
+              }
+              if (streamBufferRef.current) {
+                const finalText = streamBufferRef.current;
+                streamBufferRef.current = "";
+                setLocalMessages((prev) => {
+                  const msgs = [...prev];
+                  const idx = msgs.findIndex(m => m.id === assistantMessageId);
+                  if (idx >= 0) {
+                    const last = msgs[idx];
+                    msgs[idx] = { ...msgs[idx], content: last.content + finalText };
+                  }
+                  return msgs;
+                });
+                setStreamDraft("");
+              }
+              queryClient.invalidateQueries({ queryKey: ["chat", "history"] });
+            }
+          } catch {
+            // skip
+          }
+        }
+      }
+    } catch {
+      setAudioNotice("Audio send failed. Please try again.");
+      setLocalMessages((prev) => {
+        const msgs = [...prev];
+        const idx = msgs.findIndex(m => m.id === assistantMessageId);
+        if (idx >= 0) {
+          msgs[idx] = {
+            ...msgs[idx],
+            content: "⚠ Audio send failed.",
+            tag: "error",
+          };
+        }
+        return msgs;
+      });
+    } finally {
+      if (streamFlushRef.current) {
+        clearTimeout(streamFlushRef.current);
+        streamFlushRef.current = null;
+      }
+      setLoading(false);
+    }
+  }, [historyData, queryClient]);
 
   const startRecording = async () => {
     try {
@@ -413,167 +560,6 @@ export default function ChatPage() {
     mr.stop();
   };
 
-  const sendAudio = async (blob: Blob, mimeType: string) => {
-    setLoading(true);
-    setStreamDraft("");
-    setStreamNotice(null);
-    setAudioNotice(null);
-    streamBufferRef.current = "";
-
-    const ext = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") ? "mp4" : "webm";
-    const form = new FormData();
-    form.append("audio", blob, `recording.${ext}`);
-    form.append("backend_name", "groq");
-
-    setMessages((prev) => [
-      ...prev,
-      { id: makeId(), role: "user", content: "🎤 (audio)" },
-      { id: makeId(), role: "assistant", content: "" },
-    ]);
-
-    try {
-      const response = await fetch(`${API_BASE}/api/v1/chat/audio`, {
-        method: "POST",
-        body: form,
-      });
-      if (!response.body) throw new Error("No body");
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      const flushStream = () => {
-        setStreamDraft(streamBufferRef.current);
-        streamFlushRef.current = null;
-      };
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split("\n")) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const payload = JSON.parse(line.slice(6));
-            const { event, data } = payload;
-            if (event === "transcribed") {
-              setMessages((prev) => {
-                const msgs = [...prev];
-                msgs[msgs.length - 2] = {
-                  ...msgs[msgs.length - 2],
-                  role: "user",
-                  content: `🎤 ${data.text}`,
-                };
-                return msgs;
-              });
-            }
-            if (event === "emotion") {
-              setMessages((prev) => {
-                const msgs = [...prev];
-                const userIdx = msgs.length - 2;
-                if (userIdx >= 0 && msgs[userIdx].role === "user") {
-                  msgs[userIdx] = {
-                    ...msgs[userIdx],
-                    emotion: { label: data.emotion, score: data.score },
-                  };
-                }
-                return msgs;
-              });
-            }
-            if (event === "meal_proposed") {
-              setMessages((prev) => {
-                const msgs = [...prev];
-                const idx = msgs.length - 1;
-                if (idx >= 0 && msgs[idx].role === "assistant") {
-                  msgs[idx] = {
-                    ...msgs[idx],
-                    mealProposal: {
-                      proposalId: data.proposal_id,
-                      mealText: data.meal_text,
-                    },
-                  };
-                }
-                return msgs;
-              });
-            }
-            if (event === "token") {
-              streamBufferRef.current += data.text;
-              if (!streamFlushRef.current) {
-                streamFlushRef.current = setTimeout(flushStream, 80);
-              }
-            }
-            if (event === "error") {
-              setAudioNotice(data.message || "Audio send failed.");
-              setMessages((prev) => {
-                const msgs = [...prev];
-                msgs[msgs.length - 1] = {
-                  ...msgs[msgs.length - 1],
-                  role: "assistant",
-                  content: "⚠ " + (data.message || "Audio send failed."),
-                  tag: "error",
-                };
-                return msgs;
-              });
-            }
-            if (event === "done") {
-              if (streamFlushRef.current) {
-                clearTimeout(streamFlushRef.current);
-                streamFlushRef.current = null;
-              }
-              if (streamBufferRef.current) {
-                const finalText = streamBufferRef.current;
-                streamBufferRef.current = "";
-                setMessages((prev) => {
-                  const msgs = [...prev];
-                  const last = msgs[msgs.length - 1];
-                  const merged =
-                    last && last.content ? `${last.content}${finalText}` : finalText;
-                  msgs[msgs.length - 1] = {
-                    ...msgs[msgs.length - 1],
-                    content: merged,
-                  };
-                  return msgs;
-                });
-                setStreamDraft("");
-              }
-            }
-          } catch {
-            // skip
-          }
-        }
-      }
-    } catch {
-      setAudioNotice("Audio send failed. Please try again.");
-      setMessages((prev) => {
-        const msgs = [...prev];
-        msgs[msgs.length - 1] = {
-          ...msgs[msgs.length - 1],
-          role: "assistant",
-          content: "⚠ Audio send failed.",
-          tag: "error",
-        };
-        return msgs;
-      });
-    } finally {
-      if (streamFlushRef.current) {
-        clearTimeout(streamFlushRef.current);
-        streamFlushRef.current = null;
-      }
-      if (streamBufferRef.current) {
-        const finalText = streamBufferRef.current;
-        streamBufferRef.current = "";
-        setMessages((prev) => {
-          const msgs = [...prev];
-          const last = msgs[msgs.length - 1];
-          const merged = last && last.content ? `${last.content}${finalText}` : finalText;
-          msgs[msgs.length - 1] = {
-            ...msgs[msgs.length - 1],
-            content: merged,
-          };
-          return msgs;
-        });
-        setStreamDraft("");
-      }
-      setLoading(false);
-    }
-  };
-
   const fmtTime = (ms: number) => {
     const s = Math.floor(ms / 1000);
     return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -583,7 +569,7 @@ export default function ChatPage() {
     <div className={`flex flex-col gap-6 lg:flex-row lg:items-start relative isolate ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
       <div className="dashboard-grounding" />
       <section className="flex flex-1 min-h-[calc(100vh-14rem)] lg:min-h-[75vh] flex-col glass-card !p-4 sm:!p-8">
-        <ChatHeader onClear={clearHistory} />
+        <ChatHeader onClear={() => clearHistoryMutation.mutate()} />
 
         <div className="my-6 h-px w-full bg-white/10 opacity-60" />
 

@@ -36,4 +36,4 @@ def test_test_command_help_is_available() -> None:
 def test_redis_keyspace_migration_command_is_removed() -> None:
     result = _run("migrate", "redis-keyspace")
     assert result.returncode != 0
-    assert "No such command 'redis-keyspace'" in (result.stderr or result.stdout)
+    assert "No such command 'migrate'" in (result.stderr or result.stdout)

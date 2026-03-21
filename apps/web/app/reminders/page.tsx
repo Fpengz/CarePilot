@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Calendar, History, ListTodo, X } from "lucide-react";
 
 import { ErrorCard } from "@/components/app/error-card";
@@ -10,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   actOnReminderOccurrence,
   createReminderDefinition,
@@ -21,20 +21,14 @@ import {
 } from "@/lib/api/reminder-client";
 import type {
   ReminderDefinitionApi,
-  ReminderOccurrenceApi,
 } from "@/lib/types";
 import { APP_TIMEZONE, formatDate } from "@/lib/time";
 import { ReminderListItem } from "./components/reminder-list-item";
 import { cn } from "@/lib/utils";
 
 export default function RemindersPage() {
-  const [definitions, setDefinitions] = useState<ReminderDefinitionApi[]>([]);
-  const [upcoming, setUpcoming] = useState<ReminderOccurrenceApi[]>([]);
-  const [history, setHistory] = useState<ReminderOccurrenceApi[]>([]);
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [toggleLoadingId, setToggleLoadingId] = useState<string | null>(null);
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingDefinitionId, setEditingDefinitionId] = useState<string | null>(null);
   const [newReminder, setNewReminder] = useState({
@@ -48,6 +42,24 @@ export default function RemindersPage() {
     oneTimeDate: new Date().toISOString().split("T")[0],
   });
 
+  // Queries
+  const { data: definitionsData, isLoading: definitionsLoading } = useQuery({
+    queryKey: ["reminder-definitions"],
+    queryFn: listReminderDefinitions,
+  });
+  const { data: upcomingData, isLoading: upcomingLoading } = useQuery({
+    queryKey: ["reminder-upcoming"],
+    queryFn: listUpcomingReminderOccurrences,
+  });
+  const { data: historyData, isLoading: historyLoading } = useQuery({
+    queryKey: ["reminder-history"],
+    queryFn: listReminderHistory,
+  });
+
+  const definitions = definitionsData?.items ?? [];
+  const upcoming = upcomingData?.items ?? [];
+  const history = historyData?.items ?? [];
+
   const definitionMap = useMemo(() => new Map(definitions.map((item) => [item.id, item])), [definitions]);
   const todayKey = useMemo(() => formatDate(new Date()), []);
   const todaysOccurrences = useMemo(
@@ -55,39 +67,62 @@ export default function RemindersPage() {
     [todayKey, upcoming],
   );
 
-  async function loadStructuredData() {
-    setLoading(true);
-    try {
-      const [definitionData, upcomingData, historyData] = await Promise.all([
-        listReminderDefinitions(),
-        listUpcomingReminderOccurrences(),
-        listReminderHistory(),
-      ]);
-      setDefinitions(definitionData.items);
-      setUpcoming(upcomingData.items);
-      setHistory(historyData.items);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Mutations
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) => 
+      patchReminderDefinition(id, { active }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminder-definitions"] });
+      queryClient.invalidateQueries({ queryKey: ["reminder-upcoming"] });
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
 
-  useEffect(() => {
-    void loadStructuredData();
-  }, []);
+  const actionMutation = useMutation({
+    mutationFn: (params: { occurrenceId: string; action: "taken" | "skipped" | "snooze"; snoozeMinutes?: number }) =>
+      actOnReminderOccurrence(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminder-upcoming"] });
+      queryClient.invalidateQueries({ queryKey: ["reminder-history"] });
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
 
-  async function toggleDefinition(definition: ReminderDefinitionApi) {
-    setError(null);
-    setToggleLoadingId(definition.id);
-    try {
-      await patchReminderDefinition(definition.id, { active: !definition.active });
-      await loadStructuredData();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setToggleLoadingId(null);
-    }
+  const createMutation = useMutation({
+    mutationFn: createReminderDefinition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminder-definitions"] });
+      queryClient.invalidateQueries({ queryKey: ["reminder-upcoming"] });
+      setShowCreateForm(false);
+      resetForm();
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
+
+  const patchMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) => 
+      patchReminderDefinition(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminder-definitions"] });
+      queryClient.invalidateQueries({ queryKey: ["reminder-upcoming"] });
+      setShowCreateForm(false);
+      setEditingDefinitionId(null);
+      resetForm();
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
+
+  function resetForm() {
+    setNewReminder({
+      title: "",
+      body: "",
+      reminder_type: "medication",
+      pattern: "daily_fixed_times",
+      time: "08:00",
+      interval_hours: 4,
+      weekdays: [],
+      oneTimeDate: new Date().toISOString().split("T")[0],
+    });
   }
 
   function startEditDefinition(definition: ReminderDefinitionApi) {
@@ -108,99 +143,59 @@ export default function RemindersPage() {
     setShowCreateForm(true);
   }
 
-  async function handleOccurrenceAction(
-    occurrenceId: string,
-    action: "taken" | "skipped" | "snooze",
-    snoozeMinutes?: number,
-  ) {
-    setError(null);
-    setActionLoadingId(occurrenceId);
-    try {
-      await actOnReminderOccurrence({
-        occurrenceId,
-        action,
-        snooze_minutes: snoozeMinutes,
-      });
-      await loadStructuredData();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setActionLoadingId(null);
-    }
-  }
-
   async function handleCreateReminder() {
     if (!newReminder.title.trim()) {
       setError("Title is required");
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    try {
-      const timezone = APP_TIMEZONE;
-      const schedule: any = {
-        pattern: newReminder.pattern,
-        timezone,
-        offset_minutes: 0,
-        as_needed: false,
-        metadata: {},
-      };
+    const timezone = APP_TIMEZONE;
+    const schedule: any = {
+      pattern: newReminder.pattern,
+      timezone,
+      offset_minutes: 0,
+      as_needed: false,
+      metadata: {},
+    };
 
-      if (newReminder.pattern === "one_time") {
-        schedule.start_date = newReminder.oneTimeDate;
-        schedule.times = [newReminder.time];
-      } else if (newReminder.pattern === "daily_fixed_times") {
-        schedule.start_date = newReminder.oneTimeDate;
-        schedule.times = [newReminder.time];
-      } else if (newReminder.pattern === "every_x_hours") {
-        schedule.start_date = newReminder.oneTimeDate;
-        schedule.interval_hours = newReminder.interval_hours;
-        schedule.times = [newReminder.time];
-      } else if (newReminder.pattern === "specific_weekdays") {
-        schedule.start_date = newReminder.oneTimeDate;
-        schedule.weekdays = newReminder.weekdays;
-        schedule.times = [newReminder.time];
-      }
+    if (newReminder.pattern === "one_time" || newReminder.pattern === "daily_fixed_times") {
+      schedule.start_date = newReminder.oneTimeDate;
+      schedule.times = [newReminder.time];
+    } else if (newReminder.pattern === "every_x_hours") {
+      schedule.start_date = newReminder.oneTimeDate;
+      schedule.interval_hours = newReminder.interval_hours;
+      schedule.times = [newReminder.time];
+    } else if (newReminder.pattern === "specific_weekdays") {
+      schedule.start_date = newReminder.oneTimeDate;
+      schedule.weekdays = newReminder.weekdays;
+      schedule.times = [newReminder.time];
+    }
 
-      if (editingDefinitionId) {
-        await patchReminderDefinition(editingDefinitionId, {
+    if (editingDefinitionId) {
+      patchMutation.mutate({
+        id: editingDefinitionId,
+        payload: {
           title: newReminder.title,
           body: newReminder.body,
           schedule,
-        });
-      } else {
-        await createReminderDefinition({
-          title: newReminder.title,
-          body: newReminder.body,
-          reminder_type: newReminder.reminder_type,
-          medication_name: newReminder.reminder_type === "medication" ? newReminder.title : undefined,
-          dosage_text: newReminder.reminder_type === "medication" ? "as prescribed" : "",
-          schedule,
-          active: true,
-          source: "manual",
-        });
-      }
-
-      setShowCreateForm(false);
-      setEditingDefinitionId(null);
-      setNewReminder({
-        title: "",
-        body: "",
-        reminder_type: "medication",
-        pattern: "daily_fixed_times",
-        time: "08:00",
-        interval_hours: 4,
-        weekdays: [],
-        oneTimeDate: new Date().toISOString().split("T")[0],
+        },
       });
-      await loadStructuredData();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
+    } else {
+      createMutation.mutate({
+        title: newReminder.title,
+        body: newReminder.body,
+        reminder_type: newReminder.reminder_type,
+        medication_name: newReminder.reminder_type === "medication" ? newReminder.title : undefined,
+        dosage_text: newReminder.reminder_type === "medication" ? "as prescribed" : "",
+        schedule,
+        active: true,
+        source: "manual",
+      });
     }
   }
+
+  const loading = definitionsLoading || upcomingLoading || historyLoading;
+  const mutating = createMutation.isPending || patchMutation.isPending;
 
   return (
     <div className="section-stack relative isolate">
@@ -232,6 +227,7 @@ export default function RemindersPage() {
               onClick={() => {
                 setShowCreateForm(false);
                 setEditingDefinitionId(null);
+                resetForm();
               }}
             >
               <X className="h-4 w-4" />
@@ -278,31 +274,18 @@ export default function RemindersPage() {
               </Select>
             </div>
 
-            {newReminder.pattern === "one_time" && (
-              <div className="space-y-2">
-                <Label htmlFor="one-time-date" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Date</Label>
-                <Input 
-                  id="one-time-date"
-                  type="date"
-                  value={newReminder.oneTimeDate}
-                  onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
-                  className="rounded-lg"
-                />
-              </div>
-            )}
-            
-            {newReminder.pattern !== "one_time" && (
-              <div className="space-y-2">
-                <Label htmlFor="start-date" className="text-[10px] font-bold uppercase tracking-widest opacity-60">Start date</Label>
-                <Input 
-                  id="start-date"
-                  type="date"
-                  value={newReminder.oneTimeDate}
-                  onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
-                  className="rounded-lg"
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="start-date" className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                {newReminder.pattern === "one_time" ? "Date" : "Start Date"}
+              </Label>
+              <Input 
+                id="start-date"
+                type="date"
+                value={newReminder.oneTimeDate}
+                onChange={(e) => setNewReminder({ ...newReminder, oneTimeDate: e.target.value })}
+                className="rounded-lg"
+              />
+            </div>
 
             {newReminder.pattern === "every_x_hours" && (
               <div className="space-y-2">
@@ -379,6 +362,7 @@ export default function RemindersPage() {
               onClick={() => {
                 setShowCreateForm(false);
                 setEditingDefinitionId(null);
+                resetForm();
               }}
               className="h-11 px-6 rounded-xl"
             >
@@ -386,10 +370,10 @@ export default function RemindersPage() {
             </Button>
             <Button 
               onClick={handleCreateReminder}
-              disabled={loading}
+              disabled={mutating}
               className="h-11 px-8 rounded-xl font-bold shadow-md bg-health-teal hover:bg-health-teal/90"
             >
-              {loading ? (editingDefinitionId ? "Updating..." : "Creating...") : (editingDefinitionId ? "Update Reminder" : "Save Reminder")}
+              {mutating ? (editingDefinitionId ? "Updating..." : "Creating...") : (editingDefinitionId ? "Update Reminder" : "Save Reminder")}
             </Button>
           </div>
         </div>
@@ -453,8 +437,8 @@ export default function RemindersPage() {
                   key={occurrence.id} 
                   occurrence={occurrence} 
                   definition={definitionMap.get(occurrence.reminder_definition_id)}
-                  onAction={(action, snoozeMinutes) => handleOccurrenceAction(occurrence.id, action, snoozeMinutes)}
-                  actionDisabled={actionLoadingId === occurrence.id || loading}
+                  onAction={(action, snoozeMinutes) => actionMutation.mutate({ occurrenceId: occurrence.id, action, snoozeMinutes })}
+                  actionDisabled={actionMutation.isPending || loading}
                   onEdit={() => {
                     const definition = definitionMap.get(occurrence.reminder_definition_id);
                     if (definition) startEditDefinition(definition);
@@ -482,8 +466,8 @@ export default function RemindersPage() {
                 <ReminderListItem 
                   key={definition.id} 
                   definition={definition} 
-                  onToggle={() => toggleDefinition(definition)}
-                  toggleDisabled={toggleLoadingId === definition.id || loading}
+                  onToggle={() => toggleMutation.mutate({ id: definition.id, active: !definition.active })}
+                  toggleDisabled={toggleMutation.isPending || loading}
                   onEdit={() => startEditDefinition(definition)}
                 />
               ))
@@ -501,8 +485,8 @@ export default function RemindersPage() {
                   key={occurrence.id} 
                   occurrence={occurrence} 
                   definition={definitionMap.get(occurrence.reminder_definition_id)}
-                  onAction={(action, snoozeMinutes) => handleOccurrenceAction(occurrence.id, action, snoozeMinutes)}
-                  actionDisabled={actionLoadingId === occurrence.id || loading}
+                  onAction={(action, snoozeMinutes) => actionMutation.mutate({ occurrenceId: occurrence.id, action, snoozeMinutes })}
+                  actionDisabled={actionMutation.isPending || loading}
                   onEdit={() => {
                     const definition = definitionMap.get(occurrence.reminder_definition_id);
                     if (definition) startEditDefinition(definition);

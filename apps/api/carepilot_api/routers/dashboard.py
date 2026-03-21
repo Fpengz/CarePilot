@@ -7,7 +7,6 @@ from chat and tracking workflows.
 
 from __future__ import annotations
 
-import json
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -85,41 +84,19 @@ def dashboard_chart_data(
 @router.post("/api/v1/dashboard/trend")
 def dashboard_trend(
     payload: TrendRequest,
-    request: Request,
     session: dict[str, object] = Depends(current_session),
 ):
     require_action(session, "metrics.trends.read")
-    deps = chat_deps(get_context(request), session)
     if not payload.metrics:
         return {"trends": {}}
 
-    metric_lines: list[str] = []
+    computed = {}
     for key, metric in payload.metrics.items():
-        metric_lines.append(
-            f'  {json.dumps(key)}: {{"change": round({metric.last} - {metric.first}, 4), '
-            f'"pct": round(({metric.last} - {metric.first}) / {metric.first} * 100, 2) if {metric.first} != 0 else 0}}'
-        )
-
-    code = "import json\nprint(json.dumps({\n" + ",\n".join(metric_lines) + "\n}))"
-    print(f"[DashboardTrend] Running sandbox code:\n{code}")
-    try:
-        raw_output = deps.code_agent.run(code)
-        print(f"[DashboardTrend] Sandbox output: {raw_output!r}")
-    except Exception as exc:
-        print(f"[DashboardTrend] Sandbox unavailable: {exc}")
-        raw_output = ""
-
-    try:
-        computed = json.loads(raw_output)
-    except Exception:
-        computed = {
-            key: {
-                "change": round(metric.last - metric.first, 4),
-                "pct": round((metric.last - metric.first) / metric.first * 100, 2)
-                if metric.first
-                else 0,
-            }
-            for key, metric in payload.metrics.items()
+        change = round(metric.last - metric.first, 4)
+        pct = round((change / metric.first) * 100, 2) if metric.first != 0 else 0
+        computed[key] = {
+            "change": change,
+            "pct": pct,
         }
 
     trends = {

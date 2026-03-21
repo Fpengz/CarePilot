@@ -8,7 +8,6 @@ import pytest
 from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
 from care_pilot.config.app import get_settings
 from care_pilot.features.companion.chat.meal_intent import (
     meal_proposal_cache_key,
@@ -61,18 +60,6 @@ def test_confirm_meal_proposal_logs_meal() -> None:
 
     before_count = len(ctx.stores.meals.list_validated_meal_events("user_001"))
 
-    async def _fake_stream(
-        self,
-        *,
-        messages: list[dict[str, object]],
-        model_id: str | None = None,
-    ):
-        del self, messages, model_id
-        yield "Follow-up guidance."
-
-    monkeypatch = pytest.MonkeyPatch()
-    monkeypatch.setattr(ChatStreamRuntime, "stream", _fake_stream)
-
     response = client.post(
         "/api/v1/chat/meal/confirm",
         json={"proposal_id": proposal_id, "action": "confirm"},
@@ -82,7 +69,6 @@ def test_confirm_meal_proposal_logs_meal() -> None:
     body = response.json()
     assert body["status"] == "logged"
     assert "assistant_followup" in body
-    assert "Follow-up guidance." in body["assistant_followup"]
+    assert "Confirmed. Logged meal: Chicken rice." in body["assistant_followup"]
     assert len(ctx.stores.meals.list_validated_meal_events("user_001")) == before_count + 1
 
-    monkeypatch.undo()

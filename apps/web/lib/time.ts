@@ -31,19 +31,14 @@ export function formatDateKey(value: string | Date | number): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
 
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  // Use Intl to get the date in the target timezone, then format as YYYY-MM-DD
+  const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: APP_TIMEZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(date);
-
-  const bucket: Record<string, string> = {};
-  for (const part of parts) {
-    if (part.type !== "literal") bucket[part.type] = part.value;
-  }
-  if (!bucket.year || !bucket.month || !bucket.day) return String(value);
-  return `${bucket.year}-${bucket.month}-${bucket.day}`;
+  });
+  return formatter.format(date);
 }
 
 export function parseDateKey(dateKey: string): Date | null {

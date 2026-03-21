@@ -1,73 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Activity, AlertTriangle, RefreshCcw, Thermometer, Info, History } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { createSymptomCheckIn, getSymptomSummary, listSymptomCheckIns } from "@/lib/api/meal-client";
-import type { SymptomCheckInApi, SymptomSummaryApiResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const COMMON_SYMPTOMS = ["Headache", "Fatigue", "Nausea", "Dizziness", "Bloating", "Thirst"];
 
 export default function SymptomsPage() {
+  const queryClient = useQueryClient();
   const [severity, setSeverity] = useState(3);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [freeText, setFreeText] = useState("");
-  const [checkIns, setCheckIns] = useState<SymptomCheckInApi[]>([]);
-  const [summary, setSummary] = useState<SymptomSummaryApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  async function refreshData() {
-    try {
-      const [checkinResponse, summaryResponse] = await Promise.all([
-        listSymptomCheckIns({ limit: 20 }),
-        getSymptomSummary(),
-      ]);
-      setCheckIns(checkinResponse.items);
-      setSummary(summaryResponse);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  }
+  // Queries
+  const { data: checkinsData, isLoading: checkinsLoading } = useQuery({
+    queryKey: ["symptom-checkins"],
+    queryFn: () => listSymptomCheckIns({ limit: 20 }),
+  });
 
-  useEffect(() => {
-    void refreshData();
-  }, []);
+  const { data: summary, isLoading: summaryLoading } = useQuery({
+    queryKey: ["symptom-summary"],
+    queryFn: () => getSymptomSummary(),
+  });
 
-  const handleSubmit = async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      await createSymptomCheckIn({
-        severity,
-        symptom_codes: selectedSymptoms.map(s => s.toLowerCase()),
-        free_text: freeText.trim() || undefined,
-        context: {},
-      });
+  const checkIns = checkinsData?.items ?? [];
+
+  // Mutations
+  const submitMutation = useMutation({
+    mutationFn: createSymptomCheckIn,
+    onSuccess: () => {
       setFreeText("");
       setSelectedSymptoms([]);
       setSeverity(3);
-      await refreshData();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
+      queryClient.invalidateQueries({ queryKey: ["symptom-checkins"] });
+      queryClient.invalidateQueries({ queryKey: ["symptom-summary"] });
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : String(err)),
+  });
 
   const toggleSymptom = (symptom: string) => {
     setSelectedSymptoms(prev => 
       prev.includes(symptom) ? prev.filter(s => s !== symptom) : [...prev, symptom]
     );
   };
+
+  const loading = checkinsLoading || summaryLoading || submitMutation.isPending;
 
   return (
     <div className="section-stack relative isolate">
@@ -79,7 +65,7 @@ export default function SymptomsPage() {
             Log physical signals to help your AI companion detect patterns and provide safer clinical guidance.
           </p>
         </div>
-        <Button variant="secondary" size="sm" onClick={refreshData} className="gap-2 rounded-xl h-10 px-4">
+        <Button variant="secondary" size="sm" onClick={() => queryClient.invalidateQueries()} className="gap-2 rounded-xl h-10 px-4">
           <RefreshCcw className="h-3.5 w-3.5" /> Sync Data
         </Button>
       </div>
@@ -153,10 +139,10 @@ export default function SymptomsPage() {
 
               <Button 
                 className="w-full h-12 rounded-xl font-bold shadow-md bg-health-teal hover:bg-health-teal/90" 
-                onClick={handleSubmit}
-                disabled={loading}
+                onClick={() => submitMutation.mutate({ severity, symptom_codes: selectedSymptoms.map(s => s.toLowerCase()), free_text: freeText.trim() || undefined, context: {} })}
+                disabled={submitMutation.isPending}
               >
-                <AsyncLabel active={loading} loading="Recording" idle="Log Symptom Check-In" />
+                <AsyncLabel active={submitMutation.isPending} loading="Recording" idle="Log Symptom Check-In" />
               </Button>
             </div>
           </div>

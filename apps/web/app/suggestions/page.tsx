@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { AsyncLabel } from "@/components/app/async-label";
@@ -19,7 +20,6 @@ import {
   buildSuggestionDetail,
   buildSuggestionSummaries,
   toSuggestionErrorMessage,
-  type SuggestionsLoadState,
   type SuggestionScope,
 } from "@/lib/suggestions-view-model";
 import type { SuggestionItemApi } from "@/lib/types";
@@ -27,18 +27,35 @@ import type { SuggestionItemApi } from "@/lib/types";
 const DEFAULT_REPORT = "HbA1c 7.1 LDL 4.2 systolic bp 150 diastolic bp 95";
 
 export default function SuggestionsPage() {
+  const queryClient = useQueryClient();
   const { hasScope, status } = useSession();
   const [reportText, setReportText] = useState(DEFAULT_REPORT);
-  const [selected, setSelected] = useState<SuggestionItemApi | null>(null);
-  const [items, setItems] = useState<SuggestionItemApi[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [scope, setScope] = useState<SuggestionScope>("self");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
-  const [listState, setListState] = useState<SuggestionsLoadState>("idle");
-  const [detailState, setDetailState] = useState<SuggestionsLoadState>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<"generate" | "load" | "open" | null>(null);
+
   const canInspectWorkflow = status === "authenticated" && hasScope("workflow:replay");
 
+  // Queries
+  const { data: listData, isLoading: listLoading } = useQuery({
+    queryKey: ["suggestions", scope, sourceFilter],
+    queryFn: () => listSuggestions({
+      limit: 20,
+      scope,
+      sourceUserId: sourceFilter === "all" ? undefined : sourceFilter,
+    }),
+    enabled: status === "authenticated",
+  });
+
+  const { data: selectedDetail, isLoading: detailLoading } = useQuery({
+    queryKey: ["suggestion-detail", selectedId, scope],
+    queryFn: () => getSuggestion(selectedId!, { scope }),
+    enabled: !!selectedId && status === "authenticated",
+  });
+
+  const items = listData?.items ?? [];
+  const selected = selectedDetail?.suggestion ?? null;
   const summaries = useMemo(() => buildSuggestionSummaries(items), [items]);
   const detail = useMemo(() => buildSuggestionDetail(selected), [selected]);
 
@@ -53,18 +70,17 @@ export default function SuggestionsPage() {
     [summaries, sourceFilter],
   );
 
-  const sourceUserIdParam = sourceFilter === "all" ? undefined : sourceFilter;
+  // Mutations
+  const generateMutation = useMutation({
+    mutationFn: (text: string) => generateSuggestionFromReport({ text }),
+    onSuccess: (res) => {
+      setSelectedId(res.suggestion.suggestion_id);
+      queryClient.invalidateQueries({ queryKey: ["suggestions"] });
+    },
+    onError: (err) => setError(toSuggestionErrorMessage(err)),
+  });
 
-  async function refreshSuggestions() {
-    setListState("loading");
-    const response = await listSuggestions({
-      limit: 20,
-      scope,
-      sourceUserId: sourceUserIdParam,
-    });
-    setItems(response.items);
-    setListState("ready");
-  }
+  const loadingAction = generateMutation.isPending ? "generate" : listLoading ? "load" : detailLoading ? "open" : null;
 
   return (
     <div>
@@ -97,7 +113,7 @@ export default function SuggestionsPage() {
             <div className="flex flex-wrap gap-2" role="group" aria-label="Suggestion visibility scope">
               <Button
                 variant={scope === "self" ? "default" : "secondary"}
-                disabled={loadingAction !== null}
+                disabled={!!loadingAction}
                 aria-pressed={scope === "self"}
                 onClick={() => setScope("self")}
               >
@@ -105,7 +121,7 @@ export default function SuggestionsPage() {
               </Button>
               <Button
                 variant={scope === "household" ? "default" : "secondary"}
-                disabled={loadingAction !== null}
+                disabled={!!loadingAction}
                 aria-pressed={scope === "household"}
                 onClick={() => setScope("household")}
               >
@@ -116,7 +132,7 @@ export default function SuggestionsPage() {
             <div className="flex flex-wrap gap-2" role="group" aria-label="Filter suggestions by source user">
               <Button
                 variant={sourceFilter === "all" ? "default" : "secondary"}
-                disabled={listState === "loading"}
+                disabled={listLoading}
                 aria-pressed={sourceFilter === "all"}
                 onClick={() => setSourceFilter("all")}
               >
@@ -126,7 +142,7 @@ export default function SuggestionsPage() {
                 <Button
                   key={source.id}
                   variant={sourceFilter === source.id ? "default" : "secondary"}
-                  disabled={listState === "loading"}
+                  disabled={listLoading}
                   aria-pressed={sourceFilter === source.id}
                   onClick={() => setSourceFilter(source.id)}
                 >
@@ -137,50 +153,23 @@ export default function SuggestionsPage() {
 
             <div className="flex flex-wrap gap-2">
               <Button
-                disabled={loadingAction !== null || reportText.trim().length === 0}
-                onClick={async () => {
-                  setError(null);
-                  setLoadingAction("generate");
-                  setDetailState("loading");
-                  try {
-                    const response = await generateSuggestionFromReport({ text: reportText });
-                    setSelected(response.suggestion);
-                    setDetailState("ready");
-                    await refreshSuggestions();
-                  } catch (e) {
-                    setError(toSuggestionErrorMessage(e));
-                    setDetailState("error");
-                    setListState("error");
-                  } finally {
-                    setLoadingAction(null);
-                  }
-                }}
+                disabled={!!loadingAction || reportText.trim().length === 0}
+                onClick={() => generateMutation.mutate(reportText)}
               >
                 <AsyncLabel active={loadingAction === "generate"} loading="Generating" idle="Generate Suggestion" />
               </Button>
 
               <Button
                 variant="secondary"
-                disabled={loadingAction !== null}
-                onClick={async () => {
-                  setError(null);
-                  setLoadingAction("load");
-                  try {
-                    await refreshSuggestions();
-                  } catch (e) {
-                    setError(toSuggestionErrorMessage(e));
-                    setListState("error");
-                  } finally {
-                    setLoadingAction(null);
-                  }
-                }}
+                disabled={!!loadingAction}
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["suggestions"] })}
               >
                 <AsyncLabel active={loadingAction === "load"} loading="Loading" idle="Load Suggestions" />
               </Button>
             </div>
 
             <div aria-live="polite" className="app-muted text-xs">
-              {listState === "loading" ? "Refreshing suggestions list..." : `Showing ${visibleItems.length} suggestion(s).`}
+              {listLoading ? "Refreshing suggestions list..." : `Showing ${visibleItems.length} suggestion(s).`}
             </div>
 
             {selected ? (
@@ -218,26 +207,15 @@ export default function SuggestionsPage() {
           <TimelineList
             title="Insight History"
             description="Recent saved recommendations for the selected scope."
-            emptyLabel={listState === "loading" ? "Loading insights..." : "No insights yet for this scope/filter."}
+            emptyLabel={listLoading ? "Loading insights..." : "No insights yet for this scope/filter."}
             items={visibleItems.map((item) => ({
               id: item.id,
               title: item.id,
               subtitle: `${item.sourceDisplayName} · ${item.createdAtLabel}`,
               badges: [item.safetyDecision, item.safe ? "safe" : "review"],
-              onClick: async () => {
+              onClick: () => {
                 setError(null);
-                setLoadingAction("open");
-                setDetailState("loading");
-                try {
-                  const detailResponse = await getSuggestion(item.id, { scope });
-                  setSelected(detailResponse.suggestion);
-                  setDetailState("ready");
-                } catch (e) {
-                  setError(toSuggestionErrorMessage(e));
-                  setDetailState("error");
-                } finally {
-                  setLoadingAction(null);
-                }
+                setSelectedId(item.id);
               },
             }))}
           />
@@ -254,7 +232,7 @@ export default function SuggestionsPage() {
                   ]
                 : []
             }
-            emptyLabel={detailState === "loading" ? "Loading safety details..." : "Open a suggestion to inspect safety details."}
+            emptyLabel={detailLoading ? "Loading safety details..." : "Open a suggestion to inspect safety details."}
           />
 
           <KeyValuePreview
@@ -271,7 +249,7 @@ export default function SuggestionsPage() {
                   ]
                 : []
             }
-            emptyLabel={detailState === "loading" ? "Loading suggestion detail..." : "Open a suggestion to validate detail completeness."}
+            emptyLabel={detailLoading ? "Loading suggestion detail..." : "Open a suggestion to validate detail completeness."}
           />
 
           {detail?.isPartial ? (
@@ -293,7 +271,7 @@ export default function SuggestionsPage() {
           <TimelineList
             title="Workflow Timeline"
             description="Request/correlation-linked timeline events for this suggestion run."
-            emptyLabel={detailState === "loading" ? "Loading workflow events..." : "No workflow events available."}
+            emptyLabel={detailLoading ? "Loading workflow events..." : "No workflow events available."}
             items={(selected?.workflow.timeline_events ?? []).map((event, index) => {
               return {
                 id: `${event.event_type || "event"}-${index}`,

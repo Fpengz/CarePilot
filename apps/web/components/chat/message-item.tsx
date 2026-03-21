@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
@@ -26,7 +27,7 @@ const EMOJI: Record<string, string> = {
   fearful: "😨",
 };
 
-export function MessageItem({
+export const MessageItem = memo(function MessageItem({
   message,
   isStreaming,
   streamDraft,
@@ -44,7 +45,7 @@ export function MessageItem({
 
   if (isUser) {
     return (
-      <div className="flex justify-end">
+      <div className="flex justify-end" style={{ contentVisibility: "auto", containIntrinsicSize: "0 80px" }}>
         <div className="max-w-[78%] rounded-2xl bg-[color:var(--accent)] px-5 py-4 text-sm text-[color:var(--accent-foreground)] shadow-[0_12px_24px_rgba(15,23,42,0.1)]">
           <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
           {message.emotion ? (
@@ -60,7 +61,7 @@ export function MessageItem({
   }
 
   return (
-    <div className="flex justify-start">
+    <div className="flex justify-start" style={{ contentVisibility: "auto", containIntrinsicSize: "0 120px" }}>
       <div className="max-w-[82%] rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-6 py-5">
         <AssistantMeta
           kindLabel={KIND_LABELS[message.kind] || undefined}
@@ -120,4 +121,4 @@ export function MessageItem({
       </div>
     </div>
   );
-}
+});
