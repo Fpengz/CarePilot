@@ -4,7 +4,6 @@ Execute agent inference requests through model providers.
 This module coordinates inference requests, provider selection, and retries
 for agent runtime execution.
 """
-
 import asyncio
 import json
 import re
@@ -21,6 +20,7 @@ from pydantic_ai.messages import (
     TextPart,
     TextPartDelta,
 )
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from care_pilot.agent.runtime.inference_types import (
     InferenceHealth,
@@ -171,6 +171,12 @@ class _BaseStrategy:
             return settings.llm.inference.local_output_validation_retries
         return 0
 
+    @retry(
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        stop=stop_after_attempt(3),
+        retry=retry_if_exception_type(Exception),
+        reraise=True,
+    )
     async def run(self, request: InferenceRequest) -> InferenceResponse:
         started = time.perf_counter()
         output_retries = self._output_retry_budget()

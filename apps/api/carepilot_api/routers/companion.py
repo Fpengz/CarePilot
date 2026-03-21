@@ -35,31 +35,31 @@ router = APIRouter(tags=["companion"])
 
 
 @router.get("/api/v1/companion/today", response_model=CompanionTodayResponse)
-def companion_today(
+async def companion_today(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> CompanionTodayResponse:
     require_action(session, "companion.today.read")
-    return get_companion_today(context=get_context(request), session=session)
+    return await get_companion_today(context=get_context(request), session=session)
 
 
 @router.get(
     "/api/v1/companion/blood-pressure",
     response_model=BloodPressureSummaryEnvelopeResponse,
 )
-def companion_blood_pressure_summary(
+async def companion_blood_pressure_summary(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> BloodPressureSummaryEnvelopeResponse:
     require_action(session, "companion.today.read")
-    return get_blood_pressure_summary(context=get_context(request), session=session)
+    return await get_blood_pressure_summary(context=get_context(request), session=session)
 
 
 @router.get(
     "/api/v1/companion/blood-pressure-chart",
     response_model=BloodPressureChartResponse,
 )
-def companion_blood_pressure_chart(
+async def companion_blood_pressure_chart(
     request: Request,
     range: str = "30d",
     from_date: str | None = None,
@@ -70,7 +70,7 @@ def companion_blood_pressure_chart(
     parsed_from = date.fromisoformat(from_date) if from_date else None
     parsed_to = date.fromisoformat(to_date) if to_date else None
     try:
-        return get_blood_pressure_chart(
+        return await get_blood_pressure_chart(
             context=get_context(request),
             session=session,
             range_key=range,
@@ -82,7 +82,7 @@ def companion_blood_pressure_chart(
 
 
 @router.post("/api/v1/companion/interactions", response_model=CompanionInteractionResponse)
-def companion_interactions(
+async def companion_interactions(
     payload: CompanionInteractionRequest,
     request: Request,
     session: dict[str, object] = Depends(current_session),
@@ -90,7 +90,7 @@ def companion_interactions(
     require_action(session, "companion.interactions.write")
     request_id = getattr(request.state, "request_id", None) or str(uuid4())
     correlation_id = getattr(request.state, "correlation_id", None) or str(uuid4())
-    return handle_companion_interaction(
+    return await handle_companion_interaction(
         context=get_context(request),
         session=session,
         payload=payload,
@@ -100,21 +100,21 @@ def companion_interactions(
 
 
 @router.get("/api/v1/clinician/digest", response_model=ClinicianDigestEnvelopeResponse)
-def clinician_digest(
+async def clinician_digest(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> ClinicianDigestEnvelopeResponse:
     require_action(session, "clinician.digest.read")
-    return get_clinician_digest(context=get_context(request), session=session)
+    return await get_clinician_digest(context=get_context(request), session=session)
 
 
 @router.get("/api/v1/impact/summary", response_model=ImpactSummaryResponse)
-def impact_summary(
+async def impact_summary(
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> ImpactSummaryResponse:
     require_action(session, "impact.summary.read")
-    return get_impact_summary(context=get_context(request), session=session)
+    return await get_impact_summary(context=get_context(request), session=session)
 
 
 @router.get(

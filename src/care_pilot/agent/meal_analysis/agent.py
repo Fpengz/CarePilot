@@ -19,6 +19,9 @@ from care_pilot.agent.core.contracts import (
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
 from care_pilot.features.meals.domain.models import MealPerception
+from care_pilot.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 SYSTEM_PROMPT = (
     "You are the 'Hawker Vision' Specialist node in a multi-agent care system. "
@@ -44,6 +47,7 @@ def get_meal_agent() -> Agent[None, MealPerception]:
 
 async def run_meal_agent(request: AgentRequest) -> AgentResponse:
     """Execute the meal specialist agent."""
+    logger.info("run_meal_agent_start correlation_id=%s", request.correlation_id)
     agent = get_meal_agent()
 
     # Extract input

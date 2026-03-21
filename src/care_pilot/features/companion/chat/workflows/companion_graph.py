@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Annotated, Any, TypedDict, cast
 
 from langchain_core.messages import BaseMessage
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
@@ -34,15 +35,16 @@ class CompanionState(TypedDict):
     session_id: str
 
 
-async def supervisor_node(state: CompanionState) -> dict[str, Any]:
+async def supervisor_node(state: CompanionState, config: RunnableConfig) -> dict[str, Any]:
     """Analyze state and decide which agent to call next."""
     user_msg = state["messages"][-1].content if state["messages"] else "No message"
+    correlation_id = config.get("configurable", {}).get("correlation_id")
     prompt = (
         f"User message: {user_msg}\n\n"
         f"Patient Snapshot: {state['snapshot'].model_dump_json(indent=2)}"
     )
 
-    decision = await run_supervisor_agent(prompt)
+    decision = await run_supervisor_agent(prompt, correlation_id=correlation_id)
 
     return {"next_agent": decision.next_agent}
 
@@ -57,12 +59,14 @@ def route_next(state: CompanionState) -> str:
 
 # Specialist Nodes
 
-async def meal_node(state: CompanionState) -> dict[str, Any]:
+async def meal_node(state: CompanionState, config: RunnableConfig) -> dict[str, Any]:
     """Execute the meal specialist agent."""
     user_msg = state["messages"][-1].content if state["messages"] else ""
+    correlation_id = config.get("configurable", {}).get("correlation_id")
     request = AgentRequest(
         user_id=state["snapshot"].user_id,
         session_id=state["session_id"],
+        correlation_id=correlation_id,
         goal="Analyze meal from message",
         inputs={"text_context": str(user_msg)},
         context={"snapshot": state["snapshot"].model_dump_json()}
@@ -71,12 +75,14 @@ async def meal_node(state: CompanionState) -> dict[str, Any]:
     return {"last_agent_response": response, "next_agent": "supervisor"}
 
 
-async def medication_node(state: CompanionState) -> dict[str, Any]:
+async def medication_node(state: CompanionState, config: RunnableConfig) -> dict[str, Any]:
     """Execute the medication specialist agent."""
     user_msg = state["messages"][-1].content if state["messages"] else ""
+    correlation_id = config.get("configurable", {}).get("correlation_id")
     request = AgentRequest(
         user_id=state["snapshot"].user_id,
         session_id=state["session_id"],
+        correlation_id=correlation_id,
         goal="Parse medication from message",
         inputs={"text_context": str(user_msg)},
         context={"snapshot": state["snapshot"].model_dump_json()}
@@ -85,11 +91,13 @@ async def medication_node(state: CompanionState) -> dict[str, Any]:
     return {"last_agent_response": response, "next_agent": "supervisor"}
 
 
-async def trend_node(state: CompanionState) -> dict[str, Any]:
+async def trend_node(state: CompanionState, config: RunnableConfig) -> dict[str, Any]:
     """Execute the trend specialist agent."""
+    correlation_id = config.get("configurable", {}).get("correlation_id")
     request = AgentRequest(
         user_id=state["snapshot"].user_id,
         session_id=state["session_id"],
+        correlation_id=correlation_id,
         goal="Analyze health trends",
         context={"snapshot": state["snapshot"].model_dump_json()}
     )
@@ -97,11 +105,13 @@ async def trend_node(state: CompanionState) -> dict[str, Any]:
     return {"last_agent_response": response, "next_agent": "supervisor"}
 
 
-async def adherence_node(state: CompanionState) -> dict[str, Any]:
+async def adherence_node(state: CompanionState, config: RunnableConfig) -> dict[str, Any]:
     """Execute the adherence specialist agent."""
+    correlation_id = config.get("configurable", {}).get("correlation_id")
     request = AgentRequest(
         user_id=state["snapshot"].user_id,
         session_id=state["session_id"],
+        correlation_id=correlation_id,
         goal="Analyze medication adherence",
         context={"snapshot": state["snapshot"].model_dump_json()}
     )
@@ -109,11 +119,13 @@ async def adherence_node(state: CompanionState) -> dict[str, Any]:
     return {"last_agent_response": response, "next_agent": "supervisor"}
 
 
-async def care_plan_node(state: CompanionState) -> dict[str, Any]:
+async def care_plan_node(state: CompanionState, config: RunnableConfig) -> dict[str, Any]:
     """Execute the care plan specialist agent."""
+    correlation_id = config.get("configurable", {}).get("correlation_id")
     request = AgentRequest(
         user_id=state["snapshot"].user_id,
         session_id=state["session_id"],
+        correlation_id=correlation_id,
         goal="Synthesize care plan",
         context={"snapshot": state["snapshot"].model_dump_json()}
     )

@@ -7,6 +7,8 @@ including agent registry, persistence, and platform adapters.
 
 import os
 from dataclasses import dataclass
+from functools import cached_property
+from typing import cast
 
 from care_pilot.agent.core import AgentRegistry, build_default_agent_registry
 from care_pilot.agent.emotion.agent import EmotionAgent
@@ -33,6 +35,7 @@ from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
 from care_pilot.features.companion.chat.router import QueryRouter
 from care_pilot.features.companion.chat.search_adapter import SearchAgent
 from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
+from care_pilot.features.companion.emotion.ports import EmotionInferencePort
 from care_pilot.features.companion.emotion.remote_runtime import (
     RemoteEmotionRuntime,
 )
@@ -78,32 +81,136 @@ CoordinationStore = InMemoryCoordinationStore | RedisCoordinationStore
 HouseholdStore = SQLiteHouseholdStore
 
 
-@dataclass
 class AppContext:
-    settings: Settings
-    app_store: AppStoreBackend
-    stores: AppStores
-    profile_memory: ProfileMemoryService
-    clinical_memory: ClinicalSnapshotMemoryService
-    event_timeline: EventTimelineService
-    tool_registry: ToolRegistry
-    agent_registry: AgentRegistry
-    auth_store: AuthStore
-    session_signer: SessionSigner
-    memory_store: MemoryStore
-    notification_reads: NotificationReadStateStore
-    cache_store: CacheStore
-    coordination_store: CoordinationStore
-    household_store: HouseholdStore
-    emotion_agent: EmotionAgent
-    recommendation_agent: RecommendationAgent
-    chat_inference_engine: InferenceEngine
-    medication_inference_engine: InferenceEngine
-    chat_router: QueryRouter
-    chat_runtime_config: ChatRuntimeConfig
-    chat_stream_runtime: ChatStreamRuntime
-    chat_audio_agent: AudioAgent
-    chat_code_agent: CodeAgent
+    def __init__(
+        self,
+        *,
+        settings: Settings,
+        app_store: AppStoreBackend,
+        stores: AppStores,
+        profile_memory: ProfileMemoryService,
+        clinical_memory: ClinicalSnapshotMemoryService,
+        event_timeline: EventTimelineService,
+        tool_registry: ToolRegistry,
+        agent_registry: AgentRegistry,
+        auth_store: AuthStore,
+        session_signer: SessionSigner,
+        memory_store: MemoryStore,
+        notification_reads: NotificationReadStateStore,
+        cache_store: CacheStore,
+        coordination_store: CoordinationStore,
+        household_store: HouseholdStore,
+        chat_runtime_config: ChatRuntimeConfig,
+    ) -> None:
+        self.settings = settings
+        self.app_store = app_store
+        self.stores = stores
+        self.profile_memory = profile_memory
+        self.clinical_memory = clinical_memory
+        self.event_timeline = event_timeline
+        self.tool_registry = tool_registry
+        self.agent_registry = agent_registry
+        self.auth_store = auth_store
+        self.session_signer = session_signer
+        self.memory_store = memory_store
+        self.notification_reads = notification_reads
+        self.cache_store = cache_store
+        self.coordination_store = coordination_store
+        self.household_store = household_store
+        self.chat_runtime_config = chat_runtime_config
+
+    @cached_property
+    def emotion_agent(self) -> EmotionAgent:
+        settings = self.settings
+        if settings.emotion.inference_enabled or settings.emotion.speech_enabled:
+            config = EmotionRuntimeConfig.from_settings(settings)
+            if settings.emotion.runtime_mode == "remote":
+                emotion_runtime = RemoteEmotionRuntime(config, event_timeline=self.event_timeline)
+            else:
+                emotion_runtime = InProcessEmotionRuntime(
+                    config,
+                    event_timeline=self.event_timeline,
+                )
+        else:
+            class _DisabledEmotionRuntime:
+                def infer_text(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
+                    del payload
+                    raise RuntimeError("emotion runtime disabled")
+
+                def infer_speech(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
+                    del payload
+                    raise RuntimeError("emotion runtime disabled")
+
+                def health(self) -> EmotionRuntimeHealth:
+                    return EmotionRuntimeHealth(
+                        status="disabled",
+                        model_cache_ready=False,
+                        source_commit=settings.emotion.source_commit,
+                        detail="emotion inference disabled",
+                    )
+            emotion_runtime = cast(EmotionInferencePort, _DisabledEmotionRuntime())
+        return EmotionAgent(
+            runtime=emotion_runtime,
+            inference_enabled=settings.emotion.inference_enabled,
+            speech_enabled=settings.emotion.speech_enabled,
+            request_timeout_seconds=settings.emotion.request_timeout_seconds,
+        )
+
+    @cached_property
+    def recommendation_agent(self) -> RecommendationAgent:
+        return RecommendationAgent()
+
+    @cached_property
+    def chat_inference_engine(self) -> InferenceEngine:
+        return build_chat_inference_engine(
+            self.settings, model_id=self.chat_runtime_config.model_id
+        )
+
+    @cached_property
+    def medication_inference_engine(self) -> InferenceEngine:
+        return InferenceEngine(
+            settings=self.settings,
+            provider=self.settings.llm.provider,
+            capability=LLMCapability.MEDICATION_PARSE,
+        )
+
+    @cached_property
+    def chat_router(self) -> QueryRouter:
+        chat_search_agent = SearchAgent(max_results=3)
+        chat_reasoning_engine = build_chat_inference_engine(
+            self.settings, model_id=self.chat_runtime_config.reasoning_model_id
+        )
+        return QueryRouter(
+            search_agent=chat_search_agent,
+            inference_engine=self.chat_inference_engine,
+            code_agent=self.chat_code_agent,
+            reasoning_engine=chat_reasoning_engine,
+        )
+
+    @cached_property
+    def chat_stream_runtime(self) -> ChatStreamRuntime:
+        return ChatStreamRuntime(self.settings)
+
+    @cached_property
+    def chat_audio_agent(self) -> AudioAgent:
+        transcription_provider = os.environ.get("TRANSCRIPTION_PROVIDER")
+        transcription_api_key = os.environ.get("TRANSCRIPTION_API_KEY") or os.environ.get("QWEN_API_KEY")
+        transcription_base_url = os.environ.get("TRANSCRIPTION_BASE_URL") or os.environ.get("QWEN_BASE_URL")
+        transcription_model_id = os.environ.get("TRANSCRIPTION_MODEL_ID")
+        return AudioAgent(
+            repo_id=os.environ.get("TRANSCRIPTION_MODEL_ID"),
+            groq_api_key=os.environ.get("GROQ_API_KEY"),
+            provider=transcription_provider,
+            api_key=transcription_api_key,
+            base_url=transcription_base_url,
+            model_id=transcription_model_id,
+            model_cache_dir=self.settings.chat.model_cache_dir,
+            remote_inference_url=self.settings.emotion.remote_base_url,
+        )
+
+    @cached_property
+    def chat_code_agent(self) -> CodeAgent:
+        return CodeAgent(api_key=os.environ.get("E2B_API_KEY"))
 
 
 @dataclass(frozen=True)
@@ -186,6 +293,28 @@ def close_app_context(ctx: AppContext) -> None:
         if callable(close):
             close()
 
+    # Close async clients if they were instantiated
+    if "emotion_agent" in ctx.__dict__:
+        agent = ctx.emotion_agent
+        close_func = getattr(agent._runtime, "close", None)
+        if callable(close_func):
+            import asyncio
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(close_func())
+            except RuntimeError:
+                pass
+
+    if "chat_audio_agent" in ctx.__dict__:
+        import asyncio
+        close_func = getattr(ctx.chat_audio_agent, "close", None)
+        if callable(close_func):
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(close_func())
+            except RuntimeError:
+                pass
+
 
 def _build_app_store(settings: Settings) -> AppStoreBackend:
     return build_app_store(settings)
@@ -237,77 +366,8 @@ def build_app_context() -> AppContext:
     cache_store = _build_cache_store(settings)
     coordination_store = _build_coordination_store(settings)
     household_store = _build_household_store(settings)
-    if settings.emotion.inference_enabled or settings.emotion.speech_enabled:
-        config = EmotionRuntimeConfig.from_settings(settings)
-        if settings.emotion.runtime_mode == "remote":
-            emotion_runtime = RemoteEmotionRuntime(config, event_timeline=event_timeline)
-        else:
-            emotion_runtime = InProcessEmotionRuntime(
-                config,
-                event_timeline=event_timeline,
-            )
-    else:
-
-        class _DisabledEmotionRuntime:
-            def infer_text(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
-                del payload
-                raise RuntimeError("emotion runtime disabled")
-
-            def infer_speech(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
-                del payload
-                raise RuntimeError("emotion runtime disabled")
-
-            def health(self) -> EmotionRuntimeHealth:
-                return EmotionRuntimeHealth(
-                    status="disabled",
-                    model_cache_ready=False,
-                    source_commit=settings.emotion.source_commit,
-                    detail="emotion inference disabled",
-                )
-
-        emotion_runtime = _DisabledEmotionRuntime()
-    emotion_agent = EmotionAgent(
-        runtime=emotion_runtime,
-        inference_enabled=settings.emotion.inference_enabled,
-        speech_enabled=settings.emotion.speech_enabled,
-        request_timeout_seconds=settings.emotion.request_timeout_seconds,
-    )
     chat_runtime_config = build_chat_runtime_config(settings)
-    chat_search_agent = SearchAgent(max_results=3)
-    chat_code_agent = CodeAgent(api_key=os.environ.get("E2B_API_KEY"))
-    chat_inference_engine = build_chat_inference_engine(
-        settings, model_id=chat_runtime_config.model_id
-    )
-    chat_reasoning_engine = build_chat_inference_engine(
-        settings, model_id=chat_runtime_config.reasoning_model_id
-    )
-    medication_inference_engine = InferenceEngine(
-        settings=settings,
-        provider=settings.llm.provider,
-        capability=LLMCapability.MEDICATION_PARSE,
-    )
-    chat_router = QueryRouter(
-        search_agent=chat_search_agent,
-        inference_engine=chat_inference_engine,
-        code_agent=chat_code_agent,
-        reasoning_engine=chat_reasoning_engine,
-    )
-    chat_stream_runtime = ChatStreamRuntime(settings)
-    transcription_provider = os.environ.get("TRANSCRIPTION_PROVIDER")
-    transcription_api_key = os.environ.get("TRANSCRIPTION_API_KEY") or os.environ.get("QWEN_API_KEY")
-    transcription_base_url = os.environ.get("TRANSCRIPTION_BASE_URL") or os.environ.get(
-        "QWEN_BASE_URL"
-    )
-    transcription_model_id = os.environ.get("TRANSCRIPTION_MODEL_ID")
-    chat_audio_agent = AudioAgent(
-        repo_id=os.environ.get("TRANSCRIPTION_MODEL_ID"),
-        groq_api_key=os.environ.get("GROQ_API_KEY"),
-        provider=transcription_provider,
-        api_key=transcription_api_key,
-        base_url=transcription_base_url,
-        model_id=transcription_model_id,
-        model_cache_dir=settings.chat.model_cache_dir,
-    )
+
     ctx = AppContext(
         settings=settings,
         app_store=app_store,
@@ -324,15 +384,7 @@ def build_app_context() -> AppContext:
         cache_store=cache_store,
         coordination_store=coordination_store,
         household_store=household_store,
-        emotion_agent=emotion_agent,
-        recommendation_agent=RecommendationAgent(),
-        chat_inference_engine=chat_inference_engine,
-        medication_inference_engine=medication_inference_engine,
-        chat_router=chat_router,
         chat_runtime_config=chat_runtime_config,
-        chat_stream_runtime=chat_stream_runtime,
-        chat_audio_agent=chat_audio_agent,
-        chat_code_agent=chat_code_agent,
     )
     return ctx
 

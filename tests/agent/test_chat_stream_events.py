@@ -71,7 +71,7 @@ def test_stream_events_emits_token_and_done(tmp_path, monkeypatch):
         # This lambda might need adjustment if load_companion_inputs doesn't return a mock
         # or if it's expected to return a CompanionStateInputs instance.
         # For now, we assume it returns a mock compatible with the test's needs.
-        def mock_load_companion_inputs(*args, **kwargs):
+        async def mock_load_companion_inputs(*args, **kwargs):
             inputs = MockCompanionStateInputs() # Use our concrete mock
             # Set user_profile to a mock object that has 'id', 'conditions', and 'medications' attributes
             mock_user_profile = MagicMock(spec=UserProfile)
@@ -84,18 +84,20 @@ def test_stream_events_emits_token_and_done(tmp_path, monkeypatch):
         monkeypatch.setattr("apps.api.carepilot_api.services.companion_orchestration.load_companion_inputs", mock_load_companion_inputs)
 
 
-        # Mock run_multi_agent_workflow to return a mock result
+        # Mock stream_multi_agent_workflow to return a mock result
         async def mock_workflow(*args, **kwargs):
             # Ensure mock_workflow also provides necessary structure if called by stream_events
-            return {
-                "last_agent_response": AgentResponse(
-                    agent_name="conversation_agent",
-                    summary="Hello world",
-                    structured_output={}
-                )
+            yield {
+                "some_node": {
+                    "last_agent_response": AgentResponse(
+                        agent_name="conversation_agent",
+                        summary="Hello world",
+                        structured_output={}
+                    )
+                }
             }
 
-        monkeypatch.setattr(orchestrator, "run_multi_agent_workflow", mock_workflow)
+        monkeypatch.setattr(orchestrator, "stream_multi_agent_workflow", mock_workflow)
 
         events: list[ChatStreamEvent] = []
         # Use the concrete mock for CompanionStateInputs
@@ -154,14 +156,16 @@ def test_stream_events_handles_track_shortcut(tmp_path, monkeypatch):
 
         async def mock_workflow(*args, **kwargs):
             from care_pilot.agent.core.contracts import AgentResponse
-            return {
-                "last_agent_response": AgentResponse(
-                    agent_name="conversation_agent",
-                    summary="Tracked.",
-                    structured_output={}
-                )
+            yield {
+                "some_node": {
+                    "last_agent_response": AgentResponse(
+                        agent_name="conversation_agent",
+                        summary="Tracked.",
+                        structured_output={}
+                    )
+                }
             }
-        monkeypatch.setattr(orchestrator, "run_multi_agent_workflow", mock_workflow)
+        monkeypatch.setattr(orchestrator, "stream_multi_agent_workflow", mock_workflow)
 
         # Use the concrete mock for CompanionStateInputs
         mock_inputs = MockCompanionStateInputs()

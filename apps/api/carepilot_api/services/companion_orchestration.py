@@ -7,6 +7,7 @@ required to drive companion orchestration responses.
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, date, datetime, timedelta
 from typing import Literal, cast
 from zoneinfo import ZoneInfo
@@ -47,8 +48,16 @@ from care_pilot.features.companion.core.health.blood_pressure import (
     summarize_blood_pressure,
 )
 from care_pilot.features.companion.core.health.models import (
+    BiomarkerReading,
+    BloodPressureReading,
     ClinicalProfileSnapshot,
+    HealthProfileRecord,
+    MedicationAdherenceEvent,
+    SymptomCheckIn,
 )
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.profiles.domain.models import UserProfile
+from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.reports.domain import build_clinical_snapshot
 from care_pilot.platform.auth.session_context import (
     build_user_profile_from_session,
@@ -91,11 +100,12 @@ def _subject_user_id(session: dict[str, object]) -> str:
     return str(session["user_id"])
 
 
-def _clinical_snapshot(context: AppContext, *, user_id: str) -> ClinicalProfileSnapshot | None:
+def _clinical_snapshot(
+    context: AppContext, *, user_id: str, readings: list[BiomarkerReading]
+) -> ClinicalProfileSnapshot | None:
     cached = context.clinical_memory.get(user_id)
     if cached is not None:
         return cached
-    readings = context.stores.biomarkers.list_biomarker_readings(user_id)
     if not readings:
         return None
     snapshot = build_clinical_snapshot(readings)
@@ -103,11 +113,11 @@ def _clinical_snapshot(context: AppContext, *, user_id: str) -> ClinicalProfileS
     return snapshot
 
 
-def _emotion_signal(context: AppContext, *, emotion_text: str | None) -> str | None:
+async def _emotion_signal(context: AppContext, *, emotion_text: str | None) -> str | None:
     if not emotion_text:
         return None
     try:
-        result = context.emotion_agent.infer_text(text=emotion_text)
+        result = await context.emotion_agent.infer_text(text=emotion_text)
     except Exception:
         lowered = emotion_text.lower()
         if any(term in lowered for term in ("stress", "stressed", "worried", "anxious")):
@@ -118,7 +128,7 @@ def _emotion_signal(context: AppContext, *, emotion_text: str | None) -> str | N
     return str(result.final_emotion)
 
 
-def load_companion_inputs(
+async def load_companion_inputs(
     *,
     context: AppContext,
     session: dict[str, object],
@@ -128,18 +138,52 @@ def load_companion_inputs(
     subject_user_id = _subject_user_id(session)
     subject_session = dict(session)
     subject_session["user_id"] = subject_user_id
-    user_profile = build_user_profile_from_session(subject_session, context.stores.profiles)
-    health_profile = context.stores.profiles.get_health_profile(subject_user_id)
-    meals = context.stores.meals.list_meal_records(subject_user_id)
-    reminders = context.stores.reminders.list_reminder_events(subject_user_id)
-    adherence_events = context.stores.medications.list_medication_adherence_events(
-        user_id=subject_user_id
+
+    # 1. Start all I/O bound queries in parallel
+    results = await asyncio.gather(
+        asyncio.to_thread(build_user_profile_from_session, subject_session, context.stores.profiles),
+        asyncio.to_thread(context.stores.profiles.get_health_profile, subject_user_id),
+        asyncio.to_thread(context.stores.meals.list_meal_records, subject_user_id),
+        asyncio.to_thread(context.stores.reminders.list_reminder_events, subject_user_id),
+        asyncio.to_thread(
+            context.stores.medications.list_medication_adherence_events, user_id=subject_user_id
+        ),
+        asyncio.to_thread(
+            context.stores.symptoms.list_symptom_checkins, user_id=subject_user_id, limit=200
+        ),
+        asyncio.to_thread(context.stores.biomarkers.list_biomarker_readings, subject_user_id),
+        asyncio.to_thread(_HEALTH_METRICS.list_blood_pressure_readings, user_id=subject_user_id),
+        _emotion_signal(context, emotion_text=emotion_text),
     )
-    symptoms = context.stores.symptoms.list_symptom_checkins(user_id=subject_user_id, limit=200)
-    readings = context.stores.biomarkers.list_biomarker_readings(subject_user_id)
-    bp_readings = _HEALTH_METRICS.list_blood_pressure_readings(user_id=subject_user_id)
-    clinical_snapshot = _clinical_snapshot(context, user_id=subject_user_id)
-    emotion_signal = _emotion_signal(context, emotion_text=emotion_text)
+
+    (
+        user_profile,
+        health_profile,
+        meals,
+        reminders,
+        adherence_events,
+        symptoms,
+        readings,
+        bp_readings,
+        emotion_signal,
+    ) = cast(
+        tuple[
+            UserProfile,
+            HealthProfileRecord | None,
+            list[MealRecognitionRecord],
+            list[ReminderEvent],
+            list[MedicationAdherenceEvent],
+            list[SymptomCheckIn],
+            list[BiomarkerReading],
+            list[BloodPressureReading],
+            str | None,
+        ],
+        results,
+    )
+
+    # 2. Derive clinical snapshot (synchronous/fast once readings are here)
+    clinical_snapshot = _clinical_snapshot(context, user_id=subject_user_id, readings=readings)
+
     return CompanionStateInputs(
         user_profile=user_profile,
         health_profile=health_profile,
@@ -171,7 +215,7 @@ def build_workflow_response(
     )
 
 
-def get_companion_today(
+async def get_companion_today(
     *, context: AppContext, session: dict[str, object]
 ) -> CompanionTodayResponse:
     """Build the current companion summary for the active session."""
@@ -179,7 +223,7 @@ def get_companion_today(
     cached = context.cache_store.get_json(_companion_today_cache_key(subject_user_id))
     if cached is not None:
         return CompanionTodayResponse.model_validate(cached)
-    inputs = load_companion_inputs(context=context, session=session)
+    inputs = await load_companion_inputs(context=context, session=session)
     snapshot, engagement, _, _, impact, result = build_companion_today_bundle(
         inputs=inputs,
         evidence_retriever=_EVIDENCE_RETRIEVER,
@@ -200,7 +244,7 @@ def get_companion_today(
     return response
 
 
-def get_blood_pressure_summary(
+async def get_blood_pressure_summary(
     *, context: AppContext, session: dict[str, object]
 ) -> BloodPressureSummaryEnvelopeResponse:
     subject_user_id = _subject_user_id(session)
@@ -222,7 +266,7 @@ def get_blood_pressure_summary(
     )
 
 
-def get_blood_pressure_chart(
+async def get_blood_pressure_chart(
     *,
     context: AppContext,
     session: dict[str, object],
@@ -250,7 +294,7 @@ def get_blood_pressure_chart(
     )
 
 
-def handle_companion_interaction(
+async def handle_companion_interaction(
     *,
     context: AppContext,
     session: dict[str, object],
@@ -259,7 +303,7 @@ def handle_companion_interaction(
     correlation_id: str,
 ) -> CompanionInteractionResponse:
     """Run a single companion interaction and return the assembled care outputs."""
-    inputs = load_companion_inputs(
+    inputs = await load_companion_inputs(
         context=context,
         session=session,
         emotion_text=payload.emotion_text,
@@ -321,11 +365,11 @@ def handle_companion_interaction(
     )
 
 
-def get_clinician_digest(
+async def get_clinician_digest(
     *, context: AppContext, session: dict[str, object]
 ) -> ClinicianDigestEnvelopeResponse:
     """Build the clinician-digest projection for the active session."""
-    inputs = load_companion_inputs(context=context, session=session)
+    inputs = await load_companion_inputs(context=context, session=session)
     _, _, _, digest, _, _ = build_companion_today_bundle(
         inputs=inputs, evidence_retriever=_EVIDENCE_RETRIEVER
     )
@@ -334,9 +378,9 @@ def get_clinician_digest(
     )
 
 
-def get_impact_summary(*, context: AppContext, session: dict[str, object]) -> ImpactSummaryResponse:
+async def get_impact_summary(*, context: AppContext, session: dict[str, object]) -> ImpactSummaryResponse:
     """Build the impact-summary projection for the active session."""
-    inputs = load_companion_inputs(context=context, session=session)
+    inputs = await load_companion_inputs(context=context, session=session)
     _, _, _, _, impact, _ = build_companion_today_bundle(
         inputs=inputs, evidence_retriever=_EVIDENCE_RETRIEVER
     )

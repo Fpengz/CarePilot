@@ -137,9 +137,10 @@ class ChannelSettings(BaseSettings):
 class StorageSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore", case_sensitive=False, populate_by_name=True)
 
-    app_data_backend: Literal["sqlite"] = "sqlite"
+    app_data_backend: Literal["sqlite", "postgresql"] = "sqlite"
     api_sqlite_db_path: str = "care_pilot_api.db"
-    household_store_backend: Literal["sqlite"] = "sqlite"
+    api_postgres_url: str | None = Field(default=None, validation_alias="DATABASE_URL")
+    household_store_backend: Literal["sqlite", "postgresql"] = "sqlite"
     ephemeral_state_backend: Literal["in_memory", "redis"] = "in_memory"
     redis_url: str | None = None
     redis_namespace: str = "care_pilot"

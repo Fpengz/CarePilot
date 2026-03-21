@@ -13,6 +13,9 @@ from pydantic_ai import Agent
 
 from care_pilot.agent.runtime import LLMFactory
 from care_pilot.config.llm import LLMCapability
+from care_pilot.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 
 class RoutingDecision(BaseModel):
@@ -55,8 +58,9 @@ def get_supervisor_agent() -> Agent[None, RoutingDecision]:
     )
 
 
-async def run_supervisor_agent(prompt: str) -> RoutingDecision:
+async def run_supervisor_agent(prompt: str, correlation_id: str | None = None) -> RoutingDecision:
     """Execute the supervisor agent node logic."""
+    logger.info("run_supervisor_agent_start correlation_id=%s", correlation_id)
     agent = get_supervisor_agent()
     result = await agent.run(prompt)
     return result.output

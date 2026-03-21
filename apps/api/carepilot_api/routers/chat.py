@@ -76,7 +76,7 @@ async def chat_stream(
         raise HTTPException(status_code=400, detail="message is required")
 
     from ..services.companion_orchestration import load_companion_inputs
-    inputs = load_companion_inputs(context=ctx, session=session)
+    inputs = await load_companion_inputs(context=ctx, session=session)
 
     async def _stream():
         async for event in deps.chat_agent.stream_events(
@@ -111,7 +111,7 @@ async def chat_audio(
     filename = audio.filename or "audio.webm"
 
     from ..services.companion_orchestration import load_companion_inputs
-    inputs = load_companion_inputs(context=ctx, session=session)
+    inputs = await load_companion_inputs(context=ctx, session=session)
 
     async def _stream():
         async for event in deps.chat_agent.stream_audio_events(
@@ -144,7 +144,7 @@ async def confirm_meal_log(
     deps = chat_deps(ctx, session)
 
     from ..services.companion_orchestration import load_companion_inputs
-    inputs = load_companion_inputs(context=ctx, session=session)
+    inputs = await load_companion_inputs(context=ctx, session=session)
 
     result = await deps.chat_agent.confirm_meal_log(
         proposal_id=payload.proposal_id,

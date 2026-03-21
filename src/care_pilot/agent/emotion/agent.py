@@ -7,9 +7,7 @@ wrapping the inference runtime port.
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import TimeoutError as FutureTimeoutError
+import asyncio
 from typing import TypeVar
 
 from care_pilot.agent.emotion.schemas import (
@@ -19,6 +17,10 @@ from care_pilot.agent.emotion.schemas import (
     EmotionTextAgentInput,
 )
 from care_pilot.features.companion.emotion.ports import EmotionInferencePort
+from care_pilot.platform.runtime.concurrency_guards import (
+    get_emotion_speech_semaphore,
+    get_emotion_text_semaphore,
+)
 
 T = TypeVar("T")
 
@@ -35,37 +37,45 @@ class EmotionSpeechDisabledError(RuntimeError):
     """Raised when speech emotion inference is disabled via feature flag."""
 
 
-def _run_with_timeout[T](action: Callable[[], T], timeout_seconds: float) -> T:
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(action)
-        try:
-            return future.result(timeout=timeout_seconds)
-        except FutureTimeoutError as exc:
-            raise EmotionInferenceTimeoutError("emotion inference timed out") from exc
-
-
-def infer_text_emotion(
+async def infer_text_emotion(
     *,
     port: EmotionInferencePort,
     payload: EmotionTextAgentInput,
     timeout_seconds: float,
 ) -> EmotionInferenceResult:
-    return _run_with_timeout(lambda: port.infer_text(payload), timeout_seconds)
+    try:
+        # Apply backpressure/concurrency guard
+        async with get_emotion_text_semaphore():
+            return await asyncio.wait_for(
+                port.infer_text(payload),
+                timeout=timeout_seconds,
+            )
+    except TimeoutError as exc:
+        raise EmotionInferenceTimeoutError("emotion inference timed out") from exc
 
 
-def infer_speech_emotion(
+async def infer_speech_emotion(
     *,
     port: EmotionInferencePort,
     payload: EmotionSpeechAgentInput,
     timeout_seconds: float,
 ) -> EmotionInferenceResult:
-    return _run_with_timeout(lambda: port.infer_speech(payload), timeout_seconds)
+    try:
+        # Apply backpressure/concurrency guard
+        async with get_emotion_speech_semaphore():
+            return await asyncio.wait_for(
+                port.infer_speech(payload),
+                timeout=timeout_seconds,
+            )
+    except TimeoutError as exc:
+        raise EmotionInferenceTimeoutError("emotion inference timed out") from exc
 
 
 class EmotionAgent:
     """Canonical agent facade for text and speech emotion inference."""
 
     name = "emotion_agent"
+    timeout_error_type = EmotionInferenceTimeoutError
 
     def __init__(
         self,
@@ -80,7 +90,7 @@ class EmotionAgent:
         self._speech_enabled = speech_enabled
         self._request_timeout_seconds = request_timeout_seconds
 
-    def infer_text(
+    async def infer_text(
         self,
         *,
         text: str,
@@ -89,13 +99,13 @@ class EmotionAgent:
     ):
         if not self._inference_enabled:
             raise EmotionAgentDisabledError("emotion inference is disabled")
-        return infer_text_emotion(
+        return await infer_text_emotion(
             port=self._runtime,
             payload=EmotionTextAgentInput(text=text, language=language, user_id=user_id),
             timeout_seconds=self._request_timeout_seconds,
         )
 
-    def infer_speech(
+    async def infer_speech(
         self,
         *,
         audio_bytes: bytes,
@@ -109,7 +119,7 @@ class EmotionAgent:
             raise EmotionAgentDisabledError("emotion inference is disabled")
         if not self._speech_enabled:
             raise EmotionSpeechDisabledError("speech emotion inference is disabled")
-        return infer_speech_emotion(
+        return await infer_speech_emotion(
             port=self._runtime,
             payload=EmotionSpeechAgentInput(
                 audio_bytes=audio_bytes,
@@ -122,6 +132,7 @@ class EmotionAgent:
             timeout_seconds=self._request_timeout_seconds,
         )
 
+
     @property
     def inference_enabled(self) -> bool:
         return self._inference_enabled
@@ -130,8 +141,8 @@ class EmotionAgent:
     def speech_enabled(self) -> bool:
         return self._speech_enabled
 
-    def health(self) -> EmotionRuntimeHealth:
-        health = self._runtime.health()
+    async def health(self) -> EmotionRuntimeHealth:
+        health = await self._runtime.health()
         if not self._inference_enabled:
             return EmotionRuntimeHealth(
                 status="disabled",
@@ -147,7 +158,3 @@ class EmotionAgent:
             source_commit=health.source_commit,
             detail="speech emotion inference disabled",
         )
-
-    @property
-    def timeout_error_type(self) -> type[EmotionInferenceTimeoutError]:
-        return EmotionInferenceTimeoutError

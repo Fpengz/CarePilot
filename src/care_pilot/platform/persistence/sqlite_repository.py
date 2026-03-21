@@ -959,5 +959,5 @@ class SQLiteRepository:
     def list_workflow_timeline_events(self, *args: Any, **kwargs: Any) -> Any:
         return self.workflows.list_workflow_timeline_events(*args, **kwargs)
 
-    def prune_workflow_events(self, *args: Any, **kwargs: Any) -> Any:
+    def prune_events(self, *args: Any, **kwargs: Any) -> Any:
         return self.workflows.prune_events(*args, **kwargs)

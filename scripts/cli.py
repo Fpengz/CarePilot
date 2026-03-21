@@ -16,6 +16,7 @@ import typer
 from scripts.cli.commands.dev import dev_app
 from scripts.cli.commands.infra import infra_app
 from scripts.cli.commands.ingest import ingest_app
+from scripts.cli.commands.maintenance import maintenance_app
 from scripts.cli.commands.readiness import readiness_app
 from scripts.cli.commands.reminder import reminder_app
 from scripts.cli.commands.report import report_app
@@ -27,6 +28,7 @@ app = typer.Typer(help="CarePilot unified developer CLI.")
 
 app.add_typer(dev_app, name="dev")
 app.add_typer(infra_app, name="infra")
+app.add_typer(maintenance_app, name="maintenance")
 app.add_typer(test_app, name="test")
 app.add_typer(report_app, name="report")
 app.add_typer(web_app := typer.Typer(help="Web helper commands."), name="web")
@@ -47,6 +49,7 @@ def help_command() -> None:
                 "Usage:",
                 "  uv run python scripts/cli.py dev [--no-api] [--no-web] [--no-scheduler]",
                 "  uv run python scripts/cli.py infra [up|down|restart|status|logs]",
+                "  uv run python scripts/cli.py maintenance prune-events [--days 90]",
                 "  uv run python scripts/cli.py readiness [base_url] [--strict-warnings]",
                 "  uv run python scripts/cli.py test [backend|web|comprehensive] [--skip-e2e] [--skip-smoke] [--no-infra-bootstrap]",
                 "  uv run python scripts/cli.py ingest local",

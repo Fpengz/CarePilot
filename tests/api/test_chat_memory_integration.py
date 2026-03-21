@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from apps.api.carepilot_api.main import create_app
@@ -80,20 +80,22 @@ def test_chat_uses_memory_and_records_turn(
 
     captured: dict[str, object] = {}
 
-    async def _mock_workflow(self, user_message: str, snapshot: object):
-        del self
+    async def _mock_workflow(self, user_message: str, snapshot: object, config: dict[str, Any] | None = None):
+        del self, config
         captured["user_message"] = user_message
         captured["snapshot"] = snapshot
 
-        return {
-            "last_agent_response": AgentResponse(
-                agent_name="conversation_agent",
-                summary="ok",
-                structured_output={}
-            )
+        yield {
+            "some_node": {
+                "last_agent_response": AgentResponse(
+                    agent_name="conversation_agent",
+                    summary="ok",
+                    structured_output={}
+                )
+            }
         }
 
-    monkeypatch.setattr(ChatOrchestrator, "run_multi_agent_workflow", _mock_workflow)
+    monkeypatch.setattr(ChatOrchestrator, "stream_multi_agent_workflow", _mock_workflow)
 
     response = client.post("/api/v1/chat", json={"message": "I like salads"})
     assert response.status_code == 200

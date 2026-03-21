@@ -6,15 +6,16 @@ or a local MERaLiON model for Singapore-English speech.
 
 Example:
     agent = AudioAgent()
-    text = agent.transcribe_groq(audio_input)
+    text = await agent.transcribe_bytes(raw_bytes)
 """
 
+import asyncio
 import base64
 import io
-import logging
 import mimetypes
 from typing import Any, cast
 
+import httpx
 import librosa
 import numpy as np
 import soundfile as sf
@@ -22,6 +23,7 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
 
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.runtime.executors import get_io_executor, get_ml_executor
 from care_pilot.platform.runtime.hf_loader import get_hf_loader
 
 _PROMPT_TEMPLATE = (
@@ -45,6 +47,7 @@ class AudioAgent:
         base_url: str | None = None,
         model_id: str | None = None,
         model_cache_dir: str | None = None,
+        remote_inference_url: str | None = None,
     ) -> None:
         self.repo_id = repo_id or "MERaLiON/MERaLiON-2-3B"
         self._groq_api_key = groq_api_key
@@ -53,17 +56,22 @@ class AudioAgent:
         self._base_url = base_url
         self._model_id = model_id
         self.model_cache_dir = model_cache_dir
+        self._remote_inference_url = remote_inference_url
         self.device = "mps" if torch.backends.mps.is_available() else "cpu"
         self.torch_dtype = torch.float16 if torch.backends.mps.is_available() else torch.float32
         self.processor = None
         self.model = None
+        self._async_client = httpx.AsyncClient(timeout=60.0)
 
     # ------------------------------------------------------------------
-    # MERaLiON (local)
+    # MERaLiON (local or remote)
     # ------------------------------------------------------------------
 
     def load_model(self) -> None:
         """Download & load the MERaLiON model onto the local device."""
+        if self._provider == "remote":
+            return # No local load needed
+
         logger.info(
             "audio_agent_load_start repo_id=%s device=%s",
             self.repo_id,
@@ -86,21 +94,45 @@ class AudioAgent:
         ).to(self.device)
         logger.info("audio_agent_load_complete repo_id=%s", self.repo_id)
 
-    def transcribe(self, audio_input: tuple) -> str:
-        """Transcribe audio using the local MERaLiON model.
+    async def transcribe(self, audio_input: tuple) -> str:
+        """Transcribe audio using MERaLiON (local or remote)."""
+        if self._provider == "remote":
+            return await self._transcribe_remote(audio_input)
 
-        Args:
-            audio_input: (sample_rate, np.ndarray) from gr.Audio.
-
-        Returns:
-            Transcribed text string.
-        """
         if self.model is None or self.processor is None:
             return "[MERaLiON] Model not loaded — call load_model() first."
 
         if audio_input is None:
             return "Error: No audio provided."
 
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(get_ml_executor(), self._transcribe_sync, audio_input)
+
+    async def _transcribe_remote(self, audio_input: tuple) -> str:
+        if not self._remote_inference_url:
+            raise ValueError("remote_inference_url must be provided for provider=remote")
+
+        sample_rate, audio_array = audio_input
+        # Convert to WAV bytes for transmission
+        buffer = io.BytesIO()
+        sf.write(buffer, audio_array, sample_rate, format="WAV")
+        buffer.seek(0)
+
+        files = {"audio": ("audio.wav", buffer, "audio/wav")}
+        data = {"context_features": "{}"} # Required by current remote implementation
+
+        response = await self._async_client.post(
+            f"{self._remote_inference_url}/infer/speech",
+            files=files,
+            data=data
+        )
+        response.raise_for_status()
+        result = response.json()
+        # MERaLiON implementation returns transcription in a specific field if it's an emotion pipeline
+        # but here we just need the text.
+        return result.get("transcription") or result.get("text") or ""
+
+    def _transcribe_sync(self, audio_input: tuple) -> str:
         sample_rate, audio_array = audio_input
         if sample_rate != 16000:
             audio_array = librosa.resample(
@@ -108,6 +140,10 @@ class AudioAgent:
                 orig_sr=sample_rate,
                 target_sr=16000,
             )
+
+        # Local providers must have models loaded
+        assert self.processor is not None
+        assert self.model is not None
 
         conversation = [
             [
@@ -132,23 +168,38 @@ class AudioAgent:
         return self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
     # ------------------------------------------------------------------
-    # Groq Whisper (cloud)
+    # Cloud ASR (Groq / OpenAI)
     # ------------------------------------------------------------------
 
-    def transcribe_bytes(self, raw_bytes: bytes, filename: str = "audio.webm") -> str:
-        """Transcribe raw audio bytes (webm/mp3/wav/ogg) via OpenAI-compatible ASR."""
+    async def transcribe_bytes(self, raw_bytes: bytes, filename: str = "audio.webm") -> str:
+        """Transcribe raw audio bytes (webm/mp3/wav/ogg) via cloud ASR."""
         provider = self._provider
+        loop = asyncio.get_running_loop()
+
         if provider in {"groq"}:
-            return self._transcribe_groq(raw_bytes, filename=filename)
+            return await loop.run_in_executor(get_io_executor(), self._transcribe_groq, raw_bytes, filename)
         if provider in {"qwen", "openai", "openai-compatible", "compatible"}:
-            return self._transcribe_openai_compatible(raw_bytes, filename=filename)
+            return await loop.run_in_executor(get_io_executor(), self._transcribe_openai_compatible, raw_bytes, filename)
+        if provider == "remote":
+            # Delegate raw bytes to remote service
+            files = {"audio": (filename, raw_bytes)}
+            data = {"context_features": "{}"}
+            response = await self._async_client.post(
+                f"{self._remote_inference_url}/infer/speech",
+                files=files,
+                data=data
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result.get("transcription") or result.get("text") or ""
+
         if self._api_key:
-            return self._transcribe_openai_compatible(raw_bytes, filename=filename)
+            return await loop.run_in_executor(get_io_executor(), self._transcribe_openai_compatible, raw_bytes, filename)
         if self._groq_api_key:
-            return self._transcribe_groq(raw_bytes, filename=filename)
+            return await loop.run_in_executor(get_io_executor(), self._transcribe_groq, raw_bytes, filename)
         raise ValueError("No transcription provider configured (set TRANSCRIPTION_API_KEY)")
 
-    def _transcribe_openai_compatible(self, raw_bytes: bytes, *, filename: str) -> str:
+    def _transcribe_openai_compatible(self, raw_bytes: bytes, filename: str) -> str:
         from openai import OpenAI
 
         api_key = self._api_key
@@ -162,21 +213,6 @@ class AudioAgent:
         )
 
         client = OpenAI(api_key=api_key, base_url=self._base_url)
-        openai_logger = logging.getLogger("openai")
-        openai_base_logger = logging.getLogger("openai._base_client")
-        httpx_logger = logging.getLogger("httpx")
-        httpcore_logger = logging.getLogger("httpcore")
-        prev_levels = {
-            "openai": openai_logger.level,
-            "openai._base_client": openai_base_logger.level,
-            "httpx": httpx_logger.level,
-            "httpcore": httpcore_logger.level,
-        }
-        # Avoid logging full audio payloads in debug traces.
-        openai_logger.setLevel(logging.INFO)
-        openai_base_logger.setLevel(logging.INFO)
-        httpx_logger.setLevel(logging.INFO)
-        httpcore_logger.setLevel(logging.INFO)
         logger.info(
             "audio_agent_openai_compatible_request model=%s bytes=%s filename=%s base_url=%s",
             model_id,
@@ -184,39 +220,21 @@ class AudioAgent:
             filename,
             self._base_url,
         )
-        try:
-            from typing import Any
-
-            messages: list[Any] = [
-                {
-                    "role": "system",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Singlish, Singapore English.",
-                        }
-                    ],
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "input_audio",
-                            "input_audio": {"data": data_url},
-                        }
-                    ],
-                },
-            ]
-            completion = client.chat.completions.create(
-                model=model_id,
-                messages=messages,
-                extra_body={"asr_options": {"language": "en"}},
-            )
-        finally:
-            openai_logger.setLevel(prev_levels["openai"])
-            openai_base_logger.setLevel(prev_levels["openai._base_client"])
-            httpx_logger.setLevel(prev_levels["httpx"])
-            httpcore_logger.setLevel(prev_levels["httpcore"])
+        messages: list[Any] = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": "Singlish, Singapore English."}],
+            },
+            {
+                "role": "user",
+                "content": [{"type": "input_audio", "input_audio": {"data": data_url}}],
+            },
+        ]
+        completion = client.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            extra_body={"asr_options": {"language": "en"}},
+        )
 
         message = completion.choices[0].message if completion.choices else None
         content = ""
@@ -239,7 +257,7 @@ class AudioAgent:
         logger.info("audio_agent_openai_compatible_response length=%s", len(content or ""))
         return (content or "").strip()
 
-    def _transcribe_groq(self, raw_bytes: bytes, *, filename: str) -> str:
+    def _transcribe_groq(self, raw_bytes: bytes, filename: str) -> str:
         from groq import Groq
 
         api_key = self._groq_api_key
@@ -263,44 +281,5 @@ class AudioAgent:
         logger.info("audio_agent_groq_response length=%s", len(result.text or ""))
         return result.text.strip()
 
-    def transcribe_groq(self, audio_input: tuple) -> str:
-        """Transcribe audio using the Groq Whisper API (cloud, very fast).
-
-        Audio is converted to a WAV buffer in memory and sent to Groq.
-        Returns the plain transcribed text string — NOT an LLM response.
-
-        Args:
-            audio_input: (sample_rate, np.ndarray) from gr.Audio.
-
-        Returns:
-            Transcribed text string.
-        """
-        from groq import Groq
-
-        api_key = self._groq_api_key
-        if not api_key:
-            return "Error: GROQ_API_KEY not provided for audio transcription"
-
-        if audio_input is None:
-            return "Error: No audio provided."
-
-        sample_rate, audio_array = audio_input
-        audio_array = audio_array.astype(np.float32)
-        if sample_rate != 16000:
-            audio_array = librosa.resample(y=audio_array, orig_sr=sample_rate, target_sr=16000)
-
-        buffer = io.BytesIO()
-        sf.write(buffer, audio_array, 16000, format="WAV")
-        buffer.seek(0)
-        buffer.name = "audio.wav"  # required by Groq SDK
-
-        logger.info("audio_agent_groq_request buffered=True")
-        client = Groq(api_key=api_key)
-        result = client.audio.transcriptions.create(
-            model="whisper-large-v3",
-            file=buffer,
-            prompt="Singlish, Singapore English",
-            language="en",
-        )
-        logger.info("audio_agent_groq_response length=%s", len(result.text or ""))
-        return result.text
+    async def close(self) -> None:
+        await self._async_client.aclose()

@@ -18,6 +18,7 @@ class AgentRequest(BaseModel):
     user_id: str
     session_id: str
     goal: str
+    correlation_id: str | None = None
     context: dict[str, Any] = Field(
         default_factory=dict, description="Case snapshot or relevant feature context."
     )

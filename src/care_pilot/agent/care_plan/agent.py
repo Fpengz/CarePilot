@@ -19,6 +19,9 @@ from care_pilot.agent.core.contracts import (
 )
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
+from care_pilot.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 
 class CarePlanAction(BaseModel):
@@ -66,6 +69,7 @@ def get_care_plan_agent() -> Agent[None, CarePlanOutput]:
 
 async def run_care_plan_agent(request: AgentRequest) -> AgentResponse:
     """Execute the care plan specialist agent."""
+    logger.info("run_care_plan_agent_start correlation_id=%s", request.correlation_id)
     agent = get_care_plan_agent()
 
     context_json = request.context.get("snapshot") or "{}"

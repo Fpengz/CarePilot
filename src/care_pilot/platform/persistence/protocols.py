@@ -173,6 +173,7 @@ class WorkflowRepositoryProtocol(Protocol):
         correlation_id: str | None = None,
         user_id: str | None = None,
     ) -> list[Any]: ...
+    def prune_events(self, *, days: int = 90) -> int: ...
 
 
 class CatalogRepositoryProtocol(Protocol):

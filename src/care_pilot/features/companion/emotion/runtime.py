@@ -7,6 +7,7 @@ emotion pipeline and model adapters.
 
 from __future__ import annotations
 
+import asyncio
 import os
 from typing import cast
 
@@ -18,32 +19,20 @@ from care_pilot.agent.emotion.schemas import (
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,
 )
-from care_pilot.features.companion.emotion.adapters.asr_whisper import (
-    WhisperASR,
-)
+from care_pilot.features.companion.emotion.adapters.asr_whisper import WhisperASR
 from care_pilot.features.companion.emotion.adapters.fusion_hf import HFFusion
-from care_pilot.features.companion.emotion.adapters.speech_hf import (
-    HFSpeechEmotion,
-)
-from care_pilot.features.companion.emotion.adapters.text_hf import (
-    HFTextEmotion,
-)
-from care_pilot.features.companion.emotion.audio_preprocessor import (
-    preprocess_audio,
-)
+from care_pilot.features.companion.emotion.adapters.speech_hf import HFSpeechEmotion
+from care_pilot.features.companion.emotion.adapters.text_hf import HFTextEmotion
+from care_pilot.features.companion.emotion.audio_preprocessor import preprocess_audio
 from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
 from care_pilot.features.companion.emotion.context.context_feature_extractor import (
     TimelineContextFeatureExtractor,
     TimelineServiceProtocol,
 )
-from care_pilot.features.companion.emotion.fusion.heuristic_fusion import (
-    HeuristicFusion,
-)
+from care_pilot.features.companion.emotion.fusion.heuristic_fusion import HeuristicFusion
 from care_pilot.features.companion.emotion.pipeline import EmotionPipeline
-from care_pilot.features.companion.emotion.ports import (
-    EmotionInferencePort,
-    FusionPort,
-)
+from care_pilot.features.companion.emotion.ports import EmotionInferencePort, FusionPort
+from care_pilot.platform.runtime.executors import get_ml_executor
 
 
 class InProcessEmotionRuntime(EmotionInferencePort):
@@ -70,24 +59,34 @@ class InProcessEmotionRuntime(EmotionInferencePort):
             fusion=self._build_fusion(config, device=device),
         )
 
-    def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
-        return self._pipeline.infer_text(
-            text=payload.text,
-            language=payload.language,
-            user_id=payload.user_id,
+    @property
+    def runtime_mode(self) -> str:
+        return "local"
+
+    async def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            get_ml_executor(),
+            self._pipeline.infer_text,
+            payload.text,
+            payload.language,
+            payload.user_id,
         )
 
-    def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
+    async def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
         audio_bytes = preprocess_audio(payload.audio_bytes, content_type=payload.content_type)
-        return self._pipeline.infer_speech(
-            audio_bytes=audio_bytes,
-            filename=payload.filename,
-            language=payload.language,
-            transcription=payload.transcription,
-            user_id=payload.user_id,
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            get_ml_executor(),
+            self._pipeline.infer_speech,
+            audio_bytes,
+            payload.filename,
+            payload.language,
+            payload.transcription,
+            payload.user_id,
         )
 
-    def health(self) -> EmotionRuntimeHealth:
+    async def health(self) -> EmotionRuntimeHealth:
         return EmotionRuntimeHealth(
             status="ready",
             model_cache_ready=True,

@@ -18,6 +18,9 @@ from care_pilot.agent.core.contracts import (
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
 from care_pilot.features.medications.intake.models import MedicationParseOutput
+from care_pilot.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 SYSTEM_PROMPT = (
     "You are the 'Prescription Parser' Specialist node. "
@@ -43,6 +46,7 @@ def get_medication_agent() -> Agent[None, MedicationParseOutput]:
 
 async def run_medication_agent(request: AgentRequest) -> AgentResponse:
     """Execute the medication specialist agent."""
+    logger.info("run_medication_agent_start correlation_id=%s", request.correlation_id)
     agent = get_medication_agent()
 
     text_input = request.inputs.get("text_context") or request.goal

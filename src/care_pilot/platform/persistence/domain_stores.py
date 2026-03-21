@@ -406,6 +406,9 @@ class WorkflowStore:
             user_id=user_id,
         )
 
+    def prune_events(self, *, days: int = 90) -> int:
+        return self._store.prune_events(days=days)
+
 
 @dataclass(slots=True)
 class RecommendationStore:

@@ -20,6 +20,9 @@ from care_pilot.agent.core.contracts import (
 )
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
+from care_pilot.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 
 class TrendInsight(BaseModel):
@@ -63,6 +66,7 @@ def get_trend_agent() -> Agent[None, TrendAnalysisOutput]:
 
 async def run_trend_agent(request: AgentRequest) -> AgentResponse:
     """Execute the trend specialist agent."""
+    logger.info("run_trend_agent_start correlation_id=%s", request.correlation_id)
     agent = get_trend_agent()
 
     # The trend agent primarily operates on the context (CaseSnapshot)

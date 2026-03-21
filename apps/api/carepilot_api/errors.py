@@ -59,7 +59,7 @@ def _failure_metadata(
     }
 
 
-async def handle_api_app_error(request: Request, exc: ApiAppError) -> JSONResponse:
+def handle_api_app_error(request: Request, exc: ApiAppError) -> JSONResponse:
     metadata = _failure_metadata(
         request=request,
         status_code=exc.status_code,
@@ -90,7 +90,7 @@ def _http_error_code(status_code: int) -> str:
     return mapping.get(status_code, "request.error")
 
 
-async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
+def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
     message = str(exc.detail)
     code = _http_error_code(exc.status_code)
     metadata = _failure_metadata(
@@ -110,7 +110,7 @@ async def handle_http_exception(request: Request, exc: HTTPException) -> JSONRes
     return JSONResponse(content=body, status_code=exc.status_code, headers=exc.headers)
 
 
-async def handle_validation_exception(
+def handle_validation_exception(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     code = _http_error_code(422)
@@ -134,7 +134,7 @@ async def handle_validation_exception(
     return JSONResponse(content=body, status_code=422)
 
 
-async def handle_unhandled_exception(request: Request, _exc: Exception) -> JSONResponse:
+def handle_unhandled_exception(request: Request, _exc: Exception) -> JSONResponse:
     logger.exception(
         "event=api_request_failed_unhandled path=%s method=%s",
         request.url.path,
