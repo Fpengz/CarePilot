@@ -49,7 +49,11 @@ def _login(client: TestClient) -> None:
 
 
 class _StubEmotionPort(EmotionInferencePort):
-    def infer_text(self, payload: TextEmotionInput) -> EmotionInferenceResult:
+    @property
+    def runtime_mode(self) -> str:
+        return "stub"
+
+    async def infer_text(self, payload: TextEmotionInput) -> EmotionInferenceResult:
         context = EmotionContextFeatures(recent_labels=[], trend="stable")
         return EmotionInferenceResult(
             source_type="text",
@@ -73,7 +77,7 @@ class _StubEmotionPort(EmotionInferencePort):
             context_features=context,
         )
 
-    def infer_speech(self, payload: SpeechEmotionInput) -> EmotionInferenceResult:
+    async def infer_speech(self, payload: SpeechEmotionInput) -> EmotionInferenceResult:
         context = EmotionContextFeatures(recent_labels=[], trend="stable")
         return EmotionInferenceResult(
             source_type="mixed",
@@ -104,7 +108,7 @@ class _StubEmotionPort(EmotionInferencePort):
             context_features=context,
         )
 
-    def health(self) -> EmotionRuntimeHealth:
+    async def health(self) -> EmotionRuntimeHealth:
         return EmotionRuntimeHealth(status="ready", model_cache_ready=True, source_commit="sha")
 
 

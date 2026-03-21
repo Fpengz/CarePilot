@@ -33,7 +33,7 @@ def get_correlation_id() -> str | None:
     return get_current_correlation_id()
 
 @contextmanager
-def bind_observability_context(request_id: str, correlation_id: str | None = None):
+def bind_observability_context(request_id: str | None, correlation_id: str | None = None):
     """Context manager to bind request and correlation IDs."""
     token_req = request_id_ctx.set(request_id)
     token_corr = correlation_id_ctx.set(correlation_id)

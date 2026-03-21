@@ -8,7 +8,6 @@ chat turns into the configured MemoryStore implementation.
 from __future__ import annotations
 
 import asyncio
-from typing import cast
 
 from care_pilot.platform.memory import MemorySnippet, MemoryStore
 from care_pilot.platform.observability import get_logger
@@ -82,7 +81,7 @@ async def record_chat_turn(
         return
     messages: list[dict[str, str]] = [
         {"role": "user", "content": user_message},
-        {"role": "assistant", "content": cast(str, assistant_message)},
+        {"role": "assistant", "content": assistant_message},
     ]
 
     # Enqueue for background execution to return token stream faster
