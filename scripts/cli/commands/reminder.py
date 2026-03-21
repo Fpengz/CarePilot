@@ -17,6 +17,7 @@ from scripts.cli.utils import (
 from care_pilot.config.app import get_settings
 from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.platform.messaging.channels.telegram import TelegramChannel
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 reminder_app = typer.Typer(help="Reminder and notification commands.")
 
@@ -67,7 +68,7 @@ def command_reminders_diagnose(
     )
 
     try:
-        conn = sqlite3.connect(db_path)
+        conn = get_connection(db_path)
     except sqlite3.Error as exc:
         error(f"Failed to open db: {exc}")
         raise typer.Exit(1) from exc

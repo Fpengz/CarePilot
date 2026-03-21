@@ -20,6 +20,7 @@ from care_pilot.agent.runtime.inference_types import (
     InferenceRequest,
 )
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 # ---------------------------------------------------------------------------
 # Config
@@ -194,7 +195,7 @@ class MemoryManager:
     # ------------------------------------------------------------------ #
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(str(self._db_path))
+        conn = get_connection(str(self._db_path))
         conn.row_factory = sqlite3.Row
         return conn
 

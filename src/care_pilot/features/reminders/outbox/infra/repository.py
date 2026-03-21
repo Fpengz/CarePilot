@@ -22,6 +22,7 @@ from care_pilot.features.reminders.outbox.models import (
     MetricReading,
     Reminder,
 )
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 
 class SQLiteReminderRepository:
@@ -41,7 +42,7 @@ class SQLiteReminderRepository:
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
-        conn = sqlite3.connect(self.db_path)
+        conn = get_connection(self.db_path)
         conn.row_factory = sqlite3.Row
         try:
             conn.execute("PRAGMA foreign_keys = ON;")

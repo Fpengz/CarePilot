@@ -27,6 +27,7 @@ from care_pilot.features.reminders.domain.models import (
     MedicationRegimen,
     ReminderEvent,
 )
+from care_pilot.platform.persistence.sqlite_db import get_connection
 from care_pilot.platform.persistence.sqlite_repository import SQLiteRepository
 
 SyntheticProfile = Literal["stable", "improving", "volatile"]
@@ -88,7 +89,7 @@ def _latest_seeded_day(db_path: str, user_id: str) -> date | None:
         ),
     ]
     latest: date | None = None
-    with sqlite3.connect(db_path) as conn:
+    with get_connection(db_path) as conn:
         for query, value in queries:
             row = conn.execute(query, (value,)).fetchone()
             raw = row[0] if row is not None else None
@@ -113,7 +114,7 @@ def reset_synthetic_data(*, db_path: str, user_id: str) -> None:
         "DELETE FROM health_profile_onboarding_states WHERE user_id = ?",
         "DELETE FROM health_profiles WHERE user_id = ?",
     ]
-    with sqlite3.connect(db_path) as conn:
+    with get_connection(db_path) as conn:
         for statement in statements:
             conn.execute(statement, (user_id,))
         conn.commit()
@@ -139,7 +140,7 @@ def _init_chat_metrics_schema(conn: sqlite3.Connection) -> None:
 
 
 def _reset_chat_metrics(*, chat_db_path: str, user_id: str) -> None:
-    with sqlite3.connect(chat_db_path) as conn:
+    with get_connection(chat_db_path) as conn:
         _init_chat_metrics_schema(conn)
         conn.execute("DELETE FROM health_parsed_metrics WHERE user_id = ?", (user_id,))
         conn.commit()
@@ -159,7 +160,7 @@ def _seed_chat_bp_reading(
     systolic: float,
     diastolic: float,
 ) -> None:
-    with sqlite3.connect(chat_db_path) as conn:
+    with get_connection(chat_db_path) as conn:
         _init_chat_metrics_schema(conn)
         message_id = _next_message_id(conn)
         conn.executemany(

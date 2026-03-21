@@ -6,7 +6,6 @@ policies and timeline events.
 """
 
 import json
-import sqlite3
 from datetime import datetime
 from typing import Any, cast
 
@@ -17,6 +16,7 @@ from care_pilot.platform.observability.tooling.domain.policy_models import (
 from care_pilot.platform.observability.workflows.domain.models import (
     WorkflowTimelineEvent,
 )
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
 
@@ -26,7 +26,7 @@ class SQLiteWorkflowRepository:
         self.db_path = db_path
 
     def save_tool_role_policy(self, record: ToolRolePolicyRecord) -> ToolRolePolicyRecord:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT INTO tool_role_policies
@@ -83,7 +83,7 @@ class SQLiteWorkflowRepository:
         if enabled_only:
             query += " AND enabled = 1"
         query += " ORDER BY priority DESC, updated_at DESC, id"
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             ToolRolePolicyRecord(
@@ -102,7 +102,7 @@ class SQLiteWorkflowRepository:
         ]
 
     def get_tool_role_policy(self, policy_id: str) -> ToolRolePolicyRecord | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT id, role, agent_id, tool_name, effect, conditions_json, priority, enabled, created_at, updated_at
@@ -127,7 +127,7 @@ class SQLiteWorkflowRepository:
         )
 
     def save_workflow_timeline_event(self, event: WorkflowTimelineEvent) -> WorkflowTimelineEvent:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO workflow_timeline_events
@@ -166,7 +166,7 @@ class SQLiteWorkflowRepository:
             query += " AND user_id = ?"
             params.append(user_id)
         query += " ORDER BY created_at"
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             WorkflowTimelineEvent(
@@ -181,3 +181,14 @@ class SQLiteWorkflowRepository:
             )
             for row in rows
         ]
+
+    def prune_events(self, *, days: int = 90) -> int:
+        """Delete events older than N days. Return count deleted."""
+        with get_connection(self.db_path) as conn:
+            cur = conn.execute(
+                "DELETE FROM workflow_timeline_events WHERE created_at < datetime('now', ?)",
+                (f"-{days} days",),
+            )
+            count = cur.rowcount
+            conn.commit()
+        return count

@@ -20,6 +20,7 @@ from care_pilot.features.recommendations.domain.canonical_food_matching import (
 from care_pilot.features.recommendations.domain.meal_catalog_queries import (
     DEFAULT_MEAL_CATALOG,
 )
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 SCHEMA_STATEMENTS: tuple[str, ...] = (
     """
@@ -473,7 +474,7 @@ def ensure_sqlite_column(cur: sqlite3.Cursor, table: str, column: str, definitio
 
 
 def bootstrap_sqlite_store(db_path: str) -> None:
-    with sqlite3.connect(db_path) as conn:
+    with get_connection(db_path) as conn:
         cur = conn.cursor()
         for statement in SCHEMA_STATEMENTS:
             cur.execute(statement)
@@ -484,7 +485,7 @@ def bootstrap_sqlite_store(db_path: str) -> None:
 
 
 def seed_reference_data(db_path: str) -> None:
-    with sqlite3.connect(db_path) as conn:
+    with get_connection(db_path) as conn:
         cur = conn.cursor()
         _seed_meal_catalog(cur, DEFAULT_MEAL_CATALOG)
         _seed_canonical_foods(cur, build_default_canonical_food_records())

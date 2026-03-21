@@ -4,8 +4,9 @@ Access drug interaction reference data.
 This module loads and queries drug interaction data for safety checks.
 """
 
-import sqlite3
 from threading import Lock
+
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 
 class DrugInteractionDB:
@@ -16,7 +17,7 @@ class DrugInteractionDB:
         self._init_db()
 
     def _init_db(self):
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS safety_metadata (
@@ -125,7 +126,7 @@ class DrugInteractionDB:
             cached = self._cache.get(normalized)
         if cached is not None:
             return list(cached)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """

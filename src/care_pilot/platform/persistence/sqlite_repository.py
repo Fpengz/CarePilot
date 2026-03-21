@@ -16,6 +16,7 @@ from care_pilot.features.recommendations.domain.meal_catalog_queries import (
     DEFAULT_MEAL_CATALOG,
 )
 from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 from .sqlite_alert_repository import SQLiteAlertRepository
 from .sqlite_catalog_repository import SQLiteCatalogRepository
@@ -42,7 +43,7 @@ class SQLiteRepository:
         self.workflows = SQLiteWorkflowRepository(db_path)
 
     def _init_db(self) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             cur = conn.cursor()
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS medication_regimens (
@@ -602,7 +603,7 @@ class SQLiteRepository:
             cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def _seed_meal_catalog(self) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             existing = conn.execute("SELECT COUNT(*) FROM meal_catalog").fetchone()
             if existing is not None and int(existing[0]) > 0:
                 return
@@ -624,7 +625,7 @@ class SQLiteRepository:
             conn.commit()
 
     def _seed_canonical_foods(self) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             records = build_default_canonical_food_records()
             existing = conn.execute("SELECT COUNT(*) FROM canonical_foods").fetchone()
             if not existing or int(cast(int, existing[0])) == 0:
@@ -957,3 +958,6 @@ class SQLiteRepository:
 
     def list_workflow_timeline_events(self, *args: Any, **kwargs: Any) -> Any:
         return self.workflows.list_workflow_timeline_events(*args, **kwargs)
+
+    def prune_workflow_events(self, *args: Any, **kwargs: Any) -> Any:
+        return self.workflows.prune_events(*args, **kwargs)

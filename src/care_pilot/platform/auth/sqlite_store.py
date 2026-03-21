@@ -19,6 +19,7 @@ from care_pilot.platform.auth.in_memory import AuthUserRecord, PasswordHasher
 from care_pilot.platform.observability.tooling.domain.authorization import (
     scopes_for_account_role,
 )
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 
 class SQLiteAuthStore:
@@ -36,7 +37,7 @@ class SQLiteAuthStore:
             self._seed_defaults(settings)
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self._db_path, check_same_thread=False)
+        conn = get_connection(self._db_path)
         conn.row_factory = sqlite3.Row
         return conn
 

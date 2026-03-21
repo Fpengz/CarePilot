@@ -7,12 +7,12 @@ data/runtime/chat_memory.db and exposes typed readings.
 
 from __future__ import annotations
 
-import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import cast
 
 from care_pilot.features.companion.core.health.models import BloodPressureReading
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 BASE_DIR = Path(__file__).resolve().parents[5]
 DEFAULT_DB_PATH = BASE_DIR / "data" / "runtime" / "chat_memory.db"
@@ -45,7 +45,7 @@ class ChatHealthMetricsRepository:
             query += " AND recorded_at <= ?"
             params.append(end_at.isoformat())
         query += " ORDER BY recorded_at ASC"
-        with sqlite3.connect(str(self._db_path)) as conn:
+        with get_connection(str(self._db_path)) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
 
         grouped: dict[int, dict[str, object]] = {}

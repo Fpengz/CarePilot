@@ -10,10 +10,12 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
+from care_pilot.platform.persistence.sqlite_db import get_connection
+
 
 class SQLiteHouseholdStore:
     def __init__(self, db_path: str) -> None:
-        self._conn = sqlite3.connect(db_path, check_same_thread=False)
+        self._conn = get_connection(db_path)
         self._conn.row_factory = sqlite3.Row
         self._init_db()
 

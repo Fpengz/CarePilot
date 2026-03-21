@@ -5,7 +5,6 @@ This module implements SQLite persistence for alert outbox data.
 """
 
 import json
-import sqlite3
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -14,6 +13,7 @@ from care_pilot.features.safety.domain.alerts.models import (
     OutboxRecord,
 )
 from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
 
@@ -25,7 +25,7 @@ class SQLiteAlertRepository:
     def enqueue_alert(self, message: AlertMessage) -> list[OutboxRecord]:
         created: list[OutboxRecord] = []
         now = datetime.now(UTC)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             for sink in message.destinations:
                 idempotency_key = f"{message.alert_id}:{sink}"
                 cursor = conn.execute(
@@ -103,7 +103,7 @@ class SQLiteAlertRepository:
             params.append(alert_id)
         query += " ORDER BY next_attempt_at LIMIT ?"
         params.append(limit)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
             leased: list[OutboxRecord] = []
             for row in rows:
@@ -151,7 +151,7 @@ class SQLiteAlertRepository:
     def mark_alert_delivered(
         self, alert_id: str, sink: str, attempt_count: int | None = None
     ) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             if attempt_count is None:
                 conn.execute(
                     """
@@ -180,7 +180,7 @@ class SQLiteAlertRepository:
         attempt_count: int,
         error: str,
     ) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 UPDATE alert_outbox
@@ -204,7 +204,7 @@ class SQLiteAlertRepository:
         error: str,
         attempt_count: int | None = None,
     ) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             if attempt_count is None:
                 conn.execute(
                     """
@@ -237,7 +237,7 @@ class SQLiteAlertRepository:
             query += " WHERE alert_id = ?"
             params = (alert_id,)
         query += " ORDER BY next_attempt_at"
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, params).fetchall()
         out: list[OutboxRecord] = []
         for row in rows:

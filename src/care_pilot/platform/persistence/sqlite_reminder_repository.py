@@ -6,7 +6,6 @@ and endpoints.
 """
 
 import json
-import sqlite3
 from datetime import UTC, datetime
 from typing import Any, cast
 from zoneinfo import ZoneInfo
@@ -25,6 +24,7 @@ from care_pilot.features.reminders.domain.models import (
     ScheduledReminderNotification,
 )
 from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
 
@@ -45,7 +45,7 @@ class SQLiteReminderRepository:
 
     def save_reminder_definition(self, definition: ReminderDefinition) -> ReminderDefinition:
         payload = definition.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO reminder_definitions (
@@ -85,7 +85,7 @@ class SQLiteReminderRepository:
         return saved
 
     def get_reminder_definition(self, reminder_definition_id: str) -> ReminderDefinition | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT id, user_id, regimen_id, reminder_type, source, title, body,
@@ -133,7 +133,7 @@ class SQLiteReminderRepository:
         if active_only:
             query += " AND active = 1"
         query += " ORDER BY updated_at DESC, title"
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             ReminderDefinition(
@@ -162,7 +162,7 @@ class SQLiteReminderRepository:
 
     def save_reminder_occurrence(self, occurrence: ReminderOccurrence) -> ReminderOccurrence:
         payload = occurrence.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO reminder_occurrences (
@@ -197,7 +197,7 @@ class SQLiteReminderRepository:
         return saved
 
     def get_reminder_occurrence(self, occurrence_id: str) -> ReminderOccurrence | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT id, reminder_definition_id, user_id, scheduled_for, trigger_at, status, action,
@@ -250,7 +250,7 @@ class SQLiteReminderRepository:
             params.append(status)
         query += " ORDER BY trigger_at LIMIT ?"
         params.append(limit)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             ReminderOccurrence(
@@ -275,7 +275,7 @@ class SQLiteReminderRepository:
 
     def append_reminder_action(self, action: ReminderActionRecord) -> ReminderActionRecord:
         payload = action.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT INTO reminder_actions
@@ -316,7 +316,7 @@ class SQLiteReminderRepository:
             params.append(reminder_definition_id)
         query += " ORDER BY acted_at LIMIT ?"
         params.append(limit)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             ReminderActionRecord(
@@ -343,7 +343,7 @@ class SQLiteReminderRepository:
         trigger_at: datetime | None = None,
     ) -> ReminderOccurrence | None:
         now = datetime.now(UTC)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 UPDATE reminder_occurrences
@@ -365,7 +365,7 @@ class SQLiteReminderRepository:
         return self.get_reminder_occurrence(occurrence_id)
 
     def save_reminder_event(self, event: ReminderEvent) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO reminder_events
@@ -400,7 +400,7 @@ class SQLiteReminderRepository:
         )
 
     def get_reminder_event(self, event_id: str) -> ReminderEvent | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT id, user_id, reminder_definition_id, occurrence_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
@@ -432,7 +432,7 @@ class SQLiteReminderRepository:
         )
 
     def list_reminder_events(self, user_id: str) -> list[ReminderEvent]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT id, user_id, reminder_definition_id, occurrence_id, regimen_id, reminder_type, title, body, medication_name, scheduled_at, slot, dosage_text, status, meal_confirmation, sent_at, ack_at
@@ -472,7 +472,7 @@ class SQLiteReminderRepository:
         scope_key: str | None,
         preferences: list[ReminderNotificationPreference],
     ) -> list[ReminderNotificationPreference]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 DELETE FROM reminder_notification_preferences
@@ -527,7 +527,7 @@ class SQLiteReminderRepository:
                 query += " AND scope_key = ?"
                 params.append(scope_key)
         query += " ORDER BY scope_type, scope_key, offset_minutes, channel"
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             ReminderNotificationPreference(
@@ -547,7 +547,7 @@ class SQLiteReminderRepository:
     def save_scheduled_notification(
         self, item: ScheduledReminderNotification
     ) -> ScheduledReminderNotification:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR IGNORE INTO scheduled_notifications
@@ -581,7 +581,7 @@ class SQLiteReminderRepository:
             conn.commit()
         existing = self.get_scheduled_notification(item.id)
         if existing is None:
-            with sqlite3.connect(self.db_path) as conn:
+            with get_connection(self.db_path) as conn:
                 row = conn.execute(
                     "SELECT id FROM scheduled_notifications WHERE idempotency_key = ?",
                     (item.idempotency_key,),
@@ -595,7 +595,7 @@ class SQLiteReminderRepository:
     def get_scheduled_notification(
         self, notification_id: str
     ) -> ScheduledReminderNotification | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT id, reminder_id, user_id, channel, trigger_at, offset_minutes, preference_id, status,
@@ -647,7 +647,7 @@ class SQLiteReminderRepository:
             query += " AND user_id = ?"
             params.append(user_id)
         query += " ORDER BY trigger_at, channel"
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             ScheduledReminderNotification(
@@ -678,7 +678,7 @@ class SQLiteReminderRepository:
         now: datetime,
         limit: int = 100,
     ) -> list[ScheduledReminderNotification]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT id
@@ -711,7 +711,7 @@ class SQLiteReminderRepository:
     def set_scheduled_notification_trigger_at(
         self, notification_id: str, trigger_at: datetime
     ) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 UPDATE scheduled_notifications
@@ -731,7 +731,7 @@ class SQLiteReminderRepository:
         self, notification_id: str, attempt_count: int
     ) -> None:
         now = datetime.now(UTC)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 UPDATE scheduled_notifications
@@ -746,7 +746,7 @@ class SQLiteReminderRepository:
         self, notification_id: str, attempt_count: int
     ) -> None:
         now = datetime.now(UTC)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 UPDATE scheduled_notifications
@@ -771,7 +771,7 @@ class SQLiteReminderRepository:
         error: str,
     ) -> None:
         now = datetime.now(UTC)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 UPDATE scheduled_notifications
@@ -796,7 +796,7 @@ class SQLiteReminderRepository:
         error: str,
     ) -> None:
         now = datetime.now(UTC)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 UPDATE scheduled_notifications
@@ -809,7 +809,7 @@ class SQLiteReminderRepository:
 
     def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int:
         now = datetime.now(UTC)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             result = conn.execute(
                 """
                 UPDATE scheduled_notifications
@@ -824,7 +824,7 @@ class SQLiteReminderRepository:
     def append_notification_log(
         self, entry: ReminderNotificationLogEntry
     ) -> ReminderNotificationLogEntry:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT INTO notification_logs
@@ -853,7 +853,7 @@ class SQLiteReminderRepository:
         user_id: str,
         endpoints: list[ReminderNotificationEndpoint],
     ) -> list[ReminderNotificationEndpoint]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 "DELETE FROM reminder_notification_endpoints WHERE user_id = ?",
                 (user_id,),
@@ -881,7 +881,7 @@ class SQLiteReminderRepository:
     def list_reminder_notification_endpoints(
         self, *, user_id: str
     ) -> list[ReminderNotificationEndpoint]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT id, user_id, channel, destination, verified, created_at, updated_at
@@ -910,7 +910,7 @@ class SQLiteReminderRepository:
         user_id: str,
         channel: str,
     ) -> ReminderNotificationEndpoint | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT id, user_id, channel, destination, verified, created_at, updated_at
@@ -949,7 +949,7 @@ class SQLiteReminderRepository:
             query += " AND scheduled_notification_id = ?"
             params.append(scheduled_notification_id)
         query += " ORDER BY created_at"
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             ReminderNotificationLogEntry(
@@ -968,7 +968,7 @@ class SQLiteReminderRepository:
         ]
 
     def get_mobility_reminder_settings(self, user_id: str) -> MobilityReminderSettings | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT payload_json
@@ -985,7 +985,7 @@ class SQLiteReminderRepository:
         self, settings: MobilityReminderSettings
     ) -> MobilityReminderSettings:
         payload = settings.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO mobility_reminder_settings (user_id, updated_at, payload_json)

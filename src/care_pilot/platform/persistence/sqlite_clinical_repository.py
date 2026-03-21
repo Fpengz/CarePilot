@@ -6,7 +6,6 @@ and health profiles.
 """
 
 import json
-import sqlite3
 from datetime import datetime
 from typing import Any, cast
 
@@ -21,6 +20,7 @@ from care_pilot.features.companion.core.health.models import (
     SymptomSafety,
 )
 from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
 
@@ -30,7 +30,7 @@ class SQLiteClinicalRepository:
         self.db_path = db_path
 
     def save_biomarker_readings(self, user_id: str, readings: list[BiomarkerReading]) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             for reading in readings:
                 conn.execute(
                     """
@@ -59,7 +59,7 @@ class SQLiteClinicalRepository:
         self.save_biomarker_readings(user_id, [reading])
 
     def list_biomarker_readings(self, user_id: str) -> list[BiomarkerReading]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT name, value, unit, reference_range, measured_at, source_doc_id
@@ -88,7 +88,7 @@ class SQLiteClinicalRepository:
 
     def save_symptom_checkin(self, checkin: SymptomCheckIn) -> SymptomCheckIn:
         payload = checkin.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO symptom_checkins
@@ -130,7 +130,7 @@ class SQLiteClinicalRepository:
             params.append(end_at.isoformat())
         query += " ORDER BY recorded_at DESC LIMIT ?"
         params.append(max(1, min(limit, 1000)))
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             SymptomCheckIn(
@@ -148,7 +148,7 @@ class SQLiteClinicalRepository:
 
     def save_clinical_card(self, card: ClinicalCardRecord) -> ClinicalCardRecord:
         payload = card.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO clinical_cards
@@ -170,7 +170,7 @@ class SQLiteClinicalRepository:
 
     def list_clinical_cards(self, *, user_id: str, limit: int = 50) -> list[ClinicalCardRecord]:
         bounded = max(1, min(limit, 200))
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT payload_json FROM clinical_cards
@@ -183,7 +183,7 @@ class SQLiteClinicalRepository:
         return [ClinicalCardRecord.model_validate_json(cast(str, row[0])) for row in rows]
 
     def get_clinical_card(self, *, user_id: str, card_id: str) -> ClinicalCardRecord | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 "SELECT payload_json FROM clinical_cards WHERE user_id = ? AND id = ?",
                 (user_id, card_id),
@@ -193,7 +193,7 @@ class SQLiteClinicalRepository:
         return ClinicalCardRecord.model_validate_json(cast(str, row[0]))
 
     def get_health_profile(self, user_id: str) -> HealthProfileRecord | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT payload_json
@@ -211,7 +211,7 @@ class SQLiteClinicalRepository:
 
     def save_health_profile(self, profile: HealthProfileRecord) -> HealthProfileRecord:
         payload = profile.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO health_profiles (user_id, updated_at, payload_json)
@@ -234,7 +234,7 @@ class SQLiteClinicalRepository:
     def get_health_profile_onboarding_state(
         self, user_id: str
     ) -> HealthProfileOnboardingState | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT payload_json
@@ -254,7 +254,7 @@ class SQLiteClinicalRepository:
         state: HealthProfileOnboardingState,
     ) -> HealthProfileOnboardingState:
         payload = state.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO health_profile_onboarding_states (user_id, updated_at, payload_json)

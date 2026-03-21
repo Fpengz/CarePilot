@@ -7,15 +7,14 @@ using a multi-agent LangGraph system.
 
 from __future__ import annotations
 
-import asyncio
 import re
-import sqlite3
 import uuid
 from collections.abc import AsyncIterator
 from typing import Any, Literal, cast
 
 from fastapi import HTTPException, Request
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableConfig
 
 from care_pilot.agent.chat.schemas import (
     ChatStreamEvent,
@@ -50,6 +49,7 @@ from care_pilot.features.companion.core.snapshot import build_case_snapshot
 from care_pilot.features.meals.domain.normalization import log_meal_from_text
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence import AppStores
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
 
@@ -69,10 +69,13 @@ class ChatOrchestrator:
         self.memory = memory
         self._graph = build_companion_graph().compile()
 
-    async def run_multi_agent_workflow(
-        self, user_message: str, snapshot: PatientCaseSnapshot
-    ) -> dict[str, Any]:
-        """Run the Supervisor-led LangGraph workflow."""
+    async def stream_multi_agent_workflow(
+        self,
+        user_message: str,
+        snapshot: PatientCaseSnapshot,
+        config: RunnableConfig | None = None,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Stream the Supervisor-led LangGraph workflow updates."""
         initial_state: CompanionState = {
             "snapshot": snapshot,
             "messages": [HumanMessage(content=user_message)],
@@ -82,8 +85,8 @@ class ChatOrchestrator:
             "session_id": self.memory._session_id or "default_session",
         }
 
-        result = await self._graph.ainvoke(initial_state)
-        return result
+        async for chunk in self._graph.astream(initial_state, config=config, stream_mode="updates"):
+            yield chunk
 
     async def stream_events(
         self,
@@ -99,6 +102,7 @@ class ChatOrchestrator:
         """
         user_id = str(session.get("user_id", ""))
         session_id = str(session.get("session_id", ""))
+        correlation_id = getattr(request.state, "correlation_id", None) or str(uuid.uuid4())
 
         # 1. Build Blackboard (Snapshot)
         snapshot = build_case_snapshot(
@@ -116,11 +120,7 @@ class ChatOrchestrator:
         # 2. Emotion Logic
         if ctx.emotion_agent.inference_enabled:
             try:
-                loop = asyncio.get_running_loop()
-                inference = await loop.run_in_executor(
-                    None,
-                    lambda: ctx.emotion_agent.infer_text(text=user_message),
-                )
+                inference = await ctx.emotion_agent.infer_text(text=user_message)
                 yield ChatStreamEvent(
                     event="emotion",
                     data={
@@ -157,11 +157,6 @@ class ChatOrchestrator:
         if not meal_text:
             intent_result, needs_llm = heuristic_meal_log_intent(user_message)
             if needs_llm:
-                from apps.api.carepilot_api.services.companion_orchestration import (
-                    load_companion_inputs,
-                )
-                inputs_for_intent = load_companion_inputs(context=ctx, session=session) # Re-load for intent if needed
-                del inputs_for_intent # Not used directly but showing intent pattern
                 intent_result = await classify_meal_log_intent(
                     user_message, engine=ctx.chat_inference_engine
                 )
@@ -210,20 +205,34 @@ class ChatOrchestrator:
         # 5. Run Graph
         try:
             # We use the version with memory context for the agent reasoning
-            result = await self.run_multi_agent_workflow(user_message_with_memory, snapshot)
             final_response = ""
+            graph_config: RunnableConfig = {"configurable": {"correlation_id": correlation_id}}
 
-            last_resp = result.get("last_agent_response")
-            if last_resp:
-                final_response = last_resp.summary
-                if response_prefix:
-                    final_response = f"{response_prefix}{final_response}"
-                yield ChatStreamEvent(event="token", data={"text": final_response})
-            else:
+            async for chunk in self.stream_multi_agent_workflow(
+                user_message_with_memory, snapshot, config=graph_config
+            ):
+                # chunk is a dict mapping node names to their state updates
+                for _node_name, state_update in chunk.items():
+                    if "last_agent_response" in state_update and state_update["last_agent_response"]:
+                        agent_resp = state_update["last_agent_response"]
+
+                        # Only yield if there's actual new content to show to the user
+                        if agent_resp.summary:
+                            content = agent_resp.summary
+                            if response_prefix and not final_response:
+                                content = f"{response_prefix}{content}"
+                                response_prefix = None # only prepend once
+
+                            final_response += content + "\n\n"
+                            yield ChatStreamEvent(event="token", data={"text": content + "\n\n"})
+
+            if not final_response.strip():
                 final_response = "I've updated your care context based on our conversation."
                 if response_prefix:
                     final_response = f"{response_prefix}{final_response}"
                 yield ChatStreamEvent(event="token", data={"text": final_response})
+
+            final_response = final_response.strip()
 
             # 6. Persistence
             if final_response:
@@ -282,15 +291,11 @@ class ChatOrchestrator:
         # 2. Speech Emotion
         if ctx.emotion_agent.inference_enabled and ctx.emotion_agent.speech_enabled:
             try:
-                loop = asyncio.get_running_loop()
-                inference = await loop.run_in_executor(
-                    None,
-                    lambda: ctx.emotion_agent.infer_speech(
-                        audio_bytes=audio_bytes,
-                        filename=filename,
-                        content_type=content_type,
-                        transcription=user_message,
-                    ),
+                inference = await ctx.emotion_agent.infer_speech(
+                    audio_bytes=audio_bytes,
+                    filename=filename,
+                    content_type=content_type,
+                    transcription=user_message,
                 )
                 yield ChatStreamEvent(
                     event="emotion",
@@ -409,7 +414,7 @@ class ChatOrchestrator:
         """Delete all messages/summaries for this user."""
         db_path = str(self.memory._db_path)
         user_id = self.memory._user_id
-        conn = sqlite3.connect(db_path)
+        conn = get_connection(db_path)
         conn.execute("DELETE FROM chat_messages WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM chat_summaries WHERE user_id = ?", (user_id,))
         conn.commit()
