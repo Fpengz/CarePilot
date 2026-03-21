@@ -107,15 +107,24 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
         app.state.ctx = ctx
         app.state.ctx_owned = False
     else:
+        app.state.ctx = build_app_context()
         app.state.ctx_owned = True
+
+    settings = cast(AppContext, app.state.ctx).settings
 
     # Middleware
     app.add_middleware(
         cast(Any, CORSMiddleware),
-        allow_origins=_csv_values(os.environ.get("ALLOWED_ORIGINS", ""), fallback=["*"]),
+        allow_origins=_csv_values(
+            os.environ.get("ALLOWED_ORIGINS", settings.api.cors_origins), fallback=["*"]
+        ),
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=_csv_values(
+            os.environ.get("API_CORS_METHODS", settings.api.cors_methods), fallback=["*"]
+        ),
+        allow_headers=_csv_values(
+            os.environ.get("API_CORS_HEADERS", settings.api.cors_headers), fallback=["*"]
+        ),
     )
     app.middleware("http")(request_context_middleware)
 

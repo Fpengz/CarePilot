@@ -8,6 +8,7 @@ emotion pipeline and model adapters.
 from __future__ import annotations
 
 import asyncio
+import functools
 import os
 from typing import cast
 
@@ -67,10 +68,12 @@ class InProcessEmotionRuntime(EmotionInferencePort):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             get_ml_executor(),
-            self._pipeline.infer_text,
-            payload.text,
-            payload.language,
-            payload.user_id,
+            functools.partial(
+                self._pipeline.infer_text,
+                text=payload.text,
+                language=payload.language,
+                user_id=payload.user_id,
+            ),
         )
 
     async def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
@@ -78,12 +81,14 @@ class InProcessEmotionRuntime(EmotionInferencePort):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             get_ml_executor(),
-            self._pipeline.infer_speech,
-            audio_bytes,
-            payload.filename,
-            payload.language,
-            payload.transcription,
-            payload.user_id,
+            functools.partial(
+                self._pipeline.infer_speech,
+                audio_bytes=audio_bytes,
+                filename=payload.filename,
+                language=payload.language,
+                transcription=payload.transcription,
+                user_id=payload.user_id,
+            ),
         )
 
     async def health(self) -> EmotionRuntimeHealth:

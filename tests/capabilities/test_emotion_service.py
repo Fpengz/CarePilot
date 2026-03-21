@@ -29,14 +29,14 @@ from care_pilot.features.companion.emotion.runtime import InProcessEmotionRuntim
 
 
 class _StubASR:
-    def transcribe(self, audio_bytes: bytes, **kwargs: Any) -> str:
-        del audio_bytes, kwargs
+    def transcribe(self, audio_bytes: bytes, *, filename: str | None = None, language: str | None = None) -> str:
+        del audio_bytes, filename, language
         return "transcription"
 
 
 class _StubText:
-    def predict(self, text: str, **kwargs: Any) -> TextEmotionBranchResult:
-        del text, kwargs
+    def predict(self, text: str, language: str | None = None) -> TextEmotionBranchResult:
+        del text, language
         return TextEmotionBranchResult(
             transcript_or_text="I am happy and calm",
             emotion_scores={EmotionLabel.NEUTRAL: 0.9},
@@ -47,8 +47,8 @@ class _StubText:
 
 
 class _StubSpeech:
-    def predict(self, audio_bytes: bytes, **kwargs: Any) -> SpeechEmotionBranchResult:
-        del audio_bytes, kwargs
+    def predict(self, audio_bytes: bytes, *, transcript: str | None = None) -> SpeechEmotionBranchResult:
+        del audio_bytes, transcript
         return SpeechEmotionBranchResult(
             predicted_emotion=EmotionLabel.NEUTRAL,
             emotion_scores={EmotionLabel.NEUTRAL: 0.8},
