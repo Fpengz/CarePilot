@@ -7,7 +7,7 @@ personalization and engagement workflows.
 
 from __future__ import annotations
 
-from care_pilot.features.companion.core.domain import CaseSnapshot
+from care_pilot.features.companion.core.domain import PatientCaseSnapshot
 from care_pilot.features.companion.core.health.blood_pressure import (
     summarize_blood_pressure,
 )
@@ -81,7 +81,7 @@ def build_case_snapshot(
     biomarker_readings: list[BiomarkerReading],
     blood_pressure_readings: list[BloodPressureReading],
     clinical_snapshot: ClinicalProfileSnapshot | None,
-) -> CaseSnapshot:
+) -> PatientCaseSnapshot:
     biomarker_summary = (
         dict(clinical_snapshot.biomarkers)
         if clinical_snapshot is not None
@@ -109,7 +109,18 @@ def build_case_snapshot(
     bp_summary = summarize_blood_pressure(blood_pressure_readings, conditions=condition_names)
     if bp_summary and bp_summary.has_high_bp:
         active_risk_flags.append("high_bp")
-    return CaseSnapshot(
+
+    # Map complex fields
+    recent_meals = [
+        {"name": meal_display_name(m), "captured_at": str(m.captured_at), "is_risky": _meal_is_risky(m)}
+        for m in meals[-10:]
+    ]
+    recent_symptoms = [
+        {"severity": s.severity, "recorded_at": str(s.recorded_at), "decision": s.safety.decision}
+        for s in symptoms[-10:]
+    ]
+
+    return PatientCaseSnapshot(
         user_id=user_profile.id,
         profile_name=user_profile.name,
         conditions=condition_names,
@@ -126,4 +137,11 @@ def build_case_snapshot(
         biomarker_summary=biomarker_summary,
         active_risk_flags=sorted(set(active_risk_flags)),
         blood_pressure_summary=bp_summary,
+        recent_meals=recent_meals,
+        recent_symptoms=recent_symptoms,
+        demographics={
+            "age": health_profile.age if health_profile else None,
+            "height_cm": health_profile.height_cm if health_profile else None,
+            "weight_kg": health_profile.weight_kg if health_profile else None,
+        },
     )

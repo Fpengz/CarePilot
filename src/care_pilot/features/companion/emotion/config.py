@@ -22,6 +22,8 @@ class EmotionRuntimeConfig:
     model_device: str
     source_commit: str
     model_cache_dir: str | None
+    runtime_mode: str
+    remote_base_url: str
 
     @classmethod
     def from_settings(cls, settings: Settings) -> EmotionRuntimeConfig:
@@ -34,4 +36,6 @@ class EmotionRuntimeConfig:
             model_device=settings.emotion.model_device,
             source_commit=settings.emotion.source_commit,
             model_cache_dir=settings.emotion.model_cache_dir,
+            runtime_mode=settings.emotion.runtime_mode,
+            remote_base_url=settings.emotion.remote_base_url,
         )

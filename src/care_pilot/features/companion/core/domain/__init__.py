@@ -12,6 +12,7 @@ from .models import (
     ImpactSummary,
     InteractionGoal,
     InteractionType,
+    PatientCaseSnapshot,
     PersonalizationContext,
     PolicyStatus,
     SafetyDecision,
@@ -20,6 +21,7 @@ from .models import (
 __all__ = [
     "CarePlan",
     "CaseSnapshot",
+    "PatientCaseSnapshot",
     "ClinicianDigest",
     "CompanionInteraction",
     "CompanionInteractionResult",

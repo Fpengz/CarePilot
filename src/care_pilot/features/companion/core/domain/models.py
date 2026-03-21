@@ -7,7 +7,7 @@ This module contains core data models used by the companion care loop.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -24,11 +24,20 @@ DigestPriority = Literal["routine", "watch", "urgent"]
 InteractionGoal = Literal["education", "next_step", "swap", "recovery", "monitoring"]
 
 
-class CaseSnapshot(BaseModel):
+class PatientCaseSnapshot(BaseModel):
+    """A blackboard-style shared state containing all relevant context for a patient."""
+
     user_id: str
     profile_name: str
+
+    # Static/Semi-static Context
+    demographics: dict[str, Any] = Field(default_factory=dict)
     conditions: list[str] = Field(default_factory=list)
     medications: list[str] = Field(default_factory=list)
+    goals: list[str] = Field(default_factory=list)
+    clinician_instructions: list[str] = Field(default_factory=list)
+
+    # Activity/History Context
     meal_count: int = 0
     latest_meal_name: str | None = None
     meal_risk_streak: int = 0
@@ -38,10 +47,26 @@ class CaseSnapshot(BaseModel):
     adherence_rate: float | None = None
     symptom_count: int = 0
     average_symptom_severity: float = 0.0
+    recent_meals: list[dict[str, Any]] = Field(default_factory=list)
+    recent_symptoms: list[dict[str, Any]] = Field(default_factory=list)
+    recent_emotion_markers: list[dict[str, Any]] = Field(default_factory=list)
+
+    # Longitudinal Signals
     biomarker_summary: dict[str, float] = Field(default_factory=dict)
-    active_risk_flags: list[str] = Field(default_factory=list)
     blood_pressure_summary: BloodPressureSummary | None = None
+    active_risk_flags: list[str] = Field(default_factory=list)
+    trends: dict[str, Any] = Field(default_factory=dict)
+
+    # Interaction/Orchestration Context
+    current_conversation_turn: int = 0
+    pending_tasks: list[str] = Field(default_factory=list)
+    unresolved_questions: list[str] = Field(default_factory=list)
+    last_interaction_at: datetime | None = None
+
     generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+CaseSnapshot = PatientCaseSnapshot
 
 
 class PersonalizationContext(BaseModel):
@@ -128,7 +153,7 @@ class CompanionInteraction(BaseModel):
 
 class CompanionInteractionResult(BaseModel):
     interaction: CompanionInteraction
-    snapshot: CaseSnapshot
+    snapshot: PatientCaseSnapshot
     engagement: EngagementAssessment
     care_plan: CarePlan
     clinician_digest_preview: ClinicianDigest
