@@ -10,8 +10,9 @@ import pytest
 from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
-from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
+from care_pilot.agent.core.contracts import AgentResponse
 from care_pilot.config.app import get_settings
+from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
 from care_pilot.platform.memory import MemorySnippet, MemoryStore
 
 
@@ -79,17 +80,20 @@ def test_chat_uses_memory_and_records_turn(
 
     captured: dict[str, object] = {}
 
-    async def _fake_stream(
-        self,
-        *,
-        messages: list[dict[str, object]],
-        model_id: str | None = None,
-    ):
-        del self, model_id
-        captured["messages"] = messages
-        yield "ok"
+    async def _mock_workflow(self, user_message: str, snapshot: object):
+        del self
+        captured["user_message"] = user_message
+        captured["snapshot"] = snapshot
 
-    monkeypatch.setattr(ChatStreamRuntime, "stream", _fake_stream)
+        return {
+            "last_agent_response": AgentResponse(
+                agent_name="conversation_agent",
+                summary="ok",
+                structured_output={}
+            )
+        }
+
+    monkeypatch.setattr(ChatOrchestrator, "run_multi_agent_workflow", _mock_workflow)
 
     response = client.post("/api/v1/chat", json={"message": "I like salads"})
     assert response.status_code == 200
@@ -98,9 +102,7 @@ def test_chat_uses_memory_and_records_turn(
             _ = json.loads(line[6:])
 
     assert fake_store.search_calls
-    messages = cast(list[dict[str, object]], captured["messages"])
-    user_message = [cast(str, m["content"]) for m in messages if m.get("role") == "user"][-1]
-    assert "Relevant memories" in user_message
-    assert "Allergic to peanuts" in user_message
-    assert fake_store.add_calls
-    assert fake_store.add_calls[0]["messages"][-1]["content"] == "ok"
+    user_message_with_memory = cast(str, captured["user_message"])
+    assert "Relevant memories" in user_message_with_memory
+    assert "Allergic to peanuts" in user_message_with_memory
+

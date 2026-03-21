@@ -33,6 +33,9 @@ from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
 from care_pilot.features.companion.chat.router import QueryRouter
 from care_pilot.features.companion.chat.search_adapter import SearchAgent
 from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
+from care_pilot.features.companion.emotion.remote_runtime import (
+    RemoteEmotionRuntime,
+)
 from care_pilot.features.companion.emotion.runtime import (
     InProcessEmotionRuntime,
 )
@@ -235,10 +238,14 @@ def build_app_context() -> AppContext:
     coordination_store = _build_coordination_store(settings)
     household_store = _build_household_store(settings)
     if settings.emotion.inference_enabled or settings.emotion.speech_enabled:
-        emotion_runtime = InProcessEmotionRuntime(
-            EmotionRuntimeConfig.from_settings(settings),
-            event_timeline=event_timeline,
-        )
+        config = EmotionRuntimeConfig.from_settings(settings)
+        if settings.emotion.runtime_mode == "remote":
+            emotion_runtime = RemoteEmotionRuntime(config, event_timeline=event_timeline)
+        else:
+            emotion_runtime = InProcessEmotionRuntime(
+                config,
+                event_timeline=event_timeline,
+            )
     else:
 
         class _DisabledEmotionRuntime:
@@ -299,6 +306,7 @@ def build_app_context() -> AppContext:
         api_key=transcription_api_key,
         base_url=transcription_base_url,
         model_id=transcription_model_id,
+        model_cache_dir=settings.chat.model_cache_dir,
     )
     ctx = AppContext(
         settings=settings,

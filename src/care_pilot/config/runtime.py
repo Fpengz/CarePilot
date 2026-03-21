@@ -188,6 +188,7 @@ class ChatSettings(BaseSettings):
         default="https://api.sea-lion.ai/v1",
         validation_alias="SEALION_BASE_URL",
     )
+    model_cache_dir: str | None = Field(default=None, validation_alias="CHAT_MODEL_CACHE_DIR")
     model_id: str = Field(
         default="aisingapore/Gemma-SEA-LION-v4-27B-IT",
         validation_alias="CHAT_MODEL_ID",
@@ -222,6 +223,8 @@ class EmotionSettings(BaseSettings):
 
     inference_enabled: bool = False
     speech_enabled: bool = False
+    runtime_mode: Literal["in_process", "remote"] = "in_process"
+    remote_base_url: str = "http://localhost:8002"
     request_timeout_seconds: float = Field(default=15.0, ge=0.1, le=300.0)
     model_device: Literal["auto", "cpu", "cuda"] = "auto"
     model_cache_dir: str | None = Field(default=None, validation_alias="EMOTION_MODEL_CACHE_DIR")

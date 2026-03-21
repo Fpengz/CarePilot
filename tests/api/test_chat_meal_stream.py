@@ -10,7 +10,7 @@ from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
 from care_pilot.agent.chat.schemas import ChatStreamEvent
-from care_pilot.agent.runtime.chat_runtime import ChatStreamRuntime
+from care_pilot.agent.core.contracts import AgentResponse
 from care_pilot.config.app import get_settings
 from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
 
@@ -48,18 +48,19 @@ def test_meal_command_stream_continues(
     client = TestClient(app)
     _login(client)
 
-    async def _fake_stream(
-        self,
-        *,
-        messages: list[dict[str, object]],
-        model_id: str | None = None,
-    ):
-        del self, messages, model_id
-        yield "Next guidance."
+    async def _mock_workflow(*args, **kwargs):
+        return {
+            "last_agent_response": AgentResponse(
+                agent_name="conversation_agent",
+                summary="Next guidance.",
+                structured_output={}
+            )
+        }
 
-    monkeypatch.setattr(ChatStreamRuntime, "stream", _fake_stream)
+    monkeypatch.setattr(ChatOrchestrator, "run_multi_agent_workflow", _mock_workflow)
 
     response = client.post("/api/v1/chat", json={"message": "[meal] Nasi Goreng"})
+
     assert response.status_code == 200
 
     tokens: list[str] = []
@@ -91,17 +92,18 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(
         del text, language, context
         raise RuntimeError("broken fusion model")
 
-    async def _fake_stream(
-        self,
-        *,
-        messages: list[dict[str, object]],
-        model_id: str | None = None,
-    ):
-        del self, messages, model_id
-        yield "Hello back."
+    async def _mock_workflow(*args, **kwargs):
+        return {
+            "last_agent_response": AgentResponse(
+                agent_name="conversation_agent",
+                summary="Hello back.",
+                structured_output={}
+            )
+        }
 
     monkeypatch.setattr(app.state.ctx.emotion_agent, "infer_text", _raise_emotion_failure)
-    monkeypatch.setattr(ChatStreamRuntime, "stream", _fake_stream)
+    monkeypatch.setattr(ChatOrchestrator, "run_multi_agent_workflow", _mock_workflow)
+
 
     response = client.post("/api/v1/chat", json={"message": "Hi"})
     assert response.status_code == 200
@@ -131,7 +133,7 @@ def test_chat_audio_continues_when_speech_emotion_inference_fails(
     app.state.ctx.emotion_agent._inference_enabled = True
     app.state.ctx.emotion_agent._speech_enabled = True
 
-    def _fake_transcribe_bytes(raw_bytes: bytes, filename: str) -> str:
+    async def _fake_transcribe_bytes(raw_bytes: bytes, filename: str) -> str:
         del raw_bytes, filename
         return "Hello from audio"
 
@@ -158,13 +160,15 @@ def test_chat_audio_continues_when_speech_emotion_inference_fails(
         self,
         *,
         user_message: str,
-        emotion_context: str | None = None,
-        extra_context: str | None = None,
-        response_prefix: str | None = None,
+        request: Any,
+        session: dict[str, object],
+        ctx: Any,
+        inputs: Any,
     ):
-        del self, user_message, emotion_context, extra_context, response_prefix
+        del self, user_message, request, session, ctx, inputs
         yield ChatStreamEvent(event="token", data={"text": "Audio reply."})
         yield ChatStreamEvent(event="done", data={"status": "complete"})
+
 
     monkeypatch.setattr(
         app.state.ctx.chat_audio_agent,

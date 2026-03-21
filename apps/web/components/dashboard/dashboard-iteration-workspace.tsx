@@ -1,33 +1,30 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { useQuery } from "@tanstack/react-query";
 
 import { ErrorCard } from "@/components/app/error-card";
 import { useSession } from "@/components/app/session-provider";
 import { MetricStrip } from "@/components/dashboard/metric-strip";
-import { InsightsSidebar } from "@/components/dashboard/insights-sidebar";
-import { CorrelationChart } from "@/components/dashboard/correlation-chart";
-import { MealClock } from "@/components/dashboard/meal-clock";
 import { RangeSelector, type RangeKey } from "@/components/dashboard/range-selector";
-import { NutritionBalanceChart } from "@/components/dashboard/nutrition-balance-chart";
-import { BloodPressureChart } from "@/components/dashboard/blood-pressure-chart";
 import { getDashboardOverview } from "@/lib/api/dashboard-client";
 import { listMealRecords } from "@/lib/api/meal-client";
 import { formatDateKey, parseDateKey } from "@/lib/time";
-import type {
-  DashboardOverviewApiResponse,
-} from "@/lib/types";
+
+// Dynamic imports for heavy chart components (bundle-dynamic-imports)
+const CorrelationChart = dynamic(() => import("@/components/dashboard/correlation-chart").then(m => m.CorrelationChart), {
+  loading: () => <div className="h-64 animate-pulse rounded-3xl bg-black/[0.05]" />
+});
+const MealClock = dynamic(() => import("@/components/dashboard/meal-clock").then(m => m.MealClock), {
+  loading: () => <div className="h-64 animate-pulse rounded-3xl bg-black/[0.05]" />
+});
+const NutritionBalanceChart = dynamic(() => import("@/components/dashboard/nutrition-balance-chart").then(m => m.NutritionBalanceChart), {
+  loading: () => <div className="h-64 animate-pulse rounded-3xl bg-black/[0.05]" />
+});
+const BloodPressureChart = dynamic(() => import("@/components/dashboard/blood-pressure-chart").then(m => m.BloodPressureChart), {
+  loading: () => <div className="h-64 animate-pulse rounded-3xl bg-black/[0.05]" />
+});
 
 function getDefaultCustomRange() {
   const to = new Date();
@@ -42,8 +39,9 @@ function getDefaultCustomRange() {
 function shiftDateKey(dateKey: string, days: number): string {
   const parsed = parseDateKey(dateKey);
   if (!parsed) return formatDateKey(new Date());
-  parsed.setUTCDate(parsed.getUTCDate() + days);
-  return formatDateKey(parsed);
+  const copy = new Date(parsed);
+  copy.setUTCDate(copy.getUTCDate() + days);
+  return formatDateKey(copy);
 }
 
 function DashboardSkeleton() {
@@ -64,72 +62,66 @@ export function DashboardIterationWorkspace() {
   const [range, setRange] = useState<RangeKey>("30d");
   const [customRange, setCustomRange] = useState(getDefaultCustomRange);
   const [autoRangeApplied, setAutoRangeApplied] = useState(false);
-  const [overview, setOverview] = useState<DashboardOverviewApiResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  
   const deferredRange = useDeferredValue(range);
   const deferredCustomRange = useDeferredValue(customRange);
 
-  useEffect(() => {
-    if (status !== "authenticated" || autoRangeApplied) return;
-    let cancelled = false;
-    async function loadLatestRange() {
-      try {
-        const latest = await listMealRecords(1);
-        if (cancelled) return;
-        const record = latest.records?.[0];
-        const raw = record?.captured_at ?? record?.created_at;
-        const latestKey = raw ? formatDateKey(raw as string) : formatDateKey(new Date());
-        setCustomRange({
-          from: shiftDateKey(latestKey, -29),
-          to: latestKey,
-        });
-        setRange("custom");
-        setAutoRangeApplied(true);
-      } catch (err) {
-        if (!cancelled) setAutoRangeApplied(true);
-      }
-    }
-    void loadLatestRange();
-    return () => {
-      cancelled = true;
-    };
-  }, [autoRangeApplied, status]);
+  // Auto-detect latest activity and set range accordingly
+  // We use enabled: !!(status === "authenticated" && !autoRangeApplied) to avoid unnecessary fetches
+  const { data: latestMealResult } = useQuery({
+    queryKey: ["meals", "latest", 1],
+    queryFn: () => listMealRecords(1),
+    enabled: status === "authenticated" && !autoRangeApplied,
+    staleTime: Infinity, // Range detection only needs to happen once per session/mount
+  });
 
   useEffect(() => {
-    if (status !== "authenticated") return;
-    if (deferredRange === "custom" && (!deferredCustomRange.from || !deferredCustomRange.to)) return;
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getDashboardOverview({
-          range: deferredRange,
-          from: deferredRange === "custom" ? deferredCustomRange.from : undefined,
-          to: deferredRange === "custom" ? deferredCustomRange.to : undefined,
-        });
-        if (!cancelled) setOverview(response);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (latestMealResult?.records?.[0] && !autoRangeApplied) {
+      const record = latestMealResult.records[0];
+      const raw = record.captured_at ?? record.created_at;
+      const latestKey = raw ? formatDateKey(raw as string) : formatDateKey(new Date());
+      setCustomRange({
+        from: shiftDateKey(latestKey, -29),
+        to: latestKey,
+      });
+      setRange("custom");
+      setAutoRangeApplied(true);
+    } else if (latestMealResult && !autoRangeApplied) {
+      // If no records found, just mark as applied to stop trying
+      setAutoRangeApplied(true);
     }
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [deferredCustomRange, deferredRange, status]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [latestMealResult, autoRangeApplied]);
 
+  // Main dashboard overview query
+  const { 
+    data: overview, 
+    error: overviewError, 
+    isLoading: overviewLoading,
+    isPlaceholderData 
+  } = useQuery({
+    queryKey: ["dashboard", "overview", deferredRange, deferredCustomRange],
+    queryFn: () => getDashboardOverview({
+      range: deferredRange,
+      from: deferredRange === "custom" ? deferredCustomRange.from : undefined,
+      to: deferredRange === "custom" ? deferredCustomRange.to : undefined,
+    }),
+    enabled: status === "authenticated" && (deferredRange !== "custom" || (!!deferredCustomRange.from && !!deferredCustomRange.to)),
+    placeholderData: (prev) => prev,
+  });
+
+  // Derived state calculated during render (rerender-derived-state-no-effect)
   const summarySparklines = useMemo(() => {
     if (!overview) return null;
     return {
-      adherence: overview.charts.calories.points.map(p => ({ value: p.value })), // Placeholder
+      adherence: overview.charts.calories.points.map(p => ({ value: p.value })),
       risk: overview.charts.glycemic_risk.points.map(p => ({ value: p.value })),
-      nutrition: overview.charts.calories.points.map(p => ({ value: p.value })), // Placeholder
+      nutrition: overview.charts.calories.points.map(p => ({ value: p.value })),
     };
   }, [overview]);
+
+  const error = overviewError instanceof Error ? overviewError.message : overviewError ? String(overviewError) : null;
 
   return (
     <div className="section-stack">
@@ -138,7 +130,7 @@ export function DashboardIterationWorkspace() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
+          <h1 className="text-2xl font-bold tracking-tight" role="heading">Overview</h1>
           <p className="text-sm text-[color:var(--muted-foreground)]">
             Health signals and nutrition insights for the selected period.
           </p>
@@ -153,28 +145,21 @@ export function DashboardIterationWorkspace() {
         </div>
       </div>
 
-      {loading && !overview ? <DashboardSkeleton /> : null}
+      {overviewLoading && !overview ? <DashboardSkeleton /> : null}
 
       {overview && summarySparklines ? (
-        <div className="relative isolate">
-          <div className="dashboard-grounding" />
+        <div className={isPlaceholderData ? "opacity-50 transition-opacity" : "relative isolate"}>
+          {!isPlaceholderData && <div className="dashboard-grounding" />}
           <div className="grid grid-cols-12 gap-6">
             <MetricStrip overview={overview} sparklines={summarySparklines} />
             
-            {/* Middle Row */}
             <div className="col-span-12 flex flex-col gap-6">
               <CorrelationChart 
                 calories={overview.charts.calories.points} 
                 risk={overview.charts.glycemic_risk.points} 
               />
-              {/*<div className="h-24">*/}
-              {/*  <InsightsSidebar */}
-              {/*    recommendation={overview.insights.recommendations[0] ?? "Keep tracking your meals to reveal deeper insights."} */}
-              {/*  />*/}
-              {/*</div>*/}
             </div>
 
-            {/* Bottom Row */}
             <div className="col-span-12 lg:col-span-6">
               <NutritionBalanceChart chart={overview.charts.macros} />
             </div>
@@ -182,7 +167,7 @@ export function DashboardIterationWorkspace() {
               <MealClock bins={overview.charts.meal_timing.bins} />
             </div>
             <div className="col-span-12">
-              <BloodPressureChart chart={overview?.charts.blood_pressure} loading={loading} />
+              <BloodPressureChart chart={overview?.charts.blood_pressure} loading={overviewLoading} />
             </div>
           </div>
         </div>

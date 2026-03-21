@@ -60,9 +60,9 @@ class InProcessEmotionRuntime(EmotionInferencePort):
             os.environ.setdefault("TRANSFORMERS_CACHE", config.model_cache_dir)
         device = _resolve_device(config.model_device)
         self._pipeline = pipeline or EmotionPipeline(
-            asr=WhisperASR(config.asr_model_id, device),
-            text=HFTextEmotion(config.text_model_id, device),
-            speech=HFSpeechEmotion(config.speech_model_id, device),
+            asr=WhisperASR(config.asr_model_id, device, cache_dir=config.model_cache_dir),
+            text=HFTextEmotion(config.text_model_id, device, cache_dir=config.model_cache_dir),
+            speech=HFSpeechEmotion(config.speech_model_id, device, cache_dir=config.model_cache_dir),
             context=TimelineContextFeatureExtractor(
                 cast(TimelineServiceProtocol, event_timeline),
                 history_window=config.history_window,
@@ -100,7 +100,7 @@ class InProcessEmotionRuntime(EmotionInferencePort):
         if not config.fusion_model_id:
             return HeuristicFusion()
         try:
-            return HFFusion(config.fusion_model_id, device)
+            return HFFusion(config.fusion_model_id, device, cache_dir=config.model_cache_dir)
         except Exception:
             return HeuristicFusion()
 

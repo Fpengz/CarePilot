@@ -13,6 +13,7 @@ import base64
 import io
 import logging
 import mimetypes
+from typing import Any, cast
 
 import librosa
 import numpy as np
@@ -21,6 +22,7 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
 
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.runtime.hf_loader import get_hf_loader
 
 _PROMPT_TEMPLATE = (
     "Instruction: {query} \nFollow the text instruction based on the following audio: <SpeechHere>"
@@ -42,6 +44,7 @@ class AudioAgent:
         api_key: str | None = None,
         base_url: str | None = None,
         model_id: str | None = None,
+        model_cache_dir: str | None = None,
     ) -> None:
         self.repo_id = repo_id or "MERaLiON/MERaLiON-2-3B"
         self._groq_api_key = groq_api_key
@@ -49,6 +52,7 @@ class AudioAgent:
         self._api_key = api_key
         self._base_url = base_url
         self._model_id = model_id
+        self.model_cache_dir = model_cache_dir
         self.device = "mps" if torch.backends.mps.is_available() else "cpu"
         self.torch_dtype = torch.float16 if torch.backends.mps.is_available() else torch.float32
         self.processor = None
@@ -65,9 +69,16 @@ class AudioAgent:
             self.repo_id,
             self.device,
         )
-        self.processor = AutoProcessor.from_pretrained(self.repo_id, trust_remote_code=True)
-        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        self.processor = get_hf_loader(
             self.repo_id,
+            load_func=cast(Any, AutoProcessor.from_pretrained),
+            cache_dir=self.model_cache_dir,
+            trust_remote_code=True,
+        )
+        self.model = get_hf_loader(
+            self.repo_id,
+            load_func=cast(Any, AutoModelForSpeechSeq2Seq.from_pretrained),
+            cache_dir=self.model_cache_dir,
             torch_dtype=self.torch_dtype,
             low_cpu_mem_usage=True,
             use_safetensors=True,

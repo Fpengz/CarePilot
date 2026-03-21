@@ -8,12 +8,12 @@ from typing import Any
 
 import numpy as np
 import soundfile as sf
-from transformers import pipeline
 
 from care_pilot.config.app import get_settings
 from care_pilot.features.companion.emotion.ports import ASRPort
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.observability.payloads import pretty_json_payload
+from care_pilot.platform.runtime.hf_loader import get_hf_loader
 
 logger = get_logger(__name__)
 
@@ -26,9 +26,10 @@ def _safe_preview(text: str, *, limit: int = 160) -> str:
 
 
 class WhisperASR(ASRPort):
-    def __init__(self, repo_id: str, device: str) -> None:
+    def __init__(self, repo_id: str, device: str, cache_dir: str | None = None) -> None:
         self._repo_id = repo_id
         self._device = 0 if device == "cuda" else -1
+        self._cache_dir = cache_dir
         self._pipeline: Any = None
 
     def _ensure_loaded(self) -> None:
@@ -39,9 +40,10 @@ class WhisperASR(ASRPort):
             self._repo_id,
             self._device,
         )
-        self._pipeline = pipeline(
-            "automatic-speech-recognition",
-            model=self._repo_id,
+        self._pipeline = get_hf_loader(
+            self._repo_id,
+            task="automatic-speech-recognition",
+            cache_dir=self._cache_dir,
             device=self._device,
         )
         logger.info("emotion_asr_load_complete repo_id=%s", self._repo_id)

@@ -7,7 +7,6 @@ import re
 
 import numpy as np
 import soundfile as sf
-from transformers import pipeline
 
 from care_pilot.agent.emotion.schemas import (
     EmotionLabel,
@@ -17,6 +16,7 @@ from care_pilot.config.app import get_settings
 from care_pilot.features.companion.emotion.ports import SpeechEmotionPort
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.observability.payloads import pretty_json_payload
+from care_pilot.platform.runtime.hf_loader import get_hf_loader
 
 logger = get_logger(__name__)
 
@@ -47,17 +47,19 @@ def _safe_preview(text: str | None, *, limit: int = 160) -> str | None:
 
 
 class HFSpeechEmotion(SpeechEmotionPort):
-    def __init__(self, model_id: str, device: str) -> None:
+    def __init__(self, model_id: str, device: str, cache_dir: str | None = None) -> None:
         self._model_id = model_id
         self._device = 0 if device == "cuda" else -1
+        self._cache_dir = cache_dir
         self._pipeline = None
 
     def _ensure_pipeline(self) -> None:
         if self._pipeline is not None:
             return
-        self._pipeline = pipeline(
-            "audio-classification",
-            model=self._model_id,
+        self._pipeline = get_hf_loader(
+            self._model_id,
+            task="audio-classification",
+            cache_dir=self._cache_dir,
             device=self._device,
             return_all_scores=True,
             trust_remote_code=True,
