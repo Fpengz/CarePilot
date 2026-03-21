@@ -6,8 +6,8 @@ This is the canonical architecture reference for CarePilot. It describes the fea
 Related docs:
 - `README.md`
 - `docs/refactor_plan.md` — detailed refactor history and current status
-- `docs/agent-modules.md` — agent layer deep-dive
-- `docs/workflows.md` — workflow decision table and templates
+- `docs/REFACTOR_HISTORY.md` — log of completed architectural phases
+- `docs/prompt_catalog.md` — repository of all agent prompts
 
 ---
 
@@ -18,131 +18,84 @@ CarePilot is a **feature-first modular monolith**: one codebase, strict layer ow
 ```
 src/care_pilot/
 ├── features/      product behavior and business entrypoints
-├── agent/         bounded model-powered capabilities
+├── agent/         bounded model-powered reasoning nodes
 ├── platform/      infrastructure and runtime adapters
 ├── core/          shared primitives and contracts
 └── config/        settings composition root
 ```
 
 ### Repo-Wide Architecture Stance (Hard Decisions)
-- **Features** own product behavior.
-- **Agent** owns inference implementations.
+- **Features** own product behavior and deterministic domain rules.
+- **Agent** owns model-backed reasoning (pydantic-ai).
+- **Orchestration** is supervisor-led via **LangGraph**.
 - **Platform** owns infra-only adapters.
-- **Core** owns only tiny cross-cutting primitives.
-- **Standard Libraries**:
-  - **Inference agents**: Standardize on `pydantic_ai` inside `src/care_pilot/agent/**` only.
-  - **Multi-step workflows**: Standardize on `pydantic-graph` inside `src/care_pilot/features/**/workflows/**` only.
-  - **Scheduling/persistence/policy**: Deterministic code in feature domain + platform adapters.
+- **Core** owns only tiny cross-cutting primitives and API contracts.
 
 ---
 
 ## Layers
 
 ### Interface Layer — `apps/web/`
-- Next.js 14 app router; typed API clients auto-generated from FastAPI schemas.
+- Next.js 14 app router; robust data fetching via **TanStack Query**.
+- Optimized for low-latency via dynamic component loading and `content-visibility`.
 
 ### API Layer — `apps/api/carepilot_api/`
-- Owns HTTP transport, session auth, policy enforcement (`policy.py`), request validation, error mapping, and correlation IDs.
-- Route handlers are transport-only: they validate, check policy, extract a scoped deps dataclass, and call a feature use-case function.
-- **API Orchestrators**: Complex cross-feature aggregations for specific screens live in `apps/api/carepilot_api/services/` (e.g., `companion_orchestration.py`).
-- **Never** put business logic in routers or router-level `Depends` chains.
+- Owns HTTP transport, session auth, and policy enforcement.
+- **Thin Routers**: Handlers are transport-only. Deep orchestration logic is deferred to the Feature layer.
 
-### Worker Layer — `apps/workers/`
-- Independent process consuming the reminder scheduler and alert outbox.
-- Uses distributed locks from `platform/scheduling/coordination/` to prevent duplicate delivery.
+### Inference Layer — `apps/inference/run.py`
+- Standalone microservice offloading heavy model execution (Whisper, BERT) from the main API.
+- Enables horizontal scaling of AI capabilities independent of the business logic.
 
 ### Feature Layer — `src/care_pilot/features/`
-- Owns all product behavior. Every feature converges on a job-based naming convention (e.g., `meal_service.py`, `reminder_service.py`):
-  ```text
-  features/<feature>/
-    <feature_job>_service.py # Core feature entrypoint (formerly generic service.py)
-    domain/                  # models, rules, deterministic services (incl. persistence writes)
-    workflows/               # pydantic-graph workflows (multi-step journeys)
-    use_cases/               # granular entrypoint implementations (single-step or thin workflow entrypoints)
-    presenters/              # feature-level domain → view models (NOT apps/api schemas)
-    ports.py                 # feature-facing interfaces (protocols/ports)
-  ```
-- **Job-based Services** (e.g., `medication_management.py`) are the primary entrypoints for the API layer.
-- **Workflows** coordinate steps, branching, idempotency, and tracing.
-- **Domain** decides and writes (deterministic rules; persistence via stores).
-- **Use cases** provide specific implementation logic for complex features.
-- **Presenters** map domain → feature view models (API mapping stays in API layer).
+- Owns all product behavior.
+- **Workflows**: Coordinate multi-agent journeys using **LangGraph**.
+- **Blackboard Model**: Uses `PatientCaseSnapshot` as a shared state object that agents read from and contribute to.
 
 ### Agent Layer — `src/care_pilot/agent/`
-- Bounded reasoning helpers. Agents propose; they never authorize delivery or write durable state directly.
-- **Definition**: A model-backed inference component with typed input/output schemas, prompts, and a `pydantic_ai` wrapper.
-- **Not an agent**: Orchestration, deterministic business rules, repository access, or API mapping.
-- All agents inherit `BaseAgent[InputT, OutputT]` from `agent/core/` and return `AgentResult[OutputT]`.
-
-### Platform Layer — `src/care_pilot/platform/`
-- Infrastructure adapters. Feature code only touches platform through typed protocols or store interfaces.
-
-### Config Layer — `src/care_pilot/config/`
-- Single composition root (`app.py` → `AppSettings`). `get_settings()` validates cross-field constraints.
-
-### Core Layer — `src/care_pilot/core/`
-- Pure primitives: IDs, base errors, domain-neutral events, clock/time helpers.
-- **Contracts**: `src/care_pilot/core/contracts/api/` defines the canonical Pydantic models for the API surface.
+- Bounded reasoning nodes.
+- **Supervisor Agent**: Top-level orchestrator node that interprets intent and routes to specialists.
+- **Specialist Agents**: Perception (Meal, Meds) and Reasoning (Trend, Adherence, Care Plan) nodes.
+- Agents return structured **`AgentResponse`** with proposed actions and recommendations.
 
 ---
 
-## Workflow Strategy
+## Multi-Agent Orchestration
 
-### Why Graphs Are Needed
-- Sequencing across multiple bounded steps.
-- Conditional branching, retries/fallbacks, and step-level tracing.
-- Use **`pydantic-graph`** for declared multi-step workflows.
+CarePilot uses a **Supervisor-led LangGraph** architecture.
 
-### Workflow Tracing
-- Use **`EventTimelineService`** as the canonical workflow trace sink.
-- Workflow traces are product-visible and operationally meaningful (replay by `correlation_id`, audit display).
-
----
-
-## Request Lifecycle
-
-```
-Client
-  │
-  ▼
-apps/api/carepilot_api/  ← authenticate session, check policy, validate input
-  │
-  ▼
-features/<feature>/<job>_service.py  ← orchestrate domain logic (e.g., meal_service.py)
-  │              │
-  │              ▼
-  │        features/safety/  ← deterministic safety screen
-  │
-  ├──► agent/<agent>/  ← propose enriched output (never writes state)
-  │
-  ├──► features/companion/  ← personalization, engagement, clinician digest
-  │
-  ▼
-platform/persistence/  ← persist durable outputs
-platform/messaging/    ← emit follow-up work to outbox
-  │
-  ▼
-apps/workers/  ← process reminders, outbox, background tasks
+```mermaid
+graph TD
+    START((Start)) --> Supervisor{Supervisor Agent}
+    Supervisor -->|Intent: Meal| MealAgent[Meal Perception]
+    Supervisor -->|Intent: Meds| MedAgent[Medication Parser]
+    Supervisor -->|Intent: Trends| TrendAgent[Longitudinal Analyst]
+    
+    MealAgent --> Supervisor
+    MedAgent --> Supervisor
+    TrendAgent --> Supervisor
+    
+    Supervisor -->|Intent: Advice| CarePlanAgent[Care Strategy]
+    CarePlanAgent --> Supervisor
+    
+    Supervisor -->|Done| END((End))
+    
+    subgraph "Shared Blackboard State"
+        PatientCaseSnapshot
+    end
 ```
 
----
-
-## Key Architectural Rules
-
-1. **Route handlers are transport-only.** Auth check → policy check → scoped deps → call job-based service.
-2. **Business logic lives in job-based services/domain** (e.g., `meal_service.py`), not in routers or UI glue.
-3. **Domain layer is pure.** `features/*/domain/` has no I/O and no infrastructure imports.
-4. **Agents are bounded helpers.** They receive typed input, return `AgentResult`, and never touch stores.
-5. **Safety is deterministic.** `features/safety/domain/engine.py` runs before any LLM output is accepted.
-6. **Platform adapters are the only I/O boundary.** Feature code does not open connections directly.
-7. **Contracts break reverse dependencies.** Features return models from `core/contracts/api/` to avoid depending on the API app.
-8. **No API schema imports** inside `src/care_pilot/features/**` or `src/care_pilot/platform/**`.
+### Strategic Rules:
+1. **Agents Propose, Features Execute**: Agents return `AgentAction` objects; feature workflows validate and commit them.
+2. **Deterministic Safety**: Safety filters run after agent reasoning but before user delivery.
+3. **Traceability**: All agent reasoning steps are captured in `reasoning_trace` for observability.
 
 ---
 
-## Runtime Model
+## Validation Gates
 
-- SQLite for durable storage (`care_pilot.db`, `care_pilot_auth.db`).
-- In-memory fallbacks for cache and coordination when Redis is absent.
-- Redis for ephemeral state, distributed locks, and worker signaling in production-aligned environments.
-- Chat memory and vector stores persist under `data/runtime/` and `data/vectorstore/`.
+All contributions must pass the following check suite:
+- `uv run ruff check .` - Linting and formatting.
+- `uv run ty check .` - Static type safety.
+- `uv run pytest -q` - Functional correctness.
+- `pnpm web:typecheck` - Frontend integrity.
