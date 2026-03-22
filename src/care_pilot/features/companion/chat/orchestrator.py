@@ -61,6 +61,7 @@ from care_pilot.features.companion.core.companion_core_service import CompanionS
 from care_pilot.features.companion.core.domain import PatientCaseSnapshot
 from care_pilot.features.companion.core.snapshot import build_case_snapshot
 from care_pilot.features.meals.domain.normalization import log_meal_from_text
+from care_pilot.features.safety.domain.triage import evaluate_text_safety
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence import AppStores
 from care_pilot.platform.persistence.sqlite_db import get_connection
@@ -293,6 +294,7 @@ class ChatOrchestrator:
                 for _node_name, state_update in chunk.items():
                     if "last_agent_response" in state_update and state_update["last_agent_response"]:
                         agent_resp = state_update["last_agent_response"]
+                        merged_actions = self._merge_agent_actions(agent_resp.actions)
                         try:
                             ctx.event_timeline.append(
                                 event_type="agent_action_proposed",
@@ -306,7 +308,7 @@ class ChatOrchestrator:
                                     "confidence": agent_resp.confidence,
                                     "summary_length": len(agent_resp.summary or ""),
                                     "recommendation_count": len(agent_resp.recommendations),
-                                    "action_count": len(agent_resp.actions),
+                                    "action_count": len(merged_actions),
                                 },
                             )
                             agent_names.append(agent_resp.agent_name)
@@ -319,10 +321,11 @@ class ChatOrchestrator:
 
                         # Only yield if there's actual new content to show to the user
                         if agent_resp.summary:
+                            safe_summary = self._apply_safety_policy(agent_resp.summary)
                             content = self._merge_agent_response(
                                 response_prefix=response_prefix,
                                 final_response=final_response,
-                                summary=agent_resp.summary,
+                                summary=safe_summary,
                             )
                             if response_prefix and not final_response:
                                 response_prefix = None  # only prepend once
@@ -558,6 +561,32 @@ class ChatOrchestrator:
         if response_prefix and not final_response:
             content = f"{response_prefix}{content}"
         return content
+
+    @staticmethod
+    def _apply_safety_policy(summary: str) -> str:
+        """Apply explicit safety gating to agent summaries."""
+        decision = evaluate_text_safety(summary)
+        if decision.decision == "allow":
+            return summary
+        required = " ".join(decision.required_actions).strip()
+        if required:
+            return f"{required}"
+        return "I’m concerned this may need urgent medical attention. Please seek care right away."
+
+    @staticmethod
+    def _merge_agent_actions(actions: list[dict]) -> list[dict]:
+        """Deterministically dedupe agent actions for telemetry."""
+        seen: set[str] = set()
+        merged: list[dict] = []
+        for action in actions:
+            action_type = str(action.get("type", ""))
+            message = str(action.get("message", ""))
+            key = f"{action_type}::{message}"
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(action)
+        return merged
 
     def _format_emotion_context(self, inference: EmotionInferenceResult) -> str:
         pct = int(inference.confidence * 100)
