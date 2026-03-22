@@ -10,6 +10,10 @@ from datetime import UTC, datetime
 from typing import Any, TypedDict, cast
 from uuid import uuid4
 
+from apps.api.carepilot_api.deps import (
+    RecommendationAgentDeps,
+    RecommendationDeps,
+)
 from apps.api.carepilot_api.errors import build_api_error
 
 from care_pilot.agent.adapters.shadow_agents import RecommendationAgentAdapter
@@ -347,15 +351,16 @@ def _resolve_clinical_snapshot(*, deps: Any, user_id: str) -> Any:
 
 def generate_recommendation_for_session(
     *,
-    deps: Any,
+    deps: RecommendationDeps,
     session: dict[str, object],
     request_id: str | None,
     correlation_id: str | None,
 ) -> RecommendationGenerateResponse:
     user_id = str(session["user_id"])
+    event_timeline = cast(Any, deps).event_timeline
     issued_request_id = request_id or str(uuid4())
     issued_correlation_id = correlation_id or str(uuid4())
-    deps.event_timeline.append(
+    event_timeline.append(
         event_type="workflow_started",
         workflow_name="recommendation_generate",
         request_id=issued_request_id,
@@ -387,7 +392,7 @@ def generate_recommendation_for_session(
     recommendation = generate_recommendation(meal_records[-1], snapshot, user_profile)
     recommendation_json = recommendation.model_dump(mode="json")
     deps.stores.recommendations.save_recommendation(user_id, recommendation_json)
-    deps.event_timeline.append(
+    event_timeline.append(
         event_type="workflow_completed",
         workflow_name="recommendation_generate",
         request_id=issued_request_id,
@@ -416,15 +421,16 @@ def generate_recommendation_for_session(
 
 async def get_daily_agent_for_session(
     *,
-    deps: Any,
+    deps: RecommendationAgentDeps,
     session: dict[str, object],
     request_id: str | None,
     correlation_id: str | None,
 ) -> RecommendationAgentResponse:
     user_id = str(session["user_id"])
+    event_timeline = cast(Any, deps).event_timeline
     issued_request_id = request_id or str(uuid4())
     issued_correlation_id = correlation_id or str(uuid4())
-    deps.event_timeline.append(
+    event_timeline.append(
         event_type="workflow_started",
         workflow_name="daily_recommendation_agent",
         request_id=issued_request_id,
@@ -462,7 +468,7 @@ async def get_daily_agent_for_session(
             code="recommendations.agent_failed",
             message="recommendation agent returned no output",
         )
-    deps.event_timeline.append(
+    event_timeline.append(
         event_type="agent_action_proposed",
         workflow_name="daily_recommendation_agent",
         request_id=issued_request_id,
@@ -481,7 +487,7 @@ async def get_daily_agent_for_session(
         "replayed": False,
         "timeline_events": [],
     }
-    deps.event_timeline.append(
+    event_timeline.append(
         event_type="workflow_completed",
         workflow_name="daily_recommendation_agent",
         request_id=issued_request_id,
@@ -494,16 +500,17 @@ async def get_daily_agent_for_session(
 
 def get_substitutions_for_session(
     *,
-    deps: Any,
+    deps: RecommendationAgentDeps,
     session: dict[str, object],
     payload: RecommendationSubstitutionRequest,
     request_id: str | None = None,
     correlation_id: str | None = None,
 ) -> RecommendationSubstitutionResponse:
     user_id = str(session["user_id"])
+    event_timeline = cast(Any, deps).event_timeline
     issued_request_id = request_id or str(uuid4())
     issued_correlation_id = correlation_id or str(uuid4())
-    deps.event_timeline.append(
+    event_timeline.append(
         event_type="workflow_started",
         workflow_name="recommendation_substitution",
         request_id=issued_request_id,
@@ -538,7 +545,7 @@ def get_substitutions_for_session(
             code="recommendations.no_meal_records",
             message="no meal records available",
         )
-    deps.event_timeline.append(
+    event_timeline.append(
         event_type="workflow_completed",
         workflow_name="recommendation_substitution",
         request_id=issued_request_id,
@@ -551,16 +558,17 @@ def get_substitutions_for_session(
 
 def record_interaction_for_session(
     *,
-    deps: Any,
+    deps: RecommendationAgentDeps,
     session: dict[str, object],
     payload: RecommendationInteractionRequest,
     request_id: str | None = None,
     correlation_id: str | None = None,
 ) -> RecommendationInteractionResponse:
     user_id = str(session["user_id"])
+    event_timeline = cast(Any, deps).event_timeline
     issued_request_id = request_id or str(uuid4())
     issued_correlation_id = correlation_id or str(uuid4())
-    deps.event_timeline.append(
+    event_timeline.append(
         event_type="workflow_started",
         workflow_name="recommendation_interaction",
         request_id=issued_request_id,
@@ -589,7 +597,7 @@ def record_interaction_for_session(
             message="candidate not found",
             details={"candidate_id": str(exc)},
         ) from exc
-    deps.event_timeline.append(
+    event_timeline.append(
         event_type="workflow_completed",
         workflow_name="recommendation_interaction",
         request_id=issued_request_id,
