@@ -7,15 +7,13 @@ This module contains the application workflows for recommendations.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, TypedDict, cast
+from typing import Any, Protocol, TypedDict, cast
 from uuid import uuid4
 
-from apps.api.carepilot_api.deps import (
-    RecommendationAgentDeps,
-    RecommendationDeps,
-)
 from apps.api.carepilot_api.errors import build_api_error
 
+from care_pilot.agent.adapters.shadow_agents import RecommendationAgentAdapter
+from care_pilot.agent.core.base import AgentContext
 from care_pilot.core.contracts.api import (
     RecommendationAgentResponse,
     RecommendationGenerateResponse,
@@ -61,6 +59,19 @@ from .ports import (
     HouseholdStorePort,
     SuggestionRepositoryPort,
 )
+
+
+class RecommendationDeps(Protocol):
+    stores: Any
+    clinical_memory: ClinicalMemoryPort
+    event_timeline: EventTimelinePort
+
+
+class RecommendationAgentDeps(Protocol):
+    stores: Any
+    clinical_memory: ClinicalMemoryPort
+    recommendation_agent: Any
+    event_timeline: EventTimelinePort
 
 SUGGESTION_DISCLAIMER = (
     "This information is for general wellness and care support only, not a diagnosis. "
@@ -355,6 +366,16 @@ def generate_recommendation_for_session(
     correlation_id: str | None,
 ) -> RecommendationGenerateResponse:
     user_id = str(session["user_id"])
+    issued_request_id = request_id or str(uuid4())
+    issued_correlation_id = correlation_id or str(uuid4())
+    deps.event_timeline.append(
+        event_type="workflow_started",
+        workflow_name="recommendation_generate",
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_id,
+        payload={},
+    )
     meal_records = deps.stores.meals.list_meal_records(user_id)
     if not meal_records:
         raise build_api_error(
@@ -379,11 +400,19 @@ def generate_recommendation_for_session(
     recommendation = generate_recommendation(meal_records[-1], snapshot, user_profile)
     recommendation_json = recommendation.model_dump(mode="json")
     deps.stores.recommendations.save_recommendation(user_id, recommendation_json)
+    deps.event_timeline.append(
+        event_type="workflow_completed",
+        workflow_name="recommendation_generate",
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_id,
+        payload={},
+    )
 
     workflow = {
         "workflow_name": "recommendation_generate",
-        "request_id": str(request_id or ""),
-        "correlation_id": str(correlation_id or ""),
+        "request_id": issued_request_id,
+        "correlation_id": issued_correlation_id,
         "replayed": False,
         "timeline_events": [],
     }
@@ -406,10 +435,24 @@ async def get_daily_agent_for_session(
     correlation_id: str | None,
 ) -> RecommendationAgentResponse:
     user_id = str(session["user_id"])
+    issued_request_id = request_id or str(uuid4())
+    issued_correlation_id = correlation_id or str(uuid4())
+    deps.event_timeline.append(
+        event_type="workflow_started",
+        workflow_name="daily_recommendation_agent",
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_id,
+        payload={},
+    )
     health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
     meal_history = deps.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
-    output = await deps.recommendation_agent.generate(
+    agent_adapter = RecommendationAgentAdapter(
+        deps.recommendation_agent,
+        repository=deps.stores.recommendations,
+    )
+    agent_result = await agent_adapter.run(
         RecommendationAgentInput(
             user_id=user_id,
             health_profile=health_profile,
@@ -417,17 +460,48 @@ async def get_daily_agent_for_session(
             meal_history=meal_history,
             clinical_snapshot=clinical_snapshot,
         ),
-        repository=deps.stores.recommendations,
+        AgentContext(
+            user_id=user_id,
+            session_id=str(session.get("session_id", "")),
+            request_id=issued_request_id,
+            correlation_id=issued_correlation_id,
+        ),
     )
-    recommendation = output.recommendation
+    output = agent_result.output
+    recommendation = output.recommendation if output is not None else None
+    if recommendation is None:
+        raise build_api_error(
+            status_code=500,
+            code="recommendations.agent_failed",
+            message="recommendation agent returned no output",
+        )
+    deps.event_timeline.append(
+        event_type="agent_action_proposed",
+        workflow_name="daily_recommendation_agent",
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_id,
+        payload={
+            "agent_name": agent_result.agent_name,
+            "status": "success" if agent_result.success else "error",
+        },
+    )
     payload = recommendation.model_dump(mode="json")
     payload["workflow"] = {
         "workflow_name": "daily_recommendation_agent",
-        "request_id": str(request_id or ""),
-        "correlation_id": str(correlation_id or ""),
+        "request_id": issued_request_id,
+        "correlation_id": issued_correlation_id,
         "replayed": False,
         "timeline_events": [],
     }
+    deps.event_timeline.append(
+        event_type="workflow_completed",
+        workflow_name="daily_recommendation_agent",
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_id,
+        payload={},
+    )
     return RecommendationAgentResponse.model_validate(payload)
 
 
@@ -436,8 +510,20 @@ def get_substitutions_for_session(
     deps: RecommendationAgentDeps,
     session: dict[str, object],
     payload: RecommendationSubstitutionRequest,
+    request_id: str | None = None,
+    correlation_id: str | None = None,
 ) -> RecommendationSubstitutionResponse:
     user_id = str(session["user_id"])
+    issued_request_id = request_id or str(uuid4())
+    issued_correlation_id = correlation_id or str(uuid4())
+    deps.event_timeline.append(
+        event_type="workflow_started",
+        workflow_name="recommendation_substitution",
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_id,
+        payload={"source_meal_id": payload.source_meal_id},
+    )
     health_profile, user_profile = resolve_user_profile(deps.stores.profiles, session)
     meal_history = deps.stores.meals.list_meal_records(user_id)
     clinical_snapshot = _resolve_clinical_snapshot(deps=deps, user_id=user_id)
@@ -465,6 +551,14 @@ def get_substitutions_for_session(
             code="recommendations.no_meal_records",
             message="no meal records available",
         )
+    deps.event_timeline.append(
+        event_type="workflow_completed",
+        workflow_name="recommendation_substitution",
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_id,
+        payload={"plan_id": plan.plan_id if hasattr(plan, "plan_id") else None},
+    )
     return RecommendationSubstitutionResponse.model_validate(plan.model_dump(mode="json"))
 
 
@@ -473,8 +567,20 @@ def record_interaction_for_session(
     deps: RecommendationAgentDeps,
     session: dict[str, object],
     payload: RecommendationInteractionRequest,
+    request_id: str | None = None,
+    correlation_id: str | None = None,
 ) -> RecommendationInteractionResponse:
     user_id = str(session["user_id"])
+    issued_request_id = request_id or str(uuid4())
+    issued_correlation_id = correlation_id or str(uuid4())
+    deps.event_timeline.append(
+        event_type="workflow_started",
+        workflow_name="recommendation_interaction",
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_id,
+        payload={"event_type": payload.event_type},
+    )
     meal_history = deps.stores.meals.list_meal_records(user_id)
     try:
         interaction, snapshot = record_interaction_and_update_preferences(
@@ -496,6 +602,14 @@ def record_interaction_for_session(
             message="candidate not found",
             details={"candidate_id": str(exc)},
         ) from exc
+    deps.event_timeline.append(
+        event_type="workflow_completed",
+        workflow_name="recommendation_interaction",
+        request_id=issued_request_id,
+        correlation_id=issued_correlation_id,
+        user_id=user_id,
+        payload={"candidate_id": payload.candidate_id},
+    )
     return RecommendationInteractionResponse(
         interaction=interaction.model_dump(mode="json"),
         preference_snapshot=snapshot.model_dump(mode="json"),

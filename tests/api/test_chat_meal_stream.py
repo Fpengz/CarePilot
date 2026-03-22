@@ -82,6 +82,7 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("EMOTION_INFERENCE_ENABLED", "true")
+    monkeypatch.setenv("EMOTION_RUNTIME_MODE", "remote")
     _reset_settings_cache()
 
     app = create_app()
@@ -128,6 +129,7 @@ def test_chat_audio_continues_when_speech_emotion_inference_fails(
 ) -> None:
     monkeypatch.setenv("EMOTION_INFERENCE_ENABLED", "true")
     monkeypatch.setenv("EMOTION_SPEECH_ENABLED", "true")
+    monkeypatch.setenv("EMOTION_RUNTIME_MODE", "remote")
     _reset_settings_cache()
 
     app = create_app()

@@ -16,13 +16,22 @@ from fastapi import HTTPException, Request
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
+from care_pilot.agent.adapters.shadow_agents import (
+    EmotionSpeechAgentAdapter,
+    EmotionTextAgentAdapter,
+)
 from care_pilot.agent.chat.schemas import (
     ChatStreamEvent,
 )
+from care_pilot.agent.core.base import AgentContext
 from care_pilot.agent.emotion import (
     EmotionAgentDisabledError,
 )
-from care_pilot.agent.emotion.schemas import EmotionInferenceResult
+from care_pilot.agent.emotion.schemas import (
+    EmotionInferenceResult,
+    EmotionSpeechAgentInput,
+    EmotionTextAgentInput,
+)
 from care_pilot.features.companion.chat.meal_intent import (
     classify_meal_log_intent,
     heuristic_meal_log_intent,
@@ -40,6 +49,11 @@ from care_pilot.features.companion.chat.router import QueryRouter
 from care_pilot.features.companion.chat.workflows.companion_graph import (
     CompanionState,
     build_companion_graph,
+)
+from care_pilot.features.companion.chat.workflows.companion_shadow_graph import (
+    CompanionShadowDeps,
+    CompanionShadowState,
+    schedule_companion_shadow_workflow,
 )
 
 # Important: These must be imported from features core, not apps/api
@@ -102,7 +116,11 @@ class ChatOrchestrator:
         """
         user_id = str(session.get("user_id", ""))
         session_id = str(session.get("session_id", ""))
-        correlation_id = getattr(request.state, "correlation_id", None) or str(uuid.uuid4())
+        correlation_raw = getattr(request.state, "correlation_id", None)
+        correlation_id = str(correlation_raw) if correlation_raw else str(uuid.uuid4())
+        request_raw = getattr(request.state, "request_id", None)
+        request_id = str(request_raw) if request_raw is not None else None
+        agent_names: list[str] = []
 
         # 1. Build Blackboard (Snapshot)
         snapshot = build_case_snapshot(
@@ -116,11 +134,38 @@ class ChatOrchestrator:
             blood_pressure_readings=inputs.blood_pressure_readings,
             clinical_snapshot=inputs.clinical_snapshot,
         )
+        try:
+            ctx.event_timeline.append(
+                event_type="workflow_started",
+                workflow_name="companion_chat",
+                correlation_id=correlation_id,
+                request_id=request_id,
+                user_id=user_id,
+                payload={"message_length": len(user_message)},
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "chat_workflow_started_append_failed correlation_id=%s error=%s",
+                correlation_id,
+                exc,
+            )
 
         # 2. Emotion Logic
         if ctx.emotion_agent.inference_enabled:
             try:
-                inference = await ctx.emotion_agent.infer_text(text=user_message)
+                adapter = EmotionTextAgentAdapter(ctx.emotion_agent)
+                result = await adapter.run(
+                    EmotionTextAgentInput(text=user_message, language=None, user_id=user_id),
+                    AgentContext(
+                        user_id=user_id,
+                        session_id=session_id,
+                        request_id=request_id,
+                        correlation_id=correlation_id,
+                    ),
+                )
+                inference = result.output
+                if inference is None:
+                    raise RuntimeError("emotion agent returned no output")
                 yield ChatStreamEvent(
                     event="emotion",
                     data={
@@ -129,6 +174,26 @@ class ChatOrchestrator:
                         "product_state": inference.product_state,
                     },
                 )
+                try:
+                    ctx.event_timeline.append(
+                        event_type="agent_action_proposed",
+                        workflow_name="companion_chat",
+                        correlation_id=correlation_id,
+                        request_id=request_id,
+                        user_id=user_id,
+                        payload={
+                            "agent_name": result.agent_name,
+                            "status": "success" if result.success else "error",
+                            "confidence": result.confidence,
+                            "summary_length": len(inference.final_emotion or ""),
+                        },
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        "emotion_timeline_append_failed correlation_id=%s error=%s",
+                        correlation_id,
+                        exc,
+                    )
             except EmotionAgentDisabledError:
                 pass
             except Exception as exc:  # noqa: BLE001
@@ -151,7 +216,20 @@ class ChatOrchestrator:
         else:
             user_message_with_memory = user_message
 
-        # 4. Meal Intent (Ported from legacy orchestrator)
+        # 4. Shadow pydantic-graph workflow (observability only)
+        schedule_companion_shadow_workflow(
+            deps=CompanionShadowDeps(event_timeline=ctx.event_timeline),
+            state=CompanionShadowState(
+                user_id=user_id,
+                session_id=session_id,
+                request_id=request_id,
+                correlation_id=correlation_id,
+                message=user_message_with_memory,
+                snapshot_json=snapshot.model_dump_json(),
+            ),
+        )
+
+        # 5. Meal Intent (Ported from legacy orchestrator)
         meal_text = self._parse_meal_command(user_message)
         response_prefix = None
         if not meal_text:
@@ -202,7 +280,7 @@ class ChatOrchestrator:
                 data=cast(dict[str, object], meal_result)
             )
 
-        # 5. Run Graph
+        # 6. Run Graph
         try:
             # We use the version with memory context for the agent reasoning
             final_response = ""
@@ -215,13 +293,39 @@ class ChatOrchestrator:
                 for _node_name, state_update in chunk.items():
                     if "last_agent_response" in state_update and state_update["last_agent_response"]:
                         agent_resp = state_update["last_agent_response"]
+                        try:
+                            ctx.event_timeline.append(
+                                event_type="agent_action_proposed",
+                                workflow_name="companion_chat",
+                                correlation_id=correlation_id,
+                                request_id=request_id,
+                                user_id=user_id,
+                                payload={
+                                    "agent_name": agent_resp.agent_name,
+                                    "status": agent_resp.status,
+                                    "confidence": agent_resp.confidence,
+                                    "summary_length": len(agent_resp.summary or ""),
+                                    "recommendation_count": len(agent_resp.recommendations),
+                                    "action_count": len(agent_resp.actions),
+                                },
+                            )
+                            agent_names.append(agent_resp.agent_name)
+                        except Exception as exc:  # noqa: BLE001
+                            logger.warning(
+                                "agent_timeline_append_failed correlation_id=%s error=%s",
+                                correlation_id,
+                                exc,
+                            )
 
                         # Only yield if there's actual new content to show to the user
                         if agent_resp.summary:
-                            content = agent_resp.summary
+                            content = self._merge_agent_response(
+                                response_prefix=response_prefix,
+                                final_response=final_response,
+                                summary=agent_resp.summary,
+                            )
                             if response_prefix and not final_response:
-                                content = f"{response_prefix}{content}"
-                                response_prefix = None # only prepend once
+                                response_prefix = None  # only prepend once
 
                             final_response += content + "\n\n"
                             yield ChatStreamEvent(event="token", data={"text": content + "\n\n"})
@@ -246,9 +350,43 @@ class ChatOrchestrator:
                     assistant_message=final_response,
                     metadata={"source": "chat_multi_agent"},
                 )
+            try:
+                ctx.event_timeline.append(
+                    event_type="workflow_completed",
+                    workflow_name="companion_chat",
+                    correlation_id=correlation_id,
+                    request_id=request_id,
+                    user_id=user_id,
+                    payload={
+                        "agent_count": len(agent_names),
+                        "agents": agent_names,
+                        "response_length": len(final_response or ""),
+                    },
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "chat_workflow_completed_append_failed correlation_id=%s error=%s",
+                    correlation_id,
+                    exc,
+                )
 
         except Exception as exc:  # noqa: BLE001
             logger.error("multi_agent_workflow_failed error=%s", exc)
+            try:
+                ctx.event_timeline.append(
+                    event_type="workflow_failed",
+                    workflow_name="companion_chat",
+                    correlation_id=correlation_id,
+                    request_id=request_id,
+                    user_id=user_id,
+                    payload={"error": str(exc)},
+                )
+            except Exception as timeline_exc:  # noqa: BLE001
+                logger.warning(
+                    "chat_workflow_failed_append_failed correlation_id=%s error=%s",
+                    correlation_id,
+                    timeline_exc,
+                )
             yield ChatStreamEvent(
                 event="error",
                 data={"message": str(exc), "phase": "orchestration", "retryable": False},
@@ -290,13 +428,32 @@ class ChatOrchestrator:
 
         # 2. Speech Emotion
         if ctx.emotion_agent.inference_enabled and ctx.emotion_agent.speech_enabled:
+            correlation_raw = getattr(request.state, "correlation_id", None)
+            correlation_id = str(correlation_raw) if correlation_raw else str(uuid.uuid4())
+            request_raw = getattr(request.state, "request_id", None)
+            request_id = str(request_raw) if request_raw is not None else None
+            user_id = str(session.get("user_id", ""))
             try:
-                inference = await ctx.emotion_agent.infer_speech(
-                    audio_bytes=audio_bytes,
-                    filename=filename,
-                    content_type=content_type,
-                    transcription=user_message,
+                adapter = EmotionSpeechAgentAdapter(ctx.emotion_agent)
+                result = await adapter.run(
+                    EmotionSpeechAgentInput(
+                        audio_bytes=audio_bytes,
+                        filename=filename,
+                        content_type=content_type,
+                        transcription=user_message,
+                        language=None,
+                        user_id=user_id,
+                    ),
+                    AgentContext(
+                        user_id=user_id,
+                        session_id=str(session.get("session_id", "")),
+                        request_id=request_id,
+                        correlation_id=correlation_id,
+                    ),
                 )
+                inference = result.output
+                if inference is None:
+                    raise RuntimeError("emotion agent returned no output")
                 yield ChatStreamEvent(
                     event="emotion",
                     data={
@@ -305,6 +462,25 @@ class ChatOrchestrator:
                         "product_state": inference.product_state,
                     },
                 )
+                try:
+                    ctx.event_timeline.append(
+                        event_type="agent_action_proposed",
+                        workflow_name="companion_chat_audio",
+                        correlation_id=correlation_id,
+                        request_id=request_id,
+                        user_id=user_id,
+                        payload={
+                            "agent_name": result.agent_name,
+                            "status": "success" if result.success else "error",
+                            "confidence": result.confidence,
+                            "summary_length": len(inference.final_emotion or ""),
+                        },
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        "speech_emotion_timeline_append_failed error=%s",
+                        exc,
+                    )
             except Exception as exc:  # noqa: BLE001
                 self._log_suppressed_emotion_failure(
                     request=request, phase="speech_emotion", exc=exc
@@ -369,6 +545,19 @@ class ChatOrchestrator:
             return cleaned[6:].strip() or None
         match = _MEAL_PREFIX_RE.match(cleaned)
         return match.group(1).strip() if match else None
+
+    def _merge_agent_response(
+        self,
+        *,
+        response_prefix: str | None,
+        final_response: str,
+        summary: str,
+    ) -> str:
+        """Deterministically merge a single agent summary into the response."""
+        content = summary
+        if response_prefix and not final_response:
+            content = f"{response_prefix}{content}"
+        return content
 
     def _format_emotion_context(self, inference: EmotionInferenceResult) -> str:
         pct = int(inference.confidence * 100)

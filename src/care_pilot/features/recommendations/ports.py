@@ -25,6 +25,7 @@ class SuggestionRepositoryPort(Protocol):
 
 
 class ClinicalMemoryPort(Protocol):
+    def get(self, user_id: str) -> ClinicalProfileSnapshot | None: ...
     def put(self, user_id: str, snapshot: ClinicalProfileSnapshot) -> None: ...
 
 
