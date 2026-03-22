@@ -7,7 +7,7 @@ This module contains the application workflows for recommendations.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, Protocol, TypedDict, cast
+from typing import Any, TypedDict, cast
 from uuid import uuid4
 
 from apps.api.carepilot_api.errors import build_api_error
@@ -59,19 +59,6 @@ from .ports import (
     HouseholdStorePort,
     SuggestionRepositoryPort,
 )
-
-
-class RecommendationDeps(Protocol):
-    stores: Any
-    clinical_memory: ClinicalMemoryPort
-    event_timeline: EventTimelinePort
-
-
-class RecommendationAgentDeps(Protocol):
-    stores: Any
-    clinical_memory: ClinicalMemoryPort
-    recommendation_agent: Any
-    event_timeline: EventTimelinePort
 
 SUGGESTION_DISCLAIMER = (
     "This information is for general wellness and care support only, not a diagnosis. "
@@ -360,7 +347,7 @@ def _resolve_clinical_snapshot(*, deps: Any, user_id: str) -> Any:
 
 def generate_recommendation_for_session(
     *,
-    deps: RecommendationDeps,
+    deps: Any,
     session: dict[str, object],
     request_id: str | None,
     correlation_id: str | None,
@@ -429,7 +416,7 @@ def generate_recommendation_for_session(
 
 async def get_daily_agent_for_session(
     *,
-    deps: RecommendationAgentDeps,
+    deps: Any,
     session: dict[str, object],
     request_id: str | None,
     correlation_id: str | None,
@@ -507,7 +494,7 @@ async def get_daily_agent_for_session(
 
 def get_substitutions_for_session(
     *,
-    deps: RecommendationAgentDeps,
+    deps: Any,
     session: dict[str, object],
     payload: RecommendationSubstitutionRequest,
     request_id: str | None = None,
@@ -564,7 +551,7 @@ def get_substitutions_for_session(
 
 def record_interaction_for_session(
     *,
-    deps: RecommendationAgentDeps,
+    deps: Any,
     session: dict[str, object],
     payload: RecommendationInteractionRequest,
     request_id: str | None = None,

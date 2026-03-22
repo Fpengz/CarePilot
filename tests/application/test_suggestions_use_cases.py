@@ -49,6 +49,9 @@ class FakeRepository:
 
 @dataclass
 class FakeClinicalMemory:
+    def get(self, user_id: str) -> Any | None:
+        return None
+
     def put(self, user_id: str, snapshot: Any) -> None:
         return None
 
