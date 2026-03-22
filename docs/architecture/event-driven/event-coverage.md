@@ -32,6 +32,7 @@ of the event-driven multi-agent refactor. It focuses on events appended via
 ## Gaps / Follow-Ups
 
 - None currently identified for critical paths. Continue to audit newly added workflows for event coverage.
+- Audit note (2026-03-22): workflow start/complete events present for all currently tracked flows.
 
 ## Agent Invocation Audit
 - [ ] `src/care_pilot/features/companion/chat/orchestrator.py:150` — emotion inference (`infer_text`)
