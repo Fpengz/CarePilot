@@ -9,9 +9,8 @@ of the event-driven multi-agent refactor. It focuses on events appended via
 | Workflow / Flow | Event Types Emitted | Notes |
 | --- | --- | --- |
 | Companion chat (LangGraph) | `workflow_started`, `agent_action_proposed`, `workflow_completed`, `workflow_failed` | Emitted in `features/companion/chat/orchestrator.py`. |
-| Companion chat (shadow pydantic-graph) | `workflow_started`, `agent_action_proposed`, `workflow_completed` | Shadow-only telemetry in `features/companion/chat/workflows/companion_shadow_graph.py`. |
-| Meal analysis (pydantic-graph) | `workflow_started`, `workflow_completed`, `meal_analyzed`, `meal_confirmed`, `meal_skipped`, `agent_action_proposed` | Includes arbitration + dietary proposal events and shadow agent proposal when text is present. |
-| Medication intake (text/upload) | `workflow_started`, `workflow_completed`, `medication_logged`, `reminder_scheduled`, `agent_action_proposed` | Intake flows emit start/complete via trace emitter, plus shadow agent proposal. |
+| Meal analysis (LangGraph) | `workflow_started`, `workflow_completed`, `meal_analyzed`, `meal_confirmed`, `meal_skipped`, `agent_action_proposed` | Includes arbitration + dietary proposal events and agent proposal when text is present. |
+| Medication intake (text/upload) | `workflow_started`, `workflow_completed`, `medication_logged`, `reminder_scheduled`, `agent_action_proposed` | Intake flows emit start/complete via trace emitter plus medication agent proposals. |
 | Medication intake confirm | `workflow_started`, `workflow_completed` | Emitted when draft is confirmed into regimens/reminders. |
 | Medication regimen (manual create) | `medication_logged` | Logged on regimen creation. |
 | Medication regimen updates | `medication_updated`, `medication_deleted` | Emitted on regimen patch/delete. |
@@ -38,8 +37,7 @@ of the event-driven multi-agent refactor. It focuses on events appended via
 - [ ] `src/care_pilot/features/companion/chat/orchestrator.py:150` — emotion inference (`infer_text`)
 - [ ] `src/care_pilot/features/companion/chat/orchestrator.py:414` — emotion inference (`infer_speech`)
 - [ ] `src/care_pilot/features/companion/chat/workflows/companion_graph.py:84` — supervisor routing (`run_supervisor_agent`)
-- [ ] `src/care_pilot/features/companion/chat/workflows/companion_shadow_graph.py:138` — shadow supervisor routing (`run_supervisor_agent`)
 - [ ] `src/care_pilot/features/meals/use_cases/confirm_meal.py:88` — dietary agent adapter invocation
-- [ ] `src/care_pilot/features/meals/workflows/meal_upload_graph.py:112` — shadow meal agent invocation
-- [ ] `src/care_pilot/features/medications/medication_management.py:726` — shadow medication agent invocation
+- [ ] `src/care_pilot/features/meals/workflows/meal_upload_graph.py:112` — meal agent proposal invocation
+- [ ] `src/care_pilot/features/medications/medication_management.py:726` — medication agent proposal invocation
 - [ ] `src/care_pilot/features/recommendations/recommendation_service.py:420` — recommendation agent adapter invocation

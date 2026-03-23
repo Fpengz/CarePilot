@@ -22,7 +22,7 @@ CarePilot is not just a tracker; it’s an **AI-powered health companion** that 
 
 ## 4. Technical Architecture
 *   **Modular Monolith:** Built for extensibility and strict feature ownership.
-*   **Agent Orchestration:** Uses `pydantic-ai` for bounded reasoning and `pydantic-graph` for complex health workflows.
+*   **Agent Orchestration:** Uses `pydantic-ai` for bounded reasoning and `LangGraph` for complex health workflows.
 *   **Multimodal Inference:** Combines vision, text, and speech models to understand the patient holistically.
 *   **Local-First Data:** Uses SQLite for fast, reliable local storage, ensuring patient data is always accessible.
 

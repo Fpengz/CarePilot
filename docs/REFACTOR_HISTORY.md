@@ -22,7 +22,7 @@ This document tracks the completed phases of the CarePilot architectural refacto
   - Extracted **Chat Orchestration** to `features/companion/chat/orchestrator.py`.
 
 ## Phase 2 — First Explicit Workflows (Completed 2026-03-13)
-- **Goal**: Introduce `pydantic-graph` for multi-step journeys.
+- **Goal**: Introduce `LangGraph` for multi-step journeys.
 - **Actions**:
   - Meals: `features/meals/workflows/meal_upload_graph.py` is now the hot path for meal analysis.
   - Medications: Scaffolded `features/medications/workflows/prescription_ingest_graph.py`.

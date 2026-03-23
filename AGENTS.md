@@ -60,8 +60,8 @@ Do not put new business logic primarily in route handlers.
 - Agents must not write durable state directly.
 - Safety and policy checks remain outside prompts.
 - **Inference standard:** model-powered agents use `pydantic_ai` via `src/care_pilot/agent/runtime/*` (no direct `pydantic_ai.Agent` usage outside `src/care_pilot/agent/**`).
-- **Workflow standard:** declared multi-step product journeys use `pydantic-graph` (typed workflow state + explicit steps). Keep domain rules/persistence/scheduling deterministic in `features/**/domain`.
-- **LangGraph policy:** reserved for future workflows that require first-class checkpointed persistence, interrupts, or long-lived thread state. Do not introduce it by default.
+- **Workflow standard:** declared multi-step product journeys use **LangGraph** (typed workflow state + explicit steps). Keep domain rules/persistence/scheduling deterministic in `features/**/domain`.
+- **LangGraph policy:** LangGraph is the default workflow engine. Use its checkpoint/interrupt capabilities only when a workflow truly requires them, but keep deterministic domain rules in `features/**/domain`.
 
 ## Data Source Extension Rules
 New data sources should integrate through the case snapshot and personalization layers.

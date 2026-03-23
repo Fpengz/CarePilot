@@ -58,7 +58,7 @@ The biggest real risk is **LLM/model plumbing leaking outside the agent layer** 
 
 **Standardization choices (refactor accelerators):**
 - Use `pydantic_ai` for inference agents (through `src/care_pilot/agent/runtime/*` only).
-- Use `pydantic-graph` for declared multi-step workflows.
+- Use `LangGraph` for declared multi-step workflows.
 - Reserve LangGraph for future workflows that require checkpointed persistence, interrupts, or long-lived thread state.
 
 ---

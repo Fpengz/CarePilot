@@ -1,6 +1,6 @@
 # Meal Analysis Workflow (Current Implementation)
 
-This document describes the **current meal analysis flow as implemented in code**. It traces the request from the API entrypoint through the pydantic-graph workflow, the perception agent, normalization, persistence, and logging.
+This document describes the **current meal analysis flow as implemented in code**. It traces the request from the API entrypoint through the LangGraph workflow, the perception agent, normalization, persistence, and logging.
 
 ## Entry Points
 
@@ -22,7 +22,7 @@ This document describes the **current meal analysis flow as implemented in code*
    - `should_suppress_duplicate_capture(..., window_seconds=30)` can short-circuit with 409.
 5. **Resolve provider**
    - Picks explicit provider or defaults using `settings.llm` capability map and fallback provider.
-6. **Run workflow (pydantic-graph)**
+6. **Run workflow (LangGraph)**
    - `run_meal_upload_workflow(..., state=MealUploadState(...))`.
    - Timeout enforced via `settings.llm.inference.wall_clock_timeout_seconds`.
 7. **Log completion**
@@ -30,7 +30,7 @@ This document describes the **current meal analysis flow as implemented in code*
 8. **Return API response**
    - `MealAnalyzeResponse` returns raw observation, validated event, nutrition profile, output envelope, and workflow record.
 
-## Workflow Graph (pydantic-graph)
+## Workflow Graph (LangGraph)
 
 - File: `/Users/zhoufuwang/Projects/care_pilot/src/care_pilot/features/meals/workflows/meal_upload_graph.py`
 - Graph nodes: `Start -> PerceiveMeal -> ReconcileClaims -> Persist`.

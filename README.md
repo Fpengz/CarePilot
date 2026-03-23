@@ -46,7 +46,7 @@ flowchart TD
     User([User]) <--> Web[Next.js 15 Frontend]
     Web <--> API[FastAPI Gateway]
     
-    subgraph "Reasoning Engine (pydantic-graph)"
+    subgraph "Reasoning Engine (LangGraph)"
         API --> Workflow[Meal/Medication Workflows]
         Workflow --> Perceive[Perception Node]
         Workflow --> Reconcile[Claim Reconciliation]

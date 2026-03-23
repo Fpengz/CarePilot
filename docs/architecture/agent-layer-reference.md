@@ -5,9 +5,8 @@ A complete reference for every module under the agent layer.
 ## Standards (architecture guardrails)
 
 - **Inference agents:** standardize on `pydantic_ai` via the agent runtime (`agent/runtime/*`). Feature/workflow/API code must not instantiate `pydantic_ai.Agent` directly.
-- **Workflows:** standardize on `pydantic-graph` for declared multi-step product journeys (typed workflow state + explicit steps).
+- **Workflows:** standardize on **LangGraph** for declared multi-step product journeys (typed workflow state + explicit steps).
 - **Domain logic:** rules/persistence/scheduling remain deterministic in `features/**/domain`.
-- **LangGraph:** reserved for future workflows that require first-class checkpointed persistence, interrupts, or long-lived thread state.
 
 ---
 

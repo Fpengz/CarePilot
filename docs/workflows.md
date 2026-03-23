@@ -5,9 +5,8 @@ This repo is a **modular monolith**. “Workflows” are the orchestration layer
 This document standardizes on:
 
 - **Inference agents:** `pydantic_ai` (invoked via `src/care_pilot/agent/runtime/*` only)
-- **Declared multi-step workflows:** `pydantic-graph`
+- **Declared multi-step workflows:** **LangGraph**
 - **Domain rules/persistence/scheduling:** deterministic in `src/care_pilot/features/**/domain`
-- **LangGraph:** explicitly deferred (only for checkpointed persistence / interrupts / long-lived threads)
 
 ---
 
@@ -16,8 +15,8 @@ This document standardizes on:
 | Problem shape | Use | Why |
 |---|---|---|
 | Single-step orchestration (1–2 calls), minimal branching | Plain `use_cases.py` function | Lowest overhead, easy to test |
-| Multi-step journey with explicit phases (validate → infer → persist → notify), branching, retries/idempotency, needs step-level trace | `pydantic-graph` | Declares steps + typed state + inspectable graph |
-| Needs first-class checkpointed persistence, interrupts (“pause for user”), long-lived thread state, human-in-the-loop resumption | **LangGraph (future)** | Heavier runtime semantics; only adopt when required |
+| Multi-step journey with explicit phases (validate → infer → persist → notify), branching, retries/idempotency, needs step-level trace | **LangGraph** | Declares steps + typed state + inspectable graph |
+| Needs first-class checkpointed persistence, interrupts (“pause for user”), long-lived thread state, human-in-the-loop resumption | **LangGraph** | LangGraph already provides checkpointing/interrupt semantics when needed |
 
 Rule of thumb: if you can’t easily answer “what are the steps and their inputs/outputs?” in a PR description, you should probably model it as a graph workflow.
 
@@ -55,11 +54,11 @@ src/care_pilot/features/meals/workflows/
 
 ---
 
-## `pydantic-graph` conventions (how we use it)
+## LangGraph conventions (how we use it)
 
 ### 1) Typed workflow state
 
-Workflow state is a Pydantic model that carries **only what the workflow needs between steps**:
+Workflow state is a typed container that carries **only what the workflow needs between steps**:
 - IDs / keys (user_id, session_id, request_id, idempotency_key)
 - normalized inputs (safe, validated)
 - intermediate typed outputs from agents/services (bounded)
@@ -68,14 +67,14 @@ Avoid putting repositories, DB connections, or large blobs into state.
 
 ### 2) Dependencies (`deps`)
 
-Use a single dependencies object for runtime wiring (stores, settings, agent instances, tool registries). This keeps nodes pure and testable.
+Use a single dependencies object for runtime wiring (stores, settings, agent instances, tool registries). This keeps nodes pure and testable. Pass `deps` into the graph builder and close over it in node implementations.
 
 ### 3) Nodes are small and single-purpose
 
 Each node should:
-- read/update state via `ctx.state`
+- read/update state via the `state` object
 - call exactly one “unit” (agent or domain service), or perform validation/branching
-- return the next node or `End(output)`
+- return a dict of state updates
 
 ### 4) Deterministic writes happen in domain services
 
@@ -83,31 +82,30 @@ If a node needs to persist, it calls a deterministic domain service method/funct
 
 ---
 
-## Template: a graph workflow skeleton
+## Template: a LangGraph workflow skeleton
 
-This template uses the actual `pydantic-graph` API surface available in this repo environment:
-- `Graph(nodes=[...])`
-- `BaseNode.run(ctx: GraphRunContext) -> BaseNode | End[data]`
-- `Graph.run(start_node, state=..., deps=..., persistence=...)`
-- `graph.mermaid_code(...)` for diagrams
+This template matches the LangGraph API surface used in this repo:
+- `StateGraph(StateType)`
+- `workflow.add_node`, `workflow.add_edge`
+- `workflow.compile()` + `graph.ainvoke(...)`
 
 ```python
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TypedDict
 
-from pydantic import BaseModel
-from pydantic_graph import BaseNode, End, Graph, GraphRunContext, SimpleStatePersistence
+from langgraph.graph import END, START, StateGraph
 
 
-class WorkflowState(BaseModel):
+class WorkflowState(TypedDict):
     user_id: str
     request_id: str
     idempotency_key: str
     # intermediate fields...
 
 
-class WorkflowOutput(BaseModel):
+class WorkflowOutput(TypedDict):
     status: str
     # stable output contract...
 
@@ -120,38 +118,43 @@ class WorkflowDeps:
     pass
 
 
-class ValidateInput(BaseNode[WorkflowState, WorkflowDeps, WorkflowOutput]):
-    async def run(self, ctx: GraphRunContext[WorkflowState, WorkflowDeps]) -> BaseNode | End[WorkflowOutput]:
-        # validate ctx.state; set derived fields; decide branch
-        return CallAgent()
+def build_workflow_graph(*, deps: WorkflowDeps) -> StateGraph:
+    async def validate_node(state: WorkflowState) -> dict[str, object]:
+        # validate state; set derived fields; decide branch
+        return {}
 
-
-class CallAgent(BaseNode[WorkflowState, WorkflowDeps, WorkflowOutput]):
-    async def run(self, ctx: GraphRunContext[WorkflowState, WorkflowDeps]) -> BaseNode | End[WorkflowOutput]:
+    async def call_agent_node(state: WorkflowState) -> dict[str, object]:
         # agent_result = await deps.meal_agent.run(..., context=AgentContext(...))
-        # ctx.state.some_field = agent_result.output.some_value
-        return Persist()
+        # return {"some_field": agent_result.output.some_value}
+        return {}
 
+    async def persist_node(state: WorkflowState) -> dict[str, object]:
+        # domain_service.persist(state...)  # deterministic write
+        return {"output": {"status": "ok"}}
 
-class Persist(BaseNode[WorkflowState, WorkflowDeps, WorkflowOutput]):
-    async def run(self, ctx: GraphRunContext[WorkflowState, WorkflowDeps]) -> BaseNode | End[WorkflowOutput]:
-        # domain_service.persist(ctx.state...)  # deterministic write
-        return End(WorkflowOutput(status="ok"))
+    workflow = StateGraph(WorkflowState)
+    workflow.add_node("validate", validate_node)
+    workflow.add_node("call_agent", call_agent_node)
+    workflow.add_node("persist", persist_node)
 
-
-workflow_graph = Graph(nodes=[ValidateInput, CallAgent, Persist], name="meal_upload")
+    workflow.add_edge(START, "validate")
+    workflow.add_edge("validate", "call_agent")
+    workflow.add_edge("call_agent", "persist")
+    workflow.add_edge("persist", END)
+    return workflow
 
 
 async def run_workflow(*, deps: WorkflowDeps, state: WorkflowState) -> WorkflowOutput:
-    persistence = SimpleStatePersistence()
-    result = await workflow_graph.run(ValidateInput(), state=state, deps=deps, persistence=persistence)
-    return result.output
+    graph = build_workflow_graph(deps=deps).compile()
+    final_state = await graph.ainvoke(state)
+    return final_state["output"]
 ```
 
 ### Diagram generation (recommended for PRs)
 
 ```python
-diagram = workflow_graph.mermaid_code(title="Meal Upload Workflow")
+# LangGraph can emit Mermaid once you call .get_graph()
+mermaid = build_workflow_graph(deps=deps).get_graph().draw_mermaid()
 ```
 
 Add the mermaid code to the PR description or a plan doc under `docs/plans/`.
@@ -166,18 +169,3 @@ Add the mermaid code to the PR description or a plan doc under `docs/plans/`.
   - ask follow-up questions,
   - or fall back to deterministic logic based on confidence thresholds.
 - **Policy/safety remains deterministic** and gates what is emitted to users or sent via notifications.
-
----
-
-## LangGraph (future) adoption criteria
-
-Do not introduce LangGraph unless a workflow requires at least one of:
-- checkpointed persistence of the workflow state across runs
-- interrupts / “pause until user confirms”
-- long-lived thread state and resumption semantics
-
-When that happens, keep:
-- **agents unchanged** (still `pydantic_ai` via agent runtime)
-- **domain services unchanged** (deterministic)
-- only swap the workflow runner implementation behind a small `WorkflowRunner` abstraction.
-

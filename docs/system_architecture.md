@@ -7,7 +7,7 @@ CarePilot is a multimodal, AI-powered health companion platform built using a **
 
 *   **Client Layer (Next.js 14):** Modern React-based frontend providing an interactive dashboard, real-time chat, and multimodal upload capabilities.
 *   **API Layer (FastAPI):** High-performance Python API owning session management, policy enforcement, and cross-feature orchestration.
-*   **Application Layer (Workflows):** Complex, multi-step health journeys orchestrated using `pydantic-graph`.
+*   **Application Layer (Workflows):** Complex, multi-step health journeys orchestrated using **LangGraph**.
 *   **Services Layer (Use Cases):** Feature-specific application services that implement business entrypoints.
 *   **Agent Layer (Inference):** Bounded, model-backed agents implemented with `pydantic-ai` for perception, reasoning, and synthesis.
 *   **Data Layer (Storage):** SQLite for durable state and audit logs; Redis for ephemeral coordination and worker signaling.
@@ -21,7 +21,7 @@ flowchart TD
     Web <--> API[FastAPI Gateway]
     
     API --> Auth[Auth & Policy]
-    API --> Workflow[pydantic-graph Workflows]
+    API --> Workflow[LangGraph Workflows]
     
     Workflow --> MealFlow[Meal Analysis Workflow]
     Workflow --> MedFlow[Medication Ingest Workflow]

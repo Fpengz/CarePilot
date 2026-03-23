@@ -10,7 +10,7 @@ This directory contains focused documentation that supplements the three root ca
 - `docs/operations-runbook.md`
 - `docs/user-manual.md`
 - `docs/config-reference.md`
-- `docs/workflows.md` — orchestration standard (`pydantic-graph`)
+- `docs/workflows.md` — orchestration standard (LangGraph)
 
 ## API contracts and policy
 - `docs/api/auth.md`
@@ -23,6 +23,8 @@ This directory contains focused documentation that supplements the three root ca
 - `docs/architecture/emotion-pipeline.md`
 - `docs/architecture/meal-analysis.md`
 - `docs/architecture/agent-layer-reference.md`
+- `docs/architecture/event-driven/ARCHITECTURE.md` — event timeline + workflows + agents alignment pack
+- `docs/architecture/event-driven/event-coverage.md` — workflow event timeline coverage map
 - `docs/plans/2026-03-14-agent-layer-audit-refactor-spec.md` — agent layer boundaries + checklist
 
 ## Feature-specific notes

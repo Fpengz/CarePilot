@@ -6,7 +6,7 @@
 
 **Architecture:** Preserve existing feature workflows and services while formalizing agent adapters, deterministic merges, and timeline events. Orchestrators remain in `features/**` workflows; agents remain stateless; services execute side effects. All new agent invocations are shadow-first and gated by explicit feature logic.
 
-**Tech Stack:** Python, FastAPI, pydantic, pydantic-graph, LangGraph, outbox/timeline, pytest.
+**Tech Stack:** Python, FastAPI, pydantic, LangGraph, outbox/timeline, pytest.
 
 ---
 
@@ -298,4 +298,3 @@ Expected: PASS
 ```bash
 git commit -m "chore: full test sweep for event-driven refactor"
 ```
-
