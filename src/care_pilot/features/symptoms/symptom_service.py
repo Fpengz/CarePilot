@@ -21,10 +21,7 @@ from care_pilot.core.contracts.api import (
     SymptomSafetyResponse,
     SymptomSummaryResponse,
 )
-from care_pilot.features.companion.core.health.models import (
-    SymptomCheckIn,
-    SymptomSafety,
-)
+from care_pilot.features.companion.core.health.models import SymptomCheckIn, SymptomSafety
 from care_pilot.features.safety.domain.triage import evaluate_text_safety
 
 
@@ -62,6 +59,18 @@ def create_checkin_for_session(
         ),
     )
     saved = context.stores.symptoms.save_symptom_checkin(item)
+    context.event_timeline.append(
+        event_type="symptom_reported",
+        workflow_name="symptom_checkin",
+        correlation_id=saved.id,
+        request_id=None,
+        user_id=user_id,
+        payload={
+            "severity": saved.severity,
+            "symptom_count": len(saved.symptom_codes),
+            "safety_decision": saved.safety.decision,
+        },
+    )
     return SymptomCheckInEnvelopeResponse(item=_to_response(saved))
 
 

@@ -20,9 +20,7 @@ from care_pilot.core.contracts.api import (
     ClinicalCardResponse,
 )
 from care_pilot.features.companion.core.health.blood_pressure import summarize_blood_pressure
-from care_pilot.features.companion.core.health.clinical_card import (
-    ClinicalCardRecord,
-)
+from care_pilot.features.companion.core.health.clinical_card import ClinicalCardRecord
 from care_pilot.features.companion.core.health.models import MetricTrend
 from care_pilot.features.companion.impact.domain import (
     adherence_rate_points,

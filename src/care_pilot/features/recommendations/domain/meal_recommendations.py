@@ -7,9 +7,7 @@ is rule-based — no LLM calls here.
 
 import logging
 
-from care_pilot.features.companion.core.health.models import (
-    ClinicalProfileSnapshot,
-)
+from care_pilot.features.companion.core.health.models import ClinicalProfileSnapshot
 from care_pilot.features.meals.domain.meal_record_accessors import (
     meal_display_name,
     meal_ingredients,
@@ -18,13 +16,8 @@ from care_pilot.features.meals.domain.meal_record_accessors import (
 from care_pilot.features.meals.domain.models import MealEvent
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import UserProfile
-from care_pilot.features.recommendations.domain.models import (
-    RecommendationOutput,
-)
-from care_pilot.features.safety.domain.engine import (
-    SafetyEngine,
-    SafetyViolation,
-)
+from care_pilot.features.recommendations.domain.models import RecommendationOutput
+from care_pilot.features.safety.domain.engine import SafetyEngine, SafetyViolation
 
 logger = logging.getLogger(__name__)
 

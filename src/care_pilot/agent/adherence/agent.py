@@ -22,6 +22,7 @@ logger = get_logger(__name__)
 
 class AdherenceAnalysisOutput(BaseModel):
     """The structured output of the AdherenceAgent."""
+
     adherence_status: Literal["excellent", "good", "concerning", "critical"]
     missed_dose_pattern: str | None = None
     suggested_nudge_strategy: str
@@ -72,7 +73,9 @@ async def run_adherence_agent(request: AgentRequest) -> AgentResponse:
         AgentRecommendation(
             title="Adherence Strategy",
             summary=analysis.suggested_nudge_strategy,
-            priority="high" if analysis.adherence_status in ("concerning", "critical") else "medium"
+            priority="high"
+            if analysis.adherence_status in ("concerning", "critical")
+            else "medium",
         )
     ]
 
@@ -82,5 +85,8 @@ async def run_adherence_agent(request: AgentRequest) -> AgentResponse:
         summary=f"Status is {analysis.adherence_status}. {analysis.rationale}",
         structured_output=analysis.model_dump(),
         recommendations=recommendations,
-        reasoning_trace=["Analyzed adherence events from snapshot", "Evaluated behavioral triggers"]
+        reasoning_trace=[
+            "Analyzed adherence events from snapshot",
+            "Evaluated behavioral triggers",
+        ],
     )

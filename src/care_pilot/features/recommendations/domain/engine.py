@@ -14,9 +14,7 @@ import logging
 from typing import Protocol
 from uuid import uuid4
 
-from care_pilot.features.companion.core.health.models import (
-    ClinicalProfileSnapshot,
-)
+from care_pilot.features.companion.core.health.models import ClinicalProfileSnapshot
 from care_pilot.features.meals.domain import meal_display_name, meal_nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.health_profile import (
@@ -24,9 +22,7 @@ from care_pilot.features.profiles.domain.health_profile import (
     compute_profile_completeness,
 )
 from care_pilot.features.profiles.domain.models import MealSlot, UserProfile
-from care_pilot.features.recommendations.domain.canonical_food_matching import (
-    normalize_text,
-)
+from care_pilot.features.recommendations.domain.canonical_food_matching import normalize_text
 from care_pilot.features.recommendations.domain.context import (
     _apply_affinity_update,
     _ensure_snapshot,

@@ -8,9 +8,7 @@ personalization and engagement workflows.
 from __future__ import annotations
 
 from care_pilot.features.companion.core.domain import PatientCaseSnapshot
-from care_pilot.features.companion.core.health.blood_pressure import (
-    summarize_blood_pressure,
-)
+from care_pilot.features.companion.core.health.blood_pressure import summarize_blood_pressure
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     BloodPressureReading,
@@ -112,7 +110,11 @@ def build_case_snapshot(
 
     # Map complex fields
     recent_meals = [
-        {"name": meal_display_name(m), "captured_at": str(m.captured_at), "is_risky": _meal_is_risky(m)}
+        {
+            "name": meal_display_name(m),
+            "captured_at": str(m.captured_at),
+            "is_risky": _meal_is_risky(m),
+        }
         for m in meals[-10:]
     ]
     recent_symptoms = [

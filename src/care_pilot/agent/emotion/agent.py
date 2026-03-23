@@ -132,7 +132,6 @@ class EmotionAgent:
             timeout_seconds=self._request_timeout_seconds,
         )
 
-
     @property
     def inference_enabled(self) -> bool:
         return self._inference_enabled

@@ -21,12 +21,8 @@ from care_pilot.core.contracts.api import (
     AlertTriggerRequest,
     AlertTriggerResponse,
 )
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
-)
-from care_pilot.platform.observability.tooling.domain.models import (
-    ToolPolicyContext,
-)
+from care_pilot.platform.auth.session_context import build_user_profile_from_session
+from care_pilot.platform.observability.tooling.domain.models import ToolPolicyContext
 from care_pilot.platform.observability.workflows.domain.models import (
     WorkflowExecutionResult,
     WorkflowName,
@@ -70,6 +66,18 @@ def trigger_alert_for_session(
             user_id=user_profile.id,
             correlation_id=issued_correlation_id,
         ),
+    )
+    deps.event_timeline.append(
+        event_type="reminder_triggered",
+        workflow_name=WorkflowName.ALERT_ONLY.value,
+        correlation_id=issued_correlation_id,
+        request_id=issued_request_id,
+        user_id=user_profile.id,
+        payload={
+            "alert_type": payload.alert_type,
+            "severity": payload.severity,
+            "tool_success": tool_result.success,
+        },
     )
     handoffs = [
         AgentHandoff(

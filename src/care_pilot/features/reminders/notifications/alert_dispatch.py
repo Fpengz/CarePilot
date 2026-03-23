@@ -21,20 +21,11 @@ from care_pilot.features.safety.domain.alerts import (
     AlertMessage,
     AlertSeverity,
 )
-from care_pilot.platform.messaging.alert_outbox import (
-    AlertPublisher,
-    OutboxWorker,
-)
-from care_pilot.platform.messaging.channels import (
-    TelegramChannel,
-    WeChatChannel,
-    WhatsAppChannel,
-)
+from care_pilot.platform.messaging.alert_outbox import AlertPublisher, OutboxWorker
+from care_pilot.platform.messaging.channels import TelegramChannel, WeChatChannel, WhatsAppChannel
 from care_pilot.platform.messaging.channels.base import ChannelResult
 from care_pilot.platform.observability import get_logger
-from care_pilot.platform.persistence.runtime_bootstrap import (
-    build_alert_repository,
-)
+from care_pilot.platform.persistence.runtime_bootstrap import build_alert_repository
 
 logger = get_logger(__name__)
 PENDING_ALERT_STATES = {"pending", "processing"}

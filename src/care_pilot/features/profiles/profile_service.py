@@ -36,9 +36,7 @@ from care_pilot.features.profiles.domain.onboarding import (
     list_onboarding_steps,
     update_health_profile_onboarding,
 )
-from care_pilot.features.recommendations.daily_suggestions import (
-    build_daily_suggestions,
-)
+from care_pilot.features.recommendations.daily_suggestions import build_daily_suggestions
 from care_pilot.platform.observability.setup import get_logger
 
 logger = get_logger(__name__)
@@ -154,6 +152,14 @@ def patch_profile(
         user_id=str(session["user_id"]),
         updates=updates,
     )
+    context.event_timeline.append(
+        event_type="profile_updated",
+        workflow_name="profile_update",
+        correlation_id=str(session["user_id"]),
+        request_id=None,
+        user_id=str(session["user_id"]),
+        payload={"fields": sorted(updates.keys())},
+    )
     completeness = compute_profile_completeness(profile)
     return HealthProfileEnvelopeResponse(
         profile=to_profile_response(profile=profile, fallback_mode=completeness.state != "ready")
@@ -190,6 +196,14 @@ def patch_profile_onboarding(
             code="profile.onboarding.invalid_step",
             message="invalid health profile onboarding step",
         ) from exc
+    context.event_timeline.append(
+        event_type="profile_onboarding_step",
+        workflow_name="profile_onboarding",
+        correlation_id=str(session["user_id"]),
+        request_id=None,
+        user_id=str(session["user_id"]),
+        payload={"step_id": payload.step_id},
+    )
     return _to_onboarding_response(state=state, profile=profile)
 
 
@@ -202,6 +216,14 @@ def complete_profile_onboarding(
     state, profile = complete_health_profile_onboarding(
         context.stores.profiles,
         user_id=str(session["user_id"]),
+    )
+    context.event_timeline.append(
+        event_type="profile_onboarding_completed",
+        workflow_name="profile_onboarding",
+        correlation_id=str(session["user_id"]),
+        request_id=None,
+        user_id=str(session["user_id"]),
+        payload={},
     )
     return _to_onboarding_response(state=state, profile=profile)
 

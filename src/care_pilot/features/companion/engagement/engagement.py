@@ -6,10 +6,7 @@ This module drives engagement workflows built on top of companion signals.
 
 from __future__ import annotations
 
-from care_pilot.features.companion.core.domain import (
-    CaseSnapshot,
-    EngagementAssessment,
-)
+from care_pilot.features.companion.core.domain import CaseSnapshot, EngagementAssessment
 
 
 def assess_engagement(

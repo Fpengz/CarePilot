@@ -17,16 +17,9 @@ from care_pilot.core.contracts.api import (
     SymptomSummaryWindowResponse,
 )
 from care_pilot.features.companion.core.health.models import ReportInput
-from care_pilot.features.reports.domain import (
-    build_clinical_snapshot,
-    parse_report_input,
-)
-from care_pilot.features.symptoms.symptom_service import (
-    summarize_checkins_for_session,
-)
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowName,
-)
+from care_pilot.features.reports.domain import build_clinical_snapshot, parse_report_input
+from care_pilot.features.symptoms.symptom_service import summarize_checkins_for_session
+from care_pilot.platform.observability.workflows.domain.models import WorkflowName
 
 
 def parse_report_for_session(

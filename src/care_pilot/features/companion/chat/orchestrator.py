@@ -20,13 +20,9 @@ from care_pilot.agent.adapters.shadow_agents import (
     EmotionSpeechAgentAdapter,
     EmotionTextAgentAdapter,
 )
-from care_pilot.agent.chat.schemas import (
-    ChatStreamEvent,
-)
+from care_pilot.agent.chat.schemas import ChatStreamEvent
 from care_pilot.agent.core.base import AgentContext
-from care_pilot.agent.emotion import (
-    EmotionAgentDisabledError,
-)
+from care_pilot.agent.emotion import EmotionAgentDisabledError
 from care_pilot.agent.emotion.schemas import (
     EmotionInferenceResult,
     EmotionSpeechAgentInput,
@@ -40,8 +36,6 @@ from care_pilot.features.companion.chat.meal_intent import (
 from care_pilot.features.companion.chat.memory import MemoryManager
 from care_pilot.features.companion.chat.memory_store import (
     build_memory_context as build_memory_snippet_context,
-)
-from care_pilot.features.companion.chat.memory_store import (
     fetch_memory_snippets,
     record_chat_turn,
 )
@@ -49,11 +43,6 @@ from care_pilot.features.companion.chat.router import QueryRouter
 from care_pilot.features.companion.chat.workflows.companion_graph import (
     CompanionState,
     build_companion_graph,
-)
-from care_pilot.features.companion.chat.workflows.companion_shadow_graph import (
-    CompanionShadowDeps,
-    CompanionShadowState,
-    schedule_companion_shadow_workflow,
 )
 
 # Important: These must be imported from features core, not apps/api
@@ -217,20 +206,7 @@ class ChatOrchestrator:
         else:
             user_message_with_memory = user_message
 
-        # 4. Shadow pydantic-graph workflow (observability only)
-        schedule_companion_shadow_workflow(
-            deps=CompanionShadowDeps(event_timeline=ctx.event_timeline),
-            state=CompanionShadowState(
-                user_id=user_id,
-                session_id=session_id,
-                request_id=request_id,
-                correlation_id=correlation_id,
-                message=user_message_with_memory,
-                snapshot_json=snapshot.model_dump_json(),
-            ),
-        )
-
-        # 5. Meal Intent (Ported from legacy orchestrator)
+        # 4. Meal Intent (Ported from legacy orchestrator)
         meal_text = self._parse_meal_command(user_message)
         response_prefix = None
         if not meal_text:
@@ -276,12 +252,9 @@ class ChatOrchestrator:
                 stores=ctx.stores,
             )
             response_prefix = f"{meal_result['message']}\n\n"
-            yield ChatStreamEvent(
-                event="meal_logged",
-                data=cast(dict[str, object], meal_result)
-            )
+            yield ChatStreamEvent(event="meal_logged", data=cast(dict[str, object], meal_result))
 
-        # 6. Run Graph
+        # 5. Run Graph
         try:
             # We use the version with memory context for the agent reasoning
             final_response = ""
@@ -292,7 +265,10 @@ class ChatOrchestrator:
             ):
                 # chunk is a dict mapping node names to their state updates
                 for _node_name, state_update in chunk.items():
-                    if "last_agent_response" in state_update and state_update["last_agent_response"]:
+                    if (
+                        "last_agent_response" in state_update
+                        and state_update["last_agent_response"]
+                    ):
                         agent_resp = state_update["last_agent_response"]
                         merged_actions = self._merge_agent_actions(agent_resp.actions)
                         try:
@@ -413,17 +389,15 @@ class ChatOrchestrator:
             # Transcribe audio using the directly available audio agent
             user_message = await ctx.chat_audio_agent.transcribe_bytes(audio_bytes, filename)
         except Exception as exc:
-
             yield ChatStreamEvent(
-                event="error",
-                data={"message": f"Transcription failed: {exc}", "phase": "audio"}
+                event="error", data={"message": f"Transcription failed: {exc}", "phase": "audio"}
             )
             return
 
         if not user_message:
             yield ChatStreamEvent(
                 event="error",
-                data={"message": "Transcription returned empty text", "phase": "audio"}
+                data={"message": "Transcription returned empty text", "phase": "audio"},
             )
             return
 
@@ -527,7 +501,9 @@ class ChatOrchestrator:
             return {"status": "skipped", "assistant_followup": "Skipped logging this meal."}
 
         # Log it
-        meal_result = self._log_meal_command(user_id=user_id, meal_text=meal_text, stores=ctx.stores)
+        meal_result = self._log_meal_command(
+            user_id=user_id, meal_text=meal_text, stores=ctx.stores
+        )
         ctx.cache_store.delete(cache_key)
 
         return {

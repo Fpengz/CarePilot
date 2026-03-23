@@ -58,15 +58,15 @@ async def run_meal_agent(request: AgentRequest) -> AgentResponse:
             AgentRecommendation(
                 title="Clarify Meal",
                 summary="The AI couldn't identify a clear meal. Please provide more detail or a better photo.",
-                priority="high"
+                priority="high",
             )
         )
     elif perception.confidence_score < 0.7:
         recommendations.append(
             AgentRecommendation(
                 title="Low Confidence",
-                summary=f"Only {int(perception.confidence_score*100)}% sure about this meal. Confirmation required.",
-                priority="medium"
+                summary=f"Only {int(perception.confidence_score * 100)}% sure about this meal. Confirmation required.",
+                priority="medium",
             )
         )
 
@@ -77,5 +77,5 @@ async def run_meal_agent(request: AgentRequest) -> AgentResponse:
         structured_output=perception.model_dump(),
         recommendations=recommendations,
         confidence=perception.confidence_score,
-        reasoning_trace=["Analyzed image/text context", "Extracted meal components"]
+        reasoning_trace=["Analyzed image/text context", "Extracted meal components"],
     )

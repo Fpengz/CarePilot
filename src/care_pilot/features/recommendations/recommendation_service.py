@@ -10,10 +10,7 @@ from datetime import UTC, datetime
 from typing import Any, TypedDict, cast
 from uuid import uuid4
 
-from apps.api.carepilot_api.deps import (
-    RecommendationAgentDeps,
-    RecommendationDeps,
-)
+from apps.api.carepilot_api.deps import RecommendationAgentDeps, RecommendationDeps
 from apps.api.carepilot_api.errors import build_api_error
 
 from care_pilot.agent.adapters.shadow_agents import RecommendationAgentAdapter
@@ -33,28 +30,17 @@ from care_pilot.features.households.policies import (
     ensure_household_member,
     household_source_members,
 )
-from care_pilot.features.profiles.domain.health_profile import (
-    resolve_user_profile,
-)
+from care_pilot.features.profiles.domain.health_profile import resolve_user_profile
 from care_pilot.features.recommendations.domain.engine import (
     AgentMealNotFoundError,
     build_substitution_plan,
     record_interaction_and_update_preferences,
 )
-from care_pilot.features.recommendations.domain.meal_recommendations import (
-    generate_recommendation,
-)
-from care_pilot.features.recommendations.domain.schemas import (
-    RecommendationAgentInput,
-)
-from care_pilot.features.reports.domain import (
-    build_clinical_snapshot,
-    parse_report_input,
-)
+from care_pilot.features.recommendations.domain.meal_recommendations import generate_recommendation
+from care_pilot.features.recommendations.domain.schemas import RecommendationAgentInput
+from care_pilot.features.reports.domain import build_clinical_snapshot, parse_report_input
 from care_pilot.features.safety.domain.triage import evaluate_text_safety
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
-)
+from care_pilot.platform.auth.session_context import build_user_profile_from_session
 
 from .ports import (
     BuildUserProfileFn,

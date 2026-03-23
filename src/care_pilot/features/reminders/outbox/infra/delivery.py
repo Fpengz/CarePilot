@@ -12,10 +12,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
-from care_pilot.features.reminders.outbox.models import (
-    ReminderDispatchResult,
-    ReminderEvent,
-)
+from care_pilot.features.reminders.outbox.models import ReminderDispatchResult, ReminderEvent
 
 logger = logging.getLogger(__name__)
 

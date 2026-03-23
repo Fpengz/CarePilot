@@ -8,12 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from care_pilot.features.companion.care_plans.care_plan import (
-    compose_care_plan,
-)
-from care_pilot.features.companion.clinician_digest.digest import (
-    build_clinician_digest,
-)
+from care_pilot.features.companion.care_plans.care_plan import compose_care_plan
+from care_pilot.features.companion.clinician_digest.digest import build_clinician_digest
 from care_pilot.features.companion.core.domain import (
     CaseSnapshot,
     ClinicianDigest,
@@ -36,9 +32,7 @@ from care_pilot.features.companion.core.health.models import (
     SymptomCheckIn,
 )
 from care_pilot.features.companion.core.snapshot import build_case_snapshot
-from care_pilot.features.companion.engagement.engagement import (
-    assess_engagement,
-)
+from care_pilot.features.companion.engagement.engagement import assess_engagement
 from care_pilot.features.companion.impact.impact import build_impact_summary
 from care_pilot.features.companion.personalization.personalization import (
     build_personalization_context,
@@ -46,10 +40,7 @@ from care_pilot.features.companion.personalization.personalization import (
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.reminders.domain.models import ReminderEvent
-from care_pilot.features.safety.safety_engine import (
-    apply_safety_decision,
-    review_care_plan,
-)
+from care_pilot.features.safety.safety_engine import apply_safety_decision, review_care_plan
 
 
 @dataclass(frozen=True, slots=True)

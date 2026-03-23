@@ -24,9 +24,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
-from care_pilot.core.contracts.notifications import (
-    ReminderNotificationRepository,
-)
+from care_pilot.core.contracts.notifications import ReminderNotificationRepository
 from care_pilot.features.reminders.domain import ReminderEvent
 from care_pilot.features.reminders.domain.models import (
     NotificationPreferenceScope,
@@ -37,6 +35,7 @@ from care_pilot.features.reminders.domain.models import (
     ScheduledReminderNotification,
 )
 from care_pilot.features.safety.domain.alerts import AlertMessage
+from care_pilot.platform.cache import EventTimelineService
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence import AppStoreBackend
 from care_pilot.platform.persistence.domain_stores import ReminderStore
@@ -126,6 +125,7 @@ def materialize_reminder_notifications(
     repository: ReminderNotificationRepo,
     reminder_event: ReminderEvent,
     reminder_type: str,
+    event_timeline: EventTimelineService | None = None,
 ) -> list[ScheduledReminderNotification]:
     """Create ``ScheduledReminderNotification`` rows for each applicable preference."""
     preferences = resolve_notification_preferences(
@@ -192,6 +192,19 @@ def materialize_reminder_notifications(
         reminder_event.user_id,
         len(created),
     )
+    if event_timeline is not None:
+        event_timeline.append(
+            event_type="reminder_scheduled",
+            workflow_name="reminder_materialization",
+            correlation_id=reminder_event.id,
+            request_id=None,
+            user_id=reminder_event.user_id,
+            payload={
+                "reminder_id": reminder_event.id,
+                "reminder_type": reminder_event.reminder_type,
+                "scheduled_count": len(created),
+            },
+        )
     return created
 
 
