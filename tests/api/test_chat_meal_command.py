@@ -9,9 +9,7 @@ from care_pilot.agent.chat.schemas import ChatSummaryOutput  # For structured_ou
 from care_pilot.agent.runtime.inference_types import InferenceRequest
 
 # Import the actual types and protocol from their respective modules
-from care_pilot.features.companion.chat.memory import (
-    MemoryManager,
-)
+from care_pilot.features.companion.chat.memory import MemoryManager
 from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
 from care_pilot.platform.persistence.domain_stores import build_app_stores
 from care_pilot.platform.persistence.sqlite_app_store import SQLiteAppStore

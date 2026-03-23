@@ -12,10 +12,7 @@ from care_pilot.features.reminders.notifications.alert_dispatch import (
     send_push,
     trigger_alert,
 )
-from care_pilot.features.safety.domain.alerts.models import (
-    AlertDeliveryResult,
-    AlertMessage,
-)
+from care_pilot.features.safety.domain.alerts.models import AlertDeliveryResult, AlertMessage
 from care_pilot.platform.persistence import SQLiteRepository
 
 

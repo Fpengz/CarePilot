@@ -7,12 +7,8 @@ from typing import get_args, get_type_hints
 
 from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
 from care_pilot.platform import persistence
-from care_pilot.platform.observability.tooling.platform_registry import (
-    build_platform_tool_registry,
-)
-from care_pilot.platform.scheduling.schedulers.reminder_scheduler import (
-    run_reminder_scheduler_once,
-)
+from care_pilot.platform.observability.tooling.platform_registry import build_platform_tool_registry
+from care_pilot.platform.scheduling.schedulers.reminder_scheduler import run_reminder_scheduler_once
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

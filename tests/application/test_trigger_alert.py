@@ -1,8 +1,6 @@
 """Tests for trigger alert."""
 
-from care_pilot.features.reminders.notifications.alert_dispatch import (
-    trigger_alert,
-)
+from care_pilot.features.reminders.notifications.alert_dispatch import trigger_alert
 from care_pilot.platform.persistence import SQLiteRepository
 
 

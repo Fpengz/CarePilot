@@ -1,9 +1,7 @@
 """Tests for agent registry."""
 
 from care_pilot.agent.core import build_default_agent_registry
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowName,
-)
+from care_pilot.platform.observability.workflows.domain.models import WorkflowName
 
 
 def test_default_agent_registry_exposes_core_workflow_contracts() -> None:

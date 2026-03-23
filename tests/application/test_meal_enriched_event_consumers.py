@@ -17,17 +17,9 @@ from care_pilot.features.meals.domain import (
     build_daily_nutrition_summary,
     build_weekly_nutrition_summary,
 )
-from care_pilot.features.meals.domain.models import (
-    Ingredient,
-    MealState,
-    Nutrition,
-)
+from care_pilot.features.meals.domain.models import Ingredient, MealState, Nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, UserProfile
 from care_pilot.features.recommendations.domain import (
     CanonicalFoodRecord,
     PreferenceSnapshot,
@@ -38,9 +30,7 @@ from care_pilot.features.recommendations.domain.engine import (
     build_substitution_plan,
     build_temporal_context,
 )
-from care_pilot.features.recommendations.domain.meal_recommendations import (
-    generate_recommendation,
-)
+from care_pilot.features.recommendations.domain.meal_recommendations import generate_recommendation
 
 
 def _record(*, enriched: bool = True) -> MealRecognitionRecord:

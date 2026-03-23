@@ -6,8 +6,7 @@ from apps.api.carepilot_api.deps import build_app_context, close_app_context
 
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
 from care_pilot.agent.runtime.llm_factory import LLMFactory
-from care_pilot.config.app import AppSettings as Settings
-from care_pilot.config.app import get_settings
+from care_pilot.config.app import AppSettings as Settings, get_settings
 from care_pilot.config.llm import LLMCapability, ModelProvider
 
 

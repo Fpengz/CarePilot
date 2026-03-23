@@ -4,23 +4,11 @@ from dataclasses import dataclass
 
 from care_pilot.features.companion.core.chat_context import format_chat_context
 from care_pilot.features.companion.core.domain import CaseSnapshot
-from care_pilot.features.companion.core.health.models import (
-    HealthProfileRecord,
-)
-from care_pilot.features.meals.domain.models import (
-    Ingredient,
-    MealState,
-    Nutrition,
-    PortionSize,
-)
+from care_pilot.features.companion.core.health.models import HealthProfileRecord
+from care_pilot.features.meals.domain.models import Ingredient, MealState, Nutrition, PortionSize
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-)
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowTimelineEvent,
-)
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication
+from care_pilot.platform.observability.workflows.domain.models import WorkflowTimelineEvent
 
 
 def test_format_chat_context_includes_profile_and_meals() -> None:

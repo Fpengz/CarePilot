@@ -5,11 +5,7 @@ from typing import Any, cast
 
 import pytest
 
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, UserProfile
 from care_pilot.features.recommendations.ports import BuildUserProfileFn
 from care_pilot.features.recommendations.recommendation_service import (
     MissingActiveHouseholdError,

@@ -12,9 +12,7 @@ from care_pilot.features.reminders.notifications.reminder_materialization import
 )
 from care_pilot.platform.persistence import SQLiteAppStore
 from care_pilot.platform.scheduling.schedulers import reminder_scheduler
-from care_pilot.platform.scheduling.schedulers.reminder_scheduler import (
-    run_reminder_scheduler_once,
-)
+from care_pilot.platform.scheduling.schedulers.reminder_scheduler import run_reminder_scheduler_once
 
 
 def test_run_reminder_scheduler_once_dispatches_and_delivers_due_notifications(

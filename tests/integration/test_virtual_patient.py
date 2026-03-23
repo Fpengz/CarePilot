@@ -1,26 +1,12 @@
 """Tests for virtual patient."""
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
-from care_pilot.features.meals.domain.models import (
-    Ingredient,
-    MealEvent,
-    Nutrition,
-)
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
-from care_pilot.features.safety.domain.engine import (
-    SafetyEngine,
-    SafetyViolation,
-)
-from care_pilot.features.safety.infra.drug_interaction_db import (
-    DrugInteractionDB,
-)
+from care_pilot.features.meals.domain.models import Ingredient, MealEvent, Nutrition
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, UserProfile
+from care_pilot.features.safety.domain.engine import SafetyEngine, SafetyViolation
+from care_pilot.features.safety.infra.drug_interaction_db import DrugInteractionDB
 
 # Clinical setup for Mr. Tan
 mr_tan = UserProfile(

@@ -3,9 +3,7 @@
 import os
 
 from care_pilot.config.app import AppSettings as Settings
-from care_pilot.platform.observability.diagnostics.readiness import (
-    build_readiness_report,
-)
+from care_pilot.platform.observability.diagnostics.readiness import build_readiness_report
 
 
 def _build_settings(**overrides: object) -> Settings:
