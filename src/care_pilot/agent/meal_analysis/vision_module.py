@@ -25,11 +25,7 @@ from care_pilot.agent.runtime.inference_types import (
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.app import get_settings
 from care_pilot.config.llm import LLMCapability, LocalModelProfile
-from care_pilot.features.meals.domain.models import (
-    ImageInput,
-    MealPerception,
-    VisionResult,
-)
+from care_pilot.features.meals.domain.models import ImageInput, MealPerception, VisionResult
 from care_pilot.features.meals.domain.normalization import (
     build_clarification_response,
     build_meal_record,

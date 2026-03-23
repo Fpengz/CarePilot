@@ -10,11 +10,7 @@ from typing import Any, cast
 
 from pydantic_ai import Agent
 
-from care_pilot.agent.core.contracts import (
-    AgentRecommendation,
-    AgentRequest,
-    AgentResponse,
-)
+from care_pilot.agent.core.contracts import AgentRecommendation, AgentRequest, AgentResponse
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
 from care_pilot.features.medications.intake.models import MedicationParseOutput

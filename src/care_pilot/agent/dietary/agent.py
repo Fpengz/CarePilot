@@ -11,10 +11,7 @@ from typing import Any, cast
 from pydantic_ai import Agent
 
 import logfire
-from care_pilot.agent.dietary.schemas import (
-    DietaryAgentInput,
-    DietaryAgentOutput,
-)
+from care_pilot.agent.dietary.schemas import DietaryAgentInput, DietaryAgentOutput
 from care_pilot.agent.runtime import LLMFactory
 from care_pilot.config.llm import LLMCapability
 

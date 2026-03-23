@@ -20,9 +20,7 @@ from care_pilot.agent.emotion.schemas import (
 )
 from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
 from care_pilot.core.contracts.api.core import JsonValue
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
@@ -41,9 +39,7 @@ from care_pilot.features.recommendations.domain.models import (
 )
 from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.safety.domain.alerts.models import OutboxState
-from care_pilot.platform.observability.tooling.domain.models import (
-    ToolExecutionResult,
-)
+from care_pilot.platform.observability.tooling.domain.models import ToolExecutionResult
 
 
 class AlertTriggerRequest(BaseModel):

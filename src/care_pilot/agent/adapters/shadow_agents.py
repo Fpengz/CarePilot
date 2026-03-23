@@ -1,8 +1,8 @@
 """
-Shadow-mode BaseAgent adapters for legacy AgentRequest/AgentResponse agents.
+BaseAgent adapters for legacy AgentRequest/AgentResponse agents.
 
 These adapters allow running existing agents via the BaseAgent/AgentResult
-contract without changing production behavior.
+contract while keeping feature orchestration deterministic.
 """
 
 from __future__ import annotations
