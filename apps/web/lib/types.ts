@@ -629,7 +629,16 @@ export interface MobilityReminderSettingsEnvelopeResponse {
   settings: MobilityReminderSettings;
 }
 
-export type ReminderNotificationChannel = "in_app" | "chat" | "email" | "sms" | "push" | "telegram" | "whatsapp" | "wechat";
+export type MessageChannel = "in_app" | "chat" | "email" | "sms" | "push" | "telegram" | "whatsapp" | "wechat";
+
+export interface MessageAttachment {
+  attachment_type: "image" | "audio" | "file";
+  url: string;
+  mime_type: string;
+  caption?: string | null;
+  size_bytes?: number | null;
+  metadata?: Record<string, unknown>;
+}
 
 export interface ReminderScheduleRuleApi {
   pattern:
@@ -674,7 +683,7 @@ export interface ReminderDefinitionApi {
   instructions_text?: string | null;
   special_notes?: string | null;
   treatment_duration?: string | null;
-  channels: ReminderNotificationChannel[];
+  channels: MessageChannel[];
   timezone: string;
   schedule: ReminderScheduleRuleApi;
   active: boolean;
@@ -698,7 +707,7 @@ export interface ReminderDefinitionCreateRequest {
   instructions_text?: string | null;
   special_notes?: string | null;
   treatment_duration?: string | null;
-  channels?: ReminderNotificationChannel[];
+  channels?: MessageChannel[];
   timezone?: string;
   schedule: ReminderScheduleRuleApi;
   active?: boolean;
@@ -713,7 +722,7 @@ export interface ReminderDefinitionPatchRequest {
   instructions_text?: string | null;
   special_notes?: string | null;
   treatment_duration?: string | null;
-  channels?: ReminderNotificationChannel[] | null;
+  channels?: MessageChannel[] | null;
   timezone?: string | null;
   schedule?: ReminderScheduleRuleApi | null;
   active?: boolean | null;
@@ -749,36 +758,36 @@ export interface ReminderOccurrenceActionApiResponse {
   occurrence: ReminderOccurrenceApi;
 }
 
-export interface ReminderNotificationPreferenceRule {
+export interface MessagePreferenceRule {
   id: string;
   scope_type: "default" | "reminder_type";
   scope_key?: string | null;
-  channel: ReminderNotificationChannel;
+  channel: MessageChannel;
   offset_minutes: number;
   enabled: boolean;
   updated_at: string;
 }
 
-export interface ReminderNotificationPreferenceListResponse {
-  preferences: ReminderNotificationPreferenceRule[];
+export interface MessagePreferenceListResponse {
+  preferences: MessagePreferenceRule[];
 }
 
-export interface ReminderNotificationEndpoint {
+export interface MessageEndpoint {
   id: string;
-  channel: ReminderNotificationChannel;
+  channel: MessageChannel;
   destination: string;
   verified: boolean;
   updated_at: string;
 }
 
-export interface ReminderNotificationEndpointListResponse {
-  endpoints: ReminderNotificationEndpoint[];
+export interface MessageEndpointListResponse {
+  endpoints: MessageEndpoint[];
 }
 
-export interface ScheduledReminderNotificationItem {
+export interface ScheduledMessageItem {
   id: string;
   reminder_id: string;
-  channel: ReminderNotificationChannel;
+  channel: MessageChannel;
   trigger_at: string;
   offset_minutes: number;
   status: "pending" | "queued" | "processing" | "retry_scheduled" | "delivered" | "dead_letter" | "cancelled";
@@ -787,14 +796,14 @@ export interface ScheduledReminderNotificationItem {
   last_error?: string | null;
 }
 
-export interface ScheduledReminderNotificationListResponse {
-  items: ScheduledReminderNotificationItem[];
+export interface ScheduledMessageListResponse {
+  items: ScheduledMessageItem[];
 }
 
-export interface ReminderNotificationLogItem {
+export interface MessageLogItem {
   id: string;
   scheduled_notification_id: string;
-  channel: ReminderNotificationChannel;
+  channel: MessageChannel;
   attempt_number: number;
   event_type: "scheduled" | "queued" | "dispatch_started" | "delivered" | "retry_scheduled" | "dead_lettered" | "cancelled";
   error_message?: string | null;
@@ -802,8 +811,8 @@ export interface ReminderNotificationLogItem {
   created_at: string;
 }
 
-export interface ReminderNotificationLogListResponse {
-  items: ReminderNotificationLogItem[];
+export interface MessageLogListResponse {
+  items: MessageLogItem[];
 }
 
 export interface MedicationRegimenApi {
@@ -892,7 +901,7 @@ export interface MedicationIntakeApiResponse {
   normalized_instructions: NormalizedMedicationInstructionApi[];
   regimens: MedicationRegimenApi[];
   reminders: ReminderEventView[];
-  scheduled_notifications: ScheduledReminderNotificationItem[];
+  scheduled_notifications: ScheduledMessageItem[];
 }
 
 export interface SymptomCheckInApi {
