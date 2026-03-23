@@ -11,8 +11,8 @@ import asyncio
 from uuid import uuid4
 
 from apps.api.carepilot_api.deps import build_app_context, close_app_context
-from apps.workers.reminder_worker import run_once as run_sqlite_reminder_worker_once
 from care_pilot.config.app import get_settings
+from care_pilot.platform.eventing.runner import run_eventing_once
 from care_pilot.platform.messaging import OutboxWorker
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.scheduling import run_reminder_scheduler_once
@@ -47,17 +47,6 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
             ctx.coordination_store.release_lock("reminder-scheduler", owner=owner)
 
     if ctx.coordination_store.acquire_lock(
-        "sqlite-reminder-worker",
-        owner=owner,
-        ttl_seconds=settings.storage.redis_lock_ttl_seconds,
-    ):
-        try:
-            sqlite_processed = run_sqlite_reminder_worker_once()
-            processed_work = processed_work or bool(sqlite_processed)
-        finally:
-            ctx.coordination_store.release_lock("sqlite-reminder-worker", owner=owner)
-
-    if ctx.coordination_store.acquire_lock(
         "outbox-worker",
         owner=owner,
         ttl_seconds=settings.storage.redis_lock_ttl_seconds,
@@ -73,6 +62,28 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
             processed_work = processed_work or bool(outbox_results)
         finally:
             ctx.coordination_store.release_lock("outbox-worker", owner=owner)
+
+    if ctx.coordination_store.acquire_lock(
+        "eventing-worker",
+        owner=owner,
+        ttl_seconds=settings.storage.redis_lock_ttl_seconds,
+    ):
+        try:
+            has_handlers = bool(
+                ctx.event_reactions.all_handlers() or ctx.event_projections.all_handlers()
+            )
+            if has_handlers:
+                run_eventing_once(
+                    event_timeline=ctx.event_timeline,
+                    eventing_store=ctx.stores.eventing,
+                    reaction_registry=ctx.event_reactions,
+                    projection_registry=ctx.event_projections,
+                    coordination_store=ctx.coordination_store,
+                    lease_owner=owner,
+                    lease_seconds=settings.storage.redis_lock_ttl_seconds,
+                )
+        finally:
+            ctx.coordination_store.release_lock("eventing-worker", owner=owner)
 
     if processed_work:
         return True
