@@ -6,7 +6,10 @@ This module provides workflows for health profiles and onboarding steps.
 
 from __future__ import annotations
 
-from apps.api.carepilot_api.deps import AppContext
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 from apps.api.carepilot_api.errors import build_api_error
 
 from care_pilot.core.contracts.api import (

@@ -721,8 +721,8 @@ async def _run_medication_agent_proposal(
     text: str,
 ) -> None:
     from care_pilot.agent.adapters.shadow_agents import MedicationAgentAdapter
-    from care_pilot.agent.core.base import AgentContext
     from care_pilot.agent.core.contracts import AgentRequest
+    from care_pilot.agent.runtime.context_builder import build_agent_context
 
     adapter = MedicationAgentAdapter()
     request = AgentRequest(
@@ -734,11 +734,13 @@ async def _run_medication_agent_proposal(
     )
     result = await adapter.run(
         request,
-        AgentContext(
+        build_agent_context(
             user_id=user_id,
             session_id="medication_intake_agent",
             request_id=request_id,
             correlation_id=correlation_id,
+            policy={"allowed_sources": ["medication_text"]},
+            selection={"reason": "medication_intake"},
         ),
     )
     response = result.output

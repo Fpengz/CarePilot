@@ -7,9 +7,11 @@ This module coordinates clinical report parsing and symptom-context enrichment.
 from __future__ import annotations
 
 from datetime import date, timedelta
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from apps.api.carepilot_api.deps import AppContext
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 
 from care_pilot.core.contracts.api import (
     ReportParseRequest,

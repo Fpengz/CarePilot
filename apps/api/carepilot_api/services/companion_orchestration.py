@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, date, datetime, timedelta
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 from zoneinfo import ZoneInfo
 
-from apps.api.carepilot_api.deps import AppContext
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 from care_pilot.core.contracts.api import (
     BloodPressureChartResponse,
     BloodPressureSummaryEnvelopeResponse,
@@ -221,6 +222,7 @@ async def get_companion_today(
     snapshot, engagement, _, _, impact, result = build_companion_today_bundle(
         inputs=inputs,
         evidence_retriever=_EVIDENCE_RETRIEVER,
+        eventing_store=context.stores.eventing,
     )
     response = CompanionTodayResponse(
         snapshot=CompanionSnapshotResponse.model_validate(snapshot.model_dump(mode="json")),
@@ -324,6 +326,7 @@ async def handle_companion_interaction(
         interaction=interaction,
         inputs=inputs,
         evidence_retriever=_EVIDENCE_RETRIEVER,
+        eventing_store=context.stores.eventing,
     )
     context.event_timeline.append(
         event_type="workflow_completed",
@@ -365,7 +368,9 @@ async def get_clinician_digest(
     """Build the clinician-digest projection for the active session."""
     inputs = await load_companion_inputs(context=context, session=session)
     _, _, _, digest, _, _ = build_companion_today_bundle(
-        inputs=inputs, evidence_retriever=_EVIDENCE_RETRIEVER
+        inputs=inputs,
+        evidence_retriever=_EVIDENCE_RETRIEVER,
+        eventing_store=context.stores.eventing,
     )
     return ClinicianDigestEnvelopeResponse(
         digest=ClinicianDigestResponse.model_validate(digest.model_dump(mode="json"))
@@ -376,7 +381,9 @@ async def get_impact_summary(*, context: AppContext, session: dict[str, object])
     """Build the impact-summary projection for the active session."""
     inputs = await load_companion_inputs(context=context, session=session)
     _, _, _, _, impact, _ = build_companion_today_bundle(
-        inputs=inputs, evidence_retriever=_EVIDENCE_RETRIEVER
+        inputs=inputs,
+        evidence_retriever=_EVIDENCE_RETRIEVER,
+        eventing_store=context.stores.eventing,
     )
     return ImpactSummaryResponse(
         summary=ImpactSummaryPayloadResponse.model_validate(impact.model_dump(mode="json"))

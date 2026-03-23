@@ -14,6 +14,7 @@ from .health_profiles import router as health_profiles_router
 from .households import router as households_router
 from .meals import router as meals_router
 from .medications import router as medications_router
+from .messages import router as messages_router
 from .metrics import router as metrics_router
 from .notifications import router as notifications_router
 from .recommendations import router as recommendations_router
@@ -41,6 +42,7 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(suggestions_router)
     app.include_router(reminders_router)
     app.include_router(medications_router)
+    app.include_router(messages_router)
     app.include_router(symptoms_router)
     app.include_router(clinical_cards_router)
     app.include_router(metrics_router)

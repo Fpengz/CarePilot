@@ -10,8 +10,8 @@ from care_pilot.agent.adapters.domain_agents import (
     MealLabelArbitrationInput,
 )
 from care_pilot.agent.adapters.shadow_agents import MealAgentAdapter
-from care_pilot.agent.core.base import AgentContext
 from care_pilot.agent.core.contracts import AgentRequest
+from care_pilot.agent.runtime.context_builder import build_agent_context
 from care_pilot.core.contracts.agent_envelopes import AgentHandoff
 from care_pilot.features.meals.domain import MealPerception, MealPortionEstimate, PerceivedMealItem
 from care_pilot.features.meals.domain.models import (
@@ -120,11 +120,13 @@ async def _run_meal_agent_proposal(
     )
     result = await adapter.run(
         request,
-        AgentContext(
+        build_agent_context(
             user_id=user_id,
             session_id="meal_upload_agent",
             request_id=request_id,
             correlation_id=correlation_id,
+            policy={"allowed_sources": ["meal_text"]},
+            selection={"reason": "meal_proposal"},
         ),
     )
     response = result.output
@@ -239,10 +241,13 @@ def build_meal_upload_graph(*, deps: MealUploadDeps) -> StateGraph:
                     claim_labels=claim_labels,
                     user_text=data.meal_text,
                 ),
-                AgentContext(
+                build_agent_context(
                     user_id=data.user_id,
+                    session_id=None,
                     request_id=data.request_id,
                     correlation_id=data.correlation_id,
+                    policy={"allowed_sources": ["vision_labels", "claim_labels", "user_text"]},
+                    selection={"reason": "meal_label_arbitration"},
                 ),
             )
             decision = arbitration_result.output

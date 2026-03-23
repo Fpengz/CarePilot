@@ -8,9 +8,11 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import UTC, date, datetime, time
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from apps.api.carepilot_api.deps import AppContext
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 
 from care_pilot.core.contracts.api import (
     SymptomCheckInEnvelopeResponse,

@@ -14,7 +14,7 @@ from apps.api.carepilot_api.deps import RecommendationAgentDeps, RecommendationD
 from apps.api.carepilot_api.errors import build_api_error
 
 from care_pilot.agent.adapters.shadow_agents import RecommendationAgentAdapter
-from care_pilot.agent.core.base import AgentContext
+from care_pilot.agent.runtime.context_builder import build_agent_context
 from care_pilot.core.contracts.api import (
     RecommendationAgentResponse,
     RecommendationGenerateResponse,
@@ -439,11 +439,13 @@ async def get_daily_agent_for_session(
             meal_history=meal_history,
             clinical_snapshot=clinical_snapshot,
         ),
-        AgentContext(
+        build_agent_context(
             user_id=user_id,
             session_id=str(session.get("session_id", "")),
             request_id=issued_request_id,
             correlation_id=issued_correlation_id,
+            policy={"allowed_sources": ["profile", "meal_history", "clinical_snapshot"]},
+            selection={"reason": "recommendation_generation"},
         ),
     )
     output = agent_result.output

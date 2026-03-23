@@ -7,19 +7,19 @@ Shim: business logic lives in
 from __future__ import annotations
 
 from care_pilot.features.reminders.notifications.reminder_materialization import (  # noqa: F401
-    list_notification_endpoints,
-    list_notification_preferences,
-    list_reminder_notification_logs,
-    list_reminder_notification_schedules,
-    replace_notification_endpoints,
-    replace_notification_preferences,
+    list_message_endpoints,
+    list_message_logs,
+    list_message_preferences,
+    list_message_schedules,
+    replace_message_endpoints,
+    replace_message_preferences,
 )
 
 __all__ = [
-    "list_notification_endpoints",
-    "list_notification_preferences",
-    "list_reminder_notification_logs",
-    "list_reminder_notification_schedules",
-    "replace_notification_endpoints",
-    "replace_notification_preferences",
+    "list_message_endpoints",
+    "list_message_logs",
+    "list_message_preferences",
+    "list_message_schedules",
+    "replace_message_endpoints",
+    "replace_message_preferences",
 ]

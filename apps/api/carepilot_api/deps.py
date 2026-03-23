@@ -30,6 +30,7 @@ from care_pilot.features.companion.chat.memory import MemoryManager
 from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
 from care_pilot.features.companion.chat.router import QueryRouter
 from care_pilot.features.companion.chat.search_adapter import SearchAgent
+from care_pilot.features.companion.core.projectors import CompanionSnapshotProjector
 from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
 from care_pilot.features.companion.emotion.ports import EmotionInferencePort
 from care_pilot.features.companion.emotion.remote_runtime import RemoteEmotionRuntime
@@ -43,6 +44,9 @@ from care_pilot.platform.cache import (
     ProfileMemoryService,
     RedisCacheStore,
 )
+from care_pilot.platform.eventing import EventProjectionRegistry, EventReactionRegistry
+from care_pilot.platform.eventing.models import DeliverySemantics, OrderingScope
+from care_pilot.platform.eventing.reactions import AgentProposalCacheReaction
 from care_pilot.platform.memory import MemoryStore, build_memory_store
 from care_pilot.platform.observability.tooling.platform_registry import build_platform_tool_registry
 from care_pilot.platform.observability.tooling.registry import ToolRegistry
@@ -77,6 +81,8 @@ class AppContext:
         profile_memory: ProfileMemoryService,
         clinical_memory: ClinicalSnapshotMemoryService,
         event_timeline: EventTimelineService,
+        event_reactions: EventReactionRegistry,
+        event_projections: EventProjectionRegistry,
         tool_registry: ToolRegistry,
         agent_registry: AgentRegistry,
         auth_store: AuthStore,
@@ -94,6 +100,8 @@ class AppContext:
         self.profile_memory = profile_memory
         self.clinical_memory = clinical_memory
         self.event_timeline = event_timeline
+        self.event_reactions = event_reactions
+        self.event_projections = event_projections
         self.tool_registry = tool_registry
         self.agent_registry = agent_registry
         self.auth_store = auth_store
@@ -339,11 +347,42 @@ def _build_coordination_store(settings: Settings) -> CoordinationStore:
 def build_app_context() -> AppContext:
     settings = get_settings()
     app_store = _build_app_store(settings)
+    stores = build_app_stores(app_store)
     profile_memory = ProfileMemoryService()
     clinical_memory = ClinicalSnapshotMemoryService()
     event_timeline = EventTimelineService(
         repository=app_store,
         persistence_enabled=settings.workers.workflow_trace_persistence_enabled,
+    )
+    event_reactions = EventReactionRegistry()
+    event_projections = EventProjectionRegistry()
+    health_metrics = ChatHealthMetricsRepository()
+    event_projections.register(
+        CompanionSnapshotProjector(
+            name="companion_snapshot_projector",
+            event_types=[
+                "meal_analyzed",
+                "meal_confirmed",
+                "meal_skipped",
+                "medication_logged",
+                "medication_updated",
+                "medication_deleted",
+                "adherence_updated",
+                "symptom_reported",
+                "reminder_triggered",
+                "reminder_confirmed",
+                "reminder_scheduled",
+                "profile_updated",
+                "profile_onboarding_step",
+                "profile_onboarding_completed",
+            ],
+            projection_section="patient_case_snapshot",
+            projection_version="v1",
+            ordering_scope=OrderingScope.PER_PATIENT,
+            stores=stores,
+            clinical_memory=clinical_memory,
+            health_metrics=health_metrics,
+        )
     )
     tool_registry = build_platform_tool_registry(app_store)
     agent_registry = build_default_agent_registry()
@@ -356,13 +395,25 @@ def build_app_context() -> AppContext:
     household_store = _build_household_store(settings)
     chat_runtime_config = build_chat_runtime_config(settings)
 
+    event_reactions.register(
+        AgentProposalCacheReaction(
+            name="agent_proposal_cache",
+            event_types=["agent_action_proposed"],
+            delivery_semantics=DeliverySemantics.AT_LEAST_ONCE,
+            ordering_scope=OrderingScope.PER_PATIENT,
+            cache_store=cache_store,
+        )
+    )
+
     ctx = AppContext(
         settings=settings,
         app_store=app_store,
-        stores=build_app_stores(app_store),
+        stores=stores,
         profile_memory=profile_memory,
         clinical_memory=clinical_memory,
         event_timeline=event_timeline,
+        event_reactions=event_reactions,
+        event_projections=event_projections,
         tool_registry=tool_registry,
         agent_registry=agent_registry,
         auth_store=auth_store,

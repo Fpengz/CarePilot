@@ -21,13 +21,13 @@ from care_pilot.agent.adapters.shadow_agents import (
     EmotionTextAgentAdapter,
 )
 from care_pilot.agent.chat.schemas import ChatStreamEvent
-from care_pilot.agent.core.base import AgentContext
 from care_pilot.agent.emotion import EmotionAgentDisabledError
 from care_pilot.agent.emotion.schemas import (
     EmotionInferenceResult,
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,
 )
+from care_pilot.agent.runtime.context_builder import build_agent_context
 from care_pilot.features.companion.chat.meal_intent import (
     classify_meal_log_intent,
     heuristic_meal_log_intent,
@@ -48,7 +48,7 @@ from care_pilot.features.companion.chat.workflows.companion_graph import (
 # Important: These must be imported from features core, not apps/api
 from care_pilot.features.companion.core.companion_core_service import CompanionStateInputs
 from care_pilot.features.companion.core.domain import PatientCaseSnapshot
-from care_pilot.features.companion.core.snapshot import build_case_snapshot
+from care_pilot.features.companion.core.snapshot import build_case_snapshot_prefer_projection
 from care_pilot.features.meals.domain.normalization import log_meal_from_text
 from care_pilot.features.safety.domain.triage import evaluate_text_safety
 from care_pilot.platform.observability import get_logger
@@ -113,7 +113,9 @@ class ChatOrchestrator:
         agent_names: list[str] = []
 
         # 1. Build Blackboard (Snapshot)
-        snapshot = build_case_snapshot(
+        snapshot = build_case_snapshot_prefer_projection(
+            user_id=inputs.user_profile.id,
+            eventing_store=ctx.stores.eventing,
             user_profile=inputs.user_profile,
             health_profile=inputs.health_profile,
             meals=inputs.meals,
@@ -146,11 +148,13 @@ class ChatOrchestrator:
                 adapter = EmotionTextAgentAdapter(ctx.emotion_agent)
                 result = await adapter.run(
                     EmotionTextAgentInput(text=user_message, language=None, user_id=user_id),
-                    AgentContext(
+                    build_agent_context(
                         user_id=user_id,
                         session_id=session_id,
                         request_id=request_id,
                         correlation_id=correlation_id,
+                        policy={"allowed_sources": ["chat_message"]},
+                        selection={"reason": "emotion_inference"},
                     ),
                 )
                 inference = result.output
@@ -421,11 +425,13 @@ class ChatOrchestrator:
                         language=None,
                         user_id=user_id,
                     ),
-                    AgentContext(
+                    build_agent_context(
                         user_id=user_id,
                         session_id=str(session.get("session_id", "")),
                         request_id=request_id,
                         correlation_id=correlation_id,
+                        policy={"allowed_sources": ["audio", "transcription"]},
+                        selection={"reason": "emotion_inference_speech"},
                     ),
                 )
                 inference = result.output
