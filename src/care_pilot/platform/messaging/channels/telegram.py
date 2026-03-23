@@ -10,7 +10,7 @@ from urllib import error, request
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.features.safety.domain.alerts import OutboundMessage
 from care_pilot.platform.messaging.channels.base import ChannelResult
 from care_pilot.platform.observability import get_logger
 
@@ -48,17 +48,21 @@ class TelegramChannel:
             return raw[len("telegram://") :]
         return raw
 
-    def _build_payload(self, reminder_event: ReminderEvent, chat_id: str) -> dict[str, str]:
-        text = (
-            f"Medication reminder: {reminder_event.medication_name} "
-            f"{reminder_event.dosage_text} at {self._format_scheduled_at(reminder_event.scheduled_at)}"
-        )
+    def _build_payload(self, message: OutboundMessage, chat_id: str) -> dict[str, str]:
+        text = str(message.payload.get("body") or message.payload.get("message") or "Message")
         return {"chat_id": chat_id, "text": text}
 
-    def send(self, reminder_event: ReminderEvent, destination: str | None = None) -> ChannelResult:
+    def _build_photo_payload(self, message: OutboundMessage, chat_id: str) -> dict[str, str]:
+        attachments = message.attachments or []
+        first = attachments[0] if attachments else {}
+        photo_url = str(first.get("url") or "")
+        caption = str(first.get("caption") or message.payload.get("body") or "Message")
+        return {"chat_id": chat_id, "photo": photo_url, "caption": caption}
+
+    def send(self, message: OutboundMessage, destination: str | None = None) -> ChannelResult:
         chat_id = self._resolve_chat_id(destination)
         if not self.bot_token or not chat_id:
-            logger.warning("telegram_send_missing_config event_id=%s", reminder_event.id)
+            logger.warning("telegram_send_missing_config event_id=%s", message.alert_id)
             return ChannelResult(
                 channel=self.name,
                 success=False,
@@ -68,15 +72,28 @@ class TelegramChannel:
         if not destination:
             logger.info(
                 "telegram_send_default_destination event_id=%s chat_id=%s",
-                reminder_event.id,
+                message.alert_id,
                 chat_id,
             )
 
-        endpoint = self._build_endpoint()
-        payload = self._build_payload(reminder_event, chat_id)
+        has_media = bool(message.attachments)
+        endpoint = (
+            f"https://api.telegram.org/bot{self.bot_token}/sendPhoto"
+            if has_media
+            else self._build_endpoint()
+        )
+        payload = (
+            self._build_photo_payload(message, chat_id)
+            if has_media
+            else self._build_payload(message, chat_id)
+        )
+        if has_media and not payload.get("photo"):
+            has_media = False
+            endpoint = self._build_endpoint()
+            payload = self._build_payload(message, chat_id)
         logger.info(
             "telegram_send_start event_id=%s destination=%s dev_mode=%s",
-            reminder_event.id,
+            message.alert_id,
             destination or endpoint,
             self.dev_mode,
         )
@@ -84,7 +101,7 @@ class TelegramChannel:
         if self.dev_mode:
             logger.info(
                 "telegram_send_dev_mode_skip_network event_id=%s",
-                reminder_event.id,
+                message.alert_id,
             )
             result = ChannelResult(
                 channel=self.name,
@@ -94,7 +111,7 @@ class TelegramChannel:
             )
             logger.info(
                 "telegram_send_complete event_id=%s success=%s error=%s",
-                reminder_event.id,
+                message.alert_id,
                 result.success,
                 result.error or "",
             )
@@ -119,7 +136,7 @@ class TelegramChannel:
                     )
                     logger.warning(
                         "telegram_send_complete event_id=%s success=%s error=%s",
-                        reminder_event.id,
+                        message.alert_id,
                         result.success,
                         result.error or "",
                     )
@@ -132,7 +149,7 @@ class TelegramChannel:
             )
             logger.info(
                 "telegram_send_complete event_id=%s success=%s error=%s",
-                reminder_event.id,
+                message.alert_id,
                 result.success,
                 result.error or "",
             )
@@ -140,7 +157,7 @@ class TelegramChannel:
         except error.URLError as exc:
             logger.error(
                 "telegram_send_error event_id=%s error=%s",
-                reminder_event.id,
+                message.alert_id,
                 exc,
             )
             result = ChannelResult(
@@ -151,7 +168,7 @@ class TelegramChannel:
             )
             logger.warning(
                 "telegram_send_complete event_id=%s success=%s error=%s",
-                reminder_event.id,
+                message.alert_id,
                 result.success,
                 result.error or "",
             )

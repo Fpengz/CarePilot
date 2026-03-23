@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from care_pilot.core.contracts.notifications import (
-    ReminderNotificationRepository as ServiceReminderNotificationRepository,
+    MessageNotificationRepository as ServiceMessageNotificationRepository,
     ReminderSchedulerRepository as ServiceReminderSchedulerRepository,
 )
 
@@ -20,5 +20,5 @@ if TYPE_CHECKING:
     type AppStoreBackend = SQLiteAppStore
 else:
     type AppStoreBackend = Any
-ReminderNotificationRepository = ServiceReminderNotificationRepository
+MessageNotificationRepository = ServiceMessageNotificationRepository
 ReminderSchedulerRepository = ServiceReminderSchedulerRepository

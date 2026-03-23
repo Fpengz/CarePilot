@@ -3,7 +3,7 @@
 from care_pilot.platform.persistence.builders import build_app_store
 from care_pilot.platform.persistence.contracts import (
     AppStoreBackend,
-    ReminderNotificationRepository,
+    MessageNotificationRepository,
     ReminderSchedulerRepository,
 )
 from care_pilot.platform.persistence.domain_stores import AppStores, build_app_stores
@@ -39,7 +39,7 @@ __all__ = [
     "MealRepositoryProtocol",
     "MedicationRepositoryProtocol",
     "ProfileRepositoryProtocol",
-    "ReminderNotificationRepository",
+    "MessageNotificationRepository",
     "ReminderRepositoryProtocol",
     "ReminderSchedulerRepository",
     "SQLiteAppStore",

@@ -18,8 +18,12 @@ from datetime import UTC, datetime, timedelta
 from typing import cast
 
 from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
-from care_pilot.features.reminders.domain.models import ReminderNotificationChannel
-from care_pilot.features.safety.domain.alerts import AlertDeliveryResult, AlertMessage, OutboxRecord
+from care_pilot.features.reminders.domain.models import MessageChannel
+from care_pilot.features.safety.domain.alerts import (
+    AlertDeliveryResult,
+    OutboundMessage,
+    OutboxRecord,
+)
 from care_pilot.platform.messaging.channels.base import SinkAdapter  # noqa: F401
 from care_pilot.platform.messaging.channels.sinks import (  # noqa: F401
     EmailSink,
@@ -41,7 +45,7 @@ class AlertPublisher:
     def __init__(self, repository: AlertRepositoryProtocol) -> None:
         self._repository = repository
 
-    def publish(self, message: AlertMessage) -> list[OutboxRecord]:
+    def publish(self, message: OutboundMessage) -> list[OutboxRecord]:
         logger.info(
             "alert_publish alert_id=%s correlation_id=%s destinations=%s",
             message.alert_id,
@@ -117,13 +121,14 @@ class OutboxWorker:
                 error="unknown sink",
             )
 
-        message = AlertMessage(
+        message = OutboundMessage(
             alert_id=record.alert_id,
             type=record.type,
             severity=record.severity,
             payload=record.payload,
             destinations=[record.sink],
             correlation_id=record.correlation_id,
+            attachments=record.attachments,
             created_at=record.created_at,
         )
         attempt = record.attempt_count + 1
@@ -223,15 +228,15 @@ class OutboxWorker:
         if callable(append_log):
             from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import ReminderNotificationLogEntry
+            from care_pilot.features.reminders.domain.models import MessageLogEntry
 
             append_log(
-                ReminderNotificationLogEntry(
+                MessageLogEntry(
                     id=str(uuid4()),
                     scheduled_notification_id=record.alert_id,
                     reminder_id=str(record.payload.get("reminder_id", "")),
                     user_id=str(record.payload.get("user_id", "")),
-                    channel=cast(ReminderNotificationChannel, record.sink),
+                    channel=cast(MessageChannel, record.sink),
                     attempt_number=attempt,
                     event_type="dispatch_started",
                 )
@@ -247,15 +252,15 @@ class OutboxWorker:
         if callable(append_log):
             from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import ReminderNotificationLogEntry
+            from care_pilot.features.reminders.domain.models import MessageLogEntry
 
             append_log(
-                ReminderNotificationLogEntry(
+                MessageLogEntry(
                     id=str(uuid4()),
                     scheduled_notification_id=record.alert_id,
                     reminder_id=str(record.payload.get("reminder_id", "")),
                     user_id=str(record.payload.get("user_id", "")),
-                    channel=cast(ReminderNotificationChannel, record.sink),
+                    channel=cast(MessageChannel, record.sink),
                     attempt_number=attempt,
                     event_type="delivered",
                 )
@@ -283,15 +288,15 @@ class OutboxWorker:
         if callable(append_log):
             from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import ReminderNotificationLogEntry
+            from care_pilot.features.reminders.domain.models import MessageLogEntry
 
             append_log(
-                ReminderNotificationLogEntry(
+                MessageLogEntry(
                     id=str(uuid4()),
                     scheduled_notification_id=record.alert_id,
                     reminder_id=str(record.payload.get("reminder_id", "")),
                     user_id=str(record.payload.get("user_id", "")),
-                    channel=cast(ReminderNotificationChannel, record.sink),
+                    channel=cast(MessageChannel, record.sink),
                     attempt_number=attempt,
                     event_type="retry_scheduled",
                     error_message=error,
@@ -315,15 +320,15 @@ class OutboxWorker:
         if callable(append_log):
             from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import ReminderNotificationLogEntry
+            from care_pilot.features.reminders.domain.models import MessageLogEntry
 
             append_log(
-                ReminderNotificationLogEntry(
+                MessageLogEntry(
                     id=str(uuid4()),
                     scheduled_notification_id=record.alert_id,
                     reminder_id=str(record.payload.get("reminder_id", "")),
                     user_id=str(record.payload.get("user_id", "")),
-                    channel=cast(ReminderNotificationChannel, record.sink),
+                    channel=cast(MessageChannel, record.sink),
                     attempt_number=attempt,
                     event_type="dead_lettered",
                     error_message=error,

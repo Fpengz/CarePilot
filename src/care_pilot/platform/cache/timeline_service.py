@@ -27,6 +27,8 @@ class WorkflowTimelineRepository(Protocol):
         *,
         correlation_id: str | None = None,
         user_id: str | None = None,
+        since_time: datetime | None = None,
+        limit: int | None = None,
     ) -> list[WorkflowTimelineEvent]: ...
 
 
@@ -76,12 +78,19 @@ class EventTimelineService:
         return event
 
     def get_events(
-        self, *, correlation_id: str | None = None, user_id: str | None = None
+        self,
+        *,
+        correlation_id: str | None = None,
+        user_id: str | None = None,
+        since_time: datetime | None = None,
+        limit: int | None = None,
     ) -> list[WorkflowTimelineEvent]:
         if self._persistence_enabled and self._repository is not None:
             return self._repository.list_workflow_timeline_events(
                 correlation_id=correlation_id,
                 user_id=user_id,
+                since_time=since_time,
+                limit=limit,
             )
 
         events = self._events
@@ -89,7 +98,12 @@ class EventTimelineService:
             events = [e for e in events if e.correlation_id == correlation_id]
         if user_id is not None:
             events = [e for e in events if e.user_id == user_id]
-        return sorted(events, key=lambda e: e.created_at)
+        if since_time is not None:
+            events = [e for e in events if e.created_at > since_time]
+        events = sorted(events, key=lambda e: e.created_at)
+        if limit is not None:
+            events = events[:limit]
+        return events
 
 
 __all__ = ["EventTimelineService", "WorkflowTimelineRepository"]

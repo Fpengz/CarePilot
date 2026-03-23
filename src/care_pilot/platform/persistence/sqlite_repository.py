@@ -19,6 +19,7 @@ from care_pilot.platform.persistence.sqlite_db import get_connection
 from .sqlite_alert_repository import SQLiteAlertRepository
 from .sqlite_catalog_repository import SQLiteCatalogRepository
 from .sqlite_clinical_repository import SQLiteClinicalRepository
+from .sqlite_eventing_repository import SQLiteEventingRepository
 from .sqlite_meal_repository import SQLiteMealRepository
 from .sqlite_medication_repository import SQLiteMedicationRepository
 from .sqlite_reminder_repository import SQLiteReminderRepository
@@ -39,6 +40,7 @@ class SQLiteRepository:
         self.catalog = SQLiteCatalogRepository(db_path)
         self.alerts = SQLiteAlertRepository(db_path)
         self.workflows = SQLiteWorkflowRepository(db_path)
+        self.eventing = SQLiteEventingRepository(db_path)
 
     def _init_db(self) -> None:
         with get_connection(self.db_path) as conn:
@@ -333,7 +335,43 @@ class SQLiteRepository:
                 )
                 """)
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS message_preferences (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    scope_type TEXT NOT NULL,
+                    scope_key TEXT,
+                    channel TEXT NOT NULL,
+                    offset_minutes INTEGER NOT NULL,
+                    enabled INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    UNIQUE(user_id, scope_type, scope_key, channel, offset_minutes)
+                )
+                """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS scheduled_notifications (
+                    id TEXT PRIMARY KEY,
+                    reminder_id TEXT NOT NULL,
+                    occurrence_id TEXT,
+                    user_id TEXT NOT NULL,
+                    channel TEXT NOT NULL,
+                    trigger_at TEXT NOT NULL,
+                    offset_minutes INTEGER NOT NULL,
+                    preference_id TEXT,
+                    status TEXT NOT NULL,
+                    attempt_count INTEGER NOT NULL,
+                    next_attempt_at TEXT,
+                    queued_at TEXT,
+                    delivered_at TEXT,
+                    last_error TEXT,
+                    payload_json TEXT NOT NULL,
+                    idempotency_key TEXT NOT NULL UNIQUE,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS scheduled_messages (
                     id TEXT PRIMARY KEY,
                     reminder_id TEXT NOT NULL,
                     occurrence_id TEXT,
@@ -370,6 +408,21 @@ class SQLiteRepository:
                 )
                 """)
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS message_logs (
+                    id TEXT PRIMARY KEY,
+                    scheduled_notification_id TEXT NOT NULL,
+                    reminder_id TEXT NOT NULL,
+                    occurrence_id TEXT,
+                    user_id TEXT NOT NULL,
+                    channel TEXT NOT NULL,
+                    attempt_number INTEGER NOT NULL,
+                    event_type TEXT NOT NULL,
+                    error_message TEXT,
+                    metadata_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS reminder_notification_endpoints (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
@@ -379,6 +432,52 @@ class SQLiteRepository:
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL,
                     UNIQUE(user_id, channel)
+                )
+                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS message_endpoints (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    channel TEXT NOT NULL,
+                    destination TEXT NOT NULL,
+                    verified INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    UNIQUE(user_id, channel, destination)
+                )
+                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS message_threads (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    channel TEXT NOT NULL,
+                    endpoint_id TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    UNIQUE(user_id, channel, endpoint_id)
+                )
+                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS message_thread_participants (
+                    id TEXT PRIMARY KEY,
+                    thread_id TEXT NOT NULL,
+                    participant_type TEXT NOT NULL,
+                    participant_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS message_thread_messages (
+                    id TEXT PRIMARY KEY,
+                    thread_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    channel TEXT NOT NULL,
+                    direction TEXT NOT NULL,
+                    body TEXT NOT NULL,
+                    attachments_json TEXT NOT NULL,
+                    metadata_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL
                 )
                 """)
             cur.execute("""
@@ -451,6 +550,46 @@ class SQLiteRepository:
                     created_at TEXT NOT NULL
                 )
                 """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS event_reaction_executions (
+                    event_id TEXT NOT NULL,
+                    handler_name TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    started_at TEXT,
+                    completed_at TEXT,
+                    failure_count INTEGER NOT NULL DEFAULT 0,
+                    last_error TEXT,
+                    payload_hash TEXT,
+                    event_version TEXT,
+                    ordering_scope TEXT NOT NULL DEFAULT 'none',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (event_id, handler_name)
+                )
+                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS case_snapshot_sections (
+                    user_id TEXT NOT NULL,
+                    section_key TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    projection_version TEXT NOT NULL,
+                    source_event_cursor TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, section_key)
+                )
+                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS event_handler_cursors (
+                    handler_name TEXT NOT NULL,
+                    scope_key TEXT NOT NULL,
+                    last_event_id TEXT,
+                    last_event_time TEXT,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (handler_name, scope_key)
+                )
+                """)
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_reminders_user_time ON reminder_events(user_id, scheduled_at)"
             )
@@ -513,16 +652,31 @@ class SQLiteRepository:
                 "CREATE INDEX IF NOT EXISTS idx_reminder_notification_preferences_user_scope ON reminder_notification_preferences(user_id, scope_type, scope_key)"
             )
             cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_message_preferences_user_scope ON message_preferences(user_id, scope_type, scope_key)"
+            )
+            cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_scheduled_notifications_due ON scheduled_notifications(status, trigger_at, next_attempt_at)"
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_scheduled_notifications_reminder_id ON scheduled_notifications(reminder_id)"
             )
             cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_scheduled_messages_due ON scheduled_messages(status, trigger_at, next_attempt_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_scheduled_messages_reminder_id ON scheduled_messages(reminder_id)"
+            )
+            cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_notification_logs_reminder_created ON notification_logs(reminder_id, created_at)"
             )
             cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_message_logs_reminder_created ON message_logs(reminder_id, created_at)"
+            )
+            cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_reminder_notification_endpoints_user_channel ON reminder_notification_endpoints(user_id, channel)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_message_endpoints_user_channel ON message_endpoints(user_id, channel)"
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_adherence_user_time ON medication_adherence_events(user_id, scheduled_at)"
@@ -585,7 +739,71 @@ class SQLiteRepository:
             self._ensure_sqlite_column(cur, "reminder_events", "occurrence_id", "TEXT")
             self._ensure_sqlite_column(cur, "reminder_events", "regimen_id", "TEXT")
             self._ensure_sqlite_column(cur, "scheduled_notifications", "occurrence_id", "TEXT")
+            self._ensure_sqlite_column(cur, "scheduled_messages", "occurrence_id", "TEXT")
             self._ensure_sqlite_column(cur, "notification_logs", "occurrence_id", "TEXT")
+            self._ensure_sqlite_column(cur, "message_logs", "occurrence_id", "TEXT")
+            # One-time migration from legacy notification tables to message tables.
+            cur.execute("SELECT COUNT(*) FROM message_preferences")
+            message_pref_count = int(cur.fetchone()[0])
+            cur.execute("SELECT COUNT(*) FROM reminder_notification_preferences")
+            legacy_pref_count = int(cur.fetchone()[0])
+            if message_pref_count == 0 and legacy_pref_count > 0:
+                cur.execute(
+                    """
+                    INSERT INTO message_preferences
+                    (id, user_id, scope_type, scope_key, channel, offset_minutes, enabled, created_at, updated_at)
+                    SELECT id, user_id, scope_type, scope_key, channel, offset_minutes, enabled, created_at, updated_at
+                    FROM reminder_notification_preferences
+                    """
+                )
+
+            cur.execute("SELECT COUNT(*) FROM message_endpoints")
+            message_endpoint_count = int(cur.fetchone()[0])
+            cur.execute("SELECT COUNT(*) FROM reminder_notification_endpoints")
+            legacy_endpoint_count = int(cur.fetchone()[0])
+            if message_endpoint_count == 0 and legacy_endpoint_count > 0:
+                cur.execute(
+                    """
+                    INSERT INTO message_endpoints
+                    (id, user_id, channel, destination, verified, created_at, updated_at)
+                    SELECT id, user_id, channel, destination, verified, created_at, updated_at
+                    FROM reminder_notification_endpoints
+                    """
+                )
+
+            cur.execute("SELECT COUNT(*) FROM scheduled_messages")
+            message_sched_count = int(cur.fetchone()[0])
+            cur.execute("SELECT COUNT(*) FROM scheduled_notifications")
+            legacy_sched_count = int(cur.fetchone()[0])
+            if message_sched_count == 0 and legacy_sched_count > 0:
+                cur.execute(
+                    """
+                    INSERT INTO scheduled_messages
+                    (id, reminder_id, occurrence_id, user_id, channel, trigger_at, offset_minutes, preference_id,
+                     status, attempt_count, next_attempt_at, queued_at, delivered_at, last_error, payload_json,
+                     idempotency_key, created_at, updated_at)
+                    SELECT id, reminder_id, occurrence_id, user_id, channel, trigger_at, offset_minutes, preference_id,
+                           status, attempt_count, next_attempt_at, queued_at, delivered_at, last_error, payload_json,
+                           idempotency_key, created_at, updated_at
+                    FROM scheduled_notifications
+                    """
+                )
+
+            cur.execute("SELECT COUNT(*) FROM message_logs")
+            message_log_count = int(cur.fetchone()[0])
+            cur.execute("SELECT COUNT(*) FROM notification_logs")
+            legacy_log_count = int(cur.fetchone()[0])
+            if message_log_count == 0 and legacy_log_count > 0:
+                cur.execute(
+                    """
+                    INSERT INTO message_logs
+                    (id, scheduled_notification_id, reminder_id, occurrence_id, user_id, channel, attempt_number,
+                     event_type, error_message, metadata_json, created_at)
+                    SELECT id, scheduled_notification_id, reminder_id, occurrence_id, user_id, channel, attempt_number,
+                           event_type, error_message, metadata_json, created_at
+                    FROM notification_logs
+                    """
+                )
             conn.commit()
         self._seed_meal_catalog()
         self._seed_canonical_foods()
@@ -739,6 +957,46 @@ class SQLiteRepository:
 
     def list_reminder_events(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.list_reminder_events(*args, **kwargs)
+
+    # --- Messages / Reminders Extended ---
+
+    def list_message_preferences(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_message_preferences(*args, **kwargs)
+
+    def replace_message_preferences(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.replace_message_preferences(*args, **kwargs)
+
+    def list_message_endpoints(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_message_endpoints(*args, **kwargs)
+
+    def replace_message_endpoints(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.replace_message_endpoints(*args, **kwargs)
+
+    def list_message_logs(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_message_logs(*args, **kwargs)
+
+    def list_message_schedules(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_scheduled_messages(*args, **kwargs)
+
+    def get_message_thread(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.get_message_thread(*args, **kwargs)
+
+    def create_message_thread(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.create_message_thread(*args, **kwargs)
+
+    def add_message_thread_participant(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.add_message_thread_participant(*args, **kwargs)
+
+    def append_message_thread_message(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.append_message_thread_message(*args, **kwargs)
+
+    def list_message_thread_messages(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_message_thread_messages(*args, **kwargs)
+
+    def get_message_endpoint_by_destination(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.get_message_endpoint_by_destination(*args, **kwargs)
+
+    # --- Legacy Aliases (optional but keeping for compat) ---
 
     def replace_reminder_notification_preferences(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.replace_reminder_notification_preferences(*args, **kwargs)
@@ -956,6 +1214,30 @@ class SQLiteRepository:
 
     def list_workflow_timeline_events(self, *args: Any, **kwargs: Any) -> Any:
         return self.workflows.list_workflow_timeline_events(*args, **kwargs)
+
+    def save_reaction_execution(self, *args: Any, **kwargs: Any) -> Any:
+        return self.eventing.save_reaction_execution(*args, **kwargs)
+
+    def get_reaction_execution(self, *args: Any, **kwargs: Any) -> Any:
+        return self.eventing.get_reaction_execution(*args, **kwargs)
+
+    def upsert_snapshot_section(self, *args: Any, **kwargs: Any) -> Any:
+        return self.eventing.upsert_snapshot_section(*args, **kwargs)
+
+    def get_snapshot_section(self, *args: Any, **kwargs: Any) -> Any:
+        return self.eventing.get_snapshot_section(*args, **kwargs)
+
+    def list_snapshot_sections(self, *args: Any, **kwargs: Any) -> Any:
+        return self.eventing.list_snapshot_sections(*args, **kwargs)
+
+    def upsert_event_handler_cursor(self, *args: Any, **kwargs: Any) -> Any:
+        return self.eventing.upsert_event_handler_cursor(*args, **kwargs)
+
+    def get_event_handler_cursor(self, *args: Any, **kwargs: Any) -> Any:
+        return self.eventing.get_event_handler_cursor(*args, **kwargs)
+
+    def list_event_handler_cursors(self, *args: Any, **kwargs: Any) -> Any:
+        return self.eventing.list_event_handler_cursors(*args, **kwargs)
 
     def prune_events(self, *args: Any, **kwargs: Any) -> Any:
         return self.workflows.prune_events(*args, **kwargs)

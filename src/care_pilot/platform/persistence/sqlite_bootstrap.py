@@ -323,6 +323,19 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS message_preferences (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        scope_type TEXT NOT NULL,
+        scope_key TEXT,
+        channel TEXT NOT NULL,
+        offset_minutes INTEGER NOT NULL,
+        enabled INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS scheduled_notifications (
         notification_id TEXT PRIMARY KEY,
         reminder_id TEXT NOT NULL,
@@ -334,6 +347,28 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         status TEXT NOT NULL,
         attempt_count INTEGER NOT NULL,
         next_attempt_at TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        idempotency_key TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS scheduled_messages (
+        id TEXT PRIMARY KEY,
+        reminder_id TEXT NOT NULL,
+        occurrence_id TEXT,
+        user_id TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        trigger_at TEXT NOT NULL,
+        offset_minutes INTEGER NOT NULL,
+        preference_id TEXT,
+        status TEXT NOT NULL,
+        attempt_count INTEGER NOT NULL,
+        next_attempt_at TEXT,
+        queued_at TEXT,
+        delivered_at TEXT,
+        last_error TEXT,
         payload_json TEXT NOT NULL,
         idempotency_key TEXT NOT NULL UNIQUE,
         created_at TEXT NOT NULL,
@@ -354,6 +389,21 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS message_logs (
+        id TEXT PRIMARY KEY,
+        scheduled_notification_id TEXT NOT NULL,
+        reminder_id TEXT NOT NULL,
+        occurrence_id TEXT,
+        user_id TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        attempt_number INTEGER NOT NULL DEFAULT 0,
+        event_type TEXT NOT NULL,
+        error_message TEXT,
+        metadata_json TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS reminder_notification_endpoints (
         endpoint_id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
@@ -364,6 +414,52 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         UNIQUE(user_id, channel, destination)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS message_endpoints (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        destination TEXT NOT NULL,
+        verified INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(user_id, channel, destination)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS message_threads (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        endpoint_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(user_id, channel, endpoint_id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS message_thread_participants (
+        id TEXT PRIMARY KEY,
+        thread_id TEXT NOT NULL,
+        participant_type TEXT NOT NULL,
+        participant_id TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS message_thread_messages (
+        id TEXT PRIMARY KEY,
+        thread_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        direction TEXT NOT NULL,
+        body TEXT NOT NULL,
+        attachments_json TEXT NOT NULL,
+        metadata_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
     )
     """,
     """
@@ -394,6 +490,46 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         user_id TEXT,
         created_at TEXT NOT NULL,
         payload_json TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS event_reaction_executions (
+        event_id TEXT NOT NULL,
+        handler_name TEXT NOT NULL,
+        status TEXT NOT NULL,
+        started_at TEXT,
+        completed_at TEXT,
+        failure_count INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT,
+        payload_hash TEXT,
+        event_version TEXT,
+        ordering_scope TEXT NOT NULL DEFAULT 'none',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (event_id, handler_name)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS case_snapshot_sections (
+        user_id TEXT NOT NULL,
+        section_key TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        schema_version TEXT NOT NULL,
+        projection_version TEXT NOT NULL,
+        source_event_cursor TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, section_key)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS event_handler_cursors (
+        handler_name TEXT NOT NULL,
+        scope_key TEXT NOT NULL,
+        last_event_id TEXT,
+        last_event_time TEXT,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (handler_name, scope_key)
     )
     """,
     """

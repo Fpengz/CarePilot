@@ -14,7 +14,7 @@ import smtplib
 import urllib.request
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.safety.domain.alerts import AlertDeliveryResult, AlertMessage
+from care_pilot.features.safety.domain.alerts import AlertDeliveryResult, OutboundMessage
 from care_pilot.platform.messaging.channels.telegram import TelegramChannel
 from care_pilot.platform.messaging.channels.wechat import WeChatChannel
 from care_pilot.platform.messaging.channels.whatsapp import WhatsAppChannel
@@ -32,34 +32,6 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _alert_to_reminder(message: AlertMessage):
-    """Adapt an ``AlertMessage`` to a ``ReminderEvent`` for channel sinks."""
-    from datetime import datetime
-
-    from care_pilot.features.reminders.domain.models import ReminderEvent
-
-    composed = compose_alert_message(
-        message,
-        channel=message.destinations[0] if message.destinations else "unknown",
-    )
-    medication_name = message.payload.get("medication_name", composed.title)
-    dosage_text = message.payload.get("dosage_text", format_alert_text_for_transport(composed))
-    scheduled_at_raw = message.payload.get("scheduled_at")
-    try:
-        scheduled_at = (
-            datetime.fromisoformat(scheduled_at_raw) if scheduled_at_raw else message.created_at
-        )
-    except ValueError:
-        scheduled_at = message.created_at
-    return ReminderEvent(
-        id=f"alert-{message.alert_id}",
-        user_id=message.payload.get("user_id", "system"),
-        medication_name=medication_name,
-        scheduled_at=scheduled_at,
-        dosage_text=dosage_text,
-    )
-
-
 # ---------------------------------------------------------------------------
 # Concrete sink adapters
 # ---------------------------------------------------------------------------
@@ -68,7 +40,7 @@ def _alert_to_reminder(message: AlertMessage):
 class InAppSink:
     name = "in_app"
 
-    def send(self, message: AlertMessage) -> AlertDeliveryResult:
+    def send(self, message: OutboundMessage) -> AlertDeliveryResult:
         return AlertDeliveryResult(
             alert_id=message.alert_id,
             sink=self.name,
@@ -82,7 +54,7 @@ class InAppSink:
 class PushSink:
     name = "push"
 
-    def send(self, message: AlertMessage) -> AlertDeliveryResult:
+    def send(self, message: OutboundMessage) -> AlertDeliveryResult:
         return AlertDeliveryResult(
             alert_id=message.alert_id,
             sink=self.name,
@@ -96,7 +68,7 @@ class PushSink:
 class EmailSink:
     name = "email"
 
-    def send(self, message: AlertMessage) -> AlertDeliveryResult:
+    def send(self, message: OutboundMessage) -> AlertDeliveryResult:
         settings = get_settings()
         destination = str(message.payload.get("destination", "")).strip() or "mailto://default"
         if settings.channels.email_dev_mode:
@@ -164,7 +136,7 @@ class EmailSink:
 class SmsSink:
     name = "sms"
 
-    def send(self, message: AlertMessage) -> AlertDeliveryResult:
+    def send(self, message: OutboundMessage) -> AlertDeliveryResult:
         settings = get_settings()
         destination = str(message.payload.get("destination", "")).strip()
         if settings.channels.sms_dev_mode:
@@ -246,10 +218,9 @@ class TelegramSink:
     def __init__(self) -> None:
         self._channel = TelegramChannel()
 
-    def send(self, message: AlertMessage) -> AlertDeliveryResult:
-        proxy = _alert_to_reminder(message)
+    def send(self, message: OutboundMessage) -> AlertDeliveryResult:
         destination = str(message.payload.get("destination", "")).strip() or None
-        result = self._channel.send(proxy, destination=destination)
+        result = self._channel.send(message, destination=destination)
         return AlertDeliveryResult(
             alert_id=message.alert_id,
             sink=self.name,
@@ -267,9 +238,8 @@ class WhatsAppSink:
     def __init__(self) -> None:
         self._channel = WhatsAppChannel()
 
-    def send(self, message: AlertMessage) -> AlertDeliveryResult:
-        proxy = _alert_to_reminder(message)
-        result = self._channel.send(proxy)
+    def send(self, message: OutboundMessage) -> AlertDeliveryResult:
+        result = self._channel.send(message)
         return AlertDeliveryResult(
             alert_id=message.alert_id,
             sink=self.name,
@@ -287,9 +257,8 @@ class WeChatSink:
     def __init__(self) -> None:
         self._channel = WeChatChannel()
 
-    def send(self, message: AlertMessage) -> AlertDeliveryResult:
-        proxy = _alert_to_reminder(message)
-        result = self._channel.send(proxy)
+    def send(self, message: OutboundMessage) -> AlertDeliveryResult:
+        result = self._channel.send(message)
         return AlertDeliveryResult(
             alert_id=message.alert_id,
             sink=self.name,
@@ -309,5 +278,4 @@ __all__ = [
     "TelegramSink",
     "WeChatSink",
     "WhatsAppSink",
-    "_alert_to_reminder",
 ]

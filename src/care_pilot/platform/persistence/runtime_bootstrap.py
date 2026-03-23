@@ -12,7 +12,7 @@ from typing import cast
 from care_pilot.config.app import AppSettings as Settings, get_settings
 from care_pilot.core.contracts.notifications import (
     AlertRepositoryProtocol,
-    ReminderNotificationRepository,
+    MessageNotificationRepository,
     ReminderSchedulerRepository,
 )
 from care_pilot.platform.persistence.builders import build_app_store
@@ -31,8 +31,8 @@ def build_reminder_scheduler_repository(
 
 def build_reminder_notification_repository(
     settings: Settings | None = None,
-) -> ReminderNotificationRepository:
-    return cast(ReminderNotificationRepository, build_runtime_store(settings))
+) -> MessageNotificationRepository:
+    return cast(MessageNotificationRepository, build_runtime_store(settings))
 
 
 def build_alert_repository(

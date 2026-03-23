@@ -8,7 +8,7 @@ per-channel capabilities.  Transport adapters call
 from pydantic import BaseModel
 
 from care_pilot.core.contracts.agent_envelopes import PresentationMessage
-from care_pilot.features.safety.domain.alerts.models import AlertMessage
+from care_pilot.features.safety.domain.alerts.models import OutboundMessage
 
 
 class ChannelCapability(BaseModel):
@@ -54,7 +54,7 @@ CHANNEL_CAPABILITIES: dict[str, ChannelCapability] = {
 }
 
 
-def compose_alert_message(alert: AlertMessage, *, channel: str) -> PresentationMessage:
+def compose_alert_message(alert: OutboundMessage, *, channel: str) -> PresentationMessage:
     """Build a ``PresentationMessage`` from an alert, tailored to the target channel."""
     payload_message = alert.payload.get("message", "Alert")
     title = "Alert Notification"
