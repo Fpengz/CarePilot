@@ -32,10 +32,10 @@
 
   - **Inference agents:** standardize on `pydantic_ai` for model-backed reasoning/extraction, invoked through the agent runtime (`src/care_pilot/agent/runtime/*`).
     - Rule: do not instantiate `pydantic_ai.Agent` or call provider factories directly outside `src/care_pilot/agent/**`.
-  - **Workflows:** standardize on `pydantic-graph` for declared multi-step workflows (explicit steps + typed workflow state).
+  - **Workflows:** standardize on `LangGraph` for declared multi-step workflows (explicit steps + typed workflow state).
     - Rule: workflows orchestrate; they do not own domain rules, persistence, or scheduling logic.
   - **Determinism:** domain rules, persistence, and scheduling remain deterministic and live in `src/care_pilot/features/**/domain`.
-  - **LangGraph:** explicitly deferred; reserve it for workflows that *require* checkpointed persistence, interrupts, or long-lived thread state.
+  - **LangGraph usage:** standard workflow engine; use checkpointing/interrupts only when required, and keep domain rules deterministic.
 
   ———
 
