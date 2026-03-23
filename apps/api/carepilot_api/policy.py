@@ -12,9 +12,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from care_pilot.platform.observability.tooling.domain.authorization import (
-    has_scopes,
-)
+from care_pilot.platform.observability.tooling.domain.authorization import has_scopes
 
 SessionData = dict[str, Any]
 ResourceData = dict[str, Any]

@@ -17,11 +17,7 @@ from apps.api.carepilot_api.services.emotion_session import (
 
 from ..deps import emotion_deps
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
-    EmotionHealthResponse,
-    EmotionInferenceResponse,
-    EmotionTextRequest,
-)
+from ..schemas import EmotionHealthResponse, EmotionInferenceResponse, EmotionTextRequest
 
 router = APIRouter(tags=["emotions"])
 

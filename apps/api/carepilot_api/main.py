@@ -110,7 +110,7 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
         app.state.ctx = build_app_context()
         app.state.ctx_owned = True
 
-    settings = cast(AppContext, app.state.ctx).settings
+    settings = app.state.ctx.settings
 
     # Middleware
     app.add_middleware(

@@ -37,12 +37,8 @@ from care_pilot.features.companion.core.companion_core_service import (
     build_companion_today_bundle,
     run_companion_interaction,
 )
-from care_pilot.features.companion.core.domain.models import (
-    CompanionInteraction,
-)
-from care_pilot.features.companion.core.evidence.ports import (
-    EvidenceRetrievalPort,
-)
+from care_pilot.features.companion.core.domain.models import CompanionInteraction
+from care_pilot.features.companion.core.evidence.ports import EvidenceRetrievalPort
 from care_pilot.features.companion.core.health.blood_pressure import (
     build_bp_chart_points,
     summarize_blood_pressure,
@@ -59,9 +55,7 @@ from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.reports.domain import build_clinical_snapshot
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
-)
+from care_pilot.platform.auth.session_context import build_user_profile_from_session
 from care_pilot.platform.persistence.evidence import SearchEvidenceRetriever
 from care_pilot.platform.persistence.health_metrics import ChatHealthMetricsRepository
 

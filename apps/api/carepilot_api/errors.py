@@ -115,7 +115,7 @@ def handle_validation_exception(
 ) -> JSONResponse:
     code = _http_error_code(422)
     message = "request validation failed"
-    details = {"errors": exc.errors()}
+    details: dict[str, object] = {"errors": exc.errors()}
     metadata = _failure_metadata(
         request=request,
         status_code=422,

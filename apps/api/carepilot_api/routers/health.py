@@ -7,9 +7,7 @@ verification and diagnostics.
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from care_pilot.platform.observability.diagnostics.readiness import (
-    build_readiness_report,
-)
+from care_pilot.platform.observability.diagnostics.readiness import build_readiness_report
 
 from ..routes_shared import current_session, get_context
 

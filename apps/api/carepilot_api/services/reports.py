@@ -3,8 +3,6 @@
 Re-exports from :mod:`care_pilot.features.reports.report_service`.
 """
 
-from care_pilot.features.reports.report_service import (
-    parse_report_for_session,
-)  # noqa: F401
+from care_pilot.features.reports.report_service import parse_report_for_session  # noqa: F401
 
 __all__ = ["parse_report_for_session"]

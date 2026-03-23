@@ -12,10 +12,7 @@ from typing import cast
 
 from care_pilot.agent.core import AgentRegistry, build_default_agent_registry
 from care_pilot.agent.emotion.agent import EmotionAgent
-from care_pilot.agent.emotion.schemas import (
-    EmotionInferenceResult,
-    EmotionRuntimeHealth,
-)
+from care_pilot.agent.emotion.schemas import EmotionInferenceResult, EmotionRuntimeHealth
 from care_pilot.agent.recommendation.agent import RecommendationAgent
 from care_pilot.agent.runtime.chat_runtime import (
     ChatRuntimeConfig,
@@ -24,8 +21,7 @@ from care_pilot.agent.runtime.chat_runtime import (
     build_chat_runtime_config,
 )
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
-from care_pilot.config.app import AppSettings as Settings
-from care_pilot.config.app import get_settings
+from care_pilot.config.app import AppSettings as Settings, get_settings
 from care_pilot.config.llm import LLMCapability
 from care_pilot.features.companion.chat.audio_adapter import AudioAgent
 from care_pilot.features.companion.chat.code_adapter import CodeAgent
@@ -36,18 +32,10 @@ from care_pilot.features.companion.chat.router import QueryRouter
 from care_pilot.features.companion.chat.search_adapter import SearchAgent
 from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
 from care_pilot.features.companion.emotion.ports import EmotionInferencePort
-from care_pilot.features.companion.emotion.remote_runtime import (
-    RemoteEmotionRuntime,
-)
-from care_pilot.features.companion.emotion.runtime import (
-    InProcessEmotionRuntime,
-)
+from care_pilot.features.companion.emotion.remote_runtime import RemoteEmotionRuntime
+from care_pilot.features.companion.emotion.runtime import InProcessEmotionRuntime
 from care_pilot.features.meals.deps import MealDeps  # noqa: F401
-from care_pilot.platform.auth import (
-    InMemoryAuthStore,
-    SessionSigner,
-    SQLiteAuthStore,
-)
+from care_pilot.platform.auth import InMemoryAuthStore, SessionSigner, SQLiteAuthStore
 from care_pilot.platform.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,
@@ -56,9 +44,7 @@ from care_pilot.platform.cache import (
     RedisCacheStore,
 )
 from care_pilot.platform.memory import MemoryStore, build_memory_store
-from care_pilot.platform.observability.tooling.platform_registry import (
-    build_platform_tool_registry,
-)
+from care_pilot.platform.observability.tooling.platform_registry import build_platform_tool_registry
 from care_pilot.platform.observability.tooling.registry import ToolRegistry
 from care_pilot.platform.persistence import (
     AppStoreBackend,
@@ -217,6 +203,7 @@ class AppContext:
 class RecommendationDeps:
     stores: AppStores
     clinical_memory: ClinicalSnapshotMemoryService
+    event_timeline: EventTimelineService
 
 
 @dataclass(frozen=True)
@@ -224,6 +211,7 @@ class RecommendationAgentDeps:
     stores: AppStores
     clinical_memory: ClinicalSnapshotMemoryService
     recommendation_agent: RecommendationAgent
+    event_timeline: EventTimelineService
 
 
 @dataclass(frozen=True)
@@ -399,7 +387,11 @@ def meal_deps(ctx: AppContext) -> MealDeps:
 
 
 def recommendation_deps(ctx: AppContext) -> RecommendationDeps:
-    return RecommendationDeps(stores=ctx.stores, clinical_memory=ctx.clinical_memory)
+    return RecommendationDeps(
+        stores=ctx.stores,
+        clinical_memory=ctx.clinical_memory,
+        event_timeline=ctx.event_timeline,
+    )
 
 
 def workflow_deps(ctx: AppContext) -> WorkflowDeps:
@@ -450,6 +442,7 @@ def recommendation_agent_deps(ctx: AppContext) -> RecommendationAgentDeps:
         stores=ctx.stores,
         clinical_memory=ctx.clinical_memory,
         recommendation_agent=ctx.recommendation_agent,
+        event_timeline=ctx.event_timeline,
     )
 
 
