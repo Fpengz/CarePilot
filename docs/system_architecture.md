@@ -10,6 +10,8 @@ CarePilot is a multimodal, AI-powered health companion platform built using a **
 *   **Application Layer (Workflows):** Complex, multi-step health journeys orchestrated using **LangGraph**.
 *   **Services Layer (Use Cases):** Feature-specific application services that implement business entrypoints.
 *   **Agent Layer (Inference):** Bounded, model-backed agents implemented with `pydantic-ai` for perception, reasoning, and synthesis.
+*   **Projection Layer:** Deterministic projectors that materialize `PatientCaseSnapshot` sections from events.
+*   **Reaction Layer:** Async enrichments and side effects triggered by domain events.
 *   **Data Layer (Storage):** SQLite for durable state and audit logs; Redis for ephemeral coordination and worker signaling.
 *   **Infrastructure Layer:** Background workers consuming tasks from the scheduler and outbox.
 
@@ -38,10 +40,17 @@ flowchart TD
     Remind --> Scheduler[Scheduler]
     Scheduler --> Worker[Background Worker]
     Worker --> Notif[Notification Dispatch]
+
+    Workflow --> Timeline[Event Timeline]
+    Timeline --> Projectors[Snapshot Projectors]
+    Projectors --> Snapshot
+    Timeline --> Reactions[Async Reactions]
+    Reactions --> Worker
     
     Snapshot --> DB[(SQLite DB)]
     Workflow --> DB
     Remind --> DB
+    Timeline --> DB
 ```
 
 ## 4. Component Architecture Diagram (Mermaid)
@@ -85,9 +94,15 @@ flowchart LR
 4.  **Enrichment:** `CompanionOrchestrator` loads the patient's `CaseSnapshot` (current medications, biomarkers).
 5.  **Reasoning:** `DietaryAgent` (LLM) evaluates the meal's impact given the patient's health profile.
 6.  **Persistence:** The validated event is saved to the `Event Timeline`.
+7.  **Projection:** Projectors update the materialized snapshot sections.
+8.  **Reactions:** Optional async reactions enrich or notify without mutating core state.
 7.  **Output:** The user receives immediate Singlish feedback and updated dashboard metrics.
 
-## 6. Draw.io Diagram Instructions
+## 6. Message Channels (Inbound/Outbound)
+
+Message channels are the canonical interface for reminders and chat‑style interactions. Inbound channel payloads are normalized into message threads, persisted in `message_thread_messages`, then run through the companion orchestration. Outbound responses are enqueued via the outbox and delivered through channel adapters with optional media attachments.
+
+## 7. Draw.io Diagram Instructions
 
 To recreate the system architecture in Draw.io:
 1.  **Layout:** Use a layered (top-to-bottom) approach.
@@ -97,9 +112,10 @@ To recreate the system architecture in Draw.io:
 5.  **Bottom Layer:** "Durable Storage" (Cylinder), "Message Queue/Outbox", and "Background Workers".
 6.  **Color Coding:** Use **Teal** for features, **Amber** for AI/Agents, and **Slate** for Infrastructure.
 
-## 7. Key Architectural Design Decisions
+## 8. Key Architectural Design Decisions
 
 *   **Feature-First Modular Monolith:** We chose this over microservices to minimize latency and operational complexity while maintaining clear domain boundaries.
 *   **Bounded Agents:** Agents never write to the database. They return structured proposals that are validated by deterministic domain logic.
 *   **Event Timeline as Source of Truth:** All significant state changes are recorded as events, allowing for easy longitudinal tracking and AI replay.
+*   **Replay Safety:** Materialized snapshots are rebuildable from the event timeline, and projections are deterministic to ensure auditability and safe reprocessing.
 *   **Local-First Default:** The system targets SQLite by default, making it easy to deploy in resource-constrained or edge environments common in clinical settings.

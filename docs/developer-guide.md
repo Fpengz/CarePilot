@@ -112,6 +112,14 @@ pnpm web:build
 3. Confirm worker/runtime assumptions if the feature depends on reminders or async processing.
 4. Escalate to the comprehensive gate before finalizing a cross-cutting change.
 
+## Projection replay
+
+Use this to rebuild materialized snapshot sections from the timeline:
+
+```bash
+uv run python scripts/cli.py projections replay --user-id <user-id> --since <iso-timestamp>
+```
+
 ## Update this file when
 - setup or local runtime commands change
 - extension patterns change

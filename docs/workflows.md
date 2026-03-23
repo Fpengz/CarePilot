@@ -38,6 +38,23 @@ Rule of thumb: if you can’t easily answer “what are the steps and their inpu
 
 ---
 
+## Message Channels (Inbound/Outbound)
+
+Message channels are now the canonical interface for reminders and chat‑style interactions:
+
+- **Outbound:** workflows enqueue `OutboundMessage` records (via the alert outbox) with optional attachments.
+- **Inbound:** channel webhooks normalize into message payloads, create or reuse a **message thread**, then run chat orchestration.
+- **Threads:** one persistent thread per `(user + channel + endpoint)`; all inbound/outbound messages are stored in `message_thread_messages`.
+
+Inbound workflows must:
+- create or reuse the thread
+- persist inbound message
+- run chat orchestration
+- persist outbound response
+- enqueue outbound delivery
+
+---
+
 ## Where workflows live (repo conventions)
 
 - Keep workflow orchestration in the **feature layer**:
@@ -169,3 +186,17 @@ Add the mermaid code to the PR description or a plan doc under `docs/plans/`.
   - ask follow-up questions,
   - or fall back to deterministic logic based on confidence thresholds.
 - **Policy/safety remains deterministic** and gates what is emitted to users or sent via notifications.
+
+---
+
+## Agent Context Builder (Policy + Selection)
+
+To control token bloat and improve auditability, context assembly has two layers:
+
+1. **Policy layer** — what data the agent is allowed to see.
+2. **Selection layer** — what data is relevant right now.
+
+Both layers should be logged for auditability:
+
+- Policy log: “Was this data allowed?”
+- Selection log: “Why was this data selected?”

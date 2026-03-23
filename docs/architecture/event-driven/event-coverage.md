@@ -27,11 +27,17 @@ of the event-driven multi-agent refactor. It focuses on events appended via
 | Recommendation substitution | `workflow_started`, `workflow_completed` | Emits request-level timeline events. |
 | Recommendation interaction | `workflow_started`, `workflow_completed` | Emits interaction-level timeline events. |
 | Report parse | `workflow_started`, `workflow_completed` | Report parsing already emits timeline events. |
+| Snapshot projections (sectioned) | Rebuildable via projection handlers | Per-section projectors update materialized snapshot fields with ordering scope `per_patient` and replay via `scripts/cli.py projections replay`. |
+| Reaction handlers (async) | Execution records in `event_reaction_executions` | Ordered per handler’s `ordering_scope` (global/per_patient/per_case/none) with cursored replay safeguards. |
 
 ## Gaps / Follow-Ups
 
 - None currently identified for critical paths. Continue to audit newly added workflows for event coverage.
 - Audit note (2026-03-22): workflow start/complete events present for all currently tracked flows.
+
+## Replay Determinism Test
+
+- Projector rebuild from full event history should match incremental projection output.
 
 ## Agent Invocation Audit
 - [ ] `src/care_pilot/features/companion/chat/orchestrator.py:150` — emotion inference (`infer_text`)

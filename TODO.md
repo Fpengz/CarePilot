@@ -133,3 +133,80 @@
   - Add clear enable/disable flags and degrade gracefully.
   - Align chat usage with emotion service contract.
      Status: IN PROGRESS (runtime unified; enable/disable flags pending UI/env polish).
+
+## Architecture Critiques (Agreed)
+
+1. Orchestration vs choreography
+   Problem: Orchestrators must be edited to add new behaviors, creating tight coupling.
+   Solve:
+   - Introduce reaction subscribers that can respond to domain events without touching orchestrators.
+   - Reserve orchestrators for safety-critical decisions only.
+   Status: TODO
+
+2. Transactional timeline writes
+   Problem: Timeline emission is best-effort and can fail without rolling back business logic.
+   Solve:
+   - Make timeline writes part of the same transaction as the state change.
+   - Or move timeline writes into an outbox-backed persistence path.
+   Status: TODO
+
+3. Snapshot bottleneck
+   Problem: Rebuilding full snapshots on every interaction grows increasingly expensive.
+   Solve:
+   - Make projection sections the default read path.
+   - Add pruning and per-agent context selection.
+   Status: TODO
+
+4. Duck-typed outbox repository methods
+   Problem: `getattr`-based optional methods can silently disable lifecycle updates.
+   Solve:
+   - Replace with strict repository protocols.
+   - Fail fast when lifecycle hooks are missing.
+   Status: TODO
+
+5. LLM latency stacking
+   Problem: Emotion + LangGraph + service calls run on every request, even trivial ones.
+   Solve:
+   - Add a fast-path intent gate for simple messages.
+   - Skip heavyweight agents unless required.
+   Status: TODO
+
+6. Double validation overhead
+   Problem: Agents and services both validate the same payloads, increasing CPU cost.
+   Solve:
+   - Reuse shared Pydantic envelopes across agent/service boundaries.
+   - Reduce duplicate validation for trusted internal flows.
+   Status: TODO
+
+## Additional Design Debt Candidates
+
+1. Best-effort timeline append in orchestration flows (audit risk).
+2. Snapshot rebuild still appears on hot request paths.
+3. Optional outbox lifecycle methods via `getattr` in alert outbox.
+4. Lack of fast-path for low-intent chat messages.
+5. Redundant validation layers across agent/service boundaries.
+
+## Message Channels Refactor Plan (OpenClaw-style)
+
+Goal: Generalize reminder channels into message channels that support chat + media (Telegram/WhatsApp/etc) and migrate existing reminder preferences/endpoints in-place.
+
+Status: IN PROGRESS
+
+Plan:
+1. Rename domain contracts and API schemas to Message*
+2. Add attachment list schema to message payloads (type, url, mime, caption, size)
+3. Migrate reminder channel tables/fields in-place to message equivalents
+4. Update delivery pipeline to route by MessageChannel and include attachments
+5. Add full‑duplex inbound ingestion (Telegram webhook + normalized payload)
+6. Maintain backwards compatibility via adapters in reminder flows
+7. Add migration tests + API contract tests
+
+## Message Channels Initial Conversation (Outbound Welcome)
+
+Status: IN PROGRESS
+
+Plan:
+1. Add message thread storage (message_threads + participants) and repositories
+2. Send a welcome message when a message endpoint/channel is linked
+3. Store the welcome in the message thread for future conversation context
+4. Keep reminder delivery mapped to message channels until full migration is done

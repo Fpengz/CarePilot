@@ -9,7 +9,7 @@ Audience: end users and technical operators/contributors
 - Companion chat with emotion-aware responses and audio transcription.
 - Recommendation generation and substitution guidance.
 - Medication regimen tracking and adherence logging.
-- Reminder generation and notification delivery.
+- Reminder generation and message delivery (multi-channel).
 - Symptom check-ins and report context synthesis.
 - Clinical card generation and trend surfaces.
 - Workflow trace inspection and governance tools (admin scopes).
@@ -33,6 +33,7 @@ Audience: end users and technical operators/contributors
 2. Record adherence events (taken/missed/skipped).
 3. Open `/reminders` and generate reminders.
 4. Confirm reminders and review status history.
+5. Manage message channels and delivery settings in `/settings`.
 
 ### 4) Record Symptoms and Parse Reports
 1. Open `/symptoms` and submit check-ins.
@@ -75,6 +76,7 @@ Use built-in local demo credentials:
 2. Generate reminders in `/reminders`.
 3. Confirm reminders and/or log adherence events.
 4. Review adherence metrics and history.
+5. Verify message delivery in Settings if reminders are not arriving.
 
 ### Workflow: Symptom to Report Context
 1. Create symptom check-ins in `/symptoms`.
@@ -89,7 +91,7 @@ Use built-in local demo credentials:
 
 ## Troubleshooting for Users
 - If pages fail to load data, re-authenticate and refresh session.
-- If reminders are not arriving, verify notification preferences/endpoints.
+- If reminders are not arriving, verify message preferences/endpoints.
 - If features appear missing, confirm user role and scope permissions.
 
 ## When to Update This Document

@@ -12,7 +12,7 @@ CarePilot implements a hybrid architecture:
 
 This is not a pure event-bus system. It follows:
 
-Event Timeline + Workflows + Agents + Services
+Event Timeline + Projections + Reactions + Workflows + Agents + Services
 
 ## Core Principles
 
@@ -82,14 +82,25 @@ Backed by:
 
 Events represent state changes that occurred.
 
-### 6. Execution Layer (Services)
+### 6. Projection Layer
+
+Projectors consume **domain events** and deterministically update materialized state
+(e.g., `patient_case_snapshot`). Projectors are replayable, versioned, and avoid
+external network calls.
+
+### 7. Reaction Layer
+
+Reactions consume domain events to perform **optional async enrichments** (e.g.,
+notifications, background agent outputs). Reactions are idempotent and tolerate retries.
+
+### 8. Execution Layer (Services)
 
 Located in feature modules, for example:
 
 - `src/care_pilot/features/companion/core/companion_core_service.py`
 - `src/care_pilot/features/reminders/notifications/**`
-- `src/care_pilot/features/reminders/outbox/**`
 - `src/care_pilot/features/meals/workflows/**`
+- `src/care_pilot/platform/messaging/**`
 
 Responsibilities:
 
@@ -100,14 +111,31 @@ Responsibilities:
 
 ## Control Flow Pattern
 
-User Action → Feature → Workflow → Agents → Decision → Services → Event → Timeline
+User Action → Feature → Workflow → Agents → Decision → Services → Event → Timeline  
+Event → Projectors → Materialized Snapshot  
+Event → Reactions → Async Enrichments
 
 ## Key Pattern
 
 Agents propose → Features decide → Services execute
+
+## Projector Rules
+
+- Deterministic and replayable
+- Versioned per section
+- No external network calls
+- Output is derived state only
+
+## Reaction Rules
+
+- Async, optional enrichments
+- Idempotent and retry-safe
+- Ordered where needed (`global`, `per_patient`, `per_case`, `none`)
 
 ## References
 
 - [Four Design Patterns for Event-Driven, Multi-Agent Systems](https://www.confluent.io/blog/event-driven-multi-agent-systems/)
 - [A Distributed State of Mind: Event-Driven Multi-Agent Systems](https://seanfalconer.medium.com/a-distributed-state-of-mind-event-driven-multi-agent-systems-226785b479e6)
 - [OpenAgents Architecture](https://openagents.org/docs/concepts/architecture)
+- [AWS Event Sourcing pattern (auditability & replay)](https://aws-samples.github.io/eda-on-aws/patterns/event-sourcing/)
+- [AWS Transactional Outbox pattern (reliable async side effects)](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html)

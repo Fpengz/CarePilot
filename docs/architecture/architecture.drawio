@@ -139,7 +139,7 @@
       <mxGeometry x="20" y="35" width="300" height="40" as="geometry" />
     </mxCell>
     <mxCell id="L3w-outbox"
-      value="Outbox Processor&#xa;Async multi-channel notification delivery"
+      value="Outbox Processor&#xa;Async multi-channel message delivery"
       style="rounded=1;fillColor=#dcfce7;strokeColor=#4ade80;fontSize=11;"
       vertex="1" parent="L3w">
       <mxGeometry x="340" y="35" width="320" height="40" as="geometry" />
@@ -366,7 +366,7 @@
     <mxCell id="L7-health-d"      value="health&#xa;Biomarker · Symptom&#xa;MetricTrend · ClinicalCard" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="770"  y="42" width="185" height="70" as="geometry"/></mxCell>
     <mxCell id="L7-recs-d"        value="recommendations&#xa;RecommendationEngine&#xa;CanonicalFoodMatching" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="965"  y="42" width="185" height="70" as="geometry"/></mxCell>
     <mxCell id="L7-meds-d"        value="medications&#xa;MedScheduling&#xa;Adherence" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="1160" y="42" width="175" height="70" as="geometry"/></mxCell>
-    <mxCell id="L7-notifications-d" value="notifications&#xa;ReminderEvent · Alert" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="1345" y="42" width="175" height="70" as="geometry"/></mxCell>
+    <mxCell id="L7-notifications-d" value="messages&#xa;ReminderEvent · Alert" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="1345" y="42" width="175" height="70" as="geometry"/></mxCell>
     <mxCell id="L7-workflows-d"   value="workflows&#xa;WorkflowContract&#xa;TimelineEvent" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="1530" y="42" width="175" height="70" as="geometry"/></mxCell>
 
     <!-- ══════════════════════════════════════════════════════════
@@ -400,7 +400,7 @@
       <mxGeometry x="500" y="40" width="225" height="75" as="geometry" />
     </mxCell>
     <mxCell id="L8-notifications-infra"
-      value="Notification Delivery  (notifications/)&#xa;Telegram · WeChat · WhatsApp&#xa;Outbox pattern (async)"
+      value="Message Delivery  (messaging/)&#xa;Telegram · WeChat · WhatsApp&#xa;Outbox pattern (async)"
       style="rounded=1;fillColor=#bae6fd;strokeColor=#0284c7;fontSize=11;"
       vertex="1" parent="L8">
       <mxGeometry x="740" y="40" width="230" height="75" as="geometry" />

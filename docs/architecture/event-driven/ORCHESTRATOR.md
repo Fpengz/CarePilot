@@ -56,6 +56,29 @@ Responsibilities:
 
 Agents do not orchestrate. Features and workflows orchestrate.
 
+## Foreground Invariant
+
+The foreground response must be **fully correct without any background agent output**.
+Background results only enrich later turns and must never repair a missing core answer.
+
+## Background Agent Rules
+
+Background agents may only write:
+
+- Cached advisory outputs
+- Summarized insights
+- Candidate recommendations awaiting standard workflow ingestion
+
+They must not mutate core clinical state directly.
+
+## Freshness Windows
+
+Deferred outputs should include TTLs:
+
+- Emotion deep analysis: short TTL
+- Adherence synthesis: medium TTL
+- Long-term trends: longer TTL
+
 ## Why Not Pure Event-Driven
 
 Pure event choreography increases implicit flows and complicates auditing. CarePilot uses explicit orchestration to keep traceability, auditability, and compliance first.

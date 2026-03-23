@@ -6,13 +6,33 @@ CarePilot uses a centralized state model:
 
 PatientCaseSnapshot
 
-This acts as the system's shared blackboard for companion workflows.
+This acts as the system's shared blackboard for companion workflows and is
+materialized by deterministic projectors.
 
 ## Responsibilities
 
 - Unify patient data for personalization
 - Provide context to agents
 - Ensure consistency across features
+
+## Snapshot Sections (Owned Projections)
+
+To reduce write conflicts and improve replay safety, the snapshot is split into
+owned sections. Each section is updated by one or more designated projectors.
+
+Example sections:
+
+- Demographics & preferences summary
+- Medications & adherence summary
+- Meal & nutrition summary
+- Trends & vitals summary
+- Conversation summary
+
+Each section includes metadata:
+
+- `schema_version`
+- `projection_version`
+- `source_event_cursor`
 
 ## Components
 

@@ -77,13 +77,14 @@ uv run python scripts/cli.py infra down
 Migration:
 
 ```bash
+uv run python scripts/cli.py projections replay --user-id <user-id> --since <iso-timestamp>
 ```
 
 ## Incident triage
 1. Confirm infra health if Redis-backed worker coordination is expected.
 2. Run readiness and inspect failed or warning checks.
 3. Verify API and worker processes are running with the intended backend settings.
-4. Check reminder and notification settings if async behavior is involved.
+4. Check reminder and message channel settings if async behavior is involved.
 5. Re-run scoped validation for the affected subsystem.
 6. Use the comprehensive gate before closing the incident.
 
@@ -95,7 +96,7 @@ Migration:
 
 ### Reminder workflows are not dispatching
 - worker is not running
-- scheduler-related settings or notification endpoints are missing
+- scheduler-related settings or message endpoints are missing
 
 ### Runtime policy behavior is unexpected
 - enforcement mode is still `shadow`

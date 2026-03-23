@@ -108,7 +108,7 @@ Role:
 | Feature orchestration | `src/care_pilot/features/companion/core/companion_core_service.py` |
 | Chat orchestration | `src/care_pilot/features/companion/chat/orchestrator.py` |
 | Meal workflow | `src/care_pilot/features/meals/workflows/**` |
-| Reminder notifications | `src/care_pilot/features/reminders/notifications/**` |
+| Message delivery orchestration | `src/care_pilot/features/reminders/notifications/**` |
 | Outbox integration | `src/care_pilot/platform/messaging/**` |
 | Agent contracts | `src/care_pilot/agent/core/base.py` |
 
