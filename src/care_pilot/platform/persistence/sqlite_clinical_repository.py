@@ -9,9 +9,7 @@ import json
 from datetime import datetime
 from typing import Any, cast
 
-from care_pilot.features.companion.core.health.clinical_card import (
-    ClinicalCardRecord,
-)
+from care_pilot.features.companion.core.health.clinical_card import ClinicalCardRecord
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     HealthProfileOnboardingState,

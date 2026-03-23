@@ -7,12 +7,7 @@ from typing import Annotated
 from uuid import uuid4
 
 import typer
-from scripts.cli.utils import (
-    REPO_ROOT,
-    error,
-    info,
-    load_root_env,
-)
+from scripts.cli.utils import REPO_ROOT, error, info, load_root_env
 
 from care_pilot.config.app import get_settings
 from care_pilot.features.reminders.domain.models import ReminderEvent

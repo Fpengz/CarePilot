@@ -9,8 +9,7 @@ from __future__ import annotations
 
 from typing import cast
 
-from care_pilot.config.app import AppSettings as Settings
-from care_pilot.config.app import get_settings
+from care_pilot.config.app import AppSettings as Settings, get_settings
 from care_pilot.core.contracts.notifications import (
     AlertRepositoryProtocol,
     ReminderNotificationRepository,

@@ -10,16 +10,14 @@ import hmac
 import os
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any, cast
+from typing import Any, TypedDict
 from uuid import uuid4
 
 from care_pilot.config.app import AppSettings as Settings
 from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
 from care_pilot.platform.auth.demo_defaults import build_demo_user_seeds
 from care_pilot.platform.observability.setup import get_logger
-from care_pilot.platform.observability.tooling.domain.authorization import (
-    scopes_for_account_role,
-)
+from care_pilot.platform.observability.tooling.domain.authorization import scopes_for_account_role
 
 logger = get_logger(__name__)
 
@@ -32,6 +30,12 @@ class AuthUserRecord:
     account_role: AccountRole
     profile_mode: ProfileMode
     password_hash: str
+
+
+class LoginFailureState(TypedDict):
+    failed_count: int
+    window_started_at: str | None
+    lockout_until: str | None
 
 
 def _pbkdf2_hash(password: str, *, salt: bytes | None = None) -> str:
@@ -85,7 +89,7 @@ class InMemoryAuthStore:
         self._auth_audit_events_max_entries = int(settings.auth.audit_events_max_entries)
         self._users_by_email: dict[str, AuthUserRecord] = {}
         self._sessions: dict[str, dict[str, Any]] = {}
-        self._login_failures: dict[str, dict[str, Any]] = {}
+        self._login_failures: dict[str, LoginFailureState] = {}
         self._auth_audit_events: list[dict[str, Any]] = []
         if settings.auth.seed_demo_users:
             self._seed_defaults()
@@ -164,7 +168,7 @@ class InMemoryAuthStore:
         now = datetime.now(UTC)
         state = self._login_failures.get(email)
         if state is None:
-            state = {
+            state: LoginFailureState = {
                 "failed_count": 0,
                 "window_started_at": None,
                 "lockout_until": None,
@@ -191,7 +195,7 @@ class InMemoryAuthStore:
         )
         state["failed_count"] = current_failed_count + 1
         state["lockout_until"] = None
-        failed_count = cast(int, state["failed_count"])
+        failed_count = state["failed_count"]
         if failed_count >= self._login_max_failed_attempts:
             state["lockout_until"] = (
                 now + timedelta(seconds=self._login_lockout_seconds)

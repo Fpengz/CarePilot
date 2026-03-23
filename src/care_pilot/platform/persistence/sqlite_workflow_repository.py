@@ -10,12 +10,8 @@ from datetime import datetime
 from typing import Any, cast
 
 from care_pilot.platform.observability.setup import get_logger
-from care_pilot.platform.observability.tooling.domain.policy_models import (
-    ToolRolePolicyRecord,
-)
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowTimelineEvent,
-)
+from care_pilot.platform.observability.tooling.domain.policy_models import ToolRolePolicyRecord
+from care_pilot.platform.observability.workflows.domain.models import WorkflowTimelineEvent
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)

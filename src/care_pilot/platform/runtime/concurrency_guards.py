@@ -17,11 +17,13 @@ MAX_CONCURRENT_EMOTION_SPEECH: Final[int] = 2
 _EMOTION_TEXT_SEMAPHORE: asyncio.Semaphore | None = None
 _EMOTION_SPEECH_SEMAPHORE: asyncio.Semaphore | None = None
 
+
 def get_emotion_text_semaphore() -> asyncio.Semaphore:
     global _EMOTION_TEXT_SEMAPHORE
     if _EMOTION_TEXT_SEMAPHORE is None:
         _EMOTION_TEXT_SEMAPHORE = asyncio.Semaphore(MAX_CONCURRENT_EMOTION_TEXT)
     return _EMOTION_TEXT_SEMAPHORE
+
 
 def get_emotion_speech_semaphore() -> asyncio.Semaphore:
     global _EMOTION_SPEECH_SEMAPHORE

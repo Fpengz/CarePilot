@@ -16,9 +16,7 @@ from uuid import uuid4
 from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
 from care_pilot.platform.auth.demo_defaults import build_demo_user_seeds
 from care_pilot.platform.auth.in_memory import AuthUserRecord, PasswordHasher
-from care_pilot.platform.observability.tooling.domain.authorization import (
-    scopes_for_account_role,
-)
+from care_pilot.platform.observability.tooling.domain.authorization import scopes_for_account_role
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 

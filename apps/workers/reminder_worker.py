@@ -16,19 +16,13 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from care_pilot.features.reminders.outbox.infra.delivery import (
-    build_delivery_adapter,
-)
+from care_pilot.features.reminders.outbox.infra.delivery import build_delivery_adapter
 from care_pilot.features.reminders.outbox.infra.knowledge import (
     EmptyDrugKnowledgeRepository,
     JsonDrugKnowledgeRepository,
 )
-from care_pilot.features.reminders.outbox.infra.outbox_sqlite import (
-    SQLiteOutboxRepository,
-)
-from care_pilot.features.reminders.outbox.infra.repository import (
-    SQLiteReminderRepository,
-)
+from care_pilot.features.reminders.outbox.infra.outbox_sqlite import SQLiteOutboxRepository
+from care_pilot.features.reminders.outbox.infra.repository import SQLiteReminderRepository
 from care_pilot.features.reminders.outbox.outbox_service import ReminderService
 
 logger = logging.getLogger(__name__)

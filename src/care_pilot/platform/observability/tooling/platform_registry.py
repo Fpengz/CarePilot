@@ -40,9 +40,7 @@ def build_platform_tool_registry(
     registry = ToolRegistry()
 
     def _trigger_alert_tool(payload: BaseModel, _ctx: ToolPolicyContext) -> BaseModel:
-        from care_pilot.features.reminders.notifications.alert_dispatch import (
-            trigger_alert,
-        )
+        from care_pilot.features.reminders.notifications.alert_dispatch import trigger_alert
 
         typed = cast(TriggerAlertToolInput, payload)
         alert, deliveries = trigger_alert(

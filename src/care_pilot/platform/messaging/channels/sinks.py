@@ -14,10 +14,7 @@ import smtplib
 import urllib.request
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.safety.domain.alerts import (
-    AlertDeliveryResult,
-    AlertMessage,
-)
+from care_pilot.features.safety.domain.alerts import AlertDeliveryResult, AlertMessage
 from care_pilot.platform.messaging.channels.telegram import TelegramChannel
 from care_pilot.platform.messaging.channels.wechat import WeChatChannel
 from care_pilot.platform.messaging.channels.whatsapp import WhatsAppChannel

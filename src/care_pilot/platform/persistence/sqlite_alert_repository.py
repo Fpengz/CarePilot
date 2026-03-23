@@ -8,10 +8,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from care_pilot.features.safety.domain.alerts.models import (
-    AlertMessage,
-    OutboxRecord,
-)
+from care_pilot.features.safety.domain.alerts.models import AlertMessage, OutboxRecord
 from care_pilot.platform.observability.setup import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 

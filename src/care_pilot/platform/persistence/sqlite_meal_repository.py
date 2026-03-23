@@ -7,11 +7,7 @@ events, and nutrition profiles.
 
 from datetime import datetime
 
-from care_pilot.features.meals.domain import (
-    EnrichedMealEvent,
-    MealNutritionProfile,
-    MealPerception,
-)
+from care_pilot.features.meals.domain import EnrichedMealEvent, MealNutritionProfile, MealPerception
 from care_pilot.features.meals.domain.models import (
     CandidateMealEvent,
     MealCandidateRecord,

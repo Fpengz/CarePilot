@@ -248,9 +248,7 @@ class FoodInfoIngester:
 
 
 def _smoke_test() -> None:
-    from care_pilot.platform.persistence.food.local_retriever import (
-        FoodInfoRetriever,
-    )
+    from care_pilot.platform.persistence.food.local_retriever import FoodInfoRetriever
 
     retriever = FoodInfoRetriever(n_results=3)
     queries = [

@@ -12,9 +12,7 @@ from care_pilot.features.recommendations.domain.canonical_food_matching import (
     build_default_canonical_food_records,
     normalize_text,
 )
-from care_pilot.features.recommendations.domain.meal_catalog_queries import (
-    DEFAULT_MEAL_CATALOG,
-)
+from care_pilot.features.recommendations.domain.meal_catalog_queries import DEFAULT_MEAL_CATALOG
 from care_pilot.platform.observability.setup import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 

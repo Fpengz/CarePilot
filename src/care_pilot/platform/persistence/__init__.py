@@ -6,10 +6,7 @@ from care_pilot.platform.persistence.contracts import (
     ReminderNotificationRepository,
     ReminderSchedulerRepository,
 )
-from care_pilot.platform.persistence.domain_stores import (
-    AppStores,
-    build_app_stores,
-)
+from care_pilot.platform.persistence.domain_stores import AppStores, build_app_stores
 from care_pilot.platform.persistence.protocols import (
     AlertRepositoryProtocol,
     CatalogRepositoryProtocol,

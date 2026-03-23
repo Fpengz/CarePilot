@@ -10,8 +10,6 @@ from typing import TYPE_CHECKING, Any
 
 from care_pilot.core.contracts.notifications import (
     ReminderNotificationRepository as ServiceReminderNotificationRepository,
-)
-from care_pilot.core.contracts.notifications import (
     ReminderSchedulerRepository as ServiceReminderSchedulerRepository,
 )
 

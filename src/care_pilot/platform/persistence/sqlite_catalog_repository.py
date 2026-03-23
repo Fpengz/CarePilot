@@ -11,8 +11,6 @@ from typing import Any, cast
 
 from care_pilot.features.recommendations.domain.canonical_food_matching import (
     find_food_by_name as _find_food_by_name_impl,
-)
-from care_pilot.features.recommendations.domain.canonical_food_matching import (
     normalize_text,
 )
 from care_pilot.features.recommendations.domain.models import (

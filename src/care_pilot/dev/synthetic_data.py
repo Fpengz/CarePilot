@@ -15,18 +15,9 @@ from care_pilot.features.companion.core.health.models import (
     HealthProfileRecord,
     MedicationAdherenceEvent,
 )
-from care_pilot.features.meals.domain.models import (
-    NutritionRiskProfile,
-    ValidatedMealEvent,
-)
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-)
-from care_pilot.features.reminders.domain.models import (
-    MedicationRegimen,
-    ReminderEvent,
-)
+from care_pilot.features.meals.domain.models import NutritionRiskProfile, ValidatedMealEvent
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication
+from care_pilot.features.reminders.domain.models import MedicationRegimen, ReminderEvent
 from care_pilot.platform.persistence.sqlite_db import get_connection
 from care_pilot.platform.persistence.sqlite_repository import SQLiteRepository
 

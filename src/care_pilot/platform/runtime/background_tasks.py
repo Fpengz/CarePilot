@@ -17,12 +17,13 @@ logger = get_logger(__name__)
 
 T = TypeVar("T")
 
-_QUEUE: asyncio.Queue[tuple[Callable[..., Coroutine[Any, Any, Any]], tuple[Any, ...], dict[str, Any]]] = asyncio.Queue(maxsize=1000)
+_QUEUE: asyncio.Queue[
+    tuple[Callable[..., Coroutine[Any, Any, Any]], tuple[Any, ...], dict[str, Any]]
+] = asyncio.Queue(maxsize=1000)
+
 
 async def enqueue_task(
-    func: Callable[..., Coroutine[Any, Any, Any]],
-    *args: Any,
-    **kwargs: Any
+    func: Callable[..., Coroutine[Any, Any, Any]], *args: Any, **kwargs: Any
 ) -> bool:
     """
     Add a task to the background queue.
@@ -35,6 +36,7 @@ async def enqueue_task(
         logger.warning("background_task_queue_full task=%s", getattr(func, "__name__", "unknown"))
         return False
 
+
 async def run_background_worker() -> None:
     """Infinite loop to process background tasks."""
     logger.info("background_worker_started")
@@ -44,9 +46,12 @@ async def run_background_worker() -> None:
             logger.debug("executing_background_task name=%s", getattr(func, "__name__", "unknown"))
             await func(*args, **kwargs)
         except Exception as exc:
-            logger.exception("background_task_failed name=%s error=%s", getattr(func, "__name__", "unknown"), exc)
+            logger.exception(
+                "background_task_failed name=%s error=%s", getattr(func, "__name__", "unknown"), exc
+            )
         finally:
             _QUEUE.task_done()
+
 
 def get_queue_size() -> int:
     return _QUEUE.qsize()

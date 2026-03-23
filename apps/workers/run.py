@@ -11,9 +11,7 @@ import asyncio
 from uuid import uuid4
 
 from apps.api.carepilot_api.deps import build_app_context, close_app_context
-from apps.workers.reminder_worker import (
-    run_once as run_sqlite_reminder_worker_once,
-)
+from apps.workers.reminder_worker import run_once as run_sqlite_reminder_worker_once
 from care_pilot.config.app import get_settings
 from care_pilot.platform.messaging import OutboxWorker
 from care_pilot.platform.observability import get_logger

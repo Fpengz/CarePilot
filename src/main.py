@@ -14,18 +14,9 @@ from rich.panel import Panel
 from care_pilot.agent.dietary.agent import analyze_dietary_request
 from care_pilot.agent.dietary.schemas import DietaryAgentInput
 from care_pilot.agent.runtime.llm_factory import LLMFactory
-from care_pilot.config.app import AppSettings as Settings
-from care_pilot.config.app import get_settings
-from care_pilot.features.meals.domain.models import (
-    Ingredient,
-    MealEvent,
-    Nutrition,
-)
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
+from care_pilot.config.app import AppSettings as Settings, get_settings
+from care_pilot.features.meals.domain.models import Ingredient, MealEvent, Nutrition
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, UserProfile
 from care_pilot.features.safety.domain.engine import SafetyEngine
 
 console = Console()

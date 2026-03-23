@@ -15,29 +15,27 @@ logger = get_logger(__name__)
 # Dedicated pool for ML inference (PyTorch/Transformers)
 # High CPU/Memory usage, isolated from general I/O tasks.
 # Using a small number of workers to prevent system overload on single-node deployments.
-_ML_EXECUTOR = ThreadPoolExecutor(
-    max_workers=4,
-    thread_name_prefix="ml_worker"
-)
+_ML_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="ml_worker")
 
 # Dedicated pool for general blocking I/O (Database, Cloud APIs)
-_IO_EXECUTOR = ThreadPoolExecutor(
-    max_workers=32,
-    thread_name_prefix="io_worker"
-)
+_IO_EXECUTOR = ThreadPoolExecutor(max_workers=32, thread_name_prefix="io_worker")
+
 
 def get_ml_executor() -> ThreadPoolExecutor:
     """Return the shared ML thread pool executor."""
     return _ML_EXECUTOR
 
+
 def get_io_executor() -> ThreadPoolExecutor:
     """Return the shared I/O thread pool executor."""
     return _IO_EXECUTOR
+
 
 def shutdown_executors() -> None:
     """Gracefully shutdown all shared executors."""
     logger.info("shutting_down_executors")
     _ML_EXECUTOR.shutdown(wait=True)
     _IO_EXECUTOR.shutdown(wait=True)
+
 
 atexit.register(shutdown_executors)

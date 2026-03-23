@@ -10,27 +10,36 @@ request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
 correlation_id_ctx: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 user_id_ctx: ContextVar[str | None] = ContextVar("user_id", default=None)
 
-def set_request_context(*, request_id: str, correlation_id: str, user_id: str | None = None) -> None:
+
+def set_request_context(
+    *, request_id: str, correlation_id: str, user_id: str | None = None
+) -> None:
     """Set the current request context."""
     request_id_ctx.set(request_id)
     correlation_id_ctx.set(correlation_id)
     user_id_ctx.set(user_id)
 
+
 def get_current_request_id() -> str | None:
     return request_id_ctx.get()
+
 
 def get_current_correlation_id() -> str | None:
     return correlation_id_ctx.get()
 
+
 def get_current_user_id() -> str | None:
     return user_id_ctx.get()
+
 
 # Compatibility shims for older code
 def get_request_id() -> str | None:
     return get_current_request_id()
 
+
 def get_correlation_id() -> str | None:
     return get_current_correlation_id()
+
 
 @contextmanager
 def bind_observability_context(request_id: str | None, correlation_id: str | None = None):
@@ -42,6 +51,7 @@ def bind_observability_context(request_id: str | None, correlation_id: str | Non
     finally:
         request_id_ctx.reset(token_req)
         correlation_id_ctx.reset(token_corr)
+
 
 def current_observability_context() -> dict[str, Any]:
     """Return the current observability context as a dictionary."""

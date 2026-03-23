@@ -1,8 +1,6 @@
 """Canonical cache platform exports."""
 
-from care_pilot.platform.cache.clinical_snapshot_cache import (
-    ClinicalSnapshotMemoryService,
-)
+from care_pilot.platform.cache.clinical_snapshot_cache import ClinicalSnapshotMemoryService
 from care_pilot.platform.cache.in_memory import InMemoryCacheStore
 from care_pilot.platform.cache.profile_cache import ProfileMemoryService
 from care_pilot.platform.cache.rate_limiter import (

@@ -25,9 +25,7 @@ from care_pilot.features.reminders.notifications.reminder_materialization import
 from care_pilot.platform.messaging.alert_outbox import OutboxWorker
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence import AppStoreBackend
-from care_pilot.platform.persistence.runtime_bootstrap import (
-    build_reminder_scheduler_repository,
-)
+from care_pilot.platform.persistence.runtime_bootstrap import build_reminder_scheduler_repository
 
 logger = get_logger(__name__)
 

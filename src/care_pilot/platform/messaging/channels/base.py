@@ -15,10 +15,7 @@ from pydantic import BaseModel
 from care_pilot.features.reminders.domain.models import ReminderEvent
 
 if TYPE_CHECKING:
-    from care_pilot.features.safety.domain.alerts import (
-        AlertDeliveryResult,
-        AlertMessage,
-    )
+    from care_pilot.features.safety.domain.alerts import AlertDeliveryResult, AlertMessage
 
 
 class ChannelResult(BaseModel):

@@ -26,7 +26,7 @@ class StaticEvidenceRetriever:
     ) -> EvidenceBundle:
         lowered = message.lower()
         citations: list[EvidenceCitation] = []
-        query_parts = [interaction_type.replace("_", " ")]
+        query_parts: list[str] = [interaction_type.replace("_", " ")]
         if snapshot.active_risk_flags:
             query_parts.extend(snapshot.active_risk_flags[:2])
         if "meal" in interaction_type or "hawker" in lowered or snapshot.meal_risk_streak >= 1:

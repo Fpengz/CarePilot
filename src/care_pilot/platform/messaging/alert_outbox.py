@@ -18,17 +18,9 @@ from datetime import UTC, datetime, timedelta
 from typing import cast
 
 from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
-from care_pilot.features.reminders.domain.models import (
-    ReminderNotificationChannel,
-)
-from care_pilot.features.safety.domain.alerts import (
-    AlertDeliveryResult,
-    AlertMessage,
-    OutboxRecord,
-)
-from care_pilot.platform.messaging.channels.base import (
-    SinkAdapter,
-)  # noqa: F401
+from care_pilot.features.reminders.domain.models import ReminderNotificationChannel
+from care_pilot.features.safety.domain.alerts import AlertDeliveryResult, AlertMessage, OutboxRecord
+from care_pilot.platform.messaging.channels.base import SinkAdapter  # noqa: F401
 from care_pilot.platform.messaging.channels.sinks import (  # noqa: F401
     EmailSink,
     InAppSink,
@@ -231,9 +223,7 @@ class OutboxWorker:
         if callable(append_log):
             from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import (
-                ReminderNotificationLogEntry,
-            )
+            from care_pilot.features.reminders.domain.models import ReminderNotificationLogEntry
 
             append_log(
                 ReminderNotificationLogEntry(
@@ -257,9 +247,7 @@ class OutboxWorker:
         if callable(append_log):
             from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import (
-                ReminderNotificationLogEntry,
-            )
+            from care_pilot.features.reminders.domain.models import ReminderNotificationLogEntry
 
             append_log(
                 ReminderNotificationLogEntry(
@@ -295,9 +283,7 @@ class OutboxWorker:
         if callable(append_log):
             from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import (
-                ReminderNotificationLogEntry,
-            )
+            from care_pilot.features.reminders.domain.models import ReminderNotificationLogEntry
 
             append_log(
                 ReminderNotificationLogEntry(
@@ -329,9 +315,7 @@ class OutboxWorker:
         if callable(append_log):
             from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import (
-                ReminderNotificationLogEntry,
-            )
+            from care_pilot.features.reminders.domain.models import ReminderNotificationLogEntry
 
             append_log(
                 ReminderNotificationLogEntry(
