@@ -12,6 +12,10 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from care_pilot.config.app import get_settings
 from care_pilot.features.safety.domain.alerts import OutboundMessage
 from care_pilot.platform.messaging.channels.base import ChannelResult
+from care_pilot.platform.messaging.message_composer import (
+    compose_alert_message,
+    format_alert_text_for_transport,
+)
 from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
@@ -49,14 +53,20 @@ class TelegramChannel:
         return raw
 
     def _build_payload(self, message: OutboundMessage, chat_id: str) -> dict[str, str]:
-        text = str(message.payload.get("body") or message.payload.get("message") or "Message")
+        presentation = compose_alert_message(
+            message, channel="telegram", timezone_name=self.app_timezone
+        )
+        text = format_alert_text_for_transport(presentation)
         return {"chat_id": chat_id, "text": text}
 
     def _build_photo_payload(self, message: OutboundMessage, chat_id: str) -> dict[str, str]:
+        presentation = compose_alert_message(
+            message, channel="telegram", timezone_name=self.app_timezone
+        )
         attachments = message.attachments or []
         first = attachments[0] if attachments else {}
         photo_url = str(first.get("url") or "")
-        caption = str(first.get("caption") or message.payload.get("body") or "Message")
+        caption = presentation.body
         return {"chat_id": chat_id, "photo": photo_url, "caption": caption}
 
     def send(self, message: OutboundMessage, destination: str | None = None) -> ChannelResult:

@@ -308,7 +308,7 @@ def trigger_alert(
     *,
     alert_type: str,
     severity: AlertSeverity,
-    payload: dict[str, str],
+    payload: dict[str, object],
     destinations: list[str],
     repository: AlertRepositoryProtocol,
 ) -> tuple[OutboundMessage, list[DeliveryResult]]:
