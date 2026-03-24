@@ -259,7 +259,35 @@ class ReminderStore:
             scope_key=resolved_scope_key,
         )
 
+    def list_message_preferences(
+        self,
+        *,
+        user_id: str,
+        scope_type: str | None = None,
+        scope_key: str | None = None,
+    ) -> list[Any]:
+        return self._store.list_message_preferences(
+            user_id=user_id,
+            scope_type=scope_type,
+            scope_key=scope_key,
+        )
+
     def replace_reminder_notification_preferences(
+        self,
+        *,
+        user_id: str,
+        scope_type: str | None = None,
+        scope_key: str | None = None,
+        preferences: list[Any],
+    ) -> list[Any]:
+        return self._store.replace_message_preferences(
+            user_id=user_id,
+            scope_type=scope_type,
+            scope_key=scope_key,
+            preferences=preferences,
+        )
+
+    def replace_message_preferences(
         self,
         *,
         user_id: str,
@@ -282,7 +310,7 @@ class ReminderStore:
         status: str | None = None,
         limit: int = 200,
     ) -> list[Any]:
-        items = self._store.list_scheduled_notifications(
+        items = self._store.list_scheduled_messages(
             reminder_id=reminder_id,
             user_id=user_id,
         )
@@ -290,27 +318,47 @@ class ReminderStore:
             items = [item for item in items if getattr(item, "status", None) == status]
         return items[:limit]
 
+    def list_scheduled_messages(
+        self,
+        *,
+        reminder_id: str | None = None,
+        user_id: str | None = None,
+    ) -> list[Any]:
+        return self._store.list_scheduled_messages(
+            reminder_id=reminder_id,
+            user_id=user_id,
+        )
+
     def save_scheduled_notification(self, notification: Any) -> Any:
         return self._store.save_scheduled_notification(notification)
 
     def lease_due_scheduled_notifications(self, *, now: Any, limit: int = 100) -> list[Any]:
-        return self._store.lease_due_scheduled_notifications(now=now, limit=limit)
+        return self._store.lease_due_scheduled_messages(now=now, limit=limit)
+
+    def lease_due_scheduled_messages(self, *, now: Any, limit: int = 100) -> list[Any]:
+        return self._store.lease_due_scheduled_messages(now=now, limit=limit)
 
     def get_reminder_notification_endpoint(self, *, user_id: str, channel: str) -> Any | None:
         return self._store.get_message_endpoint(user_id=user_id, channel=channel)
 
+    def get_message_endpoint(self, *, user_id: str, channel: str) -> Any | None:
+        return self._store.get_message_endpoint(user_id=user_id, channel=channel)
+
     def get_message_endpoint_by_destination(
-        self, *, channel: str, destination: str
+        self, *, user_id: str, channel: str, destination: str
     ) -> Any | None:
         return self._store.get_message_endpoint_by_destination(
-            channel=channel, destination=destination
+            user_id=user_id, channel=channel, destination=destination
         )
 
     def append_notification_log(self, entry: Any) -> Any:
         return self._store.append_notification_log(entry)
 
     def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int:
-        return self._store.cancel_scheduled_notifications_for_reminder(reminder_id)
+        return self._store.cancel_scheduled_messages_for_reminder(reminder_id)
+
+    def cancel_scheduled_messages_for_reminder(self, reminder_id: str) -> int:
+        return self._store.cancel_scheduled_messages_for_reminder(reminder_id)
 
     def mark_scheduled_notification_dead_letter(
         self,
@@ -331,7 +379,15 @@ class ReminderStore:
     def list_reminder_notification_endpoints(self, *, user_id: str) -> list[Any]:
         return self._store.list_message_endpoints(user_id=user_id)
 
+    def list_message_endpoints(self, *, user_id: str) -> list[Any]:
+        return self._store.list_message_endpoints(user_id=user_id)
+
     def replace_reminder_notification_endpoints(
+        self, *, user_id: str, endpoints: list[Any]
+    ) -> list[Any]:
+        return self._store.replace_message_endpoints(user_id=user_id, endpoints=endpoints)
+
+    def replace_message_endpoints(
         self, *, user_id: str, endpoints: list[Any]
     ) -> list[Any]:
         return self._store.replace_message_endpoints(user_id=user_id, endpoints=endpoints)
@@ -351,6 +407,17 @@ class ReminderStore:
         if channel is not None:
             items = [item for item in items if getattr(item, "channel", None) == channel]
         return items[:limit]
+
+    def list_message_logs(
+        self,
+        *,
+        reminder_id: str | None = None,
+        scheduled_notification_id: str | None = None,
+    ) -> list[Any]:
+        return self._store.list_message_logs(
+            reminder_id=reminder_id,
+            scheduled_notification_id=scheduled_notification_id,
+        )
 
     def get_message_thread(
         self, *, user_id: str, channel: str, endpoint_id: str

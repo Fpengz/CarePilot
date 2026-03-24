@@ -98,7 +98,8 @@ class MessageNotificationRepository(Protocol):
     def get_message_endpoint(
         self,
         *,
-        endpoint_id: str,
+        user_id: str,
+        channel: str,
     ) -> MessageEndpoint | None: ...
 
     def get_message_endpoint_by_destination(
@@ -112,6 +113,8 @@ class MessageNotificationRepository(Protocol):
     def enqueue_alert(self, message: OutboundMessage) -> list[OutboxRecord]: ...
 
     def cancel_scheduled_messages_for_reminder(self, reminder_id: str) -> int: ...
+
+    def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int: ...
 
     def list_scheduled_notifications(
         self,
@@ -135,7 +138,27 @@ class MessageNotificationRepository(Protocol):
 
     def list_notification_logs(self, *, reminder_id: str) -> list[MessageLogEntry]: ...
 
-    def list_message_logs(self, *, reminder_id: str) -> list[MessageLogEntry]: ...
+    def list_message_logs(
+        self,
+        *,
+        reminder_id: str | None = None,
+        scheduled_notification_id: str | None = None,
+    ) -> list[MessageLogEntry]: ...
+
+    def list_reminder_notification_preferences(
+        self,
+        *,
+        user_id: str,
+        scope_type: str | None = None,
+        scope_key: str | None = None,
+    ) -> list[MessagePreference]: ...
+
+    def get_reminder_notification_endpoint(
+        self,
+        *,
+        user_id: str,
+        channel: str,
+    ) -> MessageEndpoint | None: ...
 
     def get_message_thread(
         self,

@@ -958,8 +958,6 @@ class SQLiteRepository:
     def list_reminder_events(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.list_reminder_events(*args, **kwargs)
 
-    # --- Messages / Reminders Extended ---
-
     def list_message_preferences(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.list_message_preferences(*args, **kwargs)
 
@@ -978,6 +976,15 @@ class SQLiteRepository:
     def list_message_schedules(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.list_scheduled_messages(*args, **kwargs)
 
+    def list_scheduled_messages(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.list_scheduled_messages(*args, **kwargs)
+
+    def lease_due_scheduled_messages(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.lease_due_scheduled_messages(*args, **kwargs)
+
+    def cancel_scheduled_messages_for_reminder(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.cancel_scheduled_messages_for_reminder(*args, **kwargs)
+
     def get_message_thread(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.get_message_thread(*args, **kwargs)
 
@@ -992,6 +999,9 @@ class SQLiteRepository:
 
     def list_message_thread_messages(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.list_message_thread_messages(*args, **kwargs)
+
+    def get_message_endpoint(self, *args: Any, **kwargs: Any) -> Any:
+        return self.reminders.get_message_endpoint(*args, **kwargs)
 
     def get_message_endpoint_by_destination(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.get_message_endpoint_by_destination(*args, **kwargs)
@@ -1032,7 +1042,7 @@ class SQLiteRepository:
         return self.reminders.mark_scheduled_notification_dead_letter(*args, **kwargs)
 
     def cancel_scheduled_notifications_for_reminder(self, *args: Any, **kwargs: Any) -> Any:
-        return self.reminders.cancel_scheduled_notifications_for_reminder(*args, **kwargs)
+        return self.reminders.cancel_scheduled_messages_for_reminder(*args, **kwargs)
 
     def append_notification_log(self, *args: Any, **kwargs: Any) -> Any:
         return self.reminders.append_notification_log(*args, **kwargs)
