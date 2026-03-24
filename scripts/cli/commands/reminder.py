@@ -10,7 +10,7 @@ import typer
 from scripts.cli.utils import REPO_ROOT, error, info, load_root_env
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.features.safety.domain.alerts.models import OutboundMessage
 from care_pilot.platform.messaging.channels.telegram import TelegramChannel
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
@@ -158,25 +158,19 @@ def command_telegram_test(
     channel.chat_id = destination
     channel.dev_mode = use_dev_mode
 
-    reminder = ReminderEvent(
-        id=str(uuid4()),
-        user_id="cli",
-        reminder_definition_id=None,
-        occurrence_id=None,
-        regimen_id=None,
-        reminder_type="medication",
-        title="Telegram test reminder",
-        body=message,
-        medication_name=message,
-        scheduled_at=datetime.now(UTC),
-        slot=None,
-        dosage_text="",
-        status="sent",
-        meal_confirmation="unknown",
-        sent_at=None,
-        ack_at=None,
+    message_obj = OutboundMessage(
+        alert_id=str(uuid4()),
+        type="medication_reminder",
+        severity="info",
+        payload={
+            "medication_name": message,
+            "dosage_text": "",
+            "scheduled_at": datetime.now(UTC).isoformat(),
+        },
+        destinations=["telegram"],
+        correlation_id="cli",
     )
-    result = channel.send(reminder, destination=f"telegram://{destination}")
+    result = channel.send(message_obj, destination=f"telegram://{destination}")
     if result.success:
         info("Telegram test dispatched successfully.")
         return

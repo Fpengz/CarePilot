@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Literal
 from uuid import uuid4
 
 from fastapi import Request
@@ -89,11 +90,12 @@ def record_thread_message(
     *,
     context,
     thread: MessageThread,
-    direction: str,
+    direction: Literal["inbound", "outbound"],
     body: str,
     attachments: list[MessageAttachment],
     metadata: dict[str, object] | None = None,
 ) -> MessageThreadMessage:
+
     message = MessageThreadMessage(
         id=str(uuid4()),
         thread_id=thread.id,
@@ -182,7 +184,7 @@ async def run_inbound_chat(
     user_message: str,
 ) -> str:
     correlation_id, request_id = _ensure_request_ids(request)
-    session = {
+    session: dict[str, object] = {
         "user_id": thread.user_id,
         "session_id": thread.id,
         "profile_mode": "self",
