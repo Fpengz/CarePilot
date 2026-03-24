@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 from care_pilot.core.events import DomainEvent
 from care_pilot.platform.cache import EventTimelineService
