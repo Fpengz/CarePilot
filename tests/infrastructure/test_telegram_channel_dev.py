@@ -4,17 +4,22 @@ from datetime import UTC, datetime
 from urllib import request
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.reminders.domain.models import ReminderEvent
+from care_pilot.features.safety.domain.alerts.models import OutboundMessage
 from care_pilot.platform.messaging.channels.telegram import TelegramChannel
 
 
-def _event() -> ReminderEvent:
-    return ReminderEvent(
-        id="evt-1",
-        user_id="u1",
-        medication_name="Metformin",
-        scheduled_at=datetime(2026, 2, 24, 12, 0),
-        dosage_text="500mg",
+def _event() -> OutboundMessage:
+    return OutboundMessage(
+        alert_id="evt-1",
+        type="medication_reminder",
+        severity="info",
+        payload={
+            "medication_name": "Metformin",
+            "dosage_text": "500mg",
+            "scheduled_at": datetime(2026, 2, 24, 12, 0),
+        },
+        destinations=["telegram"],
+        correlation_id="corr-1",
     )
 
 
@@ -60,9 +65,8 @@ def test_telegram_payload_formats_local_timezone(monkeypatch) -> None:
     monkeypatch.setenv("APP_TIMEZONE", "Asia/Singapore")
 
     channel = TelegramChannel()
-    event = _event().model_copy(
-        update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3, tzinfo=UTC)}
-    )
+    event = _event()
+    event.payload["scheduled_at"] = datetime(2026, 2, 25, 9, 48, 3, tzinfo=UTC)
     payload = channel._build_payload(event, channel._resolve_chat_id(None))
 
     assert "+08:00" in payload["text"]
@@ -80,7 +84,8 @@ def test_telegram_payload_preserves_naive_local_wall_clock(
     monkeypatch.setenv("APP_TIMEZONE", "Asia/Singapore")
 
     channel = TelegramChannel()
-    event = _event().model_copy(update={"scheduled_at": datetime(2026, 2, 25, 9, 48, 3)})
+    event = _event()
+    event.payload["scheduled_at"] = datetime(2026, 2, 25, 9, 48, 3)
     payload = channel._build_payload(event, channel._resolve_chat_id(None))
 
     assert "09:48:03+08:00" in payload["text"]

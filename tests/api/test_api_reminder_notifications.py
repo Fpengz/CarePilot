@@ -45,7 +45,7 @@ def test_notification_preferences_round_trip_and_generation_materializes_schedul
     _login(client)
 
     update = client.put(
-        "/api/v1/reminder-notification-preferences/default",
+        "/api/v1/message-preferences/default",
         json={
             "rules": [
                 {"channel": "in_app", "offset_minutes": -30, "enabled": True},
@@ -58,7 +58,7 @@ def test_notification_preferences_round_trip_and_generation_materializes_schedul
     body = update.json()
     assert len(body["preferences"]) == 2
 
-    listed = client.get("/api/v1/reminder-notification-preferences")
+    listed = client.get("/api/v1/message-preferences")
     assert listed.status_code == 200
     assert {item["channel"] for item in listed.json()["preferences"]} == {
         "in_app",
@@ -69,7 +69,7 @@ def test_notification_preferences_round_trip_and_generation_materializes_schedul
     assert generated.status_code == 200
     reminder_id = generated.json()["reminders"][0]["id"]
 
-    schedules = client.get(f"/api/v1/reminders/{reminder_id}/notification-schedules")
+    schedules = client.get(f"/api/v1/reminders/{reminder_id}/message-schedules")
     assert schedules.status_code == 200
     scheduled = schedules.json()["items"]
     assert len(scheduled) == 2
@@ -85,7 +85,7 @@ def test_dispatch_due_notifications_enqueues_and_delivers_due_schedule() -> None
     _login(client)
 
     pref = client.put(
-        "/api/v1/reminder-notification-preferences/default",
+        "/api/v1/message-preferences/default",
         json={"rules": [{"channel": "in_app", "offset_minutes": 0, "enabled": True}]},
     )
     assert pref.status_code == 200
@@ -122,7 +122,7 @@ def test_confirming_reminder_cancels_future_pending_notifications() -> None:
     _login(client)
 
     pref = client.put(
-        "/api/v1/reminder-notification-preferences/default",
+        "/api/v1/message-preferences/default",
         json={"rules": [{"channel": "in_app", "offset_minutes": 0, "enabled": True}]},
     )
     assert pref.status_code == 200
@@ -131,14 +131,14 @@ def test_confirming_reminder_cancels_future_pending_notifications() -> None:
     assert generated.status_code == 200
     reminder_id = generated.json()["reminders"][0]["id"]
 
-    schedules_before = client.get(f"/api/v1/reminders/{reminder_id}/notification-schedules")
+    schedules_before = client.get(f"/api/v1/reminders/{reminder_id}/message-schedules")
     assert schedules_before.status_code == 200
     assert schedules_before.json()["items"][0]["status"] == "pending"
 
     confirmed = client.post(f"/api/v1/reminders/{reminder_id}/confirm", json={"confirmed": True})
     assert confirmed.status_code == 200
 
-    schedules_after = client.get(f"/api/v1/reminders/{reminder_id}/notification-schedules")
+    schedules_after = client.get(f"/api/v1/reminders/{reminder_id}/message-schedules")
     assert schedules_after.status_code == 200
     assert all(item["status"] == "cancelled" for item in schedules_after.json()["items"])
 
@@ -149,7 +149,7 @@ def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> 
     _login(client)
 
     endpoint_update = client.put(
-        "/api/v1/reminder-notification-endpoints",
+        "/api/v1/message-endpoints",
         json={
             "endpoints": [
                 {
@@ -168,12 +168,12 @@ def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> 
     assert endpoint_update.status_code == 200
     assert {item["channel"] for item in endpoint_update.json()["endpoints"]} == {"email", "sms"}
 
-    endpoint_list = client.get("/api/v1/reminder-notification-endpoints")
+    endpoint_list = client.get("/api/v1/message-endpoints")
     assert endpoint_list.status_code == 200
     assert len(endpoint_list.json()["endpoints"]) == 2
 
     pref = client.put(
-        "/api/v1/reminder-notification-preferences/default",
+        "/api/v1/message-preferences/default",
         json={"rules": [{"channel": "email", "offset_minutes": 0, "enabled": True}]},
     )
     assert pref.status_code == 200
@@ -192,7 +192,7 @@ def test_notification_endpoints_round_trip_and_logs_visible_after_delivery() -> 
         OutboxWorker(repo, max_attempts=2, concurrency=2).process_once(alert_id=schedule.id)
     )
 
-    logs = client.get(f"/api/v1/reminders/{reminder_id}/notification-logs")
+    logs = client.get(f"/api/v1/reminders/{reminder_id}/message-logs")
     assert logs.status_code == 200
     body = logs.json()
     assert body["items"]
