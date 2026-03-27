@@ -15,8 +15,7 @@ from uuid import uuid4
 
 from care_pilot.config.app import AppSettings as Settings
 from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
-from care_pilot.platform.auth.demo_defaults import build_demo_user_seeds
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.observability.tooling.domain.authorization import scopes_for_account_role
 
 logger = get_logger(__name__)
@@ -81,7 +80,6 @@ class PasswordHasher:
 class InMemoryAuthStore:
     def __init__(self, settings: Settings) -> None:
         self._hasher = PasswordHasher(settings.auth.password_hash_scheme)
-        self._demo_defaults = build_demo_user_seeds(settings)
         self._session_ttl_seconds = int(settings.auth.session_ttl_seconds)
         self._login_max_failed_attempts = int(settings.auth.login_max_failed_attempts)
         self._login_failure_window_seconds = int(settings.auth.login_failure_window_seconds)
@@ -92,25 +90,33 @@ class InMemoryAuthStore:
         self._login_failures: dict[str, LoginFailureState] = {}
         self._auth_audit_events: list[dict[str, Any]] = []
         if settings.auth.seed_demo_users:
-            self._seed_defaults()
+            self._seed_demo_users(settings)
 
-    def _seed_defaults(self) -> None:
-        for (
-            user_id,
-            email,
-            name,
-            account_role,
-            profile_mode,
-            password,
-        ) in self._demo_defaults:
-            self._users_by_email[email] = AuthUserRecord(
-                user_id=user_id,
-                email=email,
-                display_name=name,
-                account_role=account_role,
-                profile_mode=profile_mode,
-                password_hash=self._hasher.hash(password),
-            )
+    def _seed_demo_users(self, settings: Settings) -> None:
+        self.create_user(
+            email="member@example.com",
+            password=settings.auth.demo_member_password,
+            display_name="Alex Member",
+            account_role="member",
+            profile_mode="self",
+            user_id="user_001",
+        )
+        self.create_user(
+            email="helper@example.com",
+            password=settings.auth.demo_helper_password,
+            display_name="Casey Helper",
+            account_role="member",
+            profile_mode="caregiver",
+            user_id="care_001",
+        )
+        self.create_user(
+            email="admin@example.com",
+            password=settings.auth.demo_admin_password,
+            display_name="Ops Admin",
+            account_role="admin",
+            profile_mode="self",
+            user_id="ops_001",
+        )
 
     def authenticate(self, email: str, password: str) -> AuthUserRecord | None:
         user = self._users_by_email.get(email)
@@ -128,12 +134,13 @@ class InMemoryAuthStore:
         display_name: str,
         account_role: AccountRole = "member",
         profile_mode: ProfileMode = "self",
+        user_id: str | None = None,
     ) -> AuthUserRecord | None:
         normalized_email = email.strip().lower()
         if not normalized_email or normalized_email in self._users_by_email:
             return None
         user = AuthUserRecord(
-            user_id=f"user_{uuid4().hex[:12]}",
+            user_id=user_id or f"user_{uuid4().hex[:12]}",
             email=normalized_email,
             display_name=display_name,
             account_role=account_role,

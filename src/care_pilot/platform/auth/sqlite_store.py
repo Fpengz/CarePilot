@@ -14,7 +14,6 @@ from typing import Any, cast
 from uuid import uuid4
 
 from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
-from care_pilot.platform.auth.demo_defaults import build_demo_user_seeds
 from care_pilot.platform.auth.in_memory import AuthUserRecord, PasswordHasher
 from care_pilot.platform.observability.tooling.domain.authorization import scopes_for_account_role
 from care_pilot.platform.persistence.sqlite_db import get_connection
@@ -29,10 +28,37 @@ class SQLiteAuthStore:
         self._login_max_failed_attempts = int(settings.auth.login_max_failed_attempts)
         self._login_failure_window_seconds = int(settings.auth.login_failure_window_seconds)
         self._login_lockout_seconds = int(settings.auth.login_lockout_seconds)
+        self._auth_audit_events_max_entries = int(settings.auth.audit_events_max_entries)
 
         self._init_db()
         if settings.auth.seed_demo_users:
-            self._seed_defaults(settings)
+            self._seed_demo_users(settings)
+
+    def _seed_demo_users(self, settings: Any) -> None:
+        self.create_user(
+            email="member@example.com",
+            password=settings.auth.demo_member_password,
+            display_name="Alex Member",
+            account_role="member",
+            profile_mode="self",
+            user_id="user_001",
+        )
+        self.create_user(
+            email="helper@example.com",
+            password=settings.auth.demo_helper_password,
+            display_name="Casey Helper",
+            account_role="member",
+            profile_mode="caregiver",
+            user_id="care_001",
+        )
+        self.create_user(
+            email="admin@example.com",
+            password=settings.auth.demo_admin_password,
+            display_name="Ops Admin",
+            account_role="admin",
+            profile_mode="self",
+            user_id="ops_001",
+        )
 
     def _connect(self) -> sqlite3.Connection:
         conn = get_connection(self._db_path)
@@ -146,27 +172,6 @@ class SQLiteAuthStore:
 
             conn.commit()
 
-    def _seed_defaults(self, settings: Any) -> None:
-        users = build_demo_user_seeds(settings)
-        with self._lock, self._connect() as conn:
-            for user_id, email, display_name, role, mode, password in users:
-                conn.execute(
-                    """
-                    INSERT OR IGNORE INTO auth_users (user_id, email, display_name, account_role, profile_mode, password_hash, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        user_id,
-                        email,
-                        display_name,
-                        role,
-                        mode,
-                        self._hasher.hash(password),
-                        datetime.now(UTC).isoformat(),
-                    ),
-                )
-            conn.commit()
-
     def authenticate(self, email: str, password: str) -> AuthUserRecord | None:
         with self._lock, self._connect() as conn:
             row = conn.execute(
@@ -193,11 +198,12 @@ class SQLiteAuthStore:
         display_name: str,
         account_role: AccountRole = "member",
         profile_mode: ProfileMode = "self",
+        user_id: str | None = None,
     ) -> AuthUserRecord | None:
         normalized_email = email.strip().lower()
         try:
             user = AuthUserRecord(
-                user_id=f"user_{uuid4().hex[:12]}",
+                user_id=user_id or f"user_{uuid4().hex[:12]}",
                 email=normalized_email,
                 display_name=display_name,
                 account_role=account_role,
