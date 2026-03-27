@@ -17,8 +17,11 @@ import random
 from datetime import UTC, datetime, timedelta
 from typing import cast
 
-from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
-from care_pilot.features.reminders.domain.models import MessageChannel
+from care_pilot.core.contracts.notifications import (
+    AlertRepositoryProtocol,
+    ReminderSchedulerRepository,
+)
+from care_pilot.features.reminders.domain.models import MessageChannel, MessageLogEntry
 from care_pilot.features.safety.domain.alerts import (
     AlertDeliveryResult,
     OutboundMessage,
@@ -60,7 +63,7 @@ class OutboxWorker:
 
     def __init__(
         self,
-        repository: AlertRepositoryProtocol,
+        repository: ReminderSchedulerRepository,
         lease_owner: str = "worker-1",
         max_attempts: int = 3,
         concurrency: int = 4,
@@ -221,50 +224,42 @@ class OutboxWorker:
     def _sync_reminder_notification_processing(self, *, record: OutboxRecord, attempt: int) -> None:
         if record.type != "reminder_notification":
             return
-        mark_processing = getattr(self._repository, "mark_scheduled_notification_processing", None)
-        append_log = getattr(self._repository, "append_notification_log", None)
-        if callable(mark_processing):
-            mark_processing(record.alert_id, attempt)
-        if callable(append_log):
-            from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import MessageLogEntry
+        self._repository.mark_scheduled_notification_processing(record.alert_id, attempt)
 
-            append_log(
-                MessageLogEntry(
-                    id=str(uuid4()),
-                    scheduled_notification_id=record.alert_id,
-                    reminder_id=str(record.payload.get("reminder_id", "")),
-                    user_id=str(record.payload.get("user_id", "")),
-                    channel=cast(MessageChannel, record.sink),
-                    attempt_number=attempt,
-                    event_type="dispatch_started",
-                )
+        from uuid import uuid4
+
+        self._repository.append_notification_log(
+            MessageLogEntry(
+                id=str(uuid4()),
+                scheduled_notification_id=record.alert_id,
+                reminder_id=str(record.payload.get("reminder_id", "")),
+                user_id=str(record.payload.get("user_id", "")),
+                channel=cast(MessageChannel, record.sink),
+                attempt_number=attempt,
+                event_type="dispatch_started",
             )
+        )
 
     def _sync_reminder_notification_delivered(self, *, record: OutboxRecord, attempt: int) -> None:
         if record.type != "reminder_notification":
             return
-        mark_delivered = getattr(self._repository, "mark_scheduled_notification_delivered", None)
-        append_log = getattr(self._repository, "append_notification_log", None)
-        if callable(mark_delivered):
-            mark_delivered(record.alert_id, attempt)
-        if callable(append_log):
-            from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import MessageLogEntry
+        self._repository.mark_scheduled_notification_delivered(record.alert_id, attempt)
 
-            append_log(
-                MessageLogEntry(
-                    id=str(uuid4()),
-                    scheduled_notification_id=record.alert_id,
-                    reminder_id=str(record.payload.get("reminder_id", "")),
-                    user_id=str(record.payload.get("user_id", "")),
-                    channel=cast(MessageChannel, record.sink),
-                    attempt_number=attempt,
-                    event_type="delivered",
-                )
+        from uuid import uuid4
+
+        self._repository.append_notification_log(
+            MessageLogEntry(
+                id=str(uuid4()),
+                scheduled_notification_id=record.alert_id,
+                reminder_id=str(record.payload.get("reminder_id", "")),
+                user_id=str(record.payload.get("user_id", "")),
+                channel=cast(MessageChannel, record.sink),
+                attempt_number=attempt,
+                event_type="delivered",
             )
+        )
 
     def _sync_reminder_notification_retry(
         self,
@@ -276,33 +271,29 @@ class OutboxWorker:
     ) -> None:
         if record.type != "reminder_notification":
             return
-        reschedule = getattr(self._repository, "reschedule_scheduled_notification", None)
-        append_log = getattr(self._repository, "append_notification_log", None)
-        if callable(reschedule):
-            reschedule(
-                record.alert_id,
-                attempt_count=attempt,
-                next_attempt_at=next_attempt_at,
-                error=error,
-            )
-        if callable(append_log):
-            from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import MessageLogEntry
+        self._repository.reschedule_scheduled_notification(
+            record.alert_id,
+            attempt_count=attempt,
+            next_attempt_at=next_attempt_at,
+            error=error,
+        )
 
-            append_log(
-                MessageLogEntry(
-                    id=str(uuid4()),
-                    scheduled_notification_id=record.alert_id,
-                    reminder_id=str(record.payload.get("reminder_id", "")),
-                    user_id=str(record.payload.get("user_id", "")),
-                    channel=cast(MessageChannel, record.sink),
-                    attempt_number=attempt,
-                    event_type="retry_scheduled",
-                    error_message=error,
-                    metadata={"next_attempt_at": next_attempt_at.isoformat()},
-                )
+        from uuid import uuid4
+
+        self._repository.append_notification_log(
+            MessageLogEntry(
+                id=str(uuid4()),
+                scheduled_notification_id=record.alert_id,
+                reminder_id=str(record.payload.get("reminder_id", "")),
+                user_id=str(record.payload.get("user_id", "")),
+                channel=cast(MessageChannel, record.sink),
+                attempt_number=attempt,
+                event_type="retry_scheduled",
+                error_message=error,
+                metadata={"next_attempt_at": next_attempt_at.isoformat()},
             )
+        )
 
     def _sync_reminder_notification_dead_letter(
         self,
@@ -313,27 +304,25 @@ class OutboxWorker:
     ) -> None:
         if record.type != "reminder_notification":
             return
-        dead_letter = getattr(self._repository, "mark_scheduled_notification_dead_letter", None)
-        append_log = getattr(self._repository, "append_notification_log", None)
-        if callable(dead_letter):
-            dead_letter(record.alert_id, attempt_count=attempt, error=error)
-        if callable(append_log):
-            from uuid import uuid4
 
-            from care_pilot.features.reminders.domain.models import MessageLogEntry
+        self._repository.mark_scheduled_notification_dead_letter(
+            record.alert_id, attempt_count=attempt, error=error
+        )
 
-            append_log(
-                MessageLogEntry(
-                    id=str(uuid4()),
-                    scheduled_notification_id=record.alert_id,
-                    reminder_id=str(record.payload.get("reminder_id", "")),
-                    user_id=str(record.payload.get("user_id", "")),
-                    channel=cast(MessageChannel, record.sink),
-                    attempt_number=attempt,
-                    event_type="dead_lettered",
-                    error_message=error,
-                )
+        from uuid import uuid4
+
+        self._repository.append_notification_log(
+            MessageLogEntry(
+                id=str(uuid4()),
+                scheduled_notification_id=record.alert_id,
+                reminder_id=str(record.payload.get("reminder_id", "")),
+                user_id=str(record.payload.get("user_id", "")),
+                channel=cast(MessageChannel, record.sink),
+                attempt_number=attempt,
+                event_type="dead_lettered",
+                error_message=error,
             )
+        )
 
 
 __all__ = [

@@ -9,7 +9,7 @@ from typing import cast
 
 from pydantic import BaseModel
 
-from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
+from care_pilot.core.contracts.notifications import ReminderSchedulerRepository
 from care_pilot.features.safety.domain.alerts.models import AlertSeverity
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolPolicyContext,
@@ -34,7 +34,7 @@ class TriggerAlertToolOutput(BaseModel):
 
 
 def build_platform_tool_registry(
-    repository: AlertRepositoryProtocol,
+    repository: ReminderSchedulerRepository,
 ) -> ToolRegistry:
     """Return a ``ToolRegistry`` pre-loaded with the ``trigger_alert`` platform tool."""
     registry = ToolRegistry()

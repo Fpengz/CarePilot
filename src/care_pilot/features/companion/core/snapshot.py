@@ -20,6 +20,7 @@ from care_pilot.features.companion.core.health.models import (
     MedicationAdherenceEvent,
     SymptomCheckIn,
 )
+from care_pilot.features.companion.core.pruning import PruningService
 from care_pilot.features.meals.domain import (
     meal_confidence,
     meal_display_name,
@@ -118,14 +119,14 @@ def build_case_snapshot(
             "captured_at": str(m.captured_at),
             "is_risky": _meal_is_risky(m),
         }
-        for m in meals[-10:]
+        for m in meals
     ]
     recent_symptoms = [
         {"severity": s.severity, "recorded_at": str(s.recorded_at), "decision": s.safety.decision}
-        for s in symptoms[-10:]
+        for s in symptoms
     ]
 
-    return PatientCaseSnapshot(
+    snapshot = PatientCaseSnapshot(
         user_id=user_profile.id,
         profile_name=user_profile.name,
         conditions=condition_names,
@@ -150,6 +151,10 @@ def build_case_snapshot(
             "weight_kg": health_profile.weight_kg if health_profile else None,
         },
     )
+
+    # Apply pruning
+    pruner = PruningService()
+    return pruner.prune(snapshot)
 
 
 def load_snapshot_from_sections(

@@ -8,10 +8,11 @@ async loop with coordination locking and retry handling.
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime
 from uuid import uuid4
 
-from apps.api.carepilot_api.deps import build_app_context, close_app_context
 from care_pilot.config.app import get_settings
+from care_pilot.platform.app_context import build_app_context, close_app_context
 from care_pilot.platform.eventing.runner import run_eventing_once
 from care_pilot.platform.messaging import OutboxWorker
 from care_pilot.platform.observability import get_logger
@@ -19,6 +20,7 @@ from care_pilot.platform.scheduling import run_reminder_scheduler_once
 
 logger = get_logger(__name__)
 _WORKER_FAILURE_RETRY_SECONDS = 1.0
+_SHUTDOWN_EVENT = asyncio.Event()
 
 
 def _idle_wait_seconds(settings) -> float:
@@ -31,6 +33,14 @@ def _idle_wait_seconds(settings) -> float:
 
 
 async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
+    # Heartbeat
+    if hasattr(ctx.coordination_store, "set_value"):
+        ctx.coordination_store.set_value(
+            f"worker:heartbeat:{owner}",
+            datetime.now(UTC).isoformat(),
+            ttl_seconds=300,
+        )
+
     processed_work = False
 
     if ctx.coordination_store.acquire_lock(
@@ -130,7 +140,7 @@ async def run_worker_loop() -> None:
             if processed_work:
                 continue
     finally:
-        close_app_context(ctx)
+        await close_app_context(ctx)
 
 
 def main() -> None:

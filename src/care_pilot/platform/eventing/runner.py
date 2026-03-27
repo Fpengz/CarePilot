@@ -15,7 +15,7 @@ from care_pilot.platform.eventing.models import (
     ReactionExecutionRecord,
 )
 from care_pilot.platform.eventing.registry import EventProjectionRegistry, EventReactionRegistry
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 
@@ -84,6 +84,10 @@ def _scope_key_for_event(handler, event: DomainEvent) -> str | None:
     return "none"
 
 
+MAX_REACTION_RETRIES = 5
+REACTION_RETRY_BACKOFF_MINUTES = [1, 5, 15, 60, 240]  # Exponential-ish backoff
+
+
 def _execute_reaction(
     *,
     event_id: str,
@@ -94,6 +98,18 @@ def _execute_reaction(
     lease_owner: str,
     lease_seconds: int,
 ) -> bool:
+    existing = eventing_store.get_reaction_execution(
+        event_id=event_id, handler_name=handler.name
+    )
+
+    if existing is not None:
+        if existing.status == ExecutionStatus.SUCCEEDED:
+            return True
+        if existing.status == ExecutionStatus.DEAD_LETTER:
+            return True
+        if existing.status == ExecutionStatus.FAILED and existing.next_retry_at and datetime.now(UTC) < existing.next_retry_at:
+            return False
+
     meta = event.payload.get("meta", {}) if isinstance(event.payload, dict) else {}
     user_id = meta.get("user_id")
     correlation_id = meta.get("correlation_id")
@@ -117,16 +133,6 @@ def _execute_reaction(
     ):
         return False
 
-    existing = eventing_store.get_reaction_execution(
-        event_id=event_id, handler_name=handler.name
-    )
-    if existing is not None and existing.status == ExecutionStatus.SUCCEEDED:
-        if lock_key is not None:
-            _release_ordering_lock(
-                coordination_store=coordination_store, lock_key=lock_key, owner=lease_owner
-            )
-        return True
-
     now = datetime.now(UTC)
     failure_count = existing.failure_count if existing is not None else 0
     payload_hash = _payload_hash(event)
@@ -148,10 +154,34 @@ def _execute_reaction(
         handler.handle(event)
     except Exception as exc:  # noqa: BLE001
         failure_count += 1
+        status = ExecutionStatus.FAILED
+        next_retry_at = None
+
+        if failure_count >= MAX_REACTION_RETRIES:
+            status = ExecutionStatus.DEAD_LETTER
+            logger.error(
+                "event_reaction_dead_letter handler=%s event_id=%s failure_count=%s",
+                handler.name,
+                event_id,
+                failure_count,
+            )
+        else:
+            backoff_idx = min(failure_count - 1, len(REACTION_RETRY_BACKOFF_MINUTES) - 1)
+            minutes = REACTION_RETRY_BACKOFF_MINUTES[backoff_idx]
+            from datetime import timedelta
+            next_retry_at = datetime.now(UTC) + timedelta(minutes=minutes)
+            logger.warning(
+                "event_reaction_retry_scheduled handler=%s event_id=%s failure_count=%s next_retry=%s",
+                handler.name,
+                event_id,
+                failure_count,
+                next_retry_at,
+            )
+
         failed_record = ReactionExecutionRecord(
             event_id=event_id,
             handler_name=handler.name,
-            status=ExecutionStatus.FAILED,
+            status=status,
             started_at=record.started_at,
             completed_at=datetime.now(UTC),
             failure_count=failure_count,
@@ -159,13 +189,9 @@ def _execute_reaction(
             payload_hash=payload_hash,
             event_version=event_version,
             ordering_scope=handler.ordering_scope,
+            next_retry_at=next_retry_at,
         )
         eventing_store.save_reaction_execution(failed_record)
-        logger.exception(
-            "event_reaction_failed handler=%s event_id=%s",
-            handler.name,
-            event_id,
-        )
         if lock_key is not None:
             _release_ordering_lock(
                 coordination_store=coordination_store, lock_key=lock_key, owner=lease_owner

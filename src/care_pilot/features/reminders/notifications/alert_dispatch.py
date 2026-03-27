@@ -14,7 +14,7 @@ from uuid import uuid4
 from pydantic import BaseModel
 
 from care_pilot.config.app import get_settings
-from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
+from care_pilot.core.contracts.notifications import ReminderSchedulerRepository
 from care_pilot.features.reminders.domain import ReminderEvent
 from care_pilot.features.safety.domain.alerts import (
     AlertDeliveryResult,
@@ -25,7 +25,6 @@ from care_pilot.platform.messaging.alert_outbox import AlertPublisher, OutboxWor
 from care_pilot.platform.messaging.channels import TelegramChannel, WeChatChannel, WhatsAppChannel
 from care_pilot.platform.messaging.channels.base import ChannelResult
 from care_pilot.platform.observability import get_logger
-from care_pilot.platform.persistence.runtime_bootstrap import build_alert_repository
 
 logger = get_logger(__name__)
 PENDING_ALERT_STATES = {"pending", "processing"}
@@ -119,7 +118,8 @@ def dispatch_reminder(
     channels: list[str],
     retries: int = 2,
     force_push_fail: bool = False,
-    repository: AlertRepositoryProtocol | None = None,
+    repository: ReminderSchedulerRepository
+ | None = None,
 ) -> list[DeliveryResult]:
     """Dispatch a reminder to one or more channels, using the outbox when available."""
     settings = get_settings()
@@ -230,7 +230,8 @@ def dispatch_reminder(
 def dispatch_reminder_async(
     reminder_event: ReminderEvent,
     channels: list[str],
-    repository: AlertRepositoryProtocol | None = None,
+    repository: ReminderSchedulerRepository
+ | None = None,
     retries: int | None = None,
     force_push_fail: bool = False,
 ) -> list[DeliveryResult]:
@@ -310,7 +311,8 @@ def trigger_alert(
     severity: AlertSeverity,
     payload: dict[str, object],
     destinations: list[str],
-    repository: AlertRepositoryProtocol,
+    repository: ReminderSchedulerRepository
+,
 ) -> tuple[OutboundMessage, list[DeliveryResult]]:
     """Enqueue an alert and drain delivery synchronously; returns the message and results."""
     alert = OutboundMessage(
@@ -352,7 +354,8 @@ def trigger_alert(
 
 def _drain_alert_for_sync_delivery(
     worker: OutboxWorker,
-    repository: AlertRepositoryProtocol,
+    repository: ReminderSchedulerRepository
+,
     alert_id: str,
     *,
     fast_forward_scheduled_retries: bool,
@@ -389,8 +392,12 @@ def _drain_alert_for_sync_delivery(
     return list(by_sink.values())
 
 
-def _default_alert_repository() -> AlertRepositoryProtocol:
-    return build_alert_repository(get_settings())
+def _default_alert_repository() -> ReminderSchedulerRepository:
+    from care_pilot.platform.persistence.runtime_bootstrap import (
+        build_reminder_scheduler_repository,
+    )
+
+    return build_reminder_scheduler_repository(get_settings())
 
 
 __all__ = [
