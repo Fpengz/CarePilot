@@ -969,6 +969,7 @@ export interface MetricTrendListApiResponse {
 }
 
 export type DashboardBucket = "hour" | "day" | "week";
+export type RangeKey = "today" | "7d" | "30d" | "3m" | "1y" | "custom";
 
 export interface DashboardRangeApi {
   key: string;

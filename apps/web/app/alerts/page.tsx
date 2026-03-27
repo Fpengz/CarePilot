@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldAlert, History, Terminal, PlayCircle, RefreshCcw } from "lucide-react";
+import { ShieldAlert, Terminal, PlayCircle, RefreshCcw } from "lucide-react";
 
 import { AsyncLabel } from "@/components/app/async-label";
-import { ErrorCard } from "@/components/app/error-card";
 import { JsonViewer } from "@/components/app/json-viewer";
 import { TimelineList } from "@/components/app/timeline-list";
 import { useSession } from "@/components/app/session-provider";
@@ -12,14 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getAlertTimeline, triggerAlert } from "@/lib/api/workflow-client";
-import { cn } from "@/lib/utils";
 
 export default function AlertsPage() {
   const { hasScope, status } = useSession();
   const [result, setResult] = useState<object | null>(null);
   const [timelineResult, setTimelineResult] = useState<object | null>(null);
   const [alertId, setAlertId] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"trigger" | "timeline" | null>(null);
 
   const triggeredAlertId =
@@ -87,7 +84,7 @@ export default function AlertsPage() {
                       "";
                     if (maybeAlertId) setAlertId(maybeAlertId);
                   } catch (e) {
-                    setError(e instanceof Error ? e.message : String(e));
+                    console.error(e);
                   } finally {
                     setLoadingAction(null);
                   }
@@ -117,13 +114,12 @@ export default function AlertsPage() {
                   className="w-full h-11 rounded-xl font-bold"
                   disabled={!alertId || loadingAction !== null || !canReadTimeline}
                   onClick={async () => {
-                    setError(null);
                     setLoadingAction("timeline");
                     try {
                       const data = await getAlertTimeline(alertId);
                       setTimelineResult(data);
                     } catch (e) {
-                      setError(e instanceof Error ? e.message : String(e));
+                      console.error(e);
                     } finally {
                       setLoadingAction(null);
                     }

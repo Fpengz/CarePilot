@@ -99,9 +99,11 @@ export default function PatientCardPage() {
 
             {card?.markdown ? (
               <div className="rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-6 flex-1 min-h-0 overflow-y-auto">
-                <ReactMarkdown className="chat-markdown prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed">
-                  {card.markdown}
-                </ReactMarkdown>
+                <div className="chat-markdown prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed">
+                  <ReactMarkdown>
+                    {card.markdown}
+                  </ReactMarkdown>
+                </div>
               </div>
             ) : (
               <p className="app-muted text-sm">
