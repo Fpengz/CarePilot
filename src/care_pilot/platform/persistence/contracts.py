@@ -14,7 +14,7 @@ from care_pilot.core.contracts.notifications import (
 )
 
 if TYPE_CHECKING:
-    from .sqlite_app_store import SQLiteAppStore
+    from .builders import SQLiteAppStore
 
 if TYPE_CHECKING:
     type AppStoreBackend = SQLiteAppStore

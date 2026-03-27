@@ -27,7 +27,7 @@ from care_pilot.features.reminders.domain.models import (
     ReminderScheduleRule,
     ScheduledMessage,
 )
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)

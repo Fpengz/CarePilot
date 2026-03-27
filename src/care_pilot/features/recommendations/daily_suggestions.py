@@ -21,7 +21,7 @@ from care_pilot.features.recommendations.domain.models import (
     DailySuggestionBundle,
     DailySuggestionItem,
 )
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 

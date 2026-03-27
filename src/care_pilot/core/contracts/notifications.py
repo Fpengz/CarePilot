@@ -187,6 +187,27 @@ class MessageNotificationRepository(Protocol):
         error: str,
     ) -> None: ...
 
+    def mark_scheduled_notification_processing(
+        self,
+        notification_id: str,
+        attempt_count: int,
+    ) -> None: ...
+
+    def mark_scheduled_notification_delivered(
+        self,
+        notification_id: str,
+        attempt_count: int,
+    ) -> None: ...
+
+    def reschedule_scheduled_notification(
+        self,
+        notification_id: str,
+        *,
+        attempt_count: int,
+        next_attempt_at: datetime,
+        error: str,
+    ) -> None: ...
+
 
 class ReminderSchedulerRepository(
     MessageNotificationRepository, AlertRepositoryProtocol, Protocol

@@ -1,0 +1,36 @@
+[
+  {
+    "user_id": "user_001",
+    "age": 54,
+    "locale": "en-SG",
+    "conditions": [
+      {
+        "name": "Type 2 Diabetes",
+        "severity": "High"
+      },
+      {
+        "name": "Hypertension",
+        "severity": "Medium"
+      }
+    ],
+    "medications": [
+      {
+        "name": "Metformin",
+        "dosage": "500mg"
+      },
+      {
+        "name": "Amlodipine",
+        "dosage": "5mg"
+      }
+    ],
+    "nutrition_goals": []
+  },
+  {
+    "user_id": "care_001",
+    "age": 32,
+    "locale": "en-SG",
+    "conditions": [],
+    "medications": [],
+    "nutrition_goals": []
+  }
+]

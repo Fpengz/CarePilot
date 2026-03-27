@@ -94,6 +94,10 @@ class AudioAgent:
         ).to(self.device)
         logger.info("audio_agent_load_complete repo_id=%s", self.repo_id)
 
+    async def close(self) -> None:
+        """Close the underlying HTTP client."""
+        await self._async_client.aclose()
+
     async def transcribe(self, audio_input: tuple) -> str:
         """Transcribe audio using MERaLiON (local or remote)."""
         if self._provider == "remote":
@@ -284,6 +288,3 @@ class AudioAgent:
         )
         logger.info("audio_agent_groq_response length=%s", len(result.text or ""))
         return result.text.strip()
-
-    async def close(self) -> None:
-        await self._async_client.aclose()

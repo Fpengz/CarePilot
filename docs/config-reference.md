@@ -17,7 +17,6 @@ Environment loading conventions:
 - `COOKIE_SECURE` (default: `false`)
 - `COOKIE_SAMESITE` (default: `lax`) — `lax`, `strict`, or `none`
 - `AUTH_PASSWORD_HASH_SCHEME` (default: `pbkdf2_sha256`)
-- `AUTH_SEED_DEMO_USERS` (default: profile-derived; `true` in `dev`, `false` in `staging`/`prod`)
 - `AUTH_STORE_BACKEND` (default: `sqlite`) — `sqlite` or `in_memory`
 - `AUTH_SQLITE_DB_PATH` (default: `care_pilot_auth.db`)
 - `APP_DATA_BACKEND` (default: `sqlite`) — SQLite-only in the hackathon runtime
@@ -42,7 +41,6 @@ Deployment guardrails:
 - `SESSION_SECRET` must be non-default in `staging`/`prod`
 - `COOKIE_SECURE` must be enabled in `staging`/`prod`
 - `COOKIE_SAMESITE=none` requires `COOKIE_SECURE=true`
-- `AUTH_SEED_DEMO_USERS` must be disabled in `staging`/`prod`
 
 ## API
 - `API_HOST` (default: `127.0.0.1`)

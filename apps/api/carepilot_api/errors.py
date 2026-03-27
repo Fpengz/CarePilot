@@ -17,6 +17,15 @@ from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 
+__all__ = [
+    "ApiAppError",
+    "build_api_error",
+    "handle_api_app_error",
+    "handle_http_exception",
+    "handle_validation_exception",
+    "handle_unhandled_exception",
+]
+
 
 def api_error_payload(
     *,

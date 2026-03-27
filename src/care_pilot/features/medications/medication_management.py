@@ -720,7 +720,7 @@ async def _run_medication_agent_proposal(
     user_id: str,
     text: str,
 ) -> None:
-    from care_pilot.agent.adapters.shadow_agents import MedicationAgentAdapter
+    from care_pilot.agent.adapters.agent_adapters import MedicationAgentAdapter
     from care_pilot.agent.core.contracts import AgentRequest
     from care_pilot.agent.runtime.context_builder import build_agent_context
 

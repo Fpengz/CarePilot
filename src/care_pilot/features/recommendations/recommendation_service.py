@@ -13,7 +13,7 @@ from uuid import uuid4
 from apps.api.carepilot_api.deps import RecommendationAgentDeps, RecommendationDeps
 from apps.api.carepilot_api.errors import build_api_error
 
-from care_pilot.agent.adapters.shadow_agents import RecommendationAgentAdapter
+from care_pilot.agent.adapters.agent_adapters import RecommendationAgentAdapter
 from care_pilot.agent.runtime.context_builder import build_agent_context
 from care_pilot.core.contracts.api import (
     RecommendationAgentResponse,

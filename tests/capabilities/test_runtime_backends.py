@@ -3,9 +3,9 @@
 from collections.abc import Generator
 
 import pytest
-from apps.api.carepilot_api.deps import build_app_context, close_app_context
 
 from care_pilot.config.app import get_settings
+from care_pilot.platform.app_context import build_app_context, close_app_context
 from care_pilot.platform.persistence import SQLiteAppStore, build_app_store
 
 
@@ -26,7 +26,8 @@ def runtime_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, No
     _reset_settings_cache()
 
 
-def test_build_app_context_supports_redis_ephemeral_backend(
+@pytest.mark.anyio
+async def test_build_app_context_supports_redis_ephemeral_backend(
     runtime_env: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -40,10 +41,11 @@ def test_build_app_context_supports_redis_ephemeral_backend(
         assert ctx.coordination_store is not None
         assert ctx.cache_store is not None
     finally:
-        close_app_context(ctx)
+        await close_app_context(ctx)
 
 
-def test_build_app_context_defaults_to_in_memory_ephemeral_backends(
+@pytest.mark.anyio
+async def test_build_app_context_defaults_to_in_memory_ephemeral_backends(
     runtime_env: None,
 ) -> None:
     ctx = build_app_context()
@@ -52,7 +54,7 @@ def test_build_app_context_defaults_to_in_memory_ephemeral_backends(
         assert ctx.coordination_store is not None
         assert ctx.cache_store is not None
     finally:
-        close_app_context(ctx)
+        await close_app_context(ctx)
 
 
 def test_exported_build_app_store_returns_sqlite_store_in_sqlite_mode(
@@ -65,7 +67,8 @@ def test_exported_build_app_store_returns_sqlite_store_in_sqlite_mode(
         store.close()
 
 
-def test_build_app_context_uses_sqlite_backends_for_durable_state(
+@pytest.mark.anyio
+async def test_build_app_context_uses_sqlite_backends_for_durable_state(
     runtime_env: None,
 ) -> None:
     ctx = build_app_context()
@@ -74,4 +77,4 @@ def test_build_app_context_uses_sqlite_backends_for_durable_state(
         assert ctx.settings.auth.store_backend == "sqlite"
         assert ctx.settings.storage.household_store_backend == "sqlite"
     finally:
-        close_app_context(ctx)
+        await close_app_context(ctx)

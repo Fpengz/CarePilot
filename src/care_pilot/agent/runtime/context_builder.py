@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from care_pilot.agent.core.base import AgentContext
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 

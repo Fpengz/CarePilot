@@ -10,8 +10,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from apps.api.carepilot_api.deps import AppContext
-from apps.api.carepilot_api.errors import build_api_error
-
 from care_pilot.core.contracts.api import (
     DailySuggestionBundleResponse,
     DailySuggestionsResponse,
@@ -26,6 +24,7 @@ from care_pilot.core.contracts.api import (
     HealthProfileResponseItem,
     HealthProfileUpdateRequest,
 )
+from care_pilot.core.errors import build_api_error
 from care_pilot.features.profiles.domain.health_profile import (
     compute_bmi,
     compute_profile_completeness,
@@ -40,7 +39,7 @@ from care_pilot.features.profiles.domain.onboarding import (
     update_health_profile_onboarding,
 )
 from care_pilot.features.recommendations.daily_suggestions import build_daily_suggestions
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 

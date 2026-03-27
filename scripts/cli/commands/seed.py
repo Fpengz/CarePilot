@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import date
 from pathlib import Path
 from typing import Annotated, cast
@@ -8,9 +9,72 @@ import typer
 from scripts.cli.commands.ingest import _resolve_app_db_path
 from scripts.cli.utils import REPO_ROOT, error, load_root_env
 
-from care_pilot.dev.synthetic_data import SyntheticProfile, seed_synthetic_data
+from care_pilot.dev.synthetic_data import SyntheticProfile, seed_demo_accounts, seed_synthetic_data
 
 seed_app = typer.Typer(help="Seed developer synthetic data.")
+
+
+@seed_app.command("accounts")
+def seed_accounts(
+    auth_db: Annotated[
+        str | None,
+        typer.Option(
+            "--auth-db",
+            help="Optional auth DB path (default: data/care_pilot_auth.db).",
+        ),
+    ] = None,
+    app_db: Annotated[
+        str | None,
+        typer.Option(
+            "--app-db",
+            help="Optional application DB path (default: data/care_pilot_api.db).",
+        ),
+    ] = None,
+    accounts_file: Annotated[
+        str | None,
+        typer.Option(
+            "--accounts-file",
+            help="JSON file with account seeds (default: data/seeds/demo_accounts.json).",
+        ),
+    ] = None,
+    profiles_file: Annotated[
+        str | None,
+        typer.Option(
+            "--profiles-file",
+            help="JSON file with profile seeds (default: data/seeds/demo_profiles.json).",
+        ),
+    ] = None,
+) -> None:
+    """Seed standard demo accounts and their initial health profiles."""
+    load_root_env()
+    from care_pilot.config import get_settings
+
+    settings = get_settings()
+    resolved_auth_db = auth_db or settings.auth.sqlite_db_path
+    resolved_app_db = app_db or settings.storage.api_sqlite_db_path
+    resolved_accounts_file = Path(accounts_file or REPO_ROOT / "data/seeds/demo_accounts.json")
+    resolved_profiles_file = Path(profiles_file or REPO_ROOT / "data/seeds/demo_profiles.json")
+
+    if not resolved_accounts_file.exists():
+        error(f"Accounts file not found: {resolved_accounts_file}")
+        raise typer.Exit(1)
+    if not resolved_profiles_file.exists():
+        error(f"Profiles file not found: {resolved_profiles_file}")
+        raise typer.Exit(1)
+
+    with open(resolved_accounts_file) as f:
+        accounts = json.load(f)
+    with open(resolved_profiles_file) as f:
+        profiles = json.load(f)
+
+    seed_demo_accounts(
+        auth_db_path=resolved_auth_db,
+        app_db_path=resolved_app_db,
+        accounts=accounts,
+        profiles=profiles,
+    )
+    typer.echo(f"Demo accounts and profiles seeded in {resolved_auth_db} and {resolved_app_db}")
+
 
 @seed_app.command("synthetic")
 def seed_synthetic(

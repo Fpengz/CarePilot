@@ -6,9 +6,9 @@ from datetime import datetime
 from typing import Annotated
 
 import typer
-from apps.api.carepilot_api.deps import build_app_context, close_app_context
 from scripts.cli.utils import info, load_root_env
 
+from care_pilot.platform.app_context import build_app_context, close_app_context
 from care_pilot.platform.eventing.runner import run_projection_replay
 
 projections_app = typer.Typer(help="Projection replay utilities.")
@@ -22,6 +22,11 @@ def replay_projections(
     ] = None,
 ) -> None:
     """Replay projection handlers from the workflow timeline."""
+    import asyncio
+    asyncio.run(_replay_projections_async(user_id, since))
+
+
+async def _replay_projections_async(user_id: str | None, since: str | None) -> None:
     load_root_env()
     ctx = build_app_context()
     since_time = datetime.fromisoformat(since) if since else None
@@ -41,7 +46,7 @@ def replay_projections(
             f"skipped={result.projections_skipped}"
         )
     finally:
-        close_app_context(ctx)
+        await close_app_context(ctx)
 
 
 @projections_app.callback(invoke_without_command=True)

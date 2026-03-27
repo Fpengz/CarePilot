@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import typer
 from scripts.cli.commands.dev import dev_app
+from scripts.cli.commands.eval import eval_app
 from scripts.cli.commands.infra import infra_app
 from scripts.cli.commands.ingest import ingest_app
 from scripts.cli.commands.maintenance import maintenance_app
@@ -28,6 +29,7 @@ from scripts.cli.commands.web import web_app as web_app_impl
 app = typer.Typer(help="CarePilot unified developer CLI.")
 
 app.add_typer(dev_app, name="dev")
+app.add_typer(eval_app, name="eval")
 app.add_typer(infra_app, name="infra")
 app.add_typer(maintenance_app, name="maintenance")
 app.add_typer(test_app, name="test")

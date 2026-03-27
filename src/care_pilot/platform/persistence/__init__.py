@@ -1,6 +1,6 @@
 """Canonical persistence platform exports."""
 
-from care_pilot.platform.persistence.builders import build_app_store
+from care_pilot.platform.persistence.builders import SQLiteAppStore, build_app_store
 from care_pilot.platform.persistence.contracts import (
     AppStoreBackend,
     MessageNotificationRepository,
@@ -25,7 +25,6 @@ from care_pilot.platform.persistence.runtime_bootstrap import (
     build_reminder_scheduler_repository,
     build_runtime_store,
 )
-from care_pilot.platform.persistence.sqlite_app_store import SQLiteAppStore
 from care_pilot.platform.persistence.sqlite_repository import SQLiteRepository
 
 __all__ = [

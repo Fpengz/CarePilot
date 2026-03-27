@@ -18,7 +18,7 @@ from care_pilot.features.meals.domain.models import (
     ValidatedMealEvent,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
@@ -32,9 +32,18 @@ class SQLiteMealRepository:
         with get_connection(self.db_path) as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO meal_records
+                INSERT INTO meal_records
                 (id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    user_id = excluded.user_id,
+                    captured_at = excluded.captured_at,
+                    source = excluded.source,
+                    meal_state_json = excluded.meal_state_json,
+                    meal_perception_json = excluded.meal_perception_json,
+                    enriched_event_json = excluded.enriched_event_json,
+                    analysis_version = excluded.analysis_version,
+                    multi_item_count = excluded.multi_item_count
                 """,
                 (
                     record.id,

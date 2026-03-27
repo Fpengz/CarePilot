@@ -1,86 +1,78 @@
-# System Roadmap
+# CarePilot System Roadmap
 
 ## Purpose
-This is the single roadmap and status file for the hackathon branch. It replaces the older split between roadmap and capability-audit summaries.
+This is the single source of truth for CarePilot's development, combining architectural vision, technical debt management, and active implementation plans.
 
-Current objective:
-- proactive patient engagement
-- multi-source personalization
-- clinician-facing summaries
-- measurable health impact
-
-## Current maturity
+## Current Maturity
 Implemented baseline:
-- FastAPI API with auth, policy, typed contracts, and workflow trace support
-- Next.js frontend with companion-facing routes and typed API integration
-- feature-first `features/` backbone for companion workflows
-- deterministic evidence and safety boundaries in the companion flow
-- companion APIs for today view, interactions, clinician digest, and impact summary
-- meal analysis with bounded perception and deterministic canonical-food enrichment
-- recommendations, reminders, medications, symptoms, reports, metrics, and clinical cards
-- SQLite default persistence with optional Redis-backed coordination path
-- external worker runtime for reminders and outbox-style async processing
+- FastAPI API with auth, policy, and workflow trace support.
+- Next.js frontend with impeccable UI redesign.
+- Feature-first modular monolith backbone.
+- LangGraph-based ChatOrchestrator with streaming support.
+- Meal analysis, medication management, reminders, and health metrics.
+- SQLite default persistence.
 
-Not yet fully productized:
-- SQLite and optional Redis as the standard hackathon runtime
-- full retrieval and indexing pipeline behind the evidence boundary
-- more proactive intervention triggers and replay-oriented evaluation
-- richer offline evaluation and production-hardening around agent quality
+---
 
-Current baseline versus target direction:
-- already present: meals, recommendations, reminders, medications, symptoms, reports, trends, clinical cards, workflow traces, policy-protected APIs, and feature-flagged emotion inference
-- still maturing: proactive engagement logic, evidence-backed retrieval quality, richer clinician-facing summarization, and measured impact loops that are explicit enough for pilots
+## 1. Today's Plan (Active Workstreams)
 
-Current hardening emphasis:
-- stabilize typed API contracts and frontend error handling
-- reduce opaque orchestration and broad service-locator patterns
-- establish `features/`, `agent/`, `platform/`, `core/`, and `core/contracts/api/` as the canonical backend surfaces
-- completed architecture refactor: removed legacy layered packages, relocated API schemas to core contracts, and stabilized the persistence layer.
-- finalized feature-first modular monolith structure with job-based service naming (e.g., `meal_service.py`, `medication_management.py`).
+### 1.1 Multi-Agent & Chat Refinement
+- [ ] **Fast-Path Intent Gate**: Skip heavyweight LangGraph for simple social/low-intent queries.
+- [ ] **Context Pruning**: Implement relevance-based and temporal pruning in `PatientCaseSnapshot`.
+- [ ] **ChatAgent Consolidation**: Finalize the core refactor of `ChatOrchestrator` and remove legacy handler leftovers.
+- [ ] **EmotionAgent Workflow**: Centralize emotion inference in a single runtime with clear enable/disable flags.
 
-## Delivered phases
+### 1.2 Infrastructure Hardening
+- [ ] **Protocol Migration**: Replace `getattr` magic in repositories (e.g., `alert_outbox.py`) with strict Python Protocols.
+- [ ] **Transactional Timeline Writes**: Move timeline writes into an outbox-backed persistence path to ensure reliability.
+- [ ] **Feature Flags**: Migrate environment-based guards to structured `FeatureFlags` in `AppSettings`.
 
-### Phase 1: Companion backbone
-Delivered:
-- `features/companion/*` modules for case snapshot, personalization, engagement, care plans, clinician digest, and impact
-- typed companion APIs:
-  - `GET /api/v1/companion/today`
-  - `POST /api/v1/companion/interactions`
-  - `GET /api/v1/clinician/digest`
-  - `GET /api/v1/impact/summary`
+### 1.3 Message Channels (OpenClaw-style)
+- [ ] **Generalize Channels**: Rename domain contracts to `Message*` and add attachment support.
+- [ ] **Inbound Ingestion**: Add full-duplex inbound support (e.g., Telegram webhooks).
+- [ ] **Welcome Flow**: Send an outbound welcome message when a new channel is linked.
 
-### Phase 2: Structural hardening and contracts
-Delivered:
-- relocation of all API schemas to `src/care_pilot/core/contracts/api/`
-- decoupling of feature logic from the API app layer
-- extraction of cross-feature orchestration to API services
-- stabilization of the SQLite persistence layer with a central bootstrap mechanism
-- resolution of circular import patterns across domain and workflow models
+---
 
-### Phase 3: Proactive engagement
-Delivered:
-- turn reminder and adherence signals into explicit proactive outreach triggers
-- add inactivity, repeated risky meal, and worsening symptom triggers
-- persist intervention outcomes for replay and evaluation
+## 2. Production-Ready Gaps & Technical Debt
 
-### Phase 4: Structural Hardening and Feature-First Refactor
-Delivered:
-- Renamed 21+ files to follow job-based naming conventions (e.g., `service.py` -> `meal_service.py`).
-- Established the "feature-first modular monolith" as the canonical architecture.
-- Refactored `src/care_pilot/features/` to ensure strict ownership and bounded contexts.
-- Consolidated agent-layer logic into `src/care_pilot/agent/`.
-- Verified system-wide stability after the structural reorganization.
+### 2.1 Reliability & Schema Management
+- **Schema Migrations**: Introduce a formal migration tool (Alembic) to replace the current 'init if not exists' pattern.
+- **Outbox Pattern**: Ensure all side effects (logs, notifications) are transactional with state changes.
 
-### Phase 5: Documentation and Submission Prep (ACTIVE)
-- Update all project documentation (`*.md` files) to reflect the finalized file structure.
-- Replace generic file references with specific job-based names across the codebase and docs.
-- Ensure ARCHITECTURE.md matches the current reality of the `src/` folder.
-- Fix broken links and verify consistency across all documentation.
-- Finalize the README and submission materials for the hackathon.
+### 2.2 Observability & Performance
+- **Logging Alignment**: Ensure all agents and services use the centralized `setup_logging` consistently.
+- **Snapshot Bottleneck**: Transition `PatientCaseSnapshot` generation to a background-projected read model (projection sections).
+- **Validation Overhead**: Consolidate Pydantic models to reduce redundant validation across agent/service boundaries.
 
-## Related references
-- `README.md`
-- `ARCHITECTURE.md`
-- `docs/developer-guide.md`
-- `docs/meal-analysis-agents.md`
-- `docs/operations-runbook.md`
+### 2.3 Security & Testing
+- **Memory Isolation Audit**: Continue auditing cross-user isolation for memory and health profiles.
+- **E2E Validation**: Ensure all core flows (Meal → Meds → Reminders → Chat) pass in `web-e2e`.
+- **LLM Evaluation**: Implement automated evaluation for agent reasoning quality.
+
+---
+
+## 3. Architectural North Star
+
+### Ownership Rule
+- **features/**: Own product behavior and deterministic domain rules.
+- **agent/**: Own model-backed inference (no direct writes/DB access).
+- **platform/**: Own infra-only adapters (Auth, Cache, Storage).
+- **core/**: Own cross-cutting contracts and tiny primitives.
+
+### Target Feature Shape
+```text
+features/<feature>/
+  domain/         # models, deterministic rules, persistence
+  workflows/      # LangGraph (multi-step journeys)
+  use_cases/      # application entrypoints
+  presenters/     # domain → feature-view models
+  ports.py        # protocols for dependency inversion
+```
+
+---
+
+## 4. Documentation & Submission Prep
+- [ ] **Technical Overview**: Generate Product + Technical Overview for Hackathon entry.
+- [ ] **Prompt Catalog**: Document all LLM prompts in `docs/prompt_catalog.md`.
+- [ ] **Architecture Diagrams**: Update Mermaid diagrams in `ARCHITECTURE.md`.

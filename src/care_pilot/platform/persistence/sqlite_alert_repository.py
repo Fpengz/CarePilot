@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
 from care_pilot.features.safety.domain.alerts.models import OutboundMessage, OutboxRecord
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)

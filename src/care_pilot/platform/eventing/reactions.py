@@ -11,7 +11,7 @@ from care_pilot.platform.eventing.models import (
     EventReactionHandler,
     OrderingScope,
 )
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 

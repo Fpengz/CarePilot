@@ -25,6 +25,7 @@ from care_pilot.core.contracts.api.core import (
     HealthProfileResponseItem,
     HouseholdCareContextResponse,
 )
+from care_pilot.core.contracts.api.dashboard import DashboardBucket
 from care_pilot.core.contracts.api.notifications import ScheduledReminderNotificationItemResponse
 from care_pilot.core.contracts.api.workflows import WorkflowResponse
 from care_pilot.features.companion.core.health.analytics import EngagementMetrics
@@ -399,9 +400,6 @@ class MetricTrendResponse(BaseModel):
 
 class MetricTrendListResponse(BaseModel):
     items: list[MetricTrendResponse] = Field(default_factory=list)
-
-
-type DashboardBucket = Literal["hour", "day", "week"]
 
 
 class DashboardRangeResponse(BaseModel):

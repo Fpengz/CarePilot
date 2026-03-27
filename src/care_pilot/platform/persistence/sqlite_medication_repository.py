@@ -11,7 +11,7 @@ from typing import Any, cast
 from care_pilot.features.companion.core.health.models import MedicationAdherenceEvent
 from care_pilot.features.profiles.domain.models import MealSlot
 from care_pilot.features.reminders.domain.models import MedicationRegimen
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)

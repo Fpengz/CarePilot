@@ -7,7 +7,7 @@ existing AgentRequest/AgentResponse contracts.
 
 from __future__ import annotations
 
-from care_pilot.agent.adapters.shadow_agents import (
+from care_pilot.agent.adapters.agent_adapters import (
     AdherenceAgentAdapter,
     CarePlanAgentAdapter,
     MealAgentAdapter,

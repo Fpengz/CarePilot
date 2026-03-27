@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from typing import Protocol
 from uuid import uuid4
 
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.observability.workflows.domain.models import WorkflowTimelineEvent
 
 logger = get_logger(__name__)

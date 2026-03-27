@@ -7,7 +7,7 @@ Snapshots are keyed by user ID and replaced on every new report upload.
 from threading import Lock
 
 from care_pilot.features.companion.core.health.models import ClinicalProfileSnapshot
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 

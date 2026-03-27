@@ -16,7 +16,7 @@ from fastapi import HTTPException, Request
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from care_pilot.agent.adapters.shadow_agents import (
+from care_pilot.agent.adapters.agent_adapters import (
     EmotionSpeechAgentAdapter,
     EmotionTextAgentAdapter,
 )

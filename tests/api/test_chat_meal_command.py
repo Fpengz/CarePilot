@@ -11,8 +11,8 @@ from care_pilot.agent.runtime.inference_types import InferenceRequest
 # Import the actual types and protocol from their respective modules
 from care_pilot.features.companion.chat.memory import MemoryManager
 from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
+from care_pilot.platform.persistence.builders import SQLiteAppStore
 from care_pilot.platform.persistence.domain_stores import build_app_stores
-from care_pilot.platform.persistence.sqlite_app_store import SQLiteAppStore
 
 
 # --- Mock types for Response ---
@@ -64,6 +64,7 @@ def test_parse_meal_command_ignores_regular_text(tmp_path: Path) -> None:
 
 def test_log_meal_command_persists_event_and_profile(tmp_path: Path) -> None:
     app_store = SQLiteAppStore(str(tmp_path / "chat-meals.db"))
+    app_store._init_db()
     stores = build_app_stores(app_store)
     memory = MemoryManager(user_id="u", session_id="s", db_path=tmp_path/"m.db", inference_engine=mock_inference_engine)
     orchestrator = ChatOrchestrator(router=None, memory=memory)

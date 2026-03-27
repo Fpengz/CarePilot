@@ -16,10 +16,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
+from care_pilot.platform.app_context import build_app_context, close_app_context
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.runtime.background_tasks import run_background_worker
 
-from .deps import AppContext, build_app_context, close_app_context
+from .deps import AppContext
 from .errors import (
     ApiAppError,
     handle_api_app_error,
@@ -67,6 +68,12 @@ async def _prewarm_models(ctx: AppContext) -> None:
             await asyncio.to_thread(ctx.chat_audio_agent.load_model)
 
         logger.info("model_prewarm_complete")
+    except asyncio.CancelledError:
+        logger.info("model_prewarm_cancelled")
+        # Ensure we close the audio agent if it was opened during prewarm
+        if "chat_audio_agent" in ctx.__dict__:
+            await ctx.chat_audio_agent.close()
+        raise
     except Exception as exc:
         logger.warning("model_prewarm_failed error=%s", exc)
 
@@ -74,26 +81,37 @@ async def _prewarm_models(ctx: AppContext) -> None:
 @asynccontextmanager
 async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     ctx_owned = bool(getattr(app.state, "ctx_owned", False))
+    ctx_present = getattr(app.state, "ctx", None) is not None
+    print(f"DEBUG: lifespan enter owned={ctx_owned} present={ctx_present}")
     if ctx_owned and getattr(app.state, "ctx", None) is None:
+        print("DEBUG: lifespan building new context")
         app.state.ctx = build_app_context()
 
     ctx = cast(AppContext, app.state.ctx)
+    print(f"DEBUG: lifespan using ctx {id(ctx)}")
     maintenance_task = asyncio.create_task(_run_maintenance(ctx))
     worker_task = asyncio.create_task(run_background_worker())
 
     # Run pre-warming in background to not block startup
     prewarm_task = asyncio.create_task(_prewarm_models(ctx))
 
-    logger.info("event=api_startup status=ready")
-    yield
+    try:
+        yield
+    finally:
+        prewarm_task.cancel()
+        worker_task.cancel()
+        maintenance_task.cancel()
 
-    prewarm_task.cancel()
-    worker_task.cancel()
-    maintenance_task.cancel()
-    if ctx_owned and ctx is not None:
-        close_app_context(ctx)
-        app.state.ctx = None
-    logger.info("event=api_shutdown status=complete")
+        # Await cancelled tasks to allow them to clean up resources
+        await asyncio.gather(
+            prewarm_task, worker_task, maintenance_task,
+            return_exceptions=True
+        )
+
+        if ctx_owned and ctx is not None:
+            await close_app_context(ctx)
+            app.state.ctx = None
+        logger.info("event=api_shutdown status=complete")
 
 
 def create_app(ctx: AppContext | None = None) -> FastAPI:

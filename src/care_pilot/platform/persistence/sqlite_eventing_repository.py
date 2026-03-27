@@ -27,9 +27,10 @@ class SQLiteEventingRepository:
                 INSERT INTO event_reaction_executions
                 (
                     event_id, handler_name, status, started_at, completed_at, failure_count,
-                    last_error, payload_hash, event_version, ordering_scope, created_at, updated_at
+                    last_error, payload_hash, event_version, ordering_scope, next_retry_at,
+                    created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (event_id, handler_name) DO UPDATE SET
                     status = excluded.status,
                     started_at = excluded.started_at,
@@ -39,6 +40,7 @@ class SQLiteEventingRepository:
                     payload_hash = excluded.payload_hash,
                     event_version = excluded.event_version,
                     ordering_scope = excluded.ordering_scope,
+                    next_retry_at = excluded.next_retry_at,
                     updated_at = excluded.updated_at
                 """,
                 (
@@ -52,6 +54,7 @@ class SQLiteEventingRepository:
                     record.payload_hash,
                     record.event_version,
                     record.ordering_scope,
+                    record.next_retry_at.isoformat() if record.next_retry_at else None,
                     record.created_at.isoformat(),
                     record.updated_at.isoformat(),
                 ),
@@ -66,7 +69,8 @@ class SQLiteEventingRepository:
             row = conn.execute(
                 """
                 SELECT event_id, handler_name, status, started_at, completed_at, failure_count,
-                       last_error, payload_hash, event_version, ordering_scope, created_at, updated_at
+                       last_error, payload_hash, event_version, ordering_scope, next_retry_at,
+                       created_at, updated_at
                 FROM event_reaction_executions
                 WHERE event_id = ? AND handler_name = ?
                 """,
@@ -85,8 +89,9 @@ class SQLiteEventingRepository:
             payload_hash=row[7],
             event_version=row[8],
             ordering_scope=OrderingScope(cast(str, row[9])),
-            created_at=datetime.fromisoformat(row[10]),
-            updated_at=datetime.fromisoformat(row[11]),
+            next_retry_at=datetime.fromisoformat(row[10]) if row[10] else None,
+            created_at=datetime.fromisoformat(row[11]),
+            updated_at=datetime.fromisoformat(row[12]),
         )
 
     def upsert_snapshot_section(self, record: SnapshotSectionRecord) -> SnapshotSectionRecord:

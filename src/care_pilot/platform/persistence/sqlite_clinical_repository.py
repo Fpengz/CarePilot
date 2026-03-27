@@ -17,7 +17,7 @@ from care_pilot.features.companion.core.health.models import (
     SymptomCheckIn,
     SymptomSafety,
 )
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)

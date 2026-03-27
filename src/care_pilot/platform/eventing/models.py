@@ -51,6 +51,7 @@ class ExecutionStatus(StrEnum):
     RUNNING = "running"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+    DEAD_LETTER = "dead_letter"
 
 
 @dataclass(slots=True)
@@ -65,6 +66,7 @@ class ReactionExecutionRecord:
     payload_hash: str | None = None
     event_version: str | None = None
     ordering_scope: OrderingScope = OrderingScope.NONE
+    next_retry_at: datetime | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 

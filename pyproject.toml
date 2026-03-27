@@ -24,6 +24,7 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 dependencies = [
+    "alembic>=1.18.4",
     "chromadb>=1.5.5",
     "ddgs>=9.11.3",
     "e2b-code-interpreter>=2.4.1",
@@ -40,6 +41,7 @@ dependencies = [
     "omegaconf>=2.3.0",
     "peft>=0.17.1",
     "pillow>=11.0.0",
+    "psycopg[binary]>=3.3.3",
     "pydantic-ai>=1.62.0",
     "pydantic-settings>=2.11.0",
     "pydantic>=2.12.5",
@@ -50,6 +52,7 @@ dependencies = [
     "rich>=14.3.3",
     "sentence-transformers>=5.2.3",
     "soundfile>=0.13.1",
+    "sqlmodel>=0.0.37",
     "tenacity>=9.1.4",
     "torch>=2.10.0",
     "transformers>=5.3.0",
@@ -85,7 +88,6 @@ packages = ["src/care_pilot"]
 [tool.hatch.build.targets.sdist]
 include = [
     "src/care_pilot",
-    "src/main.py",
     "README.md",
     "pyproject.toml",
 ]

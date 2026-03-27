@@ -7,7 +7,7 @@ due notifications and drains the outbox worker.
 using the configured interval from settings.
 
 This module is a runtime concern — it should only be imported by process
-entrypoints (``apps/api/run_reminder_scheduler.py``, ``apps/workers/run.py``).
+entrypoints (``apps/workers/run.py``).
 Business logic lives in ``application.notifications``.
 """
 

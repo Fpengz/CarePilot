@@ -5,11 +5,11 @@ from dataclasses import dataclass
 
 from langgraph.graph import END, START, StateGraph
 
+from care_pilot.agent.adapters.agent_adapters import MealAgentAdapter
 from care_pilot.agent.adapters.domain_agents import (
     MealLabelArbitrationAdapter,
     MealLabelArbitrationInput,
 )
-from care_pilot.agent.adapters.shadow_agents import MealAgentAdapter
 from care_pilot.agent.core.contracts import AgentRequest
 from care_pilot.agent.runtime.context_builder import build_agent_context
 from care_pilot.core.contracts.agent_envelopes import AgentHandoff

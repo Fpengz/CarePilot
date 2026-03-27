@@ -9,7 +9,12 @@ from __future__ import annotations
 from care_pilot.config.app import AppSettings as Settings
 
 from .contracts import AppStoreBackend
-from .sqlite_app_store import SQLiteAppStore
+from .sqlite_repository import SQLiteRepository
+
+
+class SQLiteAppStore(SQLiteRepository):
+    """Concrete SQLite implementation of the application store."""
+    pass
 
 
 def build_app_store(settings: Settings) -> AppStoreBackend:
