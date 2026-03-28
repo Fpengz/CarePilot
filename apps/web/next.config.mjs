@@ -1,7 +1,7 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
 
-function normalizeAllowedDevOrigins(rawOrigins: string): string[] {
-  const origins = new Set<string>();
+function normalizeAllowedDevOrigins(rawOrigins) {
+  const origins = new Set();
   for (const token of rawOrigins.split(",")) {
     const value = token.trim();
     if (!value) continue;
@@ -21,7 +21,7 @@ const allowedDevOrigins = normalizeAllowedDevOrigins(
   process.env.NEXT_ALLOWED_DEV_ORIGINS ?? "http://localhost:3000,http://127.0.0.1:3000"
 );
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   reactStrictMode: true,
   allowedDevOrigins,
   env: {

@@ -68,7 +68,6 @@ export default function AlertsPage() {
                 className="w-full h-12 rounded-xl font-bold shadow-sm"
                 disabled={loadingAction !== null || !canTrigger}
                 onClick={async () => {
-                  setError(null);
                   setResult(null);
                   setLoadingAction("trigger");
                   try {

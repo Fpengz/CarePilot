@@ -27,6 +27,7 @@ from care_pilot.features.reminders.use_cases import (
     list_upcoming_occurrences_for_user,
     update_reminder_definition_for_user,
 )
+from care_pilot.features.reminders.use_cases.inbound_messages import handle_inbound_message
 
 __all__ = [
     "apply_occurrence_action_for_session",
@@ -34,6 +35,7 @@ __all__ = [
     "create_reminder_definition_for_user",
     "generate_reminders_for_session",
     "get_mobility_settings_for_session",
+    "handle_inbound_message",
     "list_history_occurrences_for_user",
     "list_message_endpoints",
     "list_message_logs",

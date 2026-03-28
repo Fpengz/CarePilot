@@ -50,7 +50,7 @@ def _local_advice_for_dish(
     else:
         base = ["Choose less gravy and ask for reduced sodium at hawker stalls"]
 
-    goals = {goal.lower() for goal in user_profile.nutrition_goals}
+    goals = {getattr(goal, "goal_type", str(goal)).lower() for goal in user_profile.nutrition_goals}
     if "lower_sugar" in goals or clinical_snapshot.biomarkers.get("hba1c", 0) >= 7.0:
         base.append(
             "Prefer unsweetened drinks and smaller refined-carb portions to steady glucose response."
@@ -114,7 +114,8 @@ def generate_recommendation(
     biomarker_line = (
         ", ".join(f"{k}={v}" for k, v in biomarkers.items()) or "no biomarkers available"
     )
-    goals_line = ", ".join(user_profile.nutrition_goals) or "general wellness"
+    goal_names = [getattr(g, "goal_type", str(g)) for g in user_profile.nutrition_goals]
+    goals_line = ", ".join(goal_names) or "general wellness"
     rationale = (
         f"Based on {meal_display_name(meal_record)}, goals ({goals_line}), and biomarkers ({biomarker_line}), "
         "here are localized recommendations for Singapore hawker options."

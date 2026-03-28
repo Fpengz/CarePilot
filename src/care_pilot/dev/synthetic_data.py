@@ -16,7 +16,7 @@ from care_pilot.features.companion.core.health.models import (
     MedicationAdherenceEvent,
 )
 from care_pilot.features.meals.domain.models import NutritionRiskProfile, ValidatedMealEvent
-from care_pilot.features.profiles.domain.models import MedicalCondition, Medication
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, NutritionGoal
 from care_pilot.features.reminders.domain.models import MedicationRegimen, ReminderEvent
 from care_pilot.platform.auth.in_memory import PasswordHasher
 from care_pilot.platform.persistence.sqlite_db import get_connection
@@ -80,7 +80,10 @@ def seed_demo_accounts(
                         Medication(name=str(m["name"]), dosage=str(m["dosage"]))
                         for m in cast(list[dict[str, str]], p.get("medications", []))
                     ],
-                    nutrition_goals=cast(list[str], p.get("nutrition_goals", [])),
+                    nutrition_goals=[
+                        NutritionGoal(goal_type=str(g), target_value=0.0, unit="unit", start_date=datetime.now(UTC).date())
+                        for g in cast(list[str], p.get("nutrition_goals", []))
+                    ],
                     updated_at=datetime.now(UTC).isoformat(),
                 )
             )
@@ -384,7 +387,10 @@ def _build_profile(*, user_id: str, config: SyntheticProfileConfig) -> HealthPro
             Medication(name="Metformin", dosage="500mg"),
             Medication(name="Atorvastatin", dosage="20mg"),
         ],
-        nutrition_goals=list(config.goals),
+        nutrition_goals=[
+            NutritionGoal(goal_type=str(g), target_value=0.0, unit="unit", start_date=datetime.now(UTC).date())
+            for g in config.goals
+        ],
         preferred_cuisines=["teochew", "japanese"],
         disliked_ingredients=["lard"],
         preferred_notification_channel="in_app",

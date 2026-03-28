@@ -23,7 +23,6 @@ from care_pilot.agent.adapters.agent_adapters import (
 from care_pilot.agent.chat.schemas import ChatStreamEvent
 from care_pilot.agent.emotion import EmotionAgentDisabledError
 from care_pilot.agent.emotion.schemas import (
-    EmotionInferenceResult,
     EmotionSpeechAgentInput,
     EmotionTextAgentInput,
 )
@@ -50,7 +49,6 @@ from care_pilot.features.companion.core.companion_core_service import CompanionS
 from care_pilot.features.companion.core.domain import PatientCaseSnapshot
 from care_pilot.features.companion.core.snapshot import build_case_snapshot_prefer_projection
 from care_pilot.features.meals.domain.normalization import log_meal_from_text
-from care_pilot.features.safety.domain.triage import evaluate_text_safety
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence import AppStores
 from care_pilot.platform.persistence.sqlite_db import get_connection
@@ -274,7 +272,6 @@ class ChatOrchestrator:
                         and state_update["last_agent_response"]
                     ):
                         agent_resp = state_update["last_agent_response"]
-                        merged_actions = self._merge_agent_actions(agent_resp.actions)
                         try:
                             ctx.event_timeline.append(
                                 event_type="agent_action_proposed",
@@ -288,7 +285,7 @@ class ChatOrchestrator:
                                     "confidence": agent_resp.confidence,
                                     "summary_length": len(agent_resp.summary or ""),
                                     "recommendation_count": len(agent_resp.recommendations),
-                                    "action_count": len(merged_actions),
+                                    "action_count": len(agent_resp.actions),
                                 },
                             )
                             agent_names.append(agent_resp.agent_name)
@@ -301,13 +298,9 @@ class ChatOrchestrator:
 
                         # Only yield if there's actual new content to show to the user
                         if agent_resp.summary:
-                            safe_summary = self._apply_safety_policy(agent_resp.summary)
-                            content = self._merge_agent_response(
-                                response_prefix=response_prefix,
-                                final_response=final_response,
-                                summary=safe_summary,
-                            )
+                            content = agent_resp.summary
                             if response_prefix and not final_response:
+                                content = f"{response_prefix}{content}"
                                 response_prefix = None  # only prepend once
 
                             final_response += content + "\n\n"
@@ -530,53 +523,6 @@ class ChatOrchestrator:
             return cleaned[6:].strip() or None
         match = _MEAL_PREFIX_RE.match(cleaned)
         return match.group(1).strip() if match else None
-
-    def _merge_agent_response(
-        self,
-        *,
-        response_prefix: str | None,
-        final_response: str,
-        summary: str,
-    ) -> str:
-        """Deterministically merge a single agent summary into the response."""
-        content = summary
-        if response_prefix and not final_response:
-            content = f"{response_prefix}{content}"
-        return content
-
-    @staticmethod
-    def _apply_safety_policy(summary: str) -> str:
-        """Apply explicit safety gating to agent summaries."""
-        decision = evaluate_text_safety(summary)
-        if decision.decision == "allow":
-            return summary
-        required = " ".join(decision.required_actions).strip()
-        if required:
-            return f"{required}"
-        return "I’m concerned this may need urgent medical attention. Please seek care right away."
-
-    @staticmethod
-    def _merge_agent_actions(actions: list[dict]) -> list[dict]:
-        """Deterministically dedupe agent actions for telemetry."""
-        seen: set[str] = set()
-        merged: list[dict] = []
-        for action in actions:
-            action_type = str(action.get("type", ""))
-            message = str(action.get("message", ""))
-            key = f"{action_type}::{message}"
-            if key in seen:
-                continue
-            seen.add(key)
-            merged.append(action)
-        return merged
-
-    def _format_emotion_context(self, inference: EmotionInferenceResult) -> str:
-        pct = int(inference.confidence * 100)
-        return (
-            f"[Emotional context] The user appears to be feeling **{inference.final_emotion}** "
-            f"(confidence {pct} %). Please respond with appropriate empathy and tailor "
-            f"your advice to their current emotional state."
-        )
 
     def _meal_proposal_prompt(self, meal_text: str) -> str:
         return f"I can log **{meal_text}** as a meal. Would you like me to save it?"

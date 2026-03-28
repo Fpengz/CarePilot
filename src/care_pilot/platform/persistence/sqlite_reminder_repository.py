@@ -1025,6 +1025,18 @@ class SQLiteReminderRepository:
             updated_at=cast(datetime, _parse_datetime(row[6])),
         )
 
+    def get_user_id_by_channel_destination(self, *, channel: str, destination: str) -> str | None:
+        with get_connection(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT user_id
+                FROM message_endpoints
+                WHERE channel = ? AND destination = ?
+                """,
+                (channel, destination),
+            ).fetchone()
+        return str(row[0]) if row else None
+
     def list_message_logs(
         self,
         *,

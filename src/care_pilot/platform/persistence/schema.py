@@ -196,6 +196,24 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS user_profiles (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        age INTEGER NOT NULL,
+        profile_mode TEXT NOT NULL DEFAULT 'self',
+        locale TEXT NOT NULL DEFAULT 'en-SG',
+        allergies_json TEXT NOT NULL DEFAULT '[]',
+        budget_tier TEXT NOT NULL DEFAULT 'moderate',
+        target_calories_per_day REAL,
+        daily_sodium_limit_mg REAL NOT NULL DEFAULT 2000.0,
+        daily_sugar_limit_g REAL NOT NULL DEFAULT 30.0,
+        daily_protein_target_g REAL NOT NULL DEFAULT 60.0,
+        daily_fiber_target_g REAL NOT NULL DEFAULT 25.0,
+        created_at DATETIME DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+        updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP) NOT NULL
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS health_profiles (
         user_id TEXT PRIMARY KEY,
         updated_at TEXT NOT NULL,
@@ -555,6 +573,33 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         PRIMARY KEY (handler_name, scope_key)
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS user_nutrition_goals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        goal_type TEXT NOT NULL,
+        target_value REAL NOT NULL,
+        unit TEXT NOT NULL,
+        start_date TEXT NOT NULL,
+        end_date TEXT,
+        created_at DATETIME DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+        updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES user_profiles(id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS user_meal_schedule (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        day_of_week INTEGER NOT NULL,
+        meal_type TEXT NOT NULL,
+        time TEXT NOT NULL,
+        notes TEXT,
+        created_at DATETIME DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+        updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES user_profiles(id)
+    )
+    """,
 )
 
 INDEX_STATEMENTS: tuple[str, ...] = (
@@ -576,6 +621,8 @@ INDEX_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_scheduled_notifications_occurrence ON scheduled_notifications(occurrence_id)",
     "CREATE INDEX IF NOT EXISTS idx_scheduled_messages_occurrence ON scheduled_messages(occurrence_id)",
     "CREATE INDEX IF NOT EXISTS idx_event_reaction_executions_ordering ON event_reaction_executions(ordering_scope, status)",
+    "CREATE INDEX IF NOT EXISTS idx_user_nutrition_goals_user ON user_nutrition_goals(user_id)",
+    "CREATE INDEX IF NOT EXISTS idx_user_meal_schedule_user ON user_meal_schedule(user_id)",
 )
 
 

@@ -16,6 +16,7 @@ from care_pilot.features.profiles.domain.models import (
     MealScheduleWindow,
     MedicalCondition,
     Medication,
+    NutritionGoal,
 )
 
 
@@ -189,7 +190,7 @@ class HealthProfileRecord(BaseModel):
     conditions: list[MedicalCondition] = Field(default_factory=list)
     medications: list[Medication] = Field(default_factory=list)
     allergies: list[str] = Field(default_factory=list)
-    nutrition_goals: list[str] = Field(default_factory=list)
+    nutrition_goals: list[NutritionGoal | str] = Field(default_factory=list)
     preferred_cuisines: list[str] = Field(default_factory=list)
     disliked_ingredients: list[str] = Field(default_factory=list)
     budget_tier: BudgetTier = "moderate"

@@ -23,6 +23,7 @@ from care_pilot.core.contracts.api import (
     HealthProfileOnboardingStateResponse,
     HealthProfileResponseItem,
     HealthProfileUpdateRequest,
+    NutritionGoalResponse,
 )
 from care_pilot.core.errors import build_api_error
 from care_pilot.features.profiles.domain.health_profile import (
@@ -78,7 +79,10 @@ def to_profile_response(*, profile, fallback_mode: bool) -> HealthProfileRespons
             for item in profile.medications
         ],
         allergies=profile.allergies,
-        nutrition_goals=profile.nutrition_goals,
+        nutrition_goals=[
+            NutritionGoalResponse.model_validate(item.model_dump(mode="json"))
+            for item in profile.nutrition_goals
+        ],
         preferred_cuisines=profile.preferred_cuisines,
         disliked_ingredients=profile.disliked_ingredients,
         budget_tier=profile.budget_tier,

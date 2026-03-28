@@ -22,7 +22,9 @@ from .reminders import ReminderDefinitionRecord, ReminderOccurrenceRecord
 from .symptom_codes import SymptomCodeRecord
 from .user_conditions import UserConditionRecord
 from .user_disliked_ingredients import UserDislikedIngredientRecord
+from .user_meal_schedule import UserMealScheduleRecord
 from .user_medications import UserMedicationRecord
+from .user_nutrition_goals import UserNutritionGoalRecord
 
 # Expose all defined models for external use
 __all__ = [
@@ -45,7 +47,9 @@ __all__ = [
     "SymptomCodeRecord",
     "UserConditionRecord",
     "UserDislikedIngredientRecord",
+    "UserMealScheduleRecord",
     "UserMedicationRecord",
+    "UserNutritionGoalRecord",
 ]
 
 # Ensure all models are registered with SQLModel.metadata

@@ -22,6 +22,7 @@ from .reminders import router as reminders_router
 from .reports import router as reports_router
 from .suggestions import router as suggestions_router
 from .symptoms import router as symptoms_router
+from .webhooks import router as webhooks_router
 from .workflows import router as workflows_router
 
 
@@ -47,3 +48,4 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(clinical_cards_router)
     app.include_router(metrics_router)
     app.include_router(companion_router)
+    app.include_router(webhooks_router)

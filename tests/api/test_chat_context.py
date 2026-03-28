@@ -7,7 +7,7 @@ from care_pilot.features.companion.core.domain import CaseSnapshot
 from care_pilot.features.companion.core.health.models import HealthProfileRecord
 from care_pilot.features.meals.domain.models import Ingredient, MealState, Nutrition, PortionSize
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.profiles.domain.models import MedicalCondition, Medication
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, NutritionGoal
 from care_pilot.platform.observability.workflows.domain.models import WorkflowTimelineEvent
 
 
@@ -149,7 +149,7 @@ def test_format_chat_context_includes_health_profile_details() -> None:
         conditions=[MedicalCondition(name="hypertension", severity="High")],
         medications=[Medication(name="amlodipine", dosage="5mg")],
         allergies=["peanuts"],
-        nutrition_goals=["low sodium"],
+        nutrition_goals=[NutritionGoal(goal_type="low sodium", target_value=0.0, unit="unit")],
         preferred_cuisines=["local"],
         disliked_ingredients=["offal"],
         macro_focus=["protein"],

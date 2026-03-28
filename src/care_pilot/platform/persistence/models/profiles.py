@@ -4,6 +4,8 @@ UserProfile persistence models.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship  # Import Relationship
 
@@ -20,6 +22,14 @@ from care_pilot.platform.persistence.models.user_disliked_ingredients import (
     UserDislikedIngredientRecord,
 )
 from care_pilot.platform.persistence.models.user_medications import UserMedicationRecord
+
+if TYPE_CHECKING:
+    from care_pilot.platform.persistence.models.user_meal_schedule import (
+        UserMealScheduleRecord,
+    )
+    from care_pilot.platform.persistence.models.user_nutrition_goals import (
+        UserNutritionGoalRecord,
+    )
 
 
 class UserProfileRecord(BaseRecord, TimestampMixin, table=True):
@@ -57,3 +67,7 @@ class UserProfileRecord(BaseRecord, TimestampMixin, table=True):
     meal_records: list[MealRecordRecord] = Relationship(back_populates="user_profile")
     biomarker_readings: list[BiomarkerReadingRecord] = Relationship(back_populates="user_profile")
     symptom_checkins: list[SymptomCheckInRecord] = Relationship(back_populates="user_profile")
+
+    # New relationships for normalized goals and schedules
+    nutrition_goals: list[UserNutritionGoalRecord] = Relationship(back_populates="user_profile")
+    meal_schedule: list[UserMealScheduleRecord] = Relationship(back_populates="user_profile")

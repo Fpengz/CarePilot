@@ -7,13 +7,21 @@ the core AppContext from the platform layer.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
+
+from fastapi import Request
 
 from care_pilot.config.app import AppSettings as Settings
 from care_pilot.features.meals.deps import MealDeps
 from care_pilot.platform.app_context import AppContext, AuthStore
 from care_pilot.platform.auth import SessionSigner
 from care_pilot.platform.persistence.health_metrics import ChatHealthMetricsRepository
+
+
+def get_context(request: Request) -> AppContext:
+    """Return the application context from the request state."""
+    return cast(AppContext, request.app.state.ctx)
+
 
 if TYPE_CHECKING:
     from care_pilot.agent.emotion.agent import EmotionAgent

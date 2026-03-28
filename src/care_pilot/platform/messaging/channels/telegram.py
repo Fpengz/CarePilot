@@ -69,6 +69,26 @@ class TelegramChannel:
         caption = presentation.body
         return {"chat_id": chat_id, "photo": photo_url, "caption": caption}
 
+    def _build_audio_payload(self, message: OutboundMessage, chat_id: str) -> dict[str, str]:
+        presentation = compose_alert_message(
+            message, channel="telegram", timezone_name=self.app_timezone
+        )
+        attachments = message.attachments or []
+        first = attachments[0] if attachments else {}
+        audio_url = str(first.get("url") or "")
+        caption = presentation.body
+        return {"chat_id": chat_id, "audio": audio_url, "caption": caption}
+
+    def _build_document_payload(self, message: OutboundMessage, chat_id: str) -> dict[str, str]:
+        presentation = compose_alert_message(
+            message, channel="telegram", timezone_name=self.app_timezone
+        )
+        attachments = message.attachments or []
+        first = attachments[0] if attachments else {}
+        doc_url = str(first.get("url") or "")
+        caption = presentation.body
+        return {"chat_id": chat_id, "document": doc_url, "caption": caption}
+
     def send(self, message: OutboundMessage, destination: str | None = None) -> ChannelResult:
         chat_id = self._resolve_chat_id(destination)
         if not self.bot_token or not chat_id:
@@ -86,26 +106,31 @@ class TelegramChannel:
                 chat_id,
             )
 
-        has_media = bool(message.attachments)
-        endpoint = (
-            f"https://api.telegram.org/bot{self.bot_token}/sendPhoto"
-            if has_media
-            else self._build_endpoint()
-        )
-        payload = (
-            self._build_photo_payload(message, chat_id)
-            if has_media
-            else self._build_payload(message, chat_id)
-        )
-        if has_media and not payload.get("photo"):
-            has_media = False
+        attachments = message.attachments or []
+        first_attachment = attachments[0] if attachments else None
+        
+        has_media = first_attachment is not None
+        media_type = first_attachment.get("content_type", "") if first_attachment else ""
+        
+        if not has_media:
             endpoint = self._build_endpoint()
             payload = self._build_payload(message, chat_id)
+        elif "image" in media_type:
+            endpoint = f"https://api.telegram.org/bot{self.bot_token}/sendPhoto"
+            payload = self._build_photo_payload(message, chat_id)
+        elif "audio" in media_type:
+            endpoint = f"https://api.telegram.org/bot{self.bot_token}/sendAudio"
+            payload = self._build_audio_payload(message, chat_id)
+        else:
+            endpoint = f"https://api.telegram.org/bot{self.bot_token}/sendDocument"
+            payload = self._build_document_payload(message, chat_id)
+
         logger.info(
-            "telegram_send_start event_id=%s destination=%s dev_mode=%s",
+            "telegram_send_start event_id=%s destination=%s dev_mode=%s media=%s",
             message.alert_id,
             destination or endpoint,
             self.dev_mode,
+            media_type or "none",
         )
 
         if self.dev_mode:

@@ -41,6 +41,7 @@ from ..schemas import (
     DashboardSeriesPointResponse,
     DashboardSummaryMetricResponse,
     DashboardSummaryResponse,
+    NutritionGoalResponse,
 )
 
 _HEALTH_METRICS = ChatHealthMetricsRepository()
@@ -419,6 +420,7 @@ def _build_summary(
     readings: list[BiomarkerReading],
     calorie_target: float,
     days: int,
+    nutrition_goals: list[NutritionGoal | str],
 ) -> DashboardSummaryResponse:
     avg_daily_calories = _average_daily_calories(current_profiles, days)
     previous_daily_calories = _average_daily_calories(previous_profiles, max(days, 1))
@@ -487,6 +489,14 @@ def _build_summary(
             status=stability_status,
             detail="Combines intake consistency and medication follow-through.",
         ),
+        nutrition_goals=[
+            (
+                NutritionGoalResponse.model_validate(g.model_dump(mode="json"))
+                if not isinstance(g, str)
+                else NutritionGoalResponse(goal_type=g, target_value=0.0, unit="unit")
+            )
+            for g in nutrition_goals
+        ],
     )
 
 
@@ -663,6 +673,7 @@ def get_dashboard_overview(
         readings=readings,
         calorie_target=calorie_target,
         days=current.days,
+        nutrition_goals=profile.nutrition_goals if profile else [],
     )
     response_components["summary"] = summary
 

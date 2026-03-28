@@ -55,6 +55,7 @@ from care_pilot.features.profiles.domain.models import (
     AccountRole,
     MealScheduleWindow,
     MealSlot,
+    NutritionGoal,
     ProfileMode,
 )
 from care_pilot.features.profiles.schemas import (  # noqa: F401
@@ -62,6 +63,7 @@ from care_pilot.features.profiles.schemas import (  # noqa: F401
     HealthProfileCondition,
     HealthProfileMedication,
     HealthProfileResponseItem,
+    NutritionGoalResponse,
 )
 from care_pilot.features.recommendations.domain.models import (
     InteractionEventType,
@@ -171,7 +173,7 @@ class HealthProfileUpdateRequest(BaseModel):
     conditions: list[HealthProfileCondition] | None = None
     medications: list[HealthProfileMedication] | None = None
     allergies: list[str] | None = None
-    nutrition_goals: list[str] | None = None
+    nutrition_goals: list[NutritionGoal | str] | None = None
     preferred_cuisines: list[str] | None = None
     disliked_ingredients: list[str] | None = None
     budget_tier: Literal["budget", "moderate", "flexible"] | None = None

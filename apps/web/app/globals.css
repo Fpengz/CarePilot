@@ -1,371 +1,61 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-@custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-  --background: oklch(0.985 0.008 235);
-  --foreground: oklch(0.22 0.02 240);
-  --card: oklch(0.99 0.01 240);
-  --card-foreground: oklch(0.22 0.02 240);
-  --muted: oklch(0.95 0.012 238);
-  --muted-foreground: oklch(0.5 0.02 238);
-  --accent: oklch(0.62 0.085 230);
-  --accent-foreground: oklch(0.985 0.01 230);
-  --ring: oklch(0.62 0.085 230);
-  --border: oklch(0.9 0.01 238);
-  --border-soft: oklch(0.93 0.008 238);
-  --panel: oklch(0.985 0.01 240);
-  --panel-soft: oklch(0.97 0.01 238);
-  --surface: oklch(0.995 0.004 238);
-  --surface-raised: oklch(0.985 0.01 238);
-  --code-bg: oklch(0.965 0.01 238);
-  --code-fg: oklch(0.2 0.02 238);
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
 
-  /* Chart Tokens */
-  --chart-grid: oklch(0.9 0.01 238);
-  --chart-text: oklch(0.5 0.02 238);
-  --chart-gradient-start: rgba(255, 255, 255, 0.88);
-  --chart-gradient-end: rgba(255, 255, 255, 0.55);
-  --chart-bg: oklch(0.99 0.01 240);
-
-  /* Semantic Health Colors */
-  --health-teal: #047857;
-  --health-teal-soft: rgba(4, 120, 87, 0.1);
-  --health-amber: #f59e0b;
-  --health-amber-soft: rgba(245, 158, 11, 0.1);
-  --health-slate: #475569;
-  --health-slate-soft: rgba(71, 85, 105, 0.1);
-  --health-rose: #e11d48;
-  --health-rose-soft: rgba(225, 29, 72, 0.1);
-
-  color-scheme: light;
-}
-
-.dark {
-  --background: oklch(0.14 0.01 240);
-  --foreground: oklch(0.92 0.02 240);
-  --card: oklch(0.18 0.01 240);
-  --card-foreground: oklch(0.92 0.02 240);
-  --muted: oklch(0.22 0.01 240);
-  --muted-foreground: oklch(0.65 0.02 240);
-  --accent: oklch(0.72 0.08 230);
-  --accent-foreground: oklch(0.14 0.02 235);
-  --ring: oklch(0.72 0.08 230);
-  --border: oklch(0.25 0.02 240);
-  --border-soft: oklch(0.22 0.02 240);
-  --panel: oklch(0.16 0.01 240);
-  --panel-soft: oklch(0.19 0.01 240);
-  --surface: oklch(0.15 0.01 240);
-  --surface-raised: oklch(0.18 0.01 240);
-  --code-bg: oklch(0.18 0.01 240);
-  --code-fg: oklch(0.92 0.02 240);
-
-  /* Chart Tokens - Dark */
-  --chart-grid: oklch(0.25 0.02 240);
-  --chart-text: oklch(0.65 0.02 240);
-  --chart-gradient-start: rgba(30, 32, 35, 0.8);
-  --chart-gradient-end: rgba(25, 27, 30, 0.4);
-  --chart-bg: oklch(0.16 0.01 240);
-
-  /* Semantic Health Colors - Dark */
-  --health-teal: #10b981;
-  --health-teal-soft: rgba(16, 185, 129, 0.15);
-  --health-amber: #fbbf24;
-  --health-amber-soft: rgba(251, 191, 36, 0.15);
-  --health-slate: #94a3b8;
-  --health-slate-soft: rgba(148, 163, 184, 0.15);
-  --health-rose: #fb7185;
-  --health-rose-soft: rgba(251, 113, 133, 0.15);
-
-  color-scheme: dark;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-health-teal: var(--health-teal);
-  --color-health-teal-soft: var(--health-teal-soft);
-  --color-health-amber: var(--health-amber);
-  --color-health-amber-soft: var(--health-amber-soft);
-  --color-health-slate: var(--health-slate);
-  --color-health-slate-soft: var(--health-slate-soft);
-  --color-health-rose: var(--health-rose);
-  --color-health-rose-soft: var(--health-rose-soft);
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
 }
 
 @layer base {
   * {
     @apply border-border;
   }
-
-  html,
   body {
-    @apply min-h-screen;
-  }
-
-  body {
-    color: var(--foreground);
-    background: var(--background);
-    font-family: "Inter", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
-    line-height: 1.55;
-  }
-
-  .dark body {
-    background: var(--background);
-  }
-
-  h1,
-  h2,
-  h3 {
-    font-family: "Inter", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
-    letter-spacing: -0.015em;
-  }
-
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  button,
-  [role="button"],
-  select,
-  input,
-  textarea {
-    min-height: 44px;
-  }
-}
-
-@layer components {
-  .app-shell {
-    @apply mx-auto min-h-screen w-full max-w-[1280px] px-6 py-8 md:px-10 md:py-12;
-  }
-
-  .app-panel {
-    @apply rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)];
-  }
-
-  .app-toolbar-chip {
-    @apply rounded-lg border border-[color:var(--border)] bg-[color:var(--panel-soft)] p-0.5;
-  }
-
-  .app-muted {
-    color: var(--muted-foreground);
-    @apply text-[13px] leading-relaxed;
-  }
-
-  .app-code {
-    @apply max-h-[28rem] overflow-auto rounded-lg border border-[color:var(--border)] bg-[color:var(--code-bg)] p-4 text-xs text-[color:var(--code-fg)];
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  }
-
-  .chat-markdown {
-    @apply space-y-4 text-[14px] leading-relaxed tracking-tight;
-  }
-
-  .chat-markdown h1 {
-    @apply mt-6 mb-4 text-xl font-bold text-[color:var(--foreground)];
-  }
-
-  .chat-markdown h2 {
-    @apply mt-5 mb-3 text-lg font-bold text-[color:var(--foreground)];
-  }
-
-  .chat-markdown h3 {
-    @apply mt-4 mb-2 text-base font-semibold text-[color:var(--foreground)];
-  }
-
-  .chat-markdown h4, .chat-markdown h5, .chat-markdown h6 {
-    @apply mt-3 mb-1 text-[13px] font-semibold text-[color:var(--foreground)];
-  }
-
-  .chat-markdown a {
-    @apply font-medium underline decoration-[color:var(--accent)] decoration-1 underline-offset-4 transition-colors hover:text-[color:var(--accent)];
-  }
-
-  .chat-markdown ul {
-    @apply list-disc pl-5 space-y-2.5;
-  }
-
-  .chat-markdown ol {
-    @apply list-decimal pl-5 space-y-2.5;
-  }
-
-  .chat-markdown code {
-    @apply rounded bg-black/5 px-1.5 py-0.5 text-[0.8rem] dark:bg-white/10;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  }
-
-  .chat-markdown pre {
-    @apply my-4 max-h-[28rem] overflow-auto rounded-lg border border-white/5 bg-[#0f172a] p-4 text-[13px] text-[#f8fafc] dark:border-[color:var(--border)] dark:bg-[color:var(--code-bg)] dark:text-[color:var(--code-fg)];
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  }
-
-  .chat-markdown pre code {
-    @apply bg-transparent p-0 text-inherit;
-  }
-
-  .chat-markdown table {
-    @apply my-4 w-full border-collapse text-left text-[13px];
-  }
-
-  .chat-markdown thead {
-    @apply border-b border-[color:var(--border-soft)] bg-[color:var(--panel-soft)];
-  }
-
-  .chat-markdown th {
-    @apply px-4 py-2 font-semibold text-[color:var(--foreground)];
-  }
-
-  .chat-markdown td {
-    @apply border-b border-[color:var(--border-soft)] px-4 py-2 text-[color:var(--muted-foreground)];
-  }
-
-  .chat-markdown tr:last-child td {
-    @apply border-b-0;
-  }
-
-  .chat-markdown blockquote {
-    @apply border-l-2 border-[color:var(--accent)]/30 pl-4 italic text-[color:var(--muted-foreground)];
-  }
-
-  .page-grid {
-    @apply grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)];
-  }
-
-  .stack-grid {
-    @apply grid gap-6;
-  }
-
-  .stack-grid-tight {
-    @apply grid gap-4;
-  }
-
-  .metric-card {
-    @apply rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-5 shadow-[0_4px_20px_rgba(15,23,42,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)];
-  }
-
-  .clinical-card {
-    @apply rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface-raised)] p-6 shadow-[0_12px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_12px_30px_rgba(0,0,0,0.3)];
-  }
-
-  .clinical-panel {
-    @apply rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] p-8 shadow-[0_16px_40px_rgba(15,23,42,0.05)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.35)];
-  }
-
-  .clinical-kicker {
-    @apply text-[10px] font-bold uppercase tracking-[0.25em] text-[color:var(--muted-foreground)] opacity-80;
-  }
-
-  .clinical-title {
-    @apply text-2xl font-semibold leading-[1.15] tracking-tight md:text-[2.4rem];
-  }
-
-  .clinical-body {
-    @apply text-[14px] leading-relaxed text-[color:var(--muted-foreground)];
-  }
-
-  .clinical-subtitle {
-    @apply text-[15px] font-semibold tracking-tight text-[color:var(--foreground)];
-  }
-
-  .clinical-alert {
-    @apply rounded-xl bg-[color:var(--surface)] p-5 shadow-[0_4px_16px_rgba(15,23,42,0.03)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)];
-  }
-
-  .clinical-divider {
-    @apply h-px w-full bg-[color:var(--border-soft)] opacity-60;
-  }
-
-  .clinical-chip {
-    @apply rounded-full border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-3 py-1 text-[11px] font-semibold tracking-tight text-[color:var(--muted-foreground)] transition-colors hover:border-[color:var(--accent)] hover:text-[color:var(--foreground)];
-  }
-
-  .soft-block {
-    @apply rounded-xl bg-[color:var(--surface)] p-5;
-  }
-
-  .section-stack {
-    @apply space-y-10;
-  }
-
-  .data-list {
-    @apply space-y-3;
-  }
-
-  .data-list-row {
-    @apply flex flex-col gap-3 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-5 py-4 transition-all hover:border-[color:var(--border)] hover:shadow-sm;
-  }
-
-  .section-kicker {
-    @apply text-[11px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)];
-  }
-
-  .grain-overlay {
-    position: relative;
-  }
-
-  .glass-card {
-    @apply bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-xl rounded-xl p-6 transition-all;
-  }
-
-  .dashboard-grounding {
-    background-image: 
-      linear-gradient(to right, var(--chart-grid) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--chart-grid) 1px, transparent 1px);
-    background-size: 40px 40px;
-    background-position: center;
-    @apply opacity-[0.05];
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
-  }
-
-  .status-chip {
-    @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider;
-  }
-
-  .status-chip-teal {
-    @apply bg-health-teal-soft text-health-teal;
-  }
-
-  .status-chip-amber {
-    @apply bg-health-amber-soft text-health-amber;
-  }
-
-  .status-chip-slate {
-    @apply bg-health-slate-soft text-health-slate;
-  }
-
-  .status-chip-rose {
-    @apply bg-health-rose-soft text-health-rose;
-  }
-}
-
-@media (max-width: 640px) {
-  @layer components {
-    .app-shell {
-      @apply px-4 pt-6 pb-28;
-    }
-
-    .app-panel {
-      @apply rounded-lg;
-    }
-  }
-}
-
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    @apply bg-background text-foreground;
   }
 }

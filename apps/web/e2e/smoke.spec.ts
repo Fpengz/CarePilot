@@ -4,10 +4,12 @@ test("login redirects to dashboard", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("member@example.com");
   await page.getByLabel("Password").fill("member-pass");
+  const loginResponse = page.waitForResponse(r => r.url().includes("/auth/login") && r.status() === 200);
   await page.getByRole("button", { name: "Login" }).click();
+  await loginResponse;
 
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
-  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible();
 });
 
 test.describe("mobile navigation", () => {
@@ -33,10 +35,12 @@ test("dashboard stays summary-focused and links out to settings", async ({ page 
   await page.goto("/login");
   await page.getByLabel("Email").fill("member@example.com");
   await page.getByLabel("Password").fill("member-pass");
+  const loginResponse = page.waitForResponse(r => r.url().includes("/auth/login") && r.status() === 200);
   await page.getByRole("button", { name: "Login" }).click();
+  await loginResponse;
 
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
-  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible();
   await expect(page.getByLabel("Height (cm)")).toBeHidden();
   await expect(page.getByLabel("Weight (kg)")).toBeHidden();
 });
