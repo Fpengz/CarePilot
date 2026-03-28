@@ -154,6 +154,7 @@ class ReminderRepositoryProtocol(Protocol):
     def list_message_thread_messages(
         self, *, thread_id: str, limit: int = 100
     ) -> list[Any]: ...
+    def get_user_id_by_channel_destination(self, *, channel: str, destination: str) -> str | None: ...
     def list_reminder_notification_preferences(
         self,
         *,

@@ -1,7 +1,7 @@
 """initial_schema_with_normalization
 
 Revision ID: a70ccb965b37
-Revises: 
+Revises:
 Create Date: 2026-03-28 10:28:10.275082
 
 """

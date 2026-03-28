@@ -7,6 +7,7 @@ the core AppContext from the platform layer.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from fastapi import Request
@@ -36,7 +37,6 @@ if TYPE_CHECKING:
     from care_pilot.platform.persistence import AppStores
 
 
-from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

@@ -250,7 +250,6 @@ export function SettingsWorkspace() {
 
   // Sync drafts when data loads
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     if (onboarding && !draft) {
       setDraft(buildDraft(onboarding.profile));
     }
@@ -274,7 +273,6 @@ export function SettingsWorkspace() {
         telegramEnabled: telegram?.enabled ?? false, telegramOffset: telegram?.offset_minutes ?? 0, telegramDestination: telegramEnd?.destination ?? "",
       });
     }
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [onboarding, mobility, prefs, endpoints, draft, mobilityDraft]);
 
   // Mutations

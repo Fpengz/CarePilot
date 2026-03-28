@@ -29,7 +29,6 @@ from care_pilot.core.contracts.api.core import (
     HealthProfileOnboardingEnvelopeResponse,
     HealthProfileOnboardingPatchRequest,
     HealthProfileUpdateRequest,
-    NutritionGoalResponse,
     HouseholdActiveUpdateRequest,
     HouseholdActiveUpdateResponse,
     HouseholdBundleResponse,
@@ -41,6 +40,7 @@ from care_pilot.core.contracts.api.core import (
     HouseholdMemberRemoveResponse,
     HouseholdMembersResponse,
     HouseholdUpdateRequest,
+    NutritionGoalResponse,
     SessionInfo,
     SessionUser,
 )

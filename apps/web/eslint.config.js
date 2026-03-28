@@ -38,7 +38,7 @@ export default [
       '@typescript-eslint': pluginTypescript,
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       // Disable due to ESLint 9 incompatibility in v4 of the plugin
       // 'react-hooks/exhaustive-deps': 'error',

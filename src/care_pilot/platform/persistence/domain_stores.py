@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from care_pilot.features.companion.core.health.models import HealthProfileRecord
+
 from .contracts import AppStoreBackend
 from .protocols import (
     AlertRepositoryProtocol,
@@ -438,6 +440,9 @@ class ReminderStore:
     def list_message_thread_messages(self, *, thread_id: str, limit: int = 200) -> list[Any]:
         return self._store.list_message_thread_messages(thread_id=thread_id, limit=limit)
 
+    def get_user_id_by_channel_destination(self, *, channel: str, destination: str) -> str | None:
+        return self._store.get_user_id_by_channel_destination(channel=channel, destination=destination)
+
     def get_mobility_reminder_settings(self, user_id: str) -> Any | None:
         return self._store.get_mobility_reminder_settings(user_id)
 
@@ -559,10 +564,14 @@ class RecommendationStore:
 class ProfileStore:
     _store: ProfileRepositoryProtocol
 
-    def get_health_profile(self, user_id: str) -> Any | None:
-        return self._store.get_health_profile(user_id)
+    def get_health_profile(self, user_id: str) -> HealthProfileRecord:
+        record = self._store.get_health_profile(user_id)
+        if record is None:
+            from care_pilot.features.profiles.domain.health_profile import default_health_profile
+            return default_health_profile(user_id)
+        return record
 
-    def save_health_profile(self, profile: Any) -> Any:
+    def save_health_profile(self, profile: HealthProfileRecord) -> HealthProfileRecord:
         return self._store.save_health_profile(profile)
 
     def get_health_profile_onboarding_state(self, user_id: str) -> Any | None:

@@ -72,16 +72,16 @@ def update_health_profile(
     updates: dict[str, Any],
 ) -> HealthProfileRecord:
     current = get_or_create_health_profile(repository, user_id)
-    
+
     # Merge updates into current model
     current_data = current.model_dump()
     for key, value in updates.items():
         if key in current_data:
             current_data[key] = value
-            
+
     current_data["user_id"] = user_id
     current_data["updated_at"] = datetime.now(UTC).isoformat()
-    
+
     merged = HealthProfileRecord.model_validate(current_data)
     return repository.save_health_profile(merged)
 
@@ -101,7 +101,10 @@ def build_user_profile_from_health_profile(
         or default_profile_mode_for_role(cast(AccountRole, str(session["account_role"]))),
         locale=health_profile.locale,
         allergies=list(health_profile.allergies),
-        nutrition_goals=list(health_profile.nutrition_goals),
+        nutrition_goals=[
+            g if not isinstance(g, str) else NutritionGoal(goal_type=g, target_value=0.0, unit="unit")
+            for g in health_profile.nutrition_goals
+        ],
         preferred_cuisines=list(health_profile.preferred_cuisines),
         disliked_ingredients=list(health_profile.disliked_ingredients),
         budget_tier=health_profile.budget_tier,

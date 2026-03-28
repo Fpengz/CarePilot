@@ -55,6 +55,7 @@ from care_pilot.features.profiles.domain.models import (
     MealSlot,
     ProfileMode,
 )
+from care_pilot.features.profiles.schemas import NutritionGoalResponse
 from care_pilot.features.recommendations.domain.models import (
     InteractionEventType,
     RecommendationOutput,
@@ -510,6 +511,7 @@ class DashboardSummaryResponse(BaseModel):
     adherence_score: DashboardSummaryMetricResponse
     glycemic_risk: DashboardSummaryMetricResponse
     stability_index: DashboardSummaryMetricResponse
+    nutrition_goals: list[NutritionGoalResponse] = Field(default_factory=list)
 
 
 class DashboardOverviewResponse(BaseModel):

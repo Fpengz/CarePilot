@@ -12,7 +12,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from care_pilot.features.profiles.domain.models import MealScheduleWindow, NutritionGoal
+from care_pilot.features.profiles.domain.models import MealScheduleWindow
 
 
 class NutritionGoalResponse(BaseModel):

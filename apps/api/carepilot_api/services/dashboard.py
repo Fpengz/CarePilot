@@ -17,6 +17,7 @@ from care_pilot.features.companion.core.health.models import (
     BloodPressureReading,
     HealthProfileRecord,
     MedicationAdherenceEvent,
+    NutritionGoal,
 )
 from care_pilot.features.meals.domain.models import NutritionRiskProfile, ValidatedMealEvent
 from care_pilot.features.reminders.domain.models import ReminderEvent
