@@ -49,3 +49,14 @@ This document tracks the completed phases of the CarePilot architectural refacto
 - **Actions**:
   - **Frontend Best Practices**: Migrated major pages to TanStack Query and implemented Vercel React Best Practices (dynamic imports, memoization, content-visibility).
   - **Backend Security**: Removed "Code Agent" for deterministic arithmetic, eliminating RCE risk in the dashboard.
+
+## Phase 8 — Hardening and Relational Migration (Completed 2026-03-27)
+- **Goal**: Move toward production-grade reliability and data integrity.
+- **Actions**:
+  - **Relational Profile Migration**: Normalized `UserProfileRecord` JSON fields into relational tables (`user_nutrition_goals`, `user_meal_schedule`) with full SQLModel and Alembic support.
+  - **Full-Duplex Messaging**: Implemented Telegram webhook support (`/api/v1/webhooks/telegram`) and unified inbound/outbound message processing.
+  - **Multi-Modal Sinks**: Enhanced the `TelegramChannel` sink to support audio and document attachments based on content types.
+  - **Agent Consolidation**: Pruned 300+ lines of legacy code from `ChatOrchestrator`, ensuring all inference flows through the supervisor-led LangGraph.
+  - **Unified Emotion Runtime**: Centralized text and speech emotion inference in `AppContext` for better latency and resource management.
+  - **Frontend Build Restoration**: Resolved critical Tailwind v4/v3 mismatches and restored missing build-time dependencies.
+  - **Type Safety**: Resolved 25+ backend type-checking diagnostics and fixed complex frontend React/TypeScript prop mismatches.
