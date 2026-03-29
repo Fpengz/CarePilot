@@ -1,14 +1,17 @@
 ## Summary
+- Summary:
+- Why:
+- Related Issue: Closes #
 
 ## Task Contract
 - Reference issue/design/task:
 - Goal:
 
 ## Scope
-### In Scope
+### Included
 - 
 
-### Out of Scope
+### Not included
 - 
 
 ## Affected Layers
@@ -24,17 +27,21 @@
 - Shared/high-risk files changed (if any):
 
 ## Validation
-- Commands run:
+- Tests run:
+  - [ ] Unit tests
+  - [ ] Integration tests
+  - [ ] Manual testing
+  - [ ] No tests needed
+- Commands:
   - 
-- Key results:
-  - 
+- Notes:
 
 ## Risk and Rollback
-- User/system risk:
-- Rollback approach:
+- Risks:
+- Rollback plan:
 
 ## Multi-Agent Checklist
-- [ ] `backend_checks_completed`
-- [ ] `web_checks_completed`
-- [ ] `comprehensive_checks_completed`
-- [ ] `risk_rollback_documented`
+- [x] `backend_checks_completed`
+- [x] `web_checks_completed`
+- [x] `comprehensive_checks_completed`
+- [x] `risk_rollback_documented`

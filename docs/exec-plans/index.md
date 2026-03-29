@@ -40,6 +40,12 @@ Execution plans are first-class artifacts. Keep active work separate from in-pro
 | `docs/exec-plans/completed/2026-03-22-carepilot-event-driven-refactor.md` | completed | 2026-03-29 | platform |
 | `docs/exec-plans/completed/2026-03-26-production-ready-hardening.md` | completed | 2026-03-29 | platform |
 
+## Tech Debt
+
+| Doc | Status | Last Verified | Owner |
+| --- | --- | --- | --- |
+| `docs/exec-plans/tech-debt-tracker.md` | active | 2026-03-30 | platform |
+
 ## Templates
 
 | Doc | Status | Last Verified | Owner |
