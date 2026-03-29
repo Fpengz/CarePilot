@@ -20,8 +20,8 @@ export function BloodPressureChart({
   return (
     <div className="glass-card h-full">
       <div className="flex flex-col items-start gap-1 mb-6">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Blood Pressure</span>
-        <h3 className="text-lg font-bold tracking-tight">Trend Overview</h3>
+        <span className="text-xs font-semibold text-[color:var(--muted-foreground)]">Blood pressure</span>
+        <h3 className="text-xl font-bold tracking-tight">Trend overview</h3>
       </div>
       <div className="flex items-center justify-between mb-2">
         <span className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">

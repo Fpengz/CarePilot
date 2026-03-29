@@ -13,7 +13,7 @@ interface MetricItemProps {
 function MetricItem({ label, value, unit, data, icon }: MetricItemProps) {
   return (
     <div className="flex flex-1 flex-col items-center gap-1 px-4 first:pl-0 last:pr-0 border-r border-white/5 last:border-0 text-center">
-      <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)] opacity-60">
+      <div className="flex items-center gap-2 text-[11px] font-semibold text-[color:var(--muted-foreground)] opacity-70">
         {icon}
         <span>{label}</span>
       </div>
@@ -43,7 +43,7 @@ export function MetricStrip({
     Array.isArray(chart?.points) ? chart.points : [];
 
   return (
-    <div className="glass-card col-span-12 !py-5 flex items-center justify-between divide-x divide-white/5 overflow-hidden">
+    <div className="glass-card col-span-12 !py-3 bg-[color:var(--panel-soft)]/60 flex items-center justify-between divide-x divide-white/5 overflow-hidden">
       <MetricItem 
         label="Signal" 
         value={overview.summary.adherence_score.value > 80 ? "Stable" : "Variable"} 

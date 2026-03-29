@@ -12,6 +12,9 @@ import type { DashboardOverviewApiResponse, RangeKey } from "@/lib/types";
 import { MetricStrip } from "@/components/dashboard/metric-strip";
 import { ClinicalSummary } from "@/components/dashboard/clinical-summary";
 import { NutritionBalanceChart } from "@/components/dashboard/nutrition-balance-chart";
+import { CorrelationChart } from "@/components/dashboard/correlation-chart";
+import { MealClock } from "@/components/dashboard/meal-clock";
+import { BloodPressureChart } from "@/components/dashboard/blood-pressure-chart";
 import { NextActions } from "@/components/dashboard/next-actions";
 import { RangeSelector } from "@/components/dashboard/range-selector";
 
@@ -82,6 +85,7 @@ export default function DashboardPage() {
         <div className="space-y-8">
           <MetricStrip overview={data} charts={data.charts} />
           
+          {/* Row 1: Primary signals */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
               <ClinicalSummary 
@@ -90,12 +94,55 @@ export default function DashboardPage() {
                 nutrition={data.summary.nutrition_goal_score.value}
                 recommendation={data.insights.recommendations[0]}
               />
-              <NutritionBalanceChart 
-                chart={data.charts.macros} 
-              />
             </div>
             
             <div className="space-y-8">
+              <div className="glass-card h-full">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-[color:var(--muted-foreground)]">Critical alerts</p>
+                    <h3 className="text-lg font-bold tracking-tight text-[color:var(--foreground)]">Immediate follow‑ups</h3>
+                  </div>
+                  <span className="text-[11px] font-semibold text-[color:var(--accent)]">
+                    {data.alerts.length} alerts
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {data.alerts.length ? (
+                    data.alerts.slice(0, 4).map((alert) => (
+                      <div
+                        key={alert.id}
+                        className="rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)]/70 px-4 py-3"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-semibold text-[color:var(--foreground)]">
+                            {alert.title}
+                          </span>
+                          <span
+                            className={`text-[10px] font-semibold uppercase tracking-wider ${
+                              alert.severity === "critical"
+                                ? "text-rose-500"
+                                : alert.severity === "warning"
+                                  ? "text-amber-500"
+                                  : "text-emerald-500"
+                            }`}
+                          >
+                            {alert.severity}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-[color:var(--muted-foreground)]">
+                          {alert.detail}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-[color:var(--border-soft)] p-4 text-xs text-[color:var(--muted-foreground)]">
+                      No critical alerts right now.
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <NextActions 
                 recommendations={data.insights.recommendations}
                 links={{
@@ -106,6 +153,21 @@ export default function DashboardPage() {
               />
             </div>
           </div>
+
+          {/* Row 2: Trends */}
+          <CorrelationChart
+            calories={data.charts.calories.points}
+            risk={data.charts.glycemic_risk.points}
+          />
+
+          {/* Row 3: Daily patterns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <NutritionBalanceChart chart={data.charts.macros} />
+            <MealClock bins={data.charts.meal_timing.bins} />
+          </div>
+
+          {/* Row 4: Vitals */}
+          <BloodPressureChart chart={data.charts.blood_pressure} />
         </div>
       )}
     </div>

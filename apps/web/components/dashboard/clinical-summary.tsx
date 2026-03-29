@@ -28,7 +28,7 @@ export function ClinicalSummary({
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[color:var(--accent)]/10 text-[color:var(--accent)]">
               <Activity className="h-3.5 w-3.5" />
             </span>
-            <span className="clinical-kicker">Companion Digest</span>
+            <span className="clinical-kicker">Companion digest</span>
           </div>
           
           <h3 className="clinical-title">
@@ -43,13 +43,13 @@ export function ClinicalSummary({
           <div className="flex flex-wrap gap-4 pt-2">
             <div className="flex items-center gap-2 rounded-full border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-4 py-2">
               <div className={cn("h-2 w-2 rounded-full", adherence > 80 ? "bg-emerald-500" : "bg-amber-500")} />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)]">
+              <span className="text-[11px] font-semibold text-[color:var(--muted-foreground)]">
                 Adherence: {adherence}%
               </span>
             </div>
             <div className="flex items-center gap-2 rounded-full border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-4 py-2">
               <div className={cn("h-2 w-2 rounded-full", risk < 30 ? "bg-emerald-500" : "bg-rose-500")} />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)]">
+              <span className="text-[11px] font-semibold text-[color:var(--muted-foreground)]">
                 Risk: {risk}/100
               </span>
             </div>
@@ -60,12 +60,12 @@ export function ClinicalSummary({
           <div className="rounded-2xl bg-[color:var(--accent)]/5 p-6 border border-[color:var(--accent)]/10">
             <div className="mb-3 flex items-center gap-2 text-[color:var(--accent)]">
               <AlertCircle className="h-4 w-4" />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Action Required</span>
+              <span className="text-[11px] font-semibold">Action required</span>
             </div>
             <p className="text-sm font-medium leading-relaxed text-[color:var(--foreground)]">
               &quot;{recommendation}&quot;
             </p>
-            <button className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[color:var(--accent)] hover:underline">
+            <button className="mt-4 text-[11px] font-semibold text-[color:var(--accent)] hover:underline">
               Implement recommendation →
             </button>
           </div>

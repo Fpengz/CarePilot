@@ -29,8 +29,8 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
     <div className="glass-card h-full">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div className="flex flex-col items-start gap-1">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Nutrient Profile</span>
-          <h3 className="text-lg font-bold tracking-tight">{chart.title}</h3>
+          <span className="text-xs font-semibold text-[color:var(--muted-foreground)]">Nutrient profile</span>
+          <h3 className="text-xl font-bold tracking-tight">{chart.title}</h3>
         </div>
         <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-lg self-start">
           {modes.map((m) => (
