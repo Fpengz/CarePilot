@@ -9,18 +9,12 @@ from fastapi import APIRouter, Depends, Request
 
 from care_pilot.features.reminders.notifications.alert_session import (
     get_alert_timeline,
-)
-from care_pilot.features.reminders.notifications.alert_session import (
     trigger_alert_for_session as trigger_alert,
 )
 
 from ..deps import alert_deps
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
-    AlertTimelineResponse,
-    AlertTriggerRequest,
-    AlertTriggerResponse,
-)
+from ..schemas import AlertTimelineResponse, AlertTriggerRequest, AlertTriggerResponse
 
 router = APIRouter(tags=["alerts"])
 

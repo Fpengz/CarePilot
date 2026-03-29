@@ -1,12 +1,15 @@
-"""Tests for emotion service."""
+"""
+Verify the emotion agent and its in-process/remote runtimes.
+"""
 
 from __future__ import annotations
 
-import time
+import asyncio
+from typing import Any, cast
 
 import pytest
 
-from care_pilot.agent.emotion import EmotionAgent
+from care_pilot.agent.emotion.agent import EmotionAgent
 from care_pilot.agent.emotion.schemas import (
     EmotionContextFeatures,
     EmotionFusionOutput,
@@ -21,147 +24,142 @@ from care_pilot.agent.emotion.schemas import (
     TextEmotionBranchResult,
 )
 from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
-from care_pilot.features.companion.emotion.pipeline import EmotionPipeline
-from care_pilot.features.companion.emotion.ports import (
-    EmotionInferencePort,
-)
-from care_pilot.features.companion.emotion.runtime import (
-    InProcessEmotionRuntime,
-)
+from care_pilot.features.companion.emotion.ports import EmotionInferencePort
+from care_pilot.features.companion.emotion.runtime import InProcessEmotionRuntime
 
 
 class _StubASR:
-    def transcribe(self, audio_bytes: bytes, *, filename: str | None, language: str | None) -> str:
+    def transcribe(self, audio_bytes: bytes, *, filename: str | None = None, language: str | None = None) -> str:
         del audio_bytes, filename, language
-        return "hello"
+        return "transcription"
 
 
 class _StubText:
-    def predict(self, text: str, language: str | None) -> TextEmotionBranchResult:
-        del language
+    def predict(self, text: str, language: str | None = None) -> TextEmotionBranchResult:
+        del text, language
         return TextEmotionBranchResult(
-            transcript_or_text=text,
-            emotion_scores={EmotionLabel.NEUTRAL: 0.7},
+            transcript_or_text="I am happy and calm",
+            emotion_scores={EmotionLabel.NEUTRAL: 0.9},
             predicted_emotion=EmotionLabel.NEUTRAL,
-            confidence=0.7,
-            model_name="text-model",
-            metadata={},
+            confidence=0.9,
+            model_name="stub-text",
         )
 
 
 class _StubSpeech:
-    def predict(self, audio_bytes: bytes, *, transcript: str | None) -> SpeechEmotionBranchResult:
-        del audio_bytes
+    def predict(self, audio_bytes: bytes, *, transcript: str | None = None) -> SpeechEmotionBranchResult:
+        del audio_bytes, transcript
         return SpeechEmotionBranchResult(
-            transcription=transcript,
-            acoustic_scores={"duration_sec": 1.2},
             predicted_emotion=EmotionLabel.NEUTRAL,
-            emotion_scores={EmotionLabel.NEUTRAL: 0.6},
-            confidence=0.6,
-            model_name="speech-model",
-            metadata={},
+            emotion_scores={EmotionLabel.NEUTRAL: 0.8},
+            confidence=0.8,
+            model_name="stub-speech",
         )
 
 
 class _StubContext:
     def extract(self, user_id: str | None) -> EmotionContextFeatures:
         del user_id
-        return EmotionContextFeatures(recent_labels=[], trend="stable", recent_product_states=[])
+        return EmotionContextFeatures(
+            trend="stable",
+        )
 
 
 class _StubFusion:
-    def predict(
-        self,
-        *,
-        text_branch: TextEmotionBranchResult | None,
-        speech_branch: SpeechEmotionBranchResult | None,
-        context: EmotionContextFeatures,
-    ) -> tuple[EmotionFusionOutput, FusionTrace]:
-        del text_branch, speech_branch, context
+    def predict(self, **kwargs: Any) -> tuple[EmotionFusionOutput, FusionTrace]:
+        del kwargs
         return EmotionFusionOutput(
             emotion_label=EmotionLabel.NEUTRAL,
             product_state=EmotionProductState.STABLE,
-            confidence=0.72,
-            logits={EmotionLabel.NEUTRAL: 0.72},
+            confidence=0.85,
         ), FusionTrace(
             fusion_inputs={},
             weighting_strategy="stub",
-            final_decision_reason="stub",
+            final_decision_reason="stub reasoning",
         )
 
 
 def _runtime() -> InProcessEmotionRuntime:
+    from care_pilot.features.companion.emotion.pipeline import EmotionPipeline
     return InProcessEmotionRuntime(
-        EmotionRuntimeConfig(
-            text_model_id="text-model",
-            speech_model_id="speech-model",
-            fusion_model_id="fusion-model",
-            asr_model_id="MERaLiON/MERaLiON-2-3B",
+        config=EmotionRuntimeConfig(
+            asr_model_id="stub",
+            text_model_id="stub",
+            speech_model_id="stub",
+            source_commit="sha",
+            runtime_mode="in_process",
+            remote_base_url="http://localhost",
             history_window=5,
             model_device="cpu",
-            source_commit="9afc3f1a3a3fec71a4e5920d8f4103710b337ecc",
+            fusion_model_id=None,
             model_cache_dir=None,
-            runtime_mode="in_process",
-            remote_base_url="http://localhost:8002",
         ),
         pipeline=EmotionPipeline(
-            asr=_StubASR(),
-            text=_StubText(),
-            speech=_StubSpeech(),
-            context=_StubContext(),
-            fusion=_StubFusion(),
+            asr=cast(Any, _StubASR()),
+            text=cast(Any, _StubText()),
+            speech=cast(Any, _StubSpeech()),
+            context=cast(Any, _StubContext()),
+            fusion=cast(Any, _StubFusion()),
         ),
     )
 
 
-def test_inprocess_emotion_runtime_text_inference() -> None:
+@pytest.mark.asyncio
+async def test_inprocess_emotion_runtime_text_inference() -> None:
     runtime = _runtime()
-    result = runtime.infer_text(EmotionTextAgentInput(text="I am happy and calm"))
+    result = await runtime.infer_text(EmotionTextAgentInput(text="I am happy and calm"))
 
     assert result.source_type == "text"
-    assert result.final_emotion == "neutral"
-    assert result.product_state == "stable"
+    assert result.final_emotion == EmotionLabel.NEUTRAL
+    assert result.product_state == EmotionProductState.STABLE
 
 
-def test_inprocess_emotion_runtime_speech_inference() -> None:
+@pytest.mark.asyncio
+async def test_inprocess_emotion_runtime_speech_inference() -> None:
     runtime = _runtime()
-    result = runtime.infer_speech(
+    result = await runtime.infer_speech(
         EmotionSpeechAgentInput(audio_bytes=b"fake-wave-data", content_type="audio/wav")
     )
 
     assert result.source_type == "mixed"
-    assert result.product_state == "stable"
+    assert result.product_state == EmotionProductState.STABLE
 
 
-def test_inprocess_runtime_health_reports_ready_when_configured() -> None:
+@pytest.mark.asyncio
+async def test_inprocess_runtime_health_reports_ready_when_configured() -> None:
     runtime = _runtime()
-    health = runtime.health()
+    health = await runtime.health()
     assert health.status == "ready"
 
 
 class _SlowPort(EmotionInferencePort):
-    def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
-        del payload
-        time.sleep(0.05)
-        return _runtime().infer_text(EmotionTextAgentInput(text="neutral"))
+    @property
+    def runtime_mode(self) -> str:
+        return "slow"
 
-    def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
+    async def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
         del payload
-        return _runtime().infer_speech(
+        await asyncio.sleep(0.05)
+        return await _runtime().infer_text(EmotionTextAgentInput(text="neutral"))
+
+    async def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
+        del payload
+        return await _runtime().infer_speech(
             EmotionSpeechAgentInput(audio_bytes=b"fake", content_type="audio/wav")
         )
 
-    def health(self) -> EmotionRuntimeHealth:
+    async def health(self) -> EmotionRuntimeHealth:
         return EmotionRuntimeHealth(status="ready", model_cache_ready=True, source_commit="sha")
 
 
-def test_emotion_service_times_out_with_wall_clock_limit() -> None:
+@pytest.mark.asyncio
+async def test_emotion_service_times_out_with_wall_clock_limit() -> None:
     service = EmotionAgent(
         runtime=_SlowPort(),
         inference_enabled=True,
         speech_enabled=True,
-        request_timeout_seconds=0.001,
+        request_timeout_seconds=0.01,
     )
 
     with pytest.raises(service.timeout_error_type):
-        service.infer_text(text="hello")
+        await service.infer_text(text="hello")

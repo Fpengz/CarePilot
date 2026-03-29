@@ -7,11 +7,13 @@ required to drive companion orchestration responses.
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, date, datetime, timedelta
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 from zoneinfo import ZoneInfo
 
-from apps.api.carepilot_api.deps import AppContext
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 from care_pilot.core.contracts.api import (
     BloodPressureChartResponse,
     BloodPressureSummaryEnvelopeResponse,
@@ -36,23 +38,25 @@ from care_pilot.features.companion.core.companion_core_service import (
     build_companion_today_bundle,
     run_companion_interaction,
 )
-from care_pilot.features.companion.core.domain.models import (
-    CompanionInteraction,
-)
-from care_pilot.features.companion.core.evidence.ports import (
-    EvidenceRetrievalPort,
-)
+from care_pilot.features.companion.core.domain.models import CompanionInteraction
+from care_pilot.features.companion.core.evidence.ports import EvidenceRetrievalPort
 from care_pilot.features.companion.core.health.blood_pressure import (
     build_bp_chart_points,
     summarize_blood_pressure,
 )
 from care_pilot.features.companion.core.health.models import (
+    BiomarkerReading,
+    BloodPressureReading,
     ClinicalProfileSnapshot,
+    HealthProfileRecord,
+    MedicationAdherenceEvent,
+    SymptomCheckIn,
 )
+from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
+from care_pilot.features.profiles.domain.models import UserProfile
+from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.reports.domain import build_clinical_snapshot
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
-)
+from care_pilot.platform.auth.session_context import build_user_profile_from_session
 from care_pilot.platform.persistence.evidence import SearchEvidenceRetriever
 from care_pilot.platform.persistence.health_metrics import ChatHealthMetricsRepository
 
@@ -91,11 +95,12 @@ def _subject_user_id(session: dict[str, object]) -> str:
     return str(session["user_id"])
 
 
-def _clinical_snapshot(context: AppContext, *, user_id: str) -> ClinicalProfileSnapshot | None:
+def _clinical_snapshot(
+    context: AppContext, *, user_id: str, readings: list[BiomarkerReading]
+) -> ClinicalProfileSnapshot | None:
     cached = context.clinical_memory.get(user_id)
     if cached is not None:
         return cached
-    readings = context.stores.biomarkers.list_biomarker_readings(user_id)
     if not readings:
         return None
     snapshot = build_clinical_snapshot(readings)
@@ -103,11 +108,11 @@ def _clinical_snapshot(context: AppContext, *, user_id: str) -> ClinicalProfileS
     return snapshot
 
 
-def _emotion_signal(context: AppContext, *, emotion_text: str | None) -> str | None:
+async def _emotion_signal(context: AppContext, *, emotion_text: str | None) -> str | None:
     if not emotion_text:
         return None
     try:
-        result = context.emotion_agent.infer_text(text=emotion_text)
+        result = await context.emotion_agent.infer_text(text=emotion_text)
     except Exception:
         lowered = emotion_text.lower()
         if any(term in lowered for term in ("stress", "stressed", "worried", "anxious")):
@@ -118,28 +123,110 @@ def _emotion_signal(context: AppContext, *, emotion_text: str | None) -> str | N
     return str(result.final_emotion)
 
 
-def load_companion_inputs(
+async def load_companion_inputs(
     *,
     context: AppContext,
     session: dict[str, object],
     emotion_text: str | None = None,
+    include: str | None = None, # Added include parameter
 ) -> CompanionStateInputs:
     """Assemble the longitudinal inputs required by companion workflows."""
     subject_user_id = _subject_user_id(session)
     subject_session = dict(session)
     subject_session["user_id"] = subject_user_id
-    user_profile = build_user_profile_from_session(subject_session, context.stores.profiles)
-    health_profile = context.stores.profiles.get_health_profile(subject_user_id)
-    meals = context.stores.meals.list_meal_records(subject_user_id)
-    reminders = context.stores.reminders.list_reminder_events(subject_user_id)
-    adherence_events = context.stores.medications.list_medication_adherence_events(
-        user_id=subject_user_id
-    )
-    symptoms = context.stores.symptoms.list_symptom_checkins(user_id=subject_user_id, limit=200)
-    readings = context.stores.biomarkers.list_biomarker_readings(subject_user_id)
-    bp_readings = _HEALTH_METRICS.list_blood_pressure_readings(user_id=subject_user_id)
-    clinical_snapshot = _clinical_snapshot(context, user_id=subject_user_id)
-    emotion_signal = _emotion_signal(context, emotion_text=emotion_text)
+
+    # Define all possible data sources
+    all_data_sources = {
+        "user_profile": asyncio.to_thread(build_user_profile_from_session, subject_session, context.stores.profiles),
+        "health_profile": asyncio.to_thread(context.stores.profiles.get_health_profile, subject_user_id),
+        "meals": asyncio.to_thread(context.stores.meals.list_meal_records, subject_user_id),
+        "reminders": asyncio.to_thread(context.stores.reminders.list_reminder_events, subject_user_id),
+        "adherence_events": asyncio.to_thread(
+            context.stores.medications.list_medication_adherence_events, user_id=subject_user_id
+        ),
+        "symptoms": asyncio.to_thread(
+            context.stores.symptoms.list_symptom_checkins, user_id=subject_user_id, limit=200
+        ),
+        "biomarker_readings": asyncio.to_thread(context.stores.biomarkers.list_biomarker_readings, subject_user_id),
+        "blood_pressure_readings": asyncio.to_thread(_HEALTH_METRICS.list_blood_pressure_readings, user_id=subject_user_id),
+    }
+
+    # Determine which data sources to fetch based on the 'include' parameter
+    include_sections = set(include.split(',')) if include else None
+
+    tasks_to_run = []
+    if include_sections is None or "user_profile" in include_sections:
+        tasks_to_run.append(all_data_sources["user_profile"])
+    if include_sections is None or "health_profile" in include_sections:
+        tasks_to_run.append(all_data_sources["health_profile"])
+    if include_sections is None or "meals" in include_sections:
+        tasks_to_run.append(all_data_sources["meals"])
+    if include_sections is None or "reminders" in include_sections:
+        tasks_to_run.append(all_data_sources["reminders"])
+    if include_sections is None or "adherence_events" in include_sections:
+        tasks_to_run.append(all_data_sources["adherence_events"])
+    if include_sections is None or "symptoms" in include_sections:
+        tasks_to_run.append(all_data_sources["symptoms"])
+    if include_sections is None or "biomarker_readings" in include_sections:
+        tasks_to_run.append(all_data_sources["biomarker_readings"])
+    if include_sections is None or "blood_pressure_readings" in include_sections:
+        tasks_to_run.append(all_data_sources["blood_pressure_readings"])
+
+    results = await asyncio.gather(*tasks_to_run)
+
+    # Assign results based on the order of tasks_to_run
+    # This mapping assumes the order in all_data_sources is maintained, which asyncio.gather guarantees for results list.
+    # A more robust way would be to map results back to their original task names.
+    # For simplicity, we use the order here.
+
+    # Initialize variables
+    user_profile: UserProfile | None = None
+    health_profile: HealthProfileRecord | None = None
+    meals: list[MealRecognitionRecord] = []
+    reminders: list[ReminderEvent] = []
+    adherence_events: list[MedicationAdherenceEvent] = []
+    symptoms: list[SymptomCheckIn] = []
+    readings: list[BiomarkerReading] = []
+    bp_readings: list[BloodPressureReading] = []
+
+    idx = 0
+    if include_sections is None or "user_profile" in include_sections:
+        user_profile = cast(UserProfile, results[idx])
+        idx += 1
+    if include_sections is None or "health_profile" in include_sections:
+        health_profile = cast(HealthProfileRecord | None, results[idx])
+        idx += 1
+    if include_sections is None or "meals" in include_sections:
+        meals = cast(list[MealRecognitionRecord], results[idx])
+        idx += 1
+    if include_sections is None or "reminders" in include_sections:
+        reminders = cast(list[ReminderEvent], results[idx])
+        idx += 1
+    if include_sections is None or "adherence_events" in include_sections:
+        adherence_events = cast(list[MedicationAdherenceEvent], results[idx])
+        idx += 1
+    if include_sections is None or "symptoms" in include_sections:
+        symptoms = cast(list[SymptomCheckIn], results[idx])
+        idx += 1
+    if include_sections is None or "biomarker_readings" in include_sections:
+        readings = cast(list[BiomarkerReading], results[idx])
+        idx += 1
+    if include_sections is None or "blood_pressure_readings" in include_sections:
+        bp_readings = cast(list[BloodPressureReading], results[idx])
+        idx += 1
+
+    # Check if emotion signal is requested or always fetched
+    emotion_signal = await _emotion_signal(context, emotion_text=emotion_text)
+
+    # 2. Derive clinical snapshot (synchronous/fast once readings are here)
+    clinical_snapshot = None
+    if include_sections is None or "clinical_snapshot" in include_sections: # Assuming clinical_snapshot is a derived piece
+        clinical_snapshot = _clinical_snapshot(context, user_id=subject_user_id, readings=readings)
+
+    if user_profile is None:
+        # Fallback if user_profile was not requested but needed for the dataclass
+        user_profile = build_user_profile_from_session(subject_session, context.stores.profiles)
+
     return CompanionStateInputs(
         user_profile=user_profile,
         health_profile=health_profile,
@@ -171,27 +258,36 @@ def build_workflow_response(
     )
 
 
-def get_companion_today(
-    *, context: AppContext, session: dict[str, object]
+async def get_companion_today(
+    *,
+    context: AppContext,
+    session: dict[str, object],
+    include: str | None = None, # Added include parameter
 ) -> CompanionTodayResponse:
     """Build the current companion summary for the active session."""
     subject_user_id = _subject_user_id(session)
     cached = context.cache_store.get_json(_companion_today_cache_key(subject_user_id))
     if cached is not None:
         return CompanionTodayResponse.model_validate(cached)
-    inputs = load_companion_inputs(context=context, session=session)
+    inputs = await load_companion_inputs(context=context, session=session, include=include) # Pass include to load_companion_inputs
     snapshot, engagement, _, _, impact, result = build_companion_today_bundle(
         inputs=inputs,
         evidence_retriever=_EVIDENCE_RETRIEVER,
+        eventing_store=context.stores.eventing,
     )
-    response = CompanionTodayResponse(
-        snapshot=CompanionSnapshotResponse.model_validate(snapshot.model_dump(mode="json")),
-        engagement=CompanionEngagementResponse.model_validate(engagement.model_dump(mode="json")),
-        care_plan=CompanionCarePlanResponse.model_validate(
-            result.care_plan.model_dump(mode="json")
-        ),
-        impact=ImpactSummaryPayloadResponse.model_validate(impact.model_dump(mode="json")),
-    )
+
+    response_components = {}
+    if not include or "snapshot" in include:
+        response_components["snapshot"] = CompanionSnapshotResponse.model_validate(snapshot.model_dump(mode="json"))
+    if not include or "engagement" in include:
+        response_components["engagement"] = CompanionEngagementResponse.model_validate(engagement.model_dump(mode="json"))
+    if not include or "care_plan" in include:
+        response_components["care_plan"] = CompanionCarePlanResponse.model_validate(result.care_plan.model_dump(mode="json"))
+    if not include or "impact" in include:
+        response_components["impact"] = ImpactSummaryPayloadResponse.model_validate(impact.model_dump(mode="json"))
+
+    response = CompanionTodayResponse(**response_components)
+
     context.cache_store.set_json(
         _companion_today_cache_key(subject_user_id),
         response.model_dump(mode="json"),
@@ -200,7 +296,7 @@ def get_companion_today(
     return response
 
 
-def get_blood_pressure_summary(
+async def get_blood_pressure_summary(
     *, context: AppContext, session: dict[str, object]
 ) -> BloodPressureSummaryEnvelopeResponse:
     subject_user_id = _subject_user_id(session)
@@ -222,7 +318,7 @@ def get_blood_pressure_summary(
     )
 
 
-def get_blood_pressure_chart(
+async def get_blood_pressure_chart(
     *,
     context: AppContext,
     session: dict[str, object],
@@ -250,19 +346,21 @@ def get_blood_pressure_chart(
     )
 
 
-def handle_companion_interaction(
+async def handle_companion_interaction(
     *,
     context: AppContext,
     session: dict[str, object],
     payload: CompanionInteractionRequest,
     request_id: str,
     correlation_id: str,
+    include: str | None = None, # Added include parameter
 ) -> CompanionInteractionResponse:
     """Run a single companion interaction and return the assembled care outputs."""
-    inputs = load_companion_inputs(
+    inputs = await load_companion_inputs(
         context=context,
         session=session,
         emotion_text=payload.emotion_text,
+        include=include, # Pass include to load_companion_inputs
     )
     context.event_timeline.append(
         event_type="workflow_started",
@@ -286,6 +384,7 @@ def handle_companion_interaction(
         interaction=interaction,
         inputs=inputs,
         evidence_retriever=_EVIDENCE_RETRIEVER,
+        eventing_store=context.stores.eventing,
     )
     context.event_timeline.append(
         event_type="workflow_completed",
@@ -298,47 +397,65 @@ def handle_companion_interaction(
             "recommended_mode": result.engagement.recommended_mode,
         },
     )
-    return CompanionInteractionResponse(
-        interaction=CompanionInteractionInfoResponse.model_validate(
+
+    # Conditionally build response components
+    response_components = {}
+    if not include or "interaction" in include:
+        response_components["interaction"] = CompanionInteractionInfoResponse.model_validate(
             interaction.model_dump(mode="json")
-        ),
-        snapshot=CompanionSnapshotResponse.model_validate(result.snapshot.model_dump(mode="json")),
-        engagement=CompanionEngagementResponse.model_validate(
+        )
+    if not include or "snapshot" in include:
+        response_components["snapshot"] = CompanionSnapshotResponse.model_validate(
+            result.snapshot.model_dump(mode="json")
+        )
+    if not include or "engagement" in include:
+        response_components["engagement"] = CompanionEngagementResponse.model_validate(
             result.engagement.model_dump(mode="json")
-        ),
-        care_plan=CompanionCarePlanResponse.model_validate(
+        )
+    if not include or "care_plan" in include:
+        response_components["care_plan"] = CompanionCarePlanResponse.model_validate(
             result.care_plan.model_dump(mode="json")
-        ),
-        clinician_digest_preview=ClinicianDigestResponse.model_validate(
+        )
+    if not include or "clinician_digest_preview" in include:
+        response_components["clinician_digest_preview"] = ClinicianDigestResponse.model_validate(
             result.clinician_digest_preview.model_dump(mode="json")
-        ),
-        impact=ImpactSummaryPayloadResponse.model_validate(result.impact.model_dump(mode="json")),
-        workflow=build_workflow_response(
+        )
+    if not include or "impact" in include:
+        response_components["impact"] = ImpactSummaryPayloadResponse.model_validate(
+            result.impact.model_dump(mode="json")
+        )
+    if not include or "workflow" in include:
+        response_components["workflow"] = build_workflow_response(
             context=context,
             correlation_id=correlation_id,
             request_id=request_id,
-        ),
-    )
+        )
+
+    return CompanionInteractionResponse(**response_components)
 
 
-def get_clinician_digest(
+async def get_clinician_digest(
     *, context: AppContext, session: dict[str, object]
 ) -> ClinicianDigestEnvelopeResponse:
     """Build the clinician-digest projection for the active session."""
-    inputs = load_companion_inputs(context=context, session=session)
+    inputs = await load_companion_inputs(context=context, session=session)
     _, _, _, digest, _, _ = build_companion_today_bundle(
-        inputs=inputs, evidence_retriever=_EVIDENCE_RETRIEVER
+        inputs=inputs,
+        evidence_retriever=_EVIDENCE_RETRIEVER,
+        eventing_store=context.stores.eventing,
     )
     return ClinicianDigestEnvelopeResponse(
         digest=ClinicianDigestResponse.model_validate(digest.model_dump(mode="json"))
     )
 
 
-def get_impact_summary(*, context: AppContext, session: dict[str, object]) -> ImpactSummaryResponse:
+async def get_impact_summary(*, context: AppContext, session: dict[str, object]) -> ImpactSummaryResponse:
     """Build the impact-summary projection for the active session."""
-    inputs = load_companion_inputs(context=context, session=session)
+    inputs = await load_companion_inputs(context=context, session=session)
     _, _, _, _, impact, _ = build_companion_today_bundle(
-        inputs=inputs, evidence_retriever=_EVIDENCE_RETRIEVER
+        inputs=inputs,
+        evidence_retriever=_EVIDENCE_RETRIEVER,
+        eventing_store=context.stores.eventing,
     )
     return ImpactSummaryResponse(
         summary=ImpactSummaryPayloadResponse.model_validate(impact.model_dump(mode="json"))

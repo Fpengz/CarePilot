@@ -6,6 +6,7 @@ import typer
 from scripts.cli.commands.dev import dev_app
 from scripts.cli.commands.infra import infra_app
 from scripts.cli.commands.ingest import ingest_app
+from scripts.cli.commands.projections import projections_app
 from scripts.cli.commands.readiness import readiness_app
 from scripts.cli.commands.reminder import reminder_app
 from scripts.cli.commands.report import report_app
@@ -27,6 +28,7 @@ app.add_typer(ingest_app, name="ingest")
 app.add_typer(seed_app, name="seed")
 app.add_typer(reminder_app, name="reminders")
 app.add_typer(readiness_app, name="readiness")
+app.add_typer(projections_app, name="projections")
 
 web_app.add_typer(web_app_impl, name="env")
 
@@ -46,6 +48,7 @@ def help_command() -> None:
                 "  uv run python scripts/cli.py ingest usda <path> [--reset]",
                 "  uv run python scripts/cli.py ingest off <path> [--reset]",
                 "  uv run python scripts/cli.py report nightly [date]",
+                "  uv run python scripts/cli.py projections replay [--user-id USER] [--since ISO]",
                 "  uv run python scripts/cli.py web env -- <command...>",
                 "  uv run python scripts/cli.py help",
             ]

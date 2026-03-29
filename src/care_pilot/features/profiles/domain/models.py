@@ -7,6 +7,7 @@ the profiles feature.
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -49,6 +50,16 @@ class MealScheduleWindow(BaseModel):
     start_time: str  # HH:MM
     end_time: str  # HH:MM
     timezone: str = Field(default_factory=lambda: get_settings().app.timezone)
+    day_of_week: int = 0  # 0=Daily, 1-7=Mon-Sun
+    notes: str | None = None
+
+
+class NutritionGoal(BaseModel):
+    goal_type: str
+    target_value: float
+    unit: str
+    start_date: date | None = None
+    end_date: date | None = None
 
 
 class MedicalCondition(BaseModel):
@@ -71,7 +82,7 @@ class UserProfile(BaseModel):
     profile_mode: ProfileMode = "self"
     locale: str = "en-SG"
     allergies: list[str] = Field(default_factory=list)
-    nutrition_goals: list[str] = Field(default_factory=list)
+    nutrition_goals: list[NutritionGoal] = Field(default_factory=list)
     preferred_cuisines: list[str] = Field(default_factory=list)
     disliked_ingredients: list[str] = Field(default_factory=list)
     budget_tier: Literal["budget", "moderate", "flexible"] = "moderate"

@@ -10,9 +10,7 @@ from typing import Annotated, Any, cast
 from fastapi import Cookie, Depends, HTTPException, Request
 
 from care_pilot.features.reminders.domain.models import MedicationRegimen
-from care_pilot.platform.observability.tooling.domain.authorization import (
-    has_scopes,
-)
+from care_pilot.platform.observability.tooling.domain.authorization import has_scopes
 
 from .deps import AppContext, AuthContext, auth_context
 from .policy import authorize_action, authorize_resource_action

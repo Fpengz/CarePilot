@@ -5,11 +5,7 @@ from typing import Any, cast
 
 import pytest
 
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, UserProfile
 from care_pilot.features.recommendations.ports import BuildUserProfileFn
 from care_pilot.features.recommendations.recommendation_service import (
     MissingActiveHouseholdError,
@@ -49,6 +45,9 @@ class FakeRepository:
 
 @dataclass
 class FakeClinicalMemory:
+    def get(self, user_id: str) -> Any | None:
+        return None
+
     def put(self, user_id: str, snapshot: Any) -> None:
         return None
 

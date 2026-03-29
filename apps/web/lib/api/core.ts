@@ -61,14 +61,14 @@ import type {
   ReminderDefinitionEnvelopeResponse,
   ReminderDefinitionListApiResponse,
   ReminderDefinitionPatchRequest,
-  ReminderNotificationEndpointListResponse,
-  ReminderNotificationLogListResponse,
-  ReminderNotificationPreferenceListResponse,
+  MessageEndpointListResponse,
+  MessageLogListResponse,
+  MessagePreferenceListResponse,
   ReminderGenerateApiResponse,
   ReminderListApiResponse,
   ReminderOccurrenceActionApiResponse,
   ReminderOccurrenceListApiResponse,
-  ScheduledReminderNotificationListResponse,
+  ScheduledMessageListResponse,
   ReportParseApiResponse,
   SessionUser,
   WorkflowExecutionResult,
@@ -797,8 +797,8 @@ export async function actOnReminderOccurrence(payload: {
   });
 }
 
-export async function listReminderNotificationPreferences(): Promise<ReminderNotificationPreferenceListResponse> {
-  return request<ReminderNotificationPreferenceListResponse>("/api/v1/reminder-notification-preferences");
+export async function listMessagePreferences(): Promise<MessagePreferenceListResponse> {
+  return request<MessagePreferenceListResponse>("/api/v1/message-preferences");
 }
 
 export async function getMobilityReminderSettings(): Promise<MobilityReminderSettingsEnvelopeResponse> {
@@ -817,36 +817,36 @@ export async function updateMobilityReminderSettings(payload: {
   });
 }
 
-export async function updateReminderNotificationPreferences(payload: {
+export async function updateMessagePreferences(payload: {
   rules: Array<{ channel: string; offset_minutes: number; enabled: boolean }>;
-}): Promise<ReminderNotificationPreferenceListResponse> {
-  return request<ReminderNotificationPreferenceListResponse>("/api/v1/reminder-notification-preferences/default", {
+}): Promise<MessagePreferenceListResponse> {
+  return request<MessagePreferenceListResponse>("/api/v1/message-preferences/default", {
     method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
-export async function listReminderNotificationEndpoints(): Promise<ReminderNotificationEndpointListResponse> {
-  return request<ReminderNotificationEndpointListResponse>("/api/v1/reminder-notification-endpoints");
+export async function listMessageEndpoints(): Promise<MessageEndpointListResponse> {
+  return request<MessageEndpointListResponse>("/api/v1/message-endpoints");
 }
 
-export async function updateReminderNotificationEndpoints(payload: {
+export async function updateMessageEndpoints(payload: {
   endpoints: Array<{ channel: string; destination: string; verified: boolean }>;
-}): Promise<ReminderNotificationEndpointListResponse> {
-  return request<ReminderNotificationEndpointListResponse>("/api/v1/reminder-notification-endpoints", {
+}): Promise<MessageEndpointListResponse> {
+  return request<MessageEndpointListResponse>("/api/v1/message-endpoints", {
     method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
-export async function listReminderNotificationSchedules(
+export async function listMessageSchedules(
   reminderId: string,
-): Promise<ScheduledReminderNotificationListResponse> {
-  return request<ScheduledReminderNotificationListResponse>(`/api/v1/reminders/${reminderId}/notification-schedules`);
+): Promise<ScheduledMessageListResponse> {
+  return request<ScheduledMessageListResponse>(`/api/v1/reminders/${reminderId}/message-schedules`);
 }
 
-export async function listReminderNotificationLogs(reminderId: string): Promise<ReminderNotificationLogListResponse> {
-  return request<ReminderNotificationLogListResponse>(`/api/v1/reminders/${reminderId}/notification-logs`);
+export async function listMessageLogs(reminderId: string): Promise<MessageLogListResponse> {
+  return request<MessageLogListResponse>(`/api/v1/reminders/${reminderId}/message-logs`);
 }
 
 export async function listMedicationRegimens(): Promise<MedicationRegimenListApiResponse> {

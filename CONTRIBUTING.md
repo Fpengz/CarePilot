@@ -105,7 +105,7 @@ Use short-lived feature branches from `main`.
 Recommended naming:
 - `feat/<topic>`
 - `fix/<topic>`
-- `docs/<topic>`
+- `docs/<category>/<doc>`
 - `refactor/<topic>`
 - `agent/<task-name>` for multi-agent execution branches
 
@@ -183,7 +183,7 @@ Nightly or batch contributor work should still follow the same rule: one coheren
 ### Planning and backlog hygiene
 - `SYSTEM_ROADMAP.md` is the canonical roadmap and status document.
 - Do not create new root planning files for temporary execution packets or one-off backlogs.
-- If a plan is still active and generally useful, fold it into `SYSTEM_ROADMAP.md`, `ARCHITECTURE.md`, or `docs/developer-guide.md`.
+- If a plan is still active and generally useful, fold it into `SYSTEM_ROADMAP.md`, `ARCHITECTURE.md`, or `docs/references/developer-guide.md`.
 - If a plan is task-local and temporary, keep it in the PR or issue context instead of adding another repository-level markdown file.
 
 ## Coding Standards
@@ -473,16 +473,16 @@ Primary index:
 - `docs/README.md`
 
 Core docs:
-- `docs/developer-guide.md`
-- `docs/user-manual.md`
-- `docs/operations-runbook.md`
+- `docs/references/developer-guide.md`
+- `docs/product-specs/user-manual.md`
+- `docs/references/operations-runbook.md`
 
 Canonical references that must stay consistent:
 - `README.md`
 - `ARCHITECTURE.md`
 - `SYSTEM_ROADMAP.md`
 - `AGENTS.md`
-- `docs/config-reference.md`
+- `docs/references/config-reference.md`
 
 Minimum rule:
 - if a PR changes architecture, runtime commands, APIs, workflows, or user-facing flows, update relevant docs in the same PR.

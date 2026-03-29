@@ -9,18 +9,14 @@ import asyncio
 import json
 import re
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol, cast
 
 from pydantic import BaseModel, ValidationError
 from pydantic_ai import Agent
-from pydantic_ai.messages import (
-    BinaryImage,
-    PartDeltaEvent,
-    PartEndEvent,
-    TextPart,
-    TextPartDelta,
-)
+from pydantic_ai.messages import BinaryImage, PartDeltaEvent, PartEndEvent, TextPart, TextPartDelta
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from care_pilot.agent.runtime.inference_types import (
     InferenceHealth,
@@ -40,7 +36,7 @@ logger = get_logger(__name__)
 QWEN_PROVIDER = getattr(ModelProvider, "QWEN", ModelProvider.OPENAI)
 
 
-def _collect_text_from_events(events: list[object]) -> str:
+def _collect_text_from_events(events: Sequence[object]) -> str:
     chunks: list[str] = []
     for event in events:
         if isinstance(event, PartDeltaEvent) and isinstance(event.delta, TextPartDelta):
@@ -171,6 +167,12 @@ class _BaseStrategy:
             return settings.llm.inference.local_output_validation_retries
         return 0
 
+    @retry(
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        stop=stop_after_attempt(3),
+        retry=retry_if_exception_type(Exception),
+        reraise=True,
+    )
     async def run(self, request: InferenceRequest) -> InferenceResponse:
         started = time.perf_counter()
         output_retries = self._output_retry_budget()

@@ -9,10 +9,7 @@ from fastapi import APIRouter, Depends, Request
 
 from ..deps import workflow_deps
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
-    WorkflowListResponse,
-    WorkflowResponse,
-)
+from ..schemas import WorkflowListResponse, WorkflowResponse
 from ..services.workflows import get_workflow, list_workflows
 
 router = APIRouter(tags=["workflows"])

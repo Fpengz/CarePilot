@@ -17,9 +17,15 @@ class SafetyDecision:
 
 _RED_FLAG_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("chest_pain", ("chest pain", "pressure in chest")),
-    ("trouble_breathing", ("trouble breathing", "shortness of breath", "cannot breathe")),
-    ("stroke_signs", ("face droop", "slurred speech", "arm weakness", "stroke")),
-    ("suicidal_ideation", ("suicidal", "kill myself", "self harm")),
+    (
+        "trouble_breathing",
+        ("trouble breathing", "shortness of breath", "cannot breathe", "can't breathe"),
+    ),
+    (
+        "stroke_signs",
+        ("face droop", "slurred speech", "arm weakness", "stroke", "face is drooping"),
+    ),
+    ("suicidal_ideation", ("suicidal", "kill myself", "self harm", "killing myself")),
     ("severe_allergic_reaction", ("anaphylaxis", "throat swelling", "severe allergic")),
     ("loss_of_consciousness", ("passed out", "loss of consciousness", "unconscious")),
     ("severe_bleeding", ("severe bleeding", "bleeding heavily", "cannot stop bleeding")),

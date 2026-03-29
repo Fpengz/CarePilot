@@ -14,27 +14,17 @@ from uuid import uuid4
 from pydantic import BaseModel
 
 from care_pilot.config.app import get_settings
-from care_pilot.core.contracts.notifications import AlertRepositoryProtocol
+from care_pilot.core.contracts.notifications import ReminderSchedulerRepository
 from care_pilot.features.reminders.domain import ReminderEvent
 from care_pilot.features.safety.domain.alerts import (
     AlertDeliveryResult,
-    AlertMessage,
     AlertSeverity,
+    OutboundMessage,
 )
-from care_pilot.platform.messaging.alert_outbox import (
-    AlertPublisher,
-    OutboxWorker,
-)
-from care_pilot.platform.messaging.channels import (
-    TelegramChannel,
-    WeChatChannel,
-    WhatsAppChannel,
-)
+from care_pilot.platform.messaging.alert_outbox import AlertPublisher, OutboxWorker
+from care_pilot.platform.messaging.channels import TelegramChannel, WeChatChannel, WhatsAppChannel
 from care_pilot.platform.messaging.channels.base import ChannelResult
 from care_pilot.platform.observability import get_logger
-from care_pilot.platform.persistence.runtime_bootstrap import (
-    build_alert_repository,
-)
 
 logger = get_logger(__name__)
 PENDING_ALERT_STATES = {"pending", "processing"}
@@ -128,7 +118,8 @@ def dispatch_reminder(
     channels: list[str],
     retries: int = 2,
     force_push_fail: bool = False,
-    repository: AlertRepositoryProtocol | None = None,
+    repository: ReminderSchedulerRepository
+ | None = None,
 ) -> list[DeliveryResult]:
     """Dispatch a reminder to one or more channels, using the outbox when available."""
     settings = get_settings()
@@ -186,7 +177,23 @@ def dispatch_reminder(
 
         extra_channel = _channel_from_name(channel)
         if extra_channel is not None:
-            channel_result = extra_channel.send(reminder_event)
+            message = OutboundMessage(
+                alert_id=reminder_event.id,
+                type="reminder_notification",
+                severity="info",
+                payload={
+                    "reminder_id": reminder_event.id,
+                    "user_id": reminder_event.user_id,
+                    "title": reminder_event.title,
+                    "body": reminder_event.body or "",
+                    "medication_name": reminder_event.medication_name,
+                    "dosage_text": reminder_event.dosage_text,
+                    "scheduled_at": reminder_event.scheduled_at.isoformat(),
+                },
+                destinations=[channel],
+                correlation_id=reminder_event.id,
+            )
+            channel_result = extra_channel.send(message)
             logger.info(
                 "dispatch_reminder_channel_result event_id=%s channel=%s success=%s destination=%s",
                 reminder_event.id,
@@ -223,7 +230,8 @@ def dispatch_reminder(
 def dispatch_reminder_async(
     reminder_event: ReminderEvent,
     channels: list[str],
-    repository: AlertRepositoryProtocol | None = None,
+    repository: ReminderSchedulerRepository
+ | None = None,
     retries: int | None = None,
     force_push_fail: bool = False,
 ) -> list[DeliveryResult]:
@@ -243,7 +251,7 @@ def dispatch_reminder_async(
         class _ForcedFailPushSink:
             name = "push"
 
-            def send(self, message: AlertMessage) -> AlertDeliveryResult:
+            def send(self, message: OutboundMessage) -> AlertDeliveryResult:
                 return AlertDeliveryResult(
                     alert_id=message.alert_id,
                     sink="push",
@@ -255,7 +263,7 @@ def dispatch_reminder_async(
                 )
 
         worker._sinks["push"] = _ForcedFailPushSink()
-    message = AlertMessage(
+    message = OutboundMessage(
         alert_id=reminder_event.id,
         type="medication_reminder",
         severity="warning",
@@ -301,12 +309,13 @@ def trigger_alert(
     *,
     alert_type: str,
     severity: AlertSeverity,
-    payload: dict[str, str],
+    payload: dict[str, object],
     destinations: list[str],
-    repository: AlertRepositoryProtocol,
-) -> tuple[AlertMessage, list[DeliveryResult]]:
+    repository: ReminderSchedulerRepository
+,
+) -> tuple[OutboundMessage, list[DeliveryResult]]:
     """Enqueue an alert and drain delivery synchronously; returns the message and results."""
-    alert = AlertMessage(
+    alert = OutboundMessage(
         alert_id=str(uuid4()),
         type=alert_type,
         severity=severity,
@@ -345,7 +354,8 @@ def trigger_alert(
 
 def _drain_alert_for_sync_delivery(
     worker: OutboxWorker,
-    repository: AlertRepositoryProtocol,
+    repository: ReminderSchedulerRepository
+,
     alert_id: str,
     *,
     fast_forward_scheduled_retries: bool,
@@ -382,8 +392,12 @@ def _drain_alert_for_sync_delivery(
     return list(by_sink.values())
 
 
-def _default_alert_repository() -> AlertRepositoryProtocol:
-    return build_alert_repository(get_settings())
+def _default_alert_repository() -> ReminderSchedulerRepository:
+    from care_pilot.platform.persistence.runtime_bootstrap import (
+        build_reminder_scheduler_repository,
+    )
+
+    return build_reminder_scheduler_repository(get_settings())
 
 
 __all__ = [

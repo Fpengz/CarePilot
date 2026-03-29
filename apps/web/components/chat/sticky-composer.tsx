@@ -61,7 +61,7 @@ export function StickyComposer({
         ) : null}
 
         <textarea
-          ref={inputRef}
+          ref={inputRef as any}
           value={input}
           onChange={(event) => onInputChange(event.target.value)}
           onKeyDown={onKeyDown}

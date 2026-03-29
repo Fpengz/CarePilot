@@ -8,10 +8,7 @@ import re
 import numpy as np
 import soundfile as sf
 
-from care_pilot.agent.emotion.schemas import (
-    EmotionLabel,
-    SpeechEmotionBranchResult,
-)
+from care_pilot.agent.emotion.schemas import EmotionLabel, SpeechEmotionBranchResult
 from care_pilot.config.app import get_settings
 from care_pilot.features.companion.emotion.ports import SpeechEmotionPort
 from care_pilot.platform.observability import get_logger

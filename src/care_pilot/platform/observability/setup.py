@@ -13,6 +13,11 @@ from pydantic import ValidationError
 
 import logfire
 from care_pilot.config.app import get_settings
+from care_pilot.platform.observability.context import (
+    get_current_correlation_id,
+    get_current_request_id,
+    get_current_user_id,
+)
 
 logfire_api = cast(Any, logfire)
 _CONFIGURED = False
@@ -20,10 +25,20 @@ _HANDLER_MARKER = "_care_pilot_logfire_handler"
 _ROOT_MARKER = "_care_pilot_logging_configured"
 
 
+class RequestContextFilter(logging.Filter):
+    """Inject request context into log records."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.request_id = get_current_request_id() or "-"
+        record.correlation_id = get_current_correlation_id() or "-"
+        record.user_id = get_current_user_id() or "-"
+        return True
+
+
 def _resolve_log_level_name() -> str:
     try:
         return get_settings().observability.log_level.upper()
-    except ValidationError:
+    except (ValidationError, RuntimeError):
         return os.getenv("CARE_PILOT_LOG_LEVEL", "INFO").upper()
 
 
@@ -76,10 +91,11 @@ def setup_logging(project_name: str = "care-pilot") -> logging.Logger:
         handler.setLevel(level)
         handler.setFormatter(
             logging.Formatter(
-                "%(asctime)s %(levelname)s [%(name)s] %(message)s",
+                "%(asctime)s %(levelname)s [%(name)s] [req=%(request_id)s corr=%(correlation_id)s] %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
         )
+        handler.addFilter(RequestContextFilter())
         root.addHandler(handler)
     _dedupe_logfire_handlers()
     logger = logging.getLogger(project_name)

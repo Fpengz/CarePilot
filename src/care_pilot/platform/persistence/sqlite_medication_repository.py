@@ -5,16 +5,14 @@ This module implements SQLite storage for medication regimens and adherence even
 """
 
 import json
-import sqlite3
 from datetime import date, datetime
 from typing import Any, cast
 
-from care_pilot.features.companion.core.health.models import (
-    MedicationAdherenceEvent,
-)
+from care_pilot.features.companion.core.health.models import MedicationAdherenceEvent
 from care_pilot.features.profiles.domain.models import MealSlot
 from care_pilot.features.reminders.domain.models import MedicationRegimen
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
 
@@ -24,7 +22,7 @@ class SQLiteMedicationRepository:
         self.db_path = db_path
 
     def save_medication_regimen(self, regimen: MedicationRegimen) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO medication_regimens
@@ -81,7 +79,7 @@ class SQLiteMedicationRepository:
         if active_only:
             query += " AND active = 1"
         query += " ORDER BY medication_name, id"
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             MedicationRegimen(
@@ -115,7 +113,7 @@ class SQLiteMedicationRepository:
         ]
 
     def get_medication_regimen(self, *, user_id: str, regimen_id: str) -> MedicationRegimen | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT id, user_id, medication_name, canonical_name, dosage_text, timing_type, frequency_type,
@@ -155,7 +153,7 @@ class SQLiteMedicationRepository:
         )
 
     def delete_medication_regimen(self, *, user_id: str, regimen_id: str) -> bool:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             cursor = conn.execute(
                 "DELETE FROM medication_regimens WHERE user_id = ? AND id = ?",
                 (user_id, regimen_id),
@@ -167,7 +165,7 @@ class SQLiteMedicationRepository:
         self, event: MedicationAdherenceEvent
     ) -> MedicationAdherenceEvent:
         payload = event.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO medication_adherence_events
@@ -209,7 +207,7 @@ class SQLiteMedicationRepository:
             query += " AND scheduled_at <= ?"
             params.append(end_at.isoformat())
         query += " ORDER BY scheduled_at"
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [
             MedicationAdherenceEvent(

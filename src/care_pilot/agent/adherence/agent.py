@@ -12,17 +12,17 @@ from typing import Any, Literal, cast
 from pydantic import BaseModel
 from pydantic_ai import Agent
 
-from care_pilot.agent.core.contracts import (
-    AgentRecommendation,
-    AgentRequest,
-    AgentResponse,
-)
+from care_pilot.agent.core.contracts import AgentRecommendation, AgentRequest, AgentResponse
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
+from care_pilot.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 
 class AdherenceAnalysisOutput(BaseModel):
     """The structured output of the AdherenceAgent."""
+
     adherence_status: Literal["excellent", "good", "concerning", "critical"]
     missed_dose_pattern: str | None = None
     suggested_nudge_strategy: str
@@ -60,6 +60,7 @@ def get_adherence_agent() -> Agent[None, AdherenceAnalysisOutput]:
 
 async def run_adherence_agent(request: AgentRequest) -> AgentResponse:
     """Execute the adherence specialist agent."""
+    logger.info("run_adherence_agent_start correlation_id=%s", request.correlation_id)
     agent = get_adherence_agent()
 
     context_json = request.context.get("snapshot") or "{}"
@@ -72,7 +73,9 @@ async def run_adherence_agent(request: AgentRequest) -> AgentResponse:
         AgentRecommendation(
             title="Adherence Strategy",
             summary=analysis.suggested_nudge_strategy,
-            priority="high" if analysis.adherence_status in ("concerning", "critical") else "medium"
+            priority="high"
+            if analysis.adherence_status in ("concerning", "critical")
+            else "medium",
         )
     ]
 
@@ -82,5 +85,8 @@ async def run_adherence_agent(request: AgentRequest) -> AgentResponse:
         summary=f"Status is {analysis.adherence_status}. {analysis.rationale}",
         structured_output=analysis.model_dump(),
         recommendations=recommendations,
-        reasoning_trace=["Analyzed adherence events from snapshot", "Evaluated behavioral triggers"]
+        reasoning_trace=[
+            "Analyzed adherence events from snapshot",
+            "Evaluated behavioral triggers",
+        ],
     )

@@ -4,7 +4,10 @@ API orchestration for patient-facing medical cards.
 
 from __future__ import annotations
 
-from apps.api.carepilot_api.deps import AppContext
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 from care_pilot.config.app import get_settings
 from care_pilot.core.contracts.api import PatientMedicalCardResponse
 from care_pilot.features.companion.chat.search_adapter import SearchAgent
@@ -38,7 +41,7 @@ async def generate_patient_medical_card_for_session(
     cached = context.cache_store.get_json(_cache_key(user_id))
     if cached is not None:
         return PatientMedicalCardResponse.model_validate(cached)
-    inputs = load_companion_inputs(context=context, session=session)
+    inputs = await load_companion_inputs(context=context, session=session)
     interaction = CompanionInteraction(
         interaction_type="check_in",
         message="Generate patient blood pressure medical card.",

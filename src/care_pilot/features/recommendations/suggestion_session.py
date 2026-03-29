@@ -35,9 +35,7 @@ from care_pilot.features.recommendations.recommendation_service import (
     get_suggestion_for_session,
     list_suggestions_for_session,
 )
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
-)
+from care_pilot.platform.auth.session_context import build_user_profile_from_session
 
 
 def _to_suggestion_response(

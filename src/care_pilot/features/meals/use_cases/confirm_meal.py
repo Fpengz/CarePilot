@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+from contextvars import ContextVar
 from datetime import UTC, datetime
 
-from care_pilot.agent.dietary import DietaryAgentInput, analyze_dietary_request
+from care_pilot.agent.adapters.domain_agents import DietaryAgentAdapter
+from care_pilot.agent.core.base import AgentContext
+from care_pilot.agent.dietary import DietaryAgentInput
+from care_pilot.agent.dietary.schemas import DietaryAgentOutput
+from care_pilot.agent.runtime.context_builder import build_agent_context
 from care_pilot.features.meals.deps import MealDeps
 from care_pilot.features.meals.domain.models import MealCandidateRecord
 from care_pilot.platform.observability import get_logger
@@ -20,6 +25,29 @@ class MealCandidateInvalidStateError(ValueError):
 
 
 logger = get_logger(__name__)
+_DIETARY_AGENT_CONTEXT: ContextVar[AgentContext | None] = ContextVar(
+    "dietary_agent_context", default=None
+)
+
+
+async def analyze_dietary_request(input_data: DietaryAgentInput) -> DietaryAgentOutput:
+    """Run dietary reasoning with adapter context (for test monkeypatching)."""
+    context = _DIETARY_AGENT_CONTEXT.get()
+    if context is None:
+        context = build_agent_context(
+            user_id="unknown",
+            session_id=None,
+            request_id=None,
+            correlation_id=None,
+            policy={"allowed_sources": ["dietary_input"]},
+            selection={"reason": "fallback_dietary_request"},
+        )
+    adapter = DietaryAgentAdapter()
+    result = await adapter.run(input_data, context)
+    output = result.output
+    if output is None:
+        raise ValueError("dietary agent returned no output")
+    return output
 
 
 async def confirm_meal_candidate(
@@ -41,6 +69,17 @@ async def confirm_meal_candidate(
     if action == "skip":
         updated = record.model_copy(update={"confirmation_status": "skipped", "skipped_at": now})
         deps.stores.meals.save_meal_candidate(updated)
+        deps.event_timeline.append(
+            event_type="meal_skipped",
+            workflow_name="meal_analysis",
+            correlation_id=updated.correlation_id or updated.candidate_id,
+            request_id=updated.request_id,
+            user_id=updated.user_id,
+            payload={
+                "candidate_id": updated.candidate_id,
+                "meal_name": updated.candidate_event.meal_name,
+            },
+        )
         return updated
 
     if action != "confirm":
@@ -55,13 +94,50 @@ async def confirm_meal_candidate(
     deps.stores.meals.save_nutrition_risk_profile(record.nutrition_profile)
     updated = record.model_copy(update={"confirmation_status": "confirmed", "confirmed_at": now})
     deps.stores.meals.save_meal_candidate(updated)
+    deps.event_timeline.append(
+        event_type="meal_confirmed",
+        workflow_name="meal_analysis",
+        correlation_id=updated.correlation_id or updated.candidate_id,
+        request_id=updated.request_id,
+        user_id=updated.user_id,
+        payload={
+            "candidate_id": updated.candidate_id,
+            "meal_name": updated.candidate_event.meal_name,
+            "risk_tags": list(updated.candidate_event.risk_tags),
+        },
+    )
 
     try:
         dietary_input = _build_dietary_input(
             record=updated,
             user_name=user_name or "Friend",
         )
-        dietary_output = await analyze_dietary_request(dietary_input)
+        token = _DIETARY_AGENT_CONTEXT.set(
+            build_agent_context(
+                user_id=updated.user_id,
+                session_id=session_id,
+                request_id=updated.request_id,
+                correlation_id=updated.correlation_id or updated.candidate_id,
+                policy={"allowed_sources": ["meal_candidate", "user_profile"]},
+                selection={"reason": "dietary_confirmation"},
+            )
+        )
+        try:
+            dietary_output = await analyze_dietary_request(dietary_input)
+        finally:
+            _DIETARY_AGENT_CONTEXT.reset(token)
+        deps.event_timeline.append(
+            event_type="agent_action_proposed",
+            workflow_name="meal_analysis",
+            correlation_id=updated.correlation_id or updated.candidate_id,
+            request_id=updated.request_id,
+            user_id=updated.user_id,
+            payload={
+                "agent_name": "dietary_agent",
+                "status": "success",
+                "summary_length": len(dietary_output.analysis or ""),
+            },
+        )
         deps.event_timeline.append(
             event_type="dietary_agent_executed",
             workflow_name="meal_analysis",

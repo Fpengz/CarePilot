@@ -2,11 +2,7 @@
 
 from datetime import datetime
 
-from care_pilot.features.meals.domain import (
-    EnrichedMealEvent,
-    MealNutritionProfile,
-    MealPerception,
-)
+from care_pilot.features.meals.domain import EnrichedMealEvent, MealNutritionProfile, MealPerception
 from care_pilot.features.meals.domain.models import MealState, Nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.platform.persistence import SQLiteRepository

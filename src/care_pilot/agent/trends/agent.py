@@ -20,10 +20,14 @@ from care_pilot.agent.core.contracts import (
 )
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
+from care_pilot.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 
 class TrendInsight(BaseModel):
     """Structured insight about a health trend."""
+
     metric: str
     pattern: Literal["improving", "stable", "worsening", "insufficient_data"]
     summary: str
@@ -32,6 +36,7 @@ class TrendInsight(BaseModel):
 
 class TrendAnalysisOutput(BaseModel):
     """The output of the TrendAgent."""
+
     insights: list[TrendInsight] = Field(default_factory=list)
     risk_level: Literal["low", "medium", "high"] = "low"
     rationale: str
@@ -63,6 +68,7 @@ def get_trend_agent() -> Agent[None, TrendAnalysisOutput]:
 
 async def run_trend_agent(request: AgentRequest) -> AgentResponse:
     """Execute the trend specialist agent."""
+    logger.info("run_trend_agent_start correlation_id=%s", request.correlation_id)
     agent = get_trend_agent()
 
     # The trend agent primarily operates on the context (CaseSnapshot)
@@ -79,16 +85,14 @@ async def run_trend_agent(request: AgentRequest) -> AgentResponse:
         if insight.pattern == "worsening":
             recommendations.append(
                 AgentRecommendation(
-                    title=f"Worsening {insight.metric}",
-                    summary=insight.summary,
-                    priority="high"
+                    title=f"Worsening {insight.metric}", summary=insight.summary, priority="high"
                 )
             )
             if analysis.risk_level == "high":
                 actions.append(
                     AgentAction(
                         action_name="escalate_to_clinician",
-                        params={"metric": insight.metric, "reason": insight.summary}
+                        params={"metric": insight.metric, "reason": insight.summary},
                     )
                 )
 
@@ -99,5 +103,8 @@ async def run_trend_agent(request: AgentRequest) -> AgentResponse:
         structured_output=analysis.model_dump(),
         recommendations=recommendations,
         actions=actions,
-        reasoning_trace=["Analyzed longitudinal biomarker logs", "Correlated meals with risk flags"]
+        reasoning_trace=[
+            "Analyzed longitudinal biomarker logs",
+            "Correlated meals with risk flags",
+        ],
     )

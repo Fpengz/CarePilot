@@ -1,1 +1,1 @@
-"""Medications workflows (pydantic-graph)."""
+"""Medications workflows (LangGraph)."""

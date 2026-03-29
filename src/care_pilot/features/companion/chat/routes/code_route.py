@@ -13,15 +13,9 @@ import uuid
 
 from care_pilot.agent.chat.schemas import ChatGeneratedCode, ChatRouteLabel
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
-from care_pilot.agent.runtime.inference_types import (
-    InferenceModality,
-    InferenceRequest,
-)
+from care_pilot.agent.runtime.inference_types import InferenceModality, InferenceRequest
 from care_pilot.features.companion.chat.code_adapter import CodeAgent
-from care_pilot.features.companion.chat.routes.base import (
-    BaseRoute,
-    RouteResult,
-)
+from care_pilot.features.companion.chat.routes.base import BaseRoute, RouteResult
 from care_pilot.platform.observability import get_logger
 
 _CODE_GEN_PROMPT = (

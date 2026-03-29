@@ -3,10 +3,7 @@
 import pytest
 
 from care_pilot.agent.meal_analysis import HawkerVisionModule
-from care_pilot.agent.runtime.inference_types import (
-    InferenceResponse,
-    ProviderMetadata,
-)
+from care_pilot.agent.runtime.inference_types import InferenceResponse, ProviderMetadata
 from care_pilot.config.app import get_settings
 from care_pilot.config.llm import LocalModelProfile
 from care_pilot.features.meals.domain import MealPerception

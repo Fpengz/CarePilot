@@ -5,12 +5,8 @@ This module contains presentation helpers that normalize companion responses
 for the router output models.
 """
 
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.features.recommendations.domain.models import (
-    RecommendationOutput,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
+from care_pilot.features.recommendations.domain.models import RecommendationOutput
 from care_pilot.features.reminders.domain.models import ReminderEvent
 
 

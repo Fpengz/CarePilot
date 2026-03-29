@@ -10,15 +10,9 @@ from __future__ import annotations
 import asyncio
 import uuid
 
-from care_pilot.agent.chat.schemas import (
-    ChatClassificationOutput,
-    ChatRouteLabel,
-)
+from care_pilot.agent.chat.schemas import ChatClassificationOutput, ChatRouteLabel
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
-from care_pilot.agent.runtime.inference_types import (
-    InferenceModality,
-    InferenceRequest,
-)
+from care_pilot.agent.runtime.inference_types import InferenceModality, InferenceRequest
 from care_pilot.features.companion.chat.code_adapter import CodeAgent
 from care_pilot.features.companion.chat.routes.base import RouteResult
 from care_pilot.features.companion.chat.routes.code_route import CodeRoute

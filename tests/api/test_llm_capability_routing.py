@@ -2,13 +2,13 @@
 
 import json
 
-from apps.api.carepilot_api.deps import build_app_context, close_app_context
+import pytest
 
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
 from care_pilot.agent.runtime.llm_factory import LLMFactory
-from care_pilot.config.app import AppSettings as Settings
-from care_pilot.config.app import get_settings
+from care_pilot.config.app import AppSettings as Settings, get_settings
 from care_pilot.config.llm import LLMCapability, ModelProvider
+from care_pilot.platform.app_context import build_app_context, close_app_context
 
 
 def test_settings_parse_capability_targets_from_env_shape() -> None:
@@ -94,7 +94,8 @@ def test_unmapped_capability_falls_back_to_legacy_global_settings() -> None:
     assert "endpoint=default" in LLMFactory.describe_model_destination(model)
 
 
-def test_app_context_medication_parse_uses_base_provider(monkeypatch) -> None:
+@pytest.mark.anyio
+async def test_app_context_medication_parse_uses_base_provider(monkeypatch) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LLM_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
@@ -116,7 +117,7 @@ def test_app_context_medication_parse_uses_base_provider(monkeypatch) -> None:
     try:
         health = ctx.medication_inference_engine.health()
     finally:
-        close_app_context(ctx)
+        await close_app_context(ctx)
 
     assert health.capability == LLMCapability.MEDICATION_PARSE.value
     assert health.provider == ModelProvider.OPENAI.value

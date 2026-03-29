@@ -80,13 +80,15 @@ export const MessageItem = memo(function MessageItem({
         ) : null}
 
         {content ? (
-          <ReactMarkdown
-            className="chat-markdown mt-4"
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeSanitize]}
-          >
-            {content}
-          </ReactMarkdown>
+          <div className="chat-markdown mt-4">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeSanitize]}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
+
         ) : isStreaming ? (
           <div className="mt-4 text-sm text-[color:var(--muted-foreground)] animate-pulse">▋</div>
         ) : null}

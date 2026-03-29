@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const backendDbPrefix = process.env.PLAYWRIGHT_SQLITE_PREFIX ?? "/tmp/dietary-playwright";
+const backendDbPrefix = process.env.PLAYWRIGHT_SQLITE_PREFIX ?? `/tmp/carepilot-e2e-${Math.floor(Math.random() * 1000000)}`;
 
 export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
@@ -22,7 +22,7 @@ export default defineConfig({
         `AUTH_STORE_BACKEND=sqlite ` +
         `AUTH_SQLITE_DB_PATH=${backendDbPrefix}-auth.sqlite3 ` +
         `API_SQLITE_DB_PATH=${backendDbPrefix}-api.sqlite3 ` +
-        `API_CORS_ORIGINS=http://127.0.0.1:3000,http://localhost:3000 ` +
+        `API_CORS_ORIGINS=http://127.0.0.1:3000 ` +
         `uv run python -m uvicorn apps.api.carepilot_api.main:create_app --factory --host 127.0.0.1 --port 8001`,
       url: "http://127.0.0.1:8001/api/v1/health/live",
       reuseExistingServer: !process.env.CI,
@@ -30,7 +30,7 @@ export default defineConfig({
     },
     {
       command:
-        "NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001 pnpm start --hostname 127.0.0.1 --port 3000",
+        "pnpm start --hostname 127.0.0.1 --port 3000",
       url: "http://127.0.0.1:3000/login",
       cwd: ".",
       reuseExistingServer: !process.env.CI,

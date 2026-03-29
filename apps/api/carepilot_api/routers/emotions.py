@@ -17,28 +17,24 @@ from apps.api.carepilot_api.services.emotion_session import (
 
 from ..deps import emotion_deps
 from ..routes_shared import current_session, get_context, require_action
-from ..schemas import (
-    EmotionHealthResponse,
-    EmotionInferenceResponse,
-    EmotionTextRequest,
-)
+from ..schemas import EmotionHealthResponse, EmotionInferenceResponse, EmotionTextRequest
 
 router = APIRouter(tags=["emotions"])
 
 
 @router.get("/api/v1/emotions/health", response_model=EmotionHealthResponse)
-def emotions_health(request: Request) -> EmotionHealthResponse:
-    return get_emotion_health(deps=emotion_deps(get_context(request)))
+async def emotions_health(request: Request) -> EmotionHealthResponse:
+    return await get_emotion_health(deps=emotion_deps(get_context(request)))
 
 
 @router.post("/api/v1/emotions/text", response_model=EmotionInferenceResponse)
-def emotions_text(
+async def emotions_text(
     payload: EmotionTextRequest,
     request: Request,
     session: dict[str, object] = Depends(current_session),
 ) -> EmotionInferenceResponse:
     require_action(session, "emotions.text.infer")
-    return infer_text_for_session(
+    return await infer_text_for_session(
         deps=emotion_deps(get_context(request)),
         payload=payload,
         request_id=getattr(request.state, "request_id", None),
@@ -57,7 +53,7 @@ async def emotions_speech(
 ) -> EmotionInferenceResponse:
     require_action(session, "emotions.speech.infer")
     audio_bytes = await file.read()
-    return infer_speech_for_session(
+    return await infer_speech_for_session(
         deps=emotion_deps(get_context(request)),
         audio_bytes=audio_bytes,
         filename=file.filename,

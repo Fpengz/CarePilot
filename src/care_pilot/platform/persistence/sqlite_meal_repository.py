@@ -5,14 +5,9 @@ This module implements SQLite storage for meal records, observations,
 events, and nutrition profiles.
 """
 
-import sqlite3
 from datetime import datetime
 
-from care_pilot.features.meals.domain import (
-    EnrichedMealEvent,
-    MealNutritionProfile,
-    MealPerception,
-)
+from care_pilot.features.meals.domain import EnrichedMealEvent, MealNutritionProfile, MealPerception
 from care_pilot.features.meals.domain.models import (
     CandidateMealEvent,
     MealCandidateRecord,
@@ -23,7 +18,8 @@ from care_pilot.features.meals.domain.models import (
     ValidatedMealEvent,
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
 
@@ -33,12 +29,21 @@ class SQLiteMealRepository:
         self.db_path = db_path
 
     def save_meal_record(self, record: MealRecognitionRecord) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO meal_records
+                INSERT INTO meal_records
                 (id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    user_id = excluded.user_id,
+                    captured_at = excluded.captured_at,
+                    source = excluded.source,
+                    meal_state_json = excluded.meal_state_json,
+                    meal_perception_json = excluded.meal_perception_json,
+                    enriched_event_json = excluded.enriched_event_json,
+                    analysis_version = excluded.analysis_version,
+                    multi_item_count = excluded.multi_item_count
                 """,
                 (
                     record.id,
@@ -107,7 +112,7 @@ class SQLiteMealRepository:
         return self._build_meal_record_from_event(event, profile)
 
     def _load_legacy_meal_records(self, user_id: str) -> list[MealRecognitionRecord]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count
@@ -137,7 +142,7 @@ class SQLiteMealRepository:
         return out
 
     def _get_legacy_meal_record(self, user_id: str, meal_id: str) -> MealRecognitionRecord | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT id, user_id, captured_at, source, meal_state_json, meal_perception_json, enriched_event_json, analysis_version, multi_item_count
@@ -225,7 +230,7 @@ class SQLiteMealRepository:
         )
 
     def save_meal_observation(self, observation: RawObservationBundle) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO meal_observations
@@ -247,7 +252,7 @@ class SQLiteMealRepository:
         )
 
     def save_meal_candidate(self, record: MealCandidateRecord) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO meal_candidates
@@ -283,7 +288,7 @@ class SQLiteMealRepository:
         )
 
     def get_meal_candidate(self, user_id: str, candidate_id: str) -> MealCandidateRecord | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT candidate_id, user_id, created_at, captured_at, confirmation_status, candidate_event_json, observation_id, request_id, correlation_id, source, meal_text, confirmed_at, skipped_at, validated_event_json, nutrition_profile_json
@@ -314,7 +319,7 @@ class SQLiteMealRepository:
         )
 
     def list_meal_observations(self, user_id: str) -> list[RawObservationBundle]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT payload_json FROM meal_observations
@@ -325,7 +330,7 @@ class SQLiteMealRepository:
         return [RawObservationBundle.model_validate_json(r[0]) for r in rows]
 
     def save_validated_meal_event(self, event: ValidatedMealEvent) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO meal_validated_events
@@ -347,7 +352,7 @@ class SQLiteMealRepository:
         )
 
     def list_validated_meal_events(self, user_id: str) -> list[ValidatedMealEvent]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT payload_json FROM meal_validated_events
@@ -358,7 +363,7 @@ class SQLiteMealRepository:
         return [ValidatedMealEvent.model_validate_json(r[0]) for r in rows]
 
     def get_validated_meal_event(self, user_id: str, event_id: str) -> ValidatedMealEvent | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT payload_json FROM meal_validated_events
@@ -371,7 +376,7 @@ class SQLiteMealRepository:
         return ValidatedMealEvent.model_validate_json(row[0])
 
     def save_nutrition_risk_profile(self, profile: NutritionRiskProfile) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO meal_nutrition_risk_profiles
@@ -394,7 +399,7 @@ class SQLiteMealRepository:
         )
 
     def list_nutrition_risk_profiles(self, user_id: str) -> list[NutritionRiskProfile]:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT payload_json FROM meal_nutrition_risk_profiles
@@ -407,7 +412,7 @@ class SQLiteMealRepository:
     def get_nutrition_risk_profile(
         self, user_id: str, event_id: str
     ) -> NutritionRiskProfile | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT payload_json FROM meal_nutrition_risk_profiles

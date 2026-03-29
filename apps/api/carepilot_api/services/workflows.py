@@ -10,13 +10,8 @@ from care_pilot.core.contracts.api.workflows import (
     WorkflowTimelineEventPayloadResponse,
     WorkflowTimelineEventResponse,
 )
-from care_pilot.features.workflows.query_service import (
-    list_workflow_runs,
-    replay_workflow,
-)
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowTimelineEvent,
-)
+from care_pilot.features.workflows.query_service import list_workflow_runs, replay_workflow
+from care_pilot.platform.observability.workflows.domain.models import WorkflowTimelineEvent
 
 
 def _timeline_event_response(

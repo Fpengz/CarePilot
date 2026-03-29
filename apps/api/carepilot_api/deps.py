@@ -1,115 +1,49 @@
 """
 Wire API dependencies for runtime stores, agents, and orchestration.
 
-This module assembles shared runtime services used by API route handlers,
-including agent registry, persistence, and platform adapters.
+This module provides FastAPI-specific dependency helpers and re-exports
+the core AppContext from the platform layer.
 """
 
-import os
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, cast
 
-from care_pilot.agent.core import AgentRegistry, build_default_agent_registry
-from care_pilot.agent.emotion.agent import EmotionAgent
-from care_pilot.agent.emotion.schemas import (
-    EmotionInferenceResult,
-    EmotionRuntimeHealth,
-)
-from care_pilot.agent.recommendation.agent import RecommendationAgent
-from care_pilot.agent.runtime.chat_runtime import (
-    ChatRuntimeConfig,
-    ChatStreamRuntime,
-    build_chat_inference_engine,
-    build_chat_runtime_config,
-)
-from care_pilot.agent.runtime.inference_engine import InferenceEngine
+from fastapi import Request
+
 from care_pilot.config.app import AppSettings as Settings
-from care_pilot.config.app import get_settings
-from care_pilot.config.llm import LLMCapability
-from care_pilot.features.companion.chat.audio_adapter import AudioAgent
-from care_pilot.features.companion.chat.code_adapter import CodeAgent
-from care_pilot.features.companion.chat.health_tracker import HealthTracker
-from care_pilot.features.companion.chat.memory import MemoryManager
-from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
-from care_pilot.features.companion.chat.router import QueryRouter
-from care_pilot.features.companion.chat.search_adapter import SearchAgent
-from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
-from care_pilot.features.companion.emotion.remote_runtime import (
-    RemoteEmotionRuntime,
-)
-from care_pilot.features.companion.emotion.runtime import (
-    InProcessEmotionRuntime,
-)
-from care_pilot.features.meals.deps import MealDeps  # noqa: F401
-from care_pilot.platform.auth import (
-    InMemoryAuthStore,
-    SessionSigner,
-    SQLiteAuthStore,
-)
-from care_pilot.platform.cache import (
-    ClinicalSnapshotMemoryService,
-    EventTimelineService,
-    InMemoryCacheStore,
-    ProfileMemoryService,
-    RedisCacheStore,
-)
-from care_pilot.platform.memory import MemoryStore, build_memory_store
-from care_pilot.platform.observability.tooling.platform_registry import (
-    build_platform_tool_registry,
-)
-from care_pilot.platform.observability.tooling.registry import ToolRegistry
-from care_pilot.platform.persistence import (
-    AppStoreBackend,
-    AppStores,
-    build_app_store,
-    build_app_stores,
-)
+from care_pilot.features.meals.deps import MealDeps
+from care_pilot.platform.app_context import AppContext, AuthStore
+from care_pilot.platform.auth import SessionSigner
 from care_pilot.platform.persistence.health_metrics import ChatHealthMetricsRepository
-from care_pilot.platform.persistence.household import SQLiteHouseholdStore
-from care_pilot.platform.scheduling.coordination import (
-    InMemoryCoordinationStore,
-    RedisCoordinationStore,
-)
-
-from .services.notifications import NotificationReadStateStore
-
-AuthStore = InMemoryAuthStore | SQLiteAuthStore
-CacheStore = InMemoryCacheStore | RedisCacheStore
-CoordinationStore = InMemoryCoordinationStore | RedisCoordinationStore
-HouseholdStore = SQLiteHouseholdStore
 
 
-@dataclass
-class AppContext:
-    settings: Settings
-    app_store: AppStoreBackend
-    stores: AppStores
-    profile_memory: ProfileMemoryService
-    clinical_memory: ClinicalSnapshotMemoryService
-    event_timeline: EventTimelineService
-    tool_registry: ToolRegistry
-    agent_registry: AgentRegistry
-    auth_store: AuthStore
-    session_signer: SessionSigner
-    memory_store: MemoryStore
-    notification_reads: NotificationReadStateStore
-    cache_store: CacheStore
-    coordination_store: CoordinationStore
-    household_store: HouseholdStore
-    emotion_agent: EmotionAgent
-    recommendation_agent: RecommendationAgent
-    chat_inference_engine: InferenceEngine
-    medication_inference_engine: InferenceEngine
-    chat_router: QueryRouter
-    chat_runtime_config: ChatRuntimeConfig
-    chat_stream_runtime: ChatStreamRuntime
-    chat_audio_agent: AudioAgent
-    chat_code_agent: CodeAgent
+def get_context(request: Request) -> AppContext:
+    """Return the application context from the request state."""
+    return cast(AppContext, request.app.state.ctx)
+
+
+if TYPE_CHECKING:
+    from care_pilot.agent.emotion.agent import EmotionAgent
+    from care_pilot.agent.recommendation.agent import RecommendationAgent
+    from care_pilot.config.app import AppSettings as Settings
+    from care_pilot.features.companion.chat.audio_adapter import AudioAgent
+    from care_pilot.features.companion.chat.code_adapter import CodeAgent
+    from care_pilot.features.companion.chat.health_tracker import HealthTracker
+    from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
+    from care_pilot.platform.cache import ClinicalSnapshotMemoryService, EventTimelineService
+    from care_pilot.platform.observability.tooling.registry import ToolRegistry
+    from care_pilot.platform.persistence import AppStores
+
+
 
 
 @dataclass(frozen=True)
 class RecommendationDeps:
     stores: AppStores
     clinical_memory: ClinicalSnapshotMemoryService
+    event_timeline: EventTimelineService
 
 
 @dataclass(frozen=True)
@@ -117,6 +51,7 @@ class RecommendationAgentDeps:
     stores: AppStores
     clinical_memory: ClinicalSnapshotMemoryService
     recommendation_agent: RecommendationAgent
+    event_timeline: EventTimelineService
 
 
 @dataclass(frozen=True)
@@ -174,169 +109,6 @@ def auth_context(ctx: AppContext) -> AuthContext:
     )
 
 
-def close_app_context(ctx: AppContext) -> None:
-    for component in (
-        ctx.app_store,
-        ctx.auth_store,
-        ctx.household_store,
-        ctx.cache_store,
-        ctx.coordination_store,
-    ):
-        close = getattr(component, "close", None)
-        if callable(close):
-            close()
-
-
-def _build_app_store(settings: Settings) -> AppStoreBackend:
-    return build_app_store(settings)
-
-
-def _build_auth_store(settings: Settings) -> AuthStore:
-    if settings.auth.store_backend == "in_memory":
-        return InMemoryAuthStore(settings)
-    return SQLiteAuthStore(settings=settings, db_path=settings.auth.sqlite_db_path)
-
-
-def _build_household_store(settings: Settings) -> HouseholdStore:
-    return SQLiteHouseholdStore(settings.storage.api_sqlite_db_path)
-
-
-def _build_cache_store(settings: Settings) -> CacheStore:
-    if settings.storage.ephemeral_state_backend == "redis":
-        return RedisCacheStore(
-            redis_url=str(settings.storage.redis_url),
-            namespace=settings.storage.redis_namespace,
-        )
-    return InMemoryCacheStore()
-
-
-def _build_coordination_store(settings: Settings) -> CoordinationStore:
-    if settings.storage.ephemeral_state_backend == "redis":
-        return RedisCoordinationStore(
-            redis_url=str(settings.storage.redis_url),
-            namespace=settings.storage.redis_namespace,
-        )
-    return InMemoryCoordinationStore()
-
-
-def build_app_context() -> AppContext:
-    settings = get_settings()
-    app_store = _build_app_store(settings)
-    profile_memory = ProfileMemoryService()
-    clinical_memory = ClinicalSnapshotMemoryService()
-    event_timeline = EventTimelineService(
-        repository=app_store,
-        persistence_enabled=settings.workers.workflow_trace_persistence_enabled,
-    )
-    tool_registry = build_platform_tool_registry(app_store)
-    agent_registry = build_default_agent_registry()
-    auth_store = _build_auth_store(settings)
-    memory_store = build_memory_store(settings)
-    session_signer = SessionSigner(settings.auth.session_secret)
-    notification_reads = NotificationReadStateStore()
-    cache_store = _build_cache_store(settings)
-    coordination_store = _build_coordination_store(settings)
-    household_store = _build_household_store(settings)
-    if settings.emotion.inference_enabled or settings.emotion.speech_enabled:
-        config = EmotionRuntimeConfig.from_settings(settings)
-        if settings.emotion.runtime_mode == "remote":
-            emotion_runtime = RemoteEmotionRuntime(config, event_timeline=event_timeline)
-        else:
-            emotion_runtime = InProcessEmotionRuntime(
-                config,
-                event_timeline=event_timeline,
-            )
-    else:
-
-        class _DisabledEmotionRuntime:
-            def infer_text(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
-                del payload
-                raise RuntimeError("emotion runtime disabled")
-
-            def infer_speech(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
-                del payload
-                raise RuntimeError("emotion runtime disabled")
-
-            def health(self) -> EmotionRuntimeHealth:
-                return EmotionRuntimeHealth(
-                    status="disabled",
-                    model_cache_ready=False,
-                    source_commit=settings.emotion.source_commit,
-                    detail="emotion inference disabled",
-                )
-
-        emotion_runtime = _DisabledEmotionRuntime()
-    emotion_agent = EmotionAgent(
-        runtime=emotion_runtime,
-        inference_enabled=settings.emotion.inference_enabled,
-        speech_enabled=settings.emotion.speech_enabled,
-        request_timeout_seconds=settings.emotion.request_timeout_seconds,
-    )
-    chat_runtime_config = build_chat_runtime_config(settings)
-    chat_search_agent = SearchAgent(max_results=3)
-    chat_code_agent = CodeAgent(api_key=os.environ.get("E2B_API_KEY"))
-    chat_inference_engine = build_chat_inference_engine(
-        settings, model_id=chat_runtime_config.model_id
-    )
-    chat_reasoning_engine = build_chat_inference_engine(
-        settings, model_id=chat_runtime_config.reasoning_model_id
-    )
-    medication_inference_engine = InferenceEngine(
-        settings=settings,
-        provider=settings.llm.provider,
-        capability=LLMCapability.MEDICATION_PARSE,
-    )
-    chat_router = QueryRouter(
-        search_agent=chat_search_agent,
-        inference_engine=chat_inference_engine,
-        code_agent=chat_code_agent,
-        reasoning_engine=chat_reasoning_engine,
-    )
-    chat_stream_runtime = ChatStreamRuntime(settings)
-    transcription_provider = os.environ.get("TRANSCRIPTION_PROVIDER")
-    transcription_api_key = os.environ.get("TRANSCRIPTION_API_KEY") or os.environ.get("QWEN_API_KEY")
-    transcription_base_url = os.environ.get("TRANSCRIPTION_BASE_URL") or os.environ.get(
-        "QWEN_BASE_URL"
-    )
-    transcription_model_id = os.environ.get("TRANSCRIPTION_MODEL_ID")
-    chat_audio_agent = AudioAgent(
-        repo_id=os.environ.get("TRANSCRIPTION_MODEL_ID"),
-        groq_api_key=os.environ.get("GROQ_API_KEY"),
-        provider=transcription_provider,
-        api_key=transcription_api_key,
-        base_url=transcription_base_url,
-        model_id=transcription_model_id,
-        model_cache_dir=settings.chat.model_cache_dir,
-    )
-    ctx = AppContext(
-        settings=settings,
-        app_store=app_store,
-        stores=build_app_stores(app_store),
-        profile_memory=profile_memory,
-        clinical_memory=clinical_memory,
-        event_timeline=event_timeline,
-        tool_registry=tool_registry,
-        agent_registry=agent_registry,
-        auth_store=auth_store,
-        session_signer=session_signer,
-        memory_store=memory_store,
-        notification_reads=notification_reads,
-        cache_store=cache_store,
-        coordination_store=coordination_store,
-        household_store=household_store,
-        emotion_agent=emotion_agent,
-        recommendation_agent=RecommendationAgent(),
-        chat_inference_engine=chat_inference_engine,
-        medication_inference_engine=medication_inference_engine,
-        chat_router=chat_router,
-        chat_runtime_config=chat_runtime_config,
-        chat_stream_runtime=chat_stream_runtime,
-        chat_audio_agent=chat_audio_agent,
-        chat_code_agent=chat_code_agent,
-    )
-    return ctx
-
-
 def meal_deps(ctx: AppContext) -> MealDeps:
     return MealDeps(
         settings=ctx.settings,
@@ -347,7 +119,11 @@ def meal_deps(ctx: AppContext) -> MealDeps:
 
 
 def recommendation_deps(ctx: AppContext) -> RecommendationDeps:
-    return RecommendationDeps(stores=ctx.stores, clinical_memory=ctx.clinical_memory)
+    return RecommendationDeps(
+        stores=ctx.stores,
+        clinical_memory=ctx.clinical_memory,
+        event_timeline=ctx.event_timeline,
+    )
 
 
 def workflow_deps(ctx: AppContext) -> WorkflowDeps:
@@ -367,6 +143,10 @@ def emotion_deps(ctx: AppContext) -> EmotionDeps:
 
 
 def chat_deps(ctx: AppContext, session: dict[str, object]) -> ChatDeps:
+    from care_pilot.features.companion.chat.health_tracker import HealthTracker
+    from care_pilot.features.companion.chat.memory import MemoryManager
+    from care_pilot.features.companion.chat.orchestrator import ChatOrchestrator
+
     user_id = str(session.get("user_id"))
     session_id = str(session.get("session_id"))
     chat_memory = MemoryManager(
@@ -398,6 +178,7 @@ def recommendation_agent_deps(ctx: AppContext) -> RecommendationAgentDeps:
         stores=ctx.stores,
         clinical_memory=ctx.clinical_memory,
         recommendation_agent=ctx.recommendation_agent,
+        event_timeline=ctx.event_timeline,
     )
 
 

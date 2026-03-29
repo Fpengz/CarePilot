@@ -14,10 +14,11 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any, cast
 
-from openai import AsyncOpenAI, BadRequestError
+from openai import APIConnectionError, APITimeoutError, AsyncOpenAI, BadRequestError, RateLimitError
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
 from care_pilot.config.app import AppSettings
@@ -187,6 +188,12 @@ class ChatStreamRuntime:
             self._safe_preview(content),
         )
 
+    @retry(
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        stop=stop_after_attempt(3),
+        retry=retry_if_exception_type((APITimeoutError, APIConnectionError, RateLimitError)),
+        reraise=True,
+    )
     async def complete(self, *, messages: list[dict[str, Any]], model_id: str | None = None) -> str:
         model = model_id or self._config.model_id
         typed_messages = cast(list[ChatCompletionMessageParam], messages)

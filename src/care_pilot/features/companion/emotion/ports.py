@@ -59,13 +59,17 @@ class FusionPort(Protocol):
 
 
 class EmotionInferencePort(Protocol):
-    def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
+    @property
+    def runtime_mode(self) -> str:
+        """Return the mode of this runtime (e.g. 'local' or 'remote')."""
+
+    async def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
         """Infer emotion labels from text input."""
 
-    def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
+    async def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
         """Infer emotion labels from speech/audio input."""
 
-    def health(self) -> EmotionRuntimeHealth:
+    async def health(self) -> EmotionRuntimeHealth:
         """Return runtime health for the active emotion backend."""
 
 

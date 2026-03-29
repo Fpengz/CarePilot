@@ -7,7 +7,7 @@ persistence layer on every request.  Cache misses propagate to the repository.
 from threading import Lock
 
 from care_pilot.features.profiles.domain.models import UserProfile
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 

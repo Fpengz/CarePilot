@@ -11,13 +11,8 @@ from uuid import uuid4
 
 from apps.api.carepilot_api.deps import EmotionDeps
 from apps.api.carepilot_api.errors import build_api_error
-from care_pilot.agent.emotion.agent import (
-    EmotionAgentDisabledError,
-    EmotionSpeechDisabledError,
-)
-from care_pilot.agent.emotion.schemas import (
-    EmotionInferenceResult,
-)
+from care_pilot.agent.emotion.agent import EmotionAgentDisabledError, EmotionSpeechDisabledError
+from care_pilot.agent.emotion.schemas import EmotionInferenceResult
 from care_pilot.core.contracts.api import (
     EmotionHealthResponse,
     EmotionInferenceResponse,
@@ -83,7 +78,7 @@ def _map_inference_error(exc: Exception, *, deps: EmotionDeps) -> Exception:
     return exc
 
 
-def infer_text_for_session(
+async def infer_text_for_session(
     *,
     deps: EmotionDeps,
     payload: EmotionTextRequest,
@@ -92,7 +87,7 @@ def infer_text_for_session(
     user_id: str | None,
 ) -> EmotionInferenceResponse:
     try:
-        result = deps.emotion_agent.infer_text(
+        result = await deps.emotion_agent.infer_text(
             text=payload.text,
             language=payload.language,
             user_id=user_id,
@@ -118,7 +113,7 @@ def infer_text_for_session(
     )
 
 
-def infer_speech_for_session(
+async def infer_speech_for_session(
     *,
     deps: EmotionDeps,
     audio_bytes: bytes,
@@ -131,7 +126,7 @@ def infer_speech_for_session(
     user_id: str | None,
 ) -> EmotionInferenceResponse:
     try:
-        result = deps.emotion_agent.infer_speech(
+        result = await deps.emotion_agent.infer_speech(
             audio_bytes=audio_bytes,
             filename=filename,
             content_type=content_type,
@@ -160,6 +155,6 @@ def infer_speech_for_session(
     )
 
 
-def get_emotion_health(*, deps: EmotionDeps) -> EmotionHealthResponse:
-    health = deps.emotion_agent.health()
+async def get_emotion_health(*, deps: EmotionDeps) -> EmotionHealthResponse:
+    health = await deps.emotion_agent.health()
     return EmotionHealthResponse.model_validate(health.model_dump(mode="json"))

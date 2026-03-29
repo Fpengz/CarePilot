@@ -32,13 +32,17 @@ class RemoteEmotionRuntime(EmotionInferencePort):
         event_timeline: object | None = None,
     ) -> None:
         self._config = config
-        self._client = httpx.Client(base_url=config.remote_base_url, timeout=30.0)
+        self._client = httpx.AsyncClient(base_url=config.remote_base_url, timeout=60.0)
         self._context_extractor = TimelineContextFeatureExtractor(
             cast(TimelineServiceProtocol, event_timeline),
             history_window=config.history_window,
         )
 
-    def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
+    @property
+    def runtime_mode(self) -> str:
+        return "remote"
+
+    async def infer_text(self, payload: EmotionTextAgentInput) -> EmotionInferenceResult:
         context_features = self._context_extractor.extract(payload.user_id)
         data = {
             "text": payload.text,
@@ -46,26 +50,28 @@ class RemoteEmotionRuntime(EmotionInferencePort):
             "user_id": payload.user_id,
             "context_features": context_features.model_dump(),
         }
-        response = self._client.post("/infer/text", json=data)
+        response = await self._client.post("/infer/text", json=data)
         response.raise_for_status()
         return EmotionInferenceResult.model_validate(response.json())
 
-    def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
+    async def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
         context_features = self._context_extractor.extract(payload.user_id)
-        files = {"audio": (payload.filename or "audio.wav", payload.audio_bytes, payload.content_type)}
+        files = {
+            "audio": (payload.filename or "audio.wav", payload.audio_bytes, payload.content_type)
+        }
         data = {
             "user_id": payload.user_id,
             "language": payload.language,
             "transcription": payload.transcription,
             "context_features": context_features.model_dump_json(),
         }
-        response = self._client.post("/infer/speech", data=data, files=files)
+        response = await self._client.post("/infer/speech", data=data, files=files)
         response.raise_for_status()
         return EmotionInferenceResult.model_validate(response.json())
 
-    def health(self) -> EmotionRuntimeHealth:
+    async def health(self) -> EmotionRuntimeHealth:
         try:
-            response = self._client.get("/health")
+            response = await self._client.get("/health")
             response.raise_for_status()
             return EmotionRuntimeHealth.model_validate(response.json())
         except Exception as exc:
@@ -75,3 +81,6 @@ class RemoteEmotionRuntime(EmotionInferencePort):
                 source_commit=self._config.source_commit,
                 detail=str(exc),
             )
+
+    async def close(self) -> None:
+        await self._client.aclose()

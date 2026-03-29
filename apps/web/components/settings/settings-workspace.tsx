@@ -11,11 +11,11 @@ import { useSession } from "@/components/app/session-provider";
 import { updateAuthProfile, logout } from "@/lib/api/auth-client";
 import {
   getMobilityReminderSettings,
-  listReminderNotificationEndpoints,
-  listReminderNotificationPreferences,
+  listMessageEndpoints,
+  listMessagePreferences,
   updateMobilityReminderSettings,
-  updateReminderNotificationEndpoints,
-  updateReminderNotificationPreferences,
+  updateMessageEndpoints,
+  updateMessagePreferences,
 } from "@/lib/api/reminder-client";
 import {
   completeHealthProfileOnboarding,
@@ -238,19 +238,18 @@ export function SettingsWorkspace() {
 
   const { data: prefs, isLoading: prefsLoading } = useQuery({
     queryKey: ["notification-prefs"],
-    queryFn: listReminderNotificationPreferences,
+    queryFn: listMessagePreferences,
     enabled: status === "authenticated",
   });
 
   const { data: endpoints, isLoading: endpointsLoading } = useQuery({
     queryKey: ["notification-endpoints"],
-    queryFn: listReminderNotificationEndpoints,
+    queryFn: listMessageEndpoints,
     enabled: status === "authenticated",
   });
 
   // Sync drafts when data loads
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     if (onboarding && !draft) {
       setDraft(buildDraft(onboarding.profile));
     }
@@ -274,7 +273,6 @@ export function SettingsWorkspace() {
         telegramEnabled: telegram?.enabled ?? false, telegramOffset: telegram?.offset_minutes ?? 0, telegramDestination: telegramEnd?.destination ?? "",
       });
     }
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [onboarding, mobility, prefs, endpoints, draft, mobilityDraft]);
 
   // Mutations
@@ -324,8 +322,8 @@ export function SettingsWorkspace() {
   const deliveryMutation = useMutation({
     mutationFn: async (payload: any) => {
       await Promise.all([
-        updateReminderNotificationPreferences({ rules: payload.rules }),
-        updateReminderNotificationEndpoints({ endpoints: payload.endpoints }),
+        updateMessagePreferences({ rules: payload.rules }),
+        updateMessageEndpoints({ endpoints: payload.endpoints }),
       ]);
     },
     onSuccess: () => {

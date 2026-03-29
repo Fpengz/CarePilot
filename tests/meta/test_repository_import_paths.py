@@ -10,7 +10,6 @@ LEGACY_DIRS = [
     REPO_ROOT / "src" / "care_pilot" / "capabilities",
 ]
 MIGRATED_CALLERS = [
-    "src/care_pilot/platform/persistence/sqlite_app_store.py",
     "tests/infrastructure/test_alerting_outbox.py",
     "tests/infrastructure/test_meal_record_persistence.py",
     "tests/infrastructure/test_medication_scheduler.py",

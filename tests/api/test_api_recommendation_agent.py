@@ -8,11 +8,7 @@ from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.meals.domain.models import (
-    Ingredient,
-    MealState,
-    Nutrition,
-)
+from care_pilot.features.meals.domain.models import Ingredient, MealState, Nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 
 

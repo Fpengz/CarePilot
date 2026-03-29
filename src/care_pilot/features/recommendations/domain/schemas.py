@@ -14,9 +14,7 @@ from care_pilot.features.companion.core.health.models import (
 )
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import UserProfile
-from care_pilot.features.recommendations.domain.models import (
-    DailyAgentRecommendation,
-)
+from care_pilot.features.recommendations.domain.models import DailyAgentRecommendation
 
 
 class RecommendationAgentInput(BaseModel):

@@ -23,7 +23,9 @@
               }
             ]
           }
-        ]
+        ],
+        "react-hooks/exhaustive-deps": "error",
+        "react-hooks/set-state-in-effect": "error"
       }
     }
   ]

@@ -6,14 +6,11 @@ recommendations, and suggestions.
 """
 
 import json
-import sqlite3
 from datetime import UTC, datetime
 from typing import Any, cast
 
 from care_pilot.features.recommendations.domain.canonical_food_matching import (
     find_food_by_name as _find_food_by_name_impl,
-)
-from care_pilot.features.recommendations.domain.canonical_food_matching import (
     normalize_text,
 )
 from care_pilot.features.recommendations.domain.models import (
@@ -22,7 +19,8 @@ from care_pilot.features.recommendations.domain.models import (
     PreferenceSnapshot,
     RecommendationInteraction,
 )
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
+from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
 
@@ -32,7 +30,7 @@ class SQLiteCatalogRepository:
         self.db_path = db_path
 
     def save_recommendation(self, user_id: str, payload: dict[str, Any]) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT INTO recommendation_records(user_id, created_at, payload_json)
@@ -65,12 +63,12 @@ class SQLiteCatalogRepository:
             params.append(slot)
         query += " ORDER BY meal_id LIMIT ?"
         params.append(bounded)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [MealCatalogItem.model_validate_json(cast(str, row[0])) for row in rows]
 
     def get_meal_catalog_item(self, meal_id: str) -> MealCatalogItem | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 "SELECT payload_json FROM meal_catalog WHERE meal_id = ?",
                 (meal_id,),
@@ -97,12 +95,12 @@ class SQLiteCatalogRepository:
             params.append(slot)
         query += " ORDER BY food_id LIMIT ?"
         params.append(bounded)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [CanonicalFoodRecord.model_validate_json(cast(str, row[0])) for row in rows]
 
     def get_canonical_food(self, food_id: str) -> CanonicalFoodRecord | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 "SELECT payload_json FROM canonical_foods WHERE food_id = ?",
                 (food_id,),
@@ -113,7 +111,7 @@ class SQLiteCatalogRepository:
 
     def find_food_by_name(self, *, locale: str, name: str) -> CanonicalFoodRecord | None:
         normalized = normalize_text(name)
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT cf.payload_json
@@ -136,7 +134,7 @@ class SQLiteCatalogRepository:
     def save_recommendation_interaction(
         self, interaction: RecommendationInteraction
     ) -> RecommendationInteraction:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO recommendation_interactions
@@ -169,7 +167,7 @@ class SQLiteCatalogRepository:
         self, user_id: str, *, limit: int = 200
     ) -> list[RecommendationInteraction]:
         bounded = max(1, min(int(limit), 1000))
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT interaction_id, user_id, recommendation_id, candidate_id, event_type, slot, source_meal_id, selected_meal_id, created_at, metadata_json
@@ -197,7 +195,7 @@ class SQLiteCatalogRepository:
         ]
 
     def get_preference_snapshot(self, user_id: str) -> PreferenceSnapshot | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 "SELECT payload_json FROM preference_snapshots WHERE user_id = ?",
                 (user_id,),
@@ -209,7 +207,7 @@ class SQLiteCatalogRepository:
 
     def save_preference_snapshot(self, snapshot: PreferenceSnapshot) -> PreferenceSnapshot:
         payload = snapshot.model_dump(mode="json")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO preference_snapshots (user_id, updated_at, payload_json)
@@ -234,7 +232,7 @@ class SQLiteCatalogRepository:
         created_at = str(payload.get("created_at", ""))
         if not suggestion_id or not created_at:
             raise ValueError("suggestion payload requires suggestion_id and created_at")
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO suggestion_records(suggestion_id, user_id, created_at, payload_json)
@@ -252,7 +250,7 @@ class SQLiteCatalogRepository:
 
     def list_suggestion_records(self, user_id: str, limit: int = 20) -> list[dict[str, Any]]:
         bounded_limit = max(1, min(limit, 100))
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT payload_json
@@ -268,7 +266,7 @@ class SQLiteCatalogRepository:
         return items
 
     def get_suggestion_record(self, user_id: str, suggestion_id: str) -> dict[str, Any] | None:
-        with sqlite3.connect(self.db_path) as conn:
+        with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
                 SELECT payload_json

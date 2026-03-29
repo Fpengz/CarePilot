@@ -16,15 +16,14 @@ from pathlib import Path
 
 import matplotlib
 
+from care_pilot.platform.persistence.sqlite_db import get_connection
+
 matplotlib.use("Agg")  # headless — no display needed
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 
 from care_pilot.agent.chat.schemas import ChatMetricsOutput
-from care_pilot.agent.runtime.inference_types import (
-    InferenceModality,
-    InferenceRequest,
-)
+from care_pilot.agent.runtime.inference_types import InferenceModality, InferenceRequest
 from care_pilot.features.companion.chat.memory import (
     USER_HISTORY_SESSION_ID,
     InferenceEngineProtocol,
@@ -178,7 +177,7 @@ class HealthTracker:
     # ------------------------------------------------------------------ #
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(str(self._db_path))
+        conn = get_connection(str(self._db_path))
         conn.row_factory = sqlite3.Row
         return conn
 

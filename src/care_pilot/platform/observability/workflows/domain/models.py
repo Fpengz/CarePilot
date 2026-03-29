@@ -7,13 +7,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
-from care_pilot.core.contracts.agent_envelopes import (
-    AgentHandoff,
-    AgentOutputEnvelope,
-)
-from care_pilot.platform.observability.tooling.domain.models import (
-    ToolExecutionResult,
-)
+from care_pilot.core.contracts.agent_envelopes import AgentHandoff, AgentOutputEnvelope
+from care_pilot.platform.observability.tooling.domain.models import ToolExecutionResult
 from care_pilot.platform.observability.tooling.domain.policy_models import (
     ToolPolicyEffect,
     ToolRolePolicyRecord,

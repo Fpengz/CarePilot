@@ -1,13 +1,7 @@
 """Tests for memory services."""
 
-from care_pilot.features.companion.core.health.models import (
-    ClinicalProfileSnapshot,
-)
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
+from care_pilot.features.companion.core.health.models import ClinicalProfileSnapshot
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, UserProfile
 from care_pilot.platform.cache import (
     ClinicalSnapshotMemoryService,
     EventTimelineService,

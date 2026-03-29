@@ -26,9 +26,7 @@ class SafetyEngine:
     def __init__(self, user: UserProfile, db: DrugInteractionRepository | None = None):
         self.user = user
         if db is None:
-            from care_pilot.features.safety.infra.drug_interaction_db import (
-                DrugInteractionDB,
-            )
+            from care_pilot.features.safety.infra.drug_interaction_db import DrugInteractionDB
 
             db = DrugInteractionDB()
         self.db: DrugInteractionRepository = db

@@ -11,7 +11,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.observability.tooling.domain.models import (
     ToolErrorClass,
     ToolExecutionError,

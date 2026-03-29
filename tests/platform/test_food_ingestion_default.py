@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from care_pilot.platform.persistence.food.ingestion import (
-    load_default_canonical_food_records,
-)
+from care_pilot.platform.persistence.food.ingestion import load_default_canonical_food_records
 
 
 def test_default_loader_includes_hawker_and_canonical() -> None:

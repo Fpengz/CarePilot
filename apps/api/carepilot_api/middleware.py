@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from care_pilot.platform.cache import build_rate_limiter
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.context import set_request_context
 
 from .errors import api_error_payload
 from .observability import get_correlation_id, get_request_id, render_kv_log
@@ -72,9 +73,13 @@ async def request_context_middleware(request: Request, call_next) -> Response:
     settings = request.app.state.ctx.settings
     request_id = get_request_id(request)
     correlation_id = get_correlation_id(request)
+    user_id = str(request.scope.get("session", {}).get("user_id", "")) or None
 
     request.state.request_id = request_id
     request.state.correlation_id = correlation_id
+
+    # Set context for logging and downstream tracing
+    set_request_context(request_id=request_id, correlation_id=correlation_id, user_id=user_id)
 
     client_ip = request.client.host if request.client else None
     origin = request.headers.get("origin")

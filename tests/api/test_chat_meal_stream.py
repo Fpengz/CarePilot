@@ -49,15 +49,17 @@ def test_meal_command_stream_continues(
     _login(client)
 
     async def _mock_workflow(*args, **kwargs):
-        return {
-            "last_agent_response": AgentResponse(
-                agent_name="conversation_agent",
-                summary="Next guidance.",
-                structured_output={}
-            )
+        yield {
+            "some_node": {
+                "last_agent_response": AgentResponse(
+                    agent_name="conversation_agent",
+                    summary="Next guidance.",
+                    structured_output={}
+                )
+            }
         }
 
-    monkeypatch.setattr(ChatOrchestrator, "run_multi_agent_workflow", _mock_workflow)
+    monkeypatch.setattr(ChatOrchestrator, "stream_multi_agent_workflow", _mock_workflow)
 
     response = client.post("/api/v1/chat", json={"message": "[meal] Nasi Goreng"})
 
@@ -80,6 +82,7 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("EMOTION_INFERENCE_ENABLED", "true")
+    monkeypatch.setenv("EMOTION_RUNTIME_MODE", "remote")
     _reset_settings_cache()
 
     app = create_app()
@@ -88,21 +91,23 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(
 
     app.state.ctx.emotion_agent._inference_enabled = True
 
-    def _raise_emotion_failure(*, text: str, language: str | None = None, context: Any = None):
+    async def _raise_emotion_failure(*, text: str, language: str | None = None, context: Any = None):
         del text, language, context
         raise RuntimeError("broken fusion model")
 
     async def _mock_workflow(*args, **kwargs):
-        return {
-            "last_agent_response": AgentResponse(
-                agent_name="conversation_agent",
-                summary="Hello back.",
-                structured_output={}
-            )
+        yield {
+            "some_node": {
+                "last_agent_response": AgentResponse(
+                    agent_name="conversation_agent",
+                    summary="Hello back.",
+                    structured_output={}
+                )
+            }
         }
 
     monkeypatch.setattr(app.state.ctx.emotion_agent, "infer_text", _raise_emotion_failure)
-    monkeypatch.setattr(ChatOrchestrator, "run_multi_agent_workflow", _mock_workflow)
+    monkeypatch.setattr(ChatOrchestrator, "stream_multi_agent_workflow", _mock_workflow)
 
 
     response = client.post("/api/v1/chat", json={"message": "Hi"})
@@ -115,7 +120,7 @@ def test_chat_stream_continues_when_text_emotion_inference_fails(
         events.append(cast(_StreamEvent, json.loads(line[6:])))
 
     assert [event["event"] for event in events] == ["token", "done"]
-    assert cast(str, events[0]["data"]["text"]) == "Hello back."
+    assert cast(str, events[0]["data"]["text"]) == "Hello back.\n\n"
     assert all(event["event"] != "error" for event in events)
 
 
@@ -124,6 +129,7 @@ def test_chat_audio_continues_when_speech_emotion_inference_fails(
 ) -> None:
     monkeypatch.setenv("EMOTION_INFERENCE_ENABLED", "true")
     monkeypatch.setenv("EMOTION_SPEECH_ENABLED", "true")
+    monkeypatch.setenv("EMOTION_RUNTIME_MODE", "remote")
     _reset_settings_cache()
 
     app = create_app()
@@ -137,7 +143,7 @@ def test_chat_audio_continues_when_speech_emotion_inference_fails(
         del raw_bytes, filename
         return "Hello from audio"
 
-    def _raise_speech_emotion_failure(
+    async def _raise_speech_emotion_failure(
         *,
         audio_bytes: bytes,
         filename: str | None = None,

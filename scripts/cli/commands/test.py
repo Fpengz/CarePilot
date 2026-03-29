@@ -45,13 +45,13 @@ def test_web(
     skip_e2e: Annotated[bool, typer.Option("--skip-e2e", help="Skip end-to-end tests.")] = False,
 ) -> None:
     require_cmd("pnpm")
-    run_step("web:lint", ["pnpm", "web:lint"])
-    run_step("web:typecheck", ["pnpm", "web:typecheck"])
-    run_step("web:build", ["pnpm", "web:build"])
+    run_step("web:lint", ["pnpm", "--dir", "apps/web", "lint"])
+    run_step("web:typecheck", ["pnpm", "--dir", "apps/web", "typecheck"])
+    run_step("web:build", ["pnpm", "--dir", "apps/web", "build"])
     if skip_e2e:
         info("Skipping web:e2e (--skip-e2e)")
     else:
-        run_step("web:e2e", ["pnpm", "web:e2e"])
+        run_step("web:e2e", ["pnpm", "--dir", "apps/web", "test:e2e"])
 
 
 @test_app.command("comprehensive")

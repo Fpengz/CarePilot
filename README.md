@@ -46,7 +46,7 @@ flowchart TD
     User([User]) <--> Web[Next.js 15 Frontend]
     Web <--> API[FastAPI Gateway]
     
-    subgraph "Reasoning Engine (pydantic-graph)"
+    subgraph "Reasoning Engine (LangGraph)"
         API --> Workflow[Meal/Medication Workflows]
         Workflow --> Perceive[Perception Node]
         Workflow --> Reconcile[Claim Reconciliation]
@@ -91,7 +91,7 @@ src/
     agent/           Bounded inference-only agents
     platform/        Infrastructure adapters (persistence, auth, messaging)
     config/          Settings composition root
-docs/         Canonical documentation and refactor history
+docs/         System-of-record knowledge base (design docs, plans, specs, references)
 tests/        Repository-level tests and meta-guardrails
 ```
 
@@ -125,8 +125,7 @@ tests/        Repository-level tests and meta-guardrails
    ```bash
    git clone https://github.com/Fpengz/CarePilot.git
    cd CarePilot
-   pnpm install
-   uv sync
+   make install
    ```
 
 2. **Environment Setup:**
@@ -136,8 +135,10 @@ tests/        Repository-level tests and meta-guardrails
    ```
 
 3. **Run Development Stack:**
-   CarePilot uses a unified CLI for convenience:
+   CarePilot uses a unified CLI for orchestration and a Makefile for convenience:
    ```bash
+   make dev
+   # OR canonical:
    uv run python scripts/cli.py dev
    ```
    Navigate to `http://localhost:3000` to view the dashboard.
@@ -145,16 +146,23 @@ tests/        Repository-level tests and meta-guardrails
 ### Validation
 To ensure system integrity, run the following:
 
+**Full Suite:**
+```bash
+make test
+```
+
 **Backend:**
 ```bash
-uv run ruff check .
-uv run pytest -q
+make test-backend
+# OR canonical:
+uv run python scripts/cli.py test backend
 ```
 
 **Web:**
 ```bash
-pnpm web:lint
-pnpm web:typecheck
+make test-web
+# OR directly from the package:
+cd apps/web && pnpm lint && pnpm typecheck
 ```
 
 ## 13. Roadmap

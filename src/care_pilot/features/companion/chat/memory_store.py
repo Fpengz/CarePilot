@@ -11,6 +11,7 @@ import asyncio
 
 from care_pilot.platform.memory import MemorySnippet, MemoryStore
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.runtime.background_tasks import enqueue_task
 
 logger = get_logger(__name__)
 
@@ -46,6 +47,27 @@ async def fetch_memory_snippets(
         return []
 
 
+async def _record_chat_turn_worker(
+    memory_store: MemoryStore,
+    user_id: str,
+    session_id: str,
+    messages: list[dict[str, str]],
+    metadata: dict[str, object] | None = None,
+) -> None:
+    """Internal task runner for background memory recording."""
+    try:
+        # Still offload the sync call to a thread inside the background worker
+        await asyncio.to_thread(
+            memory_store.add_messages,
+            user_id=user_id,
+            session_id=session_id,
+            messages=messages,
+            metadata=metadata,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("chat_memory_write_background_failed error=%s", exc)
+
+
 async def record_chat_turn(
     *,
     memory_store: MemoryStore,
@@ -57,17 +79,12 @@ async def record_chat_turn(
 ) -> None:
     if not memory_store.enabled:
         return
-    messages = [
+    messages: list[dict[str, str]] = [
         {"role": "user", "content": user_message},
         {"role": "assistant", "content": assistant_message},
     ]
-    try:
-        await asyncio.to_thread(
-            memory_store.add_messages,
-            user_id=user_id,
-            session_id=session_id,
-            messages=messages,
-            metadata=metadata,
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("chat_memory_write_failed error=%s", exc)
+
+    # Enqueue for background execution to return token stream faster
+    await enqueue_task(
+        _record_chat_turn_worker, memory_store, user_id, session_id, messages, metadata
+    )

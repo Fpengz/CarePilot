@@ -7,9 +7,11 @@ This module coordinates clinical report parsing and symptom-context enrichment.
 from __future__ import annotations
 
 from datetime import date, timedelta
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from apps.api.carepilot_api.deps import AppContext
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 
 from care_pilot.core.contracts.api import (
     ReportParseRequest,
@@ -17,16 +19,9 @@ from care_pilot.core.contracts.api import (
     SymptomSummaryWindowResponse,
 )
 from care_pilot.features.companion.core.health.models import ReportInput
-from care_pilot.features.reports.domain import (
-    build_clinical_snapshot,
-    parse_report_input,
-)
-from care_pilot.features.symptoms.symptom_service import (
-    summarize_checkins_for_session,
-)
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowName,
-)
+from care_pilot.features.reports.domain import build_clinical_snapshot, parse_report_input
+from care_pilot.features.symptoms.symptom_service import summarize_checkins_for_session
+from care_pilot.platform.observability.workflows.domain.models import WorkflowName
 
 
 def parse_report_for_session(

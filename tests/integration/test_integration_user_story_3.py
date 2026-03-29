@@ -5,18 +5,9 @@ from datetime import datetime
 from care_pilot.features.companion.core.health.models import ReportInput
 from care_pilot.features.meals.domain.models import MealState, Nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
-from care_pilot.features.recommendations.domain.meal_recommendations import (
-    generate_recommendation,
-)
-from care_pilot.features.reports.domain import (
-    build_clinical_snapshot,
-    parse_report_input,
-)
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, UserProfile
+from care_pilot.features.recommendations.domain.meal_recommendations import generate_recommendation
+from care_pilot.features.reports.domain import build_clinical_snapshot, parse_report_input
 
 
 def test_user_story_3_report_to_grounded_recommendation() -> None:

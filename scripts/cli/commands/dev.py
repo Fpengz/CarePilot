@@ -140,9 +140,9 @@ def dev_default(
             processes.append(sqlite_worker_proc)
 
     if not no_web:
-        info("starting Web: pnpm web:dev")
+        info("starting Web: pnpm --dir apps/web dev")
         web_proc = subprocess.Popen(
-            ["pnpm", "web:dev"],
+            ["pnpm", "--dir", "apps/web", "dev"],
             cwd=REPO_ROOT,
             text=True,
             env=os.environ.copy(),

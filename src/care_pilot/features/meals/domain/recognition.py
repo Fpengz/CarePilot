@@ -8,11 +8,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
-from care_pilot.features.meals.domain.models import (
-    EnrichedMealEvent,
-    MealPerception,
-    MealState,
-)
+from care_pilot.features.meals.domain.models import EnrichedMealEvent, MealPerception, MealState
 
 
 class MealRecognitionRecord(BaseModel):

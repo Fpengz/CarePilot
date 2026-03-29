@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sqlite3
 from pathlib import Path
 from typing import Annotated
 
@@ -8,18 +7,15 @@ import typer
 from scripts.cli.utils import error, info, load_root_env, warning
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.recommendations.domain.canonical_food_matching import (
-    normalize_text,
-)
-from care_pilot.features.recommendations.domain.models import (
-    CanonicalFoodRecord,
-)
+from care_pilot.features.recommendations.domain.canonical_food_matching import normalize_text
+from care_pilot.features.recommendations.domain.models import CanonicalFoodRecord
 from care_pilot.platform.persistence.food import (
     FoodInfoIngester,
     load_default_canonical_food_records,
     load_open_food_facts_records,
     load_usda_records,
 )
+from care_pilot.platform.persistence.sqlite_db import get_connection
 from care_pilot.platform.persistence.sqlite_repository import SQLiteRepository
 
 ingest_app = typer.Typer(help="Ingest food datasets into local stores.")
@@ -41,7 +37,7 @@ def _persist_canonical_food_records(
     reset: bool,
 ) -> None:
     _ensure_app_db(db_path)
-    with sqlite3.connect(db_path) as conn:
+    with get_connection(db_path) as conn:
         if reset:
             conn.execute("DELETE FROM portion_reference")
             conn.execute("DELETE FROM food_alias")

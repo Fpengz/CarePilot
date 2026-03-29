@@ -8,10 +8,7 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, Protocol
 
-from care_pilot.agent.emotion.schemas import (
-    EmotionContextFeatures,
-    EmotionLabel,
-)
+from care_pilot.agent.emotion.schemas import EmotionContextFeatures, EmotionLabel
 from care_pilot.features.companion.emotion.ports import ContextFeaturePort
 
 

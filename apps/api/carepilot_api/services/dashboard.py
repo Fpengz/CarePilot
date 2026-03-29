@@ -6,10 +6,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from statistics import mean
-from typing import Literal
+from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Query  # Import Query
 
 from care_pilot.features.companion.core.health.blood_pressure import build_bp_chart_points
 from care_pilot.features.companion.core.health.models import (
@@ -17,11 +17,9 @@ from care_pilot.features.companion.core.health.models import (
     BloodPressureReading,
     HealthProfileRecord,
     MedicationAdherenceEvent,
+    NutritionGoal,
 )
-from care_pilot.features.meals.domain.models import (
-    NutritionRiskProfile,
-    ValidatedMealEvent,
-)
+from care_pilot.features.meals.domain.models import NutritionRiskProfile, ValidatedMealEvent
 from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.platform.persistence.health_metrics import ChatHealthMetricsRepository
 
@@ -33,6 +31,7 @@ from ..schemas import (
     DashboardBucket,
     DashboardChartsResponse,
     DashboardInsightsResponse,
+    DashboardLinksResponse,
     DashboardMacroChartResponse,
     DashboardMacroPointResponse,
     DashboardMealTimingBinResponse,
@@ -43,6 +42,7 @@ from ..schemas import (
     DashboardSeriesPointResponse,
     DashboardSummaryMetricResponse,
     DashboardSummaryResponse,
+    NutritionGoalResponse,
 )
 
 _HEALTH_METRICS = ChatHealthMetricsRepository()
@@ -421,6 +421,7 @@ def _build_summary(
     readings: list[BiomarkerReading],
     calorie_target: float,
     days: int,
+    nutrition_goals: list[NutritionGoal | str],
 ) -> DashboardSummaryResponse:
     avg_daily_calories = _average_daily_calories(current_profiles, days)
     previous_daily_calories = _average_daily_calories(previous_profiles, max(days, 1))
@@ -489,6 +490,14 @@ def _build_summary(
             status=stability_status,
             detail="Combines intake consistency and medication follow-through.",
         ),
+        nutrition_goals=[
+            (
+                NutritionGoalResponse.model_validate(g.model_dump(mode="json"))
+                if not isinstance(g, str)
+                else NutritionGoalResponse(goal_type=g, target_value=0.0, unit="unit")
+            )
+            for g in nutrition_goals
+        ],
     )
 
 
@@ -594,6 +603,7 @@ def get_dashboard_overview(
     range_key: str,
     from_date: date | None = None,
     to_date: date | None = None,
+    include: str | None = Query(None), # Accept include query parameter
 ) -> DashboardOverviewResponse:
     timezone_name = context.settings.app.timezone
     current = _resolve_range(range_key=range_key, from_date=from_date, to_date=to_date)
@@ -646,6 +656,16 @@ def get_dashboard_overview(
         timezone_name=timezone_name,
     )
 
+    # Conditionally build response components
+    response_components: dict[str, Any] = {
+        "range": current.to_response(),
+        "comparison_range": comparison.to_response(),
+    }
+
+
+    include_sections = set(include.split(',')) if include else None
+
+    # Always compute summary first as it's a dependency for alerts and insights
     summary = _build_summary(
         current_profiles=current_profiles,
         previous_profiles=previous_profiles,
@@ -654,43 +674,47 @@ def get_dashboard_overview(
         readings=readings,
         calorie_target=calorie_target,
         days=current.days,
+        nutrition_goals=profile.nutrition_goals if profile else [],
     )
-    windows = _series_windows(current, timezone_name=timezone_name)
-    charts = DashboardChartsResponse(
-        calories=_build_calorie_chart(
-            windows,
-            current.bucket,
-            current_profiles,
-            calorie_target=calorie_target,
-            timezone_name=timezone_name,
-        ),
-        macros=_build_macro_chart(
-            windows, current.bucket, current_profiles, timezone_name=timezone_name
-        ),
-        glycemic_risk=_build_risk_chart(
-            windows, current.bucket, current_profiles, timezone_name=timezone_name
-        ),
-        adherence=_build_adherence_chart(
-            windows, current.bucket, current_adherence, timezone_name=timezone_name
-        ),
-        meal_timing=_build_meal_timing_chart(current_meals, timezone_name=timezone_name),
-        blood_pressure=_build_bp_chart(
-            bp_readings,
-            start=current.start,
-            end=current.end,
-            bucket=current.bucket,
-            timezone_name=timezone_name,
-        ),
-    )
-    return DashboardOverviewResponse(
-        range=current.to_response(),
-        comparison_range=comparison.to_response(),
-        summary=summary,
-        alerts=_build_alerts(summary=summary, reminders=current_reminders, readings=readings),
-        charts=charts,
-        insights=_build_insights(
-            summary=summary,
+    response_components["summary"] = summary
+
+    if include_sections is None or "alerts" in include_sections:
+        response_components["alerts"] = _build_alerts(
+            summary=summary, # Use the pre-computed summary
+            reminders=current_reminders,
+            readings=readings
+        )
+
+    if include_sections is None or "insights" in include_sections:
+        response_components["insights"] = _build_insights(
+            summary=summary, # Use the pre-computed summary
             calorie_target=calorie_target,
             current_profiles=current_profiles,
-        ),
-    )
+        )
+
+    if include_sections is None or "charts" in include_sections:
+        windows = _series_windows(current, timezone_name=timezone_name)
+        response_components["charts"] = DashboardChartsResponse(
+            calories=_build_calorie_chart(
+                windows, current.bucket, current_profiles, calorie_target=calorie_target, timezone_name=timezone_name
+            ),
+            macros=_build_macro_chart(
+                windows, current.bucket, current_profiles, timezone_name=timezone_name
+            ),
+            glycemic_risk=_build_risk_chart(
+                windows, current.bucket, current_profiles, timezone_name=timezone_name
+            ),
+            adherence=_build_adherence_chart(
+                windows, current.bucket, current_adherence, timezone_name=timezone_name
+            ),
+            meal_timing=_build_meal_timing_chart(current_meals, timezone_name=timezone_name),
+            blood_pressure=_build_bp_chart(
+                bp_readings, start=current.start, end=current.end, bucket=current.bucket, timezone_name=timezone_name
+            ),
+        )
+
+    # Always include links as they are required by the schema
+    response_components["links"] = DashboardLinksResponse()
+
+    return DashboardOverviewResponse(**response_components)
+
