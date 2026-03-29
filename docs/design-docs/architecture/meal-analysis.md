@@ -16,7 +16,7 @@ That split keeps image understanding bounded, keeps nutrition and risk logic aud
 
 ## Diagram Reference
 
-The visual target architecture lives in `docs/architecture/meal-analysis-architecture.drawio`. It represents the intended end‑state. This document annotates the diagram with current implementation notes and highlights gaps explicitly.
+The visual target architecture lives in `docs/design-docs/architecture/meal-analysis-architecture.drawio`. It represents the intended end‑state. This document annotates the diagram with current implementation notes and highlights gaps explicitly.
 
 ## Design Principles
 
@@ -651,4 +651,3 @@ The meal‑analysis stack should no longer be centered on a model inventing nutr
 - Canonical food retrieval from the food store
 - Deterministic reconciliation and enrichment from the canonical‑food layer
 - User confirmation or correction only when confidence requires it
-

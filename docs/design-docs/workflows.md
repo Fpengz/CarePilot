@@ -174,7 +174,7 @@ async def run_workflow(*, deps: WorkflowDeps, state: WorkflowState) -> WorkflowO
 mermaid = build_workflow_graph(deps=deps).get_graph().draw_mermaid()
 ```
 
-Add the mermaid code to the PR description or a plan doc under `docs/plans/`.
+Add the mermaid code to the PR description or a plan doc under `docs/exec-plans/active/`.
 
 ---
 

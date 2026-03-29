@@ -43,7 +43,7 @@ Refactor emotion inference to match `emotion-workflow.md` with an injectable mul
 
 ## API Contract
 - Breaking change to `/api/v1/emotions/*` response shape with new full-trace schema.
-- Update `docs/api-emotions-contract.md` with the new response example and fields.
+- Update `docs/references/api/emotions.md` with the new response example and fields.
 
 ## Testing
 - Update capability tests to use stub ports and validate trace shape, fusion output, and context features.

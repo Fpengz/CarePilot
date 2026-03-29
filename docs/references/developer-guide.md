@@ -3,7 +3,7 @@
 See also:
 - `CONTRIBUTING.md`
 - `ARCHITECTURE.md`
-- `docs/config-reference.md`
+- `docs/references/config-reference.md`
 
 ## Setup
 

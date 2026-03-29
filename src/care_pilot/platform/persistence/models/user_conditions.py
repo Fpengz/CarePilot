@@ -2,11 +2,10 @@
 Models for user-specific condition data.
 """
 
-from __future__ import annotations
-
 from datetime import date
 from typing import TYPE_CHECKING
 
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship  # Import Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -31,4 +30,4 @@ class UserConditionRecord(BaseRecord, TimestampMixin, table=True):
     is_active: bool = True
 
     # Define the back_populates relationship
-    user_profile: UserProfileRecord = Relationship(back_populates="conditions")
+    user_profile: Mapped["UserProfileRecord"] = Relationship(back_populates="conditions")

@@ -2,12 +2,11 @@
 Clinical data persistence models (Biomarkers and Symptoms).
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, Column
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship  # Import Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -36,8 +35,8 @@ class BiomarkerReadingRecord(BaseRecord, TimestampMixin, table=True):
     source_doc_id: str | None = None
 
     # Define ORM relationships
-    user_profile: UserProfileRecord = Relationship(back_populates="biomarker_readings")
- # Assuming UserProfileRecord has 'biomarker_readings' field
+    user_profile: Mapped["UserProfileRecord"] = Relationship(back_populates="biomarker_readings")
+    # Assuming UserProfileRecord has 'biomarker_readings' field
 
 
 class SymptomCheckInRecord(BaseRecord, TimestampMixin, table=True):
@@ -57,6 +56,6 @@ class SymptomCheckInRecord(BaseRecord, TimestampMixin, table=True):
     safety: dict = Field(default_factory=dict, sa_column=Column(JSON))
 
     # Define ORM relationships
-    symptom_codes: list[SymptomCodeRecord] = Relationship(back_populates="symptom_checkin")
-    user_profile: UserProfileRecord = Relationship(back_populates="symptom_checkins")
- # Assuming UserProfileRecord has 'symptom_checkins' field
+    symptom_codes: Mapped[list["SymptomCodeRecord"]] = Relationship(back_populates="symptom_checkin")
+    user_profile: Mapped["UserProfileRecord"] = Relationship(back_populates="symptom_checkins")
+    # Assuming UserProfileRecord has 'symptom_checkins' field

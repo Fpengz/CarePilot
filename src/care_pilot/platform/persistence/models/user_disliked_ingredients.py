@@ -2,10 +2,9 @@
 Models for user-specific disliked ingredients.
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship  # Import Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -26,4 +25,4 @@ class UserDislikedIngredientRecord(BaseRecord, TimestampMixin, table=True):
     ingredient_name: str = Field(index=True)
 
     # Define the back_populates relationship
-    user_profile: UserProfileRecord = Relationship(back_populates="disliked_ingredients")
+    user_profile: Mapped["UserProfileRecord"] = Relationship(back_populates="disliked_ingredients")

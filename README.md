@@ -91,7 +91,7 @@ src/
     agent/           Bounded inference-only agents
     platform/        Infrastructure adapters (persistence, auth, messaging)
     config/          Settings composition root
-docs/         Canonical documentation and refactor history
+docs/         System-of-record knowledge base (design docs, plans, specs, references)
 tests/        Repository-level tests and meta-guardrails
 ```
 

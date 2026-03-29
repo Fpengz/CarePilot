@@ -3,12 +3,16 @@
 ## Purpose
 This is the single source of truth for CarePilot's development, combining architectural vision, technical debt management, and active implementation plans.
 
+Related docs:
+- `docs/exec-plans/index.md`
+- `docs/design-docs/index.md`
+
 ## Current Maturity
 Implemented baseline:
 - FastAPI API with auth, policy, and workflow trace support.
 - Next.js frontend with impeccable UI redesign.
 - LangGraph-based ChatOrchestrator with streaming support.
-- SQLite persistence with formal Alembic migrations.
+- SQLModel persistence with formal Alembic migrations (SQLite backend today).
 - Strict Protocol-based repository interfaces.
 
 ---

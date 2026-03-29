@@ -1,14 +1,17 @@
 """
 Defines specific rules for reminder scheduling.
 """
-from __future__ import annotations
-
 from datetime import date, time  # Added time for specific_time
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, Column
-from sqlmodel import Field
+from sqlalchemy.orm import Mapped
+from sqlmodel import Field, Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord
+
+if TYPE_CHECKING:
+    from care_pilot.platform.persistence.models.reminders import ReminderDefinitionRecord
 
 
 class ReminderScheduleRuleRecord(BaseRecord, table=True):
@@ -28,3 +31,7 @@ class ReminderScheduleRuleRecord(BaseRecord, table=True):
     end_date: date | None = None
     # Metadata or specific rule parameters
     rule_params: dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+    reminder_definition: Mapped["ReminderDefinitionRecord"] = Relationship(
+        back_populates="schedule_rules"
+    )

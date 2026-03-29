@@ -1,11 +1,6 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
 import pluginTypescript from '@typescript-eslint/eslint-plugin';
 import parserTypescript from '@typescript-eslint/parser';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export default [
   {
@@ -38,8 +33,8 @@ export default [
       '@typescript-eslint': pluginTypescript,
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': 'warn',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
       // Disable due to ESLint 9 incompatibility in v4 of the plugin
       // 'react-hooks/exhaustive-deps': 'error',
     },

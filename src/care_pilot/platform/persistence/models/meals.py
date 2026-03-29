@@ -2,12 +2,11 @@
 MealRecord persistence models.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, Column
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship  # Import Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -46,6 +45,7 @@ class MealRecordRecord(BaseRecord, TimestampMixin, table=True):
     multi_item_count: int = 0
 
     # Define ORM relationships
-    user_profile: UserProfileRecord = Relationship(back_populates="meal_records")
- # Assuming UserProfileRecord has 'meal_records' field
-    meal_components: list[MealComponentRecord] = Relationship(back_populates="meal_record") # Back_populates name to be defined in MealComponentRecord
+    user_profile: Mapped["UserProfileRecord"] = Relationship(back_populates="meal_records")
+    meal_components: Mapped[list["MealComponentRecord"]] = Relationship(
+        back_populates="meal_record"
+    )

@@ -99,4 +99,4 @@ This document outlines the design for a comprehensive refactor of the CarePilot 
 *Author: Gemini CLI Agent*
 *Topic: Database & API Refactor Design*
 ---
-*The content above has been saved to docs/plans/2026-03-27-db-api-refactor-design.md*
+*The content above has been saved to docs/exec-plans/active/2026-03-27-db-api-refactor-design.md*

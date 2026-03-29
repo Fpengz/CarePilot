@@ -2,10 +2,9 @@
 Models for individual symptom codes linked to a check-in.
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship  # Import Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -28,4 +27,4 @@ class SymptomCodeRecord(BaseRecord, TimestampMixin, table=True):
     # agent_details: Optional[dict] = Field(default=None, sa_column=Column(JSON))
 
     # Define the back_populates relationship
-    symptom_checkin: SymptomCheckInRecord = Relationship(back_populates="symptom_codes")
+    symptom_checkin: Mapped["SymptomCheckInRecord"] = Relationship(back_populates="symptom_codes")

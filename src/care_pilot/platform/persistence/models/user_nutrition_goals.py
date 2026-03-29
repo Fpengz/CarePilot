@@ -2,11 +2,10 @@
 User nutrition goals persistence model.
 """
 
-from __future__ import annotations
-
 from datetime import date
 from typing import TYPE_CHECKING
 
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -31,4 +30,4 @@ class UserNutritionGoalRecord(BaseRecord, TimestampMixin, table=True):
     end_date: date | None = Field(default=None, index=True)
 
     # Define ORM relationships
-    user_profile: UserProfileRecord = Relationship(back_populates="nutrition_goals")
+    user_profile: Mapped["UserProfileRecord"] = Relationship(back_populates="nutrition_goals")

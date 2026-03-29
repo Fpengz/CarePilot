@@ -2,10 +2,9 @@
 Models for individual meal components and their nutritional breakdown.
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship  # Import Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -38,4 +37,4 @@ class MealComponentRecord(BaseRecord, TimestampMixin, table=True):
     fiber_g: float = 0.0
 
     # Define the back_populates relationship
-    meal_record: MealRecordRecord = Relationship(back_populates="meal_components")
+    meal_record: Mapped["MealRecordRecord"] = Relationship(back_populates="meal_components")
