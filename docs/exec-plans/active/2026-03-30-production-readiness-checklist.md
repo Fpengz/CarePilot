@@ -19,8 +19,8 @@ Define the minimum checklist and milestones required to take CarePilot from the 
 ## Milestones & Checklists
 
 ### 1) Reliability & Operability
-- [ ] Document required vs optional infra (Redis, vector memory, worker queues) in config and runbook.
-- [ ] Align runtime configuration defaults with the config reference.
+- [x] Document required vs optional infra (Redis, vector memory, worker queues) in config and runbook. (doc-level complete)
+- [x] Align runtime configuration defaults with the config reference. (doc-level complete)
 - [ ] Ensure readiness checks cover API + workers + inference runtime.
 - [ ] Validate predictable worker scheduling behavior under load.
 
@@ -45,9 +45,9 @@ Define the minimum checklist and milestones required to take CarePilot from the 
 - [ ] Ensure policy enforcement modes and role mappings are documented.
 
 ### 6) Deployment Topology
-- [ ] Define production topology for API, web, worker, inference runtime.
-- [ ] Document required environment variables and runtime dependencies.
-- [ ] Ensure infra control commands (`infra up/down/status`) map to the production topology.
+- [x] Define production topology for API, web, worker, inference runtime. (doc-level complete)
+- [x] Document required environment variables and runtime dependencies. (doc-level complete)
+- [x] Ensure infra control commands (`infra up/down/status`) map to the production topology. (doc-level complete)
 
 ### 7) E2E Validation
 - [ ] Playwright coverage for core flows (Meal → Meds → Reminders → Chat).
