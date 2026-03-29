@@ -1,14 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page, type Response } from "@playwright/test";
 
-test("login redirects to dashboard", async ({ page }) => {
+async function login(page: Page, email = "member@example.com", password = "member-pass") {
   await page.goto("/login");
-  await page.getByLabel("Email").fill("member@example.com");
-  await page.getByLabel("Password").fill("member-pass");
-  const loginResponse = page.waitForResponse(r => r.url().includes("/auth/login") && r.status() === 200);
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  const loginResponse = page.waitForResponse(
+    (r: Response) => r.url().includes("/auth/login") && r.status() === 200,
+  );
   await page.getByRole("button", { name: "Login" }).click();
   await loginResponse;
-
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
+}
+
+test("login redirects to dashboard", async ({ page }) => {
+  await login(page);
   await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible();
 });
 
@@ -16,11 +21,7 @@ test.describe("mobile navigation", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("opens and closes the mobile drawer", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("member@example.com");
-    await page.getByLabel("Password").fill("member-pass");
-    await page.getByRole("button", { name: "Login" }).click();
-    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
+    await login(page);
 
     await page.getByRole("button", { name: "Open navigation drawer" }).click();
     await expect(page.getByRole("dialog", { name: "Navigation menu" })).toBeVisible();
@@ -32,38 +33,29 @@ test.describe("mobile navigation", () => {
 });
 
 test("dashboard stays summary-focused and links out to settings", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("member@example.com");
-  await page.getByLabel("Password").fill("member-pass");
-  const loginResponse = page.waitForResponse(r => r.url().includes("/auth/login") && r.status() === 200);
-  await page.getByRole("button", { name: "Login" }).click();
-  await loginResponse;
-
-  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
+  await login(page);
   await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible();
   await expect(page.getByLabel("Height (cm)")).toBeHidden();
   await expect(page.getByLabel("Weight (kg)")).toBeHidden();
 });
 
 test("settings page exposes guided health profile setup with advanced edit fallback", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("member@example.com");
-  await page.getByLabel("Password").fill("member-pass");
-  await page.getByRole("button", { name: "Login" }).click();
+  await login(page);
 
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "Configuration" })).toBeVisible();
-  
+
   // Tabs are used now
+  await expect(page.getByRole("tab", { name: "Health Profile" })).toBeVisible();
   await page.getByRole("tab", { name: "Health Profile" }).click();
-  
+
   // Benchmark text check
-  await expect(page.getByText("established")).toBeVisible(); 
-  
+  await expect(page.getByText("established")).toBeVisible();
+
   // Default is guided
   await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
   await expect(page.getByLabel("Age")).toBeVisible();
-  
+
   // Switch to advanced
   await page.getByRole("button", { name: "Advanced" }).click();
   await expect(page.getByRole("heading", { name: "Clinical Profile" })).toBeVisible();
@@ -71,25 +63,20 @@ test("settings page exposes guided health profile setup with advanced edit fallb
 });
 
 test("reminder delivery settings live in settings, not the reminders page", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("member@example.com");
-  await page.getByLabel("Password").fill("member-pass");
-  await page.getByRole("button", { name: "Login" }).click();
+  await login(page);
 
   await page.goto("/reminders");
   await expect(page.getByRole("heading", { name: "Delivery Settings" })).toHaveCount(0);
 
   await page.goto("/settings");
+  await expect(page.getByRole("tab", { name: "Delivery" })).toBeVisible();
   await page.getByRole("tab", { name: "Delivery" }).click();
   await expect(page.getByRole("heading", { name: "Notification Channels" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Mobility Alerts" })).toBeVisible();
 });
 
 test("reminders page shows structured reminder sections", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("member@example.com");
-  await page.getByLabel("Password").fill("member-pass");
-  await page.getByRole("button", { name: "Login" }).click();
+  await login(page);
 
   await page.goto("/reminders");
   // Check for the new tabs
@@ -99,10 +86,7 @@ test("reminders page shows structured reminder sections", async ({ page }) => {
 });
 
 test("caregiver household page shows a read-only care panel", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("helper@example.com");
-  await page.getByLabel("Password").fill("helper-pass");
-  await page.getByRole("button", { name: "Login" }).click();
+  await login(page, "helper@example.com", "helper-pass");
 
   await page.goto("/household");
   await expect(page.getByRole("heading", { name: "Caregiving View" })).toBeVisible();
@@ -110,10 +94,7 @@ test("caregiver household page shows a read-only care panel", async ({ page }) =
 });
 
 test("meals page includes weekly summary insights", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("member@example.com");
-  await page.getByLabel("Password").fill("member-pass");
-  await page.getByRole("button", { name: "Login" }).click();
+  await login(page);
 
   await page.goto("/meals");
   await expect(page.getByRole("heading", { name: "Nutrition Intelligence" })).toBeVisible();
@@ -121,10 +102,7 @@ test("meals page includes weekly summary insights", async ({ page }) => {
 });
 
 test("medications page exposes regimen and adherence tooling", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("member@example.com");
-  await page.getByLabel("Password").fill("member-pass");
-  await page.getByRole("button", { name: "Login" }).click();
+  await login(page);
 
   await page.goto("/medications");
   await expect(page.getByRole("heading", { name: "Care Plan Adherence" })).toBeVisible();
@@ -133,10 +111,7 @@ test("medications page exposes regimen and adherence tooling", async ({ page }) 
 });
 
 test("medication normalization review hides after confirm", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("member@example.com");
-  await page.getByLabel("Password").fill("member-pass");
-  await page.getByRole("button", { name: "Login" }).click();
+  await login(page);
 
   await page.route("**/api/v1/medications/intake/text", async (route) => {
     await route.fulfill({
@@ -198,10 +173,7 @@ test("medication normalization review hides after confirm", async ({ page }) => 
 });
 
 test("symptoms, reports, clinical cards, and metrics pages are available", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("member@example.com");
-  await page.getByLabel("Password").fill("member-pass");
-  await page.getByRole("button", { name: "Login" }).click();
+  await login(page);
 
   await page.goto("/symptoms");
   await expect(page.getByRole("heading", { name: "Symptom Monitoring" })).toBeVisible();
