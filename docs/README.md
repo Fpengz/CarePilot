@@ -7,6 +7,7 @@ This directory is the system of record for CarePilot repository knowledge. Start
 - `docs/exec-plans/index.md` — active/in-progress/completed execution plans + templates
 - `docs/product-specs/index.md` — product specs and user-facing behavior
 - `docs/references/index.md` — API, ops, config, and engineering references
+ - `docs/design-docs/architecture/event-driven/ARCHITECTURE.md` — primary event-driven architecture (orchestration-first is legacy)
 
 ## Canonical Root Docs
 - `README.md` — product overview and setup
