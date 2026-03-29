@@ -40,6 +40,22 @@ def _login(client: TestClient, email: str, password: str) -> None:
     assert response.status_code == 200
 
 
+def _analyze_meal_and_confirm(client: TestClient, image_bytes: bytes) -> None:
+    response = client.post(
+        "/api/v1/meal/analyze",
+        files={"file": ("meal.jpg", image_bytes, "image/jpeg")},
+        data={"runtime_mode": "local", "provider": "test"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    if body.get("confirmation_required"):
+        confirm = client.post(
+            "/api/v1/meal/confirm",
+            json={"candidate_id": body["candidate_id"], "action": "confirm"},
+        )
+        assert confirm.status_code == 200
+
+
 def _reset_settings_cache() -> None:
     get_settings.cache_clear()
 
@@ -181,18 +197,7 @@ def test_meal_records_limit_query_truncates_response(sqlite_meal_env: None) -> N
     _login(client, "member@example.com", "member-pass")
 
     for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255)]:
-        response = client.post(
-            "/api/v1/meal/analyze",
-            files={
-                "file": (
-                    "meal.jpg",
-                    _jpeg_bytes_with_color(color),
-                    "image/jpeg",
-                )
-            },
-            data={"runtime_mode": "local", "provider": "test"},
-        )
-        assert response.status_code == 200
+        _analyze_meal_and_confirm(client, _jpeg_bytes_with_color(color))
 
     all_records = client.get("/api/v1/meal/records")
     limited = client.get("/api/v1/meal/records?limit=2")
@@ -210,18 +215,7 @@ def test_meal_records_cursor_pagination_returns_next_page(sqlite_meal_env: None)
     _login(client, "member@example.com", "member-pass")
 
     for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255)]:
-        response = client.post(
-            "/api/v1/meal/analyze",
-            files={
-                "file": (
-                    "meal.jpg",
-                    _jpeg_bytes_with_color(color),
-                    "image/jpeg",
-                )
-            },
-            data={"runtime_mode": "local", "provider": "test"},
-        )
-        assert response.status_code == 200
+        _analyze_meal_and_confirm(client, _jpeg_bytes_with_color(color))
 
     page_one = client.get("/api/v1/meal/records?limit=2")
     assert page_one.status_code == 200
