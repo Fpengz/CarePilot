@@ -108,10 +108,10 @@ class TelegramChannel:
 
         attachments = message.attachments or []
         first_attachment = attachments[0] if attachments else None
-        
+
         has_media = first_attachment is not None
         media_type = first_attachment.get("content_type", "") if first_attachment else ""
-        
+
         if not has_media:
             endpoint = self._build_endpoint()
             payload = self._build_payload(message, chat_id)

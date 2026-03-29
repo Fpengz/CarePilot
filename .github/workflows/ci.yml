@@ -50,18 +50,19 @@ jobs:
         with:
           node-version: "22"
           cache: "pnpm"
+          cache-dependency-path: apps/web/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm --dir apps/web install --frozen-lockfile
 
       - name: Web lint
-        run: pnpm web:lint
+        run: pnpm --dir apps/web lint
 
       - name: Web typecheck
-        run: pnpm web:typecheck
+        run: pnpm --dir apps/web typecheck
 
       - name: Web build
-        run: pnpm web:build
+        run: pnpm --dir apps/web build
 
   web-e2e:
     runs-on: ubuntu-latest
@@ -87,9 +88,13 @@ jobs:
         with:
           node-version: "22"
           cache: "pnpm"
+          cache-dependency-path: apps/web/pnpm-lock.yaml
 
       - name: Install web dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm --dir apps/web install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm --dir apps/web build
 
       - name: Install Playwright browser
         run: pnpm --dir apps/web exec playwright install --with-deps chromium

@@ -22,9 +22,16 @@ def _meal_upload(client: TestClient) -> None:
         data={"runtime_mode": "local", "provider": "test"},
     )
     assert response.status_code == 200
+    body = response.json()
+    if body.get("confirmation_required"):
+        confirm = client.post(
+            "/api/v1/meal/confirm",
+            json={"candidate_id": body["candidate_id"], "action": "confirm"},
+        )
+        assert confirm.status_code == 200
 
 
-def test_meal_records_endpoint_returns_saved_records() -> None:
+def test_meal_records_endpoint_returns_saved_records(sqlite_meal_env: None) -> None:
     with TestClient(create_app()) as client:
         _login(client, "member@example.com", "member-pass")
         client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})

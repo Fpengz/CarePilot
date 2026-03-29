@@ -22,10 +22,7 @@ from care_pilot.agent.adapters.agent_adapters import (
 )
 from care_pilot.agent.chat.schemas import ChatStreamEvent
 from care_pilot.agent.emotion import EmotionAgentDisabledError
-from care_pilot.agent.emotion.schemas import (
-    EmotionSpeechAgentInput,
-    EmotionTextAgentInput,
-)
+from care_pilot.agent.emotion.schemas import EmotionSpeechAgentInput, EmotionTextAgentInput
 from care_pilot.agent.runtime.context_builder import build_agent_context
 from care_pilot.features.companion.chat.meal_intent import (
     classify_meal_log_intent,

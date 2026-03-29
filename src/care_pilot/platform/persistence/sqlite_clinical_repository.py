@@ -205,7 +205,7 @@ class SQLiteClinicalRepository:
             logger.debug("get_health_profile_miss user_id=%s returning_default", user_id)
             from care_pilot.features.profiles.domain.health_profile import default_health_profile
             return default_health_profile(user_id)
-        
+
         payload = cast(str, row[0])
         logger.debug("get_health_profile_hit user_id=%s", user_id)
         return HealthProfileRecord.model_validate_json(payload)
@@ -225,11 +225,11 @@ class SQLiteClinicalRepository:
                 )
             else:
                 normalized_goals.append(g)
-        
+
         # Update profile with normalized objects before dumping
         profile.nutrition_goals = normalized_goals
         serializable_profile = profile.model_dump(mode="json")
-        
+
         with get_connection(self.db_path) as conn:
             # 0. Ensure user_profiles base record exists (required for FKs)
             conn.execute(
@@ -258,7 +258,7 @@ class SQLiteClinicalRepository:
                     json.dumps(serializable_profile),
                 ),
             )
-            
+
             # 2. Sync nutrition goals
             conn.execute("DELETE FROM user_nutrition_goals WHERE user_id = ?", (profile.user_id,))
             for goal in normalized_goals:
@@ -277,7 +277,7 @@ class SQLiteClinicalRepository:
                         goal.end_date.isoformat() if goal.end_date and hasattr(goal.end_date, "isoformat") else (str(goal.end_date) if goal.end_date else None),
                     ),
                 )
-                
+
             # 3. Sync meal schedule
             conn.execute("DELETE FROM user_meal_schedule WHERE user_id = ?", (profile.user_id,))
             for item in profile.meal_schedule:
@@ -295,9 +295,9 @@ class SQLiteClinicalRepository:
                         item.notes,
                     ),
                 )
-                
+
             conn.commit()
-            
+
         logger.info(
             "save_health_profile user_id=%s goals=%s schedule=%s",
             profile.user_id,

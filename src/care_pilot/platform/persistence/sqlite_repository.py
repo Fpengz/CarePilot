@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
+from care_pilot.core.contracts.notifications import ReminderSchedulerRepository
 from care_pilot.features.recommendations.domain.canonical_food_matching import (
     build_default_canonical_food_records,
     normalize_text,
@@ -29,7 +30,7 @@ from .sqlite_workflow_repository import SQLiteWorkflowRepository
 logger = get_logger(__name__)
 
 
-class SQLiteRepository:
+class SQLiteRepository(ReminderSchedulerRepository):
     """
     Composite SQLite repository aggregating all domain-specific stores.
 

@@ -24,12 +24,8 @@ from care_pilot.platform.persistence.models.user_disliked_ingredients import (
 from care_pilot.platform.persistence.models.user_medications import UserMedicationRecord
 
 if TYPE_CHECKING:
-    from care_pilot.platform.persistence.models.user_meal_schedule import (
-        UserMealScheduleRecord,
-    )
-    from care_pilot.platform.persistence.models.user_nutrition_goals import (
-        UserNutritionGoalRecord,
-    )
+    from care_pilot.platform.persistence.models.user_meal_schedule import UserMealScheduleRecord
+    from care_pilot.platform.persistence.models.user_nutrition_goals import UserNutritionGoalRecord
 
 
 class UserProfileRecord(BaseRecord, TimestampMixin, table=True):

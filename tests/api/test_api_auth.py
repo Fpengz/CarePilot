@@ -22,10 +22,11 @@ def _build_settings(**overrides: object) -> Settings:
     return Settings.model_validate(overrides)
 
 
-def _create_auth_only_app():
+def _create_auth_only_app(auth_overrides: dict[str, object] | None = None):
+    auth_overrides = auth_overrides or {}
     settings = _build_settings(
         llm={"provider": "test"},
-        auth={"store_backend": "in_memory"},
+        auth={"store_backend": "in_memory", **auth_overrides},
     )
     ctx = SimpleNamespace(
         settings=settings,
@@ -394,16 +395,17 @@ def test_patch_profile_rejects_empty_update() -> None:
         assert patch.json()["detail"] == "no profile changes requested"
 
 
-def test_login_locks_after_repeated_failures_and_then_allows_after_lockout_expiry(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_login_locks_after_repeated_failures_and_then_allows_after_lockout_expiry() -> None:
     max_attempts = 2
     lockout_seconds = 1
-    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILED_ATTEMPTS", str(max_attempts))
-    monkeypatch.setenv("AUTH_LOGIN_LOCKOUT_SECONDS", str(lockout_seconds))
-    monkeypatch.setenv("AUTH_LOGIN_FAILURE_WINDOW_SECONDS", "1")
-    _reset_settings_cache()
-    with TestClient(create_app()) as client:
+    app = _create_auth_only_app(
+        auth_overrides={
+            "login_max_failed_attempts": max_attempts,
+            "login_lockout_seconds": lockout_seconds,
+            "login_failure_window_seconds": 1,
+        }
+    )
+    with TestClient(app) as client:
         for _ in range(max_attempts):
             failed = client.post(
                 "/api/v1/auth/login",
@@ -605,4 +607,3 @@ def test_auth_api_supports_sqlite_backend_with_persistence_across_app_instances(
         )
         assert login.status_code == 200
         assert login.json()["user"]["email"] == "sqlite-user@example.com"
-
