@@ -93,6 +93,9 @@ jobs:
       - name: Install web dependencies
         run: pnpm --dir apps/web install --frozen-lockfile
 
+      - name: Build web app
+        run: pnpm --dir apps/web build
+
       - name: Install Playwright browser
         run: pnpm --dir apps/web exec playwright install --with-deps chromium
 
