@@ -10,6 +10,19 @@ Environment loading conventions:
 - Default source of truth is root `.env`.
 - Web commands (`pnpm web:*`) load root `.env` first, then optional `apps/web/.env` overrides.
 
+## Infra Defaults & Dependencies
+
+| Setting | Default | Required? | Notes |
+| --- | --- | --- | --- |
+| `APP_ENV` | `dev` | yes | `staging`/`prod` tighten readiness checks. |
+| `API_SQLITE_DB_PATH` | `care_pilot_api.db` | yes | Required for durable storage. |
+| `AUTH_SQLITE_DB_PATH` | `care_pilot_auth.db` | yes | Required for auth persistence. |
+| `EPHEMERAL_STATE_BACKEND` | `in_memory` | no | Use `redis` for production worker coordination. |
+| `REDIS_URL` | none | conditional | Required when `EPHEMERAL_STATE_BACKEND=redis`. |
+| `REDIS_NAMESPACE` | `care_pilot` | no | Namespaces worker keys and locks. |
+| `READINESS_FAIL_ON_WARNINGS` | profile-derived | yes | `false` in dev, `true` in staging/prod. |
+| `LLM_PROVIDER` | `test` | no | Set to real provider for production. |
+
 ## Auth / Session
 - `API_SQLITE_DB_PATH` (default: `care_pilot_api.db`) — application data / household persistence
 - `APP_ENV` (default: `dev`) — runtime profile (`dev`, `staging`, `prod`)
