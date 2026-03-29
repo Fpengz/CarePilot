@@ -14,8 +14,10 @@ from care_pilot.platform.persistence.sqlite_clinical_repository import SQLiteCli
 def repo(tmp_path: Path) -> SQLiteClinicalRepository:
     db_path = str(tmp_path / "test_clinical.db")
     from care_pilot.platform.persistence.sqlite_repository import SQLiteRepository
+
     full_repo = SQLiteRepository(db_path)
     return full_repo.clinical
+
 
 def test_save_and_get_normalized_profile(repo: SQLiteClinicalRepository):
     user_id = "user_test_123"
@@ -29,14 +31,14 @@ def test_save_and_get_normalized_profile(repo: SQLiteClinicalRepository):
                 goal_type="sodium",
                 target_value=1500.0,
                 unit="mg",
-                start_date=date(2026, 3, 1)
+                start_date=date(2026, 3, 1),
             ),
             NutritionGoal(
                 goal_type="sugar",
                 target_value=25.0,
                 unit="g",
-                start_date=date(2026, 3, 1)
-            )
+                start_date=date(2026, 3, 1),
+            ),
         ],
         meal_schedule=[
             MealScheduleWindow(
@@ -44,16 +46,16 @@ def test_save_and_get_normalized_profile(repo: SQLiteClinicalRepository):
                 day_of_week=1,
                 start_time="08:00",
                 end_time="09:00",
-                notes="Light meal"
+                notes="Light meal",
             ),
             MealScheduleWindow(
                 slot="lunch",
                 day_of_week=1,
                 start_time="12:30",
-                end_time="13:30"
-            )
+                end_time="13:30",
+            ),
         ],
-        updated_at=datetime.now(UTC).isoformat()
+        updated_at=datetime.now(UTC).isoformat(),
     )
 
     # Save
@@ -75,6 +77,7 @@ def test_save_and_get_normalized_profile(repo: SQLiteClinicalRepository):
     assert retrieved.meal_schedule[0].start_time == "08:00"
     assert retrieved.meal_schedule[0].notes == "Light meal"
 
+
 def test_sync_overwrites_old_records(repo: SQLiteClinicalRepository):
     user_id = "user_test_456"
 
@@ -83,9 +86,14 @@ def test_sync_overwrites_old_records(repo: SQLiteClinicalRepository):
         user_id=user_id,
         age=40,
         nutrition_goals=[
-            NutritionGoal(goal_type="calories", target_value=2000.0, unit="kcal", start_date=date(2026, 1, 1))
+            NutritionGoal(
+                goal_type="calories",
+                target_value=2000.0,
+                unit="kcal",
+                start_date=date(2026, 1, 1),
+            )
         ],
-        updated_at=datetime.now(UTC).isoformat()
+        updated_at=datetime.now(UTC).isoformat(),
     )
     repo.save_health_profile(profile1)
 
@@ -94,9 +102,14 @@ def test_sync_overwrites_old_records(repo: SQLiteClinicalRepository):
         user_id=user_id,
         age=40,
         nutrition_goals=[
-            NutritionGoal(goal_type="protein", target_value=100.0, unit="g", start_date=date(2026, 2, 1))
+            NutritionGoal(
+                goal_type="protein",
+                target_value=100.0,
+                unit="g",
+                start_date=date(2026, 2, 1),
+            )
         ],
-        updated_at=datetime.now(UTC).isoformat()
+        updated_at=datetime.now(UTC).isoformat(),
     )
     repo.save_health_profile(profile2)
 

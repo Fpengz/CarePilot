@@ -30,7 +30,7 @@ export default defineConfig({
     },
     {
       command:
-        "NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001 pnpm start --hostname 127.0.0.1 --port 3000",
+        "pnpm start --hostname 127.0.0.1 --port 3000",
       url: "http://127.0.0.1:3000/login",
       cwd: ".",
       reuseExistingServer: !process.env.CI,
