@@ -2,7 +2,10 @@
 
 ## Overview
 
-CarePilot does not use a single orchestrator. Orchestration is distributed across:
+CarePilot’s primary architecture is **event-driven**. Orchestration here refers only to explicit workflow coordination inside that model.
+The orchestration-first architecture is archived and retained for historical feature exploration only.
+
+CarePilot does not use a single orchestrator. Coordination is distributed across:
 
 1. `LangGraph` workflows
 2. Feature orchestrators

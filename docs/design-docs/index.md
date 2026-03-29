@@ -6,7 +6,7 @@ Design documentation and architecture references. Update this index when new des
 | --- | --- | --- | --- |
 | `docs/design-docs/core-beliefs.md` | active | 2026-03-30 | platform |
 | `docs/design-docs/workflows.md` | active | 2026-03-29 | platform |
-| `docs/design-docs/architecture/system_architecture.md` | active | 2026-03-29 | platform |
+| `docs/design-docs/architecture/system_architecture.md` | active | 2026-03-30 | platform |
 | `docs/design-docs/architecture/codebase-map.md` | active | 2026-03-29 | platform |
 | `docs/design-docs/architecture/agent-layer-reference.md` | active | 2026-03-29 | agent |
 | `docs/design-docs/architecture/emotion-pipeline.md` | active | 2026-03-29 | agent |
@@ -19,7 +19,7 @@ Design documentation and architecture references. Update this index when new des
 | `docs/design-docs/architecture/event-driven/ARCHITECTURE.md` | active | 2026-03-29 | platform |
 | `docs/design-docs/architecture/event-driven/EVENT_MODEL.md` | active | 2026-03-29 | platform |
 | `docs/design-docs/architecture/event-driven/STATE_MODEL.md` | active | 2026-03-29 | platform |
-| `docs/design-docs/architecture/event-driven/ORCHESTRATOR.md` | active | 2026-03-29 | platform |
+| `docs/design-docs/architecture/event-driven/ORCHESTRATOR.md` | active | 2026-03-30 | platform |
 | `docs/design-docs/architecture/event-driven/AGENT_CONTRACTS.md` | active | 2026-03-29 | agent |
 | `docs/design-docs/architecture/event-driven/REPO_MAPPING.md` | active | 2026-03-29 | platform |
 | `docs/design-docs/architecture/event-driven/event-coverage.md` | active | 2026-03-29 | platform |

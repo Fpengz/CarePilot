@@ -6,6 +6,7 @@
 - Adopted harness-engineering knowledge base conventions as the canonical documentation system.
 - Added core beliefs, tech debt tracking, and maintenance rules to keep repository knowledge legible over time.
 - Updated templates and tooling references to ensure new contributors can onboard without external context.
+- Declared event-driven workflows as the primary architecture; orchestration-first design is archived.
 
 ## Changes
 - **Knowledge Base Rules**: `docs/README.md` now documents system-of-record rules, doc gardening, and validation expectations.

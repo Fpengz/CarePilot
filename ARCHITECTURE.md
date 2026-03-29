@@ -3,6 +3,8 @@
 ## Purpose
 This is the canonical architecture reference for CarePilot. It describes the feature-first modular-monolith structure, the ownership boundaries that contributors must preserve, and the forward direction for the project.
 
+Primary direction: **event-driven workflows** are the mainline architecture. The orchestration-first design is **archived** and retained only as legacy exploration context.
+
 Related docs:
 - `README.md`
 - `docs/exec-plans/index.md` — active/in-progress/completed execution plans
@@ -27,7 +29,8 @@ src/care_pilot/
 ### Repo-Wide Architecture Stance (Hard Decisions)
 - **Features** own product behavior and deterministic domain rules.
 - **Agent** owns model-backed reasoning (pydantic-ai).
-- **Orchestration** is supervisor-led via **LangGraph**.
+- **Event-Driven** is the primary architecture; **LangGraph** is used only for explicit multi-step workflows within that model.
+- **Orchestration-first** architecture is legacy and should not be extended.
 - **Platform** owns infra-only adapters.
 - **Core** owns only tiny cross-cutting primitives and API contracts.
 
@@ -67,9 +70,10 @@ src/care_pilot/
 
 ---
 
-## Multi-Agent Orchestration
+## Event-Driven Workflows (Primary)
 
-CarePilot uses a **Supervisor-led LangGraph** architecture.
+CarePilot uses an **event-driven** architecture with **LangGraph** only for explicit multi-step journeys.
+The orchestration-first model is archived for feature exploration and should not be expanded.
 
 ```mermaid
 graph TD

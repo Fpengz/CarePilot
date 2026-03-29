@@ -11,7 +11,7 @@ Related docs:
 Implemented baseline:
 - FastAPI API with auth, policy, and workflow trace support.
 - Next.js frontend with impeccable UI redesign.
-- LangGraph-based ChatOrchestrator with streaming support.
+- Event-driven workflow spine with LangGraph for explicit journeys (orchestration-first is legacy).
 - SQLModel persistence with formal Alembic migrations (SQLite backend today).
 - Strict Protocol-based repository interfaces.
 
@@ -22,11 +22,13 @@ Implemented baseline:
 ### Completed
 - Harness engineering principles adopted across docs and validation workflows.
 - Legacy SQLite persistence migrated to SQLModel + Alembic with normalized tables.
+- Event-driven architecture established as the primary development direction.
 
 ### Current Priorities
 - Production hardening: reliability, observability, and predictable worker scheduling.
 - User health mitigation: improve clinician summaries, adherence guidance, and safety guardrails.
 - Multi-channel messaging: inbound processing and attachment handling for real-time engagement.
+- Retire remaining orchestration-first assumptions; keep legacy artifacts as reference only.
 
 ### Known Tech Debt
 - Legacy doc references and root-level documentation drift (clean up and re-index).
