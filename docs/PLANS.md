@@ -1,6 +1,8 @@
-# Planning Standards
+# Planning Pointer
 
-Plans are first-class artifacts. Use execution plans for complex work, lightweight checklists for small changes.
+Use these sources of truth for planning:
+- `SYSTEM_ROADMAP.md` — current priorities, tech debt, future plans
+- `docs/exec-plans/index.md` — active/in-progress/completed execution plans + templates
 
 ## Rules
 - Active plans live in `docs/exec-plans/active/`.

@@ -51,8 +51,8 @@ src/care_pilot/
 ### Persistence Layer — `src/care_pilot/platform/persistence/`
 - **Schema Management**: Managed exclusively via **Alembic** migrations.
 - **Relational Integrity**: Uses **SQLModel** for structured relational storage.
-- **Normalization**: User profiles, nutrition goals, and meal schedules are stored in dedicated tables to ensure data integrity and query efficiency.
-- **Backwards Compatibility**: The repository layer provides a bridging facade to support both legacy JSON-dumped records and new relational structures.
+- **Default Runtime**: SQLite is the default durable store; Postgres is the scale path.
+- **Normalization**: User profiles, nutrition goals, and meal schedules live in dedicated tables for integrity and query efficiency.
 
 ### Feature Layer — `src/care_pilot/features/`
 - Owns all product behavior.

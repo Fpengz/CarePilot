@@ -1,9 +1,37 @@
 # Developer Guide
 
 See also:
-- `CONTRIBUTING.md`
 - `ARCHITECTURE.md`
 - `docs/references/config-reference.md`
+
+## Purpose
+This guide defines how contributors should work in the CarePilot repository.
+
+It is written for:
+- backend engineers
+- frontend engineers
+- ML / applied AI engineers
+- platform engineers
+- AI agents operating on the repository
+
+The project favors maintainability over cleverness. New contributions should make the architecture easier to extend, not merely add behavior.
+
+## Repository Operating Model
+The repository is a monorepo with:
+- FastAPI backend under `apps/api`
+- Next.js frontend under `apps/web`
+- shared Python core under `src/care_pilot`
+- tests at both API and repository levels
+
+Current local-first default:
+- SQLite for durable storage
+- in-process orchestration for most workflows
+
+Target production direction:
+- SQLite remains supported for local and edge runtime
+- Postgres is the relational scale path
+- Redis for cache, ephemeral coordination, and async worker plumbing
+- expanded worker and retrieval infrastructure
 
 ## Setup
 
@@ -12,13 +40,19 @@ Requirements:
 - Node.js 20+
 - `uv`
 - `pnpm`
-- Docker for optional Redis-backed worker smoke paths
+- Docker for optional infra smoke paths
 
 Install:
 
 ```bash
+make install
+```
+
+Manual install:
+
+```bash
 uv sync
-pnpm install
+cd apps/web && pnpm install
 cp .env.example .env
 ```
 
@@ -38,21 +72,97 @@ uv run python scripts/cli.py dev --no-api
 uv run python scripts/cli.py dev --no-scheduler
 ```
 
-Target-aligned local stack:
-
-```bash
-uv run python scripts/cli.py infra up
-```
-
 ## Repository map
 - `apps/api/carepilot_api/`: FastAPI app, routers, API services, schemas
 - `apps/web/`: Next.js app, components, typed API clients, e2e coverage
-- `apps/workers/`: external worker runtime
+- `apps/workers/`: worker runtime
+- `apps/inference/`: inference runtime service
 - `src/care_pilot/core/`: tiny shared primitives
 - `src/care_pilot/features/`: product behavior and feature entrypoints
 - `src/care_pilot/agent/`: bounded model/provider logic
 - `src/care_pilot/platform/`: persistence and external adapters
-- `tests/` and `apps/api/tests/`: repository and API tests
+- `tests/`: repository tests
+
+## Development Workflow
+
+### Branch Strategy
+Use short-lived feature branches from `main`.
+
+Recommended naming:
+- `feat/<topic>`
+- `fix/<topic>`
+- `docs/<category>/<doc>`
+- `refactor/<topic>`
+- `agent/<task-name>` for multi-agent execution branches
+
+### Pull Request Guidelines
+Each PR should:
+- focus on one coherent change set
+- include tests or an explicit testing explanation
+- describe behavior changes and migration risks
+- identify affected layers: API, orchestration, agent, tool, data, frontend, infra
+
+PRs are expected to use `.github/pull_request_template.md`. CI enforces required sections and checklist completion through the `pr-policy` workflow.
+
+### Multi-Agent Workflow
+When using multiple engineers/agents in parallel:
+- Follow `AGENTS.md` for task contract requirements and ownership boundaries.
+- Follow the branch isolation and merge sequencing rules in this document.
+- Escalate changes that touch high-risk shared files listed in `AGENTS.md`.
+
+Minimum multi-agent task contract:
+- `Goal`
+- `Scope`
+- `Files`
+- `Validation`
+- `Risk`
+
+Working rule:
+- one agent or branch owns one coherent change at a time
+- avoid mixing unrelated refactors with feature or bugfix work
+- if repo-wide planning changes, update the canonical docs instead of creating new temporary root planning files
+
+### Commit Message Standard
+Use Conventional Commits.
+
+Format:
+- `<type>(<scope>): <subject>`
+
+Examples:
+- `feat(reminders): add scheduled notification delivery architecture`
+- `fix(auth): reject corrupted sqlite session payloads`
+- `docs(architecture): define target multi-agent runtime boundaries`
+
+### Code Review Expectations
+Reviewers should focus on:
+- correctness
+- boundary hygiene
+- regression risk
+- safety implications
+- test coverage
+- observability impact
+
+### Merge and Rebase Rules
+- Keep branches short-lived and task-scoped.
+- Merge low-risk isolated changes first.
+- Sequence high-risk shared-file work with explicit owner review.
+- Rebase against `main` before final review when the branch has drifted.
+- If conflicts touch shared infrastructure, auth, or policy files, pause and coordinate rather than guessing through the merge.
+
+High-risk shared-file areas:
+- `.github/workflows/*`
+- `pyproject.toml`, `apps/web/package.json`, `apps/web/pnpm-lock.yaml`
+- `src/care_pilot/config/app.py`
+- `src/care_pilot/platform/persistence/*`
+- `src/care_pilot/platform/auth/*`
+- `apps/api/carepilot_api/policy.py`
+- `apps/api/carepilot_api/deps.py`
+
+### Planning and backlog hygiene
+- `SYSTEM_ROADMAP.md` is the canonical roadmap and status document.
+- Do not create new root planning files for temporary execution packets or one-off backlogs.
+- If a plan is still active and generally useful, fold it into `SYSTEM_ROADMAP.md`, `ARCHITECTURE.md`, or `docs/references/developer-guide.md`.
+- If a plan is task-local and temporary, keep it in the PR or issue context instead of adding another repository-level markdown file.
 
 ## Extension patterns
 
@@ -88,11 +198,6 @@ Focused gates:
 ```bash
 uv run python scripts/cli.py test backend
 uv run python scripts/cli.py test web
-
-Ingestion:
-- `uv run python scripts/cli.py ingest local`
-- `uv run python scripts/cli.py ingest usda <path> [--reset]`
-- `uv run python scripts/cli.py ingest off <path> [--reset]`
 ```
 
 Direct gates:
@@ -101,9 +206,7 @@ Direct gates:
 uv run ruff check .
 uv run ty check . --extra-search-path src --output-format concise
 uv run pytest -q
-pnpm web:lint
-pnpm web:typecheck
-pnpm web:build
+cd apps/web && pnpm lint && pnpm typecheck && pnpm build
 ```
 
 ## Debugging workflow

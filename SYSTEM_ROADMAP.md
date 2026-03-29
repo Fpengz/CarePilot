@@ -17,6 +17,27 @@ Implemented baseline:
 
 ---
 
+## March 29, 2026 — Current Snapshot
+
+### Completed
+- Harness engineering principles adopted across docs and validation workflows.
+- Legacy SQLite persistence migrated to SQLModel + Alembic with normalized tables.
+
+### Current Priorities
+- Production hardening: reliability, observability, and predictable worker scheduling.
+- User health mitigation: improve clinician summaries, adherence guidance, and safety guardrails.
+- Multi-channel messaging: inbound processing and attachment handling for real-time engagement.
+
+### Known Tech Debt
+- Legacy doc references and root-level documentation drift (clean up and re-index).
+- Optional infra assumptions (Redis/vector memory) are not consistently enforced or documented.
+- Inference/runtime boundaries need clearer deployment guidance for production (API vs inference vs workers).
+
+### Future Plans
+- Production readiness: health checks, SLOs, and operational playbooks for API, workers, and inference.
+- Health impact improvements: stronger personalization signals and longitudinal trend projections.
+- Clinician support: richer digest, risk stratification, and export-ready summaries.
+
 ## 1. Today's Plan (Active Workstreams)
 
 ### 1.1 Agent & Chat Consolidation

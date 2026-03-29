@@ -6,6 +6,7 @@ Design documentation and architecture references. Update this index when new des
 | --- | --- | --- | --- |
 | `docs/design-docs/workflows.md` | active | 2026-03-29 | platform |
 | `docs/design-docs/architecture/system_architecture.md` | active | 2026-03-29 | platform |
+| `docs/design-docs/architecture/codebase-map.md` | active | 2026-03-29 | platform |
 | `docs/design-docs/architecture/agent-layer-reference.md` | active | 2026-03-29 | agent |
 | `docs/design-docs/architecture/emotion-pipeline.md` | active | 2026-03-29 | agent |
 | `docs/design-docs/architecture/meal-analysis.md` | active | 2026-03-29 | features |
