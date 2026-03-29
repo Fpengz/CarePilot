@@ -63,3 +63,60 @@ Define the minimum checklist and milestones required to take CarePilot from the 
 - `SYSTEM_ROADMAP.md` (current priorities + known tech debt)
 - `docs/exec-plans/tech-debt-tracker.md`
 - `docs/references/operations-runbook.md`
+
+---
+
+## Frontend UX Critique + Checklist (Full)
+
+### Anti-Patterns Verdict (AI-Slop Test)
+**Fail.** Repeated glass cards, micro-labels, generic typography (Inter), decorative sparklines, and uniform spacing flatten hierarchy and feel templated.
+
+### Executive Summary
+**Top issues:**
+1. Hierarchy flattening from repeated containers and micro-labels.
+2. Typography compression (titles and body too close in scale/weight).
+3. Contrast drift on tinted surfaces (risk in light/dark).
+4. Mobile density and touch-target risks.
+
+### Detailed Findings (by severity)
+**Critical**
+- Hierarchy fails under load; primary signal is not obvious.
+
+**High**
+- Typography hierarchy too narrow.
+- Micro-label overload (uppercase everywhere).
+- Contrast drift on tinted surfaces.
+
+**Medium**
+- Card grid fatigue; weak visual rhythm.
+- Charts lack clear story headlines.
+
+**Low**
+- Typography monotony (weights + sizes too uniform).
+- Spacing uniformity across sections.
+
+### Polish Checklist (Actionable)
+**Typography**
+- [ ] Reduce uppercase micro-labels to section headers only.
+- [ ] Increase contrast between H1/H2/body.
+- [ ] Add one stronger font weight for emphasis.
+- [ ] Limit to 2 typography scales per screen (title + body).
+
+**Layout & Rhythm**
+- [ ] Introduce at least one non-card section per page.
+- [ ] Vary spacing: one dense cluster + one airy zone per screen.
+- [ ] Ensure primary section is visually dominant.
+
+**Color & Contrast**
+- [ ] Replace gray-on-tint text with proper tokenized contrast.
+- [ ] Define one primary accent for alerts/actions.
+- [ ] Verify dark-mode contrast at AA minimum.
+
+**Charts & Data**
+- [ ] Add a one-line story headline above each major chart.
+- [ ] Remove decorative sparklines or make them interactive.
+
+**UX & Responsiveness**
+- [ ] Ensure 44x44 touch targets on mobile.
+- [ ] Avoid 3-column grids below ~1024px.
+- [ ] Test content density at 375px width.
