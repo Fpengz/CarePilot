@@ -29,6 +29,7 @@ Implemented baseline:
 - User health mitigation: improve clinician summaries, adherence guidance, and safety guardrails.
 - Multi-channel messaging: inbound processing and attachment handling for real-time engagement.
 - Retire remaining orchestration-first assumptions; keep legacy artifacts as reference only.
+- Deployment topology and infra assumptions clarified in docs.
 
 ### Known Tech Debt
 - Legacy doc references and root-level documentation drift (clean up and re-index).
