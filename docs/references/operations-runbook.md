@@ -27,6 +27,24 @@ This is the supported production-aligned topology:
 - SQLite for durable state
 - Redis for cache, coordination, and worker signaling
 
+## Production Topology (Customer-Facing)
+
+Required services:
+- API runtime
+- web runtime
+- external worker
+- SQLite (durable state)
+- Redis (cache, coordination, worker signaling)
+
+Optional services:
+- inference runtime (separate service for heavy model execution)
+- vector memory (if enabled by feature flags)
+
+### Readiness Dependencies
+- If Redis is enabled but unreachable, readiness should report `degraded`.
+- Worker readiness depends on Redis when `EPHEMERAL_STATE_BACKEND=redis`.
+- Inference runtime is optional; readiness should warn only when it is configured but unreachable.
+
 ## Readiness and health
 
 Endpoint:
