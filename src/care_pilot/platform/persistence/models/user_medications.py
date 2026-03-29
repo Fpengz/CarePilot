@@ -2,11 +2,10 @@
 Models for user-specific medication data, linking to regimens.
 """
 
-from __future__ import annotations
-
 from datetime import date
 from typing import TYPE_CHECKING
 
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship  # Import Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -35,4 +34,4 @@ class UserMedicationRecord(BaseRecord, TimestampMixin, table=True):
     user_notes: str | None = None
 
     # Define the back_populates relationship
-    user_profile: UserProfileRecord = Relationship(back_populates="medications")
+    user_profile: Mapped["UserProfileRecord"] = Relationship(back_populates="medications")

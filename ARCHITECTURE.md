@@ -5,9 +5,9 @@ This is the canonical architecture reference for CarePilot. It describes the fea
 
 Related docs:
 - `README.md`
-- `docs/refactor_plan.md` — detailed refactor history and current status
-- `docs/REFACTOR_HISTORY.md` — log of completed architectural phases
-- `docs/prompt_catalog.md` — repository of all agent prompts
+- `docs/exec-plans/index.md` — active/in-progress/completed execution plans
+- `docs/references/REFACTOR_HISTORY.md` — log of completed architectural phases
+- `docs/references/prompt_catalog.md` — repository of all agent prompts
 
 ---
 

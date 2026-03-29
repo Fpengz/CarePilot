@@ -9,6 +9,7 @@ registered with SQLModel.metadata.
 from sqlmodel import SQLModel
 
 from .auth import AccountRecord
+from .auth_models import AuthAuditEvent, AuthLoginFailure, AuthSession, AuthUser
 from .base import BaseRecord, TimestampMixin
 from .clinical import BiomarkerReadingRecord, SymptomCheckInRecord
 from .events import AlertOutboxRecord, ReminderEventRecord
@@ -50,13 +51,23 @@ __all__ = [
     "UserMealScheduleRecord",
     "UserMedicationRecord",
     "UserNutritionGoalRecord",
+    # Add new auth models to __all__
+    "AuthUser",
+    "AuthSession",
+    "AuthAuditEvent",
+    "AuthLoginFailure",
 ]
 
 # Ensure all models are registered with SQLModel.metadata
 # This is crucial for Alembic to detect all defined tables and relationships.
 # Iterating through __all__ and accessing the record ensures registration.
 for model_name in __all__:
-    model = globals()[model_name]
-    if isinstance(model, type) and issubclass(model, SQLModel):
-        # Use setdefault to avoid issues if metadata is already populated
-        SQLModel.metadata.tables.setdefault(model.model_json_schema()["title"], model.model_json_schema())
+    if model_name in globals(): # Check if the name is actually defined in this scope
+        model = globals()[model_name]
+        if isinstance(model, type) and issubclass(model, SQLModel):
+            # Use setdefault to avoid issues if metadata is already populated
+            # Note: This registration logic might be more complex or handled elsewhere.
+            # For now, assuming a direct approach. If SQLModel.metadata is managed globally,
+            # this might not be strictly necessary for Alembic detection, but good for clarity.
+            # Avoid creating tables directly here, rely on Alembic for schema management.
+            pass # Pass as direct table creation is not the goal here.

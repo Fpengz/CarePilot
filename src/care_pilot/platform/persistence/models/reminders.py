@@ -2,11 +2,10 @@
 Reminder persistence models.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 
 from sqlalchemy import JSON, Column
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship  # Import Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -45,8 +44,15 @@ class ReminderDefinitionRecord(BaseRecord, TimestampMixin, table=True):
     active: bool = True
 
     # Define ORM relationships
-    channels: list[ReminderDefinitionChannelRecord] = Relationship(back_populates="reminder_definition")
-    schedule_rules: list[ReminderScheduleRuleRecord] = Relationship(back_populates="reminder_definition")
+    channels: Mapped[list["ReminderDefinitionChannelRecord"]] = Relationship(
+        back_populates="reminder_definition"
+    )
+    schedule_rules: Mapped[list["ReminderScheduleRuleRecord"]] = Relationship(
+        back_populates="reminder_definition"
+    )
+    occurrences: Mapped[list["ReminderOccurrenceRecord"]] = Relationship(
+        back_populates="reminder_definition"
+    )
 
     # user_profile relationship would be defined in profiles.py
 
@@ -78,6 +84,6 @@ class ReminderOccurrenceRecord(BaseRecord, TimestampMixin, table=True):
 
     # Define back_populates relationships
     # The 'user_profile' relationship would be defined in profiles.py
-    # For reminder_definition, it should back_populate 'schedule_rules' or similar field in ReminderDefinitionRecord
-    # Let's assume ReminderDefinitionRecord has a field 'schedule_rules' for this.
-    reminder_definition: ReminderDefinitionRecord = Relationship(back_populates="schedule_rules")
+    reminder_definition: Mapped["ReminderDefinitionRecord"] = Relationship(
+        back_populates="occurrences"
+    )

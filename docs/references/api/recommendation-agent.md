@@ -187,6 +187,6 @@ Records user feedback for continual online reranking.
 - Allergen, restriction, budget, sugar, sodium, and safety violations can exclude a candidate before ranking.
 
 ## Related Docs
-- `docs/api-suggestions-contract.md`
-- `docs/rbac-matrix.md`
-- `docs/operations-runbook.md`
+- `docs/references/api/suggestions.md`
+- `docs/references/api/rbac.md`
+- `docs/references/operations-runbook.md`

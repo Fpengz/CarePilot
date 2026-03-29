@@ -2,10 +2,9 @@
 User meal schedule persistence model.
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship
 
 from care_pilot.platform.persistence.models.base import BaseRecord, TimestampMixin
@@ -29,4 +28,4 @@ class UserMealScheduleRecord(BaseRecord, TimestampMixin, table=True):
     notes: str | None = None
 
     # Define ORM relationships
-    user_profile: UserProfileRecord = Relationship(back_populates="meal_schedule")
+    user_profile: Mapped["UserProfileRecord"] = Relationship(back_populates="meal_schedule")

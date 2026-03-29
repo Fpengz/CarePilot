@@ -3,8 +3,8 @@
 Source of truth: `src/care_pilot/config/app.py` and `src/care_pilot/config/runtime.py`
 
 Related guides:
-- developer setup and extension: `docs/developer-guide.md`
-- runtime operations and incident workflow: `docs/operations-runbook.md`
+- developer setup and extension: `docs/references/developer-guide.md`
+- runtime operations and incident workflow: `docs/references/operations-runbook.md`
 
 Environment loading conventions:
 - Default source of truth is root `.env`.

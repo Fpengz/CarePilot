@@ -1,8 +1,8 @@
 # Operations Runbook
 
 See also:
-- `docs/developer-guide.md`
-- `docs/config-reference.md`
+- `docs/references/developer-guide.md`
+- `docs/references/config-reference.md`
 
 ## Supported runtime profiles
 

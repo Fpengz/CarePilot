@@ -1,6 +1,6 @@
 # Codebase Documentation Index
 
-> **Status**: Current (updated March 12, 2026)
+> **Status**: Current (updated March 29, 2026)
 
 ## Canonical Docs
 - `README.md`
@@ -12,7 +12,7 @@
 - `CODEBASE_MAP.md` — current structure overview (apps, features, agents, platform)
 
 ## Supporting References
-- `docs/developer-guide.md`
-- `docs/config-reference.md`
-- `docs/operations-runbook.md`
-- `docs/user-manual.md`
+- `docs/references/developer-guide.md`
+- `docs/references/config-reference.md`
+- `docs/references/operations-runbook.md`
+- `docs/product-specs/user-manual.md`

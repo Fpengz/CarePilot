@@ -34,7 +34,7 @@ src/
     agent/      bounded model/provider logic
     platform/   persistence + integrations
     shared/     shared utilities (time, etc.)
-docs/           canonical docs
+docs/           system-of-record knowledge base (design docs, plans, specs, references)
 tests/          unit/integration/e2e
 ```
 

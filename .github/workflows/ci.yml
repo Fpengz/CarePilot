@@ -31,6 +31,9 @@ jobs:
       - name: Tests with coverage gate
         run: uv run pytest --cov=src/care_pilot --cov=apps/api/carepilot_api --cov-report=term-missing --cov-fail-under=70 -q
 
+      - name: Doc gardening report
+        run: uv run python scripts/docs/doc_gardener.py
+
       - name: System Evaluation
         run: uv run python scripts/evaluation/eval_harness.py
 

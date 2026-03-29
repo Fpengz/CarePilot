@@ -4,9 +4,21 @@
 This file defines how human contributors and AI agents should collaborate on the companion architecture in this repository.
 
 It supplements:
-- `CONTRIBUTING.md`
+- `README.md`
 - `ARCHITECTURE.md`
 - `SYSTEM_ROADMAP.md`
+- `docs/README.md`
+
+## Repository Knowledge Map
+Treat this file as a table of contents. The system of record lives in `docs/`.
+
+Start here:
+- `docs/README.md` — knowledge base index
+- `docs/design-docs/index.md` — architecture + design references
+- `docs/exec-plans/index.md` — active, in-progress, completed plans + templates
+- `docs/product-specs/index.md` — product behavior and user specs
+- `docs/references/index.md` — API, ops, config, and engineering references
+- `docs/QUALITY_SCORE.md`, `docs/RELIABILITY.md`, `docs/SECURITY.md`
 
 ## Product Direction
 The current branch is optimizing for a hackathon-quality AI health companion, not backward compatibility.
