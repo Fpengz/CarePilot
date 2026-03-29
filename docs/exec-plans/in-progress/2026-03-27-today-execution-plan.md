@@ -1,5 +1,7 @@
 # Today's Implementation Plan - 2026-03-27 (COMPLETED)
 
+> **Superseded:** This plan is superseded by `docs/exec-plans/in-progress/2026-03-30-today-execution-plan.md`. Keep this file for historical context.
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Harden the core structural and agentic layers of CarePilot to ensure production-grade reliability, data integrity, and multi-modal messaging support.

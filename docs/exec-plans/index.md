@@ -14,7 +14,8 @@ Execution plans are first-class artifacts. Keep active work separate from in-pro
 
 | Doc | Status | Last Verified | Owner |
 | --- | --- | --- | --- |
-| `docs/exec-plans/in-progress/2026-03-27-today-execution-plan.md` | in-progress | 2026-03-29 | platform |
+| `docs/exec-plans/in-progress/2026-03-27-today-execution-plan.md` | completed | 2026-03-30 | platform |
+| `docs/exec-plans/in-progress/2026-03-30-today-execution-plan.md` | in-progress | 2026-03-30 | platform |
 
 ## Completed Plans
 
