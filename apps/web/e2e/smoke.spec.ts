@@ -1,14 +1,27 @@
-import { expect, test, type Page, type Response } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 async function login(page: Page, email = "member@example.com", password = "member-pass") {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  const loginResponse = page.waitForResponse(
-    (r: Response) => r.url().includes("/auth/login") && r.status() === 200,
-  );
-  await page.getByRole("button", { name: "Login" }).click();
-  await loginResponse;
+  const response = await page.request.post("http://127.0.0.1:8001/api/v1/auth/login", {
+    data: { email, password },
+  });
+  if (!response.ok()) {
+    throw new Error(`Login failed: ${response.status()}`);
+  }
+  const setCookie = response.headers()["set-cookie"];
+  if (!setCookie) {
+    throw new Error("Missing session cookie from login response");
+  }
+  const [cookiePair] = setCookie.split(";");
+  const [name, ...valueParts] = cookiePair.split("=");
+  await page.context().addCookies([
+    {
+      name,
+      value: valueParts.join("="),
+      url: "http://127.0.0.1:3000",
+      path: "/",
+    },
+  ]);
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
 }
 
