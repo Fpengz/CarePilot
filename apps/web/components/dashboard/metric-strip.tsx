@@ -1,5 +1,6 @@
 import { Activity, CheckCircle, Zap, Target } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import type { DashboardChartsApi } from "@/lib/types";
 
 interface MetricItemProps {
   label: string;
@@ -31,35 +32,44 @@ function MetricItem({ label, value, unit, data, icon }: MetricItemProps) {
   );
 }
 
-export function MetricStrip({ overview, sparklines }: { overview: any; sparklines: any }) {
+export function MetricStrip({
+  overview,
+  charts,
+}: {
+  overview: any;
+  charts: DashboardChartsApi;
+}) {
+  const sparklineFrom = (chart?: { points?: unknown }) =>
+    Array.isArray(chart?.points) ? chart.points : [];
+
   return (
     <div className="glass-card col-span-12 !py-5 flex items-center justify-between divide-x divide-white/5 overflow-hidden">
       <MetricItem 
         label="Signal" 
         value={overview.summary.adherence_score.value > 80 ? "Stable" : "Variable"} 
         icon={<Activity className="h-3 w-3" />}
-        data={sparklines.adherence}
+        data={sparklineFrom(charts.adherence)}
       />
       <MetricItem 
         label="Adherence" 
         value={Math.round(overview.summary.adherence_score.value).toString()} 
         unit="%" 
         icon={<CheckCircle className="h-3 w-3" />}
-        data={sparklines.adherence}
+        data={sparklineFrom(charts.adherence)}
       />
       <MetricItem 
         label="Risk" 
         value={Math.round(overview.summary.glycemic_risk.value).toString()} 
         unit="/100" 
         icon={<Zap className="h-3 w-3" />}
-        data={sparklines.risk}
+        data={sparklineFrom(charts.glycemic_risk)}
       />
       <MetricItem 
         label="Goal" 
         value={Math.round(overview.summary.nutrition_goal_score.value).toString()} 
         unit="%" 
         icon={<Target className="h-3 w-3" />}
-        data={sparklines.nutrition}
+        data={sparklineFrom(charts.calories)}
       />
     </div>
   );
