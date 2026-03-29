@@ -1,40 +1,66 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
-async function login(page: Page, email = "member@example.com", password = "member-pass") {
-  const response = await page.request.post("http://127.0.0.1:8001/api/v1/auth/login", {
+type SessionCookie = { name: string; value: string };
+
+const sessionCache = new Map<string, SessionCookie>();
+
+async function fetchSessionCookie(
+  request: APIRequestContext,
+  email: string,
+  password: string,
+): Promise<SessionCookie> {
+  const cacheKey = `${email}:${password}`;
+  const cached = sessionCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  const response = await request.post("http://127.0.0.1:8001/api/v1/auth/login", {
     data: { email, password },
   });
   if (!response.ok()) {
     throw new Error(`Login failed: ${response.status()}`);
   }
-  const setCookie = response.headers()["set-cookie"];
-  if (!setCookie) {
+  const setCookieHeader = response
+    .headersArray()
+    .find((header) => header.name.toLowerCase() === "set-cookie")?.value;
+  if (!setCookieHeader) {
     throw new Error("Missing session cookie from login response");
   }
-  const [cookiePair] = setCookie.split(";");
+  const [cookiePair] = setCookieHeader.split(";");
   const [name, ...valueParts] = cookiePair.split("=");
+  const sessionCookie = { name, value: valueParts.join("=") };
+  sessionCache.set(cacheKey, sessionCookie);
+  return sessionCookie;
+}
+
+async function login(
+  page: Page,
+  request: APIRequestContext,
+  email = "member@example.com",
+  password = "member-pass",
+) {
+  const sessionCookie = await fetchSessionCookie(request, email, password);
   await page.context().addCookies([
     {
-      name,
-      value: valueParts.join("="),
+      name: sessionCookie.name,
+      value: sessionCookie.value,
       url: "http://127.0.0.1:3000",
-      path: "/",
     },
   ]);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
 }
 
-test("login redirects to dashboard", async ({ page }) => {
-  await login(page);
+test("login redirects to dashboard", async ({ page, request }) => {
+  await login(page, request);
   await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible();
 });
 
 test.describe("mobile navigation", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("opens and closes the mobile drawer", async ({ page }) => {
-    await login(page);
+  test("opens and closes the mobile drawer", async ({ page, request }) => {
+    await login(page, request);
 
     await page.getByRole("button", { name: "Open navigation drawer" }).click();
     await expect(page.getByRole("dialog", { name: "Navigation menu" })).toBeVisible();
@@ -45,15 +71,15 @@ test.describe("mobile navigation", () => {
   });
 });
 
-test("dashboard stays summary-focused and links out to settings", async ({ page }) => {
-  await login(page);
+test("dashboard stays summary-focused and links out to settings", async ({ page, request }) => {
+  await login(page, request);
   await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible();
   await expect(page.getByLabel("Height (cm)")).toBeHidden();
   await expect(page.getByLabel("Weight (kg)")).toBeHidden();
 });
 
-test("settings page exposes guided health profile setup with advanced edit fallback", async ({ page }) => {
-  await login(page);
+test("settings page exposes guided health profile setup with advanced edit fallback", async ({ page, request }) => {
+  await login(page, request);
 
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "Configuration" })).toBeVisible();
@@ -75,8 +101,8 @@ test("settings page exposes guided health profile setup with advanced edit fallb
   await expect(page.getByLabel("Sodium Limit (mg)")).toBeVisible();
 });
 
-test("reminder delivery settings live in settings, not the reminders page", async ({ page }) => {
-  await login(page);
+test("reminder delivery settings live in settings, not the reminders page", async ({ page, request }) => {
+  await login(page, request);
 
   await page.goto("/reminders");
   await expect(page.getByRole("heading", { name: "Delivery Settings" })).toHaveCount(0);
@@ -88,8 +114,8 @@ test("reminder delivery settings live in settings, not the reminders page", asyn
   await expect(page.getByRole("heading", { name: "Mobility Alerts" })).toBeVisible();
 });
 
-test("reminders page shows structured reminder sections", async ({ page }) => {
-  await login(page);
+test("reminders page shows structured reminder sections", async ({ page, request }) => {
+  await login(page, request);
 
   await page.goto("/reminders");
   // Check for the new tabs
@@ -98,24 +124,24 @@ test("reminders page shows structured reminder sections", async ({ page }) => {
   await expect(page.getByRole("tab", { name: "History" })).toBeVisible();
 });
 
-test("caregiver household page shows a read-only care panel", async ({ page }) => {
-  await login(page, "helper@example.com", "helper-pass");
+test("caregiver household page shows a read-only care panel", async ({ page, request }) => {
+  await login(page, request, "helper@example.com", "helper-pass");
 
   await page.goto("/household");
   await expect(page.getByRole("heading", { name: "Caregiving View" })).toBeVisible();
   await expect(page.getByText("Read-only monitoring for the selected household member.")).toBeVisible();
 });
 
-test("meals page includes weekly summary insights", async ({ page }) => {
-  await login(page);
+test("meals page includes weekly summary insights", async ({ page, request }) => {
+  await login(page, request);
 
   await page.goto("/meals");
   await expect(page.getByRole("heading", { name: "Nutrition Intelligence" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Timeline" })).toBeVisible();
 });
 
-test("medications page exposes regimen and adherence tooling", async ({ page }) => {
-  await login(page);
+test("medications page exposes regimen and adherence tooling", async ({ page, request }) => {
+  await login(page, request);
 
   await page.goto("/medications");
   await expect(page.getByRole("heading", { name: "Care Plan Adherence" })).toBeVisible();
@@ -123,8 +149,8 @@ test("medications page exposes regimen and adherence tooling", async ({ page }) 
   await expect(page.getByText("Active Regimens")).toBeVisible();
 });
 
-test("medication normalization review hides after confirm", async ({ page }) => {
-  await login(page);
+test("medication normalization review hides after confirm", async ({ page, request }) => {
+  await login(page, request);
 
   await page.route("**/api/v1/medications/intake/text", async (route) => {
     await route.fulfill({
@@ -185,8 +211,8 @@ test("medication normalization review hides after confirm", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Normalization Review" })).toHaveCount(0);
 });
 
-test("symptoms, reports, clinical cards, and metrics pages are available", async ({ page }) => {
-  await login(page);
+test("symptoms, reports, clinical cards, and metrics pages are available", async ({ page, request }) => {
+  await login(page, request);
 
   await page.goto("/symptoms");
   await expect(page.getByRole("heading", { name: "Symptom Monitoring" })).toBeVisible();

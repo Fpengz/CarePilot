@@ -1,33 +1,59 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
-async function login(page: Page, email = "member@example.com", password = "member-pass") {
-  const response = await page.request.post("http://127.0.0.1:8001/api/v1/auth/login", {
+type SessionCookie = { name: string; value: string };
+
+const sessionCache = new Map<string, SessionCookie>();
+
+async function fetchSessionCookie(
+  request: APIRequestContext,
+  email: string,
+  password: string,
+): Promise<SessionCookie> {
+  const cacheKey = `${email}:${password}`;
+  const cached = sessionCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  const response = await request.post("http://127.0.0.1:8001/api/v1/auth/login", {
     data: { email, password },
   });
   if (!response.ok()) {
     throw new Error(`Login failed: ${response.status()}`);
   }
-  const setCookie = response.headers()["set-cookie"];
-  if (!setCookie) {
+  const setCookieHeader = response
+    .headersArray()
+    .find((header) => header.name.toLowerCase() === "set-cookie")?.value;
+  if (!setCookieHeader) {
     throw new Error("Missing session cookie from login response");
   }
-  const [cookiePair] = setCookie.split(";");
+  const [cookiePair] = setCookieHeader.split(";");
   const [name, ...valueParts] = cookiePair.split("=");
+  const sessionCookie = { name, value: valueParts.join("=") };
+  sessionCache.set(cacheKey, sessionCookie);
+  return sessionCookie;
+}
+
+async function login(
+  page: Page,
+  request: APIRequestContext,
+  email = "member@example.com",
+  password = "member-pass",
+) {
+  const sessionCookie = await fetchSessionCookie(request, email, password);
   await page.context().addCookies([
     {
-      name,
-      value: valueParts.join("="),
+      name: sessionCookie.name,
+      value: sessionCookie.value,
       url: "http://127.0.0.1:3000",
-      path: "/",
     },
   ]);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
 }
 
-test("full user journey: login, profile setup, and dashboard verification", async ({ page }) => {
+test("full user journey: login, profile setup, and dashboard verification", async ({ page, request }) => {
   // 1. Login
-  await login(page);
+  await login(page, request);
 
   // 2. Guided Health Profile Setup
   await page.goto("/settings");
