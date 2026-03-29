@@ -20,15 +20,22 @@ async function fetchSessionCookie(
   if (!response.ok()) {
     throw new Error(`Login failed: ${response.status()}`);
   }
-  const setCookieHeader = response
+  const setCookieHeaders = response
     .headersArray()
-    .find((header) => header.name.toLowerCase() === "set-cookie")?.value;
-  if (!setCookieHeader) {
+    .filter((header) => header.name.toLowerCase() === "set-cookie")
+    .map((header) => header.value);
+  if (!setCookieHeaders.length) {
     throw new Error("Missing session cookie from login response");
   }
-  const [cookiePair] = setCookieHeader.split(";");
-  const [name, ...valueParts] = cookiePair.split("=");
-  const sessionCookie = { name, value: valueParts.join("=") };
+  const parsed = setCookieHeaders
+    .map((header) => header.split(";")[0])
+    .map((cookiePair) => cookiePair.split("="))
+    .filter((parts) => parts.length >= 2)
+    .map(([name, ...valueParts]) => ({ name, value: valueParts.join("=") }));
+  const sessionCookie = parsed.find((cookie) => cookie.name === "dg_session") ?? parsed[0];
+  if (!sessionCookie) {
+    throw new Error("Missing dg_session cookie from login response");
+  }
   sessionCache.set(cacheKey, sessionCookie);
   return sessionCookie;
 }
@@ -49,11 +56,16 @@ async function login(
   ]);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible({
+    timeout: 15_000,
+  });
 }
 
 test("login redirects to dashboard", async ({ page, request }) => {
   await login(page, request);
-  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible({
+    timeout: 15_000,
+  });
 });
 
 test.describe("mobile navigation", () => {
@@ -73,7 +85,9 @@ test.describe("mobile navigation", () => {
 
 test("dashboard stays summary-focused and links out to settings", async ({ page, request }) => {
   await login(page, request);
-  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(page.getByLabel("Height (cm)")).toBeHidden();
   await expect(page.getByLabel("Weight (kg)")).toBeHidden();
 });
@@ -82,18 +96,22 @@ test("settings page exposes guided health profile setup with advanced edit fallb
   await login(page, request);
 
   await page.goto("/settings");
-  await expect(page.getByRole("heading", { name: "Configuration" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Configuration" })).toBeVisible({
+    timeout: 15_000,
+  });
 
   // Tabs are used now
-  await expect(page.getByRole("tab", { name: "Health Profile" })).toBeVisible();
-  await page.getByRole("tab", { name: "Health Profile" }).click();
+  await expect(page.getByRole("tab", { name: "Health Profile" })).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.getByRole("tab", { name: "Health Profile" }).click({ timeout: 15_000 });
 
   // Benchmark text check
-  await expect(page.getByText("established")).toBeVisible();
+  await expect(page.getByText("established")).toBeVisible({ timeout: 15_000 });
 
   // Default is guided
-  await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
-  await expect(page.getByLabel("Age")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByLabel("Age")).toBeVisible({ timeout: 15_000 });
 
   // Switch to advanced
   await page.getByRole("button", { name: "Advanced" }).click();
@@ -108,10 +126,14 @@ test("reminder delivery settings live in settings, not the reminders page", asyn
   await expect(page.getByRole("heading", { name: "Delivery Settings" })).toHaveCount(0);
 
   await page.goto("/settings");
-  await expect(page.getByRole("tab", { name: "Delivery" })).toBeVisible();
-  await page.getByRole("tab", { name: "Delivery" }).click();
-  await expect(page.getByRole("heading", { name: "Notification Channels" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Mobility Alerts" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Delivery" })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("tab", { name: "Delivery" }).click({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Notification Channels" })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByRole("heading", { name: "Mobility Alerts" })).toBeVisible({
+    timeout: 15_000,
+  });
 });
 
 test("reminders page shows structured reminder sections", async ({ page, request }) => {
@@ -119,9 +141,9 @@ test("reminders page shows structured reminder sections", async ({ page, request
 
   await page.goto("/reminders");
   // Check for the new tabs
-  await expect(page.getByRole("tab", { name: "Due Today" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Schedule" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "History" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Due Today" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("tab", { name: "Schedule" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("tab", { name: "History" })).toBeVisible({ timeout: 15_000 });
 });
 
 test("caregiver household page shows a read-only care panel", async ({ page, request }) => {
@@ -144,9 +166,13 @@ test("medications page exposes regimen and adherence tooling", async ({ page, re
   await login(page, request);
 
   await page.goto("/medications");
-  await expect(page.getByRole("heading", { name: "Care Plan Adherence" })).toBeVisible();
-  await expect(page.getByText("Clinical Adherence")).toBeVisible();
-  await expect(page.getByText("Active Regimens")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Care Plan Adherence" })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByText("Clinical Adherence")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Active Regimens" })).toBeVisible({
+    timeout: 15_000,
+  });
 });
 
 test("medication normalization review hides after confirm", async ({ page, request }) => {

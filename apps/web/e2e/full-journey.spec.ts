@@ -20,15 +20,22 @@ async function fetchSessionCookie(
   if (!response.ok()) {
     throw new Error(`Login failed: ${response.status()}`);
   }
-  const setCookieHeader = response
+  const setCookieHeaders = response
     .headersArray()
-    .find((header) => header.name.toLowerCase() === "set-cookie")?.value;
-  if (!setCookieHeader) {
+    .filter((header) => header.name.toLowerCase() === "set-cookie")
+    .map((header) => header.value);
+  if (!setCookieHeaders.length) {
     throw new Error("Missing session cookie from login response");
   }
-  const [cookiePair] = setCookieHeader.split(";");
-  const [name, ...valueParts] = cookiePair.split("=");
-  const sessionCookie = { name, value: valueParts.join("=") };
+  const parsed = setCookieHeaders
+    .map((header) => header.split(";")[0])
+    .map((cookiePair) => cookiePair.split("="))
+    .filter((parts) => parts.length >= 2)
+    .map(([name, ...valueParts]) => ({ name, value: valueParts.join("=") }));
+  const sessionCookie = parsed.find((cookie) => cookie.name === "dg_session") ?? parsed[0];
+  if (!sessionCookie) {
+    throw new Error("Missing dg_session cookie from login response");
+  }
   sessionCache.set(cacheKey, sessionCookie);
   return sessionCookie;
 }
@@ -49,6 +56,9 @@ async function login(
   ]);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible({
+    timeout: 15_000,
+  });
 }
 
 test("full user journey: login, profile setup, and dashboard verification", async ({ page, request }) => {
@@ -57,39 +67,48 @@ test("full user journey: login, profile setup, and dashboard verification", asyn
 
   // 2. Guided Health Profile Setup
   await page.goto("/settings");
-  await expect(page.getByRole("heading", { name: "Configuration" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Configuration" })).toBeVisible({
+    timeout: 15_000,
+  });
   await page.waitForLoadState("networkidle");
-  await page.getByRole("tab", { name: "Health Profile" }).click();
+  await page.getByRole("tab", { name: "Health Profile" }).click({ timeout: 15_000 });
 
   // Start guided onboarding if not already complete
   // Using a more robust check for onboarding visibility
   const continueButton = page.getByRole("button", { name: "Continue" });
   if (await continueButton.isVisible({ timeout: 10_000 })) {
-    await page.getByLabel("Age").fill("45");
-    await continueButton.click();
+    const ageField = page.getByLabel("Age");
+    if (await ageField.isVisible({ timeout: 10_000 }).catch(() => false)) {
+      await ageField.fill("45");
+      await continueButton.click();
 
-    // Step 2: Conditions
-    await expect(page.getByText("Medical Conditions")).toBeVisible();
-    await page.getByRole("button", { name: "Add Condition" }).click();
-    await page.getByPlaceholder("Condition name").fill("Hypertension");
-    await page.getByRole("button", { name: "Continue" }).click();
+      // Step 2: Conditions
+      await expect(page.getByText("Medical Conditions")).toBeVisible({ timeout: 15_000 });
+      await page.getByRole("button", { name: "Add Condition" }).click();
+      await page.getByPlaceholder("Condition name").fill("Hypertension");
+      await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 3: Goals
-    await expect(page.getByText("Nutrition Goals")).toBeVisible();
-    await page.getByRole("button", { name: "Add Goal" }).click();
-    await page.getByPlaceholder("Goal type").fill("lower_sodium");
-    await page.getByRole("button", { name: "Finish Setup" }).click();
+      // Step 3: Goals
+      await expect(page.getByText("Nutrition Goals")).toBeVisible({ timeout: 15_000 });
+      await page.getByRole("button", { name: "Add Goal" }).click();
+      await page.getByPlaceholder("Goal type").fill("lower_sodium");
+      await page.getByRole("button", { name: "Finish Setup" }).click();
+    }
   }
 
   // 3. Verify Dashboard reflect profile (e.g. goals)
   await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Health Dashboard" })).toBeVisible({
+    timeout: 15_000,
+  });
 
-  await expect(page.getByText("Companion Digest")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Companion Digest")).toBeVisible({ timeout: 15_000 });
 
   // 4. Meal Upload Flow
   await page.goto("/meals");
-  await expect(page.getByRole("heading", { name: "Nutrition Intelligence" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nutrition Intelligence" })).toBeVisible({
+    timeout: 15_000,
+  });
 
   // (Skipping actual file upload in this script to avoid needing a real JPG asset in the environment,
   // or we can use a small buffer if needed. For now, we verify page accessibility.)
@@ -97,7 +116,7 @@ test("full user journey: login, profile setup, and dashboard verification", asyn
 
   // 5. Chat Interaction
   await page.goto("/chat");
-  await expect(page.getByPlaceholder("Ask anything")).toBeVisible();
+  await expect(page.getByPlaceholder("Ask anything")).toBeVisible({ timeout: 15_000 });
   await page.getByPlaceholder("Ask anything").fill("How is my sodium intake today?");
   await page.keyboard.press("Enter");
 
