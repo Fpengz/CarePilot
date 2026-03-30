@@ -26,6 +26,14 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+
+    /* New Un-Slop Tokens */
+    --surface: #FDFDFD;
+    --panel: #F8F9FA;
+    --raised: #FFFFFF;
+    --accent-teal: #0D9488;
+    --accent-teal-muted: #F0FDFA;
+    --border-soft: #E2E8F0;
   }
 
   .dark {
@@ -48,6 +56,14 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
+
+    /* New Un-Slop Tokens (Dark) */
+    --surface: #0F172A;
+    --panel: #1E293B;
+    --raised: #1E293B;
+    --accent-teal: #2DD4BF;
+    --accent-teal-muted: #134E4A;
+    --border-soft: #334155;
   }
 }
 

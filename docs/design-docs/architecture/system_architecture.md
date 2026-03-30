@@ -6,8 +6,8 @@ CarePilot is a multimodal, AI-powered health companion platform built using a **
 ## 2. Architecture Layers
 
 *   **Client Layer (Next.js 14):** Modern React-based frontend providing an interactive dashboard, real-time chat, and multimodal upload capabilities.
-*   **API Layer (FastAPI):** High-performance Python API owning session management, policy enforcement, and cross-feature orchestration.
-*   **Application Layer (Workflows):** Complex, multi-step health journeys orchestrated using **LangGraph**.
+*   **API Layer (FastAPI):** High-performance Python API owning session management, policy enforcement, and event-driven workflow routing. Legacy orchestration-first paths are archived.
+*   **Application Layer (Workflows):** Complex, explicit journeys coordinated using **LangGraph** within the event-driven model.
 *   **Services Layer (Use Cases):** Feature-specific application services that implement business entrypoints.
 *   **Agent Layer (Inference):** Bounded, model-backed agents implemented with `pydantic-ai` for perception, reasoning, and synthesis.
 *   **Projection Layer:** Deterministic projectors that materialize `PatientCaseSnapshot` sections from events.
@@ -31,7 +31,7 @@ flowchart TD
     MealFlow --> MealAgent[Meal Perception Agent]
     MedFlow --> MedAgent[Prescription Extract Agent]
     
-    API --> CompService[Companion Orchestrator]
+    API --> CompService[Companion Workflow Coordinator (legacy name)]
     CompService --> Snapshot[Case Snapshot Service]
     CompService --> Engage[Engagement Engine]
     CompService --> Emotion[Emotion Inference Agent]
@@ -91,7 +91,7 @@ flowchart LR
 1.  **Input:** User uploads a meal image + message.
 2.  **Perception:** `MealPerceptionAgent` (Vision LLM) extracts dish names and portion estimates.
 3.  **Normalization:** `MealService` maps perceived dishes to the canonical hawker food database.
-4.  **Enrichment:** `CompanionOrchestrator` loads the patient's `CaseSnapshot` (current medications, biomarkers).
+4.  **Enrichment:** `CompanionOrchestrator` (legacy name) loads the patient's `CaseSnapshot` (current medications, biomarkers) as part of the event-driven flow.
 5.  **Reasoning:** `DietaryAgent` (LLM) evaluates the meal's impact given the patient's health profile.
 6.  **Persistence:** The validated event is saved to the `Event Timeline`.
 7.  **Projection:** Projectors update the materialized snapshot sections.
@@ -100,7 +100,7 @@ flowchart LR
 
 ## 6. Message Channels (Inbound/Outbound)
 
-Message channels are the canonical interface for reminders and chat‑style interactions. Inbound channel payloads are normalized into message threads, persisted in `message_thread_messages`, then run through the companion orchestration. Outbound responses are enqueued via the outbox and delivered through channel adapters with optional media attachments.
+Message channels are the canonical interface for reminders and chat‑style interactions. Inbound channel payloads are normalized into message threads, persisted in `message_thread_messages`, then processed by event-driven workflows (legacy orchestration components remain only for exploration context). Outbound responses are enqueued via the outbox and delivered through channel adapters with optional media attachments.
 
 ## 7. Draw.io Diagram Instructions
 

@@ -7,6 +7,7 @@ import { Activity, AlertTriangle, RefreshCcw, Thermometer, Info, History } from 
 import { AsyncLabel } from "@/components/app/async-label";
 import { ErrorCard } from "@/components/app/error-card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createSymptomCheckIn, getSymptomSummary, listSymptomCheckIns } from "@/lib/api/meal-client";
@@ -56,49 +57,51 @@ export default function SymptomsPage() {
   const loading = checkinsLoading || summaryLoading || submitMutation.isPending;
 
   return (
-    <div className="section-stack relative isolate">
+    <div className="section-stack max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 bg-background min-h-screen relative isolate">
       <div className="dashboard-grounding" />
-      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Symptom Monitoring</h1>
-          <p className="text-[color:var(--muted-foreground)] leading-relaxed max-w-2xl text-sm">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between py-10">
+        <div className="space-y-2">
+          <h1 className="text-h1 font-display tracking-tight text-foreground">Symptom Monitoring</h1>
+          <p className="text-muted-foreground leading-relaxed max-w-2xl text-sm font-medium">
             Log physical signals to help your AI companion detect patterns and provide safer clinical guidance.
           </p>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => queryClient.invalidateQueries()} className="gap-2 rounded-xl h-10 px-4">
-          <RefreshCcw className="h-3.5 w-3.5" /> Sync Data
-        </Button>
+        <div className="pb-1">
+          <Button variant="secondary" size="sm" onClick={() => queryClient.invalidateQueries()} className="gap-2 rounded-xl h-11 px-6 bg-surface shadow-sm border-border-soft hover:bg-panel transition-all">
+            <RefreshCcw className="h-4 w-4 text-accent-teal" /> Sync Clinical Data
+          </Button>
+        </div>
       </div>
 
       {error && <ErrorCard message={error} />}
 
-      <div className="grid grid-cols-12 gap-6 items-start">
-        <div className="col-span-12 lg:col-span-8 space-y-8">
-          <div className="glass-card space-y-8">
+      <div className="grid grid-cols-12 gap-12 items-start">
+        <div className="col-span-12 lg:col-span-8 space-y-12">
+          <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm space-y-8">
             <div className="space-y-1">
-              <h3 className="text-base font-bold">Active Check-In</h3>
-              <p className="text-xs text-[color:var(--muted-foreground)]">How are you feeling right now?</p>
+              <h3 className="text-xl font-semibold tracking-tight text-foreground">Active Check-In</h3>
+              <p className="text-sm text-muted-foreground font-medium">How are you feeling right now?</p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest opacity-70">Intensity</Label>
-                  <span className={cn(
-                    "status-chip",
-                    severity >= 4 ? "status-chip-rose" : "status-chip-teal"
-                  )}>Level {severity}</span>
+                <div className="flex items-center justify-between px-1">
+                  <Label className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground">Intensity Level</Label>
+                  <Badge variant="outline" className={cn(
+                    "text-micro-label font-bold uppercase px-3 py-1",
+                    severity >= 4 ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                  )}>Level {severity}</Badge>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   {[1, 2, 3, 4, 5].map((val) => (
                     <button
                       key={val}
                       onClick={() => setSeverity(val)}
                       className={cn(
-                        "flex-1 h-12 rounded-xl border-2 transition-all font-bold",
+                        "flex-1 h-12 rounded-2xl border-2 transition-all font-bold text-sm",
                         severity === val 
-                          ? "border-health-teal bg-health-teal text-white shadow-sm" 
-                          : "border-white/10 bg-white/5 text-[color:var(--muted-foreground)] hover:border-white/20"
+                          ? "border-accent-teal bg-accent-teal text-white shadow-md transform scale-[1.02]" 
+                          : "border-border-soft bg-surface text-muted-foreground hover:border-accent-teal/30 shadow-sm"
                       )}
                     >
                       {val}
@@ -107,18 +110,18 @@ export default function SymptomsPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-70">Symptoms</Label>
-                <div className="flex flex-wrap gap-2">
+              <div className="space-y-4">
+                <Label className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground ml-1">Observed Symptoms</Label>
+                <div className="flex flex-wrap gap-2.5">
                   {COMMON_SYMPTOMS.map((s) => (
                     <button
                       key={s}
                       onClick={() => toggleSymptom(s)}
                       className={cn(
-                        "status-chip border-2 transition-all",
+                        "rounded-xl border-2 px-4 py-2 text-xs font-bold transition-all shadow-sm",
                         selectedSymptoms.includes(s) 
-                          ? "status-chip-teal border-health-teal bg-health-teal text-white" 
-                          : "status-chip-slate border-white/10 hover:border-white/20"
+                          ? "border-accent-teal bg-accent-teal text-white" 
+                          : "border-border-soft bg-surface text-muted-foreground hover:border-accent-teal/30"
                       )}
                     >
                       {s}
@@ -127,18 +130,18 @@ export default function SymptomsPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-70">Clinical Notes</Label>
+              <div className="space-y-4">
+                <Label className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground ml-1">Clinical Narrative</Label>
                 <Textarea
                   placeholder="Describe timing, duration, or triggers..."
                   value={freeText}
                   onChange={(e) => setFreeText(e.target.value)}
-                  className="rounded-xl min-h-[100px] bg-white/5 border-white/10"
+                  className="rounded-2xl min-h-[120px] bg-surface border-border-soft shadow-sm p-4 text-sm leading-relaxed"
                 />
               </div>
 
               <Button 
-                className="w-full h-12 rounded-xl font-bold shadow-md bg-health-teal hover:bg-health-teal/90" 
+                className="w-full h-12 rounded-2xl font-bold shadow-lg shadow-accent-teal/20 bg-accent-teal hover:bg-accent-teal/90 text-white" 
                 onClick={() => submitMutation.mutate({ severity, symptom_codes: selectedSymptoms.map(s => s.toLowerCase()), free_text: freeText.trim() || undefined, context: {} })}
                 disabled={submitMutation.isPending}
               >
@@ -147,40 +150,41 @@ export default function SymptomsPage() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-[color:var(--muted-foreground)]" />
-              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">Recent Records</h4>
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 px-1">
+              <History className="h-4 w-4 text-accent-teal" />
+              <h4 className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground">Historical Records</h4>
             </div>
-            <div className="grid gap-3">
+            <div className="grid gap-4">
               {checkIns.slice(0, 5).map((item) => (
-                <div key={item.id} className="glass-card !p-4 group">
+                <div key={item.id} className="bg-panel border border-border-soft rounded-2xl p-5 shadow-sm group hover:border-accent-teal/30 transition-all">
                   <div className="flex items-center justify-between text-left">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <div className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-lg border border-white/10",
-                        item.severity >= 4 ? "bg-health-rose-soft text-health-rose" : "bg-health-teal-soft text-health-teal"
+                        "flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm",
+                        item.severity >= 4 ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
                       )}>
-                        <Thermometer className="h-4 w-4" />
+                        <Thermometer className="h-5 w-5" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold tracking-tight">Severity {item.severity}</div>
-                        <div className="text-[10px] text-[color:var(--muted-foreground)] opacity-60">
+                        <div className="text-sm font-bold tracking-tight text-foreground">Severity {item.severity}</div>
+                        <div className="text-micro-label font-medium text-muted-foreground opacity-60">
                           {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.recorded_at))}
                         </div>
                       </div>
                     </div>
-                    <span 
+                    <Badge 
+                      variant="outline"
                       className={cn(
-                        "status-chip",
-                        item.safety.decision === "escalate" ? "status-chip-rose" : "status-chip-slate"
+                        "text-[10px] font-bold uppercase tracking-widest px-2.5",
+                        item.safety.decision === "escalate" ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-surface text-muted-foreground border-border-soft"
                       )}
                     >
                       {item.safety.decision}
-                    </span>
+                    </Badge>
                   </div>
                   {item.free_text && (
-                    <p className="mt-3 text-xs text-[color:var(--muted-foreground)] leading-relaxed italic border-l-2 border-white/10 pl-3">&quot;{item.free_text}&quot;</p>
+                    <p className="mt-4 text-xs text-muted-foreground leading-relaxed italic border-l-4 border-accent-teal/20 pl-4">&quot;{item.free_text}&quot;</p>
                   )}
                 </div>
               ))}
@@ -188,45 +192,45 @@ export default function SymptomsPage() {
           </div>
         </div>
 
-        <div className="col-span-12 lg:col-span-4 space-y-8 lg:sticky lg:top-28">
-          <div className="glass-card bg-health-amber-soft border-health-amber/20 shadow-[0_8px_32px_rgba(245,158,11,0.1)]">
-            <div className="flex items-center gap-2 text-health-amber mb-4">
+        <aside className="col-span-12 lg:col-span-4 space-y-10 lg:sticky lg:top-28">
+          <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm">
+            <div className="flex items-center gap-2 text-accent-teal mb-6">
               <Info className="h-4 w-4" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Aggregate Insights</span>
+              <span className="text-micro-label font-bold uppercase tracking-widest">Aggregate Insights</span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">Total Logs</div>
-                <div className="text-xl font-bold">{summary?.total_count ?? 0}</div>
+                <div className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground opacity-60">Total Logs</div>
+                <div className="text-2xl font-bold text-foreground">{summary?.total_count ?? 0}</div>
               </div>
               <div className="space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">Avg Intensity</div>
-                <div className="text-xl font-bold">{(summary?.average_severity ?? 0).toFixed(1)}</div>
+                <div className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground opacity-60">Avg Intensity</div>
+                <div className="text-2xl font-bold text-foreground">{(summary?.average_severity ?? 0).toFixed(1)}</div>
               </div>
             </div>
             {summary?.red_flag_count ? (
-              <div className="mt-6 rounded-lg bg-health-rose-soft p-3 border border-health-rose/20 flex items-center gap-3 animate-pulse">
-                <AlertTriangle className="h-4 w-4 text-health-rose" />
-                <span className="text-xs font-bold text-health-rose">{summary.red_flag_count} Critical Red Flags Detected</span>
+              <div className="mt-8 rounded-2xl bg-rose-50 p-4 border border-rose-100 flex items-center gap-4 animate-pulse">
+                <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0" />
+                <span className="text-xs font-bold text-rose-700">{summary.red_flag_count} Critical Red Flags Detected</span>
               </div>
             ) : null}
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-[color:var(--muted-foreground)]" />
-              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">Prevalent Signals</h4>
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 px-1">
+              <Activity className="h-4 w-4 text-accent-teal" />
+              <h4 className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground">Prevalent Signals</h4>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {summary?.top_symptoms.map((s) => (
-                <div key={s.code} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-bold shadow-sm">
-                  <span className="capitalize">{s.code}</span>
-                  <span className="text-[10px] font-bold text-health-teal bg-health-teal-soft px-1.5 py-0.5 rounded-md">{s.count}</span>
+                <div key={s.code} className="flex items-center gap-3 px-4 py-2 rounded-xl border border-border-soft bg-surface text-xs font-bold shadow-sm group hover:border-accent-teal/30 transition-all">
+                  <span className="capitalize text-foreground">{s.code}</span>
+                  <span className="text-[10px] font-bold text-accent-teal bg-accent-teal-muted px-2 py-0.5 rounded-lg border border-accent-teal/10">{s.count}</span>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

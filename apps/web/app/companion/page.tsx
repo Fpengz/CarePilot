@@ -78,76 +78,99 @@ export default function CompanionPage() {
   const citations = activePlan?.citations ?? [];
 
   return (
-    <div className="section-stack max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 bg-[color:var(--background)] min-h-screen">
+    <div className="section-stack max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 bg-background min-h-screen relative isolate">
+      <div className="dashboard-grounding" />
+      
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between py-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-extrabold tracking-tight text-[color:var(--foreground)]">Companion Workspace</h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between py-10 relative z-10">
+        <div className="space-y-2">
+          <div className="flex items-center gap-4">
+            <h1 className="text-h1 font-display tracking-tight text-foreground">Companion Workspace</h1>
             {active?.engagement.risk_level && (
               <Badge 
                 variant="outline"
                 className={cn(
-                  "rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest border shadow-sm",
+                  "rounded-full px-4 py-1 text-micro-label font-bold uppercase tracking-widest border shadow-sm",
                   active.engagement.risk_level === "high" 
-                    ? "bg-health-rose-soft text-health-rose border-health-rose/20"
+                    ? "bg-rose-50 text-rose-600 border-rose-200"
                     : active.engagement.risk_level === "medium"
-                    ? "bg-health-amber-soft text-health-amber border-health-amber/20"
-                    : "bg-health-teal-soft text-health-teal border-health-teal/20"
+                    ? "bg-amber-50 text-amber-600 border-amber-200"
+                    : "bg-accent-teal-muted text-accent-teal border-accent-teal/20"
                 )}
               >
-                {active.engagement.risk_level} Risk
+                {active.engagement.risk_level} Clinical Risk
               </Badge>
             )}
           </div>
-          <p className="text-xs text-[color:var(--muted-foreground)] font-medium uppercase tracking-wider">
-            Clinical Decision Support & Interaction Orchestration
+          <p className="text-sm text-muted-foreground font-medium max-w-2xl">
+            Synthesizing longitudinal health data into actionable clinical reasoning and personalized check-ins.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pb-1">
           <Button
             variant="secondary"
             size="sm"
             onClick={refresh}
             disabled={isRefreshing}
-            className="gap-2 rounded-xl h-11 px-4 bg-[color:var(--surface)] shadow-sm border-[color:var(--border-soft)] hover:bg-[color:var(--panel-soft)] transition-all"
+            className="gap-2 rounded-xl h-11 px-6 bg-surface shadow-sm border-border-soft hover:bg-panel transition-all"
             aria-busy={isRefreshing}
           >
-            <RefreshCcw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
-            <AsyncLabel active={isRefreshing} idle="Refresh Workspace" loading="Refreshing" />
+            <RefreshCcw className={cn("h-4 w-4 text-accent-teal", isRefreshing && "animate-spin")} />
+            <AsyncLabel active={isRefreshing} idle="Synchronize" loading="Syncing" />
           </Button>
         </div>
       </div>
 
       {error ? (
-        <div className="mb-6">
+        <div className="mb-8 relative z-10">
           <ErrorCard message={error} />
         </div>
       ) : null}
 
-      <div className="space-y-8">
-        {/* Primary Action */}
-        <InteractionForm
-          onSuccess={(data) => setInteraction(data)}
-          todayData={today ?? undefined}
-          isRefreshing={isRefreshing}
-          onRefresh={refresh}
-        />
+      <div className="space-y-12 relative z-10">
+        {/* Primary Interaction Area */}
+        <section className="bg-panel border border-border-soft rounded-[2rem] p-1 shadow-sm overflow-hidden">
+          <InteractionForm
+            onSuccess={(data) => setInteraction(data)}
+            todayData={today ?? undefined}
+            isRefreshing={isRefreshing}
+            onRefresh={refresh}
+          />
+        </section>
 
-        {/* Core Guidance */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <PatientMedicalCard card={patientCard} showFullLink loading={patientCardLoading} />
-          <SupportingEvidenceCard citations={citations} />
+        {/* Intelligence Layers */}
+        <div className="grid gap-8 lg:grid-cols-2">
+          <div className="space-y-4">
+            <div className="px-2">
+              <h2 className="text-h2 font-display text-foreground tracking-tight">Clinical Foundation</h2>
+              <p className="text-sm text-muted-foreground">Consolidated medical profile and longitudinal reasoning</p>
+            </div>
+            <PatientMedicalCard card={patientCard} showFullLink loading={patientCardLoading} />
+          </div>
+          
+          <div className="space-y-4">
+            <div className="px-2">
+              <h2 className="text-h2 font-display text-foreground tracking-tight">Evidence Support</h2>
+              <p className="text-sm text-muted-foreground">Peer-reviewed citations and clinical reference sources</p>
+            </div>
+            <SupportingEvidenceCard citations={citations} />
+          </div>
         </div>
 
-        {/* Health Signals */}
-        <div className="grid gap-6 md:grid-cols-2 pb-12">
-          <ImpactWatchCard impact={active?.impact} />
-          <BloodPressureCard
-            summary={bpSummary ?? active?.snapshot.blood_pressure_summary}
-            loading={bpLoading}
-            chart={bpChart}
-          />
+        {/* Secondary Signals */}
+        <div className="space-y-6">
+          <div className="px-2 border-t border-border-soft pt-10">
+            <h2 className="text-h2 font-display text-foreground tracking-tight">Vitals & Impact</h2>
+            <p className="text-sm text-muted-foreground">Measuring intervention effectiveness across clinical markers</p>
+          </div>
+          <div className="grid gap-8 lg:grid-cols-2 pb-12">
+            <ImpactWatchCard impact={active?.impact} />
+            <BloodPressureCard
+              summary={bpSummary ?? active?.snapshot.blood_pressure_summary}
+              loading={bpLoading}
+              chart={bpChart}
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,7 @@
 # Design Document: Comprehensive Database & API Optimization (CarePilot)
 
+> **Superseded:** Execution is now tracked in `docs/exec-plans/in-progress/2026-03-30-today-execution-plan.md`. This design remains as background context.
+
 ## 1. Introduction
 
 This document outlines the design for a comprehensive refactor of the CarePilot system's database schema and API data pipelines. The goal is to address technical debt, improve data integrity, enhance performance, and ensure scalability by adopting a schema-first relational redesign and optimizing API interactions. This refactor focuses on normalizing JSON fields, clarifying data relationships, and refining data transfer mechanisms.

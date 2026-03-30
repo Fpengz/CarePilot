@@ -34,18 +34,18 @@ export function StickyComposer({
   onCancelRecording,
 }: StickyComposerProps) {
   return (
-    <div className="sticky bottom-0 z-30 -mx-6 border-t border-[color:var(--border-soft)] bg-[color:var(--surface)] px-6 py-4 sm:-mx-8 sm:px-8">
-      <div className="soft-block flex flex-col gap-3">
+    <div className="sticky bottom-0 z-30 -mx-4 -mb-8 mt-4 border-t border-border-soft bg-panel px-4 py-6 sm:-mx-8 sm:px-8">
+      <div className="bg-surface border border-border-soft rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-accent-teal/20 transition-all">
         {isRecording ? (
-          <div className="flex flex-wrap items-center gap-3 rounded-xl bg-red-50 px-3 py-2 text-red-600">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-sm font-mono">{recordingLabel ?? "00:00"}</span>
-            <span className="text-xs flex-1">Recording…</span>
+          <div className="flex flex-wrap items-center gap-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 px-4 py-3 text-rose-600 dark:text-rose-400 mb-2">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-rose-500 animate-pulse" />
+            <span className="text-sm font-mono font-bold">{recordingLabel ?? "00:00"}</span>
+            <span className="text-xs font-semibold flex-1 uppercase tracking-wider">Recording in progress…</span>
             <button
               type="button"
               aria-label="Cancel recording"
               onClick={onCancelRecording}
-              className="min-h-[44px] text-xs text-red-300 hover:text-red-500 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/60"
+              className="h-9 w-9 flex items-center justify-center rounded-full text-rose-300 hover:text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors"
             >
               ✕
             </button>
@@ -53,9 +53,9 @@ export function StickyComposer({
               type="button"
               aria-label="Stop and send recording"
               onClick={onStopRecording}
-              className="min-h-[44px] text-xs px-4 py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/60"
+              className="h-9 px-4 rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 shadow-sm transition-all active:scale-95"
             >
-              ⏹ Stop &amp; Send
+              STOP & SEND
             </button>
           </div>
         ) : null}
@@ -68,28 +68,28 @@ export function StickyComposer({
           placeholder="Ask anything… (Enter to send, Shift+Enter for new line)"
           rows={2}
           aria-label="Message input"
-          className="w-full resize-none border-none bg-transparent outline-none text-sm text-[color:var(--foreground)] placeholder-[color:var(--muted-foreground)]"
+          className="w-full resize-none border-none bg-transparent outline-none text-sm text-foreground placeholder-muted-foreground px-4 py-2 leading-relaxed"
         />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-2 pb-1">
           <div className="relative z-50">
             <button
               type="button"
               onClick={onToggleMenu}
               aria-label="More options"
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-[color:var(--border-soft)] text-lg text-[color:var(--muted-foreground)] hover:bg-[color:var(--muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]/40"
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-border-soft bg-panel text-muted-foreground hover:text-foreground hover:bg-border-soft transition-all focus-visible:ring-2 focus-visible:ring-accent-teal/40"
             >
               ＋
             </button>
             {menuOpen ? (
-              <div className="absolute bottom-12 left-0 w-52 overflow-hidden rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--panel)] py-2 shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
+              <div className="absolute bottom-full left-0 mb-3 w-56 overflow-hidden rounded-2xl border border-border-soft bg-surface py-2 shadow-xl animate-in slide-in-from-bottom-2 fade-in">
                 <button
                   type="button"
                   onClick={onStartRecording}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-[color:var(--foreground)] hover:bg-[color:var(--muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]/40"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-panel transition-colors"
                 >
                   <span className="text-base">🎤</span>
-                  <span>Record Audio</span>
+                  <span>Record Voice Check‑in</span>
                 </button>
               </div>
             ) : null}
@@ -98,18 +98,18 @@ export function StickyComposer({
             type="button"
             onClick={onPrependTrack}
             aria-label="Add [TRACK] prefix"
-            className="min-h-[44px] text-xs px-4 py-2 rounded-full border border-[color:var(--accent)]/40 text-[color:var(--accent)] hover:bg-[color:var(--accent)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]/40"
+            className="h-10 px-4 rounded-xl border border-border-soft bg-panel text-xs font-bold text-accent-teal uppercase tracking-wider hover:bg-accent-teal/5 transition-all active:scale-95"
           >
-            Add [TRACK]
+            [TRACK] METRIC
           </button>
           <button
             type="button"
             onClick={onSend}
             disabled={loading || !input.trim()}
             aria-label="Send message"
-            className="ml-auto min-h-[44px] text-sm font-medium px-4 py-2 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-foreground)] hover:opacity-90 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]/40"
+            className="ml-auto h-10 px-6 rounded-xl bg-accent-teal text-white text-sm font-bold shadow-sm hover:bg-accent-teal/90 disabled:opacity-40 transition-all active:scale-95"
           >
-            {loading ? "Thinking…" : "Send"}
+            {loading ? "Thinking…" : "SEND"}
           </button>
         </div>
       </div>

@@ -1,5 +1,7 @@
 # Design for Production-Ready Hardening Plan (2026-03-26)
 
+> **Superseded:** Execution is now tracked in `docs/exec-plans/in-progress/2026-03-30-today-execution-plan.md`. This design remains as background context.
+
 This document outlines the design for a comprehensive hardening plan aimed at transforming the current system from a hackathon project into a production-ready, robust, and consumer-facing application. The plan focuses on making the codebase clean, improving maintainability, and ensuring it provides a strong foundation for future development, specifically supporting areas like multi-modal memory layers, event-driven system improvements, meal-analysis optimization, chatbot architecture upgrades, and multi-agent systems.
 
 ## 1. Strengthening Core Infrastructure for Future Capabilities

@@ -60,3 +60,10 @@ This document tracks the completed phases of the CarePilot architectural refacto
   - **Unified Emotion Runtime**: Centralized text and speech emotion inference in `AppContext` for better latency and resource management.
   - **Frontend Build Restoration**: Resolved critical Tailwind v4/v3 mismatches and restored missing build-time dependencies.
   - **Type Safety**: Resolved 25+ backend type-checking diagnostics and fixed complex frontend React/TypeScript prop mismatches.
+
+## Phase 9 — Harness Knowledge Base Alignment (Completed 2026-03-30)
+- **Goal**: Make repository knowledge the system of record for new engineers and agents.
+- **Actions**:
+  - Added core beliefs and tech-debt tracking within the docs knowledge base.
+  - Documented doc-gardening and validation expectations for ongoing freshness.
+  - Expanded change log coverage to preserve historical context for future onboarding.

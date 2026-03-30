@@ -9,3 +9,7 @@ Use these sources of truth for planning:
 - In-progress work lives in `docs/exec-plans/in-progress/`.
 - Completed plans live in `docs/exec-plans/completed/`.
 - Always update `docs/exec-plans/index.md` when a plan moves state.
+- Primary architecture is event-driven; orchestration-first docs are legacy exploration only.
+
+## Current Execution Plan
+- `docs/exec-plans/in-progress/2026-03-30-today-execution-plan.md`
