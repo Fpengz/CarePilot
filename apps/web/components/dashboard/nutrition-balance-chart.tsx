@@ -26,13 +26,13 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
   ];
 
   return (
-    <div className="glass-card h-full">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+    <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm h-full">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8 px-1">
         <div className="flex flex-col items-start gap-1">
-          <span className="text-xs font-semibold text-[color:var(--muted-foreground)]">Nutrient profile</span>
-          <h3 className="text-xl font-bold tracking-tight">{chart.title}</h3>
+          <span className="text-micro-label text-muted-foreground uppercase">Nutrient Profile</span>
+          <h3 className="text-xl font-semibold tracking-tight text-foreground">{chart.title}</h3>
         </div>
-        <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-lg self-start">
+        <div className="flex bg-surface border border-border-soft p-1 rounded-xl self-start shadow-sm">
           {modes.map((m) => (
             <button
               key={m.id}
