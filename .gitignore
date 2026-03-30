@@ -75,3 +75,6 @@ CODEBASE_INDEX.md
 CODEBASE_MAP.md
 CODEBASE_SUMMARY.txt
 DEPENDENCY_GRAPH.txt
+
+.gemini/
+gha-creds-*.json
