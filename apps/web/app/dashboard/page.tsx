@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { RefreshCcw, LayoutDashboard } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ErrorCard } from "@/components/app/error-card";
 import { AsyncLabel } from "@/components/app/async-label";
 import { getDashboardOverview } from "@/lib/api/dashboard-client";
@@ -82,40 +83,72 @@ export default function DashboardPage() {
       ) : null}
 
       {data && (
-        <div className="space-y-8">
+        <div className="space-y-12">
           <MetricStrip overview={data} charts={data.charts} />
           
-          {/* Row 1: Primary signals */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            {/* Main Insights Column */}
+            <div className="lg:col-span-8 space-y-12">
               <ClinicalSummary 
                 adherence={data.summary.adherence_score.value}
                 risk={data.summary.glycemic_risk.value}
                 nutrition={data.summary.nutrition_goal_score.value}
                 recommendation={data.insights.recommendations[0]}
               />
-            </div>
-            
-            <div className="space-y-8">
-              <div className="bg-panel border border-border-soft rounded-3xl p-6 shadow-sm h-full">
-                <div className="flex items-center justify-between mb-5 px-1">
-                  <div className="space-y-1">
-                    <p className="text-micro-label text-muted-foreground uppercase">Alert Status</p>
-                    <h3 className="text-xl font-semibold tracking-tight text-foreground">Critical follow‑ups</h3>
-                  </div>
-                  <span className="text-[11px] font-semibold text-accent-teal">
-                    {data.alerts.length} alerts
-                  </span>
+
+              {/* Row 2: Metabolic Rhythms */}
+              <section className="space-y-8">
+                <div className="px-2">
+                  <h2 className="text-h2 font-display text-foreground tracking-tight">Metabolic Rhythms</h2>
+                  <p className="text-sm text-muted-foreground font-medium">Correlation of caloric intake and glycemic response stability</p>
                 </div>
-                <div className="space-y-3">
+                
+                <div className="space-y-10">
+                  <CorrelationChart
+                    calories={data.charts.calories.points}
+                    risk={data.charts.glycemic_risk.points}
+                  />
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 px-1">
+                    <NutritionBalanceChart chart={data.charts.macros} />
+                    <MealClock bins={data.charts.meal_timing.bins} />
+                  </div>
+                </div>
+              </section>
+
+              {/* Row 3: Longitudinal Vitals */}
+              <section className="space-y-8 pt-4">
+                <div className="px-2 border-t border-border-soft pt-12">
+                  <h2 className="text-h2 font-display text-foreground tracking-tight">Clinical Vitals</h2>
+                  <p className="text-sm text-muted-foreground font-medium">Longitudinal baseline tracking for hemodynamic stability</p>
+                </div>
+                <div className="px-1">
+                  <BloodPressureChart chart={data.charts.blood_pressure} />
+                </div>
+              </section>
+            </div>
+
+            {/* Sidebar: Alerts & Actions */}
+            <aside className="lg:col-span-4 space-y-10 lg:sticky lg:top-8">
+              <div className="bg-panel border border-border-soft rounded-[2rem] p-8 shadow-sm">
+                <div className="flex items-center justify-between mb-6 px-1">
+                  <div className="space-y-1">
+                    <p className="text-micro-label text-muted-foreground uppercase font-bold tracking-widest">Clinical Priority</p>
+                    <h3 className="text-xl font-semibold tracking-tight text-foreground">Active Alerts</h3>
+                  </div>
+                  <Badge className="bg-accent-teal/10 text-accent-teal hover:bg-accent-teal/20 border-accent-teal/20">
+                    {data.alerts.length}
+                  </Badge>
+                </div>
+                <div className="space-y-4">
                   {data.alerts.length ? (
                     data.alerts.slice(0, 4).map((alert) => (
                       <div
                         key={alert.id}
-                        className="rounded-2xl border border-border-soft bg-surface px-4 py-3 shadow-sm"
+                        className="rounded-2xl border border-border-soft bg-surface px-5 py-4 shadow-sm group hover:border-accent-teal/30 transition-all"
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-semibold text-foreground">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="text-sm font-bold text-foreground">
                             {alert.title}
                           </span>
                           <span
@@ -130,14 +163,14 @@ export default function DashboardPage() {
                             {alert.severity}
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
                           {alert.detail}
                         </p>
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-2xl border border-dashed border-border-soft p-6 text-center text-xs text-muted-foreground">
-                      No critical alerts right now.
+                    <div className="rounded-2xl border border-dashed border-border-soft p-8 text-center text-xs text-muted-foreground bg-surface/50">
+                      No critical alerts observed in this window.
                     </div>
                   )}
                 </div>
@@ -151,37 +184,8 @@ export default function DashboardPage() {
                   medications: data.links.medications
                 }}
               />
-            </div>
+            </aside>
           </div>
-
-          {/* Row 2: Daily Rhythms */}
-          <section className="space-y-6">
-            <div className="flex items-baseline gap-3">
-              <h2 className="text-h2 font-display text-foreground">Daily Rhythms & Balance</h2>
-              <p className="text-sm text-muted-foreground">Correlating activity, nutrition, and metabolic response</p>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-8">
-              <CorrelationChart
-                calories={data.charts.calories.points}
-                risk={data.charts.glycemic_risk.points}
-              />
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <NutritionBalanceChart chart={data.charts.macros} />
-                <MealClock bins={data.charts.meal_timing.bins} />
-              </div>
-            </div>
-          </section>
-
-          {/* Row 3: Vitals */}
-          <section className="space-y-6 pt-4">
-            <div className="flex items-baseline gap-3 border-t border-border-soft pt-10">
-              <h2 className="text-h2 font-display text-foreground">Baseline Vitals</h2>
-              <p className="text-sm text-muted-foreground">Longitudinal tracking of clinical markers</p>
-            </div>
-            <BloodPressureChart chart={data.charts.blood_pressure} />
-          </section>
         </div>
       )}
     </div>
