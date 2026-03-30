@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -76,40 +75,37 @@ export function InteractionForm({ onSuccess, todayData, isRefreshing, onRefresh 
     setEmotionText(INTERACTION_PRESETS[nextType].emotionText);
   };
 
-  const activePlan = todayData?.care_plan;
-
   return (
-    <Card className="shadow-md rounded-[16px] overflow-hidden">
-      <CardHeader className="bg-[color:var(--panel-soft)] border-b border-[color:var(--border-soft)] pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg font-bold text-[color:var(--foreground)]">Patient Interaction Studio</CardTitle>
-            <CardDescription className="text-xs font-medium">
-              Establish clinical intent and capture subjective patient context.
-            </CardDescription>
+    <div className="bg-surface rounded-[1.8rem] overflow-hidden">
+      <div className="px-8 py-6 border-b border-border-soft bg-panel/30">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">Interaction Studio</h2>
+            <p className="text-sm text-muted-foreground font-medium">
+              Establish clinical intent and capture subjective patient context for reasoning.
+            </p>
           </div>
           {todayData && (
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-[color:var(--surface)] text-[9px] font-bold uppercase tracking-tighter border-[color:var(--border-soft)]">
-                Engagement: {todayData.engagement.recommended_mode}
-              </Badge>
-            </div>
+            <Badge variant="outline" className="bg-accent-teal-muted text-accent-teal text-micro-label font-bold uppercase tracking-wider border-accent-teal/20 px-4 py-1 self-start sm:self-center">
+              Mode: {todayData.engagement.recommended_mode}
+            </Badge>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="p-6">
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Left Column: Interaction Metadata */}
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="companion-interaction-type" className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">
+      </div>
+
+      <div className="p-8">
+        <div className="grid gap-10 lg:grid-cols-2">
+          {/* Left Column: Config */}
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <Label htmlFor="companion-interaction-type" className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground ml-1">
                 Workflow Context
               </Label>
               <Select 
                 id="companion-interaction-type" 
                 value={interactionType} 
                 onChange={handleTypeChange}
-                className="h-11 rounded-xl bg-[color:var(--panel-soft)] border-[color:var(--border-soft)] focus:ring-[color:var(--accent)]/40 shadow-sm transition-all"
+                className="h-12 rounded-2xl bg-panel border-border-soft focus:ring-accent-teal/20 shadow-sm transition-all text-sm font-medium"
               >
                 {Object.entries(INTERACTION_PRESETS).map(([value, preset]) => (
                   <option key={value} value={value}>
@@ -119,8 +115,8 @@ export function InteractionForm({ onSuccess, todayData, isRefreshing, onRefresh 
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="companion-emotion" className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">
+            <div className="space-y-3">
+              <Label htmlFor="companion-emotion" className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground ml-1">
                 Subjective Emotion (Optional)
               </Label>
               <div className="relative group">
@@ -128,56 +124,53 @@ export function InteractionForm({ onSuccess, todayData, isRefreshing, onRefresh 
                   id="companion-emotion"
                   value={emotionText}
                   onChange={(event) => setEmotionText(event.target.value)}
-                  className="h-11 pl-4 rounded-xl bg-[color:var(--panel-soft)] border-[color:var(--border-soft)] focus:ring-[color:var(--accent)]/40 shadow-sm transition-all text-sm"
+                  className="h-12 pl-5 rounded-2xl bg-panel border-border-soft focus:ring-accent-teal/20 shadow-sm transition-all text-sm"
                   placeholder="e.g. Frustrated with adherence, anxious about diet..."
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <Badge variant="outline" className="text-[8px] cursor-pointer hover:bg-[color:var(--panel-soft)]">Stressed</Badge>
-                   <Badge variant="outline" className="text-[8px] cursor-pointer hover:bg-[color:var(--panel-soft)]">Ready</Badge>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <Badge variant="outline" className="text-[9px] cursor-pointer hover:bg-surface transition-colors border-border-soft">STRESSED</Badge>
+                   <Badge variant="outline" className="text-[9px] cursor-pointer hover:bg-surface transition-colors border-border-soft">READY</Badge>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Narrative Input */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="companion-message" className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">
-                  Patient Narrative / Barrier
-                </Label>
-                <span className="text-[9px] font-bold text-[color:var(--muted-foreground)] uppercase">Secure Clinical Channel</span>
-              </div>
-              <div className="relative rounded-[16px] border border-[color:var(--border-soft)] bg-[color:var(--panel-soft)] focus-within:ring-2 focus-within:ring-[color:var(--accent)]/30 focus-within:border-[color:var(--accent)] transition-all overflow-hidden shadow-inner">
-                <Textarea
-                  id="companion-message"
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  rows={5}
-                  className="border-none bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm leading-relaxed p-4 resize-none"
-                  placeholder="Establish the clinical narrative here..."
-                />
-                <div className="absolute bottom-3 right-3 flex items-center gap-3">
-                   <Button
-                    size="sm"
-                    className="rounded-full h-10 px-6 font-bold shadow-lg shadow-[color:var(--accent)]/25 bg-[color:var(--accent)] hover:bg-[color:var(--accent)]/90 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-                    disabled={mutation.isPending || isRefreshing || !message.trim()}
-                    onClick={() =>
-                      mutation.mutate({
-                        interaction_type: interactionType,
-                        message,
-                        emotion_text: emotionText.trim() || undefined,
-                      })
-                    }
-                  >
-                    <AsyncLabel active={mutation.isPending} idle="Generate Decision" loading="Thinking" />
-                  </Button>
-                </div>
+          {/* Right Column: Narrative */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between ml-1">
+              <Label htmlFor="companion-message" className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground">
+                Patient Narrative / Barriers
+              </Label>
+              <span className="text-[9px] font-bold text-accent-teal uppercase tracking-tighter opacity-60">Secure Channel</span>
+            </div>
+            <div className="relative rounded-3xl border border-border-soft bg-panel focus-within:ring-4 focus-within:ring-accent-teal/5 focus-within:border-accent-teal/30 transition-all overflow-hidden shadow-sm">
+              <Textarea
+                id="companion-message"
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                rows={6}
+                className="border-none bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm leading-relaxed p-6 resize-none"
+                placeholder="Establish the clinical narrative here..."
+              />
+              <div className="absolute bottom-4 right-4">
+                 <Button
+                  className="rounded-2xl h-12 px-8 font-bold shadow-lg shadow-accent-teal/20 bg-accent-teal hover:bg-accent-teal/90 transition-all transform hover:scale-[1.02] active:scale-95 text-white"
+                  disabled={mutation.isPending || isRefreshing || !message.trim()}
+                  onClick={() =>
+                    mutation.mutate({
+                      interaction_type: interactionType,
+                      message,
+                      emotion_text: emotionText.trim() || undefined,
+                    })
+                  }
+                >
+                  <AsyncLabel active={mutation.isPending} idle="Generate Insight" loading="Synthesizing" />
+                </Button>
               </div>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
