@@ -16,10 +16,8 @@ from care_pilot.features.companion.core.health.models import (
     HealthProfileRecord,
     MedicationAdherenceEvent,
 )
-from care_pilot.features.meals.domain.models import (
-    NutritionRiskProfile,
-    ValidatedMealEvent,
-)
+from care_pilot.features.meals.domain.models import NutritionRiskProfile, ValidatedMealEvent
+from care_pilot.features.profiles.domain.models import NutritionGoal
 from care_pilot.features.reminders.domain.models import ReminderEvent
 
 
@@ -63,7 +61,10 @@ def _seed_dashboard_state(client: TestClient) -> None:
             daily_fiber_target_g=30,
             daily_sugar_limit_g=28,
             target_calories_per_day=1900,
-            nutrition_goals=["lower_sugar", "heart_health"],
+            nutrition_goals=[
+                NutritionGoal(goal_type="lower_sugar", target_value=0.0, unit="unit", start_date=date(2026, 1, 1)),
+                NutritionGoal(goal_type="heart_health", target_value=0.0, unit="unit", start_date=date(2026, 1, 1)),
+            ],
         )
     )
 

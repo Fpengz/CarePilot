@@ -1,4 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { Activity } from "lucide-react";
 import type { DashboardBloodPressureChartApi } from "@/lib/types";
 import { COMMON_AXIS_PROPS } from "./chart-utils";
 
@@ -18,23 +19,23 @@ export function BloodPressureChart({
   const showLoading = loading || !chart;
 
   return (
-    <div className="glass-card h-full">
-      <div className="flex flex-col items-start gap-1 mb-6">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Blood Pressure</span>
-        <h3 className="text-lg font-bold tracking-tight">Trend Overview</h3>
+    <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm h-full">
+      <div className="flex flex-col items-start gap-1 mb-8 px-1">
+        <span className="text-micro-label text-muted-foreground uppercase">Blood Pressure</span>
+        <h3 className="text-xl font-semibold tracking-tight text-foreground">Vitals Trend Overview</h3>
       </div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">
-          mmHg
+      <div className="flex items-center justify-between mb-4 px-1">
+        <span className="text-micro-label text-muted-foreground opacity-60">
+          MMHG
         </span>
-        <div className="flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#dc2626]" />
-            Systolic
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-2 text-micro-label text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-rose-500" />
+            SYSTOLIC
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#2563eb]" />
-            Diastolic
+          <span className="flex items-center gap-2 text-micro-label text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-blue-500" />
+            DIASTOLIC
           </span>
         </div>
       </div>
@@ -49,7 +50,9 @@ export function BloodPressureChart({
                 contentStyle={{
                   background: "var(--surface)",
                   borderColor: "var(--border-soft)",
-                  fontSize: "10px",
+                  borderRadius: "12px",
+                  fontSize: "11px",
+                  boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
                 }}
                 formatter={(value: any, name: any) => [`${value} mmHg`, name]}
               />
@@ -57,25 +60,26 @@ export function BloodPressureChart({
                 type="monotone"
                 dataKey="systolic"
                 name="Systolic"
-                stroke="#dc2626"
-                strokeWidth={2.5}
+                stroke="#f43f5e"
+                strokeWidth={3}
                 dot={false}
-                activeDot={{ r: 4, fill: "#dc2626", stroke: "var(--background)", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "#f43f5e", stroke: "var(--surface)", strokeWidth: 2 }}
               />
               <Line
                 type="monotone"
                 dataKey="diastolic"
                 name="Diastolic"
-                stroke="#2563eb"
-                strokeWidth={2.5}
+                stroke="#3b82f6"
+                strokeWidth={3}
                 dot={false}
-                activeDot={{ r: 4, fill: "#2563eb", stroke: "var(--background)", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "#3b82f6", stroke: "var(--surface)", strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-full flex items-center justify-center text-xs text-[color:var(--muted-foreground)] italic">
-            {showLoading ? "Loading blood pressure data..." : "No blood pressure data available."}
+          <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground italic bg-surface/50 rounded-2xl border border-dashed border-border-soft">
+            <Activity className="h-8 w-8 mb-2 opacity-20" />
+            {showLoading ? "Synchronizing vitals..." : "No blood pressure records found."}
           </div>
         )}
       </div>

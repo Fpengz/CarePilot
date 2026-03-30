@@ -6,12 +6,10 @@ and health profiles.
 """
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 
-from care_pilot.features.companion.core.health.clinical_card import (
-    ClinicalCardRecord,
-)
+from care_pilot.features.companion.core.health.clinical_card import ClinicalCardRecord
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     HealthProfileOnboardingState,
@@ -19,7 +17,8 @@ from care_pilot.features.companion.core.health.models import (
     SymptomCheckIn,
     SymptomSafety,
 )
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.features.profiles.domain.models import NutritionGoal
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
@@ -192,7 +191,7 @@ class SQLiteClinicalRepository:
             return None
         return ClinicalCardRecord.model_validate_json(cast(str, row[0]))
 
-    def get_health_profile(self, user_id: str) -> HealthProfileRecord | None:
+    def get_health_profile(self, user_id: str) -> HealthProfileRecord:
         with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
@@ -203,15 +202,51 @@ class SQLiteClinicalRepository:
                 (user_id,),
             ).fetchone()
         if row is None:
-            logger.debug("get_health_profile_miss user_id=%s", user_id)
-            return None
+            logger.debug("get_health_profile_miss user_id=%s returning_default", user_id)
+            from care_pilot.features.profiles.domain.health_profile import default_health_profile
+            return default_health_profile(user_id)
+
         payload = cast(str, row[0])
         logger.debug("get_health_profile_hit user_id=%s", user_id)
         return HealthProfileRecord.model_validate_json(payload)
 
     def save_health_profile(self, profile: HealthProfileRecord) -> HealthProfileRecord:
-        payload = profile.model_dump(mode="json")
+        # 1. Ensure all goals are objects for internal processing
+        normalized_goals = []
+        for g in profile.nutrition_goals:
+            if isinstance(g, str):
+                normalized_goals.append(
+                    NutritionGoal(
+                        goal_type=g,
+                        target_value=0.0,
+                        unit="unit",
+                        start_date=datetime.now(UTC).date()
+                    )
+                )
+            else:
+                normalized_goals.append(g)
+
+        # Update profile with normalized objects before dumping
+        profile.nutrition_goals = normalized_goals
+        serializable_profile = profile.model_dump(mode="json")
+
         with get_connection(self.db_path) as conn:
+            # 0. Ensure user_profiles base record exists (required for FKs)
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO user_profiles (id, name, age, profile_mode, locale)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    profile.user_id,
+                    "Alex Member", # Placeholder name if not provided
+                    profile.age or 30,
+                    "self",
+                    profile.locale,
+                ),
+            )
+
+            # 1. Save main profile
             conn.execute(
                 """
                 INSERT OR REPLACE INTO health_profiles (user_id, updated_at, payload_json)
@@ -219,15 +254,55 @@ class SQLiteClinicalRepository:
                 """,
                 (
                     profile.user_id,
-                    str(payload["updated_at"]),
-                    json.dumps(payload),
+                    str(serializable_profile["updated_at"]),
+                    json.dumps(serializable_profile),
                 ),
             )
+
+            # 2. Sync nutrition goals
+            conn.execute("DELETE FROM user_nutrition_goals WHERE user_id = ?", (profile.user_id,))
+            for goal in normalized_goals:
+                conn.execute(
+                    """
+                    INSERT INTO user_nutrition_goals
+                    (user_id, goal_type, target_value, unit, start_date, end_date)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        profile.user_id,
+                        goal.goal_type,
+                        goal.target_value,
+                        goal.unit,
+                        goal.start_date.isoformat() if hasattr(goal.start_date, "isoformat") else str(goal.start_date),
+                        goal.end_date.isoformat() if goal.end_date and hasattr(goal.end_date, "isoformat") else (str(goal.end_date) if goal.end_date else None),
+                    ),
+                )
+
+            # 3. Sync meal schedule
+            conn.execute("DELETE FROM user_meal_schedule WHERE user_id = ?", (profile.user_id,))
+            for item in profile.meal_schedule:
+                conn.execute(
+                    """
+                    INSERT INTO user_meal_schedule
+                    (user_id, day_of_week, meal_type, time, notes)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        profile.user_id,
+                        item.day_of_week,
+                        item.slot,
+                        item.start_time,
+                        item.notes,
+                    ),
+                )
+
             conn.commit()
+
         logger.info(
-            "save_health_profile user_id=%s goals=%s",
+            "save_health_profile user_id=%s goals=%s schedule=%s",
             profile.user_id,
             len(profile.nutrition_goals),
+            len(profile.meal_schedule),
         )
         return profile
 

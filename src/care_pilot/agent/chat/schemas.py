@@ -61,5 +61,7 @@ class ChatMetricsOutput(BaseModel):
 
 
 class ChatStreamEvent(BaseModel):
-    event: Literal["token", "emotion", "transcribed", "error", "done", "meal_proposed", "meal_logged"]
+    event: Literal[
+        "token", "emotion", "transcribed", "error", "done", "meal_proposed", "meal_logged"
+    ]
     data: dict

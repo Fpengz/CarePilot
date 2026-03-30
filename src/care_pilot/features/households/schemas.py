@@ -12,9 +12,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
 from care_pilot.features.meals.schemas import MealDailySummaryResponse
 from care_pilot.features.profiles.schemas import HealthProfileResponseItem
 from care_pilot.features.reminders.domain.models import ReminderEvent

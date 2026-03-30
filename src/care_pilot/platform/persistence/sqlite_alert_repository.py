@@ -6,13 +6,10 @@ This module implements SQLite persistence for alert outbox data.
 
 import json
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
-from care_pilot.features.safety.domain.alerts.models import (
-    AlertMessage,
-    OutboxRecord,
-)
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.features.safety.domain.alerts.models import OutboundMessage, OutboxRecord
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
@@ -22,9 +19,12 @@ class SQLiteAlertRepository:
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
-    def enqueue_alert(self, message: AlertMessage) -> list[OutboxRecord]:
+    def enqueue_alert(self, message: OutboundMessage) -> list[OutboxRecord]:
         created: list[OutboxRecord] = []
         now = datetime.now(UTC)
+        payload = dict(message.payload)
+        if message.attachments:
+            payload["attachments"] = message.attachments
         with get_connection(self.db_path) as conn:
             for sink in message.destinations:
                 idempotency_key = f"{message.alert_id}:{sink}"
@@ -42,7 +42,7 @@ class SQLiteAlertRepository:
                         sink,
                         message.type,
                         message.severity,
-                        json.dumps(message.payload),
+                        json.dumps(payload),
                         message.correlation_id,
                         message.created_at.isoformat(),
                         "pending",
@@ -62,8 +62,9 @@ class SQLiteAlertRepository:
                         sink=sink,
                         type=message.type,
                         severity=message.severity,
-                        payload=message.payload,
+                        payload=payload,
                         correlation_id=message.correlation_id,
+                        attachments=message.attachments,
                         created_at=message.created_at,
                         state="pending",
                         attempt_count=0,
@@ -127,14 +128,16 @@ class SQLiteAlertRepository:
                 )
                 if updated.rowcount != 1:
                     continue
+                payload = json.loads(row[4])
                 leased.append(
                     OutboxRecord(
                         alert_id=row[0],
                         sink=row[1],
                         type=row[2],
                         severity=row[3],
-                        payload=json.loads(row[4]),
+                        payload=payload,
                         correlation_id=row[5],
+                        attachments=cast(dict[str, Any], payload).get("attachments", []),
                         created_at=datetime.fromisoformat(row[6]),
                         state="processing",
                         attempt_count=row[8],
@@ -241,14 +244,16 @@ class SQLiteAlertRepository:
             rows = conn.execute(query, params).fetchall()
         out: list[OutboxRecord] = []
         for row in rows:
+            payload = json.loads(row[4])
             out.append(
                 OutboxRecord(
                     alert_id=row[0],
                     sink=row[1],
                     type=row[2],
                     severity=row[3],
-                    payload=json.loads(row[4]),
+                    payload=payload,
                     correlation_id=row[5],
+                    attachments=cast(dict[str, Any], payload).get("attachments", []),
                     created_at=datetime.fromisoformat(row[6]),
                     state=row[7],
                     attempt_count=row[8],

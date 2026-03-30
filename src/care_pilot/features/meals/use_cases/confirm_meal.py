@@ -10,6 +10,7 @@ from care_pilot.agent.adapters.domain_agents import DietaryAgentAdapter
 from care_pilot.agent.core.base import AgentContext
 from care_pilot.agent.dietary import DietaryAgentInput
 from care_pilot.agent.dietary.schemas import DietaryAgentOutput
+from care_pilot.agent.runtime.context_builder import build_agent_context
 from care_pilot.features.meals.deps import MealDeps
 from care_pilot.features.meals.domain.models import MealCandidateRecord
 from care_pilot.platform.observability import get_logger
@@ -33,11 +34,13 @@ async def analyze_dietary_request(input_data: DietaryAgentInput) -> DietaryAgent
     """Run dietary reasoning with adapter context (for test monkeypatching)."""
     context = _DIETARY_AGENT_CONTEXT.get()
     if context is None:
-        context = AgentContext(
+        context = build_agent_context(
             user_id="unknown",
             session_id=None,
             request_id=None,
             correlation_id=None,
+            policy={"allowed_sources": ["dietary_input"]},
+            selection={"reason": "fallback_dietary_request"},
         )
     adapter = DietaryAgentAdapter()
     result = await adapter.run(input_data, context)
@@ -110,11 +113,13 @@ async def confirm_meal_candidate(
             user_name=user_name or "Friend",
         )
         token = _DIETARY_AGENT_CONTEXT.set(
-            AgentContext(
+            build_agent_context(
                 user_id=updated.user_id,
                 session_id=session_id,
                 request_id=updated.request_id,
                 correlation_id=updated.correlation_id or updated.candidate_id,
+                policy={"allowed_sources": ["meal_candidate", "user_profile"]},
+                selection={"reason": "dietary_confirmation"},
             )
         )
         try:

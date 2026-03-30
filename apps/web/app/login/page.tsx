@@ -22,143 +22,136 @@ export default function LoginPage() {
   const { refreshSession } = useSession();
   const [email, setEmail] = useState(SHOW_DEMO_ACCOUNTS ? "admin@example.com" : "");
   const [password, setPassword] = useState(SHOW_DEMO_ACCOUNTS ? "admin-pass" : "");
-  const [result, setResult] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [meResult, setMeResult] = useState<object | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await login(email, password);
+      await refreshSession();
+      router.replace("/dashboard");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div>
-      <PageTitle
-        eyebrow="Auth"
-        title="Sign In"
-        description={
-          SHOW_DEMO_ACCOUNTS
-            ? "Use demo accounts to test session cookies, role/scopes, and the account panel flows."
-            : "Sign in with your account to access the CarePilot workspace."
-        }
+    <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 relative isolate">
+      <div className="dashboard-grounding" />
+      
+      <div className="w-full max-w-md space-y-8 relative z-10">
+        <div className="text-center space-y-2">
+          <h1 className="text-h1 font-display tracking-tight text-foreground">Welcome Back</h1>
+          <p className="text-sm text-muted-foreground font-medium">
+            Sign in to your clinical workspace to manage your care plan.
+          </p>
+        </div>
 
-      />
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,540px)_minmax(0,1fr)]">
-      <Card className="grain-overlay relative overflow-hidden">
-        <CardHeader>
-          <div className="mb-2 flex items-center gap-2">
-            <Badge>Auth v2</Badge>
-            <Badge variant="outline">account_role + scopes</Badge>
-          </div>
-          <CardTitle className="text-2xl">{SHOW_DEMO_ACCOUNTS ? "Sign In to Demo Accounts" : "Sign In"}</CardTitle>
-          <CardDescription>
-            Backend-issued session cookie flow (`/api/v1/auth/login`).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="login-email">Email</Label>
-              <Input
-                id="login-email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com"
-              />
+        <div className="bg-surface border border-border-soft rounded-3xl p-8 shadow-lg shadow-black/[0.02]">
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-email" className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                  Email Address
+                </Label>
+                <Input
+                  id="login-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="h-12 rounded-2xl bg-panel border-border-soft focus:ring-accent-teal/20 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-password" title="Password" className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                  Secure Password
+                </Label>
+                <Input
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="h-12 rounded-2xl bg-panel border-border-soft focus:ring-accent-teal/20 transition-all"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="login-password">Password</Label>
-              <Input
-                id="login-password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="admin-pass"
-              />
+
+            {error && (
+              <div className="rounded-xl bg-rose-50 border border-rose-100 p-3 text-xs font-bold text-rose-600 animate-in fade-in slide-in-from-top-1">
+                {error}
+              </div>
+            )}
+
+            <Button
+              className="w-full h-12 rounded-2xl font-bold shadow-lg shadow-accent-teal/20 bg-accent-teal hover:bg-accent-teal/90 text-white transition-all transform active:scale-[0.98]"
+              onClick={handleLogin}
+              disabled={loading || !email || !password}
+            >
+              {loading ? "Authenticating..." : "Sign In to Workspace"}
+            </Button>
+
+            <div className="pt-2 text-center">
+              <p className="text-xs text-muted-foreground font-medium">
+                Don&apos;t have an account?{" "}
+                <Link href="/signup" className="text-accent-teal font-bold hover:underline">
+                  Create Profile
+                </Link>
+              </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={async () => {
-                setError(null);
-                try {
-                  const data = await login(email, password);
-                  setResult(data);
-                  await refreshSession();
-                  router.replace("/dashboard");
-                } catch (e) {
-                  setError(e instanceof Error ? e.message : String(e));
-                }
-              }}
-            >
-              Login
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={async () => {
-                setError(null);
-                try {
-                  const data = await me();
-                  setMeResult(data);
-                  await refreshSession();
-                } catch (e) {
-                  setError(e instanceof Error ? e.message : String(e));
-                }
-              }}
-            >
-              Fetch /auth/me
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/signup">Go to Sign Up</Link>
-            </Button>
-          </div>
-          {SHOW_DEMO_ACCOUNTS ? (
-            <div className="grid gap-2 pt-2">
+        </div>
+
+        {SHOW_DEMO_ACCOUNTS && (
+          <div className="space-y-4 pt-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div className="w-full border-t border-border-soft" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
+                <span className="bg-background px-4 text-muted-foreground">Sandbox Profiles</span>
+              </div>
+            </div>
+            
+            <div className="grid gap-2.5">
               {[
-                { label: "Member (self)", email: "member@example.com", pass: "member-pass", icon: UserRound },
-                { label: "Helper (member + caregiver mode)", email: "helper@example.com", pass: "helper-pass", icon: Users },
-                { label: "Admin", email: "admin@example.com", pass: "admin-pass", icon: ShieldCheck },
+                { label: "Patient (Self)", email: "member@example.com", pass: "member-pass", icon: UserRound },
+                { label: "Caregiver Role", email: "helper@example.com", pass: "helper-pass", icon: Users },
+                { label: "System Admin", email: "admin@example.com", pass: "admin-pass", icon: ShieldCheck },
               ].map((acct) => {
                 const Icon = acct.icon;
                 return (
                   <button
                     key={acct.email}
-                    className="flex items-center justify-between rounded-xl border border-[color:var(--border)] bg-white/75 px-3 py-2 text-left text-[color:var(--foreground)] transition hover:bg-white dark:bg-[color:var(--panel-soft)] dark:hover:bg-[color:var(--card)]"
+                    className="flex items-center justify-between rounded-2xl border border-border-soft bg-surface/50 px-4 py-3 text-left transition-all hover:bg-surface hover:border-accent-teal/30 group"
                     onClick={() => {
                       setEmail(acct.email);
                       setPassword(acct.pass);
                     }}
                     type="button"
                   >
-                    <span className="flex items-center gap-2 text-sm font-medium">
-                      <Icon className="h-4 w-4 text-[color:var(--accent)]" />
+                    <span className="flex items-center gap-3 text-sm font-bold text-foreground">
+                      <div className="h-8 w-8 rounded-xl bg-panel border border-border-soft flex items-center justify-center group-hover:bg-accent-teal/5 group-hover:border-accent-teal/20 transition-all">
+                        <Icon className="h-4 w-4 text-muted-foreground group-hover:text-accent-teal transition-colors" />
+                      </div>
                       {acct.label}
                     </span>
-                    <span className="text-xs text-[color:var(--muted-foreground)]">{acct.email}</span>
+                    <span className="text-[10px] font-mono font-medium text-muted-foreground opacity-60">{acct.email}</span>
                   </button>
                 );
               })}
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4">
-        {error ? (
-          <ErrorCard message={error} />
-        ) : null}
-        {result ? <JsonViewer title="Login Response" data={result} /> : null}
-        {meResult ? <JsonViewer title="Current Session (`/auth/me`)" data={meResult} /> : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Foundation Applied</CardTitle>
-              <CardDescription>
-                Tailwind v4 + shadcn-style primitives are now wired in (`Button`, `Input`, `Card`, `Badge`).
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          </div>
         )}
-      </div>
       </div>
     </div>
   );

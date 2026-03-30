@@ -4,17 +4,12 @@ from datetime import date
 
 import pytest
 
-from care_pilot.agent.runtime.inference_types import (
-    InferenceResponse,
-    ProviderMetadata,
-)
+from care_pilot.agent.runtime.inference_types import InferenceResponse, ProviderMetadata
 from care_pilot.features.medications.intake import (
     build_plain_text_source,
     parse_medication_instructions,
 )
-from care_pilot.features.medications.intake.models import (
-    MedicationParseOutputLoose,
-)
+from care_pilot.features.medications.intake.models import MedicationParseOutputLoose
 
 
 class _FakeInferenceEngine:

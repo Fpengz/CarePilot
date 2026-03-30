@@ -1,19 +1,19 @@
 """Reminder notification materialisation, dispatch, and orchestration use cases.
 
 ``materialize_reminder_notifications`` converts a ``ReminderEvent`` into one
-or more ``ScheduledReminderNotification`` rows (one per user preference / channel).
+or more ``ScheduledMessage`` rows (one per user preference / channel).
 
 ``dispatch_due_reminder_notifications`` leases rows that are due now, wraps
-them as ``AlertMessage`` objects, enqueues them into the alert outbox, and
-returns ``QueuedReminderNotification`` receipts.
+them as ``OutboundMessage`` objects, enqueues them into the alert outbox, and
+returns ``QueuedMessage`` receipts.
 
 ``cancel_reminder_notifications`` cancels all pending scheduled notifications
 for a given reminder and logs the cancellation.
 
-The CRUD orchestration functions (``list_notification_preferences``,
-``replace_notification_preferences``, ``list_reminder_notification_schedules``,
-``list_notification_endpoints``, ``replace_notification_endpoints``,
-``list_reminder_notification_logs``) manage user-facing preference and endpoint
+The CRUD orchestration functions (``list_message_preferences``,
+``replace_message_preferences``, ``list_message_schedules``,
+``list_message_endpoints``, ``replace_message_endpoints``,
+``list_message_logs``) manage user-facing preference and endpoint
 records via ``AppContext``.
 """
 
@@ -24,19 +24,21 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
-from care_pilot.core.contracts.notifications import (
-    ReminderNotificationRepository,
-)
+from care_pilot.core.contracts.notifications import MessageNotificationRepository
 from care_pilot.features.reminders.domain import ReminderEvent
 from care_pilot.features.reminders.domain.models import (
+    MessageEndpoint,
+    MessageLogEntry,
+    MessagePreference,
+    MessageThread,
+    MessageThreadMessage,
+    MessageThreadParticipant,
     NotificationPreferenceScope,
-    QueuedReminderNotification,
-    ReminderNotificationEndpoint,
-    ReminderNotificationLogEntry,
-    ReminderNotificationPreference,
-    ScheduledReminderNotification,
+    QueuedMessage,
+    ScheduledMessage,
 )
-from care_pilot.features.safety.domain.alerts import AlertMessage
+from care_pilot.features.safety.domain.alerts import OutboundMessage
+from care_pilot.platform.cache import EventTimelineService
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence import AppStoreBackend
 from care_pilot.platform.persistence.domain_stores import ReminderStore
@@ -47,38 +49,39 @@ if TYPE_CHECKING:
 from apps.api.carepilot_api.errors import build_api_error
 
 from care_pilot.core.contracts.api import (
-    ReminderNotificationEndpointListResponse,
-    ReminderNotificationEndpointRequest,
-    ReminderNotificationEndpointResponse,
-    ReminderNotificationLogItemResponse,
-    ReminderNotificationLogListResponse,
-    ReminderNotificationPreferenceListResponse,
-    ReminderNotificationPreferenceRuleRequest,
-    ReminderNotificationPreferenceRuleResponse,
-    ScheduledReminderNotificationItemResponse,
-    ScheduledReminderNotificationListResponse,
+    MessageEndpointListResponse,
+    MessageEndpointRequest,
+    MessageEndpointResponse,
+    MessageLogItemResponse,
+    MessageLogListResponse,
+    MessagePreferenceListResponse,
+    MessagePreferenceRuleRequest,
+    MessagePreferenceRuleResponse,
+    ScheduledMessageItemResponse,
+    ScheduledMessageListResponse,
 )
 
 logger = get_logger(__name__)
 
 SYSTEM_DEFAULT_CHANNEL = "in_app"
 SYSTEM_DEFAULT_OFFSET_MINUTES = 0
+WELCOME_MESSAGE = "Welcome to CarePilot. You can chat here anytime, including photos of meals."
 
-type ReminderNotificationRepo = ReminderNotificationRepository | AppStoreBackend | ReminderStore
+type ReminderNotificationRepo = MessageNotificationRepository | AppStoreBackend | ReminderStore
 
 
-def resolve_notification_preferences(
+def resolve_message_preferences(
     *,
     repository: ReminderNotificationRepo,
     user_id: str,
     reminder_type: str,
-) -> list[ReminderNotificationPreference]:
+) -> list[MessagePreference]:
     """Return the effective preferences for a user/reminder-type combination.
 
     Falls back to default-scoped preferences, then to a hard-coded in-app
     system default if neither is configured.
     """
-    typed = repository.list_reminder_notification_preferences(
+    typed = repository.list_message_preferences(
         user_id=user_id,
         scope_type="reminder_type",
         scope_key=reminder_type,
@@ -86,7 +89,7 @@ def resolve_notification_preferences(
     enabled_typed = [item for item in typed if item.enabled]
     if enabled_typed:
         return enabled_typed
-    defaults = repository.list_reminder_notification_preferences(
+    defaults = repository.list_message_preferences(
         user_id=user_id,
         scope_type="default",
         scope_key=None,
@@ -96,7 +99,7 @@ def resolve_notification_preferences(
         return enabled_defaults
     now = datetime.now(UTC)
     return [
-        ReminderNotificationPreference(
+        MessagePreference(
             id=f"system-default-{user_id}",
             user_id=user_id,
             scope_type="default",
@@ -126,18 +129,19 @@ def materialize_reminder_notifications(
     repository: ReminderNotificationRepo,
     reminder_event: ReminderEvent,
     reminder_type: str,
-) -> list[ScheduledReminderNotification]:
+    event_timeline: EventTimelineService | None = None,
+) -> list[ScheduledMessage]:
     """Create ``ScheduledReminderNotification`` rows for each applicable preference."""
-    preferences = resolve_notification_preferences(
+    preferences = resolve_message_preferences(
         repository=repository,
         user_id=reminder_event.user_id,
         reminder_type=reminder_type,
     )
-    created: list[ScheduledReminderNotification] = []
+    created: list[ScheduledMessage] = []
     for preference in preferences:
         trigger_at = reminder_event.scheduled_at + timedelta(minutes=preference.offset_minutes)
         now = datetime.now(UTC)
-        scheduled = ScheduledReminderNotification(
+        scheduled = ScheduledMessage(
             id=str(uuid4()),
             reminder_id=reminder_event.id,
             user_id=reminder_event.user_id,
@@ -176,7 +180,7 @@ def materialize_reminder_notifications(
         persisted = repository.save_scheduled_notification(scheduled)
         created.append(persisted)
         repository.append_notification_log(
-            ReminderNotificationLogEntry(
+            MessageLogEntry(
                 id=str(uuid4()),
                 scheduled_notification_id=persisted.id,
                 reminder_id=reminder_event.id,
@@ -192,6 +196,19 @@ def materialize_reminder_notifications(
         reminder_event.user_id,
         len(created),
     )
+    if event_timeline is not None:
+        event_timeline.append(
+            event_type="reminder_scheduled",
+            workflow_name="reminder_materialization",
+            correlation_id=reminder_event.id,
+            request_id=None,
+            user_id=reminder_event.user_id,
+            payload={
+                "reminder_id": reminder_event.id,
+                "reminder_type": reminder_event.reminder_type,
+                "scheduled_count": len(created),
+            },
+        )
     return created
 
 
@@ -201,14 +218,14 @@ def dispatch_due_reminder_notifications(
     now: datetime | None = None,
     limit: int = 100,
     max_late_minutes: int | None = None,
-) -> list[QueuedReminderNotification]:
+) -> list[QueuedMessage]:
     """Lease due scheduled notifications and enqueue them into the alert outbox."""
     dispatch_at = now or datetime.now(UTC)
     due_items = repository.lease_due_scheduled_notifications(now=dispatch_at, limit=limit)
     if not due_items:
         return []
 
-    queued: list[QueuedReminderNotification] = []
+    queued: list[QueuedMessage] = []
     for item in due_items:
         if max_late_minutes is not None and max_late_minutes >= 0:
             deadline = item.trigger_at + timedelta(minutes=max_late_minutes)
@@ -227,7 +244,7 @@ def dispatch_due_reminder_notifications(
                     error="late_delivery_window_exceeded",
                 )
                 repository.append_notification_log(
-                    ReminderNotificationLogEntry(
+                    MessageLogEntry(
                         id=str(uuid4()),
                         scheduled_notification_id=item.id,
                         reminder_id=item.reminder_id,
@@ -252,7 +269,7 @@ def dispatch_due_reminder_notifications(
                 item.id,
                 item.channel,
             )
-        message = AlertMessage(
+        message = OutboundMessage(
             alert_id=item.id,
             type="reminder_notification",
             severity="info",
@@ -289,7 +306,7 @@ def dispatch_due_reminder_notifications(
             "true" if endpoint and endpoint.destination else "false",
         )
         repository.append_notification_log(
-            ReminderNotificationLogEntry(
+            MessageLogEntry(
                 id=str(uuid4()),
                 scheduled_notification_id=item.id,
                 reminder_id=item.reminder_id,
@@ -300,7 +317,7 @@ def dispatch_due_reminder_notifications(
             )
         )
         queued.append(
-            QueuedReminderNotification(
+            QueuedMessage(
                 scheduled_notification_id=item.id,
                 reminder_id=item.reminder_id,
                 channel=item.channel,
@@ -322,7 +339,7 @@ def cancel_reminder_notifications(
         if item.status != "cancelled":
             continue
         repository.append_notification_log(
-            ReminderNotificationLogEntry(
+            MessageLogEntry(
                 id=str(uuid4()),
                 scheduled_notification_id=item.id,
                 reminder_id=item.reminder_id,
@@ -338,14 +355,14 @@ def cancel_reminder_notifications(
 __all__ = [
     "cancel_reminder_notifications",
     "dispatch_due_reminder_notifications",
-    "list_notification_endpoints",
-    "list_notification_preferences",
-    "list_reminder_notification_logs",
-    "list_reminder_notification_schedules",
+    "list_message_endpoints",
+    "list_message_preferences",
+    "list_message_logs",
+    "list_message_schedules",
     "materialize_reminder_notifications",
-    "replace_notification_endpoints",
-    "replace_notification_preferences",
-    "resolve_notification_preferences",
+    "replace_message_endpoints",
+    "replace_message_preferences",
+    "resolve_message_preferences",
 ]
 
 # ---------------------------------------------------------------------------
@@ -353,21 +370,21 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 
-def list_notification_preferences(
+def list_message_preferences(
     *,
     context: AppContext,
     user_id: str,
     scope_type: str | None = None,
     scope_key: str | None = None,
-) -> ReminderNotificationPreferenceListResponse:
-    items = context.stores.reminders.list_reminder_notification_preferences(
+) -> MessagePreferenceListResponse:
+    items = context.stores.reminders.list_message_preferences(
         user_id=user_id,
         scope_type=scope_type,
         scope_key=scope_key,
     )
-    return ReminderNotificationPreferenceListResponse(
+    return MessagePreferenceListResponse(
         preferences=[
-            ReminderNotificationPreferenceRuleResponse(
+            MessagePreferenceRuleResponse(
                 id=item.id,
                 scope_type=item.scope_type,
                 scope_key=item.scope_key,
@@ -381,17 +398,17 @@ def list_notification_preferences(
     )
 
 
-def replace_notification_preferences(
+def replace_message_preferences(
     *,
     context: AppContext,
     user_id: str,
     scope_type: str,
     scope_key: str | None,
-    rules: list[ReminderNotificationPreferenceRuleRequest],
-) -> ReminderNotificationPreferenceListResponse:
+    rules: list[MessagePreferenceRuleRequest],
+) -> MessagePreferenceListResponse:
     seen: set[tuple[str, int]] = set()
     now = datetime.now(UTC)
-    preferences: list[ReminderNotificationPreference] = []
+    preferences: list[MessagePreference] = []
     for rule in rules:
         key = (rule.channel, rule.offset_minutes)
         if key in seen:
@@ -402,7 +419,7 @@ def replace_notification_preferences(
             )
         seen.add(key)
         preferences.append(
-            ReminderNotificationPreference(
+            MessagePreference(
                 id=str(uuid4()),
                 user_id=user_id,
                 scope_type=cast(NotificationPreferenceScope, scope_type),
@@ -414,15 +431,15 @@ def replace_notification_preferences(
                 updated_at=now,
             )
         )
-    saved = context.stores.reminders.replace_reminder_notification_preferences(
+    saved = context.stores.reminders.replace_message_preferences(
         user_id=user_id,
         scope_type=scope_type,
         scope_key=scope_key,
         preferences=preferences,
     )
-    return ReminderNotificationPreferenceListResponse(
+    return MessagePreferenceListResponse(
         preferences=[
-            ReminderNotificationPreferenceRuleResponse(
+            MessagePreferenceRuleResponse(
                 id=item.id,
                 scope_type=item.scope_type,
                 scope_key=item.scope_key,
@@ -436,12 +453,12 @@ def replace_notification_preferences(
     )
 
 
-def list_reminder_notification_schedules(
+def list_message_schedules(
     *,
     context: AppContext,
     user_id: str,
     reminder_id: str,
-) -> ScheduledReminderNotificationListResponse:
+) -> ScheduledMessageListResponse:
     reminder = context.stores.reminders.get_reminder_event(reminder_id)
     if reminder is None or reminder.user_id != user_id:
         raise build_api_error(
@@ -450,9 +467,9 @@ def list_reminder_notification_schedules(
             message="reminder not found",
         )
     items = context.stores.reminders.list_scheduled_notifications(reminder_id=reminder_id)
-    return ScheduledReminderNotificationListResponse(
+    return ScheduledMessageListResponse(
         items=[
-            ScheduledReminderNotificationItemResponse(
+            ScheduledMessageItemResponse(
                 id=item.id,
                 reminder_id=item.reminder_id,
                 channel=item.channel,
@@ -468,13 +485,11 @@ def list_reminder_notification_schedules(
     )
 
 
-def list_notification_endpoints(
-    *, context: AppContext, user_id: str
-) -> ReminderNotificationEndpointListResponse:
+def list_message_endpoints(*, context: AppContext, user_id: str) -> MessageEndpointListResponse:
     items = context.stores.reminders.list_reminder_notification_endpoints(user_id=user_id)
-    return ReminderNotificationEndpointListResponse(
+    return MessageEndpointListResponse(
         endpoints=[
-            ReminderNotificationEndpointResponse(
+            MessageEndpointResponse(
                 id=item.id,
                 channel=item.channel,
                 destination=item.destination,
@@ -486,15 +501,15 @@ def list_notification_endpoints(
     )
 
 
-def replace_notification_endpoints(
+def replace_message_endpoints(
     *,
     context: AppContext,
     user_id: str,
-    endpoints: list[ReminderNotificationEndpointRequest],
-) -> ReminderNotificationEndpointListResponse:
+    endpoints: list[MessageEndpointRequest],
+) -> MessageEndpointListResponse:
     seen: set[str] = set()
     now = datetime.now(UTC)
-    rows: list[ReminderNotificationEndpoint] = []
+    rows: list[MessageEndpoint] = []
     for endpoint in endpoints:
         if endpoint.channel in seen:
             raise build_api_error(
@@ -504,7 +519,7 @@ def replace_notification_endpoints(
             )
         seen.add(endpoint.channel)
         rows.append(
-            ReminderNotificationEndpoint(
+            MessageEndpoint(
                 id=str(uuid4()),
                 user_id=user_id,
                 channel=endpoint.channel,
@@ -514,12 +529,95 @@ def replace_notification_endpoints(
                 updated_at=now,
             )
         )
-    saved = context.stores.reminders.replace_reminder_notification_endpoints(
+    saved = context.stores.reminders.replace_message_endpoints(
         user_id=user_id, endpoints=rows
     )
-    return ReminderNotificationEndpointListResponse(
+    for endpoint in saved:
+        if not endpoint.verified:
+            continue
+        thread = context.stores.reminders.get_message_thread(
+            user_id=endpoint.user_id,
+            channel=endpoint.channel,
+            endpoint_id=endpoint.id,
+        )
+        if thread is None:
+            now = datetime.now(UTC)
+            thread = MessageThread(
+                id=str(uuid4()),
+                user_id=endpoint.user_id,
+                channel=endpoint.channel,
+                endpoint_id=endpoint.id,
+                status="active",
+                created_at=now,
+                updated_at=now,
+            )
+            context.stores.reminders.create_message_thread(thread)
+            context.stores.reminders.add_message_thread_participant(
+                MessageThreadParticipant(
+                    id=str(uuid4()),
+                    thread_id=thread.id,
+                    participant_type="user",
+                    participant_id=endpoint.user_id,
+                    created_at=now,
+                )
+            )
+            context.stores.reminders.add_message_thread_participant(
+                MessageThreadParticipant(
+                    id=str(uuid4()),
+                    thread_id=thread.id,
+                    participant_type="assistant",
+                    participant_id="assistant",
+                    created_at=now,
+                )
+            )
+            context.stores.reminders.append_message_thread_message(
+                MessageThreadMessage(
+                    id=str(uuid4()),
+                    thread_id=thread.id,
+                    user_id=endpoint.user_id,
+                    channel=endpoint.channel,
+                    direction="outbound",
+                    body=WELCOME_MESSAGE,
+                    attachments=[],
+                    metadata={"reason": "welcome"},
+                    created_at=now,
+                )
+            )
+            context.stores.reminders.enqueue_alert(
+                OutboundMessage(
+                    alert_id=str(uuid4()),
+                    type="message",
+                    severity="info",
+                    payload={
+                        "body": WELCOME_MESSAGE,
+                        "destination": endpoint.destination,
+                        "thread_id": thread.id,
+                        "channel": endpoint.channel,
+                        "user_id": endpoint.user_id,
+                    },
+                    destinations=[endpoint.channel],
+                    correlation_id=thread.id,
+                    attachments=[],
+                )
+            )
+            try:
+                context.event_timeline.append(
+                    event_type="message_welcome_sent",
+                    workflow_name="message_channels",
+                    correlation_id=thread.id,
+                    request_id=None,
+                    user_id=endpoint.user_id,
+                    payload={"channel": endpoint.channel, "endpoint_id": endpoint.id},
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "message_welcome_timeline_failed endpoint_id=%s error=%s",
+                    endpoint.id,
+                    exc,
+                )
+    return MessageEndpointListResponse(
         endpoints=[
-            ReminderNotificationEndpointResponse(
+            MessageEndpointResponse(
                 id=item.id,
                 channel=item.channel,
                 destination=item.destination,
@@ -531,12 +629,12 @@ def replace_notification_endpoints(
     )
 
 
-def list_reminder_notification_logs(
+def list_message_logs(
     *,
     context: AppContext,
     user_id: str,
     reminder_id: str,
-) -> ReminderNotificationLogListResponse:
+) -> MessageLogListResponse:
     reminder = context.stores.reminders.get_reminder_event(reminder_id)
     if reminder is None or reminder.user_id != user_id:
         raise build_api_error(
@@ -545,9 +643,9 @@ def list_reminder_notification_logs(
             message="reminder not found",
         )
     items = context.stores.reminders.list_notification_logs(reminder_id=reminder_id)
-    return ReminderNotificationLogListResponse(
+    return MessageLogListResponse(
         items=[
-            ReminderNotificationLogItemResponse(
+            MessageLogItemResponse(
                 id=item.id,
                 scheduled_notification_id=item.scheduled_notification_id,
                 channel=item.channel,

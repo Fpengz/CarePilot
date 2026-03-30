@@ -6,7 +6,7 @@ import random
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
-from typing import Literal
+from typing import Any, Literal, cast
 from zoneinfo import ZoneInfo
 
 from care_pilot.config import get_settings
@@ -15,22 +15,78 @@ from care_pilot.features.companion.core.health.models import (
     HealthProfileRecord,
     MedicationAdherenceEvent,
 )
-from care_pilot.features.meals.domain.models import (
-    NutritionRiskProfile,
-    ValidatedMealEvent,
-)
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-)
-from care_pilot.features.reminders.domain.models import (
-    MedicationRegimen,
-    ReminderEvent,
-)
+from care_pilot.features.meals.domain.models import NutritionRiskProfile, ValidatedMealEvent
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, NutritionGoal
+from care_pilot.features.reminders.domain.models import MedicationRegimen, ReminderEvent
+from care_pilot.platform.auth.in_memory import PasswordHasher
 from care_pilot.platform.persistence.sqlite_db import get_connection
 from care_pilot.platform.persistence.sqlite_repository import SQLiteRepository
 
 SyntheticProfile = Literal["stable", "improving", "volatile"]
+
+
+def seed_demo_accounts(
+    *,
+    auth_db_path: str,
+    app_db_path: str,
+    accounts: list[dict[str, str]],
+    profiles: list[dict[str, object]],
+) -> None:
+    """Seed demo accounts and their initial health profiles from provided data."""
+    settings = get_settings()
+    hasher = PasswordHasher(settings.auth.password_hash_scheme)
+
+    # 1. Seed Auth Users
+    with get_connection(auth_db_path) as conn:
+        for acc in accounts:
+            user_id = acc["user_id"]
+            email = acc["email"]
+            name = acc["display_name"]
+            role = acc["account_role"]
+            mode = acc["profile_mode"]
+            password = acc["password"]
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO auth_users (user_id, email, display_name, account_role, profile_mode, password_hash, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    user_id,
+                    email,
+                    name,
+                    role,
+                    mode,
+                    hasher.hash(password),
+                    datetime.now(UTC).isoformat(),
+                ),
+            )
+        conn.commit()
+
+    # 2. Seed Initial Health Profiles
+    repo = SQLiteRepository(app_db_path)
+    for p in cast(list[dict[str, Any]], profiles):
+        user_id = str(p["user_id"])
+        if not repo.clinical.get_health_profile(user_id):
+            repo.clinical.save_health_profile(
+                HealthProfileRecord(
+                    user_id=user_id,
+                    age=int(cast(int, p["age"])),
+                    locale=str(p["locale"]),
+                    conditions=[
+                        MedicalCondition(name=str(c["name"]), severity=str(c["severity"]))
+                        for c in cast(list[dict[str, str]], p.get("conditions", []))
+                    ],
+                    medications=[
+                        Medication(name=str(m["name"]), dosage=str(m["dosage"]))
+                        for m in cast(list[dict[str, str]], p.get("medications", []))
+                    ],
+                    nutrition_goals=[
+                        NutritionGoal(goal_type=str(g), target_value=0.0, unit="unit", start_date=datetime.now(UTC).date())
+                        for g in cast(list[str], p.get("nutrition_goals", []))
+                    ],
+                    updated_at=datetime.now(UTC).isoformat(),
+                )
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -331,7 +387,10 @@ def _build_profile(*, user_id: str, config: SyntheticProfileConfig) -> HealthPro
             Medication(name="Metformin", dosage="500mg"),
             Medication(name="Atorvastatin", dosage="20mg"),
         ],
-        nutrition_goals=list(config.goals),
+        nutrition_goals=[
+            NutritionGoal(goal_type=str(g), target_value=0.0, unit="unit", start_date=datetime.now(UTC).date())
+            for g in config.goals
+        ],
         preferred_cuisines=["teochew", "japanese"],
         disliked_ingredients=["lard"],
         preferred_notification_channel="in_app",

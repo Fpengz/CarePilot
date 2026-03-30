@@ -12,10 +12,7 @@ from care_pilot.features.reminders.notifications.alert_dispatch import (
     send_push,
     trigger_alert,
 )
-from care_pilot.features.safety.domain.alerts.models import (
-    AlertDeliveryResult,
-    AlertMessage,
-)
+from care_pilot.features.safety.domain.alerts.models import AlertDeliveryResult, AlertMessage
 from care_pilot.platform.persistence import SQLiteRepository
 
 
@@ -68,10 +65,10 @@ def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(
 ) -> None:
     captured = {}
 
-    def fake_send(self, reminder_event, destination=None):  # noqa: ANN001
-        captured["scheduled_at"] = reminder_event.scheduled_at
-        captured["dosage_text"] = reminder_event.dosage_text
-        captured["medication_name"] = reminder_event.medication_name
+    def fake_send(self, message, destination=None):  # noqa: ANN001
+        captured["scheduled_at"] = message.payload.get("scheduled_at")
+        captured["dosage_text"] = message.payload.get("dosage_text")
+        captured["medication_name"] = message.payload.get("medication_name")
         return type(
             "Result",
             (),
@@ -93,8 +90,7 @@ def test_dispatch_reminder_async_preserves_reminder_fields_for_telegram(
     repo = SQLiteRepository(str(tmp_path / "alerts.db"))
     dispatch_reminder_async(event, ["telegram"], repository=repo)
 
-    assert captured["scheduled_at"] == event.scheduled_at
-    assert captured["scheduled_at"].tzinfo is None
+    assert captured["scheduled_at"] == event.scheduled_at.isoformat()
     assert captured["dosage_text"] == event.dosage_text
     assert captured["medication_name"] == event.medication_name
 
@@ -203,7 +199,7 @@ def test_trigger_alert_drains_all_destinations_across_batches(monkeypatch, tmp_p
     monkeypatch.setenv("ALERT_WORKER_CONCURRENCY", "1")
     get_settings.cache_clear()
 
-    def fake_channel_send(self, reminder_event, destination=None):  # noqa: ANN001
+    def fake_channel_send(self, message, destination=None):  # noqa: ANN001
         channel_name = self.__class__.__name__.replace("Channel", "").lower()
         return type(
             "Result",

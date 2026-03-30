@@ -16,22 +16,14 @@ from fastapi import HTTPException, Request
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from care_pilot.agent.adapters.shadow_agents import (
+from care_pilot.agent.adapters.agent_adapters import (
     EmotionSpeechAgentAdapter,
     EmotionTextAgentAdapter,
 )
-from care_pilot.agent.chat.schemas import (
-    ChatStreamEvent,
-)
-from care_pilot.agent.core.base import AgentContext
-from care_pilot.agent.emotion import (
-    EmotionAgentDisabledError,
-)
-from care_pilot.agent.emotion.schemas import (
-    EmotionInferenceResult,
-    EmotionSpeechAgentInput,
-    EmotionTextAgentInput,
-)
+from care_pilot.agent.chat.schemas import ChatStreamEvent
+from care_pilot.agent.emotion import EmotionAgentDisabledError
+from care_pilot.agent.emotion.schemas import EmotionSpeechAgentInput, EmotionTextAgentInput
+from care_pilot.agent.runtime.context_builder import build_agent_context
 from care_pilot.features.companion.chat.meal_intent import (
     classify_meal_log_intent,
     heuristic_meal_log_intent,
@@ -40,8 +32,6 @@ from care_pilot.features.companion.chat.meal_intent import (
 from care_pilot.features.companion.chat.memory import MemoryManager
 from care_pilot.features.companion.chat.memory_store import (
     build_memory_context as build_memory_snippet_context,
-)
-from care_pilot.features.companion.chat.memory_store import (
     fetch_memory_snippets,
     record_chat_turn,
 )
@@ -50,18 +40,12 @@ from care_pilot.features.companion.chat.workflows.companion_graph import (
     CompanionState,
     build_companion_graph,
 )
-from care_pilot.features.companion.chat.workflows.companion_shadow_graph import (
-    CompanionShadowDeps,
-    CompanionShadowState,
-    schedule_companion_shadow_workflow,
-)
 
 # Important: These must be imported from features core, not apps/api
 from care_pilot.features.companion.core.companion_core_service import CompanionStateInputs
 from care_pilot.features.companion.core.domain import PatientCaseSnapshot
-from care_pilot.features.companion.core.snapshot import build_case_snapshot
+from care_pilot.features.companion.core.snapshot import build_case_snapshot_prefer_projection
 from care_pilot.features.meals.domain.normalization import log_meal_from_text
-from care_pilot.features.safety.domain.triage import evaluate_text_safety
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence import AppStores
 from care_pilot.platform.persistence.sqlite_db import get_connection
@@ -124,7 +108,9 @@ class ChatOrchestrator:
         agent_names: list[str] = []
 
         # 1. Build Blackboard (Snapshot)
-        snapshot = build_case_snapshot(
+        snapshot = build_case_snapshot_prefer_projection(
+            user_id=inputs.user_profile.id,
+            eventing_store=ctx.stores.eventing,
             user_profile=inputs.user_profile,
             health_profile=inputs.health_profile,
             meals=inputs.meals,
@@ -157,11 +143,13 @@ class ChatOrchestrator:
                 adapter = EmotionTextAgentAdapter(ctx.emotion_agent)
                 result = await adapter.run(
                     EmotionTextAgentInput(text=user_message, language=None, user_id=user_id),
-                    AgentContext(
+                    build_agent_context(
                         user_id=user_id,
                         session_id=session_id,
                         request_id=request_id,
                         correlation_id=correlation_id,
+                        policy={"allowed_sources": ["chat_message"]},
+                        selection={"reason": "emotion_inference"},
                     ),
                 )
                 inference = result.output
@@ -217,20 +205,7 @@ class ChatOrchestrator:
         else:
             user_message_with_memory = user_message
 
-        # 4. Shadow pydantic-graph workflow (observability only)
-        schedule_companion_shadow_workflow(
-            deps=CompanionShadowDeps(event_timeline=ctx.event_timeline),
-            state=CompanionShadowState(
-                user_id=user_id,
-                session_id=session_id,
-                request_id=request_id,
-                correlation_id=correlation_id,
-                message=user_message_with_memory,
-                snapshot_json=snapshot.model_dump_json(),
-            ),
-        )
-
-        # 5. Meal Intent (Ported from legacy orchestrator)
+        # 4. Meal Intent (Ported from legacy orchestrator)
         meal_text = self._parse_meal_command(user_message)
         response_prefix = None
         if not meal_text:
@@ -276,12 +251,9 @@ class ChatOrchestrator:
                 stores=ctx.stores,
             )
             response_prefix = f"{meal_result['message']}\n\n"
-            yield ChatStreamEvent(
-                event="meal_logged",
-                data=cast(dict[str, object], meal_result)
-            )
+            yield ChatStreamEvent(event="meal_logged", data=cast(dict[str, object], meal_result))
 
-        # 6. Run Graph
+        # 5. Run Graph
         try:
             # We use the version with memory context for the agent reasoning
             final_response = ""
@@ -292,9 +264,11 @@ class ChatOrchestrator:
             ):
                 # chunk is a dict mapping node names to their state updates
                 for _node_name, state_update in chunk.items():
-                    if "last_agent_response" in state_update and state_update["last_agent_response"]:
+                    if (
+                        "last_agent_response" in state_update
+                        and state_update["last_agent_response"]
+                    ):
                         agent_resp = state_update["last_agent_response"]
-                        merged_actions = self._merge_agent_actions(agent_resp.actions)
                         try:
                             ctx.event_timeline.append(
                                 event_type="agent_action_proposed",
@@ -308,7 +282,7 @@ class ChatOrchestrator:
                                     "confidence": agent_resp.confidence,
                                     "summary_length": len(agent_resp.summary or ""),
                                     "recommendation_count": len(agent_resp.recommendations),
-                                    "action_count": len(merged_actions),
+                                    "action_count": len(agent_resp.actions),
                                 },
                             )
                             agent_names.append(agent_resp.agent_name)
@@ -321,13 +295,9 @@ class ChatOrchestrator:
 
                         # Only yield if there's actual new content to show to the user
                         if agent_resp.summary:
-                            safe_summary = self._apply_safety_policy(agent_resp.summary)
-                            content = self._merge_agent_response(
-                                response_prefix=response_prefix,
-                                final_response=final_response,
-                                summary=safe_summary,
-                            )
+                            content = agent_resp.summary
                             if response_prefix and not final_response:
+                                content = f"{response_prefix}{content}"
                                 response_prefix = None  # only prepend once
 
                             final_response += content + "\n\n"
@@ -413,17 +383,15 @@ class ChatOrchestrator:
             # Transcribe audio using the directly available audio agent
             user_message = await ctx.chat_audio_agent.transcribe_bytes(audio_bytes, filename)
         except Exception as exc:
-
             yield ChatStreamEvent(
-                event="error",
-                data={"message": f"Transcription failed: {exc}", "phase": "audio"}
+                event="error", data={"message": f"Transcription failed: {exc}", "phase": "audio"}
             )
             return
 
         if not user_message:
             yield ChatStreamEvent(
                 event="error",
-                data={"message": "Transcription returned empty text", "phase": "audio"}
+                data={"message": "Transcription returned empty text", "phase": "audio"},
             )
             return
 
@@ -447,11 +415,13 @@ class ChatOrchestrator:
                         language=None,
                         user_id=user_id,
                     ),
-                    AgentContext(
+                    build_agent_context(
                         user_id=user_id,
                         session_id=str(session.get("session_id", "")),
                         request_id=request_id,
                         correlation_id=correlation_id,
+                        policy={"allowed_sources": ["audio", "transcription"]},
+                        selection={"reason": "emotion_inference_speech"},
                     ),
                 )
                 inference = result.output
@@ -527,7 +497,9 @@ class ChatOrchestrator:
             return {"status": "skipped", "assistant_followup": "Skipped logging this meal."}
 
         # Log it
-        meal_result = self._log_meal_command(user_id=user_id, meal_text=meal_text, stores=ctx.stores)
+        meal_result = self._log_meal_command(
+            user_id=user_id, meal_text=meal_text, stores=ctx.stores
+        )
         ctx.cache_store.delete(cache_key)
 
         return {
@@ -548,53 +520,6 @@ class ChatOrchestrator:
             return cleaned[6:].strip() or None
         match = _MEAL_PREFIX_RE.match(cleaned)
         return match.group(1).strip() if match else None
-
-    def _merge_agent_response(
-        self,
-        *,
-        response_prefix: str | None,
-        final_response: str,
-        summary: str,
-    ) -> str:
-        """Deterministically merge a single agent summary into the response."""
-        content = summary
-        if response_prefix and not final_response:
-            content = f"{response_prefix}{content}"
-        return content
-
-    @staticmethod
-    def _apply_safety_policy(summary: str) -> str:
-        """Apply explicit safety gating to agent summaries."""
-        decision = evaluate_text_safety(summary)
-        if decision.decision == "allow":
-            return summary
-        required = " ".join(decision.required_actions).strip()
-        if required:
-            return f"{required}"
-        return "I’m concerned this may need urgent medical attention. Please seek care right away."
-
-    @staticmethod
-    def _merge_agent_actions(actions: list[dict]) -> list[dict]:
-        """Deterministically dedupe agent actions for telemetry."""
-        seen: set[str] = set()
-        merged: list[dict] = []
-        for action in actions:
-            action_type = str(action.get("type", ""))
-            message = str(action.get("message", ""))
-            key = f"{action_type}::{message}"
-            if key in seen:
-                continue
-            seen.add(key)
-            merged.append(action)
-        return merged
-
-    def _format_emotion_context(self, inference: EmotionInferenceResult) -> str:
-        pct = int(inference.confidence * 100)
-        return (
-            f"[Emotional context] The user appears to be feeling **{inference.final_emotion}** "
-            f"(confidence {pct} %). Please respond with appropriate empathy and tailor "
-            f"your advice to their current emotional state."
-        )
 
     def _meal_proposal_prompt(self, meal_text: str) -> str:
         return f"I can log **{meal_text}** as a meal. Would you like me to save it?"

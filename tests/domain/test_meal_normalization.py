@@ -1,15 +1,9 @@
 """Tests for meal normalization."""
 
 from care_pilot.features.meals.domain import MealPerception
-from care_pilot.features.meals.domain.models import (
-    MealState,
-    Nutrition,
-    VisionResult,
-)
+from care_pilot.features.meals.domain.models import MealState, Nutrition, VisionResult
 from care_pilot.features.meals.domain.normalization import normalize_vision_result
-from care_pilot.features.recommendations.domain.models import (
-    CanonicalFoodRecord,
-)
+from care_pilot.features.recommendations.domain.models import CanonicalFoodRecord
 
 
 class _StubFoodStore:

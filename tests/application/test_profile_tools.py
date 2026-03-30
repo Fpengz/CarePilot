@@ -9,11 +9,7 @@ from care_pilot.features.companion.personalization import (
     get_profile_sections,
 )
 from care_pilot.features.meals.domain.models import MealState, Nutrition
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, UserProfile
 from care_pilot.features.profiles.domain.profile_tools import (
     CaregiverToolState,
     ClinicalSummaryToolState,

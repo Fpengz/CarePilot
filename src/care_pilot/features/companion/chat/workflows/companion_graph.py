@@ -14,13 +14,16 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
-from care_pilot.agent.adherence.agent import run_adherence_agent
-from care_pilot.agent.care_plan.agent import run_care_plan_agent
+from care_pilot.agent.adapters.graph_agents import (
+    run_adherence_agent_via_adapter,
+    run_care_plan_agent_via_adapter,
+    run_meal_agent_via_adapter,
+    run_medication_agent_via_adapter,
+    run_trend_agent_via_adapter,
+)
+from care_pilot.agent.core.base import AgentContext
 from care_pilot.agent.core.contracts import AgentRequest, AgentResponse
-from care_pilot.agent.meal_analysis.agent import run_meal_agent
-from care_pilot.agent.medication.agent import run_medication_agent
 from care_pilot.agent.orchestrator.agent import run_supervisor_agent
-from care_pilot.agent.trends.agent import run_trend_agent
 from care_pilot.features.companion.core.domain import PatientCaseSnapshot
 
 
@@ -33,6 +36,40 @@ class CompanionState(TypedDict):
     last_agent_response: AgentResponse | None
     errors: list[str]
     session_id: str
+
+
+async def _run_adapter_agent(
+    *,
+    request: AgentRequest,
+    runner: Any,
+) -> AgentResponse:
+    context = AgentContext(
+        user_id=request.user_id,
+        session_id=request.session_id,
+        correlation_id=request.correlation_id,
+    )
+    result = await runner(request=request, context=context)
+    return result.output
+
+
+async def run_meal_agent(request: AgentRequest) -> AgentResponse:
+    return await _run_adapter_agent(request=request, runner=run_meal_agent_via_adapter)
+
+
+async def run_medication_agent(request: AgentRequest) -> AgentResponse:
+    return await _run_adapter_agent(request=request, runner=run_medication_agent_via_adapter)
+
+
+async def run_trend_agent(request: AgentRequest) -> AgentResponse:
+    return await _run_adapter_agent(request=request, runner=run_trend_agent_via_adapter)
+
+
+async def run_adherence_agent(request: AgentRequest) -> AgentResponse:
+    return await _run_adapter_agent(request=request, runner=run_adherence_agent_via_adapter)
+
+
+async def run_care_plan_agent(request: AgentRequest) -> AgentResponse:
+    return await _run_adapter_agent(request=request, runner=run_care_plan_agent_via_adapter)
 
 
 async def supervisor_node(state: CompanionState, config: RunnableConfig) -> dict[str, Any]:
@@ -59,6 +96,7 @@ def route_next(state: CompanionState) -> str:
 
 # Specialist Nodes
 
+
 async def meal_node(state: CompanionState, config: RunnableConfig) -> dict[str, Any]:
     """Execute the meal specialist agent."""
     user_msg = state["messages"][-1].content if state["messages"] else ""
@@ -69,7 +107,7 @@ async def meal_node(state: CompanionState, config: RunnableConfig) -> dict[str, 
         correlation_id=correlation_id,
         goal="Analyze meal from message",
         inputs={"text_context": str(user_msg)},
-        context={"snapshot": state["snapshot"].model_dump_json()}
+        context={"snapshot": state["snapshot"].model_dump_json()},
     )
     response = await run_meal_agent(request)
     return {"last_agent_response": response, "next_agent": "supervisor"}
@@ -85,7 +123,7 @@ async def medication_node(state: CompanionState, config: RunnableConfig) -> dict
         correlation_id=correlation_id,
         goal="Parse medication from message",
         inputs={"text_context": str(user_msg)},
-        context={"snapshot": state["snapshot"].model_dump_json()}
+        context={"snapshot": state["snapshot"].model_dump_json()},
     )
     response = await run_medication_agent(request)
     return {"last_agent_response": response, "next_agent": "supervisor"}
@@ -99,7 +137,7 @@ async def trend_node(state: CompanionState, config: RunnableConfig) -> dict[str,
         session_id=state["session_id"],
         correlation_id=correlation_id,
         goal="Analyze health trends",
-        context={"snapshot": state["snapshot"].model_dump_json()}
+        context={"snapshot": state["snapshot"].model_dump_json()},
     )
     response = await run_trend_agent(request)
     return {"last_agent_response": response, "next_agent": "supervisor"}
@@ -113,7 +151,7 @@ async def adherence_node(state: CompanionState, config: RunnableConfig) -> dict[
         session_id=state["session_id"],
         correlation_id=correlation_id,
         goal="Analyze medication adherence",
-        context={"snapshot": state["snapshot"].model_dump_json()}
+        context={"snapshot": state["snapshot"].model_dump_json()},
     )
     response = await run_adherence_agent(request)
     return {"last_agent_response": response, "next_agent": "supervisor"}
@@ -127,7 +165,7 @@ async def care_plan_node(state: CompanionState, config: RunnableConfig) -> dict[
         session_id=state["session_id"],
         correlation_id=correlation_id,
         goal="Synthesize care plan",
-        context={"snapshot": state["snapshot"].model_dump_json()}
+        context={"snapshot": state["snapshot"].model_dump_json()},
     )
     response = await run_care_plan_agent(request)
     return {"last_agent_response": response, "next_agent": "supervisor"}

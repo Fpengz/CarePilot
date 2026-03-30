@@ -23,9 +23,7 @@ from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
 from care_pilot.core.contracts.api.core import HealthProfileResponseItem, JsonValue
 from care_pilot.core.contracts.api.meal_health import SymptomSummaryResponse
 from care_pilot.core.contracts.api.workflows import WorkflowResponse
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
@@ -49,9 +47,7 @@ from care_pilot.features.reminders.domain.models import (
     ReminderScheduleRule,
 )
 from care_pilot.features.safety.domain.alerts.models import OutboxState
-from care_pilot.platform.observability.tooling.domain.models import (
-    ToolExecutionResult,
-)
+from care_pilot.platform.observability.tooling.domain.models import ToolExecutionResult
 
 
 class ReportParseRequest(BaseModel):

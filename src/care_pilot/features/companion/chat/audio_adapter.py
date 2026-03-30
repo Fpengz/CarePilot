@@ -70,7 +70,7 @@ class AudioAgent:
     def load_model(self) -> None:
         """Download & load the MERaLiON model onto the local device."""
         if self._provider == "remote":
-            return # No local load needed
+            return  # No local load needed
 
         logger.info(
             "audio_agent_load_start repo_id=%s device=%s",
@@ -93,6 +93,10 @@ class AudioAgent:
             trust_remote_code=True,
         ).to(self.device)
         logger.info("audio_agent_load_complete repo_id=%s", self.repo_id)
+
+    async def close(self) -> None:
+        """Close the underlying HTTP client."""
+        await self._async_client.aclose()
 
     async def transcribe(self, audio_input: tuple) -> str:
         """Transcribe audio using MERaLiON (local or remote)."""
@@ -119,12 +123,10 @@ class AudioAgent:
         buffer.seek(0)
 
         files = {"audio": ("audio.wav", buffer, "audio/wav")}
-        data = {"context_features": "{}"} # Required by current remote implementation
+        data = {"context_features": "{}"}  # Required by current remote implementation
 
         response = await self._async_client.post(
-            f"{self._remote_inference_url}/infer/speech",
-            files=files,
-            data=data
+            f"{self._remote_inference_url}/infer/speech", files=files, data=data
         )
         response.raise_for_status()
         result = response.json()
@@ -177,26 +179,32 @@ class AudioAgent:
         loop = asyncio.get_running_loop()
 
         if provider in {"groq"}:
-            return await loop.run_in_executor(get_io_executor(), self._transcribe_groq, raw_bytes, filename)
+            return await loop.run_in_executor(
+                get_io_executor(), self._transcribe_groq, raw_bytes, filename
+            )
         if provider in {"qwen", "openai", "openai-compatible", "compatible"}:
-            return await loop.run_in_executor(get_io_executor(), self._transcribe_openai_compatible, raw_bytes, filename)
+            return await loop.run_in_executor(
+                get_io_executor(), self._transcribe_openai_compatible, raw_bytes, filename
+            )
         if provider == "remote":
             # Delegate raw bytes to remote service
             files = {"audio": (filename, raw_bytes)}
             data = {"context_features": "{}"}
             response = await self._async_client.post(
-                f"{self._remote_inference_url}/infer/speech",
-                files=files,
-                data=data
+                f"{self._remote_inference_url}/infer/speech", files=files, data=data
             )
             response.raise_for_status()
             result = response.json()
             return result.get("transcription") or result.get("text") or ""
 
         if self._api_key:
-            return await loop.run_in_executor(get_io_executor(), self._transcribe_openai_compatible, raw_bytes, filename)
+            return await loop.run_in_executor(
+                get_io_executor(), self._transcribe_openai_compatible, raw_bytes, filename
+            )
         if self._groq_api_key:
-            return await loop.run_in_executor(get_io_executor(), self._transcribe_groq, raw_bytes, filename)
+            return await loop.run_in_executor(
+                get_io_executor(), self._transcribe_groq, raw_bytes, filename
+            )
         raise ValueError("No transcription provider configured (set TRANSCRIPTION_API_KEY)")
 
     def _transcribe_openai_compatible(self, raw_bytes: bytes, filename: str) -> str:
@@ -280,6 +288,3 @@ class AudioAgent:
         )
         logger.info("audio_agent_groq_response length=%s", len(result.text or ""))
         return result.text.strip()
-
-    async def close(self) -> None:
-        await self._async_client.aclose()

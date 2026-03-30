@@ -9,9 +9,7 @@ from care_pilot.features.meals.domain.models import (
     RawObservationBundle,
     ValidatedMealEvent,
 )
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowExecutionResult,
-)
+from care_pilot.platform.observability.workflows.domain.models import WorkflowExecutionResult
 
 
 class MealUploadOutput(BaseModel):

@@ -4,22 +4,18 @@ Execute agent inference requests through model providers.
 This module coordinates inference requests, provider selection, and retries
 for agent runtime execution.
 """
+
 import asyncio
 import json
 import re
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol, cast
 
 from pydantic import BaseModel, ValidationError
 from pydantic_ai import Agent
-from pydantic_ai.messages import (
-    BinaryImage,
-    PartDeltaEvent,
-    PartEndEvent,
-    TextPart,
-    TextPartDelta,
-)
+from pydantic_ai.messages import BinaryImage, PartDeltaEvent, PartEndEvent, TextPart, TextPartDelta
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from care_pilot.agent.runtime.inference_types import (
@@ -40,7 +36,7 @@ logger = get_logger(__name__)
 QWEN_PROVIDER = getattr(ModelProvider, "QWEN", ModelProvider.OPENAI)
 
 
-def _collect_text_from_events(events: list[object]) -> str:
+def _collect_text_from_events(events: Sequence[object]) -> str:
     chunks: list[str] = []
     for event in events:
         if isinstance(event, PartDeltaEvent) and isinstance(event.delta, TextPartDelta):

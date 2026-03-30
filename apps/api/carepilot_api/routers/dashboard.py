@@ -26,6 +26,7 @@ def dashboard_overview(
     range: str = Query(default="30d"),
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
+    include: str | None = Query(None), # Added include parameter
     session: dict[str, object] = Depends(current_session),
 ) -> DashboardOverviewResponse:
     require_action(session, "dashboard.read")
@@ -35,6 +36,7 @@ def dashboard_overview(
         range_key=range,
         from_date=None if from_date is None else date.fromisoformat(from_date),
         to_date=None if to_date is None else date.fromisoformat(to_date),
+        include=include, # Pass include parameter to service
     )
 
 

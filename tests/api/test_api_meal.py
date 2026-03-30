@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-from collections.abc import Generator
 from datetime import UTC, datetime
 from io import BytesIO
 from uuid import uuid4
@@ -22,16 +21,6 @@ from care_pilot.features.meals.domain.models import (
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 
 
-@pytest.fixture
-def sqlite_meal_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
-    monkeypatch.setenv("AUTH_STORE_BACKEND", "sqlite")
-    monkeypatch.setenv("AUTH_SQLITE_DB_PATH", str(tmp_path / "auth.sqlite3"))
-    monkeypatch.setenv("API_SQLITE_DB_PATH", str(tmp_path / "api.sqlite3"))
-    _reset_settings_cache()
-    yield
-    _reset_settings_cache()
-
-
 def _jpeg_bytes() -> bytes:
     img = Image.new("RGB", (64, 64), color=(255, 0, 0))
     buffer = BytesIO()
@@ -49,6 +38,22 @@ def _jpeg_bytes_with_color(color: tuple[int, int, int]) -> bytes:
 def _login(client: TestClient, email: str, password: str) -> None:
     response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert response.status_code == 200
+
+
+def _analyze_meal_and_confirm(client: TestClient, image_bytes: bytes) -> None:
+    response = client.post(
+        "/api/v1/meal/analyze",
+        files={"file": ("meal.jpg", image_bytes, "image/jpeg")},
+        data={"runtime_mode": "local", "provider": "test"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    if body.get("confirmation_required"):
+        confirm = client.post(
+            "/api/v1/meal/confirm",
+            json={"candidate_id": body["candidate_id"], "action": "confirm"},
+        )
+        assert confirm.status_code == 200
 
 
 def _reset_settings_cache() -> None:
@@ -187,23 +192,12 @@ def test_meal_analyze_rejects_duplicate_capture_with_domain_code() -> None:
     assert duplicate.json()["error"]["code"] == "meal.duplicate_capture"
 
 
-def test_meal_records_limit_query_truncates_response() -> None:
+def test_meal_records_limit_query_truncates_response(sqlite_meal_env: None) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
 
     for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255)]:
-        response = client.post(
-            "/api/v1/meal/analyze",
-            files={
-                "file": (
-                    "meal.jpg",
-                    _jpeg_bytes_with_color(color),
-                    "image/jpeg",
-                )
-            },
-            data={"runtime_mode": "local", "provider": "test"},
-        )
-        assert response.status_code == 200
+        _analyze_meal_and_confirm(client, _jpeg_bytes_with_color(color))
 
     all_records = client.get("/api/v1/meal/records")
     limited = client.get("/api/v1/meal/records?limit=2")
@@ -216,23 +210,12 @@ def test_meal_records_limit_query_truncates_response() -> None:
     assert isinstance(limited.json()["page"], dict)
 
 
-def test_meal_records_cursor_pagination_returns_next_page() -> None:
+def test_meal_records_cursor_pagination_returns_next_page(sqlite_meal_env: None) -> None:
     client = TestClient(create_app())
     _login(client, "member@example.com", "member-pass")
 
     for color in [(255, 0, 0), (0, 255, 0), (0, 0, 255)]:
-        response = client.post(
-            "/api/v1/meal/analyze",
-            files={
-                "file": (
-                    "meal.jpg",
-                    _jpeg_bytes_with_color(color),
-                    "image/jpeg",
-                )
-            },
-            data={"runtime_mode": "local", "provider": "test"},
-        )
-        assert response.status_code == 200
+        _analyze_meal_and_confirm(client, _jpeg_bytes_with_color(color))
 
     page_one = client.get("/api/v1/meal/records?limit=2")
     assert page_one.status_code == 200

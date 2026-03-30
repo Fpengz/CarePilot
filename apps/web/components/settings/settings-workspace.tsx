@@ -11,11 +11,11 @@ import { useSession } from "@/components/app/session-provider";
 import { updateAuthProfile, logout } from "@/lib/api/auth-client";
 import {
   getMobilityReminderSettings,
-  listReminderNotificationEndpoints,
-  listReminderNotificationPreferences,
+  listMessageEndpoints,
+  listMessagePreferences,
   updateMobilityReminderSettings,
-  updateReminderNotificationEndpoints,
-  updateReminderNotificationPreferences,
+  updateMessageEndpoints,
+  updateMessagePreferences,
 } from "@/lib/api/reminder-client";
 import {
   completeHealthProfileOnboarding,
@@ -28,12 +28,11 @@ import type {
   MobilityReminderSettings,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 import { HouseholdTab } from "./tabs/household-tab";
 import { ClinicalSuggestionsTab } from "./tabs/clinical-suggestions-tab";
@@ -238,19 +237,18 @@ export function SettingsWorkspace() {
 
   const { data: prefs, isLoading: prefsLoading } = useQuery({
     queryKey: ["notification-prefs"],
-    queryFn: listReminderNotificationPreferences,
+    queryFn: listMessagePreferences,
     enabled: status === "authenticated",
   });
 
   const { data: endpoints, isLoading: endpointsLoading } = useQuery({
     queryKey: ["notification-endpoints"],
-    queryFn: listReminderNotificationEndpoints,
+    queryFn: listMessageEndpoints,
     enabled: status === "authenticated",
   });
 
   // Sync drafts when data loads
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     if (onboarding && !draft) {
       setDraft(buildDraft(onboarding.profile));
     }
@@ -274,7 +272,6 @@ export function SettingsWorkspace() {
         telegramEnabled: telegram?.enabled ?? false, telegramOffset: telegram?.offset_minutes ?? 0, telegramDestination: telegramEnd?.destination ?? "",
       });
     }
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [onboarding, mobility, prefs, endpoints, draft, mobilityDraft]);
 
   // Mutations
@@ -324,8 +321,8 @@ export function SettingsWorkspace() {
   const deliveryMutation = useMutation({
     mutationFn: async (payload: any) => {
       await Promise.all([
-        updateReminderNotificationPreferences({ rules: payload.rules }),
-        updateReminderNotificationEndpoints({ endpoints: payload.endpoints }),
+        updateMessagePreferences({ rules: payload.rules }),
+        updateMessageEndpoints({ endpoints: payload.endpoints }),
       ]);
     },
     onSuccess: () => {
@@ -359,123 +356,144 @@ export function SettingsWorkspace() {
   if (!draft || !mobilityDraft) return <div className="p-12 text-center text-sm opacity-60">Loading configuration…</div>;
 
   return (
-    <div className="section-stack">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight" role="heading">Configuration</h1>
-        <p className="text-[color:var(--muted-foreground)] leading-relaxed max-w-2xl text-sm">
-          Fine-tune your health profile, manage care circle members, and configure reminder delivery channels.
+    <div className="section-stack max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="flex flex-col gap-2 mb-10 px-1">
+        <h1 className="text-h1 font-display tracking-tight text-foreground" role="heading">System Configuration</h1>
+        <p className="text-muted-foreground leading-relaxed max-w-2xl text-sm font-medium">
+          Fine-tune your health profile, manage care circle members, and configure longitudinal delivery channels.
         </p>
       </div>
 
       {error && <ErrorCard message={error} />}
-      {notice && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{notice}</div>}
+      {notice && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-4 text-sm font-bold text-emerald-800 shadow-sm animate-in fade-in slide-in-from-top-2">{notice}</div>}
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full space-y-8">
-        <TabsList className="bg-transparent h-auto p-0 gap-8 border-b border-[color:var(--border-soft)] w-full justify-start">
-          <TabsTrigger value="account" className="settings-tab-trigger">Identity</TabsTrigger>
-          <TabsTrigger value="health" className="settings-tab-trigger">Health Profile</TabsTrigger>
-          <TabsTrigger value="reminders" className="settings-tab-trigger">Delivery</TabsTrigger>
-          <TabsTrigger value="household" className="settings-tab-trigger">Household</TabsTrigger>
-          <TabsTrigger value="clinical_suggestions" className="settings-tab-trigger">Suggestions</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full space-y-10">
+        <TabsList className="bg-panel p-1.5 rounded-2xl border border-border-soft w-full justify-start h-auto gap-1 shadow-sm">
+          <TabsTrigger value="account" className="rounded-xl px-6 py-2.5 text-sm font-bold data-[state=active]:bg-surface data-[state=active]:text-accent-teal data-[state=active]:shadow-sm transition-all">Identity</TabsTrigger>
+          <TabsTrigger value="health" className="rounded-xl px-6 py-2.5 text-sm font-bold data-[state=active]:bg-surface data-[state=active]:text-accent-teal data-[state=active]:shadow-sm transition-all">Health Profile</TabsTrigger>
+          <TabsTrigger value="reminders" className="rounded-xl px-6 py-2.5 text-sm font-bold data-[state=active]:bg-surface data-[state=active]:text-accent-teal data-[state=active]:shadow-sm transition-all">Delivery</TabsTrigger>
+          <TabsTrigger value="household" className="rounded-xl px-6 py-2.5 text-sm font-bold data-[state=active]:bg-surface data-[state=active]:text-accent-teal data-[state=active]:shadow-sm transition-all">Household</TabsTrigger>
+          <TabsTrigger value="clinical_suggestions" className="rounded-xl px-6 py-2.5 text-sm font-bold data-[state=active]:bg-surface data-[state=active]:text-accent-teal data-[state=active]:shadow-sm transition-all">Suggestions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="account" className="space-y-8 mt-0">
-          <Card className="glass-card">
-            <CardHeader><CardTitle>Account Context</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Display Name</Label>
-                <Input value={displayNameInput} onChange={e => setDisplayNameInput(e.target.value)} className="rounded-xl" />
+          <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm">
+            <h3 className="text-xl font-semibold tracking-tight text-foreground mb-6">Account Context</h3>
+            <div className="space-y-6 max-w-xl">
+              <div className="space-y-3">
+                <Label className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground ml-1">Display Name</Label>
+                <Input value={displayNameInput} onChange={e => setDisplayNameInput(e.target.value)} className="h-12 rounded-2xl bg-surface border-border-soft shadow-sm" />
               </div>
-              <div className="space-y-2">
-                <Label>Clinical Role</Label>
-                <Select value={profileModeInput} onChange={e => setProfileModeInput(e.target.value as any)}>
+              <div className="space-y-3">
+                <Label className="text-micro-label font-bold uppercase tracking-widest text-muted-foreground ml-1">Clinical Role</Label>
+                <Select value={profileModeInput} onChange={e => setProfileModeInput(e.target.value as any)} className="h-12 rounded-2xl bg-surface border-border-soft shadow-sm">
                   <option value="self">Managing for myself</option>
                   <option value="caregiver">Caregiver role</option>
                 </Select>
               </div>
-              <div className="pt-4 flex gap-3">
-                <Button onClick={() => accountMutation.mutate({ display_name: displayNameInput, profile_mode: profileModeInput })} disabled={accountMutation.isPending}>
+              <div className="pt-6 flex gap-4 border-t border-border-soft">
+                <Button onClick={() => accountMutation.mutate({ display_name: displayNameInput, profile_mode: profileModeInput })} disabled={accountMutation.isPending} className="rounded-xl h-11 px-8">
                   <AsyncLabel active={accountMutation.isPending} idle="Update Account" loading="Saving" />
                 </Button>
-                <Button variant="ghost" className="text-rose-600" onClick={() => logoutMutation.mutate()} disabled={logoutMutation.isPending}>
+                <Button variant="ghost" className="text-rose-600 hover:bg-rose-50 rounded-xl h-11" onClick={() => logoutMutation.mutate()} disabled={logoutMutation.isPending}>
                   <AsyncLabel active={logoutMutation.isPending} idle="Sign Out" loading="Signing out" />
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="health" className="space-y-8 mt-0">
-          <div className="flex gap-2">
-            <Button variant={healthViewMode === "guided" ? "default" : "secondary"} onClick={() => setHealthViewMode("guided")}>Guided</Button>
-            <Button variant={healthViewMode === "advanced" ? "default" : "secondary"} onClick={() => setHealthViewMode("advanced")}>Advanced</Button>
+          <div className="flex bg-panel p-1 rounded-xl border border-border-soft w-fit shadow-sm">
+            <button 
+              className={cn("px-6 py-2 rounded-lg text-sm font-bold transition-all", healthViewMode === "guided" ? "bg-surface text-accent-teal shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              onClick={() => setHealthViewMode("guided")}
+            >
+              Guided Setup
+            </button>
+            <button 
+              className={cn("px-6 py-2 rounded-lg text-sm font-bold transition-all", healthViewMode === "advanced" ? "bg-surface text-accent-teal shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              onClick={() => setHealthViewMode("advanced")}
+            >
+              Advanced Edit
+            </button>
           </div>
 
           {healthViewMode === "guided" ? (
-            <Card className="glass-card">
-              <CardHeader><CardTitle>{activeGuidedStep?.title ?? "Guided Setup"}</CardTitle></CardHeader>
-              <CardContent className="space-y-6">
+            <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm">
+              <h3 className="text-xl font-semibold tracking-tight text-foreground mb-6">{activeGuidedStep?.title ?? "Guided Configuration"}</h3>
+              <div className="space-y-8">
                 {activeGuidedStepId === "basic_identity" && (
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="space-y-2"><Label>Age</Label><Input value={draft.age} onChange={e => setDraft({...draft, age: e.target.value})} /></div>
-                    <div className="space-y-2"><Label>Height (cm)</Label><Input value={draft.height_cm} onChange={e => setDraft({...draft, height_cm: e.target.value})} /></div>
-                    <div className="space-y-2"><Label>Weight (kg)</Label><Input value={draft.weight_kg} onChange={e => setDraft({...draft, weight_kg: e.target.value})} /></div>
+                  <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="space-y-3"><Label className="text-micro-label font-bold text-muted-foreground uppercase ml-1">Current Age</Label><Input value={draft.age} onChange={e => setDraft({...draft, age: e.target.value})} className="h-12 rounded-2xl bg-surface shadow-sm border-border-soft" /></div>
+                    <div className="space-y-3"><Label className="text-micro-label font-bold text-muted-foreground uppercase ml-1">Height (cm)</Label><Input value={draft.height_cm} onChange={e => setDraft({...draft, height_cm: e.target.value})} className="h-12 rounded-2xl bg-surface shadow-sm border-border-soft" /></div>
+                    <div className="space-y-3"><Label className="text-micro-label font-bold text-muted-foreground uppercase ml-1">Weight (kg)</Label><Input value={draft.weight_kg} onChange={e => setDraft({...draft, weight_kg: e.target.value})} className="h-12 rounded-2xl bg-surface shadow-sm border-border-soft" /></div>
                   </div>
                 )}
                 {/* ... other steps ... */}
-                <div className="flex justify-between pt-6 border-t">
-                  <Button variant="ghost" disabled={activeStepIndex === 0} onClick={() => {}}>Back</Button>
-                  <Button onClick={() => guidedMutation.mutate({ id: activeGuidedStepId, profile: buildGuidedStepPayload(activeGuidedStepId, draft) })} disabled={guidedMutation.isPending}>
-                    <AsyncLabel active={guidedMutation.isPending} idle={activeGuidedStepId === "review" ? "Finish" : "Continue"} loading="Saving" />
+                <div className="flex justify-between pt-8 border-t border-border-soft">
+                  <Button variant="ghost" disabled={activeStepIndex === 0} onClick={() => {}} className="rounded-xl h-11 px-6">Back</Button>
+                  <Button onClick={() => guidedMutation.mutate({ id: activeGuidedStepId, profile: buildGuidedStepPayload(activeGuidedStepId, draft) })} disabled={guidedMutation.isPending} className="rounded-xl h-11 px-8 font-bold">
+                    <AsyncLabel active={guidedMutation.isPending} idle={activeGuidedStepId === "review" ? "Complete Setup" : "Next Step"} loading="Saving" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ) : (
-            <Card className="glass-card">
-              <CardHeader><CardTitle>Advanced Health Profile</CardTitle></CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-3">
-                  <div className="space-y-2"><Label>Sodium (mg)</Label><Input value={draft.daily_sodium_limit_mg} onChange={e => setDraft({...draft, daily_sodium_limit_mg: e.target.value})} /></div>
-                  <div className="space-y-2"><Label>Sugar (g)</Label><Input value={draft.daily_sugar_limit_g} onChange={e => setDraft({...draft, daily_sugar_limit_g: e.target.value})} /></div>
+            <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm">
+              <h3 className="text-xl font-semibold tracking-tight text-foreground mb-6">Advanced Clinical Profile</h3>
+              <div className="space-y-8">
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-3"><Label className="text-micro-label font-bold text-muted-foreground uppercase ml-1">Daily Sodium (mg)</Label><Input value={draft.daily_sodium_limit_mg} onChange={e => setDraft({...draft, daily_sodium_limit_mg: e.target.value})} className="h-12 rounded-2xl bg-surface shadow-sm border-border-soft" /></div>
+                  <div className="space-y-3"><Label className="text-micro-label font-bold text-muted-foreground uppercase ml-1">Daily Sugar (g)</Label><Input value={draft.daily_sugar_limit_g} onChange={e => setDraft({...draft, daily_sugar_limit_g: e.target.value})} className="h-12 rounded-2xl bg-surface shadow-sm border-border-soft" /></div>
                 </div>
-                <Button onClick={() => profileMutation.mutate(buildFullProfilePayload(draft))} disabled={profileMutation.isPending}>
-                  <AsyncLabel active={profileMutation.isPending} idle="Save Profile" loading="Saving" />
-                </Button>
-              </CardContent>
-            </Card>
+                <div className="pt-8 border-t border-border-soft">
+                  <Button onClick={() => profileMutation.mutate(buildFullProfilePayload(draft))} disabled={profileMutation.isPending} className="rounded-xl h-11 px-10 font-bold">
+                    <AsyncLabel active={profileMutation.isPending} idle="Save Changes" loading="Saving" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
         </TabsContent>
 
         <TabsContent value="reminders" className="space-y-8 mt-0">
-          <Card className="glass-card">
-            <CardHeader><CardTitle>Delivery Channels</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 border rounded-xl">
-                <Label>In-App Notifications</Label>
-                <input type="checkbox" checked={deliverySettings.inAppEnabled} onChange={e => setDeliverySettings({...deliverySettings, inAppEnabled: e.target.checked})} />
+          <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm">
+            <h3 className="text-xl font-semibold tracking-tight text-foreground mb-6">Delivery Channels</h3>
+            <div className="space-y-6 max-w-2xl">
+              <div className="flex items-center justify-between p-6 bg-surface border border-border-soft rounded-2xl shadow-sm">
+                <div className="space-y-1">
+                  <Label className="text-base font-semibold">In-App Notifications</Label>
+                  <p className="text-xs text-muted-foreground font-medium">Standard clinical alerts via system dashboard.</p>
+                </div>
+                <input type="checkbox" checked={deliverySettings.inAppEnabled} onChange={e => setDeliverySettings({...deliverySettings, inAppEnabled: e.target.checked})} className="h-6 w-6 rounded-lg border-border-soft text-accent-teal focus:ring-accent-teal/20" />
               </div>
-              <div className="flex items-center justify-between p-4 border rounded-xl">
-                <Label>Telegram Delivery</Label>
-                <input type="checkbox" checked={deliverySettings.telegramEnabled} onChange={e => setDeliverySettings({...deliverySettings, telegramEnabled: e.target.checked})} />
+              <div className="flex items-center justify-between p-6 bg-surface border border-border-soft rounded-2xl shadow-sm">
+                <div className="space-y-1">
+                  <Label className="text-base font-semibold">Telegram Channel</Label>
+                  <p className="text-xs text-muted-foreground font-medium">Direct secure messaging via Telegram bot.</p>
+                </div>
+                <input type="checkbox" checked={deliverySettings.telegramEnabled} onChange={e => setDeliverySettings({...deliverySettings, telegramEnabled: e.target.checked})} className="h-6 w-6 rounded-lg border-border-soft text-accent-teal focus:ring-accent-teal/20" />
               </div>
               {deliverySettings.telegramEnabled && (
-                <div className="p-4 border rounded-xl space-y-2">
-                  <Label>Telegram Chat ID</Label>
-                  <Input value={deliverySettings.telegramDestination} onChange={e => setDeliverySettings({...deliverySettings, telegramDestination: e.target.value})} />
+                <div className="p-6 bg-accent-teal-muted border border-accent-teal/20 rounded-2xl space-y-4 shadow-sm animate-in zoom-in-95">
+                  <div className="space-y-2">
+                    <Label className="text-micro-label font-bold text-accent-teal uppercase ml-1">Telegram Chat ID</Label>
+                    <Input value={deliverySettings.telegramDestination} onChange={e => setDeliverySettings({...deliverySettings, telegramDestination: e.target.value})} className="h-12 rounded-2xl bg-surface border-accent-teal/20 shadow-inner" placeholder="e.g. 123456789" />
+                  </div>
                 </div>
               )}
-              <Button onClick={handleDeliverySave} disabled={deliveryMutation.isPending} className="w-full">
-                <AsyncLabel active={deliveryMutation.isPending} idle="Save Delivery Rules" loading="Saving" />
-              </Button>
-            </CardContent>
-          </Card>
+              <div className="pt-6">
+                <Button onClick={handleDeliverySave} disabled={deliveryMutation.isPending} className="rounded-xl h-12 px-10 font-bold shadow-lg shadow-accent-teal/20 w-full sm:w-auto">
+                  <AsyncLabel active={deliveryMutation.isPending} idle="Save Delivery Preferences" loading="Updating" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </TabsContent>
-
-        <TabsContent value="household" className="mt-0"><HouseholdTab /></TabsContent>
-        <TabsContent value="clinical_suggestions" className="mt-0"><ClinicalSuggestionsTab /></TabsContent>
-      </Tabs>
-    </div>
-  );
+<TabsContent value="household" className="mt-0"><HouseholdTab /></TabsContent>
+<TabsContent value="clinical_suggestions" className="mt-0"><ClinicalSuggestionsTab /></TabsContent>
+</Tabs>
+</div>
+);
 }

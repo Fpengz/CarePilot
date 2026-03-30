@@ -21,34 +21,33 @@ function PatientMedicalCardBase({ card, showFullLink = false, loading = false }:
     : "Live Summary";
 
   return (
-    <Card className="p-0 overflow-hidden h-[520px] flex flex-col">
-      <CardContent className="p-0 h-full flex flex-col flex-1 min-h-0">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--border-soft)] bg-[color:var(--panel-soft)]">
+    <div className="bg-panel border border-border-soft rounded-3xl overflow-hidden h-[520px] flex flex-col shadow-sm">
+      <div className="flex items-center justify-between px-6 py-5 border-b border-border-soft bg-panel/50">
         <div className="min-w-0">
-          <div className="text-sm font-bold text-[color:var(--foreground)]">Patient Medical Card</div>
-          <div className="text-[10px] font-bold text-[color:var(--muted-foreground)] uppercase tracking-widest truncate">
+          <div className="text-sm font-bold text-foreground">Patient Medical Card</div>
+          <div className="text-micro-label font-bold text-muted-foreground uppercase tracking-widest truncate">
             {generatedLabel}
           </div>
         </div>
         {showFullLink ? (
-          <Button asChild variant="secondary" size="sm" className="h-9 rounded-lg">
-            <Link href="/companion/patient-card">Open full card</Link>
+          <Button asChild variant="secondary" size="sm" className="h-9 rounded-xl px-4 text-xs">
+            <Link href="/companion/patient-card">View Full History</Link>
           </Button>
         ) : null}
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 custom-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4 custom-scrollbar">
         {card?.markdown ? (
-          <div className="chat-markdown prose prose-slate max-w-none prose-sm prose-headings:text-[color:var(--foreground)] prose-headings:font-bold prose-p:text-[color:var(--muted-foreground)] prose-p:leading-relaxed break-words">
+          <div className="chat-markdown prose prose-slate dark:prose-invert max-w-none prose-sm prose-headings:text-foreground prose-headings:font-display prose-headings:font-bold prose-p:text-muted-foreground prose-p:leading-relaxed break-words">
             <ReactMarkdown>{markdown}</ReactMarkdown>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="h-12 w-12 rounded-full bg-[color:var(--panel-soft)] flex items-center justify-center mb-3">
-               <Activity className="h-6 w-6 text-[color:var(--muted-foreground)]/40" />
+          <div className="flex flex-col items-center justify-center py-16 text-center h-full bg-surface/50 rounded-2xl border border-dashed border-border-soft">
+            <div className="h-12 w-12 rounded-2xl bg-panel border border-border-soft flex items-center justify-center mb-3">
+               <Activity className="h-6 w-6 text-muted-foreground opacity-20" />
             </div>
-            <p className="text-xs text-[color:var(--muted-foreground)] italic">
+            <p className="text-sm text-muted-foreground italic">
               {loading ? "Generating patient card..." : "No clinical summary available."}
             </p>
           </div>
@@ -56,14 +55,13 @@ function PatientMedicalCardBase({ card, showFullLink = false, loading = false }:
       </div>
 
       {card?.generated_at && (
-        <div className="px-5 py-3 border-t border-[color:var(--border-soft)] bg-[color:var(--panel-soft)] shrink-0">
-          <span className="text-[9px] font-bold text-[color:var(--muted-foreground)] uppercase tracking-widest">
-            Last Generated: {generatedLabel}
+        <div className="px-6 py-4 border-t border-border-soft bg-panel/50 shrink-0">
+          <span className="text-micro-label font-bold text-muted-foreground uppercase tracking-widest">
+            Provenance: Clinical Snapshot v2.1
           </span>
         </div>
       )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
 

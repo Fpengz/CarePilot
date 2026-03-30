@@ -11,8 +11,6 @@ from typing import Any, cast
 
 from care_pilot.features.recommendations.domain.canonical_food_matching import (
     find_food_by_name as _find_food_by_name_impl,
-)
-from care_pilot.features.recommendations.domain.canonical_food_matching import (
     normalize_text,
 )
 from care_pilot.features.recommendations.domain.models import (
@@ -21,7 +19,7 @@ from care_pilot.features.recommendations.domain.models import (
     PreferenceSnapshot,
     RecommendationInteraction,
 )
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)

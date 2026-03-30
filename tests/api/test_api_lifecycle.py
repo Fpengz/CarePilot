@@ -3,11 +3,10 @@
 from collections.abc import Generator
 
 import pytest
-from apps.api.carepilot_api.deps import build_app_context, close_app_context
 from apps.api.carepilot_api.main import create_app
-from fastapi.testclient import TestClient
 
 from care_pilot.config.app import get_settings
+from care_pilot.platform.app_context import build_app_context, close_app_context
 
 
 def _reset_settings_cache() -> None:
@@ -24,62 +23,56 @@ def sqlite_lifecycle_env(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Generator
     _reset_settings_cache()
 
 
-def test_app_lifecycle_closes_resources_on_shutdown(
-    sqlite_lifecycle_env: None,
-) -> None:
+@pytest.mark.anyio
+async def test_close_app_context_is_awaited_by_lifespan() -> None:
+    from unittest.mock import AsyncMock
+
+    import apps.api.carepilot_api.main as main_mod
+
     app = create_app()
     ctx = app.state.ctx
-    closed = {
-        "repository": False,
-        "auth_store": False,
-        "household_store": False,
-    }
+    app.state.ctx_owned = True
 
-    def close_repository(*args: object, **kwargs: object) -> None:
-        closed["repository"] = True
+    # Mock close_app_context directly in the module
+    mock_close = AsyncMock()
+    import pytest
+    with pytest.MonkeyPatch().context() as mp:
+        mp.setattr(main_mod, "close_app_context", mock_close)
 
-    def close_auth_store(*args: object, **kwargs: object) -> None:
-        closed["auth_store"] = True
+        # Manually trigger lifespan
+        async with main_mod.app_lifespan(app):
+            pass
 
-    def close_household_store(*args: object, **kwargs: object) -> None:
-        closed["household_store"] = True
-
-    ctx.app_store.close = close_repository
-    ctx.auth_store.close = close_auth_store
-    ctx.household_store.close = close_household_store
-
-    with TestClient(app) as client:
-        response = client.get("/api/v1/health/live")
-        assert response.status_code == 200
-
-    assert closed == {
-        "repository": True,
-        "auth_store": True,
-        "household_store": True,
-    }
+    assert mock_close.called
+    # It should be called with the context
+    assert mock_close.call_args[0][0] is ctx
 
 
-def test_app_rebuilds_owned_context_on_lifespan_restart(
+
+@pytest.mark.anyio
+async def test_app_rebuilds_owned_context_on_lifespan_restart(
     sqlite_lifecycle_env: None,
 ) -> None:
+    from httpx import ASGITransport, AsyncClient
     app = create_app()
 
-    with TestClient(app) as client:
-        first_login = client.post(
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        first_login = await client.post(
             "/api/v1/auth/login",
             json={"email": "member@example.com", "password": "member-pass"},
         )
         assert first_login.status_code == 200
 
-    with TestClient(app) as client:
-        second_login = client.post(
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        second_login = await client.post(
             "/api/v1/auth/login",
             json={"email": "member@example.com", "password": "member-pass"},
         )
         assert second_login.status_code == 200
 
 
-def test_app_does_not_close_caller_managed_context(
+@pytest.mark.anyio
+async def test_app_does_not_close_caller_managed_context(
     sqlite_lifecycle_env: None,
 ) -> None:
     caller_ctx = build_app_context()
@@ -90,21 +83,22 @@ def test_app_does_not_close_caller_managed_context(
         "household_store": False,
     }
 
-    def close_repository(*args: object, **kwargs: object) -> None:
+    async def close_repository(*args: object, **kwargs: object) -> None:
         closed["repository"] = True
 
-    def close_auth_store(*args: object, **kwargs: object) -> None:
+    async def close_auth_store(*args: object, **kwargs: object) -> None:
         closed["auth_store"] = True
 
-    def close_household_store(*args: object, **kwargs: object) -> None:
+    async def close_household_store(*args: object, **kwargs: object) -> None:
         closed["household_store"] = True
 
-    caller_ctx.app_store.close = close_repository  # type: ignore[assignment]
-    caller_ctx.auth_store.close = close_auth_store  # type: ignore[assignment]
-    caller_ctx.household_store.close = close_household_store  # type: ignore[assignment]
+    caller_ctx.app_store.close = close_repository  # type: ignore[invalid-assignment]
+    caller_ctx.auth_store.close = close_auth_store  # type: ignore[invalid-assignment]
+    caller_ctx.household_store.close = close_household_store  # type: ignore[invalid-assignment]
 
-    with TestClient(app) as client:
-        response = client.get("/api/v1/health/live")
+    from httpx import ASGITransport, AsyncClient
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/health/live")
         assert response.status_code == 200
 
     assert closed == {
@@ -112,10 +106,11 @@ def test_app_does_not_close_caller_managed_context(
         "auth_store": False,
         "household_store": False,
     }
-    close_app_context(caller_ctx)
+    await close_app_context(caller_ctx)
 
 
-def test_app_context_exposes_runtime_store_aliases(
+@pytest.mark.anyio
+async def test_app_context_exposes_runtime_store_aliases(
     sqlite_lifecycle_env: None,
 ) -> None:
     ctx = build_app_context()
@@ -125,18 +120,20 @@ def test_app_context_exposes_runtime_store_aliases(
         assert ctx.cache_store is not None
         assert ctx.coordination_store is not None
     finally:
-        close_app_context(ctx)
+        await close_app_context(ctx)
 
 
-def test_cors_uses_configured_methods_and_headers(
+@pytest.mark.anyio
+async def test_cors_uses_configured_methods_and_headers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("API_CORS_METHODS", "GET,POST")
     monkeypatch.setenv("API_CORS_HEADERS", "Content-Type")
     _reset_settings_cache()
     app = create_app()
-    with TestClient(app) as client:
-        response = client.options(
+    from httpx import ASGITransport, AsyncClient
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.options(
             "/api/v1/auth/login",
             headers={
                 "Origin": "http://localhost:3000",

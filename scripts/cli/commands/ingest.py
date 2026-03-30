@@ -7,12 +7,8 @@ import typer
 from scripts.cli.utils import error, info, load_root_env, warning
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.recommendations.domain.canonical_food_matching import (
-    normalize_text,
-)
-from care_pilot.features.recommendations.domain.models import (
-    CanonicalFoodRecord,
-)
+from care_pilot.features.recommendations.domain.canonical_food_matching import normalize_text
+from care_pilot.features.recommendations.domain.models import CanonicalFoodRecord
 from care_pilot.platform.persistence.food import (
     FoodInfoIngester,
     load_default_canonical_food_records,

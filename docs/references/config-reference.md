@@ -1,0 +1,143 @@
+# Backend Config Reference
+
+Source of truth: `src/care_pilot/config/app.py` and `src/care_pilot/config/runtime.py`
+
+Related guides:
+- developer setup and extension: `docs/references/developer-guide.md`
+- runtime operations and incident workflow: `docs/references/operations-runbook.md`
+
+Environment loading conventions:
+- Default source of truth is root `.env`.
+- Web commands (`pnpm web:*`) load root `.env` first, then optional `apps/web/.env` overrides.
+
+## Infra Defaults & Dependencies
+
+| Setting | Default | Required? | Notes |
+| --- | --- | --- | --- |
+| `APP_ENV` | `dev` | yes | `staging`/`prod` tighten readiness checks. |
+| `API_SQLITE_DB_PATH` | `care_pilot_api.db` | yes | Required for durable storage. |
+| `AUTH_SQLITE_DB_PATH` | `care_pilot_auth.db` | yes | Required for auth persistence. |
+| `EPHEMERAL_STATE_BACKEND` | `in_memory` | no | Use `redis` for production worker coordination. |
+| `REDIS_URL` | none | conditional | Required when `EPHEMERAL_STATE_BACKEND=redis`. |
+| `REDIS_NAMESPACE` | `care_pilot` | no | Namespaces worker keys and locks. |
+| `READINESS_FAIL_ON_WARNINGS` | profile-derived | yes | `false` in dev, `true` in staging/prod. |
+| `LLM_PROVIDER` | `test` | no | Set to real provider for production. |
+
+## Auth / Session
+- `API_SQLITE_DB_PATH` (default: `care_pilot_api.db`) — application data / household persistence
+- `APP_ENV` (default: `dev`) — runtime profile (`dev`, `staging`, `prod`)
+- `SESSION_SECRET` (default: `dev-insecure-session-secret-change-me`)
+- `COOKIE_SECURE` (default: `false`)
+- `COOKIE_SAMESITE` (default: `lax`) — `lax`, `strict`, or `none`
+- `AUTH_PASSWORD_HASH_SCHEME` (default: `pbkdf2_sha256`)
+- `AUTH_STORE_BACKEND` (default: `sqlite`) — `sqlite` or `in_memory`
+- `AUTH_SQLITE_DB_PATH` (default: `care_pilot_auth.db`)
+- `APP_DATA_BACKEND` (default: `sqlite`) — SQLite-only in the hackathon runtime
+- `HOUSEHOLD_STORE_BACKEND` (default: `sqlite`) — SQLite-only in the hackathon runtime
+- `EPHEMERAL_STATE_BACKEND` (default: `in_memory`) — `in_memory` or `redis`
+- `REDIS_URL` (required when `EPHEMERAL_STATE_BACKEND=redis`)
+- `REDIS_NAMESPACE` (default: `care_pilot`)
+- `REDIS_DEFAULT_TTL_SECONDS` (default: `300`)
+- `REDIS_LOCK_TTL_SECONDS` (default: `30`)
+- `REDIS_WORKER_SIGNAL_CHANNEL` (default: `workers.ready`)
+- `READINESS_FAIL_ON_WARNINGS` (default: profile-derived; `false` in `dev`, `true` in `staging`/`prod`)
+- `REQUIRED_PROVIDER` (optional) — expected provider (`gemini`, `openai`, `qwen`, `ollama`, `vllm`, `test`) for readiness checks
+- `AUTH_SESSION_TTL_SECONDS` (default: `86400`)
+- `AUTH_LOGIN_MAX_FAILED_ATTEMPTS` (default: `5`)
+- `AUTH_LOGIN_FAILURE_WINDOW_SECONDS` (default: `300`)
+- `AUTH_LOGIN_LOCKOUT_SECONDS` (default: `300`)
+- `AUTH_AUDIT_EVENTS_MAX_ENTRIES` (default: `500`)
+- `TOOL_POLICY_ENFORCEMENT_MODE` (default: `shadow`) — `shadow` or `enforce`
+- `WORKFLOW_CONTRACT_BOOTSTRAP` (default: `true`) — create/refresh startup runtime-contract snapshots
+
+Deployment guardrails:
+- `SESSION_SECRET` must be non-default in `staging`/`prod`
+- `COOKIE_SECURE` must be enabled in `staging`/`prod`
+- `COOKIE_SAMESITE=none` requires `COOKIE_SECURE=true`
+
+## API
+- `API_HOST` (default: `127.0.0.1`)
+- `API_PORT` (default: `8001`)
+- `API_CORS_ORIGINS` (default: `http://localhost:3000`)
+- `API_DEV_LOG_VERBOSE` (default: `false`)
+- `API_DEV_LOG_HEADERS` (default: `false`)
+- `API_DEV_LOG_RESPONSE_HEADERS` (default: `false`)
+
+## Web Runtime
+- `NEXT_PUBLIC_API_BASE_URL` (default: `/backend`)
+- `BACKEND_API_BASE_URL` (default: `http://127.0.0.1:8001`)
+- `NEXT_ALLOWED_DEV_ORIGINS` (default: `http://localhost:3000,http://127.0.0.1:3000`)
+- `NEXT_PUBLIC_MEAL_ANALYZE_PROVIDER` (default: `test`)
+- `NEXT_PUBLIC_DEV_LOG_FRONTEND` (default: `false`)
+- `NEXT_PUBLIC_DEV_LOG_FRONTEND_VERBOSE` (default: `false`)
+
+## LLM Provider
+- `LLM_PROVIDER` (default: `test`) — `gemini`, `openai`, `qwen`, `ollama`, `vllm`, `test`
+- `GEMINI_API_KEY` / `GOOGLE_API_KEY`
+- `GEMINI_MODEL`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `OPENAI_BASE_URL`
+- `OPENAI_REQUEST_TIMEOUT_SECONDS`
+- `OPENAI_TRANSPORT_MAX_RETRIES`
+- `QWEN_API_KEY`
+- `QWEN_MODEL`
+- `QWEN_BASE_URL`
+- `LOCAL_LLM_BASE_URL`
+- `LOCAL_LLM_API_KEY`
+- `LOCAL_LLM_MODEL`
+- `LOCAL_LLM_REQUEST_TIMEOUT_SECONDS`
+- `LOCAL_LLM_TRANSPORT_MAX_RETRIES`
+
+## Chat Companion (SEA-LION stack)
+- `SEALION_API` — API key for SEA-LION OpenAI-compatible endpoint
+- `SEALION_BASE_URL` (default: `https://api.sea-lion.ai/v1`)
+- `CHAT_MODEL_ID` (default: `aisingapore/Gemma-SEA-LION-v4-27B-IT`)
+- `REASONING_MODEL_ID` (default: `aisingapore/Llama-SEA-LION-v3.5-70B-R`)
+- `CHAT_STREAM_MAX_RETRIES` (default: `2`)
+- `CHAT_STREAM_BACKOFF_SECONDS` (default: `0.5`)
+- `GROQ_API_KEY` — Whisper transcription for audio chat
+- `E2B_API_KEY` — sandboxed Python execution for dashboard trend calculations
+
+## Image Processing
+- `IMAGE_DOWNSCALE_ENABLED` (default: `false`)
+- `IMAGE_MAX_SIDE_PX` (default: `1024`)
+
+## Notifications (Telegram)
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_CHAT_ID`
+- `TELEGRAM_DEV_MODE` (default: `true`)
+- `TELEGRAM_REQUEST_TIMEOUT_SECONDS` (default: `10`)
+
+## Notifications (Email / SMS / Reminder Scheduler)
+- `EMAIL_DEV_MODE` (default: `true`)
+- `EMAIL_SMTP_HOST`
+- `EMAIL_SMTP_PORT` (default: `587`)
+- `EMAIL_SMTP_USERNAME`
+- `EMAIL_SMTP_PASSWORD`
+- `EMAIL_SMTP_USE_TLS` (default: `true`)
+- `EMAIL_FROM_ADDRESS` (default: `noreply@care-pilot.local`)
+- `SMS_DEV_MODE` (default: `true`)
+- `SMS_WEBHOOK_URL`
+- `SMS_API_KEY`
+- `SMS_SENDER_ID` (default: `CarePilot`)
+- `REMINDER_SCHEDULER_INTERVAL_SECONDS` (default: `30`)
+- `REMINDER_SCHEDULER_BATCH_SIZE` (default: `100`)
+
+## Readiness Diagnostics
+- Endpoint: `GET /api/v1/health/ready`
+- Status values:
+  - `ready`: required checks passed and no warnings
+  - `degraded`: required checks passed with warnings
+  - `not_ready`: required check failure (or warning treated as failure when strict mode is enabled)
+- Script gate:
+  - `uv run python scripts/cli.py readiness [base_url]`
+  - Set `READINESS_FAIL_ON_WARNINGS=1` to fail the script on `degraded`.
+
+## Unified CLI Operations
+- Comprehensive validation gate: `uv run python scripts/cli.py test comprehensive`
+- Backend-only validation gate: `uv run python scripts/cli.py test backend`
+- Web-only validation gate: `uv run python scripts/cli.py test web`
+- Ingest hawker/drinks into ChromaDB: `uv run python scripts/cli.py ingest local`
+- Ingest USDA JSON: `uv run python scripts/cli.py ingest usda <path> [--reset]`
+- Ingest Open Food Facts JSON: `uv run python scripts/cli.py ingest off <path> [--reset]`

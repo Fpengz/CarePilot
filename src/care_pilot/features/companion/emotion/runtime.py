@@ -52,7 +52,9 @@ class InProcessEmotionRuntime(EmotionInferencePort):
         self._pipeline = pipeline or EmotionPipeline(
             asr=WhisperASR(config.asr_model_id, device, cache_dir=config.model_cache_dir),
             text=HFTextEmotion(config.text_model_id, device, cache_dir=config.model_cache_dir),
-            speech=HFSpeechEmotion(config.speech_model_id, device, cache_dir=config.model_cache_dir),
+            speech=HFSpeechEmotion(
+                config.speech_model_id, device, cache_dir=config.model_cache_dir
+            ),
             context=TimelineContextFeatureExtractor(
                 cast(TimelineServiceProtocol, event_timeline),
                 history_window=config.history_window,

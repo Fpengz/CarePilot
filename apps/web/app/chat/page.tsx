@@ -566,52 +566,68 @@ export default function ChatPage() {
   };
 
   return (
-    <div className={`flex flex-col gap-6 lg:flex-row lg:items-start relative isolate ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
+    <div className={`flex flex-col gap-8 lg:flex-row lg:items-start relative isolate min-h-[calc(100vh-6rem)] ${bodyFont.className} ${displayFont.variable} ${bodyFont.variable}`}>
       <div className="dashboard-grounding" />
-      <section className="flex flex-1 min-h-[calc(100vh-14rem)] lg:min-h-[75vh] flex-col glass-card !p-4 sm:!p-8">
-        <ChatHeader onClear={() => clearHistoryMutation.mutate()} />
+      
+      {/* Main Conversation Workspace */}
+      <section className="flex flex-1 flex-col bg-surface border border-border-soft rounded-3xl shadow-sm overflow-hidden min-h-[calc(100vh-10rem)] lg:min-h-[80vh]">
+        <div className="bg-panel px-6 py-4 border-b border-border-soft flex items-center justify-between">
+          <ChatHeader onClear={() => clearHistoryMutation.mutate()} />
+        </div>
 
-        <div className="my-6 h-px w-full bg-white/10 opacity-60" />
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-8">
+          {messageViews.length === 0 && (
+            <div className="max-w-2xl mx-auto rounded-2xl border border-dashed border-border-soft bg-panel/50 px-8 py-16 text-center">
+              <p className="text-lg font-semibold text-foreground">Health Companion Workspace</p>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Log meals, ask about nutrition, or check your adherence status. 
+                Your conversation history is securely persisted for clinical context.
+              </p>
+            </div>
+          )}
 
-        {messageViews.length === 0 && (
-          <div className="rounded-xl border border-dashed border-white/20 bg-white/5 px-6 py-12 text-center text-sm text-[color:var(--muted-foreground)]">
-            <p className="font-bold text-[color:var(--foreground)]">Start a conversation with your health companion.</p>
-            <p className="mt-2 text-xs opacity-60">Log meals, ask about nutrition, or check your adherence status.</p>
+          <div className="max-w-4xl mx-auto">
+            <MessageList
+              messages={messageViews}
+              streamDraft={streamDraft}
+              loading={loading}
+              streamNotice={streamNotice}
+              audioNotice={audioNotice}
+              onMealAction={handleMealProposal}
+              proposalLoadingId={proposalLoadingId}
+              bottomRef={bottomRef}
+            />
           </div>
-        )}
+        </div>
 
-        <MessageList
-          messages={messageViews}
-          streamDraft={streamDraft}
-          loading={loading}
-          streamNotice={streamNotice}
-          audioNotice={audioNotice}
-          onMealAction={handleMealProposal}
-          proposalLoadingId={proposalLoadingId}
-          bottomRef={bottomRef}
-        />
-
-        {menuOpen && <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />}
-
-        <StickyComposer
-          input={input}
-          inputRef={inputRef}
-          onInputChange={setInput}
-          onKeyDown={handleKeyDown}
-          onSend={handleSend}
-          loading={loading}
-          onPrependTrack={prependTrack}
-          menuOpen={menuOpen}
-          onToggleMenu={() => setMenuOpen((prev) => !prev)}
-          onStartRecording={startRecording}
-          isRecording={isRecording}
-          recordingLabel={fmtTime(recordingMs)}
-          onStopRecording={stopAndSend}
-          onCancelRecording={cancelRecording}
-        />
+        <div className="bg-panel border-t border-border-soft p-4 sm:p-6">
+          <div className="max-w-4xl mx-auto relative">
+            {menuOpen && <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />}
+            
+            <StickyComposer
+              input={input}
+              inputRef={inputRef}
+              onInputChange={setInput}
+              onKeyDown={handleKeyDown}
+              onSend={handleSend}
+              loading={loading}
+              onPrependTrack={prependTrack}
+              menuOpen={menuOpen}
+              onToggleMenu={() => setMenuOpen((prev) => !prev)}
+              onStartRecording={startRecording}
+              isRecording={isRecording}
+              recordingLabel={fmtTime(recordingMs)}
+              onStopRecording={stopAndSend}
+              onCancelRecording={cancelRecording}
+            />
+          </div>
+        </div>
       </section>
 
-      <ChatSidebar />
+      {/* Right Rail: Health Context */}
+      <div className="w-full lg:w-80 shrink-0 space-y-6">
+        <ChatSidebar />
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ and adherence metrics.
 
 from __future__ import annotations
 
+import asyncio
 import re
 from datetime import UTC, date, datetime, time
 from time import perf_counter
@@ -36,9 +37,7 @@ from care_pilot.core.contracts.api.meal_health import (
     MedicationRegimenResponse,
     NormalizedMedicationInstructionResponse,
 )
-from care_pilot.core.contracts.api.notifications import (
-    ScheduledReminderNotificationItemResponse,
-)
+from care_pilot.core.contracts.api.notifications import ScheduledReminderNotificationItemResponse
 from care_pilot.core.errors import build_api_error
 from care_pilot.features.companion.core.health.models import (
     MedicationAdherenceEvent,
@@ -62,16 +61,9 @@ from care_pilot.features.reminders.notifications.reminder_materialization import
     cancel_reminder_notifications,
     materialize_reminder_notifications,
 )
-from care_pilot.features.workflows.trace_emitter import (
-    WorkflowTraceContext,
-    WorkflowTraceEmitter,
-)
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
-)
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowName,
-)
+from care_pilot.features.workflows.trace_emitter import WorkflowTraceContext, WorkflowTraceEmitter
+from care_pilot.platform.auth.session_context import build_user_profile_from_session
+from care_pilot.platform.observability.workflows.domain.models import WorkflowName
 
 _DOSAGE_TEXT_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|iu|unit|units)\b", re.IGNORECASE)
 _GENERIC_MEDICATION_NAMES = {
@@ -471,6 +463,7 @@ def _run_parsed_intake(
                         repository=context.stores.reminders,
                         reminder_event=reminder,
                         reminder_type=reminder.reminder_type,
+                        event_timeline=context.event_timeline,
                     )
                 )
         else:
@@ -479,6 +472,32 @@ def _run_parsed_intake(
                     context.stores.reminders.list_scheduled_notifications(reminder_id=reminder.id)
                 )
         reminders.extend(current)
+
+    if regimens:
+        context.event_timeline.append(
+            event_type="medication_logged",
+            workflow_name="medication_intake",
+            correlation_id=draft_id,
+            request_id=None,
+            user_id=user_id,
+            payload={
+                "regimen_count": len(regimens),
+                "regimen_ids": [item.id for item in regimens],
+                "source_hash": parse_result.source.source_hash,
+            },
+        )
+    if reminders:
+        context.event_timeline.append(
+            event_type="reminder_scheduled",
+            workflow_name="medication_intake",
+            correlation_id=draft_id,
+            request_id=None,
+            user_id=user_id,
+            payload={
+                "reminder_count": len(reminders),
+                "reminder_type": reminders[0].reminder_type if reminders else None,
+            },
+        )
 
     return MedicationIntakeResponse(
         draft_id=draft_id,
@@ -551,6 +570,19 @@ def create_regimen_for_session(
             details={"existing_regimen_id": duplicate.id},
         )
     context.stores.medications.save_medication_regimen(regimen)
+    context.event_timeline.append(
+        event_type="medication_logged",
+        workflow_name="medication_regimen",
+        correlation_id=regimen.id,
+        request_id=None,
+        user_id=user_id,
+        payload={
+            "regimen_id": regimen.id,
+            "medication_name": regimen.medication_name,
+            "timing_type": regimen.timing_type,
+            "frequency_type": regimen.frequency_type,
+        },
+    )
     return MedicationRegimenEnvelopeResponse(regimen=_to_regimen_response(regimen))
 
 
@@ -602,6 +634,18 @@ def patch_regimen_for_session(
             details={"existing_regimen_id": duplicate.id},
         )
     context.stores.medications.save_medication_regimen(updated)
+    context.event_timeline.append(
+        event_type="medication_updated",
+        workflow_name="medication_regimen",
+        correlation_id=updated.id,
+        request_id=None,
+        user_id=user_id,
+        payload={
+            "regimen_id": updated.id,
+            "medication_name": updated.medication_name,
+            "active": updated.active,
+        },
+    )
     return MedicationRegimenEnvelopeResponse(regimen=_to_regimen_response(updated))
 
 
@@ -613,6 +657,14 @@ def delete_regimen_for_session(
             cancel_reminder_notifications(repository=context.stores.reminders, reminder_id=event.id)
     deleted = context.stores.medications.delete_medication_regimen(
         user_id=user_id, regimen_id=regimen_id
+    )
+    context.event_timeline.append(
+        event_type="medication_deleted",
+        workflow_name="medication_regimen",
+        correlation_id=regimen_id,
+        request_id=None,
+        user_id=user_id,
+        payload={"regimen_id": regimen_id, "deleted": deleted},
     )
     return MedicationRegimenDeleteResponse(deleted=deleted)
 
@@ -644,7 +696,101 @@ def record_adherence_for_session(
         metadata=payload.metadata,
     )
     saved = context.stores.medications.save_medication_adherence_event(event)
+    context.event_timeline.append(
+        event_type="adherence_updated",
+        workflow_name="medication_adherence",
+        correlation_id=event.id,
+        request_id=None,
+        user_id=user_id,
+        payload={
+            "regimen_id": event.regimen_id,
+            "reminder_id": event.reminder_id,
+            "status": event.status,
+            "scheduled_at": event.scheduled_at.isoformat() if event.scheduled_at else None,
+        },
+    )
     return MedicationAdherenceEventEnvelopeResponse(event=_to_adherence_response(saved))
+
+
+async def _run_medication_agent_proposal(
+    *,
+    event_timeline: Any,
+    correlation_id: str,
+    request_id: str | None,
+    user_id: str,
+    text: str,
+) -> None:
+    from care_pilot.agent.adapters.agent_adapters import MedicationAgentAdapter
+    from care_pilot.agent.core.contracts import AgentRequest
+    from care_pilot.agent.runtime.context_builder import build_agent_context
+
+    adapter = MedicationAgentAdapter()
+    request = AgentRequest(
+        user_id=user_id,
+        session_id="medication_intake_agent",
+        correlation_id=correlation_id,
+        goal="Parse medication instructions",
+        inputs={"text_context": text},
+    )
+    result = await adapter.run(
+        request,
+        build_agent_context(
+            user_id=user_id,
+            session_id="medication_intake_agent",
+            request_id=request_id,
+            correlation_id=correlation_id,
+            policy={"allowed_sources": ["medication_text"]},
+            selection={"reason": "medication_intake"},
+        ),
+    )
+    response = result.output
+    if response is None:
+        return
+    event_timeline.append(
+        event_type="agent_action_proposed",
+        workflow_name="medication_intake",
+        correlation_id=correlation_id,
+        request_id=request_id,
+        user_id=user_id,
+        payload={
+            "agent_name": response.agent_name,
+            "status": response.status,
+            "confidence": response.confidence,
+            "summary_length": len(response.summary or ""),
+        },
+    )
+
+
+def _schedule_medication_agent_proposal(
+    *,
+    event_timeline: Any,
+    correlation_id: str,
+    request_id: str | None,
+    user_id: str,
+    text: str,
+) -> None:
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        asyncio.run(
+            _run_medication_agent_proposal(
+                event_timeline=event_timeline,
+                correlation_id=correlation_id,
+                request_id=request_id,
+                user_id=user_id,
+                text=text,
+            )
+        )
+        return
+    loop.create_task(
+        _run_medication_agent_proposal(
+            event_timeline=event_timeline,
+            correlation_id=correlation_id,
+            request_id=request_id,
+            user_id=user_id,
+            text=text,
+        )
+    )
 
 
 def adherence_metrics_for_session(
@@ -749,6 +895,13 @@ async def intake_text_for_session(
         },
         duration_ms=(perf_counter() - started) * 1000.0,
     )
+    _schedule_medication_agent_proposal(
+        event_timeline=context.event_timeline,
+        correlation_id=trace_ctx.correlation_id,
+        request_id=trace_ctx.request_id,
+        user_id=user_id,
+        text=parse_result.source.extracted_text,
+    )
     return response
 
 
@@ -827,6 +980,13 @@ async def intake_upload_for_session(
         },
         duration_ms=(perf_counter() - started) * 1000.0,
     )
+    _schedule_medication_agent_proposal(
+        event_timeline=context.event_timeline,
+        correlation_id=trace_ctx.correlation_id,
+        request_id=trace_ctx.request_id,
+        user_id=user_id,
+        text=parse_result.source.extracted_text,
+    )
     return response
 
 
@@ -836,6 +996,14 @@ def confirm_intake_for_session(
     user_id: str,
     payload: MedicationIntakeConfirmRequest,
 ) -> MedicationIntakeResponse:
+    context.event_timeline.append(
+        event_type="workflow_started",
+        workflow_name="medication_intake_confirm",
+        correlation_id=payload.draft_id,
+        request_id=None,
+        user_id=user_id,
+        payload={"draft_id": payload.draft_id},
+    )
     draft = _load_intake_draft(context=context, user_id=user_id, draft_id=payload.draft_id)
     if any(not _instruction_is_actionable(item) for item in draft.instructions):
         raise build_api_error(
@@ -860,6 +1028,18 @@ def confirm_intake_for_session(
         today=today,
     )
     _delete_intake_draft(context=context, user_id=user_id, draft_id=draft.draft_id)
+    context.event_timeline.append(
+        event_type="workflow_completed",
+        workflow_name="medication_intake_confirm",
+        correlation_id=payload.draft_id,
+        request_id=None,
+        user_id=user_id,
+        payload={
+            "draft_id": payload.draft_id,
+            "regimen_count": len(response.regimens),
+            "reminder_count": len(response.reminders),
+        },
+    )
     return response
 
 

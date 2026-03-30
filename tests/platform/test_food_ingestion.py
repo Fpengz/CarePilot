@@ -5,12 +5,8 @@ from __future__ import annotations
 import json
 
 from care_pilot.features.meals.domain.models import Nutrition
-from care_pilot.features.recommendations.domain.models import (
-    CanonicalFoodRecord,
-)
-from care_pilot.platform.persistence.food.ingestion import (
-    load_canonical_food_records,
-)
+from care_pilot.features.recommendations.domain.models import CanonicalFoodRecord
+from care_pilot.platform.persistence.food.ingestion import load_canonical_food_records
 
 
 def test_load_canonical_food_records_from_json(tmp_path) -> None:

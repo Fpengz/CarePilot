@@ -11,20 +11,12 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import exp
 
-from care_pilot.features.companion.core.health.models import (
-    ClinicalProfileSnapshot,
-)
-from care_pilot.features.meals.domain import (
-    meal_display_name,
-    meal_ingredients,
-    meal_nutrition,
-)
+from care_pilot.features.companion.core.health.models import ClinicalProfileSnapshot
+from care_pilot.features.meals.domain import meal_display_name, meal_ingredients, meal_nutrition
 from care_pilot.features.meals.domain.models import Ingredient, MealEvent
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import MealSlot, UserProfile
-from care_pilot.features.recommendations.domain.canonical_food_matching import (
-    normalize_text,
-)
+from care_pilot.features.recommendations.domain.canonical_food_matching import normalize_text
 from care_pilot.features.recommendations.domain.models import (
     CandidateScores,
     CanonicalFoodRecord,
@@ -32,10 +24,7 @@ from care_pilot.features.recommendations.domain.models import (
     PreferenceSnapshot,
     TemporalContext,
 )
-from care_pilot.features.safety.domain.engine import (
-    SafetyEngine,
-    SafetyViolation,
-)
+from care_pilot.features.safety.domain.engine import SafetyEngine, SafetyViolation
 
 FoodItem = CanonicalFoodRecord
 

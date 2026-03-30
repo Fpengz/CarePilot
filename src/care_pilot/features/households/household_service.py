@@ -395,6 +395,15 @@ def create_household(
     except Exception as exc:
         map_household_error(exc)
         raise
+    if bundle.household is not None:
+        context.event_timeline.append(
+            event_type="household_created",
+            workflow_name="household_lifecycle",
+            correlation_id=str(bundle.household.get("household_id")),
+            request_id=None,
+            user_id=user_id,
+            payload={"name": bundle.household.get("name")},
+        )
     return household_bundle_response(bundle.household, bundle.members)
 
 
@@ -488,6 +497,15 @@ def rename_household(
     except Exception as exc:
         map_household_error(exc)
         raise
+    if bundle.household is not None:
+        context.event_timeline.append(
+            event_type="household_renamed",
+            workflow_name="household_lifecycle",
+            correlation_id=str(bundle.household.get("household_id")),
+            request_id=None,
+            user_id=actor_user_id,
+            payload={"name": bundle.household.get("name")},
+        )
     return household_bundle_response(
         bundle.household,
         bundle.members,
@@ -511,6 +529,14 @@ def create_household_invite(
     except Exception as exc:
         map_household_error(exc)
         raise
+    context.event_timeline.append(
+        event_type="household_invite_created",
+        workflow_name="household_lifecycle",
+        correlation_id=str(household_id),
+        request_id=None,
+        user_id=user_id,
+        payload={"invite_code": invite.get("code")},
+    )
     return HouseholdInviteCreateResponse(invite=household_invite_response(invite))
 
 
@@ -532,6 +558,15 @@ def join_household(
     except Exception as exc:
         map_household_error(exc)
         raise
+    if bundle.household is not None:
+        context.event_timeline.append(
+            event_type="household_joined",
+            workflow_name="household_lifecycle",
+            correlation_id=str(bundle.household.get("household_id")),
+            request_id=None,
+            user_id=user_id,
+            payload={"display_name": display_name},
+        )
     return household_bundle_response(bundle.household, bundle.members)
 
 
@@ -553,6 +588,14 @@ def remove_household_member(
     except Exception as exc:
         map_household_error(exc, not_found_message="household member not found")
         raise
+    context.event_timeline.append(
+        event_type="household_member_removed",
+        workflow_name="household_lifecycle",
+        correlation_id=str(household_id),
+        request_id=None,
+        user_id=actor_user_id,
+        payload={"target_user_id": target_user_id},
+    )
     return HouseholdMemberRemoveResponse(removed_user_id=target_user_id)
 
 
@@ -572,6 +615,14 @@ def leave_household(
     except Exception as exc:
         map_household_error(exc)
         raise
+    context.event_timeline.append(
+        event_type="household_left",
+        workflow_name="household_lifecycle",
+        correlation_id=str(household_id),
+        request_id=None,
+        user_id=user_id,
+        payload={},
+    )
     return HouseholdLeaveResponse(left_household_id=household_id)
 
 
@@ -608,9 +659,7 @@ def get_household_care_member_profile(
     subject_user_id: str,
 ) -> HouseholdCareProfileResponse:
     """Read a household member's health profile through caregiver access rules."""
-    from care_pilot.features.profiles.profile_service import (
-        to_profile_response,
-    )  # noqa: PLC0415
+    from care_pilot.features.profiles.profile_service import to_profile_response  # noqa: PLC0415
 
     ensure_household_subject_access(
         context=context,
@@ -691,9 +740,7 @@ def list_household_care_member_reminders(
     subject_user_id: str,
 ) -> HouseholdCareReminderListResponse:
     """Read a household member's reminders through caregiver access rules."""
-    from care_pilot.features.medications.domain import (
-        compute_mcr,
-    )  # noqa: PLC0415
+    from care_pilot.features.medications.domain import compute_mcr  # noqa: PLC0415
 
     ensure_household_subject_access(
         context=context,

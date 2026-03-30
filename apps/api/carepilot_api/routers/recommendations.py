@@ -76,6 +76,8 @@ def recommendations_substitutions(
         deps=recommendation_agent_deps(get_context(request)),
         session=session,
         payload=payload,
+        request_id=getattr(request.state, "request_id", None),
+        correlation_id=getattr(request.state, "correlation_id", None),
     )
 
 
@@ -93,4 +95,6 @@ def recommendations_interactions(
         deps=recommendation_agent_deps(get_context(request)),
         session=session,
         payload=payload,
+        request_id=getattr(request.state, "request_id", None),
+        correlation_id=getattr(request.state, "correlation_id", None),
     )

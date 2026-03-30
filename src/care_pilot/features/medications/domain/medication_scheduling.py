@@ -13,17 +13,9 @@ from typing import Protocol
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.features.profiles.domain.models import (
-    MealScheduleWindow,
-    UserProfile,
-)
-from care_pilot.features.reminders.domain.models import (
-    MedicationRegimen,
-    ReminderEvent,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
+from care_pilot.features.profiles.domain.models import MealScheduleWindow, UserProfile
+from care_pilot.features.reminders.domain.models import MedicationRegimen, ReminderEvent
 
 logger = logging.getLogger(__name__)
 

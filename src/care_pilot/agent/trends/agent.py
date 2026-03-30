@@ -27,6 +27,7 @@ logger = get_logger(__name__)
 
 class TrendInsight(BaseModel):
     """Structured insight about a health trend."""
+
     metric: str
     pattern: Literal["improving", "stable", "worsening", "insufficient_data"]
     summary: str
@@ -35,6 +36,7 @@ class TrendInsight(BaseModel):
 
 class TrendAnalysisOutput(BaseModel):
     """The output of the TrendAgent."""
+
     insights: list[TrendInsight] = Field(default_factory=list)
     risk_level: Literal["low", "medium", "high"] = "low"
     rationale: str
@@ -83,16 +85,14 @@ async def run_trend_agent(request: AgentRequest) -> AgentResponse:
         if insight.pattern == "worsening":
             recommendations.append(
                 AgentRecommendation(
-                    title=f"Worsening {insight.metric}",
-                    summary=insight.summary,
-                    priority="high"
+                    title=f"Worsening {insight.metric}", summary=insight.summary, priority="high"
                 )
             )
             if analysis.risk_level == "high":
                 actions.append(
                     AgentAction(
                         action_name="escalate_to_clinician",
-                        params={"metric": insight.metric, "reason": insight.summary}
+                        params={"metric": insight.metric, "reason": insight.summary},
                     )
                 )
 
@@ -103,5 +103,8 @@ async def run_trend_agent(request: AgentRequest) -> AgentResponse:
         structured_output=analysis.model_dump(),
         recommendations=recommendations,
         actions=actions,
-        reasoning_trace=["Analyzed longitudinal biomarker logs", "Correlated meals with risk flags"]
+        reasoning_trace=[
+            "Analyzed longitudinal biomarker logs",
+            "Correlated meals with risk flags",
+        ],
     )

@@ -18,12 +18,7 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from care_pilot.agent.runtime.llm_routing import LLMCapabilityRouter
 from care_pilot.agent.runtime.llm_types import ResolvedModelRuntime
 from care_pilot.config.app import AppSettings, get_settings
-from care_pilot.config.llm import (
-    LLMCapability,
-    LLMSettings,
-    LocalModelProfile,
-    ModelProvider,
-)
+from care_pilot.config.llm import LLMCapability, LLMSettings, LocalModelProfile, ModelProvider
 from care_pilot.platform.observability import get_logger
 
 ModelType = GoogleModel | OpenAIChatModel | TestModel

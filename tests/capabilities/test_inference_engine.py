@@ -8,10 +8,7 @@ from pydantic import BaseModel
 from pydantic_ai.messages import PartEndEvent, TextPart
 
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
-from care_pilot.agent.runtime.inference_types import (
-    InferenceModality,
-    InferenceRequest,
-)
+from care_pilot.agent.runtime.inference_types import InferenceModality, InferenceRequest
 from care_pilot.config.app import get_settings
 
 

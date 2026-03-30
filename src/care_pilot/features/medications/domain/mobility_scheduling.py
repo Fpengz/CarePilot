@@ -9,10 +9,7 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta
 from uuid import uuid4
 
-from care_pilot.features.reminders.domain.models import (
-    MobilityReminderSettings,
-    ReminderEvent,
-)
+from care_pilot.features.reminders.domain.models import MobilityReminderSettings, ReminderEvent
 
 
 def default_mobility_settings(user_id: str) -> MobilityReminderSettings:

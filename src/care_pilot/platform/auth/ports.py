@@ -35,6 +35,7 @@ class AuthStorePort(Protocol):
         display_name: str,
         account_role: AccountRole = "member",
         profile_mode: ProfileMode = "self",
+        user_id: str | None = None,
     ) -> AuthUserRecord | None: ...
     def update_user_profile(
         self,

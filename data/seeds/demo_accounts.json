@@ -1,0 +1,26 @@
+[
+  {
+    "user_id": "user_001",
+    "email": "member@example.com",
+    "display_name": "Alex Member",
+    "account_role": "member",
+    "profile_mode": "self",
+    "password": "member-pass"
+  },
+  {
+    "user_id": "care_001",
+    "email": "helper@example.com",
+    "display_name": "Casey Helper",
+    "account_role": "member",
+    "profile_mode": "caregiver",
+    "password": "helper-pass"
+  },
+  {
+    "user_id": "ops_001",
+    "email": "admin@example.com",
+    "display_name": "Ops Admin",
+    "account_role": "admin",
+    "profile_mode": "self",
+    "password": "admin-pass"
+  }
+]

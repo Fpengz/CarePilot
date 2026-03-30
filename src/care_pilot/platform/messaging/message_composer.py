@@ -5,10 +5,26 @@ per-channel capabilities.  Transport adapters call
 ``format_alert_text_for_transport`` to get a plain string ready for the wire.
 """
 
+import zoneinfo
+from datetime import datetime
+
 from pydantic import BaseModel
 
 from care_pilot.core.contracts.agent_envelopes import PresentationMessage
-from care_pilot.features.safety.domain.alerts.models import AlertMessage
+from care_pilot.features.safety.domain.alerts.models import OutboundMessage
+
+
+def _format_datetime(value: object, timezone_name: str | None = None) -> str:
+    if not isinstance(value, datetime):
+        return str(value)
+    if timezone_name:
+        try:
+            tz = zoneinfo.ZoneInfo(timezone_name)
+            dt = value if value.tzinfo is not None else value.replace(tzinfo=tz)
+            return dt.astimezone(tz).isoformat(timespec="seconds")
+        except Exception:
+            pass
+    return value.isoformat(timespec="seconds")
 
 
 class ChannelCapability(BaseModel):
@@ -54,23 +70,26 @@ CHANNEL_CAPABILITIES: dict[str, ChannelCapability] = {
 }
 
 
-def compose_alert_message(alert: AlertMessage, *, channel: str) -> PresentationMessage:
+def compose_alert_message(
+    alert: OutboundMessage, *, channel: str, timezone_name: str | None = None
+) -> PresentationMessage:
     """Build a ``PresentationMessage`` from an alert, tailored to the target channel."""
-    payload_message = alert.payload.get("message", "Alert")
+    payload_message = str(alert.payload.get("message") or alert.payload.get("body") or "Alert")
     title = "Alert Notification"
-    if alert.type == "medication_reminder":
+    if alert.type in {"medication_reminder", "reminder_notification"}:
         title = "Medication Reminder"
     elif alert.type.endswith("_alert"):
         title = "Alert Notification"
 
     body = payload_message
-    if alert.type == "medication_reminder":
+    if alert.type in {"medication_reminder", "reminder_notification"}:
         medication = alert.payload.get("medication_name", "Medication")
         dosage = alert.payload.get("dosage_text", "")
         scheduled_at = alert.payload.get("scheduled_at")
         body = f"{medication} {dosage}".strip()
         if scheduled_at:
-            body = f"{body} at {scheduled_at}"
+            formatted_date = _format_datetime(scheduled_at, timezone_name)
+            body = f"{body} at {formatted_date}"
 
     return PresentationMessage(
         channel=channel,

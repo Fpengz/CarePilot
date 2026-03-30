@@ -13,19 +13,19 @@ repos:
         types: [python]
       - id: web-lint
         name: web-lint
-        entry: pnpm web:lint
+        entry: pnpm --dir apps/web lint
         language: system
         files: ^apps/web/
         pass_filenames: false
       - id: web-typecheck
         name: web-typecheck
-        entry: pnpm web:typecheck
+        entry: pnpm --dir apps/web typecheck
         language: system
         files: ^apps/web/
         pass_filenames: false
       - id: web-e2e
         name: web-e2e
-        entry: pnpm web:e2e
+        entry: pnpm --dir apps/web test:e2e
         language: system
         files: ^apps/web/
         pass_filenames: false

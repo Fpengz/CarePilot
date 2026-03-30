@@ -24,9 +24,7 @@ from care_pilot.agent.emotion.schemas import (
     TextEmotionBranchResult,
 )
 from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
@@ -36,7 +34,10 @@ from care_pilot.features.households.schemas import (  # noqa: F401
     HouseholdActiveUpdateResponse,
     HouseholdBundleResponse,
     HouseholdCareContextResponse,
+    HouseholdCareMealSummaryResponse,
     HouseholdCareMembersResponse,
+    HouseholdCareProfileResponse,
+    HouseholdCareReminderListResponse,
     HouseholdCreateRequest,
     HouseholdInviteCreateResponse,
     HouseholdInviteResponseItem,
@@ -54,6 +55,7 @@ from care_pilot.features.profiles.domain.models import (
     AccountRole,
     MealScheduleWindow,
     MealSlot,
+    NutritionGoal,
     ProfileMode,
 )
 from care_pilot.features.profiles.schemas import (  # noqa: F401
@@ -61,6 +63,7 @@ from care_pilot.features.profiles.schemas import (  # noqa: F401
     HealthProfileCondition,
     HealthProfileMedication,
     HealthProfileResponseItem,
+    NutritionGoalResponse,
 )
 from care_pilot.features.recommendations.domain.models import (
     InteractionEventType,
@@ -68,9 +71,7 @@ from care_pilot.features.recommendations.domain.models import (
 )
 from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.safety.domain.alerts.models import OutboxState
-from care_pilot.platform.observability.tooling.domain.models import (
-    ToolExecutionResult,
-)
+from care_pilot.platform.observability.tooling.domain.models import ToolExecutionResult
 
 type JsonScalar = str | int | float | bool | None
 type JsonObjectValue = JsonScalar | list[JsonScalar]
@@ -172,7 +173,7 @@ class HealthProfileUpdateRequest(BaseModel):
     conditions: list[HealthProfileCondition] | None = None
     medications: list[HealthProfileMedication] | None = None
     allergies: list[str] | None = None
-    nutrition_goals: list[str] | None = None
+    nutrition_goals: list[NutritionGoal | str] | None = None
     preferred_cuisines: list[str] | None = None
     disliked_ingredients: list[str] | None = None
     budget_tier: Literal["budget", "moderate", "flexible"] | None = None

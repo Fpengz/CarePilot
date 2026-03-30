@@ -11,14 +11,10 @@ from collections.abc import Iterable
 from typing import Protocol
 
 from care_pilot.features.companion.core.domain import CaseSnapshot
-from care_pilot.features.companion.core.health.models import (
-    HealthProfileRecord,
-)
+from care_pilot.features.companion.core.health.models import HealthProfileRecord
 from care_pilot.features.meals.domain import meal_display_name, meal_nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowTimelineEvent,
-)
+from care_pilot.platform.observability.workflows.domain.models import WorkflowTimelineEvent
 
 
 def _join_or_none(values: Iterable[str]) -> str:
@@ -94,7 +90,8 @@ def format_chat_context(
         if health_profile.allergies:
             lines.append(f"Allergies: {_join_or_none(health_profile.allergies)}")
         if health_profile.nutrition_goals:
-            lines.append(f"Nutrition goals: {_join_or_none(health_profile.nutrition_goals)}")
+            goal_names = [getattr(g, "goal_type", str(g)) for g in health_profile.nutrition_goals]
+            lines.append(f"Nutrition goals: {_join_or_none(goal_names)}")
         if health_profile.preferred_cuisines:
             lines.append(f"Preferred cuisines: {_join_or_none(health_profile.preferred_cuisines)}")
         if health_profile.disliked_ingredients:

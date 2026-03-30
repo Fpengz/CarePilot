@@ -1,42 +1,50 @@
 # Documentation Index
 
-This directory contains focused documentation that supplements the three root canonical docs:
-- `README.md`
-- `ARCHITECTURE.md`
-- `SYSTEM_ROADMAP.md`
+This directory is the system of record for CarePilot repository knowledge. Start here, then drill into the relevant index. Keep docs concise, current, and cross-linked.
 
-## Core contributor docs
-- `docs/developer-guide.md`
-- `docs/operations-runbook.md`
-- `docs/user-manual.md`
-- `docs/config-reference.md`
-- `docs/workflows.md` — orchestration standard (`pydantic-graph`)
+## Primary Maps
+- `docs/design-docs/index.md` — architecture and design beliefs (including core beliefs)
+- `docs/exec-plans/index.md` — active/in-progress/completed execution plans + templates
+- `docs/product-specs/index.md` — product specs and user-facing behavior
+- `docs/references/index.md` — API, ops, config, and engineering references
+ - `docs/design-docs/architecture/event-driven/ARCHITECTURE.md` — primary event-driven architecture (orchestration-first is legacy)
 
-## API contracts and policy
-- `docs/api/auth.md`
-- `docs/api/emotions.md`
-- `docs/api/recommendation-agent.md`
-- `docs/api/suggestions.md`
-- `docs/api/rbac.md`
+## Canonical Root Docs
+- `README.md` — product overview and setup
+- `ARCHITECTURE.md` — architecture stance and layer boundaries
+- `SYSTEM_ROADMAP.md` — current priorities, tech debt, future plans
+- `AGENTS.md` — agent workflow contract and ownership map
 
-## Architecture deep-dives
-- `docs/architecture/emotion-pipeline.md`
-- `docs/architecture/meal-analysis.md`
-- `docs/architecture/agent-layer-reference.md`
-- `docs/plans/2026-03-14-agent-layer-audit-refactor-spec.md` — agent layer boundaries + checklist
+## Quality & Safety
+- `docs/QUALITY_SCORE.md`
+- `docs/RELIABILITY.md`
+- `docs/SECURITY.md`
 
-## Feature-specific notes
-- `docs/features/food-normalization.md`
+## Design & UX
+- `docs/DESIGN.md`
+- `docs/FRONTEND.md`
+- `docs/PRODUCT_SENSE.md`
 
-Runtime API discovery:
-- FastAPI interactive docs: `http://localhost:8001/docs`
-- Route definitions under `apps/api/carepilot_api/routers/` remain the code-level source of truth for current endpoints
+## Planning
+- `docs/PLANS.md` — planning pointer (see `SYSTEM_ROADMAP.md`)
 
-## Supporting assets
-- `docs/architecture/architecture.drawio`
-- `docs/architecture/system-interaction-flow.drawio`
-- `docs/architecture/meal-analysis-architecture.drawio`
-- `docs/architecture/target-system-architecture.drawio`
+## Generated Artifacts
+- `docs/generated/db-schema.md`
 
-## Maintenance rule
-Keep this index small. If a document mostly repeats architecture, roadmap, or contributor workflow content, fold that content back into the canonical files instead of adding another overview doc.
+## Change Log & History
+- `docs/references/change_log/` — chronological change logs for major updates
+- `docs/references/REFACTOR_HISTORY.md` — completed refactor phases and outcomes
+
+## Knowledge Base Operating Rules
+- `AGENTS.md` stays short and navigational; the system of record lives here in `docs/`.
+- Every doc must be indexed with `Doc | Status | Last Verified | Owner`.
+- Prefer progressive disclosure: link to deeper sources instead of duplicating rules.
+- Keep historical context in change logs rather than ephemeral notes or chat memory.
+
+## Maintenance Rules
+- New documentation must live under one of the indexed sections above.
+- Indexes must include `Doc | Status | Last Verified | Owner` columns.
+- Use relative links; absolute local paths are disallowed.
+ - Keep docs fresh: update `Last Verified` dates or deprecate stale material.
+ - Run `uv run python scripts/docs/validate_knowledge_base.py` before merging doc changes.
+ - Use `uv run python scripts/docs/doc_gardener.py` to surface stale or deprecated docs.

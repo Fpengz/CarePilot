@@ -8,9 +8,11 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import UTC, date, datetime, time
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from apps.api.carepilot_api.deps import AppContext
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 
 from care_pilot.core.contracts.api import (
     SymptomCheckInEnvelopeResponse,
@@ -21,10 +23,7 @@ from care_pilot.core.contracts.api import (
     SymptomSafetyResponse,
     SymptomSummaryResponse,
 )
-from care_pilot.features.companion.core.health.models import (
-    SymptomCheckIn,
-    SymptomSafety,
-)
+from care_pilot.features.companion.core.health.models import SymptomCheckIn, SymptomSafety
 from care_pilot.features.safety.domain.triage import evaluate_text_safety
 
 
@@ -62,6 +61,18 @@ def create_checkin_for_session(
         ),
     )
     saved = context.stores.symptoms.save_symptom_checkin(item)
+    context.event_timeline.append(
+        event_type="symptom_reported",
+        workflow_name="symptom_checkin",
+        correlation_id=saved.id,
+        request_id=None,
+        user_id=user_id,
+        payload={
+            "severity": saved.severity,
+            "symptom_count": len(saved.symptom_codes),
+            "safety_decision": saved.safety.decision,
+        },
+    )
     return SymptomCheckInEnvelopeResponse(item=_to_response(saved))
 
 

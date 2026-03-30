@@ -3,11 +3,13 @@
 ## Purpose
 This is the canonical architecture reference for CarePilot. It describes the feature-first modular-monolith structure, the ownership boundaries that contributors must preserve, and the forward direction for the project.
 
+Primary direction: **event-driven workflows** are the mainline architecture. The orchestration-first design is **archived** and retained only as legacy exploration context.
+
 Related docs:
 - `README.md`
-- `docs/refactor_plan.md` — detailed refactor history and current status
-- `docs/REFACTOR_HISTORY.md` — log of completed architectural phases
-- `docs/prompt_catalog.md` — repository of all agent prompts
+- `docs/exec-plans/index.md` — active/in-progress/completed execution plans
+- `docs/references/REFACTOR_HISTORY.md` — log of completed architectural phases
+- `docs/references/prompt_catalog.md` — repository of all agent prompts
 
 ---
 
@@ -27,7 +29,8 @@ src/care_pilot/
 ### Repo-Wide Architecture Stance (Hard Decisions)
 - **Features** own product behavior and deterministic domain rules.
 - **Agent** owns model-backed reasoning (pydantic-ai).
-- **Orchestration** is supervisor-led via **LangGraph**.
+- **Event-Driven** is the primary architecture; **LangGraph** is used only for explicit multi-step workflows within that model.
+- **Orchestration-first** architecture is legacy and should not be extended.
 - **Platform** owns infra-only adapters.
 - **Core** owns only tiny cross-cutting primitives and API contracts.
 
@@ -44,8 +47,15 @@ src/care_pilot/
 - **Thin Routers**: Handlers are transport-only. Deep orchestration logic is deferred to the Feature layer.
 
 ### Inference Layer — `apps/inference/run.py`
-- Standalone microservice offloading heavy model execution (Whisper, BERT) from the main API.
+- Standalone microservice offloading heavy model execution (Whisper, BERT, Emotion) from the main API.
+- Unified async runtime for speech and text emotion inference.
 - Enables horizontal scaling of AI capabilities independent of the business logic.
+
+### Persistence Layer — `src/care_pilot/platform/persistence/`
+- **Schema Management**: Managed exclusively via **Alembic** migrations.
+- **Relational Integrity**: Uses **SQLModel** for structured relational storage.
+- **Default Runtime**: SQLite is the default durable store; Postgres is the scale path.
+- **Normalization**: User profiles, nutrition goals, and meal schedules live in dedicated tables for integrity and query efficiency.
 
 ### Feature Layer — `src/care_pilot/features/`
 - Owns all product behavior.
@@ -60,9 +70,10 @@ src/care_pilot/
 
 ---
 
-## Multi-Agent Orchestration
+## Event-Driven Workflows (Primary)
 
-CarePilot uses a **Supervisor-led LangGraph** architecture.
+CarePilot uses an **event-driven** architecture with **LangGraph** only for explicit multi-step journeys.
+The orchestration-first model is archived for feature exploration and should not be expanded.
 
 ```mermaid
 graph TD

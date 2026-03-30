@@ -3,9 +3,7 @@
 from threading import Thread
 from time import sleep
 
-from care_pilot.platform.scheduling.coordination.in_memory import (
-    InMemoryCoordinationStore,
-)
+from care_pilot.platform.scheduling.coordination.in_memory import InMemoryCoordinationStore
 
 
 def test_in_memory_coordination_store_publish_and_drain_signal() -> None:

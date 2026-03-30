@@ -25,11 +25,10 @@ from care_pilot.core.contracts.api.core import (
     HealthProfileResponseItem,
     HouseholdCareContextResponse,
 )
+from care_pilot.core.contracts.api.dashboard import DashboardBucket
 from care_pilot.core.contracts.api.notifications import ScheduledReminderNotificationItemResponse
 from care_pilot.core.contracts.api.workflows import WorkflowResponse
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
@@ -56,15 +55,14 @@ from care_pilot.features.profiles.domain.models import (
     MealSlot,
     ProfileMode,
 )
+from care_pilot.features.profiles.schemas import NutritionGoalResponse
 from care_pilot.features.recommendations.domain.models import (
     InteractionEventType,
     RecommendationOutput,
 )
 from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.safety.domain.alerts.models import OutboxState
-from care_pilot.platform.observability.tooling.domain.models import (
-    ToolExecutionResult,
-)
+from care_pilot.platform.observability.tooling.domain.models import ToolExecutionResult
 
 
 class MealAnalyzeResponse(BaseModel):
@@ -405,9 +403,6 @@ class MetricTrendListResponse(BaseModel):
     items: list[MetricTrendResponse] = Field(default_factory=list)
 
 
-type DashboardBucket = Literal["hour", "day", "week"]
-
-
 class DashboardRangeResponse(BaseModel):
     key: str
     label: str
@@ -516,6 +511,7 @@ class DashboardSummaryResponse(BaseModel):
     adherence_score: DashboardSummaryMetricResponse
     glycemic_risk: DashboardSummaryMetricResponse
     stability_index: DashboardSummaryMetricResponse
+    nutrition_goals: list[NutritionGoalResponse] = Field(default_factory=list)
 
 
 class DashboardOverviewResponse(BaseModel):

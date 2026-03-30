@@ -12,11 +12,7 @@ from typing import Any, cast
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
-from care_pilot.agent.core.contracts import (
-    AgentRecommendation,
-    AgentRequest,
-    AgentResponse,
-)
+from care_pilot.agent.core.contracts import AgentRecommendation, AgentRequest, AgentResponse
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
 from care_pilot.platform.observability import get_logger
@@ -26,6 +22,7 @@ logger = get_logger(__name__)
 
 class CarePlanAction(BaseModel):
     """A concrete health action for the user."""
+
     title: str
     description: str
     urgency: str
@@ -33,6 +30,7 @@ class CarePlanAction(BaseModel):
 
 class CarePlanOutput(BaseModel):
     """The structured output of the CarePlanAgent."""
+
     headline: str
     summary: str
     reasoning: str
@@ -82,7 +80,7 @@ async def run_care_plan_agent(request: AgentRequest) -> AgentResponse:
         AgentRecommendation(
             title=action.title,
             summary=action.description,
-            priority="high" if action.urgency == "prompt" else "medium"
+            priority="high" if action.urgency == "prompt" else "medium",
         )
         for action in plan.actions
     ]
@@ -93,5 +91,8 @@ async def run_care_plan_agent(request: AgentRequest) -> AgentResponse:
         summary=f"{plan.headline}: {plan.summary}",
         structured_output=plan.model_dump(),
         recommendations=recommendations,
-        reasoning_trace=["Synthesized all blackboard signals", "Prioritized acute recovery actions"]
+        reasoning_trace=[
+            "Synthesized all blackboard signals",
+            "Prioritized acute recovery actions",
+        ],
     )

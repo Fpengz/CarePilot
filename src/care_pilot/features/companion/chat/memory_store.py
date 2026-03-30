@@ -86,10 +86,5 @@ async def record_chat_turn(
 
     # Enqueue for background execution to return token stream faster
     await enqueue_task(
-        _record_chat_turn_worker,
-        memory_store,
-        user_id,
-        session_id,
-        messages,
-        metadata
+        _record_chat_turn_worker, memory_store, user_id, session_id, messages, metadata
     )

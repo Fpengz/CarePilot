@@ -3,7 +3,6 @@
 from collections.abc import Generator
 
 import pytest
-from apps.api.carepilot_api.deps import build_app_context
 from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
@@ -22,6 +21,7 @@ from care_pilot.agent.emotion.schemas import (
 )
 from care_pilot.config.app import get_settings
 from care_pilot.features.companion.emotion.ports import EmotionInferencePort
+from care_pilot.platform.app_context import build_app_context
 
 
 def _reset_settings_cache() -> None:

@@ -10,11 +10,7 @@ from typing import Any, cast
 
 from pydantic_ai import Agent
 
-from care_pilot.agent.core.contracts import (
-    AgentRecommendation,
-    AgentRequest,
-    AgentResponse,
-)
+from care_pilot.agent.core.contracts import AgentRecommendation, AgentRequest, AgentResponse
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
 from care_pilot.features.medications.intake.models import MedicationParseOutput
@@ -33,7 +29,7 @@ SYSTEM_PROMPT = (
 
 def get_medication_agent() -> Agent[None, MedicationParseOutput]:
     """Build the pydantic_ai agent instance."""
-    model = LLMFactory.get_model(capability=LLMCapability.CHATBOT) # Use general purpose for now
+    model = LLMFactory.get_model(capability=LLMCapability.CHATBOT)  # Use general purpose for now
     return cast(
         Any,
         Agent(
@@ -60,17 +56,13 @@ async def run_medication_agent(request: AgentRequest) -> AgentResponse:
             AgentRecommendation(
                 title="Verify Instructions",
                 summary="The parser is not fully confident in these instructions. Please verify against your actual prescription.",
-                priority="high"
+                priority="high",
             )
         )
 
     for warning in parsed.warnings:
         recommendations.append(
-            AgentRecommendation(
-                title="Ambiguous Instruction",
-                summary=warning,
-                priority="medium"
-            )
+            AgentRecommendation(title="Ambiguous Instruction", summary=warning, priority="medium")
         )
 
     return AgentResponse(
@@ -80,5 +72,5 @@ async def run_medication_agent(request: AgentRequest) -> AgentResponse:
         structured_output=parsed.model_dump(),
         recommendations=recommendations,
         confidence=parsed.confidence_score,
-        reasoning_trace=["Parsed prescription text", "Normalized timing and dosage"]
+        reasoning_trace=["Parsed prescription text", "Normalized timing and dosage"],
     )

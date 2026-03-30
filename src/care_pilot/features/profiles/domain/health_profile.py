@@ -14,7 +14,7 @@ from care_pilot.features.companion.core.health.models import (
     HealthProfileRecord,
     ProfileCompleteness,
 )
-from care_pilot.features.profiles.domain.models import AccountRole, UserProfile
+from care_pilot.features.profiles.domain.models import AccountRole, NutritionGoal, UserProfile
 from care_pilot.platform.observability.tooling.domain.authorization import (
     default_profile_mode_for_role,
 )
@@ -23,13 +23,16 @@ DEFAULT_PROFILE_AGE = 68
 
 
 class HealthProfileRepository(Protocol):
-    def get_health_profile(self, user_id: str) -> HealthProfileRecord | None: ...
+    def get_health_profile(self, user_id: str) -> HealthProfileRecord: ...
 
     def save_health_profile(self, profile: HealthProfileRecord) -> HealthProfileRecord: ...
 
 
 def default_health_profile(user_id: str) -> HealthProfileRecord:
-    return HealthProfileRecord(user_id=user_id)
+    return HealthProfileRecord(
+        user_id=user_id,
+        updated_at=datetime.now(UTC).isoformat(),
+    )
 
 
 def compute_profile_completeness(
@@ -59,10 +62,7 @@ def compute_profile_completeness(
 def get_or_create_health_profile(
     repository: HealthProfileRepository, user_id: str
 ) -> HealthProfileRecord:
-    stored = repository.get_health_profile(user_id)
-    if stored is not None:
-        return stored
-    return default_health_profile(user_id)
+    return repository.get_health_profile(user_id)
 
 
 def update_health_profile(
@@ -72,13 +72,17 @@ def update_health_profile(
     updates: dict[str, Any],
 ) -> HealthProfileRecord:
     current = get_or_create_health_profile(repository, user_id)
-    merged_payload = {
-        **current.model_dump(mode="json"),
-        **updates,
-        "user_id": user_id,
-        "updated_at": datetime.now(UTC).isoformat(),
-    }
-    merged = HealthProfileRecord.model_validate(merged_payload)
+
+    # Merge updates into current model
+    current_data = current.model_dump()
+    for key, value in updates.items():
+        if key in current_data:
+            current_data[key] = value
+
+    current_data["user_id"] = user_id
+    current_data["updated_at"] = datetime.now(UTC).isoformat()
+
+    merged = HealthProfileRecord.model_validate(current_data)
     return repository.save_health_profile(merged)
 
 
@@ -97,7 +101,10 @@ def build_user_profile_from_health_profile(
         or default_profile_mode_for_role(cast(AccountRole, str(session["account_role"]))),
         locale=health_profile.locale,
         allergies=list(health_profile.allergies),
-        nutrition_goals=list(health_profile.nutrition_goals),
+        nutrition_goals=[
+            g if not isinstance(g, str) else NutritionGoal(goal_type=g, target_value=0.0, unit="unit")
+            for g in health_profile.nutrition_goals
+        ],
         preferred_cuisines=list(health_profile.preferred_cuisines),
         disliked_ingredients=list(health_profile.disliked_ingredients),
         budget_tier=health_profile.budget_tier,

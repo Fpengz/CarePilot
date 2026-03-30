@@ -8,14 +8,7 @@ API services for policy enforcement and persistence.
 from datetime import datetime
 from typing import Annotated, Literal, cast
 
-from fastapi import (
-    APIRouter,
-    Cookie,
-    Depends,
-    HTTPException,
-    Request,
-    Response,
-)
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 
 from care_pilot.features.profiles.domain.models import AccountRole, ProfileMode
 from care_pilot.platform.auth.auth_service import (

@@ -11,13 +11,8 @@ from uuid import uuid4
 
 from apps.api.carepilot_api.deps import EmotionDeps
 from apps.api.carepilot_api.errors import build_api_error
-from care_pilot.agent.emotion.agent import (
-    EmotionAgentDisabledError,
-    EmotionSpeechDisabledError,
-)
-from care_pilot.agent.emotion.schemas import (
-    EmotionInferenceResult,
-)
+from care_pilot.agent.emotion.agent import EmotionAgentDisabledError, EmotionSpeechDisabledError
+from care_pilot.agent.emotion.schemas import EmotionInferenceResult
 from care_pilot.core.contracts.api import (
     EmotionHealthResponse,
     EmotionInferenceResponse,

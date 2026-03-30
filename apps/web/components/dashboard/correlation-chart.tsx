@@ -10,10 +10,10 @@ export function CorrelationChart({ calories, risk }: { calories: any[]; risk: an
   }));
 
   return (
-    <div className="glass-card h-full">
-      <div className="flex flex-col items-start gap-1 mb-6">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Metabolic Data</span>
-        <h3 className="text-lg font-bold tracking-tight">Correlation Analysis</h3>
+    <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm h-full">
+      <div className="flex flex-col items-start gap-1 mb-8 px-1">
+        <span className="text-micro-label text-muted-foreground uppercase">Correlation Analysis</span>
+        <h3 className="text-xl font-semibold tracking-tight text-foreground">Metabolic Response Trends</h3>
       </div>
       <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">

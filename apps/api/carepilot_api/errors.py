@@ -17,6 +17,15 @@ from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 
+__all__ = [
+    "ApiAppError",
+    "build_api_error",
+    "handle_api_app_error",
+    "handle_http_exception",
+    "handle_validation_exception",
+    "handle_unhandled_exception",
+]
+
 
 def api_error_payload(
     *,
@@ -115,7 +124,7 @@ def handle_validation_exception(
 ) -> JSONResponse:
     code = _http_error_code(422)
     message = "request validation failed"
-    details = {"errors": exc.errors()}
+    details: dict[str, object] = {"errors": exc.errors()}
     metadata = _failure_metadata(
         request=request,
         status_code=422,

@@ -5,9 +5,7 @@ from __future__ import annotations
 import json
 
 from care_pilot.platform.cache import redis_store as redis_cache_module
-from care_pilot.platform.scheduling.coordination import (
-    redis_coordination as redis_coord_module,
-)
+from care_pilot.platform.scheduling.coordination import redis_coordination as redis_coord_module
 
 
 class _FakeRedisClient:

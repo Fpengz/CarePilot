@@ -19,7 +19,7 @@ from care_pilot.features.reminders.notifications.reminder_materialization import
     cancel_reminder_notifications,
     dispatch_due_reminder_notifications,
     materialize_reminder_notifications,
-    resolve_notification_preferences,
+    resolve_message_preferences,
 )
 
 __all__ = [
@@ -29,7 +29,7 @@ __all__ = [
     "dispatch_reminder",
     "dispatch_reminder_async",
     "materialize_reminder_notifications",
-    "resolve_notification_preferences",
+    "resolve_message_preferences",
     "send_in_app",
     "send_push",
     "trigger_alert",

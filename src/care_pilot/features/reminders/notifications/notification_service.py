@@ -16,9 +16,7 @@ from care_pilot.core.contracts.api import (
     NotificationMarkAllReadResponse,
     NotificationMarkReadResponse,
 )
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowTimelineEvent,
-)
+from care_pilot.platform.observability.workflows.domain.models import WorkflowTimelineEvent
 
 if TYPE_CHECKING:
     from apps.api.carepilot_api.deps import AppContext

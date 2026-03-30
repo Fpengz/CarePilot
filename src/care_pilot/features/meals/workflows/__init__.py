@@ -1,1 +1,1 @@
-"""Meals workflows (pydantic-graph)."""
+"""Meals workflows (LangGraph)."""

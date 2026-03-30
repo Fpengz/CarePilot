@@ -58,7 +58,18 @@ def _meal_upload(client: TestClient) -> None:
 
 
 def _seed_companion_state(client: TestClient) -> None:
-    client.patch("/api/v1/profile/health", json={"age": 54, "locale": "en-SG", "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}]})
+    client.patch(
+        "/api/v1/profile/health",
+        json={
+            "age": 54,
+            "locale": "en-SG",
+            "conditions": [{"name": "Type 2 Diabetes", "severity": "High"}],
+            "nutrition_goals": [
+                {"goal_type": "lower_sugar", "target_value": 0.0, "unit": "unit", "start_date": "2026-01-01"},
+                {"goal_type": "heart_health", "target_value": 0.0, "unit": "unit", "start_date": "2026-01-01"},
+            ],
+        },
+    )
     _meal_upload(client)
     report = client.post(
         "/api/v1/reports/parse",

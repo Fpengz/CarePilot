@@ -9,9 +9,7 @@ from apps.api.carepilot_api.main import create_app
 from fastapi.testclient import TestClient
 
 from care_pilot.config.app import get_settings
-from care_pilot.features.companion.chat.meal_intent import (
-    meal_proposal_cache_key,
-)
+from care_pilot.features.companion.chat.meal_intent import meal_proposal_cache_key
 
 
 def _reset_settings_cache() -> None:

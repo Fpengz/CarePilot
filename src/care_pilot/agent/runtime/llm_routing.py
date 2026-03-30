@@ -9,11 +9,7 @@ import os
 
 from care_pilot.agent.runtime.llm_types import ResolvedModelRuntime
 from care_pilot.config.app import AppSettings
-from care_pilot.config.llm import (
-    LLMCapability,
-    LLMCapabilityTarget,
-    ModelProvider,
-)
+from care_pilot.config.llm import LLMCapability, LLMCapabilityTarget, ModelProvider
 
 
 class LLMCapabilityRouter:

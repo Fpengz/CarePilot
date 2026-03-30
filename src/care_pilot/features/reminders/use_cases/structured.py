@@ -3,17 +3,13 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
 from apps.api.carepilot_api.routes_shared import default_demo_regimens
 
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.features.companion.core.health.models import (
-    MedicationAdherenceEvent,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
+from care_pilot.features.companion.core.health.models import MedicationAdherenceEvent
 from care_pilot.features.medications.domain import compute_mcr
 from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.reminders.domain.generation import (
@@ -31,9 +27,7 @@ from care_pilot.features.reminders.notifications.reminder_materialization import
     cancel_reminder_notifications,
     materialize_reminder_notifications,
 )
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
-)
+from care_pilot.platform.auth.session_context import build_user_profile_from_session
 
 if TYPE_CHECKING:
     from apps.api.carepilot_api.deps import AppContext
@@ -118,6 +112,7 @@ def _sync_occurrence_projection(
         repository=context.stores.reminders,
         reminder_event=event,
         reminder_type=event.reminder_type,
+        event_timeline=context.event_timeline,
     )
 
 
@@ -276,7 +271,10 @@ def update_reminder_definition_for_user(
 
         _ensure_today_occurrences_for_session(
             context=context,
-            session=session or {"user_id": user_id, "account_role": "member"},
+            session=cast(
+                dict[str, object],
+                session or {"user_id": user_id, "account_role": "member"},
+            ),
         )
 
     return saved

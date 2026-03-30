@@ -4,10 +4,7 @@ from __future__ import annotations
 
 import re
 
-from care_pilot.agent.emotion.schemas import (
-    EmotionLabel,
-    TextEmotionBranchResult,
-)
+from care_pilot.agent.emotion.schemas import EmotionLabel, TextEmotionBranchResult
 from care_pilot.config.app import get_settings
 from care_pilot.features.companion.emotion.ports import TextEmotionPort
 from care_pilot.platform.observability import get_logger

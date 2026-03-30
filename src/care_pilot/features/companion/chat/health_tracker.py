@@ -23,10 +23,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 
 from care_pilot.agent.chat.schemas import ChatMetricsOutput
-from care_pilot.agent.runtime.inference_types import (
-    InferenceModality,
-    InferenceRequest,
-)
+from care_pilot.agent.runtime.inference_types import InferenceModality, InferenceRequest
 from care_pilot.features.companion.chat.memory import (
     USER_HISTORY_SESSION_ID,
     InferenceEngineProtocol,

@@ -8,9 +8,7 @@ from care_pilot.features.recommendations.domain.canonical_food_matching import (
     find_food_by_name,
     rank_food_candidates,
 )
-from care_pilot.features.recommendations.domain.models import (
-    CanonicalFoodRecord,
-)
+from care_pilot.features.recommendations.domain.models import CanonicalFoodRecord
 
 
 def test_default_canonical_food_records_include_teammate_hawker_seed() -> None:
