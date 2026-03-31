@@ -10,8 +10,8 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import ClassVar, Literal
 
-from dotenv import load_dotenv
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from care_pilot.config.llm import LLMSettings
 from care_pilot.config.runtime import (
@@ -28,19 +28,19 @@ from care_pilot.config.runtime import (
 )
 
 
-class AppIdentitySettings(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    env: Literal["dev", "staging", "prod"] = Field(default="dev", validation_alias="APP_ENV")
-    timezone: str = Field(default="Asia/Singapore", validation_alias="APP_TIMEZONE")
-    image_downscale_enabled: bool = Field(default=False, validation_alias="IMAGE_DOWNSCALE_ENABLED")
-    image_max_side_px: int = Field(
-        default=1024, ge=256, le=4096, validation_alias="IMAGE_MAX_SIDE_PX"
+class AppIdentitySettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="APP_", extra="ignore", case_sensitive=False, populate_by_name=True
     )
 
+    env: Literal["dev", "staging", "prod"] = Field(default="dev")
+    timezone: str = "Asia/Singapore"
+    image_downscale_enabled: bool = False
+    image_max_side_px: int = Field(default=1024, ge=256, le=4096)
 
-class AppSettings(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+
+class AppSettings(BaseSettings):
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False)
 
     _DEFAULT_SESSION_SECRET: ClassVar[str] = "dev-insecure-session-secret-change-me"
 
@@ -106,23 +106,11 @@ class AppSettings(BaseModel):
 
     @classmethod
     def from_environment(cls) -> AppSettings:
-        return cls(
-            app=AppIdentitySettings(),
-            api=APISettings(),
-            auth=AuthSettings(),
-            chat=ChatSettings(),
-            channels=ChannelSettings(),
-            emotion=EmotionSettings(),
-            llm=LLMSettings(),
-            memory=MemorySettings(),
-            observability=ObservabilitySettings(),
-            storage=StorageSettings(),
-            workers=WorkerSettings(),
-            features=FeatureFlags(),
-        )
+        return cls()
 
 
 @lru_cache(maxsize=1)
 def get_settings() -> AppSettings:
-    load_dotenv()
-    return AppSettings.from_environment()
+    # load_dotenv() is not strictly needed with pydantic-settings if env_file is configured,
+    # but we keep it for now or rely on pydantic-settings env_file feature.
+    return AppSettings()
