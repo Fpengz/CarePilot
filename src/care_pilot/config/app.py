@@ -10,7 +10,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import ClassVar, Literal
 
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from care_pilot.config.llm import LLMSettings

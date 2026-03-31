@@ -4,6 +4,7 @@ Build the FastAPI application and lifecycle hooks.
 This module wires middleware, routes, and error handlers into the dietary API
 application and configures startup/shutdown behavior.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -104,10 +105,7 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
         maintenance_task.cancel()
 
         # Await cancelled tasks to allow them to clean up resources
-        await asyncio.gather(
-            prewarm_task, worker_task, maintenance_task,
-            return_exceptions=True
-        )
+        await asyncio.gather(prewarm_task, worker_task, maintenance_task, return_exceptions=True)
 
         if ctx_owned and ctx is not None:
             await close_app_context(ctx)

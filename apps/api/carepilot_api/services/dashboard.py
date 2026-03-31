@@ -603,7 +603,7 @@ def get_dashboard_overview(
     range_key: str,
     from_date: date | None = None,
     to_date: date | None = None,
-    include: str | None = Query(None), # Accept include query parameter
+    include: str | None = Query(None),  # Accept include query parameter
 ) -> DashboardOverviewResponse:
     timezone_name = context.settings.app.timezone
     current = _resolve_range(range_key=range_key, from_date=from_date, to_date=to_date)
@@ -662,8 +662,7 @@ def get_dashboard_overview(
         "comparison_range": comparison.to_response(),
     }
 
-
-    include_sections = set(include.split(',')) if include else None
+    include_sections = set(include.split(",")) if include else None
 
     # Always compute summary first as it's a dependency for alerts and insights
     summary = _build_summary(
@@ -680,14 +679,14 @@ def get_dashboard_overview(
 
     if include_sections is None or "alerts" in include_sections:
         response_components["alerts"] = _build_alerts(
-            summary=summary, # Use the pre-computed summary
+            summary=summary,  # Use the pre-computed summary
             reminders=current_reminders,
-            readings=readings
+            readings=readings,
         )
 
     if include_sections is None or "insights" in include_sections:
         response_components["insights"] = _build_insights(
-            summary=summary, # Use the pre-computed summary
+            summary=summary,  # Use the pre-computed summary
             calorie_target=calorie_target,
             current_profiles=current_profiles,
         )
@@ -696,7 +695,11 @@ def get_dashboard_overview(
         windows = _series_windows(current, timezone_name=timezone_name)
         response_components["charts"] = DashboardChartsResponse(
             calories=_build_calorie_chart(
-                windows, current.bucket, current_profiles, calorie_target=calorie_target, timezone_name=timezone_name
+                windows,
+                current.bucket,
+                current_profiles,
+                calorie_target=calorie_target,
+                timezone_name=timezone_name,
             ),
             macros=_build_macro_chart(
                 windows, current.bucket, current_profiles, timezone_name=timezone_name
@@ -709,7 +712,11 @@ def get_dashboard_overview(
             ),
             meal_timing=_build_meal_timing_chart(current_meals, timezone_name=timezone_name),
             blood_pressure=_build_bp_chart(
-                bp_readings, start=current.start, end=current.end, bucket=current.bucket, timezone_name=timezone_name
+                bp_readings,
+                start=current.start,
+                end=current.end,
+                bucket=current.bucket,
+                timezone_name=timezone_name,
             ),
         )
 
@@ -717,4 +724,3 @@ def get_dashboard_overview(
     response_components["links"] = DashboardLinksResponse()
 
     return DashboardOverviewResponse(**response_components)
-

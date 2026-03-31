@@ -16,10 +16,10 @@ from ..deps import get_context
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["webhooks"])
 
+
 @router.post("/api/v1/webhooks/telegram")
 async def telegram_webhook(
-    request: Request,
-    context: AppContext = Depends(get_context)
+    request: Request, context: AppContext = Depends(get_context)
 ) -> dict[str, str]:
     """Handle inbound Telegram update payloads."""
     try:
@@ -39,8 +39,7 @@ async def telegram_webhook(
 
     # Identify user_id by Telegram chat_id (destination)
     user_id = context.stores.reminders.get_user_id_by_channel_destination(
-        channel="telegram",
-        destination=chat_id
+        channel="telegram", destination=chat_id
     )
 
     if not user_id:
@@ -48,10 +47,7 @@ async def telegram_webhook(
         return {"status": "ignored", "reason": "unlinked_chat_id"}
 
     await handle_inbound_message(
-        context=context,
-        user_id=user_id,
-        channel="telegram",
-        message_text=text
+        context=context, user_id=user_id, channel="telegram", message_text=text
     )
 
     return {"status": "ok"}

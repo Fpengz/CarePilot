@@ -144,9 +144,7 @@ def send_welcome_message(
     thread: MessageThread,
     correlation_id: str,
 ) -> None:
-    welcome_text = (
-        "Welcome to CarePilot. You can chat here anytime, including photos of meals."
-    )
+    welcome_text = "Welcome to CarePilot. You can chat here anytime, including photos of meals."
     record_thread_message(
         context=context,
         thread=thread,
@@ -227,8 +225,10 @@ async def handle_inbound_message(
         channel=payload.channel,
         destination=payload.destination,
     )
-    if endpoint is None and payload.channel == "telegram" and not payload.destination.startswith(
-        "telegram://"
+    if (
+        endpoint is None
+        and payload.channel == "telegram"
+        and not payload.destination.startswith("telegram://")
     ):
         endpoint = context.stores.reminders.get_message_endpoint_by_destination(
             channel="telegram",

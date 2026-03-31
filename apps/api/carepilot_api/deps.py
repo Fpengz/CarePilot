@@ -37,8 +37,6 @@ if TYPE_CHECKING:
     from care_pilot.platform.persistence import AppStores
 
 
-
-
 @dataclass(frozen=True)
 class RecommendationDeps:
     stores: AppStores
