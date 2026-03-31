@@ -6,6 +6,10 @@ This document defines the canonical project versioning and release workflow for 
 
 The canonical source of truth for the project version is the `version` field in **`pyproject.toml`** at the repository root.
 
+### Mirrored Files
+The following files must mirror the canonical version to ensure consistent builds:
+- **`apps/web/package.json`**: For frontend package management and metadata.
+
 - All other version references (documentation, metadata, build artifacts) must mirror this value.
 - In-code version constants should be derived from the package metadata if possible, rather than manually hardcoded.
 
