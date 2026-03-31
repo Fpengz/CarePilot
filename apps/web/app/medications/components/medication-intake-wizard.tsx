@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Keyboard, FileText, CheckCircle2 } from "lucide-react";
+import { Upload, Keyboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AsyncLabel } from "@/components/app/async-label";
-import { cn } from "@/lib/utils";
 
 interface MedicationIntakeWizardProps {
   onTextIntake: (text: string) => void;
