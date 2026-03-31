@@ -16,6 +16,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
+import logfire
 from care_pilot.platform.app_context import build_app_context, close_app_context
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.runtime.background_tasks import run_background_worker
@@ -120,6 +121,7 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
         version="0.1.0",
         lifespan=app_lifespan,
     )
+    logfire.instrument_fastapi(app)  # type: ignore
 
     if ctx:
         app.state.ctx = ctx

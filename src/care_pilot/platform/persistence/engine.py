@@ -10,6 +10,7 @@ from functools import lru_cache
 from sqlalchemy import Engine, event
 from sqlmodel import Session, create_engine
 
+import logfire
 from care_pilot.config.app import get_settings
 from care_pilot.platform.observability import get_logger
 
@@ -43,12 +44,14 @@ def get_db_engine() -> Engine:
 
         logger.info("db_engine_init backend=postgresql")
         # Use standard high-performance defaults for Postgres
-        return create_engine(
+        engine = create_engine(
             settings.storage.api_postgres_url,
             pool_size=settings.storage.redis_lock_ttl_seconds,  # Reusing lock TTL as a heuristic or default to 20
             max_overflow=10,
             pool_pre_ping=True,
         )
+        logfire.instrument_sqlalchemy(engine)  # type: ignore
+        return engine
 
     # Default to SQLite
     db_path = settings.storage.api_sqlite_db_path
@@ -60,6 +63,7 @@ def get_db_engine() -> Engine:
         connect_args={"check_same_thread": False},  # Required for async/multi-thread use with SQLite
     )
     _configure_sqlite_engine(engine)
+    logfire.instrument_sqlalchemy(engine)  # type: ignore
     return engine
 
 
