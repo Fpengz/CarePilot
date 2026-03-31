@@ -21,71 +21,64 @@ export function ChatSidebar() {
   const upcomingCount = reminders?.items.length ?? 0;
 
   return (
-    <aside className="hidden w-80 space-y-6 lg:block">
-      <div className="clinical-card space-y-6">
-        <div className="space-y-1">
-          <h4 className="clinical-subtitle">Clinical Context</h4>
-          <p className="text-xs text-[color:var(--muted-foreground)]">
+    <div className="space-y-10 py-2">
+      <section className="space-y-6">
+        <div className="space-y-1.5 px-1">
+          <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-teal">Clinical Context</h4>
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
             Real-time health signals guiding this conversation.
           </p>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
-              <Activity className="h-5 w-5" />
+        <div className="space-y-8 pt-2">
+          <div className="group transition-opacity hover:opacity-80">
+            <div className="flex items-baseline justify-between mb-1">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Adherence (7d)</span>
+              <span className="text-xl font-display font-semibold text-foreground">
+                {overviewLoading ? "..." : `${Math.round(adherence)}%`}
+              </span>
             </div>
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">
-                Adherence (7d)
-              </div>
-              <div className="text-sm font-semibold">{overviewLoading ? "..." : `${adherence}%`}</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
-              <Bell className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">
-                Reminders Today
-              </div>
-              <div className="text-sm font-semibold">{remindersLoading ? "..." : upcomingCount} active</div>
+            <div className="h-1 w-full bg-panel rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-accent-teal transition-all duration-1000" 
+                style={{ width: `${adherence}%` }}
+              />
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
-              <Utensils className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-70">
-                Latest Signal
-              </div>
-              <div className="text-sm font-semibold truncate max-w-[120px]">
-                {overview?.summary.nutrition_goal_score.value ?? 0}/100 Goal
-              </div>
-            </div>
+          <div className="flex items-baseline justify-between group transition-opacity hover:opacity-80">
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Reminders Today</span>
+            <span className="text-lg font-semibold text-foreground">
+              {remindersLoading ? "..." : `${upcomingCount} active`}
+            </span>
+          </div>
+
+          <div className="flex items-baseline justify-between group transition-opacity hover:opacity-80 border-t border-border-soft/50 pt-6">
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Metabolic Goal</span>
+            <span className="text-lg font-semibold text-foreground">
+              {overviewLoading ? "..." : `${overview?.summary.nutrition_goal_score.value ?? 0}/100`}
+            </span>
           </div>
         </div>
+      </section>
 
-        <div className="clinical-divider" />
+      <div className="h-px bg-border-soft/30 mx-1" aria-hidden="true" />
 
-        <div className="space-y-3">
-          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[color:var(--muted-foreground)] opacity-50">
-            Active Care Goals
-          </div>
-          <ul className="space-y-2">
-            {overview?.insights.recommendations.slice(0, 2).map((rec, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-[color:var(--muted-foreground)]">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--accent)]" />
+      <section className="space-y-4 px-1">
+        <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+          Active Care Priorities
+        </h5>
+        <ul className="space-y-4">
+          {overview?.insights.recommendations.slice(0, 2).map((rec, i) => (
+            <li key={i} className="group flex items-start gap-3">
+              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent-teal/40 group-hover:bg-accent-teal transition-colors" />
+              <p className="text-[13px] leading-relaxed text-muted-foreground group-hover:text-foreground transition-colors">
                 {rec}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </aside>
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   );
 }
