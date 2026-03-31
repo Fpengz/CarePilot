@@ -15,10 +15,7 @@ from typing import Literal, cast
 from pydantic import BaseModel, Field
 
 from care_pilot.agent.runtime.inference_engine import InferenceEngine
-from care_pilot.agent.runtime.inference_types import (
-    InferenceModality,
-    InferenceRequest,
-)
+from care_pilot.agent.runtime.inference_types import InferenceModality, InferenceRequest
 
 _MEAL_PREFIX_RE = re.compile(r"^(?:log\s+meal|meal)\s*:\s*(.+)$", re.IGNORECASE)
 _QUESTION_RE = re.compile(r"\b(can|should|is it ok to|is it okay to)\b", re.IGNORECASE)

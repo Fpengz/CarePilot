@@ -56,7 +56,9 @@ class RemoteEmotionRuntime(EmotionInferencePort):
 
     async def infer_speech(self, payload: EmotionSpeechAgentInput) -> EmotionInferenceResult:
         context_features = self._context_extractor.extract(payload.user_id)
-        files = {"audio": (payload.filename or "audio.wav", payload.audio_bytes, payload.content_type)}
+        files = {
+            "audio": (payload.filename or "audio.wav", payload.audio_bytes, payload.content_type)
+        }
         data = {
             "user_id": payload.user_id,
             "language": payload.language,

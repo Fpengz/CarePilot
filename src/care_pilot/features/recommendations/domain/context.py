@@ -14,10 +14,7 @@ from typing import TYPE_CHECKING
 from care_pilot.features.meals.domain import meal_display_name
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import MealSlot
-from care_pilot.features.recommendations.domain.models import (
-    PreferenceSnapshot,
-    TemporalContext,
-)
+from care_pilot.features.recommendations.domain.models import PreferenceSnapshot, TemporalContext
 from care_pilot.features.recommendations.domain.scoring import (
     FoodItem,
     _clamp,
@@ -26,9 +23,7 @@ from care_pilot.features.recommendations.domain.scoring import (
 )
 
 if TYPE_CHECKING:
-    from care_pilot.features.recommendations.domain.engine import (
-        RecommendationAgentRepository,
-    )
+    from care_pilot.features.recommendations.domain.engine import RecommendationAgentRepository
 
 
 def _now() -> datetime:

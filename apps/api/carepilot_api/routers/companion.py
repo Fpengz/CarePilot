@@ -8,16 +8,8 @@ and clinician views, delegating orchestration to API services.
 from datetime import date
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request  # Import Query
 
-from .._companion_orchestration import (
-    get_blood_pressure_chart,
-    get_blood_pressure_summary,
-    get_clinician_digest,
-    get_companion_today,
-    get_impact_summary,
-    handle_companion_interaction,
-)
 from ..routes_shared import current_session, get_context, require_action
 from ..schemas import (
     BloodPressureChartResponse,
@@ -29,6 +21,14 @@ from ..schemas import (
     ImpactSummaryResponse,
     PatientMedicalCardResponse,
 )
+from ..services.companion_orchestration import (
+    get_blood_pressure_chart,
+    get_blood_pressure_summary,
+    get_clinician_digest,
+    get_companion_today,
+    get_impact_summary,
+    handle_companion_interaction,
+)
 from ..services.patient_card import generate_patient_medical_card_for_session
 
 router = APIRouter(tags=["companion"])
@@ -37,10 +37,11 @@ router = APIRouter(tags=["companion"])
 @router.get("/api/v1/companion/today", response_model=CompanionTodayResponse)
 async def companion_today(
     request: Request,
+    include: str | None = Query(None), # Added include parameter
     session: dict[str, object] = Depends(current_session),
 ) -> CompanionTodayResponse:
     require_action(session, "companion.today.read")
-    return await get_companion_today(context=get_context(request), session=session)
+    return await get_companion_today(context=get_context(request), session=session, include=include) # Pass include parameter to service
 
 
 @router.get(
@@ -61,9 +62,9 @@ async def companion_blood_pressure_summary(
 )
 async def companion_blood_pressure_chart(
     request: Request,
-    range: str = "30d",
-    from_date: str | None = None,
-    to_date: str | None = None,
+    range: str = Query(default="30d"),
+    from_date: str | None = Query(default=None, alias="from"),
+    to_date: str | None = Query(default=None, alias="to"),
     session: dict[str, object] = Depends(current_session),
 ) -> BloodPressureChartResponse:
     require_action(session, "companion.today.read")
@@ -85,6 +86,7 @@ async def companion_blood_pressure_chart(
 async def companion_interactions(
     payload: CompanionInteractionRequest,
     request: Request,
+    include: str | None = Query(None), # Added include parameter
     session: dict[str, object] = Depends(current_session),
 ) -> CompanionInteractionResponse:
     require_action(session, "companion.interactions.write")
@@ -96,6 +98,7 @@ async def companion_interactions(
         payload=payload,
         request_id=request_id,
         correlation_id=correlation_id,
+        include=include, # Pass include parameter to service
     )
 
 

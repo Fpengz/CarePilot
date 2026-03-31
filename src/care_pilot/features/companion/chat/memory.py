@@ -15,10 +15,7 @@ from pathlib import Path
 from typing import Protocol, cast
 
 from care_pilot.agent.chat.schemas import ChatSummaryOutput
-from care_pilot.agent.runtime.inference_types import (
-    InferenceModality,
-    InferenceRequest,
-)
+from care_pilot.agent.runtime.inference_types import InferenceModality, InferenceRequest
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.sqlite_db import get_connection
 

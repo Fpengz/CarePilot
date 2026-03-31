@@ -4,9 +4,21 @@
 This file defines how human contributors and AI agents should collaborate on the companion architecture in this repository.
 
 It supplements:
-- `CONTRIBUTING.md`
+- `README.md`
 - `ARCHITECTURE.md`
 - `SYSTEM_ROADMAP.md`
+- `docs/README.md`
+
+## Repository Knowledge Map
+Treat this file as a table of contents. The system of record lives in `docs/`.
+
+Start here:
+- `docs/README.md` — knowledge base index
+- `docs/design-docs/index.md` — architecture + design references
+- `docs/exec-plans/index.md` — active, in-progress, completed plans + templates
+- `docs/product-specs/index.md` — product behavior and user specs
+- `docs/references/index.md` — API, ops, config, and engineering references
+- `docs/QUALITY_SCORE.md`, `docs/RELIABILITY.md`, `docs/SECURITY.md`
 
 ## Product Direction
 The current branch is optimizing for a hackathon-quality AI health companion, not backward compatibility.
@@ -60,8 +72,8 @@ Do not put new business logic primarily in route handlers.
 - Agents must not write durable state directly.
 - Safety and policy checks remain outside prompts.
 - **Inference standard:** model-powered agents use `pydantic_ai` via `src/care_pilot/agent/runtime/*` (no direct `pydantic_ai.Agent` usage outside `src/care_pilot/agent/**`).
-- **Workflow standard:** declared multi-step product journeys use `pydantic-graph` (typed workflow state + explicit steps). Keep domain rules/persistence/scheduling deterministic in `features/**/domain`.
-- **LangGraph policy:** reserved for future workflows that require first-class checkpointed persistence, interrupts, or long-lived thread state. Do not introduce it by default.
+- **Workflow standard:** declared multi-step product journeys use **LangGraph** (typed workflow state + explicit steps). Keep domain rules/persistence/scheduling deterministic in `features/**/domain`.
+- **LangGraph policy:** LangGraph is the default workflow engine. Use its checkpoint/interrupt capabilities only when a workflow truly requires them, but keep deterministic domain rules in `features/**/domain`.
 
 ## Data Source Extension Rules
 New data sources should integrate through the case snapshot and personalization layers.

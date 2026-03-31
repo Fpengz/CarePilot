@@ -59,7 +59,7 @@ export function MessageList({
           />
         );
       })}
-      <div ref={bottomRef} />
+      <div ref={bottomRef as any} />
     </div>
   );
 }

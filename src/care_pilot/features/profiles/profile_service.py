@@ -6,9 +6,10 @@ This module provides workflows for health profiles and onboarding steps.
 
 from __future__ import annotations
 
-from apps.api.carepilot_api.deps import AppContext
-from apps.api.carepilot_api.errors import build_api_error
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 from care_pilot.core.contracts.api import (
     DailySuggestionBundleResponse,
     DailySuggestionsResponse,
@@ -22,7 +23,9 @@ from care_pilot.core.contracts.api import (
     HealthProfileOnboardingStateResponse,
     HealthProfileResponseItem,
     HealthProfileUpdateRequest,
+    NutritionGoalResponse,
 )
+from care_pilot.core.errors import build_api_error
 from care_pilot.features.profiles.domain.health_profile import (
     compute_bmi,
     compute_profile_completeness,
@@ -36,10 +39,8 @@ from care_pilot.features.profiles.domain.onboarding import (
     list_onboarding_steps,
     update_health_profile_onboarding,
 )
-from care_pilot.features.recommendations.daily_suggestions import (
-    build_daily_suggestions,
-)
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.features.recommendations.daily_suggestions import build_daily_suggestions
+from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 
@@ -78,7 +79,10 @@ def to_profile_response(*, profile, fallback_mode: bool) -> HealthProfileRespons
             for item in profile.medications
         ],
         allergies=profile.allergies,
-        nutrition_goals=profile.nutrition_goals,
+        nutrition_goals=[
+            NutritionGoalResponse.model_validate(item.model_dump(mode="json"))
+            for item in profile.nutrition_goals
+        ],
         preferred_cuisines=profile.preferred_cuisines,
         disliked_ingredients=profile.disliked_ingredients,
         budget_tier=profile.budget_tier,
@@ -154,6 +158,14 @@ def patch_profile(
         user_id=str(session["user_id"]),
         updates=updates,
     )
+    context.event_timeline.append(
+        event_type="profile_updated",
+        workflow_name="profile_update",
+        correlation_id=str(session["user_id"]),
+        request_id=None,
+        user_id=str(session["user_id"]),
+        payload={"fields": sorted(updates.keys())},
+    )
     completeness = compute_profile_completeness(profile)
     return HealthProfileEnvelopeResponse(
         profile=to_profile_response(profile=profile, fallback_mode=completeness.state != "ready")
@@ -190,6 +202,14 @@ def patch_profile_onboarding(
             code="profile.onboarding.invalid_step",
             message="invalid health profile onboarding step",
         ) from exc
+    context.event_timeline.append(
+        event_type="profile_onboarding_step",
+        workflow_name="profile_onboarding",
+        correlation_id=str(session["user_id"]),
+        request_id=None,
+        user_id=str(session["user_id"]),
+        payload={"step_id": payload.step_id},
+    )
     return _to_onboarding_response(state=state, profile=profile)
 
 
@@ -202,6 +222,14 @@ def complete_profile_onboarding(
     state, profile = complete_health_profile_onboarding(
         context.stores.profiles,
         user_id=str(session["user_id"]),
+    )
+    context.event_timeline.append(
+        event_type="profile_onboarding_completed",
+        workflow_name="profile_onboarding",
+        correlation_id=str(session["user_id"]),
+        request_id=None,
+        user_id=str(session["user_id"]),
+        payload={},
     )
     return _to_onboarding_response(state=state, profile=profile)
 

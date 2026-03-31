@@ -3,15 +3,11 @@
 from typing import get_type_hints
 
 from apps.api.carepilot_api import deps
-from apps.api.carepilot_api.services import (
-    alerts,
-    clinical_cards,
-    emotion_session,
-    meals,
-    recommendation_agent,
-    recommendations,
-    workflows,
-)
+from apps.api.carepilot_api.services import emotion_session, meals, workflows
+
+from care_pilot.features.companion.clinician_digest.clinical_cards import clinical_card_service
+from care_pilot.features.recommendations import recommendation_engine, recommendation_service
+from care_pilot.features.reminders.notifications import alert_session
 
 
 def test_domain_dependency_provider_types_exist() -> None:
@@ -33,16 +29,16 @@ def test_target_services_depend_on_scoped_providers() -> None:
 
     assert get_type_hints(meals.analyze_meal, localns=_ns)["deps"] is deps.MealDeps
     assert (
-        get_type_hints(recommendations.generate_recommendation_for_session, localns=_ns)["deps"]
+        get_type_hints(recommendation_engine.generate_recommendation_for_session, localns=_ns)["deps"]
         is deps.RecommendationDeps
     )
     assert (
-        get_type_hints(recommendation_agent.get_daily_agent_for_session, localns=_ns)["deps"]
+        get_type_hints(recommendation_service.get_daily_agent_for_session, localns=_ns)["deps"]
         is deps.RecommendationAgentDeps
     )
-    assert get_type_hints(alerts.trigger_alert, localns=_ns)["deps"] is deps.AlertDeps
+    assert get_type_hints(alert_session.trigger_alert_for_session, localns=_ns)["deps"] is deps.AlertDeps
     assert (
-        get_type_hints(clinical_cards.generate_clinical_card_for_session, localns=_ns)["deps"]
+        get_type_hints(clinical_card_service.generate_clinical_card_for_session, localns=_ns)["deps"]
         is deps.ClinicalCardDeps
     )
     assert get_type_hints(workflows.get_workflow, localns=_ns)["deps"] is deps.WorkflowDeps

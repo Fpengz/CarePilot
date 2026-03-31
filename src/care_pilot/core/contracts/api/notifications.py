@@ -20,9 +20,7 @@ from care_pilot.agent.emotion.schemas import (
 )
 from care_pilot.core.contracts.agent_envelopes import AgentOutputEnvelope
 from care_pilot.core.contracts.api.core import JsonValue
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
 from care_pilot.features.companion.core.health.models import (
     BiomarkerReading,
     ClinicalProfileSnapshot,
@@ -41,9 +39,7 @@ from care_pilot.features.recommendations.domain.models import (
 )
 from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.safety.domain.alerts.models import OutboxState
-from care_pilot.platform.observability.tooling.domain.models import (
-    ToolExecutionResult,
-)
+from care_pilot.platform.observability.tooling.domain.models import ToolExecutionResult
 
 
 class AlertTriggerRequest(BaseModel):
@@ -107,13 +103,22 @@ class NotificationMarkAllReadResponse(BaseModel):
     unread_count: int
 
 
-class ReminderNotificationPreferenceRuleRequest(BaseModel):
+class MessageAttachment(BaseModel):
+    attachment_type: Literal["image", "audio", "file"] = "image"
+    url: str
+    mime_type: str
+    caption: str | None = None
+    size_bytes: int | None = None
+    metadata: dict[str, object] = Field(default_factory=dict)
+
+
+class MessagePreferenceRuleRequest(BaseModel):
     channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
     offset_minutes: int = Field(le=0)
     enabled: bool = True
 
 
-class ReminderNotificationPreferenceRuleResponse(BaseModel):
+class MessagePreferenceRuleResponse(BaseModel):
     id: str
     scope_type: Literal["default", "reminder_type"]
     scope_key: str | None = None
@@ -123,21 +128,21 @@ class ReminderNotificationPreferenceRuleResponse(BaseModel):
     updated_at: datetime
 
 
-class ReminderNotificationPreferenceUpdateRequest(BaseModel):
-    rules: list[ReminderNotificationPreferenceRuleRequest] = Field(default_factory=list)
+class MessagePreferenceUpdateRequest(BaseModel):
+    rules: list[MessagePreferenceRuleRequest] = Field(default_factory=list)
 
 
-class ReminderNotificationPreferenceListResponse(BaseModel):
-    preferences: list[ReminderNotificationPreferenceRuleResponse]
+class MessagePreferenceListResponse(BaseModel):
+    preferences: list[MessagePreferenceRuleResponse]
 
 
-class ReminderNotificationEndpointRequest(BaseModel):
+class MessageEndpointRequest(BaseModel):
     channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
     destination: str
     verified: bool = False
 
 
-class ReminderNotificationEndpointResponse(BaseModel):
+class MessageEndpointResponse(BaseModel):
     id: str
     channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
     destination: str
@@ -145,15 +150,15 @@ class ReminderNotificationEndpointResponse(BaseModel):
     updated_at: datetime
 
 
-class ReminderNotificationEndpointListResponse(BaseModel):
-    endpoints: list[ReminderNotificationEndpointResponse]
+class MessageEndpointListResponse(BaseModel):
+    endpoints: list[MessageEndpointResponse]
 
 
-class ReminderNotificationEndpointUpdateRequest(BaseModel):
-    endpoints: list[ReminderNotificationEndpointRequest] = Field(default_factory=list)
+class MessageEndpointUpdateRequest(BaseModel):
+    endpoints: list[MessageEndpointRequest] = Field(default_factory=list)
 
 
-class ScheduledReminderNotificationItemResponse(BaseModel):
+class ScheduledMessageItemResponse(BaseModel):
     id: str
     reminder_id: str
     channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
@@ -173,11 +178,11 @@ class ScheduledReminderNotificationItemResponse(BaseModel):
     last_error: str | None = None
 
 
-class ScheduledReminderNotificationListResponse(BaseModel):
-    items: list[ScheduledReminderNotificationItemResponse]
+class ScheduledMessageListResponse(BaseModel):
+    items: list[ScheduledMessageItemResponse]
 
 
-class ReminderNotificationLogItemResponse(BaseModel):
+class MessageLogItemResponse(BaseModel):
     id: str
     scheduled_notification_id: str
     channel: Literal["in_app", "email", "sms", "push", "telegram", "whatsapp", "wechat"]
@@ -196,5 +201,19 @@ class ReminderNotificationLogItemResponse(BaseModel):
     created_at: datetime
 
 
-class ReminderNotificationLogListResponse(BaseModel):
-    items: list[ReminderNotificationLogItemResponse]
+class MessageLogListResponse(BaseModel):
+    items: list[MessageLogItemResponse]
+
+
+ReminderNotificationPreferenceRuleRequest = MessagePreferenceRuleRequest
+ReminderNotificationPreferenceRuleResponse = MessagePreferenceRuleResponse
+ReminderNotificationPreferenceUpdateRequest = MessagePreferenceUpdateRequest
+ReminderNotificationPreferenceListResponse = MessagePreferenceListResponse
+ReminderNotificationEndpointRequest = MessageEndpointRequest
+ReminderNotificationEndpointResponse = MessageEndpointResponse
+ReminderNotificationEndpointListResponse = MessageEndpointListResponse
+ReminderNotificationEndpointUpdateRequest = MessageEndpointUpdateRequest
+ScheduledReminderNotificationItemResponse = ScheduledMessageItemResponse
+ScheduledReminderNotificationListResponse = ScheduledMessageListResponse
+ReminderNotificationLogItemResponse = MessageLogItemResponse
+ReminderNotificationLogListResponse = MessageLogListResponse

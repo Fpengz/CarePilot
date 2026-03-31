@@ -9,13 +9,9 @@ import json
 from datetime import datetime
 from typing import Any, cast
 
-from care_pilot.platform.observability.setup import get_logger
-from care_pilot.platform.observability.tooling.domain.policy_models import (
-    ToolRolePolicyRecord,
-)
-from care_pilot.platform.observability.workflows.domain.models import (
-    WorkflowTimelineEvent,
-)
+from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.tooling.domain.policy_models import ToolRolePolicyRecord
+from care_pilot.platform.observability.workflows.domain.models import WorkflowTimelineEvent
 from care_pilot.platform.persistence.sqlite_db import get_connection
 
 logger = get_logger(__name__)
@@ -153,6 +149,8 @@ class SQLiteWorkflowRepository:
         *,
         correlation_id: str | None = None,
         user_id: str | None = None,
+        since_time: datetime | None = None,
+        limit: int | None = None,
     ) -> list[WorkflowTimelineEvent]:
         query = (
             "SELECT event_id, event_type, workflow_name, request_id, correlation_id, user_id, payload_json, created_at "
@@ -165,7 +163,13 @@ class SQLiteWorkflowRepository:
         if user_id is not None:
             query += " AND user_id = ?"
             params.append(user_id)
+        if since_time is not None:
+            query += " AND created_at > ?"
+            params.append(since_time.isoformat())
         query += " ORDER BY created_at"
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(limit)
         with get_connection(self.db_path) as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
         return [

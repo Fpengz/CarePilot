@@ -17,9 +17,7 @@ from care_pilot.features.companion.core.health.models import (
     MetricPoint,
     MetricTrend,
 )
-from care_pilot.features.meals.domain.meal_record_accessors import (
-    meal_nutrition,
-)
+from care_pilot.features.meals.domain.meal_record_accessors import meal_nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 
 

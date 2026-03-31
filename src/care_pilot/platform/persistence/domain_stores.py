@@ -9,12 +9,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from care_pilot.features.companion.core.health.models import HealthProfileRecord
+
 from .contracts import AppStoreBackend
 from .protocols import (
     AlertRepositoryProtocol,
     CatalogRepositoryProtocol,
     ClinicalCardRepositoryProtocol,
     ClinicalRepositoryProtocol,
+    EventingRepositoryProtocol,
     FoodRepositoryProtocol,
     MealRepositoryProtocol,
     MedicationRepositoryProtocol,
@@ -252,10 +255,23 @@ class ReminderStore:
         if reminder_type is not None and resolved_scope_type is None:
             resolved_scope_type = "reminder_type"
             resolved_scope_key = reminder_type
-        return self._store.list_reminder_notification_preferences(
+        return self._store.list_message_preferences(
             user_id=user_id,
             scope_type=resolved_scope_type,
             scope_key=resolved_scope_key,
+        )
+
+    def list_message_preferences(
+        self,
+        *,
+        user_id: str,
+        scope_type: str | None = None,
+        scope_key: str | None = None,
+    ) -> list[Any]:
+        return self._store.list_message_preferences(
+            user_id=user_id,
+            scope_type=scope_type,
+            scope_key=scope_key,
         )
 
     def replace_reminder_notification_preferences(
@@ -266,7 +282,22 @@ class ReminderStore:
         scope_key: str | None = None,
         preferences: list[Any],
     ) -> list[Any]:
-        return self._store.replace_reminder_notification_preferences(
+        return self._store.replace_message_preferences(
+            user_id=user_id,
+            scope_type=scope_type,
+            scope_key=scope_key,
+            preferences=preferences,
+        )
+
+    def replace_message_preferences(
+        self,
+        *,
+        user_id: str,
+        scope_type: str | None = None,
+        scope_key: str | None = None,
+        preferences: list[Any],
+    ) -> list[Any]:
+        return self._store.replace_message_preferences(
             user_id=user_id,
             scope_type=scope_type,
             scope_key=scope_key,
@@ -281,7 +312,7 @@ class ReminderStore:
         status: str | None = None,
         limit: int = 200,
     ) -> list[Any]:
-        items = self._store.list_scheduled_notifications(
+        items = self._store.list_scheduled_messages(
             reminder_id=reminder_id,
             user_id=user_id,
         )
@@ -289,20 +320,47 @@ class ReminderStore:
             items = [item for item in items if getattr(item, "status", None) == status]
         return items[:limit]
 
+    def list_scheduled_messages(
+        self,
+        *,
+        reminder_id: str | None = None,
+        user_id: str | None = None,
+    ) -> list[Any]:
+        return self._store.list_scheduled_messages(
+            reminder_id=reminder_id,
+            user_id=user_id,
+        )
+
     def save_scheduled_notification(self, notification: Any) -> Any:
         return self._store.save_scheduled_notification(notification)
 
     def lease_due_scheduled_notifications(self, *, now: Any, limit: int = 100) -> list[Any]:
-        return self._store.lease_due_scheduled_notifications(now=now, limit=limit)
+        return self._store.lease_due_scheduled_messages(now=now, limit=limit)
+
+    def lease_due_scheduled_messages(self, *, now: Any, limit: int = 100) -> list[Any]:
+        return self._store.lease_due_scheduled_messages(now=now, limit=limit)
 
     def get_reminder_notification_endpoint(self, *, user_id: str, channel: str) -> Any | None:
-        return self._store.get_reminder_notification_endpoint(user_id=user_id, channel=channel)
+        return self._store.get_message_endpoint(user_id=user_id, channel=channel)
+
+    def get_message_endpoint(self, *, user_id: str, channel: str) -> Any | None:
+        return self._store.get_message_endpoint(user_id=user_id, channel=channel)
+
+    def get_message_endpoint_by_destination(
+        self, *, user_id: str, channel: str, destination: str
+    ) -> Any | None:
+        return self._store.get_message_endpoint_by_destination(
+            user_id=user_id, channel=channel, destination=destination
+        )
 
     def append_notification_log(self, entry: Any) -> Any:
         return self._store.append_notification_log(entry)
 
     def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int:
-        return self._store.cancel_scheduled_notifications_for_reminder(reminder_id)
+        return self._store.cancel_scheduled_messages_for_reminder(reminder_id)
+
+    def cancel_scheduled_messages_for_reminder(self, reminder_id: str) -> int:
+        return self._store.cancel_scheduled_messages_for_reminder(reminder_id)
 
     def mark_scheduled_notification_dead_letter(
         self,
@@ -321,14 +379,20 @@ class ReminderStore:
         return self._store.enqueue_alert(message)
 
     def list_reminder_notification_endpoints(self, *, user_id: str) -> list[Any]:
-        return self._store.list_reminder_notification_endpoints(user_id=user_id)
+        return self._store.list_message_endpoints(user_id=user_id)
+
+    def list_message_endpoints(self, *, user_id: str) -> list[Any]:
+        return self._store.list_message_endpoints(user_id=user_id)
 
     def replace_reminder_notification_endpoints(
         self, *, user_id: str, endpoints: list[Any]
     ) -> list[Any]:
-        return self._store.replace_reminder_notification_endpoints(
-            user_id=user_id, endpoints=endpoints
-        )
+        return self._store.replace_message_endpoints(user_id=user_id, endpoints=endpoints)
+
+    def replace_message_endpoints(
+        self, *, user_id: str, endpoints: list[Any]
+    ) -> list[Any]:
+        return self._store.replace_message_endpoints(user_id=user_id, endpoints=endpoints)
 
     def list_notification_logs(
         self,
@@ -338,13 +402,46 @@ class ReminderStore:
         channel: str | None = None,
         limit: int = 200,
     ) -> list[Any]:
-        items = self._store.list_notification_logs(
+        items = self._store.list_message_logs(
             reminder_id=reminder_id,
             scheduled_notification_id=scheduled_notification_id,
         )
         if channel is not None:
             items = [item for item in items if getattr(item, "channel", None) == channel]
         return items[:limit]
+
+    def list_message_logs(
+        self,
+        *,
+        reminder_id: str | None = None,
+        scheduled_notification_id: str | None = None,
+    ) -> list[Any]:
+        return self._store.list_message_logs(
+            reminder_id=reminder_id,
+            scheduled_notification_id=scheduled_notification_id,
+        )
+
+    def get_message_thread(
+        self, *, user_id: str, channel: str, endpoint_id: str
+    ) -> Any | None:
+        return self._store.get_message_thread(
+            user_id=user_id, channel=channel, endpoint_id=endpoint_id
+        )
+
+    def create_message_thread(self, thread: Any) -> Any:
+        return self._store.create_message_thread(thread)
+
+    def add_message_thread_participant(self, participant: Any) -> Any:
+        return self._store.add_message_thread_participant(participant)
+
+    def append_message_thread_message(self, message: Any) -> Any:
+        return self._store.append_message_thread_message(message)
+
+    def list_message_thread_messages(self, *, thread_id: str, limit: int = 200) -> list[Any]:
+        return self._store.list_message_thread_messages(thread_id=thread_id, limit=limit)
+
+    def get_user_id_by_channel_destination(self, *, channel: str, destination: str) -> str | None:
+        return self._store.get_user_id_by_channel_destination(channel=channel, destination=destination)
 
     def get_mobility_reminder_settings(self, user_id: str) -> Any | None:
         return self._store.get_mobility_reminder_settings(user_id)
@@ -467,10 +564,14 @@ class RecommendationStore:
 class ProfileStore:
     _store: ProfileRepositoryProtocol
 
-    def get_health_profile(self, user_id: str) -> Any | None:
-        return self._store.get_health_profile(user_id)
+    def get_health_profile(self, user_id: str) -> HealthProfileRecord:
+        record = self._store.get_health_profile(user_id)
+        if record is None:
+            from care_pilot.features.profiles.domain.health_profile import default_health_profile
+            return default_health_profile(user_id)
+        return record
 
-    def save_health_profile(self, profile: Any) -> Any:
+    def save_health_profile(self, profile: HealthProfileRecord) -> HealthProfileRecord:
         return self._store.save_health_profile(profile)
 
     def get_health_profile_onboarding_state(self, user_id: str) -> Any | None:
@@ -489,6 +590,35 @@ class AlertStore:
 
 
 @dataclass(slots=True)
+class EventingStore:
+    _store: EventingRepositoryProtocol
+
+    def save_reaction_execution(self, record: Any) -> Any:
+        return self._store.save_reaction_execution(record)
+
+    def get_reaction_execution(self, *, event_id: str, handler_name: str) -> Any | None:
+        return self._store.get_reaction_execution(event_id=event_id, handler_name=handler_name)
+
+    def upsert_snapshot_section(self, record: Any) -> Any:
+        return self._store.upsert_snapshot_section(record)
+
+    def get_snapshot_section(self, *, user_id: str, section_key: str) -> Any | None:
+        return self._store.get_snapshot_section(user_id=user_id, section_key=section_key)
+
+    def list_snapshot_sections(self, *, user_id: str) -> list[Any]:
+        return self._store.list_snapshot_sections(user_id=user_id)
+
+    def upsert_event_handler_cursor(self, record: Any) -> Any:
+        return self._store.upsert_event_handler_cursor(record)
+
+    def get_event_handler_cursor(self, *, handler_name: str, scope_key: str) -> Any | None:
+        return self._store.get_event_handler_cursor(handler_name=handler_name, scope_key=scope_key)
+
+    def list_event_handler_cursors(self) -> list[Any]:
+        return self._store.list_event_handler_cursors()
+
+
+@dataclass(slots=True)
 class AppStores:
     meals: MealStore
     foods: FoodStore
@@ -501,6 +631,7 @@ class AppStores:
     recommendations: RecommendationStore
     profiles: ProfileStore
     alerts: AlertStore
+    eventing: EventingStore
 
 
 def build_app_stores(app_store: AppStoreBackend) -> AppStores:
@@ -516,4 +647,5 @@ def build_app_stores(app_store: AppStoreBackend) -> AppStores:
         recommendations=RecommendationStore(app_store),
         profiles=ProfileStore(app_store),
         alerts=AlertStore(app_store),
+        eventing=EventingStore(app_store),
     )

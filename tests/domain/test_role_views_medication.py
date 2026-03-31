@@ -2,9 +2,7 @@
 
 from datetime import datetime
 
-from apps.api.carepilot_api.routers._companion_views import (
-    build_profile_mode_medication_view,
-)
+from apps.api.carepilot_api.routers._companion_views import build_profile_mode_medication_view
 
 from care_pilot.features.reminders.domain.models import ReminderEvent
 

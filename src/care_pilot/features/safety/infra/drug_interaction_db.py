@@ -10,7 +10,7 @@ from care_pilot.platform.persistence.sqlite_db import get_connection
 
 
 class DrugInteractionDB:
-    def __init__(self, db_path: str = "clinical_safety.db"):
+    def __init__(self, db_path: str = "data/clinical_safety.db"):
         self.db_path = db_path
         self._cache: dict[str, list[tuple[str, str, str]]] = {}
         self._cache_lock = Lock()

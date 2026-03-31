@@ -5,10 +5,10 @@ export function MealClock({ bins }: { bins: { hour: number; count: number }[] })
   const chartData = Array.isArray(bins) ? bins : [];
 
   return (
-    <div className="glass-card h-full">
-      <div className="flex flex-col items-start gap-1 mb-6">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">Circadian Rhythms</span>
-        <h3 className="text-lg font-bold tracking-tight">Meal Timing (24h)</h3>
+    <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm h-full">
+      <div className="flex flex-col items-start gap-1 mb-8 px-1">
+        <span className="text-micro-label text-muted-foreground uppercase">Circadian Rhythms</span>
+        <h3 className="text-xl font-semibold tracking-tight text-foreground">Meal Timing Density</h3>
       </div>
       <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">

@@ -1,76 +1,108 @@
 "use client";
 
-import { Sparkles, Activity, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Activity, Zap, Info } from "lucide-react";
+import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
 interface ClinicalSummaryProps {
   adherence: number;
   risk: number;
   nutrition: number;
-  recommendation: string;
+  adherenceChart?: any[];
+  riskChart?: any[];
+  recommendation?: string | {
+    title: string;
+    detail: string;
+  };
 }
 
 export function ClinicalSummary({
   adherence,
   risk,
   nutrition,
+  adherenceChart = [],
+  riskChart = [],
   recommendation,
 }: ClinicalSummaryProps) {
+  const recTitle = typeof recommendation === "object" ? recommendation.title : "Clinical Insight";
+  const recDetail = typeof recommendation === "object" ? recommendation.detail : recommendation;
+
+  const adherenceData = Array.isArray(adherenceChart) ? adherenceChart : [];
+  const riskData = Array.isArray(riskChart) ? riskChart : [];
+
   return (
-    <div className="clinical-panel relative overflow-hidden">
-      <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-        <Sparkles className="h-24 w-24" />
-      </div>
-      
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-        <div className="max-w-2xl space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[color:var(--accent)]/10 text-[color:var(--accent)]">
-              <Activity className="h-3.5 w-3.5" />
-            </span>
-            <span className="clinical-kicker">Companion Digest</span>
+    <section className="py-2 space-y-10">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 px-2">
+        <div className="flex-1 space-y-6">
+          <div className="space-y-4">
+            <p className="text-micro-label text-accent-teal uppercase font-bold tracking-widest">Metabolic Adherence</p>
+            <div className="flex items-baseline gap-4">
+              <h2 className="text-6xl font-bold tracking-tighter text-foreground">
+                {Math.round(adherence)}<span className="text-3xl text-muted-foreground ml-1">%</span>
+              </h2>
+              <div className="space-y-1">
+                <Badge className="bg-accent-teal/10 text-accent-teal border-accent-teal/20 px-3 py-1 text-[11px] font-bold">
+                  <Activity className="h-3 w-3 mr-1.5" />
+                  METABOLIC: STABLE
+                </Badge>
+                <p className="text-xs text-muted-foreground font-medium pl-1">
+                  +4.2% vs previous period
+                </p>
+              </div>
+            </div>
           </div>
-          
-          <h3 className="clinical-title">
-            Your health signals remain <span className="text-[color:var(--accent)]">stable</span> this week.
+          <div className="h-12 w-full max-w-sm opacity-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={adherenceData}>
+                <Area type="monotone" dataKey="value" stroke="var(--accent-teal)" fill="var(--accent-teal)" fillOpacity={0.1} strokeWidth={3} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="hidden lg:block h-24 w-px bg-border-soft self-center" />
+
+        <div className="flex-1 space-y-6">
+          <div className="space-y-4">
+            <p className="text-micro-label text-amber-600 uppercase font-bold tracking-widest">Glycemic Risk Profile</p>
+            <div className="flex items-baseline gap-4">
+              <h2 className="text-6xl font-bold tracking-tighter text-foreground">
+                {Math.round(risk)}<span className="text-3xl text-muted-foreground ml-1">/100</span>
+              </h2>
+              <div className="space-y-1">
+                <Badge className="bg-amber-50 text-amber-600 border-amber-200 px-3 py-1 text-[11px] font-bold">
+                  <Zap className="h-3 w-3 mr-1.5" />
+                  RISK: LOW
+                </Badge>
+                <p className="text-xs text-muted-foreground font-medium pl-1">
+                  Stable clinical trajectory
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="h-12 w-full max-w-sm opacity-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={riskData}>
+                <Area type="monotone" dataKey="value" stroke="#d97706" fill="#d97706" fillOpacity={0.1} strokeWidth={3} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-panel rounded-3xl p-8 border border-border-soft flex items-start gap-6 shadow-sm">
+        <div className="h-12 w-12 rounded-2xl bg-white shadow-sm border border-border-soft flex items-center justify-center shrink-0">
+          <Info className="h-6 w-6 text-accent-teal" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xl font-semibold tracking-tight text-foreground">
+            {recTitle || "Clinical Insight"}
           </h3>
-          
-          <p className="clinical-body max-w-xl">
-            Based on your recent meal logs and medication adherence, your metabolic load is balanced. 
-            However, we noticed a slight increase in glycemic risk following late-evening meals.
+          <p className="text-muted-foreground leading-relaxed text-sm">
+            {recDetail || "Continue maintaining your current meal rhythm. Your glycemic stability is showing consistent improvement week-over-week."}
           </p>
-
-          <div className="flex flex-wrap gap-4 pt-2">
-            <div className="flex items-center gap-2 rounded-full border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-4 py-2">
-              <div className={cn("h-2 w-2 rounded-full", adherence > 80 ? "bg-emerald-500" : "bg-amber-500")} />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)]">
-                Adherence: {adherence}%
-              </span>
-            </div>
-            <div className="flex items-center gap-2 rounded-full border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-4 py-2">
-              <div className={cn("h-2 w-2 rounded-full", risk < 30 ? "bg-emerald-500" : "bg-rose-500")} />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)]">
-                Risk: {risk}/100
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full md:w-80">
-          <div className="rounded-2xl bg-[color:var(--accent)]/5 p-6 border border-[color:var(--accent)]/10">
-            <div className="mb-3 flex items-center gap-2 text-[color:var(--accent)]">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Action Required</span>
-            </div>
-            <p className="text-sm font-medium leading-relaxed text-[color:var(--foreground)]">
-              &quot;{recommendation}&quot;
-            </p>
-            <button className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[color:var(--accent)] hover:underline">
-              Implement recommendation →
-            </button>
-          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

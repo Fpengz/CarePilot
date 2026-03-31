@@ -16,13 +16,14 @@ AlertSeverity = Literal["info", "warning", "critical"]
 OutboxState = Literal["pending", "processing", "delivered", "dead_letter"]
 
 
-class AlertMessage(BaseModel):
+class OutboundMessage(BaseModel):
     alert_id: str
     type: str
     severity: AlertSeverity
-    payload: dict[str, str]
+    payload: dict[str, object]
     destinations: list[str]
     correlation_id: str
+    attachments: list[dict[str, str]] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -31,8 +32,9 @@ class OutboxRecord(BaseModel):
     sink: str
     type: str
     severity: AlertSeverity
-    payload: dict[str, str]
+    payload: dict[str, object]
     correlation_id: str
+    attachments: list[dict[str, str]] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     state: OutboxState = "pending"
     attempt_count: int = 0
@@ -51,3 +53,6 @@ class AlertDeliveryResult(BaseModel):
     destination: str | None = None
     provider_reference: str | None = None
     error: str | None = None
+
+
+AlertMessage = OutboundMessage

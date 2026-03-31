@@ -2,12 +2,7 @@
 
 import logging
 
-from care_pilot.config.llm import (
-    LLMCapability,
-    LLMCapabilityTarget,
-    LLMSettings,
-    ModelProvider,
-)
+from care_pilot.config.llm import LLMCapability, LLMCapabilityTarget, LLMSettings, ModelProvider
 from care_pilot.features.meals.logging import (
     build_meal_analysis_log_payload,
     log_meal_analysis_event,

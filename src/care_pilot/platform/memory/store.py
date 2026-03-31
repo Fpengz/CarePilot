@@ -132,7 +132,7 @@ class Mem0MemoryStore:
         messages: list[dict[str, str]],
         metadata: dict[str, object] | None = None,
     ) -> None:
-        payload = {"session_id": session_id}
+        payload: dict[str, object] = {"session_id": session_id}
         if metadata:
             payload.update(metadata)
         try:

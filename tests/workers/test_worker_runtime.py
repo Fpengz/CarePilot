@@ -68,7 +68,7 @@ async def test_worker_loop_recovers_from_scheduler_failure_and_continues(
     def fake_build_app_context() -> SimpleNamespace:
         return ctx
 
-    def fake_close_app_context(closed_ctx: SimpleNamespace) -> None:
+    async def fake_close_app_context(closed_ctx: SimpleNamespace) -> None:
         assert closed_ctx is ctx
 
     async def fake_run_reminder_scheduler_once(*, repository: object) -> SimpleNamespace:

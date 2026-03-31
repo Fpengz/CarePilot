@@ -6,8 +6,13 @@ from care_pilot.platform.observability.context import (
     get_correlation_id,
     get_request_id,
 )
-from care_pilot.platform.observability.logging import log_event, observability_span
-from care_pilot.platform.observability.setup import get_logger, logger, setup_logging
+from care_pilot.platform.observability.logging import (
+    get_logger,
+    log_event,
+    logger,
+    observability_span,
+    setup_logging,
+)
 
 __all__ = [
     "bind_observability_context",

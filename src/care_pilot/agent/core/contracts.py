@@ -22,9 +22,7 @@ class AgentRequest(BaseModel):
     context: dict[str, Any] = Field(
         default_factory=dict, description="Case snapshot or relevant feature context."
     )
-    memory: dict[str, Any] | None = Field(
-        None, description="Short-term or long-term agent memory."
-    )
+    memory: dict[str, Any] | None = Field(None, description="Short-term or long-term agent memory.")
     inputs: dict[str, Any] = Field(
         default_factory=dict, description="Unstructured or typed task-specific inputs."
     )

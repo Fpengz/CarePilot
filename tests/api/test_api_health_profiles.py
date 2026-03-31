@@ -79,7 +79,10 @@ def test_health_profile_patch_persists_across_requests(
                 }
             ],
             "allergies": ["shellfish"],
-            "nutrition_goals": ["lower_sugar", "lower_sodium"],
+            "nutrition_goals": [
+                {"goal_type": "lower_sugar", "target_value": 0.0, "unit": "unit", "start_date": "2026-03-01"},
+                {"goal_type": "lower_sodium", "target_value": 0.0, "unit": "unit", "start_date": "2026-03-01"},
+            ],
             "preferred_cuisines": ["teochew", "indian"],
             "disliked_ingredients": ["lard"],
             "budget_tier": "moderate",
@@ -90,7 +93,10 @@ def test_health_profile_patch_persists_across_requests(
     body = patch.json()["profile"]
     assert body["locale"] == "en-SG"
     assert body["conditions"][0]["name"] == "Type 2 Diabetes"
-    assert body["nutrition_goals"] == ["lower_sugar", "lower_sodium"]
+    assert body["nutrition_goals"] == [
+        {"goal_type": "lower_sugar", "target_value": 0.0, "unit": "unit", "start_date": "2026-03-01", "end_date": None},
+        {"goal_type": "lower_sodium", "target_value": 0.0, "unit": "unit", "start_date": "2026-03-01", "end_date": None},
+    ]
     assert body["daily_protein_target_g"] == 72
     assert body["daily_fiber_target_g"] == 28
     assert body["completeness"]["state"] == "ready"
@@ -149,7 +155,10 @@ def test_daily_suggestions_use_profile_history_and_snapshot(
                     }
                 ],
                 "allergies": ["shellfish"],
-                "nutrition_goals": ["lower_sugar", "heart_health"],
+                "nutrition_goals": [
+                    {"goal_type": "lower_sugar", "target_value": 0.0, "unit": "unit", "start_date": "2026-03-01"},
+                    {"goal_type": "heart_health", "target_value": 0.0, "unit": "unit", "start_date": "2026-03-01"},
+                ],
                 "preferred_cuisines": ["teochew"],
                 "disliked_ingredients": ["lard", "shellfish"],
                 "budget_tier": "moderate",

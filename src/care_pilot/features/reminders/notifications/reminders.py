@@ -21,12 +21,8 @@ from care_pilot.core.contracts.api import (
     ReminderGenerateResponse,
     ReminderListResponse,
 )
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
-from care_pilot.features.companion.core.health.models import (
-    MedicationAdherenceEvent,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
+from care_pilot.features.companion.core.health.models import MedicationAdherenceEvent
 from care_pilot.features.medications.domain import (
     compute_mcr,
     default_mobility_settings,
@@ -34,9 +30,7 @@ from care_pilot.features.medications.domain import (
     mark_meal_confirmation,
     parse_hhmm,
 )
-from care_pilot.features.reminders.domain.models import (
-    MobilityReminderSettings,
-)
+from care_pilot.features.reminders.domain.models import MobilityReminderSettings
 from care_pilot.features.reminders.notifications.reminder_materialization import (
     cancel_reminder_notifications,
     materialize_reminder_notifications,
@@ -45,9 +39,7 @@ from care_pilot.features.reminders.use_cases.structured import (
     apply_occurrence_action_for_session,
     generate_structured_reminders_for_session,
 )
-from care_pilot.platform.auth.session_context import (
-    build_user_profile_from_session,
-)
+from care_pilot.platform.auth.session_context import build_user_profile_from_session
 
 
 def _sort_at(item) -> datetime:  # noqa: ANN001
@@ -61,6 +53,15 @@ def generate_reminders_for_session(
     *, context: AppContext, session: dict[str, object]
 ) -> ReminderGenerateResponse:
     user_profile = build_user_profile_from_session(session, context.stores.profiles)
+    issued_correlation_id = str(uuid4())
+    context.event_timeline.append(
+        event_type="workflow_started",
+        workflow_name="reminder_generate",
+        correlation_id=issued_correlation_id,
+        request_id=None,
+        user_id=user_profile.id,
+        payload={},
+    )
     generated_reminders, metrics = generate_structured_reminders_for_session(
         context=context, session=session
     )
@@ -78,10 +79,22 @@ def generate_reminders_for_session(
             repository=context.stores.reminders,
             reminder_event=reminder,
             reminder_type=reminder.reminder_type,
+            event_timeline=context.event_timeline,
         )
     reminders = sorted(
         context.stores.reminders.list_reminder_events(user_profile.id),
         key=_sort_at,
+    )
+    context.event_timeline.append(
+        event_type="workflow_completed",
+        workflow_name="reminder_generate",
+        correlation_id=issued_correlation_id,
+        request_id=None,
+        user_id=user_profile.id,
+        payload={
+            "structured_count": len(generated_reminders),
+            "mobility_count": len(mobility_reminders),
+        },
     )
     return ReminderGenerateResponse(
         reminders=reminders,
@@ -127,6 +140,17 @@ def confirm_reminder_for_session(
                 message="reminder not found",
             ) from exc
         updated_event = context.stores.reminders.get_reminder_event(updated_occurrence.id)
+        context.event_timeline.append(
+            event_type="reminder_confirmed",
+            workflow_name="reminder_confirmation",
+            correlation_id=updated_occurrence.id,
+            request_id=None,
+            user_id=user_id,
+            payload={
+                "event_id": updated_occurrence.id,
+                "confirmed": confirmed,
+            },
+        )
         metrics = compute_mcr(context.stores.reminders.list_reminder_events(user_id))
         return ReminderConfirmResponse(
             event=updated_event or event,

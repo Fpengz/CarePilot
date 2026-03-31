@@ -1,0 +1,19 @@
+[environment]
+python-version = "3.12"
+root = ["./"]
+
+[src]
+include = ["src", "apps", "scripts", "tests"]
+exclude = [
+    ".venv",
+    "node_modules",
+    "dist",
+    "build",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+]
+respect-ignore-files = true
+
+[terminal]
+output-format = "concise"

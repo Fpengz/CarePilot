@@ -2,20 +2,9 @@
 
 import pytest
 
-from care_pilot.features.meals.domain.models import (
-    Ingredient,
-    MealEvent,
-    Nutrition,
-)
-from care_pilot.features.profiles.domain.models import (
-    MedicalCondition,
-    Medication,
-    UserProfile,
-)
-from care_pilot.features.safety.domain.engine import (
-    SafetyEngine,
-    SafetyViolation,
-)
+from care_pilot.features.meals.domain.models import Ingredient, MealEvent, Nutrition
+from care_pilot.features.profiles.domain.models import MedicalCondition, Medication, UserProfile
+from care_pilot.features.safety.domain.engine import SafetyEngine, SafetyViolation
 
 
 @pytest.fixture

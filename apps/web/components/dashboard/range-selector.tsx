@@ -25,13 +25,14 @@ export function RangeSelector({
   onCustomRangeChange: (next: { from: string; to: string }) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-4">
+    <div className="flex flex-wrap items-center gap-3">
       <Select
         value={range}
         onChange={(event) => {
           const nextRange = event.target.value as RangeKey;
           startTransition(() => onRangeChange(nextRange));
         }}
+        className="h-11 rounded-xl bg-surface border-border-soft shadow-sm text-sm font-semibold transition-all px-4 focus:ring-accent-teal/20"
       >
         {RANGE_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
@@ -41,27 +42,29 @@ export function RangeSelector({
       </Select>
 
       {range === "custom" ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-2 text-sm">
-            <span className="font-medium text-[color:var(--foreground)]">From</span>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex items-center gap-2 px-3 py-1 bg-panel border border-border-soft rounded-xl shadow-sm">
+            <span className="text-micro-label font-bold text-muted-foreground uppercase">From</span>
             <Input
               type="date"
               value={customRange.from}
               onChange={(event) =>
                 startTransition(() => onCustomRangeChange({ ...customRange, from: event.target.value }))
               }
+              className="border-none bg-transparent shadow-none h-8 text-xs font-bold p-0 focus-visible:ring-0"
             />
-          </label>
-          <label className="space-y-2 text-sm">
-            <span className="font-medium text-[color:var(--foreground)]">To</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1 bg-panel border border-border-soft rounded-xl shadow-sm">
+            <span className="text-micro-label font-bold text-muted-foreground uppercase">To</span>
             <Input
               type="date"
               value={customRange.to}
               onChange={(event) =>
                 startTransition(() => onCustomRangeChange({ ...customRange, to: event.target.value }))
               }
+              className="border-none bg-transparent shadow-none h-8 text-xs font-bold p-0 focus-visible:ring-0"
             />
-          </label>
+          </div>
         </div>
       ) : null}
     </div>

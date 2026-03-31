@@ -24,9 +24,7 @@ from care_pilot.core.contracts.api import (
     WorkflowTimelineEventPayloadResponse,
     WorkflowTimelineEventResponse,
 )
-from care_pilot.features.companion.core.health.analytics import (
-    EngagementMetrics,
-)
+from care_pilot.features.companion.core.health.analytics import EngagementMetrics
 from care_pilot.features.meals.domain.models import (
     NutritionRiskProfile,
     RawObservationBundle,

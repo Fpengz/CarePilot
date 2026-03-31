@@ -5,11 +5,7 @@ Moved from domain.nutrition — now part of domain.meals.
 
 from __future__ import annotations
 
-from care_pilot.features.meals.domain.models import (
-    Ingredient,
-    MealNutritionProfile,
-    Nutrition,
-)
+from care_pilot.features.meals.domain.models import Ingredient, MealNutritionProfile, Nutrition
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 
 

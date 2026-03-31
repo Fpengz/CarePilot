@@ -6,9 +6,7 @@ This module provides recommendation synthesis.
 
 from __future__ import annotations
 
-from care_pilot.features.recommendations.domain.engine import (
-    generate_daily_agent_recommendation,
-)
+from care_pilot.features.recommendations.domain.engine import generate_daily_agent_recommendation
 from care_pilot.features.recommendations.domain.schemas import (
     RecommendationAgentInput,
     RecommendationAgentOutput,

@@ -15,6 +15,14 @@ from pydantic import BaseModel, Field
 from care_pilot.features.profiles.domain.models import MealScheduleWindow
 
 
+class NutritionGoalResponse(BaseModel):
+    goal_type: str
+    target_value: float
+    unit: str
+    start_date: str | None = None
+    end_date: str | None = None
+
+
 class HealthProfileCondition(BaseModel):
     name: str
     severity: str
@@ -46,7 +54,7 @@ class HealthProfileResponseItem(BaseModel):
     conditions: list[HealthProfileCondition] = Field(default_factory=list)
     medications: list[HealthProfileMedication] = Field(default_factory=list)
     allergies: list[str] = Field(default_factory=list)
-    nutrition_goals: list[str] = Field(default_factory=list)
+    nutrition_goals: list[NutritionGoalResponse] = Field(default_factory=list)
     preferred_cuisines: list[str] = Field(default_factory=list)
     disliked_ingredients: list[str] = Field(default_factory=list)
     budget_tier: Literal["budget", "moderate", "flexible"] = "moderate"

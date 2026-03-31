@@ -8,12 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from care_pilot.features.companion.care_plans.care_plan import (
-    compose_care_plan,
-)
-from care_pilot.features.companion.clinician_digest.digest import (
-    build_clinician_digest,
-)
+from care_pilot.features.companion.care_plans.care_plan import compose_care_plan
+from care_pilot.features.companion.clinician_digest.digest import build_clinician_digest
 from care_pilot.features.companion.core.domain import (
     CaseSnapshot,
     ClinicianDigest,
@@ -35,10 +31,8 @@ from care_pilot.features.companion.core.health.models import (
     MedicationAdherenceEvent,
     SymptomCheckIn,
 )
-from care_pilot.features.companion.core.snapshot import build_case_snapshot
-from care_pilot.features.companion.engagement.engagement import (
-    assess_engagement,
-)
+from care_pilot.features.companion.core.snapshot import build_case_snapshot_prefer_projection
+from care_pilot.features.companion.engagement.engagement import assess_engagement
 from care_pilot.features.companion.impact.impact import build_impact_summary
 from care_pilot.features.companion.personalization.personalization import (
     build_personalization_context,
@@ -46,10 +40,7 @@ from care_pilot.features.companion.personalization.personalization import (
 from care_pilot.features.meals.domain.recognition import MealRecognitionRecord
 from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.reminders.domain.models import ReminderEvent
-from care_pilot.features.safety.safety_engine import (
-    apply_safety_decision,
-    review_care_plan,
-)
+from care_pilot.features.safety.safety_engine import apply_safety_decision, review_care_plan
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,8 +68,11 @@ def build_companion_runtime_state(
     *,
     interaction: CompanionInteraction,
     inputs: CompanionStateInputs,
+    eventing_store: object | None = None,
 ) -> CompanionRuntimeState:
-    snapshot = build_case_snapshot(
+    snapshot = build_case_snapshot_prefer_projection(
+        user_id=inputs.user_profile.id,
+        eventing_store=eventing_store,
         user_profile=inputs.user_profile,
         health_profile=inputs.health_profile,
         meals=inputs.meals,
@@ -110,8 +104,13 @@ def run_companion_interaction(
     interaction: CompanionInteraction,
     inputs: CompanionStateInputs,
     evidence_retriever: EvidenceRetrievalPort,
+    eventing_store: object | None = None,
 ) -> CompanionInteractionResult:
-    runtime = build_companion_runtime_state(interaction=interaction, inputs=inputs)
+    runtime = build_companion_runtime_state(
+        interaction=interaction,
+        inputs=inputs,
+        eventing_store=eventing_store,
+    )
     evidence = retrieve_supporting_evidence(
         retriever=evidence_retriever,
         interaction_type=interaction.interaction_type,
@@ -163,6 +162,7 @@ def build_companion_today_bundle(
     *,
     inputs: CompanionStateInputs,
     evidence_retriever: EvidenceRetrievalPort,
+    eventing_store: object | None = None,
 ) -> tuple[
     CaseSnapshot,
     EngagementAssessment,
@@ -182,8 +182,13 @@ def build_companion_today_bundle(
         interaction=synthetic_interaction,
         inputs=inputs,
         evidence_retriever=evidence_retriever,
+        eventing_store=eventing_store,
     )
-    runtime = build_companion_runtime_state(interaction=synthetic_interaction, inputs=inputs)
+    runtime = build_companion_runtime_state(
+        interaction=synthetic_interaction,
+        inputs=inputs,
+        eventing_store=eventing_store,
+    )
     return (
         result.snapshot,
         result.engagement,

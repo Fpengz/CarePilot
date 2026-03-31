@@ -4,7 +4,10 @@ API orchestration for patient-facing medical cards.
 
 from __future__ import annotations
 
-from apps.api.carepilot_api.deps import AppContext
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from apps.api.carepilot_api.deps import AppContext
 from care_pilot.config.app import get_settings
 from care_pilot.core.contracts.api import PatientMedicalCardResponse
 from care_pilot.features.companion.chat.search_adapter import SearchAgent

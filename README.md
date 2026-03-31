@@ -43,10 +43,10 @@ CarePilot utilizes a **Feature-First Modular Monolith** designed for clinical re
 
 ```mermaid
 flowchart TD
-    User([User]) <--> Web[Next.js 15 Frontend]
+    User([User]) <--> Web[Next.js 14 Frontend]
     Web <--> API[FastAPI Gateway]
     
-    subgraph "Reasoning Engine (pydantic-graph)"
+    subgraph "Reasoning Engine (LangGraph)"
         API --> Workflow[Meal/Medication Workflows]
         Workflow --> Perceive[Perception Node]
         Workflow --> Reconcile[Claim Reconciliation]
@@ -59,9 +59,9 @@ flowchart TD
     end
     
     subgraph "Infrastructure"
-        Workflow --> DB[(SQLite/Vector DB)]
-        API --> Redis[Redis Scheduler]
-        Redis --> Worker[Reminder Worker]
+        Workflow --> DB[(SQLite/SQLModel)]
+        API --> Redis[Redis Cache/Scheduler (optional)]
+        Redis --> Worker[Worker Runtime]
     end
 ```
 
@@ -71,18 +71,18 @@ flowchart TD
 *   **Modular Extensibility:** New clinical domains (e.g., Renal care) can be added as isolated feature modules.
 
 ## 7. Technical Highlights
-*   **Pydantic Graph Workflows:** Complex health journeys (like meal analysis) are managed as stateful graphs, ensuring 100% traceability from raw pixel to final nutrition log.
+*   **LangGraph Workflows:** Complex health journeys (like meal analysis) are managed as stateful graphs, ensuring traceability from raw input to final nutrition log.
 *   **Dual-Branch Emotion Pipeline:** Uses `transformers` and `librosa` for multi-modal emotion inference, combining acoustic prosody with semantic sentiment.
 *   **Structured Output Contracts:** Rigorous Zod/Pydantic schemas ensure that LLM outputs never violate clinical data integrity.
-*   **Smart Reminder Scheduler:** A Redis-backed distributed scheduler that handles time-sensitive medication windows with sub-second accuracy.
-*   **Local-First Context:** Vector embeddings (ChromaDB) store long-term patient "memory" locally, ensuring privacy and fast personalization.
+*   **Reminder Scheduler:** Worker-driven scheduling with Redis available for distributed coordination when enabled.
+*   **Local-First Context:** Optional vector memory in `data/vectorstore/` for retrieval-augmented personalization.
 
 ## 8. Repository Structure
 
 ```text
 apps/
   api/        FastAPI transport layer (transport-only routers)
-  web/        Next.js frontend (Next.js 15 App Router)
+  web/        Next.js frontend (Next.js 14 App Router)
   workers/    Async worker runtime (reminders, outbox)
 src/
   care_pilot/
@@ -91,7 +91,7 @@ src/
     agent/           Bounded inference-only agents
     platform/        Infrastructure adapters (persistence, auth, messaging)
     config/          Settings composition root
-docs/         Canonical documentation and refactor history
+docs/         System-of-record knowledge base (design docs, plans, specs, references)
 tests/        Repository-level tests and meta-guardrails
 ```
 
@@ -106,11 +106,12 @@ tests/        Repository-level tests and meta-guardrails
 *   **Behavioral:** Identification of stress-eating patterns within 14 days of use, enabling early behavioral intervention.
 
 ## 11. Tech Stack
-*   **Frontend:** Next.js 15 (App Router), TypeScript, Tailwind CSS 4, Radix UI.
-*   **Backend:** FastAPI, Python 3.12, Pydantic AI, Pydantic Graph.
-*   **Intelligence:** OpenAI GPT-4o (Vision/Reasoning), Whisper (Speech), Transformers (Emotion).
-*   **Data:** SQLite (Relational), Redis (Ephemeral/Queue), ChromaDB (Vector/Memory).
-*   **Tooling:** UV (Python Package Manager), PNPM (Node Package Manager), Logfire (Observability).
+*   **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS, Radix UI.
+*   **Backend:** FastAPI, Python 3.12, SQLModel + Alembic migrations.
+*   **Agents & Workflows:** Pydantic AI + LangGraph.
+*   **Intelligence Providers:** Local LLMs via Ollama/vLLM; optional OpenAI/Gemini/Qwen providers.
+*   **Data:** SQLite by default; Redis optional for cache/coordination; optional vector memory for RAG.
+*   **Tooling:** UV (Python package manager), PNPM (Node package manager).
 
 ## 12. Setup Instructions
 
@@ -125,8 +126,7 @@ tests/        Repository-level tests and meta-guardrails
    ```bash
    git clone https://github.com/Fpengz/CarePilot.git
    cd CarePilot
-   pnpm install
-   uv sync
+   make install
    ```
 
 2. **Environment Setup:**
@@ -136,8 +136,10 @@ tests/        Repository-level tests and meta-guardrails
    ```
 
 3. **Run Development Stack:**
-   CarePilot uses a unified CLI for convenience:
+   CarePilot uses a unified CLI for orchestration and a Makefile for convenience:
    ```bash
+   make dev
+   # OR canonical:
    uv run python scripts/cli.py dev
    ```
    Navigate to `http://localhost:3000` to view the dashboard.
@@ -145,16 +147,23 @@ tests/        Repository-level tests and meta-guardrails
 ### Validation
 To ensure system integrity, run the following:
 
+**Full Suite:**
+```bash
+make test
+```
+
 **Backend:**
 ```bash
-uv run ruff check .
-uv run pytest -q
+make test-backend
+# OR canonical:
+uv run python scripts/cli.py test backend
 ```
 
 **Web:**
 ```bash
-pnpm web:lint
-pnpm web:typecheck
+make test-web
+# OR directly from the package:
+cd apps/web && pnpm lint && pnpm typecheck
 ```
 
 ## 13. Roadmap

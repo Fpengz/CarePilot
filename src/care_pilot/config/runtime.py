@@ -59,7 +59,7 @@ class AuthSettings(BaseSettings):
         default="sqlite", validation_alias="AUTH_STORE_BACKEND"
     )
     sqlite_db_path: str = Field(
-        default="care_pilot_auth.db",
+        default="data/care_pilot_auth.db",
         validation_alias="AUTH_SQLITE_DB_PATH",
     )
     session_ttl_seconds: int = Field(
@@ -92,16 +92,10 @@ class AuthSettings(BaseSettings):
         le=10000,
         validation_alias="AUTH_AUDIT_EVENTS_MAX_ENTRIES",
     )
-    seed_demo_users: bool | None = Field(default=None, validation_alias="AUTH_SEED_DEMO_USERS")
-    demo_member_password: str = Field(
-        default="member-pass", validation_alias="AUTH_DEMO_MEMBER_PASSWORD"
-    )
-    demo_helper_password: str = Field(
-        default="helper-pass", validation_alias="AUTH_DEMO_HELPER_PASSWORD"
-    )
-    demo_admin_password: str = Field(
-        default="admin-pass", validation_alias="AUTH_DEMO_ADMIN_PASSWORD"
-    )
+    seed_demo_users: bool = Field(default=True, validation_alias="AUTH_SEED_DEMO_USERS")
+    demo_member_password: str = Field(default="member-pass", validation_alias="AUTH_DEMO_MEMBER_PASSWORD")
+    demo_helper_password: str = Field(default="helper-pass", validation_alias="AUTH_DEMO_HELPER_PASSWORD")
+    demo_admin_password: str = Field(default="admin-pass", validation_alias="AUTH_DEMO_ADMIN_PASSWORD")
 
 
 # ---------------------------------------------------------------------------
@@ -138,7 +132,7 @@ class StorageSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore", case_sensitive=False, populate_by_name=True)
 
     app_data_backend: Literal["sqlite", "postgresql"] = "sqlite"
-    api_sqlite_db_path: str = "care_pilot_api.db"
+    api_sqlite_db_path: str = "data/care_pilot_api.db"
     api_postgres_url: str | None = Field(default=None, validation_alias="DATABASE_URL")
     household_store_backend: Literal["sqlite", "postgresql"] = "sqlite"
     ephemeral_state_backend: Literal["in_memory", "redis"] = "in_memory"
@@ -155,7 +149,12 @@ class StorageSettings(BaseSettings):
 
 
 class WorkerSettings(BaseSettings):
-    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False, populate_by_name=True)
+    model_config = SettingsConfigDict(
+        env_prefix="WORKER_",
+        extra="ignore",
+        case_sensitive=False,
+        populate_by_name=True,
+    )
 
     worker_mode: Literal["in_process", "external"] = "in_process"
     reminder_scheduler_interval_seconds: int = Field(default=30, ge=5, le=3600)
@@ -169,6 +168,21 @@ class WorkerSettings(BaseSettings):
     use_alert_outbox_v2: bool = True
     alert_worker_max_attempts: int = 3
     alert_worker_concurrency: int = 4
+
+
+class FeatureFlags(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="FEATURE_",
+        extra="ignore",
+        case_sensitive=False,
+        populate_by_name=True,
+    )
+
+    enable_fast_path_intent: bool = True
+    enable_context_pruning: bool = True
+    enable_multi_modal_ingestion: bool = False
+    enable_proactive_nudge: bool = False
+    enable_debug_tools: bool = False
 
 
 # ---------------------------------------------------------------------------

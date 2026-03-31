@@ -45,14 +45,17 @@ export const MessageItem = memo(function MessageItem({
 
   if (isUser) {
     return (
-      <div className="flex justify-end" style={{ contentVisibility: "auto", containIntrinsicSize: "0 80px" }}>
-        <div className="max-w-[78%] rounded-2xl bg-[color:var(--accent)] px-5 py-4 text-sm text-[color:var(--accent-foreground)] shadow-[0_12px_24px_rgba(15,23,42,0.1)]">
-          <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+      <div className="flex justify-end mb-6" style={{ contentVisibility: "auto", containIntrinsicSize: "0 80px" }}>
+        <div className="max-w-[85%] rounded-2xl bg-accent-teal px-6 py-4 text-sm text-white shadow-sm ring-1 ring-accent-teal/10">
+          <div className="whitespace-pre-wrap leading-relaxed font-medium">{message.content}</div>
           {message.emotion ? (
-            <div className="mt-3 flex items-center gap-2 text-xs uppercase tracking-[0.16em] opacity-80">
-              <span>{EMOJI[message.emotion.label] ?? "🫥"}</span>
-              <span className="capitalize">{message.emotion.label}</span>
-              <span className="opacity-60">({Math.round(message.emotion.score * 100)}%)</span>
+            <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2 text-micro-label uppercase opacity-90">
+              <span className="text-sm" aria-hidden="true">{EMOJI[message.emotion.label] ?? "🫥"}</span>
+              <span className="sr-only">Detected emotion:</span>
+              <span>{message.emotion.label}</span>
+              <span className="opacity-60" aria-label={`${Math.round(message.emotion.score * 100)}% confidence`}>
+                ({Math.round(message.emotion.score * 100)}%)
+              </span>
             </div>
           ) : null}
         </div>
@@ -61,56 +64,58 @@ export const MessageItem = memo(function MessageItem({
   }
 
   return (
-    <div className="flex justify-start" style={{ contentVisibility: "auto", containIntrinsicSize: "0 120px" }}>
-      <div className="max-w-[82%] rounded-2xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-6 py-5">
+    <div className="flex justify-start mb-8" style={{ contentVisibility: "auto", containIntrinsicSize: "0 120px" }}>
+      <div className="max-w-[90%] rounded-2xl border border-border-soft bg-surface px-6 py-6 shadow-sm">
         <AssistantMeta
           kindLabel={KIND_LABELS[message.kind] || undefined}
           confidence={message.confidence}
         />
 
         {message.title ? (
-          <h4 className="mt-3 text-base font-semibold text-[color:var(--foreground)]">
+          <h4 className="mt-4 text-lg font-display font-semibold text-foreground tracking-tight">
             {message.title}
           </h4>
         ) : null}
         {message.explanation ? (
-          <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
             {message.explanation}
           </p>
         ) : null}
 
         {content ? (
-          <ReactMarkdown
-            className="chat-markdown mt-4"
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeSanitize]}
-          >
-            {content}
-          </ReactMarkdown>
+          <div className="chat-markdown mt-5 prose prose-sm prose-slate dark:prose-invert max-w-none">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeSanitize]}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
+
         ) : isStreaming ? (
-          <div className="mt-4 text-sm text-[color:var(--muted-foreground)] animate-pulse">▋</div>
+          <div className="mt-5 text-accent-teal animate-pulse font-bold">▋</div>
         ) : null}
 
         {message.reasoning ? (
-          <div className="mt-4 rounded-xl bg-[color:var(--panel-soft)] px-4 py-3">
-            <div className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--muted-foreground)]">
-              Reasoning
+          <div className="mt-6 rounded-2xl bg-panel border border-border-soft p-4">
+            <div className="text-micro-label text-muted-foreground uppercase mb-2">
+              Clinical Reasoning
             </div>
-            <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">{message.reasoning}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed italic">{message.reasoning}</p>
           </div>
         ) : null}
 
         {message.mealProposal ? (
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-6 pt-6 border-t border-border-soft flex flex-wrap gap-3">
             <button
-              className="min-h-[44px] rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-[color:var(--accent-foreground)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]/40"
+              className="h-11 rounded-xl bg-accent-teal px-6 text-sm font-bold text-white shadow-sm transition-all hover:bg-accent-teal/90 disabled:opacity-60"
               onClick={() => onMealAction(message.mealProposal!.proposalId, "confirm")}
               disabled={proposalLoadingId === message.mealProposal.proposalId}
             >
-              Log meal
+              Log this meal
             </button>
             <button
-              className="min-h-[44px] rounded-full border border-[color:var(--border-soft)] px-4 py-2 text-xs font-semibold text-[color:var(--foreground)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]/40"
+              className="h-11 rounded-xl border border-border-soft bg-surface px-6 text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-panel disabled:opacity-60"
               onClick={() => onMealAction(message.mealProposal!.proposalId, "skip")}
               disabled={proposalLoadingId === message.mealProposal.proposalId}
             >

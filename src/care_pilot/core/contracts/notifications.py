@@ -12,18 +12,21 @@ from datetime import datetime
 from typing import Protocol
 
 from care_pilot.features.reminders.domain import (
-    ReminderNotificationEndpoint,
-    ReminderNotificationLogEntry,
-    ReminderNotificationPreference,
-    ScheduledReminderNotification,
+    MessageEndpoint,
+    MessageLogEntry,
+    MessagePreference,
+    MessageThread,
+    MessageThreadMessage,
+    MessageThreadParticipant,
+    ScheduledMessage,
 )
-from care_pilot.features.safety.domain.alerts import AlertMessage, OutboxRecord
+from care_pilot.features.safety.domain.alerts import OutboundMessage, OutboxRecord
 
 
 class AlertRepositoryProtocol(Protocol):
     """Persistence port for alert outbox records."""
 
-    def enqueue_alert(self, message: AlertMessage) -> list[OutboxRecord]: ...
+    def enqueue_alert(self, message: OutboundMessage) -> list[OutboxRecord]: ...
 
     def lease_alert_records(
         self,
@@ -58,41 +61,58 @@ class AlertRepositoryProtocol(Protocol):
     def list_alert_records(self, alert_id: str | None = None) -> list[OutboxRecord]: ...
 
 
-class ReminderNotificationRepository(Protocol):
-    """Persistence port for scheduled reminder notifications."""
+class MessageNotificationRepository(Protocol):
+    """Persistence port for scheduled message notifications."""
 
-    def list_reminder_notification_preferences(
+    def list_message_preferences(
         self,
         *,
         user_id: str,
         scope_type: str | None = None,
         scope_key: str | None = None,
-    ) -> list[ReminderNotificationPreference]: ...
+    ) -> list[MessagePreference]: ...
+
+    def replace_message_preferences(
+        self,
+        *,
+        user_id: str,
+        scope_type: str,
+        scope_key: str | None,
+        preferences: list[MessagePreference],
+    ) -> list[MessagePreference]: ...
 
     def save_scheduled_notification(
         self,
-        notification: ScheduledReminderNotification,
-    ) -> ScheduledReminderNotification: ...
+        notification: ScheduledMessage,
+    ) -> ScheduledMessage: ...
 
-    def append_notification_log(
-        self, entry: ReminderNotificationLogEntry
-    ) -> ReminderNotificationLogEntry: ...
+    def append_notification_log(self, entry: MessageLogEntry) -> MessageLogEntry: ...
 
     def lease_due_scheduled_notifications(
         self,
         *,
         now: datetime,
         limit: int = 100,
-    ) -> list[ScheduledReminderNotification]: ...
+    ) -> list[ScheduledMessage]: ...
 
-    def get_reminder_notification_endpoint(
+    def get_message_endpoint(
         self,
         *,
         user_id: str,
         channel: str,
-    ) -> ReminderNotificationEndpoint | None: ...
+    ) -> MessageEndpoint | None: ...
 
-    def enqueue_alert(self, message: AlertMessage) -> list[OutboxRecord]: ...
+    def get_message_endpoint_by_destination(
+        self,
+        *,
+        user_id: str,
+        channel: str,
+        destination: str,
+    ) -> MessageEndpoint | None: ...
+
+    def enqueue_alert(self, message: OutboundMessage) -> list[OutboxRecord]: ...
+
+    def cancel_scheduled_messages_for_reminder(self, reminder_id: str) -> int: ...
 
     def cancel_scheduled_notifications_for_reminder(self, reminder_id: str) -> int: ...
 
@@ -101,7 +121,65 @@ class ReminderNotificationRepository(Protocol):
         *,
         reminder_id: str | None = None,
         user_id: str | None = None,
-    ) -> list[ScheduledReminderNotification]: ...
+    ) -> list[ScheduledMessage]: ...
+
+    def list_message_endpoints(
+        self,
+        *,
+        user_id: str,
+    ) -> list[MessageEndpoint]: ...
+
+    def replace_message_endpoints(
+        self,
+        *,
+        user_id: str,
+        endpoints: list[MessageEndpoint],
+    ) -> list[MessageEndpoint]: ...
+
+    def list_notification_logs(self, *, reminder_id: str) -> list[MessageLogEntry]: ...
+
+    def list_message_logs(
+        self,
+        *,
+        reminder_id: str | None = None,
+        scheduled_notification_id: str | None = None,
+    ) -> list[MessageLogEntry]: ...
+
+    def list_reminder_notification_preferences(
+        self,
+        *,
+        user_id: str,
+        scope_type: str | None = None,
+        scope_key: str | None = None,
+    ) -> list[MessagePreference]: ...
+
+    def get_reminder_notification_endpoint(
+        self,
+        *,
+        user_id: str,
+        channel: str,
+    ) -> MessageEndpoint | None: ...
+
+    def get_message_thread(
+        self,
+        *,
+        user_id: str,
+        channel: str,
+        endpoint_id: str,
+    ) -> MessageThread | None: ...
+
+    def create_message_thread(self, thread: MessageThread) -> MessageThread: ...
+
+    def add_message_thread_participant(
+        self,
+        participant: MessageThreadParticipant,
+    ) -> MessageThreadParticipant: ...
+
+    def append_message_thread_message(self, message: MessageThreadMessage) -> None: ...
+
+    def list_message_thread_messages(self, *, thread_id: str) -> list[MessageThreadMessage]: ...
+
+    def get_user_id_by_channel_destination(self, *, channel: str, destination: str) -> str | None: ...
 
     def mark_scheduled_notification_dead_letter(
         self,
@@ -111,9 +189,30 @@ class ReminderNotificationRepository(Protocol):
         error: str,
     ) -> None: ...
 
+    def mark_scheduled_notification_processing(
+        self,
+        notification_id: str,
+        attempt_count: int,
+    ) -> None: ...
+
+    def mark_scheduled_notification_delivered(
+        self,
+        notification_id: str,
+        attempt_count: int,
+    ) -> None: ...
+
+    def reschedule_scheduled_notification(
+        self,
+        notification_id: str,
+        *,
+        attempt_count: int,
+        next_attempt_at: datetime,
+        error: str,
+    ) -> None: ...
+
 
 class ReminderSchedulerRepository(
-    ReminderNotificationRepository, AlertRepositoryProtocol, Protocol
+    MessageNotificationRepository, AlertRepositoryProtocol, Protocol
 ):
     """Combined port required by the reminder scheduler runtime loop."""
 
@@ -122,6 +221,6 @@ class ReminderSchedulerRepository(
 
 __all__ = [
     "AlertRepositoryProtocol",
-    "ReminderNotificationRepository",
+    "MessageNotificationRepository",
     "ReminderSchedulerRepository",
 ]

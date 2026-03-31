@@ -20,7 +20,7 @@ class MobilityReminderSettings(BaseModel):
     updated_at: str | None = None
 
 
-ReminderNotificationChannel = Literal[
+MessageChannel = Literal[
     "in_app",
     "chat",
     "email",
@@ -30,6 +30,7 @@ ReminderNotificationChannel = Literal[
     "whatsapp",
     "wechat",
 ]
+ReminderNotificationChannel = MessageChannel
 NotificationPreferenceScope = Literal["default", "reminder_type"]
 ScheduledNotificationStatus = Literal[
     "pending",
@@ -50,34 +51,42 @@ NotificationLogEventType = Literal[
     "cancelled",
 ]
 
+class MessageAttachment(BaseModel):
+    attachment_type: Literal["image", "audio", "file"] = "image"
+    url: str
+    mime_type: str
+    caption: str | None = None
+    size_bytes: int | None = None
+    metadata: dict[str, object] = Field(default_factory=dict)
 
-class ReminderNotificationEndpoint(BaseModel):
+
+class MessageEndpoint(BaseModel):
     id: str
     user_id: str
-    channel: ReminderNotificationChannel
+    channel: MessageChannel
     destination: str
     verified: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-class ReminderNotificationPreference(BaseModel):
+class MessagePreference(BaseModel):
     id: str
     user_id: str
     scope_type: NotificationPreferenceScope = "default"
     scope_key: str | None = None
-    channel: ReminderNotificationChannel
+    channel: MessageChannel
     offset_minutes: int = 0
     enabled: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-class ScheduledReminderNotification(BaseModel):
+class ScheduledMessage(BaseModel):
     id: str
     reminder_id: str
     user_id: str
-    channel: ReminderNotificationChannel
+    channel: MessageChannel
     trigger_at: datetime
     offset_minutes: int = 0
     preference_id: str | None = None
@@ -93,24 +102,61 @@ class ScheduledReminderNotification(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-class QueuedReminderNotification(BaseModel):
+class QueuedMessage(BaseModel):
     scheduled_notification_id: str
     reminder_id: str
-    channel: ReminderNotificationChannel
+    channel: MessageChannel
     queued_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-class ReminderNotificationLogEntry(BaseModel):
+class MessageLogEntry(BaseModel):
     id: str
     scheduled_notification_id: str
     reminder_id: str
     user_id: str
-    channel: ReminderNotificationChannel
+    channel: MessageChannel
     attempt_number: int = 0
     event_type: NotificationLogEventType
     error_message: str | None = None
     metadata: dict[str, object] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class MessageThread(BaseModel):
+    id: str
+    user_id: str
+    channel: MessageChannel
+    endpoint_id: str
+    status: Literal["active", "archived"] = "active"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class MessageThreadParticipant(BaseModel):
+    id: str
+    thread_id: str
+    participant_type: Literal["user", "assistant", "system"] = "user"
+    participant_id: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class MessageThreadMessage(BaseModel):
+    id: str
+    thread_id: str
+    user_id: str
+    channel: MessageChannel
+    direction: Literal["inbound", "outbound"] = "inbound"
+    body: str
+    attachments: list[MessageAttachment] = Field(default_factory=list)
+    metadata: dict[str, object] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+ReminderNotificationEndpoint = MessageEndpoint
+ReminderNotificationPreference = MessagePreference
+ScheduledReminderNotification = ScheduledMessage
+QueuedReminderNotification = QueuedMessage
+ReminderNotificationLogEntry = MessageLogEntry
 
 
 TimingType = Literal["pre_meal", "post_meal", "fixed_time"]
@@ -193,7 +239,7 @@ class ReminderDefinition(BaseModel):
     instructions_text: str | None = None
     special_notes: str | None = None
     treatment_duration: str | None = None
-    channels: list[ReminderNotificationChannel] = Field(default_factory=lambda: ["in_app"])
+    channels: list[MessageChannel] = Field(default_factory=lambda: ["in_app"])
     timezone: str = Field(default_factory=lambda: get_settings().app.timezone)
     schedule: ReminderScheduleRule
     active: bool = True

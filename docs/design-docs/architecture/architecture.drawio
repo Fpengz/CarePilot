@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CarePilot — Clean Architecture Diagram
+  Generated for: System Documentation & Architecture Reviews
+  Format: Draw.io (mxGraph XML)
+  Import: File → Import From → Device… (or drag-and-drop into draw.io)
+
+  Layers (top → bottom):
+    1. Client           — Next.js 14 Web App
+    2. API Transport    — FastAPI (apps/api/)
+    3. Workers          — Background scheduler (apps/workers/)
+    4. Feature Services — Product behaviour (features/)
+    5. Application Core — Use cases & orchestration (application/)
+    6. Agent Layer      — LLM-bounded reasoning (agent/)
+    7. Domain           — Business models & rules (domain/)
+    8. Infrastructure   — Concrete adapters (infrastructure/)
+    9. External Systems — Third-party APIs & databases
+-->
+<mxGraphModel
+  dx="1422" dy="762"
+  grid="1" gridSize="10"
+  guides="1" tooltips="1"
+  connect="1" arrows="1" fold="1"
+  page="1" pageScale="1"
+  pageWidth="1900" pageHeight="1400"
+  math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ══════════════════════════════════════════════════════════
+         LAYER 1 — CLIENT  (Next.js 14 Web App)
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="L1"
+      value="Client Layer — Next.js 14 Web App  (apps/web/)"
+      style="swimlane;startSize=32;fontStyle=1;fontSize=13;
+             fillColor=#dbeafe;strokeColor=#3b82f6;fontColor=#1e3a8a;
+             rounded=1;arcSize=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="20" width="1820" height="110" as="geometry" />
+    </mxCell>
+
+    <mxCell id="L1-pages"
+      value="19 Pages&#xa;/ · /dashboard · /meals · /companion&#xa;/reminders · /reports · /alerts · /medications…"
+      style="rounded=1;fillColor=#bfdbfe;strokeColor=#3b82f6;fontSize=11;"
+      vertex="1" parent="L1">
+      <mxGeometry x="20" y="40" width="310" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="L1-components"
+      value="UI Components (components/ui/ + components/app/)&#xa;Radix UI · Tailwind CSS · shell · sidebar"
+      style="rounded=1;fillColor=#bfdbfe;strokeColor=#3b82f6;fontSize=11;"
+      vertex="1" parent="L1">
+      <mxGeometry x="350" y="40" width="310" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="L1-api-clients"
+      value="API Client Layer  (lib/api/)&#xa;auth · meal · companion · recommendation&#xa;reminder · household · profile · medication"
+      style="rounded=1;fillColor=#bfdbfe;strokeColor=#3b82f6;fontSize=11;"
+      vertex="1" parent="L1">
+      <mxGeometry x="680" y="40" width="340" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="L1-session"
+      value="Session Provider&#xa;(auth-client.ts + next-auth)"
+      style="rounded=1;fillColor=#bfdbfe;strokeColor=#3b82f6;fontSize=11;"
+      vertex="1" parent="L1">
+      <mxGeometry x="1040" y="40" width="240" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="L1-state"
+      value="State / Data Fetching&#xa;React Query · SWR hooks"
+      style="rounded=1;fillColor=#bfdbfe;strokeColor=#3b82f6;fontSize=11;"
+      vertex="1" parent="L1">
+      <mxGeometry x="1300" y="40" width="220" height="55" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LAYER 2 — API TRANSPORT  (FastAPI)
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="L2"
+      value="API Transport Layer — FastAPI  (apps/api/carepilot_api/)"
+      style="swimlane;startSize=32;fontStyle=1;fontSize=13;
+             fillColor=#dcfce7;strokeColor=#16a34a;fontColor=#14532d;
+             rounded=1;arcSize=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="150" width="1820" height="140" as="geometry" />
+    </mxCell>
+
+    <mxCell id="L2-main"
+      value="FastAPI App&#xa;main.py + lifespan&#xa;CORS · exception handlers"
+      style="rounded=1;fillColor=#bbf7d0;strokeColor=#16a34a;fontSize=11;"
+      vertex="1" parent="L2">
+      <mxGeometry x="20" y="40" width="190" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L2-middleware"
+      value="Middleware&#xa;Request Context (middleware.py)&#xa;Correlation IDs"
+      style="rounded=1;fillColor=#bbf7d0;strokeColor=#16a34a;fontSize=11;"
+      vertex="1" parent="L2">
+      <mxGeometry x="230" y="40" width="200" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L2-deps"
+      value="Dependency Injection&#xa;deps.py — AppContext&#xa;service + repo wiring"
+      style="rounded=1;fillColor=#bbf7d0;strokeColor=#16a34a;fontSize=11;"
+      vertex="1" parent="L2">
+      <mxGeometry x="450" y="40" width="200" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L2-routers"
+      value="20 Routers  (routers/)&#xa;meals · companion · recommendations · auth&#xa;reminders · reports · alerts · workflows&#xa;medications · symptoms · clinical-cards · impact…"
+      style="rounded=1;fillColor=#bbf7d0;strokeColor=#16a34a;fontSize=11;"
+      vertex="1" parent="L2">
+      <mxGeometry x="670" y="40" width="380" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L2-policy"
+      value="Auth + Policy&#xa;policy.py — scope checks&#xa;Session HMAC · role-based"
+      style="rounded=1;fillColor=#bbf7d0;strokeColor=#16a34a;fontSize=11;"
+      vertex="1" parent="L2">
+      <mxGeometry x="1070" y="40" width="210" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L2-schemas"
+      value="Request / Response Schemas&#xa;schemas/ — Pydantic models&#xa;errors.py — error mapping"
+      style="rounded=1;fillColor=#bbf7d0;strokeColor=#16a34a;fontSize=11;"
+      vertex="1" parent="L2">
+      <mxGeometry x="1300" y="40" width="220" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LAYER 3 — WORKERS  (background jobs)
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="L3w"
+      value="Workers Layer — Background Scheduler  (apps/workers/)"
+      style="swimlane;startSize=32;fontStyle=1;fontSize=13;
+             fillColor=#f0fdf4;strokeColor=#4ade80;fontColor=#14532d;
+             rounded=1;arcSize=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="310" width="1820" height="90" as="geometry" />
+    </mxCell>
+
+    <mxCell id="L3w-reminders"
+      value="Reminder Scheduler&#xa;APScheduler — time-triggered delivery"
+      style="rounded=1;fillColor=#dcfce7;strokeColor=#4ade80;fontSize=11;"
+      vertex="1" parent="L3w">
+      <mxGeometry x="20" y="35" width="300" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="L3w-outbox"
+      value="Outbox Processor&#xa;Async multi-channel message delivery"
+      style="rounded=1;fillColor=#dcfce7;strokeColor=#4ade80;fontSize=11;"
+      vertex="1" parent="L3w">
+      <mxGeometry x="340" y="35" width="320" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="L3w-modes"
+      value="Run Modes&#xa;Embedded (same process) or External (Redis-coordinated)"
+      style="rounded=1;fillColor=#dcfce7;strokeColor=#4ade80;fontSize=11;"
+      vertex="1" parent="L3w">
+      <mxGeometry x="680" y="35" width="360" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LAYER 4 — FEATURE SERVICES
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="L4"
+      value="Feature Services — Canonical Product Behaviour  (src/care_pilot/features/)"
+      style="swimlane;startSize=32;fontStyle=1;fontSize=13;
+             fillColor=#fef3c7;strokeColor=#d97706;fontColor=#78350f;
+             rounded=1;arcSize=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="420" width="1820" height="140" as="geometry" />
+    </mxCell>
+
+    <mxCell id="L4-companion"
+      value="🤖 Companion&#xa;(Flagship feature)&#xa;7 sub-services"
+      style="rounded=1;fillColor=#fde68a;strokeColor=#d97706;fontStyle=1;fontSize=11;"
+      vertex="1" parent="L4">
+      <mxGeometry x="20" y="40" width="200" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L4-meals"
+      value="Meals&#xa;Image analysis&#xa;record + summarise"
+      style="rounded=1;fillColor=#fde68a;strokeColor=#d97706;fontSize=11;"
+      vertex="1" parent="L4">
+      <mxGeometry x="240" y="40" width="180" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L4-recs"
+      value="Recommendations&#xa;Suggestion generation&#xa;+ safety gating"
+      style="rounded=1;fillColor=#fde68a;strokeColor=#d97706;fontSize=11;"
+      vertex="1" parent="L4">
+      <mxGeometry x="440" y="40" width="200" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L4-reminders"
+      value="Reminders&#xa;Multi-channel&#xa;scheduling"
+      style="rounded=1;fillColor=#fde68a;strokeColor=#d97706;fontSize=11;"
+      vertex="1" parent="L4">
+      <mxGeometry x="660" y="40" width="170" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L4-reports"
+      value="Reports&#xa;Clinical report&#xa;ingestion + parsing"
+      style="rounded=1;fillColor=#fde68a;strokeColor=#d97706;fontSize=11;"
+      vertex="1" parent="L4">
+      <mxGeometry x="850" y="40" width="170" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L4-safety-feat"
+      value="⚠️ Safety&#xa;Deterministic gate&#xa;+ LLM enrichment"
+      style="rounded=1;fillColor=#fde68a;strokeColor=#d97706;fontStyle=1;fontSize=11;"
+      vertex="1" parent="L4">
+      <mxGeometry x="1040" y="40" width="180" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L4-emotions"
+      value="Emotions&#xa;Text sentiment&#xa;+ speech inference"
+      style="rounded=1;fillColor=#fde68a;strokeColor=#d97706;fontSize=11;"
+      vertex="1" parent="L4">
+      <mxGeometry x="1240" y="40" width="180" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="L4-workflows"
+      value="Workflows&#xa;Execution engine&#xa;+ timeline events"
+      style="rounded=1;fillColor=#fde68a;strokeColor=#d97706;fontSize=11;"
+      vertex="1" parent="L4">
+      <mxGeometry x="1440" y="40" width="180" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LAYER 5 — APPLICATION CORE
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="L5"
+      value="Application Core — Use Cases &amp; Orchestration  (src/care_pilot/application/)"
+      style="swimlane;startSize=32;fontStyle=1;fontSize=13;
+             fillColor=#ede9fe;strokeColor=#7c3aed;fontColor=#4c1d95;
+             rounded=1;arcSize=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="580" width="1820" height="220" as="geometry" />
+    </mxCell>
+
+    <!-- Companion Orchestrator sub-container -->
+    <mxCell id="L5-companion-box"
+      value="Companion Orchestrator  (application/companion/)"
+      style="swimlane;startSize=28;fillColor=#c4b5fd;strokeColor=#7c3aed;
+             fontStyle=1;fontSize=11;rounded=1;arcSize=3;"
+      vertex="1" parent="L5">
+      <mxGeometry x="20" y="40" width="920" height="165" as="geometry" />
+    </mxCell>
+    <mxCell id="L5-snapshot"
+      value="CaseSnapshot&#xa;snapshot.py&#xa;(fuses all user state)"
+      style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;"
+      vertex="1" parent="L5-companion-box">
+      <mxGeometry x="15" y="40" width="155" height="65" as="geometry" />
+    </mxCell>
+    <mxCell id="L5-personalization"
+      value="Personalization&#xa;personalization.py&#xa;(focus areas, barriers)"
+      style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;"
+      vertex="1" parent="L5-companion-box">
+      <mxGeometry x="185" y="40" width="155" height="65" as="geometry" />
+    </mxCell>
+    <mxCell id="L5-engagement"
+      value="Engagement&#xa;engagement.py&#xa;(adherence, readiness)"
+      style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;"
+      vertex="1" parent="L5-companion-box">
+      <mxGeometry x="355" y="40" width="155" height="65" as="geometry" />
+    </mxCell>
+    <mxCell id="L5-careplan"
+      value="Care Plan&#xa;care_plan.py&#xa;(goals, actions)"
+      style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;"
+      vertex="1" parent="L5-companion-box">
+      <mxGeometry x="525" y="40" width="155" height="65" as="geometry" />
+    </mxCell>
+    <mxCell id="L5-digest"
+      value="Clinician Digest&#xa;digest.py"
+      style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;"
+      vertex="1" parent="L5-companion-box">
+      <mxGeometry x="695" y="40" width="155" height="65" as="geometry" />
+    </mxCell>
+    <mxCell id="L5-impact"
+      value="Impact Summary&#xa;impact.py"
+      style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;"
+      vertex="1" parent="L5-companion-box">
+      <mxGeometry x="15" y="120" width="155" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="L5-interactions"
+      value="Interaction Log&#xa;interactions.py"
+      style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;"
+      vertex="1" parent="L5-companion-box">
+      <mxGeometry x="185" y="120" width="155" height="35" as="geometry" />
+    </mxCell>
+
+    <!-- Other application packages sub-container -->
+    <mxCell id="L5-other-box"
+      value="Other Application Packages"
+      style="swimlane;startSize=28;fillColor=#c4b5fd;strokeColor=#7c3aed;
+             fontStyle=1;fontSize=11;rounded=1;arcSize=3;"
+      vertex="1" parent="L5">
+      <mxGeometry x="960" y="40" width="840" height="165" as="geometry" />
+    </mxCell>
+    <mxCell id="L5-auth-app"    value="Auth&#xa;Sessions"         style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="10"  y="38" width="115" height="50" as="geometry"/></mxCell>
+    <mxCell id="L5-health-app"  value="Health Profiles&#xa;Onboarding"      style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="135" y="38" width="115" height="50" as="geometry"/></mxCell>
+    <mxCell id="L5-meals-app"   value="Meals&#xa;Analysis flow"   style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="260" y="38" width="115" height="50" as="geometry"/></mxCell>
+    <mxCell id="L5-meds-app"    value="Medications&#xa;Adherence"        style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="385" y="38" width="115" height="50" as="geometry"/></mxCell>
+    <mxCell id="L5-notif-app"   value="Notifications&#xa;Outbox dispatch"  style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="510" y="38" width="115" height="50" as="geometry"/></mxCell>
+    <mxCell id="L5-safety-app"  value="Safety Review&#xa;Orchestration"    style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontStyle=1;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="635" y="38" width="115" height="50" as="geometry"/></mxCell>
+    <mxCell id="L5-evidence-app" value="Evidence&#xa;Citations"           style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="710" y="38" width="115" height="50" as="geometry"/></mxCell>
+    <mxCell id="L5-reports-app" value="Reports&#xa;Parsing"           style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="10"  y="105" width="105" height="40" as="geometry"/></mxCell>
+    <mxCell id="L5-symptoms-app" value="Symptoms&#xa;Check-in"         style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="125" y="105" width="105" height="40" as="geometry"/></mxCell>
+    <mxCell id="L5-household-app" value="Household&#xa;Access control"   style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="240" y="105" width="115" height="40" as="geometry"/></mxCell>
+    <mxCell id="L5-policies-app" value="Policies&#xa;Household scope"   style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="365" y="105" width="115" height="40" as="geometry"/></mxCell>
+    <mxCell id="L5-recs-app"    value="Recommendations&#xa;Suggestion flow" style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="490" y="105" width="130" height="40" as="geometry"/></mxCell>
+    <mxCell id="L5-clinical-app" value="Clinical Cards&#xa;Summary gen."    style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=10;" vertex="1" parent="L5-other-box"><mxGeometry x="630" y="105" width="130" height="40" as="geometry"/></mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LAYER 6 — AGENT LAYER
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="L6"
+      value="Agent Layer — LLM-Powered Bounded Reasoning  (src/care_pilot/agent/)"
+      style="swimlane;startSize=32;fontStyle=1;fontSize=13;
+             fillColor=#fce7f3;strokeColor=#db2777;fontColor=#831843;
+             rounded=1;arcSize=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="820" width="1820" height="110" as="geometry" />
+    </mxCell>
+
+    <mxCell id="L6-meal-agent"
+      value="Meal Analysis Agent&#xa;(vision + nutrition extraction)"
+      style="rounded=1;fillColor=#fbcfe8;strokeColor=#db2777;fontSize=11;"
+      vertex="1" parent="L6">
+      <mxGeometry x="20" y="40" width="260" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="L6-rec-agent"
+      value="Recommendation Agent&#xa;(evidence + safety synthesis)"
+      style="rounded=1;fillColor=#fbcfe8;strokeColor=#db2777;fontSize=11;"
+      vertex="1" parent="L6">
+      <mxGeometry x="300" y="40" width="260" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="L6-emotion-agent"
+      value="Emotion Agent&#xa;(text sentiment analysis)"
+      style="rounded=1;fillColor=#fbcfe8;strokeColor=#db2777;fontSize=11;"
+      vertex="1" parent="L6">
+      <mxGeometry x="580" y="40" width="240" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="L6-vision-agent"
+      value="Vision Agent&#xa;(meal image description)"
+      style="rounded=1;fillColor=#fbcfe8;strokeColor=#db2777;fontSize=11;"
+      vertex="1" parent="L6">
+      <mxGeometry x="840" y="40" width="240" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="L6-companion-agent"
+      value="Companion Agent&#xa;(interaction reasoning loop)"
+      style="rounded=1;fillColor=#fbcfe8;strokeColor=#db2777;fontSize=11;"
+      vertex="1" parent="L6">
+      <mxGeometry x="1100" y="40" width="260" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="L6-note"
+      value="All agents: typed I/O contracts · no direct DB writes · bounded by platform/tooling layer"
+      style="text;html=1;strokeColor=none;fillColor=none;
+             align=center;verticalAlign=middle;fontSize=10;fontStyle=2;"
+      vertex="1" parent="L6">
+      <mxGeometry x="1380" y="40" width="420" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LAYER 7 — DOMAIN
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="L7"
+      value="Domain Layer — Business Models &amp; Rules  (src/care_pilot/domain/)"
+      style="swimlane;startSize=32;fontStyle=1;fontSize=13;
+             fillColor=#fee2e2;strokeColor=#dc2626;fontColor=#7f1d1d;
+             rounded=1;arcSize=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="950" width="1820" height="130" as="geometry" />
+    </mxCell>
+
+    <mxCell id="L7-companion-d"   value="companion&#xa;CaseSnapshot&#xa;PersonalizationCtx" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="20"   y="42" width="175" height="70" as="geometry"/></mxCell>
+    <mxCell id="L7-meals-d"       value="meals&#xa;MealState · Nutrition&#xa;MealRecognitionRecord" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="205"  y="42" width="175" height="70" as="geometry"/></mxCell>
+    <mxCell id="L7-safety-d"      value="safety ⚠️&#xa;SafetyEngine · Decision&#xa;allow|downgrade|escalate" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontStyle=1;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="390"  y="42" width="185" height="70" as="geometry"/></mxCell>
+    <mxCell id="L7-identity-d"    value="identity&#xa;UserProfile · Account&#xa;Medication · Condition" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="585"  y="42" width="175" height="70" as="geometry"/></mxCell>
+    <mxCell id="L7-health-d"      value="health&#xa;Biomarker · Symptom&#xa;MetricTrend · ClinicalCard" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="770"  y="42" width="185" height="70" as="geometry"/></mxCell>
+    <mxCell id="L7-recs-d"        value="recommendations&#xa;RecommendationEngine&#xa;CanonicalFoodMatching" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="965"  y="42" width="185" height="70" as="geometry"/></mxCell>
+    <mxCell id="L7-meds-d"        value="medications&#xa;MedScheduling&#xa;Adherence" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="1160" y="42" width="175" height="70" as="geometry"/></mxCell>
+    <mxCell id="L7-notifications-d" value="messages&#xa;ReminderEvent · Alert" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="1345" y="42" width="175" height="70" as="geometry"/></mxCell>
+    <mxCell id="L7-workflows-d"   value="workflows&#xa;WorkflowContract&#xa;TimelineEvent" style="rounded=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=10;" vertex="1" parent="L7"><mxGeometry x="1530" y="42" width="175" height="70" as="geometry"/></mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LAYER 8 — INFRASTRUCTURE
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="L8"
+      value="Infrastructure Layer — Concrete Adapters  (src/care_pilot/infrastructure/)"
+      style="swimlane;startSize=32;fontStyle=1;fontSize=13;
+             fillColor=#e0f2fe;strokeColor=#0284c7;fontColor=#0c4a6e;
+             rounded=1;arcSize=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="1100" width="1820" height="140" as="geometry" />
+    </mxCell>
+
+    <mxCell id="L8-llm"
+      value="LLM Router  (llm/)&#xa;Gemini · OpenAI · Ollama · vLLM&#xa;provider switching via config"
+      style="rounded=1;fillColor=#bae6fd;strokeColor=#0284c7;fontSize=11;"
+      vertex="1" parent="L8">
+      <mxGeometry x="20" y="40" width="230" height="75" as="geometry" />
+    </mxCell>
+    <mxCell id="L8-db"
+      value="SQLite ORM  (persistence/)&#xa;repository.py (2400+ lines)&#xa;all domain stores"
+      style="rounded=1;fillColor=#bae6fd;strokeColor=#0284c7;fontSize=11;"
+      vertex="1" parent="L8">
+      <mxGeometry x="265" y="40" width="220" height="75" as="geometry" />
+    </mxCell>
+    <mxCell id="L8-cache"
+      value="Cache Layer  (cache/)&#xa;In-memory / Redis&#xa;Profile + Snapshot + Rate limiter"
+      style="rounded=1;fillColor=#bae6fd;strokeColor=#0284c7;fontSize=11;"
+      vertex="1" parent="L8">
+      <mxGeometry x="500" y="40" width="225" height="75" as="geometry" />
+    </mxCell>
+    <mxCell id="L8-notifications-infra"
+      value="Message Delivery  (messaging/)&#xa;Telegram · WeChat · WhatsApp&#xa;Outbox pattern (async)"
+      style="rounded=1;fillColor=#bae6fd;strokeColor=#0284c7;fontSize=11;"
+      vertex="1" parent="L8">
+      <mxGeometry x="740" y="40" width="230" height="75" as="geometry" />
+    </mxCell>
+    <mxCell id="L8-safety-infra"
+      value="Safety DB  (safety/)&#xa;Drug interactions (SQLite)&#xa;Singapore clinical data"
+      style="rounded=1;fillColor=#bae6fd;strokeColor=#0284c7;fontStyle=1;fontSize=11;"
+      vertex="1" parent="L8">
+      <mxGeometry x="985" y="40" width="220" height="75" as="geometry" />
+    </mxCell>
+    <mxCell id="L8-auth-infra"
+      value="Auth Infra  (auth/)&#xa;Session store · HMAC signing&#xa;In-memory cache"
+      style="rounded=1;fillColor=#bae6fd;strokeColor=#0284c7;fontSize=11;"
+      vertex="1" parent="L8">
+      <mxGeometry x="1220" y="40" width="200" height="75" as="geometry" />
+    </mxCell>
+    <mxCell id="L8-media"
+      value="Media  (media/)&#xa;Image upload · preprocessing&#xa;Vision pipeline"
+      style="rounded=1;fillColor=#bae6fd;strokeColor=#0284c7;fontSize=11;"
+      vertex="1" parent="L8">
+      <mxGeometry x="1435" y="40" width="185" height="75" as="geometry" />
+    </mxCell>
+    <mxCell id="L8-obs"
+      value="Observability  (observability/)&#xa;Logfire · structured logging&#xa;sensitive data redaction"
+      style="rounded=1;fillColor=#bae6fd;strokeColor=#0284c7;fontSize=11;"
+      vertex="1" parent="L8">
+      <mxGeometry x="1635" y="40" width="165" height="75" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LAYER 9 — EXTERNAL SYSTEMS
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="L9"
+      value="External Systems"
+      style="swimlane;startSize=32;fontStyle=1;fontSize=13;
+             fillColor=#f3f4f6;strokeColor=#6b7280;fontColor=#111827;
+             rounded=1;arcSize=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="1260" width="1820" height="100" as="geometry" />
+    </mxCell>
+
+    <mxCell id="L9-gemini"     value="Google Gemini API&#xa;(default LLM)"    style="rounded=1;fillColor=#e5e7eb;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="L9"><mxGeometry x="20"   y="35" width="200" height="45" as="geometry"/></mxCell>
+    <mxCell id="L9-openai"     value="OpenAI API&#xa;(GPT-4 / GPT-3.5)"     style="rounded=1;fillColor=#e5e7eb;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="L9"><mxGeometry x="235"  y="35" width="200" height="45" as="geometry"/></mxCell>
+    <mxCell id="L9-ollama"     value="Ollama / vLLM&#xa;(local LLM hosting)"  style="rounded=1;fillColor=#e5e7eb;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="L9"><mxGeometry x="450"  y="35" width="200" height="45" as="geometry"/></mxCell>
+    <mxCell id="L9-telegram"   value="Telegram Bot API"                      style="rounded=1;fillColor=#e5e7eb;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="L9"><mxGeometry x="665"  y="35" width="195" height="45" as="geometry"/></mxCell>
+    <mxCell id="L9-wechat"     value="WeChat API&#xa;(Asia messaging)"        style="rounded=1;fillColor=#e5e7eb;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="L9"><mxGeometry x="875"  y="35" width="195" height="45" as="geometry"/></mxCell>
+    <mxCell id="L9-whatsapp"   value="WhatsApp Business API"                 style="rounded=1;fillColor=#e5e7eb;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="L9"><mxGeometry x="1085" y="35" width="210" height="45" as="geometry"/></mxCell>
+    <mxCell id="L9-redis"      value="Redis&#xa;(cache + coordination)"      style="rounded=1;fillColor=#e5e7eb;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="L9"><mxGeometry x="1310" y="35" width="195" height="45" as="geometry"/></mxCell>
+    <mxCell id="L9-sqlite-ext" value="SQLite Databases&#xa;app · auth · clinical" style="rounded=1;fillColor=#e5e7eb;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="L9"><mxGeometry x="1520" y="35" width="195" height="45" as="geometry"/></mxCell>
+    <mxCell id="L9-logfire"    value="Logfire / Traces"                      style="rounded=1;fillColor=#e5e7eb;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="L9"><mxGeometry x="1730" y="35" width="70"  height="45" as="geometry"/></mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         FLOW ARROWS  (layer-to-layer, orthogonal routing)
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="E-L1-L2" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;fontSize=10;fontColor=#475569;" edge="1" parent="1" source="L1" target="L2"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="E-L2-L3w" value="" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;" edge="1" parent="1" source="L2" target="L3w"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="E-L2-L4" value="delegates to" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;fontSize=10;fontColor=#475569;" edge="1" parent="1" source="L2" target="L4"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="E-L3w-L4" value="" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;" edge="1" parent="1" source="L3w" target="L4"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="E-L4-L5" value="orchestrates" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;fontSize=10;fontColor=#475569;" edge="1" parent="1" source="L4" target="L5"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="E-L5-L6" value="invokes" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;fontSize=10;fontColor=#475569;" edge="1" parent="1" source="L5" target="L6"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="E-L5-L7" value="reads domain" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;fontSize=10;fontColor=#475569;" edge="1" parent="1" source="L5" target="L7"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="E-L6-L7" value="" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;" edge="1" parent="1" source="L6" target="L7"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="E-L7-L8" value="persists / queries" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;fontSize=10;fontColor=#475569;" edge="1" parent="1" source="L7" target="L8"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="E-L8-L9" value="external calls" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#475569;strokeWidth=2;fontSize=10;fontColor=#475569;" edge="1" parent="1" source="L8" target="L9"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════
+         ANNOTATIONS
+         ══════════════════════════════════════════════════════════ -->
+    <mxCell id="ann-companion-flow"
+      value="🤖 Companion Interaction Flow&#xa;① build_case_snapshot  ② build_personalization  ③ assess_engagement&#xa;④ compose_care_plan  ⑤ retrieve_evidence  ⑥ apply_safety_decision  ⑦ clinician_digest  ⑧ impact_summary  ⑨ log_interaction"
+      style="text;html=1;strokeColor=#7c3aed;fillColor=#ede9fe;
+             align=left;verticalAlign=middle;whiteSpace=wrap;
+             rounded=1;fontSize=11;fontColor=#4c1d95;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="1375" width="900" height="65" as="geometry" />
+    </mxCell>
+
+    <mxCell id="ann-safety"
+      value="⚠️ Safety Gate (always before user delivery)&#xa;① Deterministic screening: drug-food contraindications, profile rules, symptom triage&#xa;② Optional LLM enrichment  →  Decision: allow | downgrade | clarification | refusal | escalation"
+      style="text;html=1;strokeColor=#dc2626;fillColor=#fee2e2;
+             align=left;verticalAlign=middle;whiteSpace=wrap;
+             rounded=1;fontSize=11;fontColor=#7f1d1d;"
+      vertex="1" parent="1">
+      <mxGeometry x="940" y="1375" width="900" height="65" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

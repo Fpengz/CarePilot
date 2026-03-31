@@ -1,12 +1,8 @@
 """Tests for role views report advice."""
 
-from apps.api.carepilot_api.routers._companion_views import (
-    build_profile_mode_report_advice_view,
-)
+from apps.api.carepilot_api.routers._companion_views import build_profile_mode_report_advice_view
 
-from care_pilot.features.recommendations.domain.models import (
-    RecommendationOutput,
-)
+from care_pilot.features.recommendations.domain.models import RecommendationOutput
 
 
 def test_profile_mode_report_advice_views() -> None:

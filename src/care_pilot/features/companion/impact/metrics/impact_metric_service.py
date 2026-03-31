@@ -8,10 +8,7 @@ from __future__ import annotations
 
 from apps.api.carepilot_api.deps import AppContext
 
-from care_pilot.core.contracts.api import (
-    MetricTrendListResponse,
-    MetricTrendResponse,
-)
+from care_pilot.core.contracts.api import MetricTrendListResponse, MetricTrendResponse
 from care_pilot.features.companion.impact.domain import (
     adherence_rate_points,
     biomarker_points,

@@ -21,7 +21,7 @@ from care_pilot.features.recommendations.domain.models import (
     DailySuggestionBundle,
     DailySuggestionItem,
 )
-from care_pilot.platform.observability.setup import get_logger
+from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
 
@@ -129,7 +129,7 @@ def _score_candidate(
 ) -> tuple[float, list[str]]:
     score = 0.45
     why: list[str] = []
-    goals = {goal.lower() for goal in health_profile.nutrition_goals}
+    goals = {getattr(goal, "goal_type", str(goal)).lower() for goal in health_profile.nutrition_goals}
     cuisines = {cuisine.lower() for cuisine in health_profile.preferred_cuisines}
     traits = {item.lower() for item in candidate.traits}
 

@@ -8,7 +8,6 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_feature_first_backend_packages_exist() -> None:
     required_paths = [
         "src/care_pilot/core/__init__.py",
-        "src/care_pilot/core/config/__init__.py",
         "src/care_pilot/core/errors.py",
         "src/care_pilot/core/events.py",
         "src/care_pilot/core/ids.py",

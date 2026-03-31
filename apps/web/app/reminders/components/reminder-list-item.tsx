@@ -1,16 +1,14 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import { Bell, Clock, MapPin, Calendar, MoreVertical } from "lucide-react";
+import { Bell, Clock, Calendar, MoreVertical, Edit2, Play, Pause, Check, SkipForward, Timer } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/time";
 import type { ReminderDefinitionApi, ReminderOccurrenceApi } from "@/lib/types";
 
 function statusTone(status: ReminderOccurrenceApi["status"]) {
-  if (status === "completed") return "status-chip-teal";
-  if (status === "missed" || status === "skipped") return "status-chip-rose";
-  if (status === "snoozed") return "status-chip-amber";
-  return "status-chip-slate";
+  if (status === "completed") return "bg-health-teal/10 text-health-teal border-health-teal/20";
+  if (status === "missed" || status === "skipped") return "bg-health-rose/10 text-health-rose border-health-rose/20";
+  if (status === "snoozed") return "bg-health-amber/10 text-health-amber border-health-amber/20";
+  return "bg-muted/10 text-muted-foreground border-muted/20";
 }
 
 function scheduleSummary(definition?: ReminderDefinitionApi): string | null {
@@ -51,176 +49,166 @@ export function ReminderListItem({
   actionDisabled?: boolean;
 }) {
   const title = definition?.title ?? occurrence?.reminder_definition_id ?? "Reminder";
-  const body = definition?.body ?? definition?.instructions_text ?? "Instructions";
+  const body = definition?.body ?? definition?.instructions_text ?? "Clinical instructions";
   const time = occurrence ? formatDateTime(occurrence.trigger_at) : null;
   const schedule = scheduleSummary(definition);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    function handleClick(event: MouseEvent) {
-      const target = event.target as Node;
-      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
-      setMenuOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen]);
 
   return (
-    <div className="group flex items-center justify-between gap-4 glass-card !p-4 transition-all hover:bg-white/50 dark:hover:bg-black/50">
-      <div className="flex items-start gap-4">
+    <article className="group flex items-center justify-between gap-4 bg-panel border border-border-soft rounded-xl p-4 transition-all hover:border-accent-teal/30 shadow-sm">
+      <div className="flex items-start gap-4 min-w-0">
         <div className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10",
-          occurrence ? (occurrence.status === "completed" ? "bg-health-teal-soft text-health-teal" : "bg-health-rose-soft text-health-rose") : "bg-health-amber-soft text-health-amber"
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border",
+          occurrence 
+            ? (occurrence.status === "completed" ? "bg-health-teal/5 text-health-teal border-health-teal/10" : "bg-health-rose/5 text-health-rose border-health-rose/10") 
+            : "bg-accent-teal/5 text-accent-teal border-accent-teal/10"
         )}>
-          {occurrence ? <Clock className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+          {occurrence ? <Clock className="h-5 w-5" aria-hidden="true" /> : <Bell className="h-5 w-5" aria-hidden="true" />}
         </div>
         
         <div className="min-w-0 space-y-1 text-left">
-          <div className="text-sm font-bold tracking-tight text-[color:var(--foreground)]">{title}</div>
-          <div className="text-xs text-[color:var(--muted-foreground)] line-clamp-1">{body}</div>
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-            {time && (
-              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-60">
-                <Calendar className="h-3 w-3" /> {time}
-              </span>
-            )}
-            {!time && schedule && (
-              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[color:var(--muted-foreground)] opacity-60">
-                <Calendar className="h-3 w-3" /> {schedule}
+          <div className="text-[13px] font-bold tracking-tight text-foreground truncate">{title}</div>
+          <div className="text-[11px] font-medium text-muted-foreground line-clamp-1 opacity-80">{body}</div>
+          <div className="flex flex-wrap items-center gap-3 pt-0.5">
+            {(time || schedule) && (
+              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground opacity-60">
+                <Calendar className="h-3 w-3" aria-hidden="true" /> {time || schedule}
               </span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex min-w-[150px] items-center justify-end gap-3">
+      <div className="flex shrink-0 items-center justify-end gap-4">
         {occurrence ? (
-          <span className={cn("status-chip", statusTone(occurrence.status))}>
+          <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest", statusTone(occurrence.status))}>
             {occurrence.status}
           </span>
         ) : (
-          <div className="flex items-center gap-2">
-            <span className={cn("status-chip", definition?.active ? "status-chip-teal" : "status-chip-slate")}>
-              {definition?.active ? "Active" : "Paused"}
-            </span>
-          </div>
+          <span className={cn(
+            "inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest",
+            definition?.active ? "bg-health-teal/10 text-health-teal border-health-teal/20" : "bg-muted/10 text-muted-foreground border-muted/20"
+          )}>
+            {definition?.active ? "Active" : "Paused"}
+          </span>
         )}
-        <div className="relative">
-          <button
-            ref={buttonRef}
-            className="h-8 w-8 rounded-lg text-[color:var(--muted-foreground)] opacity-70 transition-opacity hover:bg-[color:var(--muted)] hover:opacity-100"
-            aria-label="More options"
-            aria-expanded={menuOpen}
-            aria-haspopup="menu"
-            onClick={() => setMenuOpen((prev) => !prev)}
-            type="button"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
-          {menuOpen ? (
-            <div
-              ref={menuRef}
-              className="absolute right-0 top-full z-10 mt-2 w-44 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface)] p-1 shadow-lg"
-            >
-              {definition && onEdit ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onEdit();
-                    }}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-[color:var(--foreground)] hover:bg-[color:var(--muted)]"
-                  >
-                    Edit
-                  </button>
-                  {onToggle ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onToggle();
-                      }}
-                      disabled={toggleDisabled}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
-                        toggleDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
-                      )}
-                    >
-                      {definition.active ? "Pause" : "Activate"}
-                    </button>
-                  ) : null}
-                </>
-              ) : null}
 
-              {occurrence && onAction ? (
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground opacity-60 transition-all hover:bg-surface hover:opacity-100 focus-visible:ring-2 focus-visible:ring-accent-teal/40 outline-none"
+              aria-label="More options"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenu.Trigger>
+
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content 
+              className="z-50 min-w-[160px] overflow-hidden rounded-xl border border-border-soft bg-surface p-1 shadow-xl animate-in fade-in zoom-in-95"
+              sideOffset={8}
+              align="end"
+            >
+              {definition && onEdit && (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onAction("taken");
-                    }}
-                    disabled={actionDisabled}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
-                      actionDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
-                    )}
+                  <DropdownMenu.Item 
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-foreground outline-none hover:bg-panel focus:bg-panel transition-colors"
+                    onClick={onEdit}
                   >
-                    Finished
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onAction("skipped");
-                    }}
-                    disabled={actionDisabled}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
-                      actionDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
-                    )}
-                  >
-                    Skipped
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onAction("snooze", 10);
-                    }}
-                    disabled={actionDisabled}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
-                      actionDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
-                    )}
-                  >
-                    Snooze 10m
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onAction("snooze", 30);
-                    }}
-                    disabled={actionDisabled}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold",
-                      actionDisabled ? "text-[color:var(--muted-foreground)] opacity-60" : "text-[color:var(--foreground)] hover:bg-[color:var(--muted)]",
-                    )}
-                  >
-                    Snooze 30m
-                  </button>
+                    <Edit2 className="h-3.5 w-3.5 opacity-60" />
+                    Edit Details
+                  </DropdownMenu.Item>
+                  {onToggle && (
+                    <DropdownMenu.Item 
+                      disabled={toggleDisabled}
+                      className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-foreground outline-none hover:bg-panel focus:bg-panel disabled:opacity-40 transition-colors"
+                      onClick={onToggle}
+                    >
+                      {definition.active ? (
+                        <>
+                          <Pause className="h-3.5 w-3.5 opacity-60" />
+                          Pause Schedule
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-3.5 w-3.5 opacity-60" />
+                          Resume Schedule
+                        </>
+                      )}
+                    </DropdownMenu.Item>
+                  )}
+                  {occurrence && <DropdownMenu.Separator className="my-1 h-px bg-border-soft" />}
                 </>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+              )}
+
+              {occurrence && onAction && (
+                <>
+                  <DropdownMenu.Item 
+                    disabled={actionDisabled}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-health-teal outline-none hover:bg-health-teal/5 focus:bg-health-teal/5 disabled:opacity-40 transition-colors"
+                    onClick={() => onAction("taken")}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Mark Finished
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item 
+                    disabled={actionDisabled}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-health-rose outline-none hover:bg-health-rose/5 focus:bg-health-rose/5 disabled:opacity-40 transition-colors"
+                    onClick={() => onAction("skipped")}
+                  >
+                    <SkipForward className="h-3.5 w-3.5" />
+                    Skip Occurrence
+                  </DropdownMenu.Item>
+                  
+                  <DropdownMenu.Sub>
+                    <DropdownMenu.SubTrigger className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-foreground outline-none hover:bg-panel focus:bg-panel data-[state=open]:bg-panel transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Timer className="h-3.5 w-3.5 opacity-60" />
+                        Snooze
+                      </div>
+                      <ChevronRightIcon className="h-3 w-3 opacity-40" />
+                    </DropdownMenu.SubTrigger>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.SubContent 
+                        className="z-[60] min-w-[120px] overflow-hidden rounded-xl border border-border-soft bg-surface p-1 shadow-xl animate-in fade-in slide-in-from-left-2"
+                        sideOffset={4}
+                      >
+                        {[10, 30, 60].map((mins) => (
+                          <DropdownMenu.Item 
+                            key={mins}
+                            className="flex cursor-pointer items-center rounded-lg px-3 py-2 text-xs font-semibold text-foreground outline-none hover:bg-panel focus:bg-panel transition-colors"
+                            onClick={() => onAction("snooze", mins)}
+                          >
+                            {mins} minutes
+                          </DropdownMenu.Item>
+                        ))}
+                      </DropdownMenu.SubContent>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Sub>
+                </>
+              )}
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       </div>
-    </div>
+    </article>
+  );
+}
+
+function ChevronRightIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg 
+      {...props} 
+      xmlns="http://www.w3.org/2000/svg" 
+      width="24" 
+      height="24" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
   );
 }

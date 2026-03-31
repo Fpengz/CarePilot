@@ -12,9 +12,7 @@ from care_pilot.features.companion.core.domain import (
     InteractionType,
     PersonalizationContext,
 )
-from care_pilot.features.companion.core.health.models import (
-    HealthProfileRecord,
-)
+from care_pilot.features.companion.core.health.models import HealthProfileRecord
 from care_pilot.features.meals.domain.models import MealState
 from care_pilot.features.profiles.domain.models import ProfileMode, UserProfile
 from care_pilot.features.profiles.domain.profile_tools import (
@@ -93,7 +91,7 @@ def build_personalization_context(
     elif interaction_goal in {"swap", "next_step"}:
         explanation_style = "action-first"
 
-    candidate_modes = [interaction_goal]
+    candidate_modes: list[str] = [interaction_goal]
     if emotion_signal in {"sad", "frustrated", "anxious"}:
         candidate_modes.append("supportive_coaching")
     if snapshot.reminder_count and snapshot.reminder_response_rate == 0.0:
