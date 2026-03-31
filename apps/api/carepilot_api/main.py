@@ -82,13 +82,13 @@ async def _prewarm_models(ctx: AppContext) -> None:
 async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     ctx_owned = bool(getattr(app.state, "ctx_owned", False))
     ctx_present = getattr(app.state, "ctx", None) is not None
-    print(f"DEBUG: lifespan enter owned={ctx_owned} present={ctx_present}")
+    logger.debug("lifespan_enter", extra={"owned": ctx_owned, "present": ctx_present})
     if ctx_owned and getattr(app.state, "ctx", None) is None:
-        print("DEBUG: lifespan building new context")
+        logger.info("lifespan_building_context")
         app.state.ctx = build_app_context()
 
     ctx = cast(AppContext, app.state.ctx)
-    print(f"DEBUG: lifespan using ctx {id(ctx)}")
+    logger.debug("lifespan_using_context", extra={"ctx_id": id(ctx)})
     maintenance_task = asyncio.create_task(_run_maintenance(ctx))
     worker_task = asyncio.create_task(run_background_worker())
 

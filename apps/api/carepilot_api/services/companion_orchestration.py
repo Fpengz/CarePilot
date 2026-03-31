@@ -172,12 +172,18 @@ async def load_companion_inputs(
     if include_sections is None or "blood_pressure_readings" in include_sections:
         tasks_to_run.append(all_data_sources["blood_pressure_readings"])
 
-    results = await asyncio.gather(*tasks_to_run)
+    results = await asyncio.gather(*tasks_to_run, return_exceptions=True)
 
     # Assign results based on the order of tasks_to_run
-    # This mapping assumes the order in all_data_sources is maintained, which asyncio.gather guarantees for results list.
-    # A more robust way would be to map results back to their original task names.
-    # For simplicity, we use the order here.
+    # Handle exceptions gracefully for partial failures
+    def safe_get_result(idx: int, default: any):
+        if idx < len(results):
+            result = results[idx]
+            if isinstance(result, Exception):
+                logger.warning("data_load_failed", extra={"error": str(result)})
+                return default
+            return result
+        return default
 
     # Initialize variables
     user_profile: UserProfile | None = None
@@ -191,28 +197,28 @@ async def load_companion_inputs(
 
     idx = 0
     if include_sections is None or "user_profile" in include_sections:
-        user_profile = cast(UserProfile, results[idx])
+        user_profile = cast(UserProfile, safe_get_result(idx, None))
         idx += 1
     if include_sections is None or "health_profile" in include_sections:
-        health_profile = cast(HealthProfileRecord | None, results[idx])
+        health_profile = cast(HealthProfileRecord | None, safe_get_result(idx, None))
         idx += 1
     if include_sections is None or "meals" in include_sections:
-        meals = cast(list[MealRecognitionRecord], results[idx])
+        meals = cast(list[MealRecognitionRecord], safe_get_result(idx, []))
         idx += 1
     if include_sections is None or "reminders" in include_sections:
-        reminders = cast(list[ReminderEvent], results[idx])
+        reminders = cast(list[ReminderEvent], safe_get_result(idx, []))
         idx += 1
     if include_sections is None or "adherence_events" in include_sections:
-        adherence_events = cast(list[MedicationAdherenceEvent], results[idx])
+        adherence_events = cast(list[MedicationAdherenceEvent], safe_get_result(idx, []))
         idx += 1
     if include_sections is None or "symptoms" in include_sections:
-        symptoms = cast(list[SymptomCheckIn], results[idx])
+        symptoms = cast(list[SymptomCheckIn], safe_get_result(idx, []))
         idx += 1
     if include_sections is None or "biomarker_readings" in include_sections:
-        readings = cast(list[BiomarkerReading], results[idx])
+        readings = cast(list[BiomarkerReading], safe_get_result(idx, []))
         idx += 1
     if include_sections is None or "blood_pressure_readings" in include_sections:
-        bp_readings = cast(list[BloodPressureReading], results[idx])
+        bp_readings = cast(list[BloodPressureReading], safe_get_result(idx, []))
         idx += 1
 
     # Check if emotion signal is requested or always fetched
