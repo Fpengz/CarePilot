@@ -4,6 +4,8 @@ Design documentation and architecture references. Update this index when new des
 
 | Doc | Status | Last Verified | Owner |
 | --- | --- | --- | --- |
+| `docs/design-docs/architecture/versioning-policy.md` | active | 2026-03-31 | platform |
+| `docs/design-docs/architecture/changelog-policy.md` | active | 2026-03-31 | platform |
 | `docs/design-docs/core-beliefs.md` | active | 2026-03-30 | platform |
 | `docs/design-docs/workflows.md` | active | 2026-03-29 | platform |
 | `docs/design-docs/architecture/system_architecture.md` | active | 2026-03-30 | platform |

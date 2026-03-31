@@ -85,6 +85,9 @@ uv run python scripts/cli.py dev --no-scheduler
 
 ## Development Workflow
 
+### Project Versioning
+CarePilot follows Semantic Versioning (SemVer) and maintains a curated `CHANGELOG.md`. See the [Project Versioning Policy](../design-docs/architecture/versioning-policy.md) for details.
+
 ### Branch Strategy
 Use short-lived feature branches from `main`.
 
