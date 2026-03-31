@@ -241,7 +241,7 @@ def _build_regimen_from_instruction(
         fixed_time=instruction.fixed_time,
         max_daily_doses=max(1, instruction.frequency_times_per_day),
         instructions_text=instructions_text,
-        source_type=source_type,  # type: ignore[arg-type]
+        source_type=cast(Any, source_type),
         source_filename=source_filename,
         source_hash=source_hash,
         start_date=instruction.start_date,

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import uuid4
 
 from apps.api.carepilot_api.routes_shared import default_demo_regimens
@@ -350,7 +350,7 @@ def apply_occurrence_action_for_session(
             occurrence_id=occurrence.id,
             reminder_definition_id=definition.id,
             user_id=user_id,
-            action=action,  # type: ignore[arg-type]
+            action=cast(Any, action),
             acted_at=acted_at,
             snooze_minutes=snooze_minutes,
         )

@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, date, datetime, timedelta
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 from zoneinfo import ZoneInfo
 
 from care_pilot.core.contracts.api import (
+    BloodPressureChartPointResponse,
     BloodPressureChartResponse,
     BloodPressureSummaryEnvelopeResponse,
     BloodPressureSummaryResponse,
@@ -190,7 +191,7 @@ async def load_companion_inputs(
 
     # Assign results based on the order of tasks_to_run
     # Handle exceptions gracefully for partial failures
-    def safe_get_result(idx: int, default: any):  # noqa: ANN401
+    def safe_get_result(idx: int, default: Any):  # noqa: ANN401
         if idx < len(results):
             result = results[idx]
             if isinstance(result, Exception):
@@ -377,7 +378,7 @@ async def get_blood_pressure_chart(
             range_key if range_key in {"7d", "30d", "3m", "1y", "custom"} else "30d",
         ),
         generated_at=datetime.now(UTC),
-        points=points,  # type: ignore[arg-type]
+        points=cast(list[BloodPressureChartPointResponse], points),
     )
 
 
