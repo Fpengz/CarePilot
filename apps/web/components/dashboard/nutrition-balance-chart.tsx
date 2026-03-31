@@ -16,7 +16,7 @@ const FUEL_COLORS = {
 
 export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi }) {
   const [view, setView] = useState<ViewMode>("all");
-  const data = chart.points;
+  const data = Array.isArray(chart?.points) ? chart.points : [];
 
   const modes: { id: ViewMode; label: string; color: string }[] = [
     { id: "all", label: "All", color: "var(--foreground)" },

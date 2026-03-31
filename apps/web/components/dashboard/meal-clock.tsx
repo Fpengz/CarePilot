@@ -2,6 +2,8 @@ import { PolarGrid, PolarAngleAxis, Radar, RadarChart, ResponsiveContainer } fro
 import { CHART_COLORS } from "./chart-utils";
 
 export function MealClock({ bins }: { bins: { hour: number; count: number }[] }) {
+  const chartData = Array.isArray(bins) ? bins : [];
+
   return (
     <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm h-full">
       <div className="flex flex-col items-start gap-1 mb-8 px-1">
@@ -10,7 +12,7 @@ export function MealClock({ bins }: { bins: { hour: number; count: number }[] })
       </div>
       <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={bins}>
+          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
             <PolarGrid stroke="var(--chart-grid)" strokeOpacity={0.5} />
             <PolarAngleAxis dataKey="hour" fontSize={9} fontWeight="bold" tick={{ fill: 'var(--chart-text)' }} />
             <Radar 

@@ -27,6 +27,9 @@ export function ClinicalSummary({
   const recTitle = typeof recommendation === "object" ? recommendation.title : "Clinical Insight";
   const recDetail = typeof recommendation === "object" ? recommendation.detail : recommendation;
 
+  const adherenceData = Array.isArray(adherenceChart) ? adherenceChart : [];
+  const riskData = Array.isArray(riskChart) ? riskChart : [];
+
   return (
     <section className="py-2 space-y-10">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 px-2">
@@ -50,7 +53,7 @@ export function ClinicalSummary({
           </div>
           <div className="h-12 w-full max-w-sm opacity-80">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={adherenceChart}>
+              <AreaChart data={adherenceData}>
                 <Area type="monotone" dataKey="value" stroke="var(--accent-teal)" fill="var(--accent-teal)" fillOpacity={0.1} strokeWidth={3} />
               </AreaChart>
             </ResponsiveContainer>
@@ -79,7 +82,7 @@ export function ClinicalSummary({
           </div>
           <div className="h-12 w-full max-w-sm opacity-80">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={riskChart}>
+              <AreaChart data={riskData}>
                 <Area type="monotone" dataKey="value" stroke="#d97706" fill="#d97706" fillOpacity={0.1} strokeWidth={3} />
               </AreaChart>
             </ResponsiveContainer>

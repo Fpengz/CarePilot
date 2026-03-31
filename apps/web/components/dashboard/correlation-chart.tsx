@@ -3,10 +3,13 @@ import { CHART_COLORS, COMMON_AXIS_PROPS, ClinicalTooltip } from "./chart-utils"
 
 export function CorrelationChart({ calories, risk }: { calories: any[]; risk: any[] }) {
   // Merge data based on labels
-  const data = calories.map((c, i) => ({
+  const caloriesData = Array.isArray(calories) ? calories : [];
+  const riskData = Array.isArray(risk) ? risk : [];
+
+  const data = caloriesData.map((c, i) => ({
     label: c.label,
     calories: c.value,
-    risk: risk[i]?.value
+    risk: riskData[i]?.value
   }));
 
   return (
