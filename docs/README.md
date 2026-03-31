@@ -7,7 +7,7 @@ This directory is the system of record for CarePilot repository knowledge. Start
 - `docs/exec-plans/index.md` — active/in-progress/completed execution plans + templates
 - `docs/product-specs/index.md` — product specs and user-facing behavior
 - `docs/references/index.md` — API, ops, config, and engineering references
- - `docs/design-docs/architecture/event-driven/ARCHITECTURE.md` — primary event-driven architecture (orchestration-first is legacy)
+- `docs/design-docs/architecture/event-driven/ARCHITECTURE.md` — primary event-driven architecture (orchestration-first is legacy)
 
 ## Canonical Root Docs
 - `README.md` — product overview and setup
@@ -45,6 +45,6 @@ This directory is the system of record for CarePilot repository knowledge. Start
 - New documentation must live under one of the indexed sections above.
 - Indexes must include `Doc | Status | Last Verified | Owner` columns.
 - Use relative links; absolute local paths are disallowed.
- - Keep docs fresh: update `Last Verified` dates or deprecate stale material.
- - Run `uv run python scripts/docs/validate_knowledge_base.py` before merging doc changes.
- - Use `uv run python scripts/docs/doc_gardener.py` to surface stale or deprecated docs.
+- Keep docs fresh: update `Last Verified` dates or deprecate stale material.
+- Run `uv run python scripts/docs/validate_knowledge_base.py` before merging doc changes.
+- Use `uv run python scripts/docs/doc_gardener.py` to surface stale or deprecated docs.
