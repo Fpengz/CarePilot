@@ -28,54 +28,52 @@ export function MealRecordsList() {
   const orderedDates = useMemo(() => Object.keys(groupedRecords), [groupedRecords]);
 
   return (
-    <div className="glass-card">
-      <div className="mb-6">
-        <h3 className="text-base font-bold">Meal History Timeline</h3>
-        <p className="text-xs text-[color:var(--muted-foreground)]">Most recent meal logs and estimated calories.</p>
+    <div className="space-y-6">
+      <div className="px-1">
+        <h3 className="text-lg font-semibold tracking-tight text-foreground">Meal History Timeline</h3>
+        <p className="text-[13px] text-muted-foreground leading-relaxed">Most recent meal logs and estimated calories.</p>
       </div>
       <div className="space-y-4">
         {recordItems.length > 0 ? (
-          <div className="max-h-[32rem] overflow-y-auto pr-1 scrollbar-hide">
-            <div className="space-y-5">
-              {orderedDates.map((dateKey) => (
-                <div key={dateKey} className="space-y-3">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--muted-foreground)]">
-                    {dateKey}
-                  </div>
-                  <div className="space-y-3">
-                    {groupedRecords[dateKey].map((record, index) => (
-                      <div
-                        key={String(record.id ?? `${record.meal_name ?? "unknown"}${index}`)}
-                        className="rounded-xl border border-white/10 bg-white/10 dark:bg-black/10 px-4 py-3 transition-colors hover:bg-white/20 dark:hover:bg-black/20"
-                      >
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-bold">{String(record.meal_name ?? "Meal record")}</div>
-                            <div className="mt-1 text-[10px] font-medium text-[color:var(--muted-foreground)] opacity-60">
-                              {record.captured_at || record.created_at
-                                ? formatDateTime((record.captured_at ?? record.created_at!) as string)
-                                : "Unknown capture time"}
-                            </div>
-                          </div>
-                          <div className="text-sm font-bold text-health-teal">
-                            {typeof record.calories_estimate === "number"
-                              ? `${Math.round(record.calories_estimate)} kcal`
-                              : typeof record.estimated_calories === "number"
-                                ? `${Math.round(Number(record.estimated_calories))} kcal`
-                                : "—"}
+          <div className="space-y-8">
+            {orderedDates.map((dateKey) => (
+              <section key={dateKey} className="space-y-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-teal px-1">
+                  {dateKey}
+                </h4>
+                <div className="grid gap-3">
+                  {groupedRecords[dateKey].map((record, index) => (
+                    <article
+                      key={String(record.id ?? `${record.meal_name ?? "unknown"}${index}`)}
+                      className="rounded-xl border border-border-soft bg-panel px-5 py-4 transition-all hover:border-accent-teal/30 shadow-sm group"
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="truncate text-[13px] font-bold text-foreground">{String(record.meal_name ?? "Meal record")}</div>
+                          <div className="mt-1 text-[11px] font-medium text-muted-foreground">
+                            {record.captured_at || record.created_at
+                              ? formatDateTime((record.captured_at ?? record.created_at!) as string)
+                              : "Unknown capture time"}
                           </div>
                         </div>
+                        <div className="text-[13px] font-bold text-health-teal bg-health-teal/5 px-2.5 py-1 rounded-lg border border-health-teal/10">
+                          {typeof record.calories_estimate === "number"
+                            ? `${Math.round(record.calories_estimate)} kcal`
+                            : typeof record.estimated_calories === "number"
+                              ? `${Math.round(Number(record.estimated_calories))} kcal`
+                              : "—"}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    </article>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </section>
+            ))}
           </div>
         ) : (
-          <div className="py-12 text-center">
-            <p className="text-xs text-[color:var(--muted-foreground)] opacity-60">
-              No meal history yet. Log a meal to build the timeline.
+          <div className="py-16 text-center bg-panel border border-dashed border-border-soft rounded-2xl">
+            <p className="text-[13px] text-muted-foreground font-medium italic opacity-60">
+              No meal history observed in this window.
             </p>
           </div>
         )}

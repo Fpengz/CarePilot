@@ -83,11 +83,11 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
   const isBusy = mutation.isPending;
 
   return (
-    <div className="clinical-card space-y-8">
-      <div className="space-y-1">
-        <h3 className="clinical-subtitle">Meal Vision</h3>
-        <p className="clinical-body">
-          Log a meal by uploading an image. Our clinical model will identify ingredients and estimate nutritional load.
+    <div className="space-y-10">
+      <div className="space-y-1.5 px-1">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-teal">Meal Vision</h3>
+        <p className="text-[13px] text-muted-foreground leading-relaxed max-w-xl">
+          Log a meal by uploading an image. Our clinical model will identify ingredients and estimate nutritional load automatically.
         </p>
       </div>
 
@@ -103,24 +103,24 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
         
         {!file && (
           <div 
-            className="group flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-[color:var(--border-soft)] bg-[color:var(--surface)] p-12 transition-all hover:border-[color:var(--accent)] hover:bg-[color:var(--accent)]/[0.02]"
+            className="group flex cursor-pointer flex-col items-center justify-center gap-5 rounded-2xl border-2 border-dashed border-border-soft bg-panel p-16 transition-all hover:border-accent-teal/30 hover:bg-surface hover:shadow-sm"
             onClick={() => fileInputRef.current?.click()}
           >
-            <div className="rounded-full bg-[color:var(--accent)]/5 p-4 text-[color:var(--accent)] transition-transform group-hover:scale-110">
-              <UploadCloud className="h-8 w-8" aria-hidden />
+            <div className="rounded-xl bg-accent-teal/10 p-4 text-accent-teal group-hover:scale-110 transition-transform">
+              <UploadCloud className="h-8 w-8" aria-hidden="true" />
             </div>
             <div className="text-center">
-              <div className="text-sm font-bold tracking-tight">Upload Meal Image</div>
-              <p className="mt-1 text-xs text-[color:var(--muted-foreground)] opacity-60">
-                Drag and drop or click to browse (JPG, PNG, WEBP)
+              <div className="text-sm font-bold tracking-widest text-foreground uppercase">Upload Image</div>
+              <p className="mt-1.5 text-[11px] font-medium text-muted-foreground opacity-60">
+                JPEG, PNG or WEBP
               </p>
             </div>
           </div>
         )}
 
         {file && (
-          <div className="space-y-4">
-            <div className="relative aspect-video overflow-hidden rounded-xl border border-[color:var(--border-soft)] shadow-sm">
+          <div className="space-y-6">
+            <div className="relative aspect-video overflow-hidden rounded-2xl border border-border-soft shadow-sm bg-panel">
               <Image 
                 src={previewUrl!} 
                 alt="Selected meal preview" 
@@ -128,11 +128,11 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
                 className={cn("object-cover transition-all", isBusy && "scale-105 blur-[2px]")} 
                 unoptimized 
               />
-              <div className="absolute top-3 right-3 flex gap-2">
+              <div className="absolute top-4 right-4 flex gap-2">
                 <Button 
                   size="sm" 
                   variant="secondary" 
-                  className="h-8 w-8 rounded-full p-0 bg-white/90 backdrop-blur-sm text-black hover:bg-white shadow-sm"
+                  className="h-9 w-9 rounded-full p-0 bg-white/90 backdrop-blur-sm text-black hover:bg-white shadow-sm border-none"
                   onClick={handleClear}
                   aria-label="Remove image"
                 >
@@ -140,30 +140,30 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
                 </Button>
               </div>
               {isBusy && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">Analyzing...</span>
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">Analyzing clinical profile...</span>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button 
-                className="flex-1 rounded-xl h-12 font-bold" 
+                className="flex-1 rounded-xl h-12 font-bold shadow-sm" 
                 disabled={!!isBusy || !!result} 
                 onClick={handleAnalyze}
               >
-                <AsyncLabel active={!!isBusy} loading="Analyzing" idle="Start Analysis" />
+                <AsyncLabel active={!!isBusy} loading="Processing" idle="Start Clinical Analysis" />
               </Button>
               {result && (
                 <Button 
                   variant="secondary" 
-                  className="rounded-xl h-12 gap-2" 
+                  className="rounded-xl h-12 px-6 gap-2 font-semibold" 
                   onClick={handleClear}
                 >
-                  <RotateCcw className="h-4 w-4" /> New Analysis
+                  <RotateCcw className="h-4 w-4" /> Reset
                 </Button>
               )}
             </div>
@@ -171,13 +171,15 @@ export function MealAnalyzer({ onSuccess }: MealAnalyzerProps) {
         )}
 
         {result && (
-          <MealAnalysisResult
-            data={result}
-            onConfirm={() => confirmMutation.mutate("confirm")}
-            onSkip={() => confirmMutation.mutate("skip")}
-            confirmationPending={confirmMutation.isPending}
-            confirmationStatus={confirmationStatus}
-          />
+          <div className="animate-in zoom-in-95 slide-in-from-top-4 duration-500">
+            <MealAnalysisResult
+              data={result}
+              onConfirm={() => confirmMutation.mutate("confirm")}
+              onSkip={() => confirmMutation.mutate("skip")}
+              confirmationPending={confirmMutation.isPending}
+              confirmationStatus={confirmationStatus}
+            />
+          </div>
         )}
       </div>
     </div>

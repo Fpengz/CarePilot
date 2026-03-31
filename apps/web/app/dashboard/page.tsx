@@ -43,12 +43,12 @@ export default function DashboardPage() {
   }, [range]);
 
   return (
-    <div className="section-stack max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 bg-background min-h-screen">
+    <main className="section-stack max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 bg-background min-h-screen">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between py-10">
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between py-10">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <LayoutDashboard className="h-8 w-8 text-accent-teal" />
+            <LayoutDashboard className="h-8 w-8 text-accent-teal" aria-hidden="true" />
             <h1 className="text-h1 font-display tracking-tight text-foreground">Health Dashboard</h1>
           </div>
           <p className="text-sm text-muted-foreground font-medium max-w-2xl">
@@ -69,14 +69,14 @@ export default function DashboardPage() {
             disabled={loading}
             className="gap-2 rounded-xl h-11 px-4 bg-surface shadow-sm border-border-soft hover:bg-panel transition-all"
           >
-            <RefreshCcw className={loading ? "animate-spin h-4 w-4" : "h-4 w-4"} />
+            <RefreshCcw className={loading ? "animate-spin h-4 w-4" : "h-4 w-4"} aria-hidden="true" />
             <AsyncLabel active={loading} idle="Refresh" loading="Refreshing" />
           </Button>
         </div>
-      </div>
+      </header>
 
       {error ? (
-        <div className="mb-6">
+        <div className="mb-6" role="alert">
           <ErrorCard message={error} />
         </div>
       ) : null}
@@ -86,14 +86,16 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             {/* Main Insights Column */}
             <div className="lg:col-span-8 space-y-16">
-              <ClinicalSummary 
-                adherence={data.summary.adherence_score.value}
-                risk={data.summary.glycemic_risk.value}
-                nutrition={data.summary.nutrition_goal_score.value}
-                adherenceChart={data.charts.adherence.points}
-                riskChart={data.charts.glycemic_risk.points}
-                recommendation={data.insights.recommendations[0]}
-              />
+              <section aria-label="Clinical Summary">
+                <ClinicalSummary 
+                  adherence={data.summary.adherence_score.value}
+                  risk={data.summary.glycemic_risk.value}
+                  nutrition={data.summary.nutrition_goal_score.value}
+                  adherenceChart={data.charts.adherence.points}
+                  riskChart={data.charts.glycemic_risk.points}
+                  recommendation={data.insights.recommendations[0]}
+                />
+              </section>
 
               {/* Row 2: Metabolic Rhythms */}
               <section className="space-y-10">
@@ -129,51 +131,54 @@ export default function DashboardPage() {
 
             {/* Sidebar: Alerts & Actions */}
             <aside className="lg:col-span-4 space-y-12 lg:sticky lg:top-8">
-              <div className="bg-panel border border-border-soft rounded-[2.5rem] p-10 shadow-sm">
+              <section 
+                className="bg-panel border border-border-soft rounded-2xl p-8 shadow-sm"
+                aria-labelledby="alerts-heading"
+              >
                 <div className="flex items-center justify-between mb-8 px-1">
                   <div className="space-y-1.5">
-                    <p className="text-micro-label text-muted-foreground uppercase font-bold tracking-widest opacity-60">Clinical Priority</p>
-                    <h3 className="text-2xl font-semibold tracking-tight text-foreground">Active Alerts</h3>
+                    <h3 id="alerts-heading" className="text-lg font-semibold tracking-tight text-foreground">Active Alerts</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-teal">Clinical Priority</p>
                   </div>
-                  <Badge className="bg-accent-teal/10 text-accent-teal hover:bg-accent-teal/20 border-accent-teal/20 h-7 w-7 rounded-full flex items-center justify-center p-0 font-bold">
+                  <Badge className="bg-accent-teal/10 text-accent-teal border-accent-teal/20 h-6 px-2 rounded-lg flex items-center justify-center p-0 text-[11px] font-bold">
                     {data.alerts.length}
                   </Badge>
                 </div>
-                <div className="space-y-5">
+                <div className="space-y-3">
                   {data.alerts.length ? (
                     data.alerts.slice(0, 4).map((alert) => (
-                      <div
+                      <article
                         key={alert.id}
-                        className="rounded-3xl border border-border-soft bg-surface px-6 py-5 shadow-sm group hover:border-accent-teal/30 transition-all"
+                        className="rounded-xl border border-border-soft bg-surface px-5 py-4 shadow-sm group hover:border-accent-teal/30 transition-all"
                       >
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <span className="text-sm font-bold text-foreground">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="text-[13px] font-semibold text-foreground">
                             {alert.title}
                           </span>
                           <span
-                            className={`text-[10px] font-bold uppercase tracking-wider ${
+                            className={`text-[9px] font-bold uppercase tracking-widest ${
                               alert.severity === "critical"
-                                ? "text-rose-600"
+                                ? "text-health-rose"
                                 : alert.severity === "warning"
-                                  ? "text-amber-600"
-                                  : "text-emerald-600"
+                                  ? "text-health-amber"
+                                  : "text-health-teal"
                             }`}
                           >
                             {alert.severity}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
+                        <p className="text-[12px] text-muted-foreground leading-relaxed">
                           {alert.detail}
                         </p>
-                      </div>
+                      </article>
                     ))
                   ) : (
-                    <div className="rounded-[2rem] border border-dashed border-border-soft p-10 text-center text-xs text-muted-foreground bg-surface/50">
+                    <div className="rounded-xl border border-dashed border-border-soft p-8 text-center text-[12px] text-muted-foreground bg-surface/50">
                       No critical alerts observed in this window.
                     </div>
                   )}
                 </div>
-              </div>
+              </section>
 
               <NextActions 
                 recommendations={data.insights.recommendations}
@@ -187,6 +192,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }

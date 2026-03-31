@@ -46,13 +46,16 @@ export const MessageItem = memo(function MessageItem({
   if (isUser) {
     return (
       <div className="flex justify-end mb-6" style={{ contentVisibility: "auto", containIntrinsicSize: "0 80px" }}>
-        <div className="max-w-[85%] rounded-2xl bg-accent-teal px-6 py-4 text-sm text-white shadow-sm">
+        <div className="max-w-[85%] rounded-2xl bg-accent-teal px-6 py-4 text-sm text-white shadow-sm ring-1 ring-accent-teal/10">
           <div className="whitespace-pre-wrap leading-relaxed font-medium">{message.content}</div>
           {message.emotion ? (
             <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2 text-micro-label uppercase opacity-90">
-              <span className="text-sm">{EMOJI[message.emotion.label] ?? "🫥"}</span>
+              <span className="text-sm" aria-hidden="true">{EMOJI[message.emotion.label] ?? "🫥"}</span>
+              <span className="sr-only">Detected emotion:</span>
               <span>{message.emotion.label}</span>
-              <span className="opacity-60">({Math.round(message.emotion.score * 100)}%)</span>
+              <span className="opacity-60" aria-label={`${Math.round(message.emotion.score * 100)}% confidence`}>
+                ({Math.round(message.emotion.score * 100)}%)
+              </span>
             </div>
           ) : null}
         </div>
