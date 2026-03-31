@@ -24,6 +24,7 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 dependencies = [
+    "aiosqlite>=0.22.1",
     "alembic>=1.18.4",
     "chromadb>=1.5.5",
     "ddgs>=9.11.3",

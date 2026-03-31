@@ -2,15 +2,14 @@
 Manages SQLModel database sessions for authentication operations.
 """
 
-from collections.abc import Iterator
-from contextlib import contextmanager
+from __future__ import annotations
+
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager, contextmanager
 
 from sqlalchemy.engine import Engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlmodel import Session
-
-# Assume engine is configured and available, e.g., from care_pilot.platform.persistence.engine
-# For now, placeholder:
-# engine = create_engine("sqlite:///./auth.db") # Example connection string
 
 
 class AuthSQLModelSessionManager:
@@ -28,3 +27,20 @@ class AuthSQLModelSessionManager:
             raise
         finally:
             session.close()
+
+
+class AuthAsyncSQLModelSessionManager:
+    def __init__(self, engine: AsyncEngine):
+        self.engine = engine
+
+    @asynccontextmanager
+    async def get_session(self) -> AsyncIterator[AsyncSession]:
+        async with AsyncSession(self.engine) as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+            finally:
+                await session.close()
