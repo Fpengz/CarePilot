@@ -266,6 +266,8 @@ class ObservabilitySettings(BaseSettings):
     api_dev_log_verbose: bool = False
     api_dev_log_headers: bool = False
     api_dev_log_response_headers: bool = False
+    logfire_token: str | None = Field(default=None, validation_alias="LOGFIRE_TOKEN")
+    logfire_enabled: bool = Field(default=False, validation_alias="LOGFIRE_ENABLED")
 
 
 # ---------------------------------------------------------------------------
