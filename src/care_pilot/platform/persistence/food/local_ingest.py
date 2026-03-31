@@ -15,11 +15,14 @@ import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 
+from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence.food.local_retriever import (
     COLLECTION_NAME,
     EMBEDDING_MODEL,
     VECTORSTORE_DIR,
 )
+
+logger = get_logger(__name__)
 
 STATIC_DATA_DIR = Path(__file__).resolve().parents[5] / "src" / "care_pilot" / "data"
 HAWKER_JSON = STATIC_DATA_DIR / "food" / "sg_hawker_food.json"
@@ -220,31 +223,31 @@ class FoodInfoIngester:
 
     def ingest_hawker(self) -> None:
         if not HAWKER_JSON.exists():
-            print(f"[FoodInfoIngester] Missing {HAWKER_JSON}")
+            logger.info("[FoodInfoIngester] Missing %s", HAWKER_JSON)
             return
         with HAWKER_JSON.open(encoding="utf-8") as handle:
             foods: list[dict[str, Any]] = json.load(handle)
         chunks: list[dict] = []
         for food in foods:
             chunks.extend(HawkerChunker.chunk(food))
-        print(f"[FoodInfoIngester] {len(foods)} foods -> {len(chunks)} chunks")
+        logger.info("[FoodInfoIngester] %s foods -> %s chunks", len(foods), len(chunks))
         self._upsert_chunks(chunks)
 
     def ingest_drinks(self) -> None:
         if not DRINKS_JSON.exists():
-            print(f"[FoodInfoIngester] Missing {DRINKS_JSON}")
+            logger.info("[FoodInfoIngester] Missing %s", DRINKS_JSON)
             return
         with DRINKS_JSON.open(encoding="utf-8") as handle:
             data: dict = json.load(handle)
         chunks = DrinkChunker.chunk(data)
-        print(f"[FoodInfoIngester] {len(chunks)} drink chunks")
+        logger.info("[FoodInfoIngester] %s drink chunks", len(chunks))
         self._upsert_chunks(chunks)
 
     def run(self) -> None:
         self.ingest_hawker()
         self.ingest_drinks()
         total = self._collection.count()
-        print(f"[FoodInfoIngester] Done. Collection '{COLLECTION_NAME}' has {total} documents.")
+        logger.info("[FoodInfoIngester] Done. Collection '%s' has %s documents.", COLLECTION_NAME, total)
 
 
 def _smoke_test() -> None:

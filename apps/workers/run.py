@@ -15,7 +15,7 @@ from care_pilot.config.app import get_settings
 from care_pilot.platform.app_context import build_app_context, close_app_context
 from care_pilot.platform.eventing.runner import run_eventing_once
 from care_pilot.platform.messaging import OutboxWorker
-from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability import get_logger, setup_observability
 from care_pilot.platform.scheduling import run_reminder_scheduler_once
 
 logger = get_logger(__name__)
@@ -113,6 +113,7 @@ async def _run_worker_iteration(*, ctx, settings, owner: str) -> bool:
 
 async def run_worker_loop() -> None:
     settings = get_settings()
+    setup_observability()
     ctx = build_app_context()
     owner = f"worker-{uuid4().hex[:8]}"
     logger.info(

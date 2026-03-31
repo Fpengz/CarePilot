@@ -29,6 +29,9 @@ typecheck: ## Run backend and frontend typechecking
 	uv run ty check . --extra-search-path src --output-format concise
 	cd apps/web && pnpm typecheck
 
+housekeeping: ## Run overnight repository maintenance
+	uv run python scripts/housekeeping.py
+
 clean: ## Remove build artifacts and caches
 	rm -rf .pytest_cache .ruff_cache .mypy_cache .ty_cache
 	rm -rf apps/web/.next apps/web/node_modules

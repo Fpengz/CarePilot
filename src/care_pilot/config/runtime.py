@@ -262,6 +262,7 @@ class ObservabilitySettings(BaseSettings):
     log_level: str = Field(default="INFO", validation_alias="CARE_PILOT_LOG_LEVEL")
     log_llm_payloads: bool = Field(default=False, validation_alias="CARE_PILOT_LOG_LLM_PAYLOADS")
     log_hf_payloads: bool = Field(default=False, validation_alias="CARE_PILOT_LOG_HF_PAYLOADS")
+    logfire_token: str | None = Field(default=None, validation_alias="LOGFIRE_TOKEN")
     readiness_fail_on_warnings: bool | None = None
     api_dev_log_verbose: bool = False
     api_dev_log_headers: bool = False

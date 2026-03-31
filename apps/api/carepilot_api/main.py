@@ -16,6 +16,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
+import logfire
 from care_pilot.platform.app_context import build_app_context, close_app_context
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.runtime.background_tasks import run_background_worker
@@ -30,6 +31,8 @@ from .errors import (
 )
 from .middleware import request_context_middleware
 from .routers import include_routers
+
+logfire_api = cast(Any, logfire)
 
 logger = get_logger(__name__)
 
@@ -82,13 +85,13 @@ async def _prewarm_models(ctx: AppContext) -> None:
 async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     ctx_owned = bool(getattr(app.state, "ctx_owned", False))
     ctx_present = getattr(app.state, "ctx", None) is not None
-    print(f"DEBUG: lifespan enter owned={ctx_owned} present={ctx_present}")
+    logger.debug("lifespan_enter owned=%s present=%s", ctx_owned, ctx_present)
     if ctx_owned and getattr(app.state, "ctx", None) is None:
-        print("DEBUG: lifespan building new context")
+        logger.debug("lifespan_build_context")
         app.state.ctx = build_app_context()
 
     ctx = cast(AppContext, app.state.ctx)
-    print(f"DEBUG: lifespan using ctx {id(ctx)}")
+    logger.debug("lifespan_using_ctx id=%s", id(ctx))
     maintenance_task = asyncio.create_task(_run_maintenance(ctx))
     worker_task = asyncio.create_task(run_background_worker())
 
@@ -131,6 +134,7 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
     settings = app.state.ctx.settings
 
     # Middleware
+    logfire_api.instrument_fastapi(app)
     app.add_middleware(
         cast(Any, CORSMiddleware),
         allow_origins=_csv_values(
