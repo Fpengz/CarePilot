@@ -51,6 +51,7 @@ NotificationLogEventType = Literal[
     "cancelled",
 ]
 
+
 class MessageAttachment(BaseModel):
     attachment_type: Literal["image", "audio", "file"] = "image"
     url: str

@@ -93,9 +93,15 @@ class AuthSettings(BaseSettings):
         validation_alias="AUTH_AUDIT_EVENTS_MAX_ENTRIES",
     )
     seed_demo_users: bool = Field(default=True, validation_alias="AUTH_SEED_DEMO_USERS")
-    demo_member_password: str = Field(default="member-pass", validation_alias="AUTH_DEMO_MEMBER_PASSWORD")
-    demo_helper_password: str = Field(default="helper-pass", validation_alias="AUTH_DEMO_HELPER_PASSWORD")
-    demo_admin_password: str = Field(default="admin-pass", validation_alias="AUTH_DEMO_ADMIN_PASSWORD")
+    demo_member_password: str = Field(
+        default="member-pass", validation_alias="AUTH_DEMO_MEMBER_PASSWORD"
+    )
+    demo_helper_password: str = Field(
+        default="helper-pass", validation_alias="AUTH_DEMO_HELPER_PASSWORD"
+    )
+    demo_admin_password: str = Field(
+        default="admin-pass", validation_alias="AUTH_DEMO_ADMIN_PASSWORD"
+    )
 
 
 # ---------------------------------------------------------------------------

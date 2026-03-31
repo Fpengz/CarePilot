@@ -118,8 +118,7 @@ def dispatch_reminder(
     channels: list[str],
     retries: int = 2,
     force_push_fail: bool = False,
-    repository: ReminderSchedulerRepository
- | None = None,
+    repository: ReminderSchedulerRepository | None = None,
 ) -> list[DeliveryResult]:
     """Dispatch a reminder to one or more channels, using the outbox when available."""
     settings = get_settings()
@@ -230,8 +229,7 @@ def dispatch_reminder(
 def dispatch_reminder_async(
     reminder_event: ReminderEvent,
     channels: list[str],
-    repository: ReminderSchedulerRepository
- | None = None,
+    repository: ReminderSchedulerRepository | None = None,
     retries: int | None = None,
     force_push_fail: bool = False,
 ) -> list[DeliveryResult]:
@@ -311,8 +309,7 @@ def trigger_alert(
     severity: AlertSeverity,
     payload: dict[str, object],
     destinations: list[str],
-    repository: ReminderSchedulerRepository
-,
+    repository: ReminderSchedulerRepository,
 ) -> tuple[OutboundMessage, list[DeliveryResult]]:
     """Enqueue an alert and drain delivery synchronously; returns the message and results."""
     alert = OutboundMessage(
@@ -354,8 +351,7 @@ def trigger_alert(
 
 def _drain_alert_for_sync_delivery(
     worker: OutboxWorker,
-    repository: ReminderSchedulerRepository
-,
+    repository: ReminderSchedulerRepository,
     alert_id: str,
     *,
     fast_forward_scheduled_retries: bool,

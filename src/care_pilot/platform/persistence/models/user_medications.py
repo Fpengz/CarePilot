@@ -23,10 +23,12 @@ class UserMedicationRecord(BaseRecord, TimestampMixin, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: str = Field(index=True, foreign_key="user_profiles.id")
-    regimen_id: str | None = Field(index=True, foreign_key="medication_regimens.id") # Links to the canonical regimen
-    medication_name: str # Denormalized for quick access, should match regimen_id's name if regimen_id is present
-    dosage_text: str # Denormalized for quick access
-    frequency_type: str # Denormalized for quick access
+    regimen_id: str | None = Field(
+        index=True, foreign_key="medication_regimens.id"
+    )  # Links to the canonical regimen
+    medication_name: str  # Denormalized for quick access, should match regimen_id's name if regimen_id is present
+    dosage_text: str  # Denormalized for quick access
+    frequency_type: str  # Denormalized for quick access
     start_date: date | None = None
     end_date: date | None = None
     is_active: bool = True

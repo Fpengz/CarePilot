@@ -50,7 +50,7 @@ def get_db_engine() -> Engine:
             max_overflow=10,
             pool_pre_ping=True,
         )
-        logfire.instrument_sqlalchemy(engine)  # type: ignore
+        logfire.instrument_sqlalchemy(engine)
         return engine
 
     # Default to SQLite
@@ -60,10 +60,12 @@ def get_db_engine() -> Engine:
 
     engine = create_engine(
         db_url,
-        connect_args={"check_same_thread": False},  # Required for async/multi-thread use with SQLite
+        connect_args={
+            "check_same_thread": False
+        },  # Required for async/multi-thread use with SQLite
     )
     _configure_sqlite_engine(engine)
-    logfire.instrument_sqlalchemy(engine)  # type: ignore
+    logfire.instrument_sqlalchemy(engine)
     return engine
 
 

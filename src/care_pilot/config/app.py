@@ -76,8 +76,10 @@ class AppSettings(BaseModel):
             # If they explicitly set it to True in non-dev, it's an error.
             # If it's the default, we flip it to False.
             # Actually, the test expects a ValidationError if set to True in prod.
-            if "AUTH_SEED_DEMO_USERS" in self.auth.model_dump(exclude_unset=True) or "seed_demo_users" in self.auth.model_dump(exclude_unset=True):
-                 raise ValueError("seed_demo_users must be False for non-dev environments")
+            if "AUTH_SEED_DEMO_USERS" in self.auth.model_dump(
+                exclude_unset=True
+            ) or "seed_demo_users" in self.auth.model_dump(exclude_unset=True):
+                raise ValueError("seed_demo_users must be False for non-dev environments")
             self.auth.seed_demo_users = False
 
         if self.app.env == "prod" and self.workers.tool_policy_enforcement_mode == "shadow":

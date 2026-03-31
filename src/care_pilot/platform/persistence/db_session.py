@@ -12,6 +12,7 @@ from sqlmodel import Session
 # For now, placeholder:
 # engine = create_engine("sqlite:///./auth.db") # Example connection string
 
+
 class AuthSQLModelSessionManager:
     def __init__(self, engine: Engine):
         self.engine = engine

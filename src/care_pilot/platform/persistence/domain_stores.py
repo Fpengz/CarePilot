@@ -389,9 +389,7 @@ class ReminderStore:
     ) -> list[Any]:
         return self._store.replace_message_endpoints(user_id=user_id, endpoints=endpoints)
 
-    def replace_message_endpoints(
-        self, *, user_id: str, endpoints: list[Any]
-    ) -> list[Any]:
+    def replace_message_endpoints(self, *, user_id: str, endpoints: list[Any]) -> list[Any]:
         return self._store.replace_message_endpoints(user_id=user_id, endpoints=endpoints)
 
     def list_notification_logs(
@@ -421,9 +419,7 @@ class ReminderStore:
             scheduled_notification_id=scheduled_notification_id,
         )
 
-    def get_message_thread(
-        self, *, user_id: str, channel: str, endpoint_id: str
-    ) -> Any | None:
+    def get_message_thread(self, *, user_id: str, channel: str, endpoint_id: str) -> Any | None:
         return self._store.get_message_thread(
             user_id=user_id, channel=channel, endpoint_id=endpoint_id
         )
@@ -441,7 +437,9 @@ class ReminderStore:
         return self._store.list_message_thread_messages(thread_id=thread_id, limit=limit)
 
     def get_user_id_by_channel_destination(self, *, channel: str, destination: str) -> str | None:
-        return self._store.get_user_id_by_channel_destination(channel=channel, destination=destination)
+        return self._store.get_user_id_by_channel_destination(
+            channel=channel, destination=destination
+        )
 
     def get_mobility_reminder_settings(self, user_id: str) -> Any | None:
         return self._store.get_mobility_reminder_settings(user_id)
@@ -568,6 +566,7 @@ class ProfileStore:
         record = self._store.get_health_profile(user_id)
         if record is None:
             from care_pilot.features.profiles.domain.health_profile import default_health_profile
+
             return default_health_profile(user_id)
         return record
 

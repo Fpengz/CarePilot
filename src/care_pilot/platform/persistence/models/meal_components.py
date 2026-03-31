@@ -25,7 +25,7 @@ class MealComponentRecord(BaseRecord, TimestampMixin, table=True):
     meal_record_id: str = Field(index=True, foreign_key="meal_records.id")
 
     component_name: str = Field(index=True)
-    original_serving_description: str | None = None # e.g., "small", "large", "1 bowl"
+    original_serving_description: str | None = None  # e.g., "small", "large", "1 bowl"
 
     # Estimated nutritional values for this component
     calories_kcal: float = 0.0

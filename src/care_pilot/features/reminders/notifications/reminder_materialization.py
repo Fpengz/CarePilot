@@ -529,9 +529,7 @@ def replace_message_endpoints(
                 updated_at=now,
             )
         )
-    saved = context.stores.reminders.replace_message_endpoints(
-        user_id=user_id, endpoints=rows
-    )
+    saved = context.stores.reminders.replace_message_endpoints(user_id=user_id, endpoints=rows)
     for endpoint in saved:
         if not endpoint.verified:
             continue

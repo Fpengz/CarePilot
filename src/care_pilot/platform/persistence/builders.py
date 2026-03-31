@@ -14,6 +14,7 @@ from .sqlite_repository import SQLiteRepository
 
 class SQLiteAppStore(SQLiteRepository):
     """Concrete SQLite implementation of the application store."""
+
     pass
 
 

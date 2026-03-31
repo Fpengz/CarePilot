@@ -14,9 +14,7 @@ from .base import SQLiteReminderRepositoryBase, parse_datetime
 
 
 class ReminderSchedulingRepository(SQLiteReminderRepositoryBase):
-    def save_scheduled_notification(
-        self, item: ScheduledMessage
-    ) -> ScheduledMessage:
+    def save_scheduled_notification(self, item: ScheduledMessage) -> ScheduledMessage:
         with self._get_connection() as conn:
             conn.execute(
                 """
@@ -62,9 +60,7 @@ class ReminderSchedulingRepository(SQLiteReminderRepositoryBase):
             raise RuntimeError(f"failed to persist scheduled notification {item.id}")
         return existing
 
-    def get_scheduled_notification(
-        self, notification_id: str
-    ) -> ScheduledMessage | None:
+    def get_scheduled_notification(self, notification_id: str) -> ScheduledMessage | None:
         with self._get_connection() as conn:
             row = conn.execute(
                 """
@@ -291,9 +287,7 @@ class ReminderSchedulingRepository(SQLiteReminderRepositoryBase):
             conn.commit()
         return int(result.rowcount)
 
-    def append_notification_log(
-        self, entry: MessageLogEntry
-    ) -> MessageLogEntry:
+    def append_notification_log(self, entry: MessageLogEntry) -> MessageLogEntry:
         with self._get_connection() as conn:
             conn.execute(
                 """

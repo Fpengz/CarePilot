@@ -15,6 +15,7 @@ import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 
+import logfire
 from care_pilot.platform.persistence.food.local_retriever import (
     COLLECTION_NAME,
     EMBEDDING_MODEL,
@@ -220,31 +221,33 @@ class FoodInfoIngester:
 
     def ingest_hawker(self) -> None:
         if not HAWKER_JSON.exists():
-            print(f"[FoodInfoIngester] Missing {HAWKER_JSON}")
+            logfire.error(f"[FoodInfoIngester] Missing {HAWKER_JSON}")
             return
         with HAWKER_JSON.open(encoding="utf-8") as handle:
             foods: list[dict[str, Any]] = json.load(handle)
         chunks: list[dict] = []
         for food in foods:
             chunks.extend(HawkerChunker.chunk(food))
-        print(f"[FoodInfoIngester] {len(foods)} foods -> {len(chunks)} chunks")
+        logfire.info(f"[FoodInfoIngester] {len(foods)} foods -> {len(chunks)} chunks")
         self._upsert_chunks(chunks)
 
     def ingest_drinks(self) -> None:
         if not DRINKS_JSON.exists():
-            print(f"[FoodInfoIngester] Missing {DRINKS_JSON}")
+            logfire.error(f"[FoodInfoIngester] Missing {DRINKS_JSON}")
             return
         with DRINKS_JSON.open(encoding="utf-8") as handle:
             data: dict = json.load(handle)
         chunks = DrinkChunker.chunk(data)
-        print(f"[FoodInfoIngester] {len(chunks)} drink chunks")
+        logfire.info(f"[FoodInfoIngester] {len(chunks)} drink chunks")
         self._upsert_chunks(chunks)
 
     def run(self) -> None:
         self.ingest_hawker()
         self.ingest_drinks()
         total = self._collection.count()
-        print(f"[FoodInfoIngester] Done. Collection '{COLLECTION_NAME}' has {total} documents.")
+        logfire.info(
+            f"[FoodInfoIngester] Done. Collection '{COLLECTION_NAME}' has {total} documents."
+        )
 
 
 def _smoke_test() -> None:
@@ -258,9 +261,9 @@ def _smoke_test() -> None:
         "what can I order instead of teh tarik",
     ]
     for query in queries:
-        print(f"\nQuery: {query!r}")
+        logfire.info(f"\nQuery: {query!r}")
         context = retriever.format_for_context(query)
-        print(context or "  (no results)")
+        logfire.info(context or "  (no results)")
 
 
 if __name__ == "__main__":

@@ -157,9 +157,7 @@ def build_case_snapshot(
     return pruner.prune(snapshot)
 
 
-def load_snapshot_from_sections(
-    *, user_id: str, eventing_store
-) -> PatientCaseSnapshot | None:
+def load_snapshot_from_sections(*, user_id: str, eventing_store) -> PatientCaseSnapshot | None:
     sections = eventing_store.list_snapshot_sections(user_id=user_id)
     if not sections:
         return None
@@ -182,9 +180,7 @@ def load_snapshot_from_sections(
 
     bp_summary_payload = trends.get("blood_pressure_summary")
     bp_summary = (
-        BloodPressureSummary.model_validate(bp_summary_payload)
-        if bp_summary_payload
-        else None
+        BloodPressureSummary.model_validate(bp_summary_payload) if bp_summary_payload else None
     )
     last_interaction_at = conversation.get("last_interaction_at")
     if isinstance(last_interaction_at, str):
