@@ -56,6 +56,8 @@ class SymptomCheckInRecord(BaseRecord, TimestampMixin, table=True):
     safety: dict = Field(default_factory=dict, sa_column=Column(JSON))
 
     # Define ORM relationships
-    symptom_codes: Mapped[list["SymptomCodeRecord"]] = Relationship(back_populates="symptom_checkin")
+    symptom_codes: Mapped[list["SymptomCodeRecord"]] = Relationship(
+        back_populates="symptom_checkin"
+    )
     user_profile: Mapped["UserProfileRecord"] = Relationship(back_populates="symptom_checkins")
     # Assuming UserProfileRecord has 'symptom_checkins' field

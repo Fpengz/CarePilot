@@ -39,6 +39,7 @@ class SQLiteRepository(ReminderSchedulerRepository):
     reminders, meals, and other domain entities while providing a unified
     interface for application stores.
     """
+
     def __init__(self, db_path: str = "data/care_pilot_api.db", *, skip_init: bool = False):
         self.db_path = db_path
         logger.info("repository_init db_path=%s", db_path)

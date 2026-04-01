@@ -204,6 +204,7 @@ class SQLiteClinicalRepository:
         if row is None:
             logger.debug("get_health_profile_miss user_id=%s returning_default", user_id)
             from care_pilot.features.profiles.domain.health_profile import default_health_profile
+
             return default_health_profile(user_id)
 
         payload = cast(str, row[0])
@@ -220,7 +221,7 @@ class SQLiteClinicalRepository:
                         goal_type=g,
                         target_value=0.0,
                         unit="unit",
-                        start_date=datetime.now(UTC).date()
+                        start_date=datetime.now(UTC).date(),
                     )
                 )
             else:
@@ -239,7 +240,7 @@ class SQLiteClinicalRepository:
                 """,
                 (
                     profile.user_id,
-                    "Alex Member", # Placeholder name if not provided
+                    "Alex Member",  # Placeholder name if not provided
                     profile.age or 30,
                     "self",
                     profile.locale,
@@ -273,8 +274,12 @@ class SQLiteClinicalRepository:
                         goal.goal_type,
                         goal.target_value,
                         goal.unit,
-                        goal.start_date.isoformat() if hasattr(goal.start_date, "isoformat") else str(goal.start_date),
-                        goal.end_date.isoformat() if goal.end_date and hasattr(goal.end_date, "isoformat") else (str(goal.end_date) if goal.end_date else None),
+                        goal.start_date.isoformat()
+                        if hasattr(goal.start_date, "isoformat")
+                        else str(goal.start_date),
+                        goal.end_date.isoformat()
+                        if goal.end_date and hasattr(goal.end_date, "isoformat")
+                        else (str(goal.end_date) if goal.end_date else None),
                     ),
                 )
 

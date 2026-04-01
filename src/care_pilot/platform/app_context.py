@@ -12,6 +12,7 @@ import os
 from functools import cached_property
 from typing import Any, cast
 
+import logfire
 from care_pilot.agent.core import AgentRegistry, build_default_agent_registry
 from care_pilot.agent.emotion.agent import EmotionAgent
 from care_pilot.agent.emotion.schemas import EmotionInferenceResult, EmotionRuntimeHealth
@@ -78,6 +79,7 @@ class AppContext:
     ML model engines) and provides lazy access to agents through cached
     properties.
     """
+
     def __init__(
         self,
         *,
@@ -132,6 +134,7 @@ class AppContext:
                     event_timeline=self.event_timeline,
                 )
         else:
+
             class _DisabledEmotionRuntime:
                 def infer_text(self, payload) -> EmotionInferenceResult:  # noqa: ANN001
                     del payload
@@ -148,6 +151,7 @@ class AppContext:
                         source_commit=settings.emotion.source_commit,
                         detail="emotion inference disabled",
                     )
+
             emotion_runtime = cast(EmotionInferencePort, _DisabledEmotionRuntime())
         return EmotionAgent(
             runtime=emotion_runtime,
@@ -194,8 +198,12 @@ class AppContext:
     @cached_property
     def chat_audio_agent(self) -> AudioAgent:
         transcription_provider = os.environ.get("TRANSCRIPTION_PROVIDER")
-        transcription_api_key = os.environ.get("TRANSCRIPTION_API_KEY") or os.environ.get("QWEN_API_KEY")
-        transcription_base_url = os.environ.get("TRANSCRIPTION_BASE_URL") or os.environ.get("QWEN_BASE_URL")
+        transcription_api_key = os.environ.get("TRANSCRIPTION_API_KEY") or os.environ.get(
+            "QWEN_API_KEY"
+        )
+        transcription_base_url = os.environ.get("TRANSCRIPTION_BASE_URL") or os.environ.get(
+            "QWEN_BASE_URL"
+        )
         transcription_model_id = os.environ.get("TRANSCRIPTION_MODEL_ID")
         return AudioAgent(
             repo_id=os.environ.get("TRANSCRIPTION_MODEL_ID"),
@@ -276,7 +284,7 @@ def build_app_context() -> AppContext:
 
 
 async def close_app_context(ctx: AppContext) -> None:
-    print(f"DEBUG: closing app context {id(ctx)}")
+    logfire.debug(f"closing app context {id(ctx)}")
     # Use __dict__ to check if cached properties were ever accessed
     # to avoid re-instantiating them during shutdown.
 
@@ -293,6 +301,7 @@ async def close_app_context(ctx: AppContext) -> None:
         close = getattr(component, "close", None)
         if callable(close):
             import inspect
+
             if inspect.iscoroutinefunction(close):
                 await close()
             else:
@@ -304,6 +313,7 @@ async def close_app_context(ctx: AppContext) -> None:
         close_func = getattr(agent._runtime, "close", None)
         if callable(close_func):
             import inspect
+
             if inspect.iscoroutinefunction(close_func):
                 await close_func()
             else:
@@ -313,6 +323,7 @@ async def close_app_context(ctx: AppContext) -> None:
         close_func = getattr(ctx.chat_audio_agent, "close", None)
         if callable(close_func):
             import inspect
+
             if inspect.iscoroutinefunction(close_func):
                 await close_func()
             else:

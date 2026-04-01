@@ -4,6 +4,7 @@ Build the FastAPI application and lifecycle hooks.
 This module wires middleware, routes, and error handlers into the dietary API
 application and configures startup/shutdown behavior.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -16,6 +17,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
+import logfire
 from care_pilot.platform.app_context import build_app_context, close_app_context
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.runtime.background_tasks import run_background_worker
@@ -82,13 +84,13 @@ async def _prewarm_models(ctx: AppContext) -> None:
 async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     ctx_owned = bool(getattr(app.state, "ctx_owned", False))
     ctx_present = getattr(app.state, "ctx", None) is not None
-    print(f"DEBUG: lifespan enter owned={ctx_owned} present={ctx_present}")
+    logger.debug("lifespan_enter", extra={"owned": ctx_owned, "present": ctx_present})
     if ctx_owned and getattr(app.state, "ctx", None) is None:
-        print("DEBUG: lifespan building new context")
+        logger.info("lifespan_building_context")
         app.state.ctx = build_app_context()
 
     ctx = cast(AppContext, app.state.ctx)
-    print(f"DEBUG: lifespan using ctx {id(ctx)}")
+    logger.debug("lifespan_using_context", extra={"ctx_id": id(ctx)})
     maintenance_task = asyncio.create_task(_run_maintenance(ctx))
     worker_task = asyncio.create_task(run_background_worker())
 
@@ -103,10 +105,7 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
         maintenance_task.cancel()
 
         # Await cancelled tasks to allow them to clean up resources
-        await asyncio.gather(
-            prewarm_task, worker_task, maintenance_task,
-            return_exceptions=True
-        )
+        await asyncio.gather(prewarm_task, worker_task, maintenance_task, return_exceptions=True)
 
         if ctx_owned and ctx is not None:
             await close_app_context(ctx)
@@ -120,6 +119,7 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
         version="0.1.0",
         lifespan=app_lifespan,
     )
+    logfire.instrument_fastapi(app)  # type: ignore
 
     if ctx:
         app.state.ctx = ctx

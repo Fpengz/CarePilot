@@ -44,9 +44,7 @@ class ReminderEndpointRepository(SQLiteReminderRepositoryBase):
             conn.commit()
         return self.list_message_endpoints(user_id=user_id)
 
-    def list_message_endpoints(
-        self, *, user_id: str
-    ) -> list[MessageEndpoint]:
+    def list_message_endpoints(self, *, user_id: str) -> list[MessageEndpoint]:
         with self._get_connection() as conn:
             rows = conn.execute(
                 """

@@ -56,13 +56,23 @@ class UserProfileRecord(BaseRecord, TimestampMixin, table=True):
     # Define ORM relationships (back_populates side)
     conditions: Mapped[list["UserConditionRecord"]] = Relationship(back_populates="user_profile")
     medications: Mapped[list["UserMedicationRecord"]] = Relationship(back_populates="user_profile")
-    disliked_ingredients: Mapped[list["UserDislikedIngredientRecord"]] = Relationship(back_populates="user_profile")
+    disliked_ingredients: Mapped[list["UserDislikedIngredientRecord"]] = Relationship(
+        back_populates="user_profile"
+    )
 
     # Relationships to clinical records
     meal_records: Mapped[list["MealRecordRecord"]] = Relationship(back_populates="user_profile")
-    biomarker_readings: Mapped[list["BiomarkerReadingRecord"]] = Relationship(back_populates="user_profile")
-    symptom_checkins: Mapped[list["SymptomCheckInRecord"]] = Relationship(back_populates="user_profile")
+    biomarker_readings: Mapped[list["BiomarkerReadingRecord"]] = Relationship(
+        back_populates="user_profile"
+    )
+    symptom_checkins: Mapped[list["SymptomCheckInRecord"]] = Relationship(
+        back_populates="user_profile"
+    )
 
     # New relationships for normalized goals and schedules
-    nutrition_goals: Mapped[list["UserNutritionGoalRecord"]] = Relationship(back_populates="user_profile")
-    meal_schedule: Mapped[list["UserMealScheduleRecord"]] = Relationship(back_populates="user_profile")
+    nutrition_goals: Mapped[list["UserNutritionGoalRecord"]] = Relationship(
+        back_populates="user_profile"
+    )
+    meal_schedule: Mapped[list["UserMealScheduleRecord"]] = Relationship(
+        back_populates="user_profile"
+    )

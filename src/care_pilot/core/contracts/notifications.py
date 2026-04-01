@@ -179,7 +179,9 @@ class MessageNotificationRepository(Protocol):
 
     def list_message_thread_messages(self, *, thread_id: str) -> list[MessageThreadMessage]: ...
 
-    def get_user_id_by_channel_destination(self, *, channel: str, destination: str) -> str | None: ...
+    def get_user_id_by_channel_destination(
+        self, *, channel: str, destination: str
+    ) -> str | None: ...
 
     def mark_scheduled_notification_dead_letter(
         self,
@@ -211,9 +213,7 @@ class MessageNotificationRepository(Protocol):
     ) -> None: ...
 
 
-class ReminderSchedulerRepository(
-    MessageNotificationRepository, AlertRepositoryProtocol, Protocol
-):
+class ReminderSchedulerRepository(MessageNotificationRepository, AlertRepositoryProtocol, Protocol):
     """Combined port required by the reminder scheduler runtime loop."""
 
     pass

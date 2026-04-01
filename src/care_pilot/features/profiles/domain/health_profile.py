@@ -102,7 +102,9 @@ def build_user_profile_from_health_profile(
         locale=health_profile.locale,
         allergies=list(health_profile.allergies),
         nutrition_goals=[
-            g if not isinstance(g, str) else NutritionGoal(goal_type=g, target_value=0.0, unit="unit")
+            g
+            if not isinstance(g, str)
+            else NutritionGoal(goal_type=g, target_value=0.0, unit="unit")
             for g in health_profile.nutrition_goals
         ],
         preferred_cuisines=list(health_profile.preferred_cuisines),

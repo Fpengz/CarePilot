@@ -1,72 +1,60 @@
-# Python-generated files
+# Python
 __pycache__/
-*.py[ocd]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-src/care_pilot/_version.py
-build/
-dist/
-wheels/
-*.egg-info
-.hypothesis/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
-.deps_installed
-*.db
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite3
-.coverage
-htmlcov/
-coverage/
-
-# Virtual environments
-.venv
-venv/
 env/
-ENV/
+venv/
+.venv/
+.venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
 
-# Node
-apps/web/.next/
-apps/web/node_modules/
-apps/web/test-results/
-apps/web/playwright-report/
-node_modules/
-.next/
-out/
-*.tsbuildinfo
-.turbo/
+# Build and distribution artifacts
+dist/
+build/
+*.egg
+*.egg-info/
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
 
-# IDE
+# Testing
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# IDE specific
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Environment
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-apps/web/.env
-
-# Runtime data
-vectorstore/
+# Documentation (if generated)
+docs/_build/
+*.db
+node_modules/
 data/runtime/
 data/vectorstore/
 
@@ -78,5 +66,6 @@ DEPENDENCY_GRAPH.txt
 
 .gemini/
 gha-creds-*.json
-\n# Worktrees\n.worktrees/
+
+# Worktrees
 .worktrees/

@@ -129,7 +129,9 @@ def _score_candidate(
 ) -> tuple[float, list[str]]:
     score = 0.45
     why: list[str] = []
-    goals = {getattr(goal, "goal_type", str(goal)).lower() for goal in health_profile.nutrition_goals}
+    goals = {
+        getattr(goal, "goal_type", str(goal)).lower() for goal in health_profile.nutrition_goals
+    }
     cuisines = {cuisine.lower() for cuisine in health_profile.preferred_cuisines}
     traits = {item.lower() for item in candidate.traits}
 

@@ -22,7 +22,7 @@ class SymptomCodeRecord(BaseRecord, TimestampMixin, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     symptom_checkin_id: str = Field(index=True, foreign_key="symptom_checkins.id")
-    code: str = Field(index=True) # The actual symptom code string
+    code: str = Field(index=True)  # The actual symptom code string
     # Optional: Add confidence score or agent details if needed
     # agent_details: Optional[dict] = Field(default=None, sa_column=Column(JSON))
 
