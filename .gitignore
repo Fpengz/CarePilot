@@ -54,6 +54,8 @@ build/
 # Documentation (if generated)
 docs/_build/
 *.db
+# Web artifacts
+.next/
 node_modules/
 data/runtime/
 data/vectorstore/

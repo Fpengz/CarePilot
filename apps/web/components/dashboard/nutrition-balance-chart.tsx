@@ -29,8 +29,10 @@ export function NutritionBalanceChart({ chart }: { chart: DashboardMacroChartApi
     <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm h-full">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8 px-1">
         <div className="flex flex-col items-start gap-1">
-          <span className="text-micro-label text-muted-foreground uppercase">Nutrient Profile</span>
-          <h3 className="text-xl font-semibold tracking-tight text-foreground">{chart.title}</h3>
+          <span className="micro-label">Nutrient Profile</span>
+          <h3 className="text-xl font-bold tracking-tight text-foreground">
+            {data.length > 0 ? "Your nutritional balance is aligning with targets" : chart.title}
+          </h3>
         </div>
         <div className="flex bg-surface border border-border-soft p-1 rounded-xl self-start shadow-sm">
           {modes.map((m) => (

@@ -21,8 +21,10 @@ export function BloodPressureChart({
   return (
     <div className="bg-panel border border-border-soft rounded-3xl p-8 shadow-sm h-full">
       <div className="flex flex-col items-start gap-1 mb-8 px-1">
-        <span className="text-micro-label text-muted-foreground uppercase">Blood Pressure</span>
-        <h3 className="text-xl font-semibold tracking-tight text-foreground">Vitals Trend Overview</h3>
+        <span className="micro-label">Blood Pressure</span>
+        <h3 className="text-xl font-bold tracking-tight text-foreground">
+          {hasData ? "Your vitals are showing stable longitudinal trends" : "Vitals Trend Overview"}
+        </h3>
       </div>
       <div className="flex items-center justify-between mb-4 px-1">
         <span className="text-micro-label text-muted-foreground opacity-60">

@@ -130,15 +130,15 @@ export default function DashboardPage() {
             </div>
 
             {/* Sidebar: Alerts & Actions */}
-            <aside className="lg:col-span-4 space-y-12 lg:sticky lg:top-8">
+            <aside className="lg:col-span-4 space-y-16 lg:sticky lg:top-8">
               <section 
-                className="bg-panel border border-border-soft rounded-2xl p-8 shadow-sm"
+                className="bg-panel/50 border border-border-soft rounded-3xl p-8 shadow-sm"
                 aria-labelledby="alerts-heading"
               >
                 <div className="flex items-center justify-between mb-8 px-1">
                   <div className="space-y-1.5">
-                    <h3 id="alerts-heading" className="text-lg font-semibold tracking-tight text-foreground">Active Alerts</h3>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-teal">Clinical Priority</p>
+                    <h3 id="alerts-heading" className="text-lg font-bold tracking-tight text-foreground">Active Alerts</h3>
+                    <p className="micro-label text-accent-teal">Clinical Priority</p>
                   </div>
                   <Badge className="bg-accent-teal/10 text-accent-teal border-accent-teal/20 h-6 px-2 rounded-lg flex items-center justify-center p-0 text-[11px] font-bold">
                     {data.alerts.length}
