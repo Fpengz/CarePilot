@@ -58,6 +58,14 @@ def _try_redis_ping(redis_url: str) -> tuple[bool, str]:
         return (False, f"redis ping failed: {exc}")
 
 
+def _try_db_ping() -> tuple[bool, str]:
+    from care_pilot.platform.persistence.engine import ping_db
+
+    if ping_db():
+        return (True, "database ping succeeded")
+    return (False, "database ping failed")
+
+
 def build_readiness_report(*, settings: Settings) -> ReadinessReport:
     """Return a readiness report by inspecting settings and probing live services."""
     checks: list[ReadinessCheck] = []
@@ -68,6 +76,16 @@ def build_readiness_report(*, settings: Settings) -> ReadinessReport:
             status="pass",
             required=True,
             detail=f"app_env={settings.app.env}",
+        )
+    )
+
+    ok, detail = _try_db_ping()
+    checks.append(
+        _check(
+            "database_connectivity",
+            status="pass" if ok else "fail",
+            required=True,
+            detail=detail,
         )
     )
 

@@ -7,21 +7,30 @@ the core AppContext from the platform layer.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from fastapi import Request
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from care_pilot.config.app import AppSettings as Settings
 from care_pilot.features.meals.deps import MealDeps
 from care_pilot.platform.app_context import AppContext, AuthStore
 from care_pilot.platform.auth import SessionSigner
+from care_pilot.platform.persistence.engine import get_async_session
 from care_pilot.platform.persistence.health_metrics import ChatHealthMetricsRepository
 
 
 def get_context(request: Request) -> AppContext:
     """Return the application context from the request state."""
     return cast(AppContext, request.app.state.ctx)
+
+
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    """Provide an asynchronous SQLModel session."""
+    async for session in get_async_session():
+        yield session
 
 
 if TYPE_CHECKING:

@@ -8,9 +8,10 @@ from collections.abc import AsyncGenerator, Generator
 from functools import lru_cache
 from typing import Any, cast
 
-from sqlalchemy import Engine, event
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy import Engine, event, text
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlmodel import Session, create_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 import logfire
 from care_pilot.config.app import get_settings
@@ -125,3 +126,15 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     engine = get_async_db_engine()
     async with AsyncSession(engine) as session:
         yield session
+
+
+def ping_db() -> bool:
+    """Check database connectivity with a simple SELECT 1 query."""
+    try:
+        engine = get_db_engine()
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return True
+    except Exception as e:
+        logger.error("db_ping_failed error=%s", str(e))
+        return False

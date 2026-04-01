@@ -45,8 +45,18 @@ class RedisCoordinationStore:
     def _key(self, key: str) -> str:
         return f"{self._namespace}:coordination:lock:{self._domain(key)}:{key}"
 
+    def _value_key(self, key: str) -> str:
+        return f"{self._namespace}:coordination:value:{self._domain(key)}:{key}"
+
     def _channel(self, channel: str) -> str:
         return f"{self._namespace}:coordination:signal:{self._domain(channel)}:{channel}"
+
+    def set_value(self, key: str, value: str, *, ttl_seconds: int) -> None:
+        self._client.set(self._value_key(key), value, ex=ttl_seconds)
+
+    def get_value(self, key: str) -> str | None:
+        val = self._client.get(self._value_key(key))
+        return str(val) if val is not None else None
 
     def acquire_lock(self, key: str, *, owner: str, ttl_seconds: int) -> bool:
         return bool(self._client.set(self._key(key), owner, nx=True, ex=ttl_seconds))

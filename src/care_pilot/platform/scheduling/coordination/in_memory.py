@@ -15,8 +15,26 @@ class InMemoryCoordinationStore:
     def __init__(self) -> None:
         self._signals: dict[str, list[dict[str, Any]]] = {}
         self._locks: dict[str, tuple[str, datetime]] = {}
+        self._values: dict[str, tuple[str, datetime]] = {}
         self._lock = Lock()
         self._condition = Condition(self._lock)
+
+    def set_value(self, key: str, value: str, *, ttl_seconds: int) -> None:
+        expires_at = datetime.now(UTC) + timedelta(seconds=ttl_seconds)
+        with self._lock:
+            self._values[key] = (value, expires_at)
+
+    def get_value(self, key: str) -> str | None:
+        now = datetime.now(UTC)
+        with self._lock:
+            existing = self._values.get(key)
+            if existing is None:
+                return None
+            value, expires_at = existing
+            if now > expires_at:
+                self._values.pop(key, None)
+                return None
+            return value
 
     def acquire_lock(self, key: str, *, owner: str, ttl_seconds: int) -> bool:
         now = datetime.now(UTC)
