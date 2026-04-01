@@ -12,8 +12,8 @@ from care_pilot.platform.observability.logging import (
     logger,
     observability_span,
     setup_logging,
+    setup_observability,
 )
-from care_pilot.platform.observability.setup import setup_observability
 
 __all__ = [
     "bind_observability_context",

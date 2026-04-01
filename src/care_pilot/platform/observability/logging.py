@@ -15,7 +15,7 @@ from typing import Any, cast
 
 from pydantic import ValidationError
 
-import logfire as logfire
+import logfire
 from care_pilot.config.app import get_settings
 from care_pilot.platform.observability.context import (
     bind_observability_context,
@@ -27,6 +27,7 @@ from care_pilot.platform.observability.context import (
 
 logfire_api = cast(Any, logfire)
 _CONFIGURED = False
+_LOGFIRE_CONFIGURED = False
 _HANDLER_MARKER = "_care_pilot_logfire_handler"
 _ROOT_MARKER = "_care_pilot_logging_configured"
 
@@ -76,17 +77,22 @@ def _dedupe_logfire_handlers() -> None:
 
 
 def setup_logging(project_name: str = "care-pilot") -> logging.Logger:
-    global _CONFIGURED
+    """Configure standard Python logging."""
+    global _CONFIGURED, _LOGFIRE_CONFIGURED
     root = logging.getLogger()
     if _CONFIGURED or getattr(root, _ROOT_MARKER, False):
         _dedupe_logfire_handlers()
         return logging.getLogger(project_name)
 
-    logfire_api.configure(send_to_logfire=False)
+    # Ensure logfire is at least minimally configured if it hasn't been yet
+    if not _LOGFIRE_CONFIGURED:
+        logfire_api.configure(send_to_logfire=False)
+        _LOGFIRE_CONFIGURED = True
 
     level_name = _resolve_log_level_name()
     level = getattr(logging, level_name, logging.INFO)
     root.setLevel(level)
+
     if not _has_logfire_handler():
         use_logfire_handler = os.getenv("CARE_PILOT_USE_LOGFIRE_HANDLER", "0") == "1"
         if use_logfire_handler:
@@ -103,12 +109,40 @@ def setup_logging(project_name: str = "care-pilot") -> logging.Logger:
         )
         handler.addFilter(RequestContextFilter())
         root.addHandler(handler)
+
     _dedupe_logfire_handlers()
     logger = logging.getLogger(project_name)
     logger.setLevel(level)
     setattr(root, _ROOT_MARKER, True)
     _CONFIGURED = True
     return logger
+
+
+def setup_observability() -> None:
+    """Unified entry point for observability (logging + logfire)."""
+    global _LOGFIRE_CONFIGURED
+    settings = get_settings()
+
+    # Configure logfire
+    token = settings.observability.logfire_token
+    env = settings.app.env
+
+    if token:
+        logfire_api.configure(
+            token=token,
+            environment=env,
+            service_name="care-pilot",
+            send_to_logfire=True
+        )
+    else:
+        logfire_api.configure(send_to_logfire=False)
+    _LOGFIRE_CONFIGURED = True
+
+    # Setup standard logging
+    setup_logging()
+
+    # Instrument common libraries
+    logfire_api.instrument_httpx()
 
 
 def get_logger(name: str) -> logging.Logger:

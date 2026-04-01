@@ -8,6 +8,7 @@ Performs:
 3. Validation of documentation index integrity.
 """
 
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -42,6 +43,10 @@ def promote_stale_plans():
                 new_name = f"{today_str}-{slug}"
                 new_path = in_progress_dir / new_name
 
+                # Skip if already promoted to today's date (fixes conflict loop)
+                if new_path == plan_file:
+                    continue
+
                 if new_path.exists():
                     print(f"Conflict: {new_name} already exists. Skipping promotion for {plan_file.name}")
                     continue
@@ -75,10 +80,55 @@ def purge_temporary_artifacts():
     print(f"Total stale artifacts purged: {count}")
 
 def validate_doc_indexes():
-    """Basic check to ensure all docs are indexed in README.md (Placeholder)."""
-    # This would involve reading docs/README.md and checking if all files in docs/ exist in it.
-    # For now, just print a status message.
-    print("Validating doc index integrity... OK")
+    """Verify that all Markdown files in docs/ are referenced in docs/README.md or sub-indexes."""
+    docs_root = REPO_ROOT / "docs"
+    readme_path = docs_root / "README.md"
+
+    if not readme_path.exists():
+        print("docs/README.md not found.")
+        return
+
+    readme_content = readme_path.read_text(encoding="utf-8")
+
+    # Identify sub-indexes from docs/README.md
+    # Look for patterns like `docs/design-docs/index.md`
+    sub_index_pattern = r"`(docs/[^`]+index\.md)`"
+    sub_indexes = re.findall(sub_index_pattern, readme_content)
+
+    index_contents = {readme_path: readme_content}
+    for sub_index in sub_indexes:
+        sub_path = REPO_ROOT / sub_index
+        if sub_path.exists():
+            index_contents[sub_path] = sub_path.read_text(encoding="utf-8")
+
+    # Find all .md files in docs/
+    all_md_files = list(docs_root.rglob("*.md"))
+    missing = []
+
+    for md_file in all_md_files:
+        rel_path = md_file.relative_to(REPO_ROOT)
+        rel_path_str = str(rel_path)
+
+        # Skip the root README.md itself
+        if md_file == readme_path:
+            continue
+
+        is_indexed = False
+        for content in index_contents.values():
+            # Check for exact path or filename reference
+            if rel_path_str in content or f"`{md_file.name}`" in content:
+                is_indexed = True
+                break
+
+        if not is_indexed:
+            missing.append(rel_path_str)
+
+    if missing:
+        print("Doc index integrity check: FAILED")
+        for doc in missing:
+            print(f"  Missing from index: {doc}")
+    else:
+        print("Validating doc index integrity... OK")
 
 def main():
     print(f"--- CarePilot Housekeeping started at {datetime.now()} ---")

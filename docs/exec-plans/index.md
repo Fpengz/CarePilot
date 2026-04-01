@@ -12,6 +12,8 @@ Execution plans are first-class artifacts. Keep active work separate from in-pro
 | `docs/exec-plans/active/2026-03-30-production-readiness-checklist.md` | active | 2026-03-30 | platform |
 | `docs/exec-plans/active/2026-03-30-frontend-un-slop-design.md` | active | 2026-03-30 | web |
 | `docs/exec-plans/active/2026-03-30-frontend-un-slop-implementation.md` | active | 2026-03-30 | web |
+| `docs/exec-plans/active/2026-03-31-dashboard-simplification-design.md` | active | 2026-03-31 | web |
+| `docs/exec-plans/active/2026-03-31-phase-1-stability-foundation-design.md` | active | 2026-03-31 | platform |
 
 ## In-Progress Plans
 

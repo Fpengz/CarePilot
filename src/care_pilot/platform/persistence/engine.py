@@ -49,7 +49,7 @@ def get_db_engine() -> Engine:
         # Use standard high-performance defaults for Postgres
         engine = create_engine(
             settings.storage.api_postgres_url,
-            pool_size=settings.storage.redis_lock_ttl_seconds,  # Reusing lock TTL as a heuristic or default to 20
+            pool_size=settings.storage.api_postgres_pool_size,
             max_overflow=10,
             pool_pre_ping=True,
         )

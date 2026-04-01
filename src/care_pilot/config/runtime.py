@@ -134,6 +134,7 @@ class StorageSettings(BaseSettings):
     app_data_backend: Literal["sqlite", "postgresql"] = "sqlite"
     api_sqlite_db_path: str = "data/care_pilot_api.db"
     api_postgres_url: str | None = Field(default=None, validation_alias="DATABASE_URL")
+    api_postgres_pool_size: int = Field(default=20, ge=1, le=100)
     household_store_backend: Literal["sqlite", "postgresql"] = "sqlite"
     ephemeral_state_backend: Literal["in_memory", "redis"] = "in_memory"
     redis_url: str | None = None

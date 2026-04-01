@@ -12,6 +12,7 @@ This directory is the system of record for CarePilot repository knowledge. Start
 ## Canonical Root Docs
 - `README.md` — product overview and setup
 - `ARCHITECTURE.md` — architecture stance and layer boundaries
+- `docs/ARCHITECTURE_AND_ROADMAP.md` — system architecture and phased roadmap
 - `SYSTEM_ROADMAP.md` — current priorities, tech debt, future plans
 - `AGENTS.md` — agent workflow contract and ownership map
 
@@ -40,6 +41,12 @@ This directory is the system of record for CarePilot repository knowledge. Start
 - Every doc must be indexed with `Doc | Status | Last Verified | Owner`.
 - Prefer progressive disclosure: link to deeper sources instead of duplicating rules.
 - Keep historical context in change logs rather than ephemeral notes or chat memory.
+
+## Superpowers
+- `docs/superpowers/plans/2026-03-31-phase-1-stability-foundation.md`
+- `docs/superpowers/plans/2026-03-31-dashboard-simplification.md`
+- `docs/superpowers/plans/2026-03-30-production-readiness-doc-pack.md`
+- `docs/superpowers/specs/2026-03-30-production-readiness-doc-pack-design.md`
 
 ## Maintenance Rules
 - New documentation must live under one of the indexed sections above.
