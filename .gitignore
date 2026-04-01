@@ -54,4 +54,7 @@ build/
 
 # Documentation (if generated)
 docs/_build/
-```
+```*.db
+node_modules/
+data/runtime/
+data/vectorstore/

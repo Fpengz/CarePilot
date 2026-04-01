@@ -98,16 +98,18 @@ def _execute_reaction(
     lease_owner: str,
     lease_seconds: int,
 ) -> bool:
-    existing = eventing_store.get_reaction_execution(
-        event_id=event_id, handler_name=handler.name
-    )
+    existing = eventing_store.get_reaction_execution(event_id=event_id, handler_name=handler.name)
 
     if existing is not None:
         if existing.status == ExecutionStatus.SUCCEEDED:
             return True
         if existing.status == ExecutionStatus.DEAD_LETTER:
             return True
-        if existing.status == ExecutionStatus.FAILED and existing.next_retry_at and datetime.now(UTC) < existing.next_retry_at:
+        if (
+            existing.status == ExecutionStatus.FAILED
+            and existing.next_retry_at
+            and datetime.now(UTC) < existing.next_retry_at
+        ):
             return False
 
     meta = event.payload.get("meta", {}) if isinstance(event.payload, dict) else {}
@@ -136,9 +138,7 @@ def _execute_reaction(
     now = datetime.now(UTC)
     failure_count = existing.failure_count if existing is not None else 0
     payload_hash = _payload_hash(event)
-    event_version = (
-        meta.get("event_version") if isinstance(meta, dict) else None
-    )
+    event_version = meta.get("event_version") if isinstance(meta, dict) else None
     record = ReactionExecutionRecord(
         event_id=event_id,
         handler_name=handler.name,
@@ -169,6 +169,7 @@ def _execute_reaction(
             backoff_idx = min(failure_count - 1, len(REACTION_RETRY_BACKOFF_MINUTES) - 1)
             minutes = REACTION_RETRY_BACKOFF_MINUTES[backoff_idx]
             from datetime import timedelta
+
             next_retry_at = datetime.now(UTC) + timedelta(minutes=minutes)
             logger.warning(
                 "event_reaction_retry_scheduled handler=%s event_id=%s failure_count=%s next_retry=%s",
@@ -249,7 +250,9 @@ def _execute_projection(
         logger.exception(
             "event_projection_failed handler=%s event_id=%s",
             handler.name,
-            event.payload.get("meta", {}).get("event_id") if isinstance(event.payload, dict) else None,
+            event.payload.get("meta", {}).get("event_id")
+            if isinstance(event.payload, dict)
+            else None,
         )
         if lock_key is not None:
             _release_ordering_lock(
@@ -292,7 +295,11 @@ def run_eventing_once(
                 handler_name=projection.name,
                 scope_key=scope_key,
             )
-            if cursor and cursor.last_event_time and timeline_event.created_at <= cursor.last_event_time:
+            if (
+                cursor
+                and cursor.last_event_time
+                and timeline_event.created_at <= cursor.last_event_time
+            ):
                 continue
             if _execute_projection(
                 handler=projection,
@@ -321,7 +328,11 @@ def run_eventing_once(
                 handler_name=reaction.name,
                 scope_key=scope_key,
             )
-            if cursor and cursor.last_event_time and timeline_event.created_at <= cursor.last_event_time:
+            if (
+                cursor
+                and cursor.last_event_time
+                and timeline_event.created_at <= cursor.last_event_time
+            ):
                 continue
             result.reactions_attempted += 1
             succeeded = _execute_reaction(

@@ -1,6 +1,7 @@
 """
 Defines specific rules for reminder scheduling.
 """
+
 from datetime import date, time  # Added time for specific_time
 from typing import TYPE_CHECKING
 

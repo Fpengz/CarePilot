@@ -4,6 +4,7 @@ Build the FastAPI application and lifecycle hooks.
 This module wires middleware, routes, and error handlers into the dietary API
 application and configures startup/shutdown behavior.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -16,6 +17,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
+import logfire
 from care_pilot.platform.app_context import build_app_context, close_app_context
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.runtime.background_tasks import run_background_worker
@@ -103,10 +105,7 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
         maintenance_task.cancel()
 
         # Await cancelled tasks to allow them to clean up resources
-        await asyncio.gather(
-            prewarm_task, worker_task, maintenance_task,
-            return_exceptions=True
-        )
+        await asyncio.gather(prewarm_task, worker_task, maintenance_task, return_exceptions=True)
 
         if ctx_owned and ctx is not None:
             await close_app_context(ctx)
@@ -120,6 +119,7 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
         version="0.1.0",
         lifespan=app_lifespan,
     )
+    logfire.instrument_fastapi(app)  # type: ignore
 
     if ctx:
         app.state.ctx = ctx

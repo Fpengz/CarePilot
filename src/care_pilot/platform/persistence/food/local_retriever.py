@@ -13,6 +13,8 @@ import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 
+import logfire
+
 BASE_DIR = Path(__file__).resolve().parents[5]
 RUNTIME_DATA_DIR = BASE_DIR / "data"
 VECTORSTORE_DIR = RUNTIME_DATA_DIR / "vectorstore" / "chroma_db"
@@ -39,14 +41,14 @@ class FoodInfoRetriever:
 
     def _get_model(self) -> SentenceTransformer:
         if self._model is None:
-            print(f"[FoodInfoRetriever] Loading {EMBEDDING_MODEL} ...")
+            logfire.info(f"[FoodInfoRetriever] Loading {EMBEDDING_MODEL} ...")
             self._model = SentenceTransformer(EMBEDDING_MODEL)
         return self._model
 
     def retrieve(self, query: str) -> list[dict[str, Any]]:
         """Return top-k matching chunks for query."""
         if self._collection.count() == 0:
-            print("[FoodInfoRetriever] Collection is empty; run food ingestion first.")
+            logfire.error("[FoodInfoRetriever] Collection is empty; run food ingestion first.")
             return []
 
         model = self._get_model()

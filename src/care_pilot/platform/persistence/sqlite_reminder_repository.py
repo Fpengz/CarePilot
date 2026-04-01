@@ -574,9 +574,7 @@ class SQLiteReminderRepository:
             user_id=user_id, scope_type=scope_type, scope_key=scope_key
         )
 
-    def save_scheduled_notification(
-        self, item: ScheduledMessage
-    ) -> ScheduledMessage:
+    def save_scheduled_notification(self, item: ScheduledMessage) -> ScheduledMessage:
         with get_connection(self.db_path) as conn:
             conn.execute(
                 """
@@ -622,9 +620,7 @@ class SQLiteReminderRepository:
             raise RuntimeError(f"failed to persist scheduled notification {item.id}")
         return existing
 
-    def get_scheduled_notification(
-        self, notification_id: str
-    ) -> ScheduledMessage | None:
+    def get_scheduled_notification(self, notification_id: str) -> ScheduledMessage | None:
         with get_connection(self.db_path) as conn:
             row = conn.execute(
                 """
@@ -867,9 +863,7 @@ class SQLiteReminderRepository:
             conn.commit()
         return int(result.rowcount)
 
-    def append_notification_log(
-        self, entry: MessageLogEntry
-    ) -> MessageLogEntry:
+    def append_notification_log(self, entry: MessageLogEntry) -> MessageLogEntry:
         with get_connection(self.db_path) as conn:
             conn.execute(
                 """
@@ -932,9 +926,7 @@ class SQLiteReminderRepository:
     ) -> list[MessageEndpoint]:
         return self.replace_message_endpoints(user_id=user_id, endpoints=endpoints)
 
-    def list_message_endpoints(
-        self, *, user_id: str
-    ) -> list[MessageEndpoint]:
+    def list_message_endpoints(self, *, user_id: str) -> list[MessageEndpoint]:
         with get_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
@@ -958,9 +950,7 @@ class SQLiteReminderRepository:
             for row in rows
         ]
 
-    def list_reminder_notification_endpoints(
-        self, *, user_id: str
-    ) -> list[MessageEndpoint]:
+    def list_reminder_notification_endpoints(self, *, user_id: str) -> list[MessageEndpoint]:
         return self.list_message_endpoints(user_id=user_id)
 
     def get_reminder_notification_endpoint(
@@ -1154,9 +1144,7 @@ class SQLiteReminderRepository:
             conn.commit()
         return participant
 
-    def append_message_thread_message(
-        self, message: MessageThreadMessage
-    ) -> MessageThreadMessage:
+    def append_message_thread_message(self, message: MessageThreadMessage) -> MessageThreadMessage:
         with get_connection(self.db_path) as conn:
             conn.execute(
                 """

@@ -51,8 +51,12 @@ class ReminderEventRecord(BaseRecord, TimestampMixin, table=True):
 
     id: str = Field(primary_key=True)
     user_id: str = Field(index=True, foreign_key="user_profiles.id")
-    reminder_definition_id: str | None = Field(default=None, index=True, foreign_key="reminder_definitions.id")
-    occurrence_id: str | None = Field(default=None, index=True, foreign_key="reminder_occurrences.id")
+    reminder_definition_id: str | None = Field(
+        default=None, index=True, foreign_key="reminder_definitions.id"
+    )
+    occurrence_id: str | None = Field(
+        default=None, index=True, foreign_key="reminder_occurrences.id"
+    )
     regimen_id: str | None = Field(default=None, index=True, foreign_key="medication_regimens.id")
 
     reminder_type: str = "medication"

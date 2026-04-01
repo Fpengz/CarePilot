@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from contextvars import ContextVar
 from datetime import UTC, datetime
+from typing import Any, cast
 
 from care_pilot.agent.adapters.domain_agents import DietaryAgentAdapter
 from care_pilot.agent.core.base import AgentContext
@@ -220,6 +221,6 @@ async def _record_meal_memory(
         user_id=record.user_id,
         session_id=session_id,
         messages=messages,
-        metadata={"source": "meal_confirmation"},
+        metadata=cast(dict[str, Any], {"source": "meal_confirmation"}),
     )
     return True

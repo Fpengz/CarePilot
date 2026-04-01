@@ -70,7 +70,9 @@ class ReminderOccurrenceRecord(BaseRecord, TimestampMixin, table=True):
 
     scheduled_for: datetime = Field(index=True)
     trigger_at: datetime = Field(index=True)
-    status: str = Field(index=True) # e.g., "pending", "sent", "acknowledged", "taken", "skipped", "missed"
+    status: str = Field(
+        index=True
+    )  # e.g., "pending", "sent", "acknowledged", "taken", "skipped", "missed"
 
     action: str | None = None
     action_outcome: str | None = None

@@ -37,11 +37,13 @@ router = APIRouter(tags=["companion"])
 @router.get("/api/v1/companion/today", response_model=CompanionTodayResponse)
 async def companion_today(
     request: Request,
-    include: str | None = Query(None), # Added include parameter
+    include: str | None = Query(None),  # Added include parameter
     session: dict[str, object] = Depends(current_session),
 ) -> CompanionTodayResponse:
     require_action(session, "companion.today.read")
-    return await get_companion_today(context=get_context(request), session=session, include=include) # Pass include parameter to service
+    return await get_companion_today(
+        context=get_context(request), session=session, include=include
+    )  # Pass include parameter to service
 
 
 @router.get(
@@ -86,7 +88,7 @@ async def companion_blood_pressure_chart(
 async def companion_interactions(
     payload: CompanionInteractionRequest,
     request: Request,
-    include: str | None = Query(None), # Added include parameter
+    include: str | None = Query(None),  # Added include parameter
     session: dict[str, object] = Depends(current_session),
 ) -> CompanionInteractionResponse:
     require_action(session, "companion.interactions.write")
@@ -98,7 +100,7 @@ async def companion_interactions(
         payload=payload,
         request_id=request_id,
         correlation_id=correlation_id,
-        include=include, # Pass include parameter to service
+        include=include,  # Pass include parameter to service
     )
 
 

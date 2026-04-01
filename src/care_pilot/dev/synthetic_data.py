@@ -81,7 +81,12 @@ def seed_demo_accounts(
                         for m in cast(list[dict[str, str]], p.get("medications", []))
                     ],
                     nutrition_goals=[
-                        NutritionGoal(goal_type=str(g), target_value=0.0, unit="unit", start_date=datetime.now(UTC).date())
+                        NutritionGoal(
+                            goal_type=str(g),
+                            target_value=0.0,
+                            unit="unit",
+                            start_date=datetime.now(UTC).date(),
+                        )
                         for g in cast(list[str], p.get("nutrition_goals", []))
                     ],
                     updated_at=datetime.now(UTC).isoformat(),
@@ -388,7 +393,9 @@ def _build_profile(*, user_id: str, config: SyntheticProfileConfig) -> HealthPro
             Medication(name="Atorvastatin", dosage="20mg"),
         ],
         nutrition_goals=[
-            NutritionGoal(goal_type=str(g), target_value=0.0, unit="unit", start_date=datetime.now(UTC).date())
+            NutritionGoal(
+                goal_type=str(g), target_value=0.0, unit="unit", start_date=datetime.now(UTC).date()
+            )
             for g in config.goals
         ],
         preferred_cuisines=["teochew", "japanese"],

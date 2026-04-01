@@ -5,6 +5,8 @@ This module wires log formatting and optional tracing integrations used by
 the application.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 from typing import Any, cast
@@ -13,11 +15,7 @@ from pydantic import ValidationError
 
 import logfire
 from care_pilot.config.app import get_settings
-from care_pilot.platform.observability.context import (
-    get_current_correlation_id,
-    get_current_request_id,
-    get_current_user_id,
-)
+from care_pilot.platform.observability.context import get_correlation_id, get_request_id
 
 logfire_api = cast(Any, logfire)
 _CONFIGURED = False
@@ -29,9 +27,10 @@ class RequestContextFilter(logging.Filter):
     """Inject request context into log records."""
 
     def filter(self, record: logging.LogRecord) -> bool:
-        record.request_id = get_current_request_id() or "-"
-        record.correlation_id = get_current_correlation_id() or "-"
-        record.user_id = get_current_user_id() or "-"
+        # Standardize on new context names
+        record.request_id = get_request_id() or "-"
+        record.correlation_id = get_correlation_id() or "-"
+        record.user_id = "-"  # Placeholder for now
         return True
 
 
@@ -76,7 +75,8 @@ def setup_logging(project_name: str = "care-pilot") -> logging.Logger:
         _dedupe_logfire_handlers()
         return logging.getLogger(project_name)
 
-    logfire_api.configure(send_to_logfire=False)
+    # Note: logfire.configure() is now handled in setup_observability()
+    # setup_logging() remains for backward compatibility and stdlib logging config
 
     level_name = _resolve_log_level_name()
     level = getattr(logging, level_name, logging.INFO)
@@ -111,3 +111,28 @@ def get_logger(name: str) -> logging.Logger:
 
 
 logger = get_logger("care-pilot")
+
+
+def setup_observability() -> None:
+    """Initialize logfire and instrument all supported libraries."""
+    settings = get_settings()
+
+    if not settings.observability.logfire_enabled:
+        return
+
+    # Configure logfire
+    logfire.configure(
+        token=settings.observability.logfire_token,
+        environment=settings.app.env,
+        service_name="care-pilot-api",
+    )
+
+    # Instrument infrastructure libraries
+    if hasattr(logfire, "instrument_httpx"):
+        logfire.instrument_httpx()
+
+    if hasattr(logfire, "instrument_pydantic"):
+        logfire.instrument_pydantic()
+
+    # logfire.instrument_sqlalchemy() will be called once we have the engine
+    # logfire.instrument_fastapi() will be called in the API entry point

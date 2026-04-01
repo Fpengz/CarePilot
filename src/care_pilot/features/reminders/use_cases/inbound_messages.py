@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+
 async def handle_inbound_message(
     *,
     context: AppContext,

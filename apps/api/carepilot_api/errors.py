@@ -119,9 +119,7 @@ def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
     return JSONResponse(content=body, status_code=exc.status_code, headers=exc.headers)
 
 
-def handle_validation_exception(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+def handle_validation_exception(request: Request, exc: RequestValidationError) -> JSONResponse:
     code = _http_error_code(422)
     message = "request validation failed"
     details: dict[str, object] = {"errors": exc.errors()}

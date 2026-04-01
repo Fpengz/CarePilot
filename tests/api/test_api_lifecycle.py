@@ -1,6 +1,7 @@
 """Module for test api lifecycle."""
 
 from collections.abc import Generator
+from typing import Any, cast
 
 import pytest
 from apps.api.carepilot_api.main import create_app
@@ -92,9 +93,9 @@ async def test_app_does_not_close_caller_managed_context(
     async def close_household_store(*args: object, **kwargs: object) -> None:
         closed["household_store"] = True
 
-    caller_ctx.app_store.close = close_repository  # type: ignore[invalid-assignment]
-    caller_ctx.auth_store.close = close_auth_store  # type: ignore[invalid-assignment]
-    caller_ctx.household_store.close = close_household_store  # type: ignore[invalid-assignment]
+    cast(Any, caller_ctx.app_store).close = close_repository
+    cast(Any, caller_ctx.auth_store).close = close_auth_store
+    cast(Any, caller_ctx.household_store).close = close_household_store
 
     from httpx import ASGITransport, AsyncClient
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

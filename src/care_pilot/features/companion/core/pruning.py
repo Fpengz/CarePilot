@@ -64,9 +64,7 @@ class PruningService:
 
         return snapshot
 
-    def prune_by_relevance(
-        self, snapshot: PatientCaseSnapshot, query: str
-    ) -> PatientCaseSnapshot:
+    def prune_by_relevance(self, snapshot: PatientCaseSnapshot, query: str) -> PatientCaseSnapshot:
         """
         Heuristic-based relevance pruning.
         If the query is about a specific area, keep more context for that area.

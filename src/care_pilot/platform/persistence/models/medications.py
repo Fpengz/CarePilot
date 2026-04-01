@@ -60,7 +60,9 @@ class MedicationAdherenceRecord(BaseRecord, TimestampMixin, table=True):
     user_id: str = Field(index=True, foreign_key="user_profiles.id")
     regimen_id: str = Field(index=True, foreign_key="medication_regimens.id")
     # Removed: reminder_id: Optional[str] = Field(default=None, index=True, foreign_key="reminder_events.id")
-    occurrence_id: str = Field(index=True, foreign_key="reminder_occurrences.id") # Links to the specific reminder occurrence
+    occurrence_id: str = Field(
+        index=True, foreign_key="reminder_occurrences.id"
+    )  # Links to the specific reminder occurrence
 
     status: str = Field(index=True)  # e.g., "taken", "skipped", "missed"
     scheduled_at: datetime = Field(index=True)

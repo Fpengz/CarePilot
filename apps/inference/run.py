@@ -43,8 +43,10 @@ device = config.model_device
 if device == "auto":
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+
 class StaticContextExtractor(ContextFeaturePort):
     """Simple extractor that returns provided features."""
+
     def __init__(self):
         self.current_features = EmotionContextFeatures(
             recent_labels=[], trend="stable", recent_product_states=[]
@@ -57,7 +59,9 @@ class StaticContextExtractor(ContextFeaturePort):
     def set_features(self, features: EmotionContextFeatures):
         self.current_features = features
 
+
 context_extractor = StaticContextExtractor()
+
 
 def build_fusion(config: EmotionRuntimeConfig, device: str) -> FusionPort:
     if not config.fusion_model_id:
@@ -66,6 +70,7 @@ def build_fusion(config: EmotionRuntimeConfig, device: str) -> FusionPort:
         return HFFusion(config.fusion_model_id, device)
     except Exception:
         return HeuristicFusion()
+
 
 emotion_pipeline = EmotionPipeline(
     asr=WhisperASR(config.asr_model_id, device),
@@ -77,19 +82,23 @@ emotion_pipeline = EmotionPipeline(
 
 # Shared ASR model for AudioAgent (MERaLiON)
 asr_repo = "MERaLiON/MERaLiON-2-3B"
-asr_processor = get_hf_loader(asr_repo, load_func=cast(Any, AutoProcessor.from_pretrained), trust_remote_code=True)
+asr_processor = get_hf_loader(
+    asr_repo, load_func=cast(Any, AutoProcessor.from_pretrained), trust_remote_code=True
+)
 asr_model = get_hf_loader(
     asr_repo,
     load_func=cast(Any, AutoModelForSpeechSeq2Seq.from_pretrained),
     torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-    trust_remote_code=True
+    trust_remote_code=True,
 ).to(device)
+
 
 class TextInferenceRequest(BaseModel):
     text: str
     language: str | None = None
     user_id: str | None = None
     context_features: EmotionContextFeatures
+
 
 @app.post("/infer/text", response_model=EmotionInferenceResult)
 async def infer_text(request: TextInferenceRequest):
@@ -100,8 +109,9 @@ async def infer_text(request: TextInferenceRequest):
         emotion_pipeline.infer_text,
         request.text,
         request.language,
-        request.user_id
+        request.user_id,
     )
+
 
 @app.post("/infer/speech", response_model=EmotionInferenceResult)
 async def infer_speech(
@@ -123,8 +133,9 @@ async def infer_speech(
         audio.filename,
         language,
         transcription,
-        user_id
+        user_id,
     )
+
 
 def _transcribe_meralion_sync(audio_bytes: bytes) -> str:
     # Basic audio load
@@ -142,6 +153,7 @@ def _transcribe_meralion_sync(audio_bytes: bytes) -> str:
     generated_ids = asr_model.generate(**inputs, max_new_tokens=256)
     return asr_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
+
 @app.post("/transcribe")
 async def transcribe(audio: Annotated[UploadFile, File()]):
     audio_bytes = await audio.read()
@@ -149,15 +161,18 @@ async def transcribe(audio: Annotated[UploadFile, File()]):
     text = await loop.run_in_executor(get_ml_executor(), _transcribe_meralion_sync, audio_bytes)
     return {"text": text}
 
+
 @app.get("/health", response_model=EmotionRuntimeHealth)
 async def health():
     return EmotionRuntimeHealth(
         status="ready",
         model_cache_ready=True,
         source_commit=config.source_commit,
-        detail="Remote inference service active (Emotion + ASR)"
+        detail="Remote inference service active (Emotion + ASR)",
     )
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8002)
