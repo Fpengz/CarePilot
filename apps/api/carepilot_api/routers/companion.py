@@ -21,7 +21,7 @@ from ..schemas import (
     ImpactSummaryResponse,
     PatientMedicalCardResponse,
 )
-from ..services.companion_orchestration import (
+from ..services.companion_service import (
     get_blood_pressure_chart,
     get_blood_pressure_summary,
     get_clinician_digest,

@@ -20,7 +20,7 @@ from care_pilot.features.safety.domain.alerts import OutboundMessage
 from care_pilot.platform.observability import get_logger
 
 from ..deps import chat_deps
-from ..services.companion_orchestration import load_companion_inputs
+from ..services.companion_service import load_companion_inputs
 
 logger = get_logger(__name__)
 

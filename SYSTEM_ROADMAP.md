@@ -1,5 +1,16 @@
 # CarePilot System Roadmap
 
+## Canonical Documentation
+
+| Doc | Status | Last Verified | Owner |
+| --- | --- | --- | --- |
+| `SYSTEM_ROADMAP.md` | active | 2026-04-01 | platform |
+| `README.md` | active | 2026-04-01 | platform |
+| `ARCHITECTURE.md` | active | 2026-04-01 | platform |
+| `AGENTS.md` | active | 2026-04-01 | platform |
+| `docs/README.md` | active | 2026-04-01 | platform |
+| `docs/ARCHITECTURE_AND_ROADMAP.md` | active | 2026-04-01 | platform |
+
 ## Purpose
 This is the single source of truth for CarePilot's development, combining architectural vision, technical debt management, and active implementation plans.
 

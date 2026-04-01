@@ -55,7 +55,7 @@ git commit -m "docs: add agent invocation audit checklist"
 ### Task 2: Convert remaining feature orchestrators to BaseAgent adapters
 **Files:**
 - Modify: `src/care_pilot/features/companion/chat/orchestrator.py`
-- Modify: `src/care_pilot/features/medications/medication_management.py`
+- Modify: `src/care_pilot/features/medications/medication_service.py`
 - Modify: `src/care_pilot/features/meals/use_cases/confirm_meal.py`
 - Modify: `src/care_pilot/features/recommendations/recommendation_service.py`
 - Modify: `src/care_pilot/agent/adapters/shadow_agents.py`

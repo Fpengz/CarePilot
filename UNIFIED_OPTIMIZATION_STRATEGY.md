@@ -43,7 +43,7 @@ This document synthesizes findings from system robustness analysis, agent evalua
 
 **Implementation Location:** 
 - `/workspace/src/care_pilot/platform/memory/context_pipeline.py` (new)
-- Refactor `companion_orchestration.py` to use pipeline
+- Refactor `companion_service.py` to use pipeline
 
 **Synergy Benefits:**
 - Single source of truth for all context

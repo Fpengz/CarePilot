@@ -7,14 +7,19 @@ adhering to the shared AgentRequest/AgentResponse contracts.
 
 from __future__ import annotations
 
+import time
 from typing import Any, cast
 
 from pydantic_ai import Agent
 
 from care_pilot.agent.core.contracts import AgentRecommendation, AgentRequest, AgentResponse
+from care_pilot.agent.meal_analysis.schemas import (
+    MealAnalysisAgentInput,
+    MealAnalysisAgentOutput,
+    MealPerception,
+)
 from care_pilot.agent.runtime.llm_factory import LLMFactory
 from care_pilot.config.llm import LLMCapability
-from care_pilot.features.meals.domain.models import MealPerception
 from care_pilot.platform.observability import get_logger
 
 logger = get_logger(__name__)
@@ -78,4 +83,26 @@ async def run_meal_agent(request: AgentRequest) -> AgentResponse:
         recommendations=recommendations,
         confidence=perception.confidence_score,
         reasoning_trace=["Analyzed image/text context", "Extracted meal components"],
+    )
+
+
+async def analyze_meal_perception(
+    input_data: MealAnalysisAgentInput,
+) -> MealAnalysisAgentOutput:
+    """Run meal perception against image or text context. (Legacy entry point)"""
+    started = time.perf_counter()
+    agent = get_meal_agent()
+
+    # Build prompt/message based on input
+    prompt = "Analyze the provided input and generate a MealPerception."
+    if input_data.text_context:
+        prompt = f"{prompt} Context: {input_data.text_context}"
+
+    result = await agent.run(prompt)
+    elapsed = (time.perf_counter() - started) * 1000.0
+
+    return MealAnalysisAgentOutput(
+        perception=result.output,
+        raw_output=str(result.output),
+        latency_ms=elapsed,
     )

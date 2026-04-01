@@ -7,7 +7,18 @@
 
 CarePilot is an end-to-end AI health system that closes the loop between clinical adherence and daily behavioral health. By integrating multimodal sensing—Vision for meal analysis, Audio for emotional well-being, and Structured Reasoning for medication management—CarePilot transforms passive tracking into proactive, longitudinal care.
 
-## 🚀 One-Liner
+## Canonical Documentation
+
+| Doc | Status | Last Verified | Owner |
+| --- | --- | --- | --- |
+| `README.md` | active | 2026-04-01 | platform |
+| `ARCHITECTURE.md` | active | 2026-04-01 | platform |
+| `SYSTEM_ROADMAP.md` | active | 2026-04-01 | platform |
+| `AGENTS.md` | active | 2026-04-01 | platform |
+| `docs/README.md` | active | 2026-04-01 | platform |
+| `docs/ARCHITECTURE_AND_ROADMAP.md` | active | 2026-04-01 | platform |
+
+## 1. 🚀 One-Liner
 
 The proactive AI Health Companion that bridges the gap between clinical prescriptions and real-world patient behavior through multimodal intelligence.
 

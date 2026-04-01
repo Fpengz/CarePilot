@@ -97,7 +97,7 @@ notifications, background agent outputs). Reactions are idempotent and tolerate 
 
 Located in feature modules, for example:
 
-- `src/care_pilot/features/companion/core/companion_core_service.py`
+- `src/care_pilot/features/companion/core/core_service.py`
 - `src/care_pilot/features/reminders/notifications/**`
 - `src/care_pilot/features/meals/workflows/**`
 - `src/care_pilot/platform/messaging/**`

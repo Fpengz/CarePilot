@@ -31,7 +31,7 @@ _EXPORT_MAP = {
         "MealAnalysisAgentOutput",
     ),
     "analyze_meal_perception": (
-        "care_pilot.agent.meal_analysis.meal_perception_agent",
+        "care_pilot.agent.meal_analysis.agent",
         "analyze_meal_perception",
     ),
     "arbitrate_meal_label": (

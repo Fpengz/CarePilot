@@ -1,5 +1,16 @@
 # Architecture
 
+## Canonical Documentation
+
+| Doc | Status | Last Verified | Owner |
+| --- | --- | --- | --- |
+| `ARCHITECTURE.md` | active | 2026-04-01 | platform |
+| `README.md` | active | 2026-04-01 | platform |
+| `SYSTEM_ROADMAP.md` | active | 2026-04-01 | platform |
+| `AGENTS.md` | active | 2026-04-01 | platform |
+| `docs/README.md` | active | 2026-04-01 | platform |
+| `docs/ARCHITECTURE_AND_ROADMAP.md` | active | 2026-04-01 | platform |
+
 ## Purpose
 This is the canonical architecture reference for CarePilot. It describes the feature-first modular-monolith structure, the ownership boundaries that contributors must preserve, and the forward direction for the project.
 

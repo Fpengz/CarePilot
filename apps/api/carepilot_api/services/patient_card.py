@@ -11,13 +11,13 @@ if TYPE_CHECKING:
 from care_pilot.config.app import get_settings
 from care_pilot.core.contracts.api import PatientMedicalCardResponse
 from care_pilot.features.companion.chat.search_adapter import SearchAgent
-from care_pilot.features.companion.core.companion_core_service import build_companion_runtime_state
+from care_pilot.features.companion.core.core_service import build_companion_runtime_state
 from care_pilot.features.companion.core.domain import CompanionInteraction
 from care_pilot.features.companion.core.evidence import retrieve_supporting_evidence
 from care_pilot.features.companion.patient_card import generate_patient_medical_card
 from care_pilot.platform.persistence.evidence import SearchEvidenceRetriever
 
-from .companion_orchestration import load_companion_inputs
+from .companion_service import load_companion_inputs
 
 _EVIDENCE_RETRIEVER = SearchEvidenceRetriever(search_agent=SearchAgent(max_results=3, timeout=6))
 _CACHE_TTL_SECONDS = get_settings().storage.redis_default_ttl_seconds

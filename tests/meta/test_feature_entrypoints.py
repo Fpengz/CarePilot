@@ -5,11 +5,11 @@ These tests lock in the "start here" modules for core product features.
 
 
 def test_companion_feature_has_service_entrypoint() -> None:
-    from care_pilot.features.companion import companion_orchestration
+    from care_pilot.features.companion import companion_service
 
-    assert hasattr(companion_orchestration, "run_companion_interaction")
-    assert hasattr(companion_orchestration, "build_companion_today_bundle")
-    assert hasattr(companion_orchestration, "CompanionStateInputs")
+    assert hasattr(companion_service, "run_companion_interaction")
+    assert hasattr(companion_service, "build_companion_today_bundle")
+    assert hasattr(companion_service, "CompanionStateInputs")
 
 
 def test_meals_feature_has_service_entrypoint() -> None:

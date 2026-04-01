@@ -31,7 +31,7 @@ Evaluating AI agents in a healthcare context requires a multi-dimensional approa
 2.  **Arize Phoenix / LangSmith**
     *   **Use Case:** End-to-end tracing and debugging.
     *   **Features:** Trace LLM calls, view latency breakdown, annotate spans for fine-tuning datasets.
-    *   **Integration:** Add as an observer in the `companion_orchestration.py` workflow.
+    *   **Integration:** Add as an observer in the `companion_service.py` workflow.
 
 3.  **DeepEval**
     *   **Use Case:** Unit testing for LLMs.
@@ -65,7 +65,7 @@ As conversation history grows, token limits and noise become issues. A context p
 
 ### Implementation Plan
 
-Modify the `build_context` step in `apps/api/carepilot_api/services/companion_orchestration.py`:
+Modify the `build_context` step in `apps/api/carepilot_api/services/companion_service.py`:
 
 ```python
 async def build_pruned_context(user_id: str, current_query: str, history: list):

@@ -67,7 +67,7 @@ async def chat_stream(
     if not user_message:
         raise HTTPException(status_code=400, detail="message is required")
 
-    from ..services.companion_orchestration import load_companion_inputs
+    from ..services.companion_service import load_companion_inputs
 
     inputs = await load_companion_inputs(context=ctx, session=session)
 
@@ -103,7 +103,7 @@ async def chat_audio(
     raw_bytes = await audio.read()
     filename = audio.filename or "audio.webm"
 
-    from ..services.companion_orchestration import load_companion_inputs
+    from ..services.companion_service import load_companion_inputs
 
     inputs = await load_companion_inputs(context=ctx, session=session)
 
@@ -137,7 +137,7 @@ async def confirm_meal_log(
     ctx = get_context(request)
     deps = chat_deps(ctx, session)
 
-    from ..services.companion_orchestration import load_companion_inputs
+    from ..services.companion_service import load_companion_inputs
 
     inputs = await load_companion_inputs(context=ctx, session=session)
 

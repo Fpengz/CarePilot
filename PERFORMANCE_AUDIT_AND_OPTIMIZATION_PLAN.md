@@ -24,7 +24,7 @@ The CarePilot codebase has **significant performance gaps** that prevent achievi
 
 ### 1. **ASYNCIO.GATHER() WITHOUT ERROR HANDLING** ⚠️ CRITICAL
 
-**Location:** `/workspace/apps/api/carepilot_api/services/companion_orchestration.py:175`
+**Location:** `/workspace/apps/api/carepilot_api/services/companion_service.py:175`
 
 ```python
 # CURRENT CODE - DANGEROUS
@@ -90,7 +90,7 @@ app.middleware("http")(timeout_middleware)  # After request_context_middleware
 **Locations:**
 - LLM calls: `/workspace/apps/api/carepilot_api/services/meals.py:186`
 - Emotion inference: `/workspace/apps/api/carepilot_api/services/emotion_session.py:66`
-- Search agent: `/workspace/apps/api/carepilot_api/services/companion_orchestration.py:64` (has 6s timeout but no circuit breaker)
+- Search agent: `/workspace/apps/api/carepilot_api/services/companion_service.py:64` (has 6s timeout but no circuit breaker)
 
 **Problem:** When external services degrade, requests pile up and overwhelm the system.
 
@@ -117,7 +117,7 @@ async def call_llm_with_breaker(...):
 
 ### 4. **INEFFICIENT DATA LOADING PATTERN** ⚠️ HIGH
 
-**Location:** `/workspace/apps/api/carepilot_api/services/companion_orchestration.py:126-241`
+**Location:** `/workspace/apps/api/carepilot_api/services/companion_service.py:126-241`
 
 **Current Pattern:**
 ```python
@@ -519,7 +519,7 @@ groups:
 
 ### Immediate (Today)
 - [ ] Remove debug prints from `main.py`
-- [ ] Add `return_exceptions=True` to `companion_orchestration.py:175`
+- [ ] Add `return_exceptions=True` to `companion_service.py:175`
 - [ ] Add `return_exceptions=True` to `alert_outbox.py:103`
 
 ### This Week

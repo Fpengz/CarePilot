@@ -45,5 +45,5 @@ of the event-driven multi-agent refactor. It focuses on events appended via
 - [ ] `src/care_pilot/features/companion/chat/workflows/companion_graph.py:84` — supervisor routing (`run_supervisor_agent`)
 - [ ] `src/care_pilot/features/meals/use_cases/confirm_meal.py:88` — dietary agent adapter invocation
 - [ ] `src/care_pilot/features/meals/workflows/meal_upload_graph.py:112` — meal agent proposal invocation
-- [ ] `src/care_pilot/features/medications/medication_management.py:726` — medication agent proposal invocation
+- [ ] `src/care_pilot/features/medications/medication_service.py:726` — medication agent proposal invocation
 - [ ] `src/care_pilot/features/recommendations/recommendation_service.py:420` — recommendation agent adapter invocation

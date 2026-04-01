@@ -6,7 +6,7 @@ Companion submodules live under `features.companion.*`.
 
 from __future__ import annotations
 
-from care_pilot.features.companion.core.companion_core_service import (  # noqa: F401
+from care_pilot.features.companion.core.core_service import (  # noqa: F401
     CompanionRuntimeState,
     CompanionStateInputs,
     build_companion_runtime_state,

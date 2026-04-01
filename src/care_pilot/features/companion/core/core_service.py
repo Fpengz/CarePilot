@@ -32,8 +32,8 @@ from care_pilot.features.companion.core.health.models import (
     SymptomCheckIn,
 )
 from care_pilot.features.companion.core.snapshot import build_case_snapshot_prefer_projection
-from care_pilot.features.companion.engagement.engagement import assess_engagement
-from care_pilot.features.companion.impact.impact import build_impact_summary
+from care_pilot.features.companion.engagement.engagement_service import assess_engagement
+from care_pilot.features.companion.impact.impact_service import build_impact_summary
 from care_pilot.features.companion.personalization.personalization import (
     build_personalization_context,
 )

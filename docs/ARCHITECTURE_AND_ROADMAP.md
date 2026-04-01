@@ -1,5 +1,16 @@
 # CarePilot Strategic Architecture & Roadmap
 
+## Canonical Documentation
+
+| Doc | Status | Last Verified | Owner |
+| --- | --- | --- | --- |
+| `docs/ARCHITECTURE_AND_ROADMAP.md` | active | 2026-04-01 | platform |
+| `README.md` | active | 2026-04-01 | platform |
+| `ARCHITECTURE.md` | active | 2026-04-01 | platform |
+| `SYSTEM_ROADMAP.md` | active | 2026-04-01 | platform |
+| `AGENTS.md` | active | 2026-04-01 | platform |
+| `docs/README.md` | active | 2026-04-01 | platform |
+
 ## 1. Executive Summary
 CarePilot is evolving from a reactive health chatbot into a proactive, low-latency (<100ms), and resilient AI Health Companion. This document serves as the **Single Source of Truth (SSoT)** for the engineering team, defining our architectural standards, performance budgets, and the 16-week execution path to production readiness.
 

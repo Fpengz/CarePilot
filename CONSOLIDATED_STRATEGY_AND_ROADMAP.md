@@ -72,7 +72,7 @@ Moving from simple history to a **Three-Tier Memory System**:
 **Context Pruning Layer:**
 *   **Mechanism:** Ebbinghaus forgetting curve implementation.
 *   **Logic:** Retain permanent facts → Keep last 5 turns → Retrieve top-K relevant historical chunks via vector search.
-*   **Integration:** Middleware in `companion_orchestration.py` before LLM invocation.
+*   **Integration:** Middleware in `companion_service.py` before LLM invocation.
 
 ### 2.3 Reinforcement Learning (RL) for Personalization
 *   **Phase 1 (Weeks 1-4): Contextual Multi-Armed Bandits (CMAB)**

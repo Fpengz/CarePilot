@@ -105,7 +105,7 @@ Role:
 
 | Component Role | Example Module |
 | --- | --- |
-| Feature orchestration | `src/care_pilot/features/companion/core/companion_core_service.py` |
+| Feature orchestration | `src/care_pilot/features/companion/core/core_service.py` |
 | Chat orchestration | `src/care_pilot/features/companion/chat/orchestrator.py` |
 | Meal workflow | `src/care_pilot/features/meals/workflows/**` |
 | Message delivery orchestration | `src/care_pilot/features/reminders/notifications/**` |

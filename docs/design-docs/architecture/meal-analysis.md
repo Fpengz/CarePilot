@@ -196,7 +196,7 @@ Example downstream consumers
 
 - `src/care_pilot/features/meals/api_service.py`
 - `src/care_pilot/features/recommendations/recommendation_service.py`
-- `src/care_pilot/features/companion/core/companion_core_service.py`
+- `src/care_pilot/features/companion/core/core_service.py`
 
 Future feedback and review workflows
 

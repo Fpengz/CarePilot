@@ -11,7 +11,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
-from care_pilot.features.medications.medication_management import (
+from care_pilot.features.medications.medication_service import (
     adherence_metrics_for_session,
     cancel_intake_draft_for_session,
     confirm_intake_for_session,

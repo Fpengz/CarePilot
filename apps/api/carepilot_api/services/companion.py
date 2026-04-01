@@ -7,7 +7,7 @@ clinician digest reads, and impact summary responses.
 
 from __future__ import annotations
 
-from .companion_orchestration import (
+from .companion_service import (
     get_clinician_digest,
     get_companion_today,
     get_impact_summary,

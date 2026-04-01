@@ -1,5 +1,16 @@
 # Agent Workflow Contract
 
+## Canonical Documentation
+
+| Doc | Status | Last Verified | Owner |
+| --- | --- | --- | --- |
+| `AGENTS.md` | active | 2026-04-01 | platform |
+| `README.md` | active | 2026-04-01 | platform |
+| `ARCHITECTURE.md` | active | 2026-04-01 | platform |
+| `SYSTEM_ROADMAP.md` | active | 2026-04-01 | platform |
+| `docs/README.md` | active | 2026-04-01 | platform |
+| `docs/ARCHITECTURE_AND_ROADMAP.md` | active | 2026-04-01 | platform |
+
 ## Purpose
 This file defines how human contributors and AI agents should collaborate on the companion architecture in this repository.
 

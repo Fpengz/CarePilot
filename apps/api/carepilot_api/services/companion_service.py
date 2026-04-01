@@ -32,7 +32,7 @@ from care_pilot.core.contracts.api import (
     WorkflowTimelineEventResponse,
 )
 from care_pilot.features.companion.chat.search_adapter import SearchAgent
-from care_pilot.features.companion.core.companion_core_service import (
+from care_pilot.features.companion.core.core_service import (
     CompanionStateInputs,
     build_companion_today_bundle,
     run_companion_interaction,

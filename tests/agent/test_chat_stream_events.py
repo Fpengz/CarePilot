@@ -81,7 +81,7 @@ def test_stream_events_emits_token_and_done(tmp_path, monkeypatch):
             mock_user_profile.medications = [] # Initialize medications as an empty list
             inputs.user_profile = mock_user_profile
             return inputs
-        monkeypatch.setattr("apps.api.carepilot_api.services.companion_orchestration.load_companion_inputs", mock_load_companion_inputs)
+        monkeypatch.setattr("apps.api.carepilot_api.services.companion_service.load_companion_inputs", mock_load_companion_inputs)
 
 
         # Mock stream_multi_agent_workflow to return a mock result

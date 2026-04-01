@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from care_pilot.features.companion.core.companion_core_service import CompanionStateInputs
+from care_pilot.features.companion.core.core_service import CompanionStateInputs
 from care_pilot.features.companion.core.health.models import ClinicalProfileSnapshot
 from care_pilot.features.profiles.domain.health_profile import resolve_user_profile
 from care_pilot.features.reports.domain import build_clinical_snapshot
