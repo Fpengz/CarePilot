@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from pydantic import Field
+
 from care_pilot.features.companion.care_plans.care_plan import compose_care_plan
 from care_pilot.features.companion.clinician_digest.digest import build_clinician_digest
 from care_pilot.features.companion.core.domain import (
@@ -34,6 +36,7 @@ from care_pilot.features.companion.core.health.models import (
 from care_pilot.features.companion.core.snapshot import build_case_snapshot_prefer_projection
 from care_pilot.features.companion.engagement.engagement_service import assess_engagement
 from care_pilot.features.companion.impact.impact_service import build_impact_summary
+from care_pilot.features.companion.messaging.normalization import InboundAttachment
 from care_pilot.features.companion.personalization.personalization import (
     build_personalization_context,
 )
@@ -42,7 +45,7 @@ from care_pilot.features.profiles.domain.models import UserProfile
 from care_pilot.features.reminders.domain.models import ReminderEvent
 from care_pilot.features.safety.safety_engine import apply_safety_decision, review_care_plan
 
-
+...
 @dataclass(frozen=True, slots=True)
 class CompanionStateInputs:
     user_profile: UserProfile
@@ -55,6 +58,7 @@ class CompanionStateInputs:
     blood_pressure_readings: list[BloodPressureReading]
     clinical_snapshot: ClinicalProfileSnapshot | None
     emotion_signal: str | None
+    attachments: list[InboundAttachment] = Field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)

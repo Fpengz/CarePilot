@@ -45,6 +45,7 @@ class MockCompanionStateInputs:
         self.blood_pressure_readings: list[BloodPressureReading] = []
         self.clinical_snapshot: ClinicalProfileSnapshot | None = None
         self.emotion_signal: str | None = None
+        self.attachments: list = []
 
 
 def test_stream_events_emits_token_and_done(tmp_path, monkeypatch):

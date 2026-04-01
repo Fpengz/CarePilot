@@ -45,6 +45,7 @@ from care_pilot.features.companion.chat.workflows.companion_graph import (
 from care_pilot.features.companion.core.core_service import CompanionStateInputs
 from care_pilot.features.companion.core.domain import PatientCaseSnapshot
 from care_pilot.features.companion.core.snapshot import build_case_snapshot_prefer_projection
+from care_pilot.features.companion.messaging.normalization import InboundAttachment
 from care_pilot.features.meals.domain.normalization import log_meal_from_text
 from care_pilot.platform.observability import get_logger
 from care_pilot.platform.persistence import AppStores
@@ -73,11 +74,17 @@ class ChatOrchestrator:
         user_message: str,
         snapshot: PatientCaseSnapshot,
         config: RunnableConfig | None = None,
+        attachments: list[InboundAttachment] | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """Stream the Supervisor-led LangGraph workflow updates."""
+        human_content: list[str | dict[str, Any]] = [{"type": "text", "text": user_message}]
+        for att in attachments or []:
+            if att.type == "image" and att.url:
+                human_content.append({"type": "image_url", "image_url": {"url": att.url}})
+
         initial_state: CompanionState = {
             "snapshot": snapshot,
-            "messages": [HumanMessage(content=user_message)],
+            "messages": [HumanMessage(content=human_content)],
             "next_agent": None,
             "last_agent_response": None,
             "errors": [],
@@ -260,7 +267,7 @@ class ChatOrchestrator:
             graph_config: RunnableConfig = {"configurable": {"correlation_id": correlation_id}}
 
             async for chunk in self.stream_multi_agent_workflow(
-                user_message_with_memory, snapshot, config=graph_config
+                user_message_with_memory, snapshot, config=graph_config, attachments=inputs.attachments
             ):
                 # chunk is a dict mapping node names to their state updates
                 for _node_name, state_update in chunk.items():
