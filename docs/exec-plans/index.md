@@ -24,6 +24,7 @@ Execution plans are first-class artifacts. Keep active work separate from in-pro
 
 | Doc | Status | Last Verified | Owner |
 | --- | --- | --- | --- |
+| `docs/exec-plans/completed/2026-04-01-readme-rendering-fix.md` | completed | 2026-04-01 | platform |
 | `docs/exec-plans/completed/2026-04-01-today-execution-plan.md` | completed | 2026-04-01 | platform |
 | `docs/exec-plans/completed/2026-03-11-feature-first-big-bang-refactor-design.md` | completed | 2026-03-29 | platform |
 | `docs/exec-plans/completed/2026-03-11-meal-analysis-pipeline-refactor-design.md` | completed | 2026-03-29 | features |
