@@ -88,6 +88,25 @@ uv run python scripts/cli.py dev --no-scheduler
 ### Project Versioning
 CarePilot follows Semantic Versioning (SemVer) and maintains a curated `CHANGELOG.md`. See the [Project Versioning Policy](../design-docs/architecture/versioning-policy.md) for details.
 
+Use the CarePilot CLI to manage versions:
+
+#### Check current version
+```bash
+uv run python scripts/cli.py version status
+```
+
+#### Increment version
+```bash
+uv run python scripts/cli.py version patch
+uv run python scripts/cli.py version minor
+uv run python scripts/cli.py version major
+```
+
+#### Set specific version
+```bash
+uv run python scripts/cli.py version set 1.2.3
+```
+
 ### Branch Strategy
 Use short-lived feature branches from `main`.
 

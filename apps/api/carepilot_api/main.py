@@ -121,7 +121,6 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
         version="0.1.0",
         lifespan=app_lifespan,
     )
-    logfire.instrument_fastapi(app)  # type: ignore
 
     if ctx:
         app.state.ctx = ctx

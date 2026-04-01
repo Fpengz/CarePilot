@@ -12,7 +12,6 @@ import os
 from functools import cached_property
 from typing import Any, cast
 
-import logfire
 from care_pilot.agent.core import AgentRegistry, build_default_agent_registry
 from care_pilot.agent.emotion.agent import EmotionAgent
 from care_pilot.agent.emotion.schemas import EmotionInferenceResult, EmotionRuntimeHealth

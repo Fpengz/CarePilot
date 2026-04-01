@@ -42,7 +42,7 @@ from care_pilot.features.companion.chat.workflows.companion_graph import (
 )
 
 # Important: These must be imported from features core, not apps/api
-from care_pilot.features.companion.core.companion_core_service import CompanionStateInputs
+from care_pilot.features.companion.core.core_service import CompanionStateInputs
 from care_pilot.features.companion.core.domain import PatientCaseSnapshot
 from care_pilot.features.companion.core.snapshot import build_case_snapshot_prefer_projection
 from care_pilot.features.meals.domain.normalization import log_meal_from_text
