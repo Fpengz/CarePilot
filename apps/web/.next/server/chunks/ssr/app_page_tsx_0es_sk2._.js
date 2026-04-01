@@ -1,0 +1,3 @@
+module.exports=[60350,a=>{"use strict";var b=a.i(28778),c=a.i(74637),d=a.i(53798),e=a.i(6822);a.s(["default",0,function(){let a=(0,d.useRouter)(),{status:f}=(0,e.useSession)();return(0,c.useEffect)(()=>{"authenticated"===f?a.replace("/dashboard"):"unauthenticated"===f&&a.replace("/login")},[a,f]),(0,b.jsx)("div",{className:"app-panel flex min-h-[40vh] items-center justify-center p-6",children:(0,b.jsx)("p",{className:"app-muted text-sm",children:"loading"===f?"Checking session…":"Redirecting…"})})}])}];
+
+//# sourceMappingURL=app_page_tsx_0es_sk2._.js.map

@@ -1,0 +1,11 @@
+{
+  "pages": {},
+  "app": {
+    "[project]/app/chat/page": [
+      "static/media/03bda585a99c6450-s.p.0zzh68k1~whtc.woff2",
+      "static/media/47df9ba1c7236d3b-s.p.0cqfp9mgbqxvb.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pagesUsingSizeAdjust": false
+}

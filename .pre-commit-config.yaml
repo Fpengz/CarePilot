@@ -23,10 +23,15 @@ repos:
         language: system
         files: ^apps/web/
         pass_filenames: false
+      - id: backend-tests
+        name: backend-tests
+        entry: uv run pytest -q
+        language: system
+        types: [python]
+        pass_filenames: false
       - id: web-e2e
         name: web-e2e
         entry: pnpm --dir apps/web test:e2e
         language: system
         files: ^apps/web/
         pass_filenames: false
-        stages: [manual, pre-push]

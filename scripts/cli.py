@@ -24,6 +24,7 @@ from scripts.cli.commands.reminder import reminder_app
 from scripts.cli.commands.report import report_app
 from scripts.cli.commands.seed import seed_app
 from scripts.cli.commands.test import test_app
+from scripts.cli.commands.version import version_app
 from scripts.cli.commands.web import web_app as web_app_impl
 
 app = typer.Typer(help="CarePilot unified developer CLI.")
@@ -40,6 +41,7 @@ app.add_typer(seed_app, name="seed")
 app.add_typer(reminder_app, name="reminders")
 app.add_typer(readiness_app, name="readiness")
 app.add_typer(projections_app, name="projections")
+app.add_typer(version_app, name="version")
 
 web_app.add_typer(web_app_impl, name="env")
 
@@ -62,6 +64,7 @@ def help_command() -> None:
                 "  uv run python scripts/cli.py ingest off <path> [--reset]",
                 "  uv run python scripts/cli.py report nightly [date]",
                 "  uv run python scripts/cli.py projections replay [--user-id USER] [--since ISO]",
+                "  uv run python scripts/cli.py version [status|patch|minor|major|set]",
                 "  uv run python scripts/cli.py web env -- <command...>",
                 "  uv run python scripts/cli.py help",
             ]

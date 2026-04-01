@@ -13,7 +13,9 @@ import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 
-import logfire
+from care_pilot.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parents[5]
 RUNTIME_DATA_DIR = BASE_DIR / "data"
@@ -41,14 +43,14 @@ class FoodInfoRetriever:
 
     def _get_model(self) -> SentenceTransformer:
         if self._model is None:
-            logfire.info(f"[FoodInfoRetriever] Loading {EMBEDDING_MODEL} ...")
+            logger.info("[FoodInfoRetriever] Loading %s ...", EMBEDDING_MODEL)
             self._model = SentenceTransformer(EMBEDDING_MODEL)
         return self._model
 
     def retrieve(self, query: str) -> list[dict[str, Any]]:
         """Return top-k matching chunks for query."""
         if self._collection.count() == 0:
-            logfire.error("[FoodInfoRetriever] Collection is empty; run food ingestion first.")
+            logger.warning("[FoodInfoRetriever] Collection is empty; run food ingestion first.")
             return []
 
         model = self._get_model()

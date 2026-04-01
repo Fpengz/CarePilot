@@ -25,7 +25,8 @@ Define the minimum checklist and milestones required to take CarePilot from the 
 - [ ] Validate predictable worker scheduling behavior under load.
 
 ### 2) Observability
-- [ ] Ensure request ID + correlation ID are available across API and workers.
+- [x] Ensure request ID + correlation ID are available across API and workers. (done 2026-04-01)
+- [x] Ensure logfire instruments FastAPI and SQLModel engine. (done 2026-04-01)
 - [ ] Verify workflow traces are accessible for primary journeys (meals, meds, chat).
 - [ ] Standardize incident triage steps for degraded readiness or worker failures.
 

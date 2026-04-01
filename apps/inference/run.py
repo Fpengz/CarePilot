@@ -31,10 +31,14 @@ from care_pilot.features.companion.emotion.config import EmotionRuntimeConfig
 from care_pilot.features.companion.emotion.fusion.heuristic_fusion import HeuristicFusion
 from care_pilot.features.companion.emotion.pipeline import EmotionPipeline
 from care_pilot.features.companion.emotion.ports import ContextFeaturePort, FusionPort
+from care_pilot.platform.observability import setup_observability
 from care_pilot.platform.runtime.executors import get_ml_executor
 from care_pilot.platform.runtime.hf_loader import get_hf_loader
 
 app = FastAPI(title="CarePilot Inference Service")
+
+# Setup observability
+setup_observability()
 
 # Setup models
 settings = get_settings()

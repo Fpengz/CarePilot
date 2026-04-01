@@ -16,6 +16,7 @@ from care_pilot.platform.eventing.models import (
 )
 from care_pilot.platform.eventing.registry import EventProjectionRegistry, EventReactionRegistry
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.context import bind_observability_context
 
 logger = get_logger(__name__)
 
@@ -151,7 +152,10 @@ def _execute_reaction(
     )
     eventing_store.save_reaction_execution(record)
     try:
-        handler.handle(event)
+        request_id = meta.get("request_id")
+        correlation_id = meta.get("correlation_id")
+        with bind_observability_context(request_id=request_id, correlation_id=correlation_id):
+            handler.handle(event)
     except Exception as exc:  # noqa: BLE001
         failure_count += 1
         status = ExecutionStatus.FAILED
@@ -244,8 +248,14 @@ def _execute_projection(
         ttl_seconds=lease_seconds,
     ):
         return False
+
+    meta = event.payload.get("meta", {}) if isinstance(event.payload, dict) else {}
+    request_id = meta.get("request_id")
+    correlation_id = meta.get("correlation_id")
+
     try:
-        handler.apply(event)
+        with bind_observability_context(request_id=request_id, correlation_id=correlation_id):
+            handler.apply(event)
     except Exception:  # noqa: BLE001
         logger.exception(
             "event_projection_failed handler=%s event_id=%s",

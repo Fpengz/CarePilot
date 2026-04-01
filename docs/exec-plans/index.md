@@ -12,18 +12,22 @@ Execution plans are first-class artifacts. Keep active work separate from in-pro
 | `docs/exec-plans/active/2026-03-30-production-readiness-checklist.md` | active | 2026-03-30 | platform |
 | `docs/exec-plans/active/2026-03-30-frontend-un-slop-design.md` | active | 2026-03-30 | web |
 | `docs/exec-plans/active/2026-03-30-frontend-un-slop-implementation.md` | active | 2026-03-30 | web |
+| `docs/exec-plans/active/2026-03-31-dashboard-simplification-design.md` | active | 2026-03-31 | web |
+| `docs/exec-plans/active/2026-03-31-phase-1-stability-foundation-design.md` | active | 2026-03-31 | platform |
 
 ## In-Progress Plans
 
 | Doc | Status | Last Verified | Owner |
 | --- | --- | --- | --- |
 | `docs/exec-plans/in-progress/2026-03-27-today-execution-plan.md` | completed | 2026-03-30 | platform |
-| `docs/exec-plans/in-progress/2026-03-30-today-execution-plan.md` | in-progress | 2026-03-30 | platform |
+| `docs/exec-plans/in-progress/2026-03-30-today-execution-plan.md` | completed | 2026-04-01 | platform |
 
 ## Completed Plans
 
 | Doc | Status | Last Verified | Owner |
 | --- | --- | --- | --- |
+| `docs/exec-plans/completed/2026-04-01-readme-rendering-fix.md` | completed | 2026-04-01 | platform |
+| `docs/exec-plans/completed/2026-04-01-today-execution-plan.md` | completed | 2026-04-01 | platform |
 | `docs/exec-plans/completed/2026-03-11-feature-first-big-bang-refactor-design.md` | completed | 2026-03-29 | platform |
 | `docs/exec-plans/completed/2026-03-11-meal-analysis-pipeline-refactor-design.md` | completed | 2026-03-29 | features |
 | `docs/exec-plans/completed/2026-03-12-balanced-ui-simplification.md` | completed | 2026-03-29 | web |

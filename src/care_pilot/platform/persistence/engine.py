@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Generator
 from functools import lru_cache
+from typing import Any, cast
 
 from sqlalchemy import Engine, event
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
@@ -14,6 +15,8 @@ from sqlmodel import Session, create_engine
 import logfire
 from care_pilot.config.app import get_settings
 from care_pilot.platform.observability import get_logger
+
+logfire_api = cast(Any, logfire)
 
 logger = get_logger(__name__)
 
@@ -47,11 +50,11 @@ def get_db_engine() -> Engine:
         # Use standard high-performance defaults for Postgres
         engine = create_engine(
             settings.storage.api_postgres_url,
-            pool_size=settings.storage.redis_lock_ttl_seconds,  # Reusing lock TTL as a heuristic or default to 20
+            pool_size=settings.storage.api_postgres_pool_size,
             max_overflow=10,
             pool_pre_ping=True,
         )
-        logfire.instrument_sqlalchemy(engine)
+        logfire_api.instrument_sqlalchemy(engine)
         return engine
 
     # Default to SQLite
@@ -66,7 +69,7 @@ def get_db_engine() -> Engine:
         },  # Required for async/multi-thread use with SQLite
     )
     _configure_sqlite_engine(engine)
-    logfire.instrument_sqlalchemy(engine)
+    logfire_api.instrument_sqlalchemy(engine)
     return engine
 
 
@@ -90,11 +93,11 @@ def get_async_db_engine() -> AsyncEngine:
         logger.info("db_async_engine_init backend=postgresql")
         engine = create_async_engine(
             url,
-            pool_size=settings.storage.redis_lock_ttl_seconds,
+            pool_size=settings.storage.api_postgres_pool_size,
             max_overflow=10,
             pool_pre_ping=True,
         )
-        logfire.instrument_sqlalchemy(engine.sync_engine)
+        logfire_api.instrument_sqlalchemy(engine.sync_engine)
         return engine
 
     # Default to SQLite
@@ -106,7 +109,7 @@ def get_async_db_engine() -> AsyncEngine:
         db_url,
     )
     _configure_sqlite_engine(engine)
-    logfire.instrument_sqlalchemy(engine.sync_engine)
+    logfire_api.instrument_sqlalchemy(engine.sync_engine)
     return engine
 
 

@@ -38,6 +38,7 @@ from care_pilot.platform.messaging.channels.sinks import (  # noqa: F401
     WhatsAppSink,
 )
 from care_pilot.platform.observability import get_logger
+from care_pilot.platform.observability.context import bind_observability_context
 
 logger = get_logger(__name__)
 
@@ -136,29 +137,31 @@ class OutboxWorker:
         )
         attempt = record.attempt_count + 1
         self._sync_reminder_notification_processing(record=record, attempt=attempt)
-        logger.info(
-            "alert_delivery_attempt alert_id=%s sink=%s attempt=%s",
-            record.alert_id,
-            record.sink,
-            attempt,
-        )
-        try:
-            result = sink.send(message)
-        except Exception as exc:
-            logger.exception(
-                "alert_delivery_sink_error alert_id=%s sink=%s attempt=%s error=%s",
+
+        with bind_observability_context(request_id=None, correlation_id=record.correlation_id):
+            logger.info(
+                "alert_delivery_attempt alert_id=%s sink=%s attempt=%s",
                 record.alert_id,
                 record.sink,
                 attempt,
-                exc,
             )
-            result = AlertDeliveryResult(
-                alert_id=record.alert_id,
-                sink=record.sink,
-                success=False,
-                attempt=attempt,
-                error=str(exc),
-            )
+            try:
+                result = sink.send(message)
+            except Exception as exc:
+                logger.exception(
+                    "alert_delivery_sink_error alert_id=%s sink=%s attempt=%s error=%s",
+                    record.alert_id,
+                    record.sink,
+                    attempt,
+                    exc,
+                )
+                result = AlertDeliveryResult(
+                    alert_id=record.alert_id,
+                    sink=record.sink,
+                    success=False,
+                    attempt=attempt,
+                    error=str(exc),
+                )
 
         if result.success:
             self._repository.mark_alert_delivered(

@@ -1,0 +1,3 @@
+module.exports=[85079,a=>{"use strict";var b=a.i(3469),c=a.i(62924),d=a.i(29171);a.s(["default",0,function(){return(0,b.jsxs)("div",{children:[(0,b.jsx)(c.PageTitle,{eyebrow:"Auth",title:"Unauthorized",description:"Please sign in to continue to this page."}),(0,b.jsxs)(d.Card,{children:[(0,b.jsx)(d.CardHeader,{children:(0,b.jsx)(d.CardTitle,{className:"text-base",children:"Authentication Required"})}),(0,b.jsx)(d.CardContent,{className:"text-sm text-[color:var(--muted-foreground)]",children:"Your session is missing or expired. Return to login and authenticate again."})]})]})}])},38612,a=>{a.n(a.i(85079))}];
+
+//# sourceMappingURL=app_unauthorized_tsx_0cowx8z._.js.map

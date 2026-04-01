@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/style-samples/layout,_N_T_/style-samples/soft-pastel/layout,_N_T_/style-samples/soft-pastel/page,_N_T_/style-samples/soft-pastel"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/style-samples/soft-pastel/__PAGE__",
+    "/style-samples/soft-pastel",
+    "/style-samples",
+    "/_index",
+    "/_head"
+  ]
+}

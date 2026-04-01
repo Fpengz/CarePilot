@@ -13,7 +13,9 @@ from typing import Any
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-import logfire
+from care_pilot.platform.observability import get_logger
+
+logger = get_logger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parents[5]
 VECTORSTORE_DIR = BASE_DIR / "data" / "vectorstore" / "chroma_db"
@@ -49,7 +51,7 @@ class FoodHybridSearch:
             client = chromadb.PersistentClient(path=self.vectorstore_dir)
             self.vector_collection = client.get_collection(FOOD_COLLECTION)
         except Exception as exc:
-            logfire.error(f"[FoodHybridSearch] Vector init failed; keyword-only mode: {exc}")
+            logger.warning("[FoodHybridSearch] Vector init failed; keyword-only mode: %s", exc)
 
     def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
         """Search via vector recall + keyword rerank."""
@@ -80,7 +82,7 @@ class FoodHybridSearch:
 
             rows = self.vector_collection.query(**kwargs)
         except Exception as exc:
-            logfire.error(f"[FoodHybridSearch] Vector search failed, fallback to keyword: {exc}")
+            logger.warning("[FoodHybridSearch] Vector search failed, fallback to keyword: %s", exc)
             return []
 
         results: list[dict[str, Any]] = []
@@ -139,13 +141,13 @@ class FoodHybridSearch:
             vector_score = float(item.get("vector_score", 0.0) or 0.0)
             rerank_score = 0.4 * keyword_score + 0.6 * vector_score
 
-            logfire.debug(
-                "[FoodHybridSearch] candidate={idx} overlap={overlap} coverage={coverage:.3f} phrase={phrase:.3f} name={name:.3f}",
-                idx=idx + 1,
-                overlap=overlap,
-                coverage=coverage_score,
-                phrase=phrase_score,
-                name=name_boost,
+            logger.debug(
+                "[FoodHybridSearch] candidate=%d overlap=%d coverage=%.3f phrase=%.3f name=%.3f",
+                idx + 1,
+                overlap,
+                coverage_score,
+                phrase_score,
+                name_boost,
             )
 
             row = dict(item)

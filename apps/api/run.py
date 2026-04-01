@@ -9,12 +9,11 @@ import uvicorn
 
 from apps.api.carepilot_api.main import create_app
 from care_pilot.config.app import get_settings
-from care_pilot.platform.observability import setup_logging, setup_observability
+from care_pilot.platform.observability import setup_observability
 
 
 def main() -> None:
     settings = get_settings()
-    setup_logging()
     setup_observability()
     uvicorn.run(
         create_app(),

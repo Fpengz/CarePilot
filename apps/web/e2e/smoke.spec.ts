@@ -211,8 +211,8 @@ test("medication normalization review hides after confirm", async ({ page, reque
   await page.goto("/medications");
   // New intake flow
   await page.getByText("Paste Text").click();
-  await page.getByLabel("Instructions").fill("Metformin 500mg daily");
-  await page.getByRole("button", { name: "Analyze Instructions" }).click();
+  await page.getByLabel("Clinical Instructions").fill("Metformin 500mg daily");
+  await page.getByRole("button", { name: "Parse Instructions" }).click();
 
   await expect(page.getByRole("heading", { name: "Normalization Review" })).toBeVisible();
   await page.getByRole("button", { name: "Confirm & Create Reminders" }).click();
@@ -231,8 +231,8 @@ test("symptoms, reports, clinical cards, and metrics pages are available", async
   await expect(page.getByRole("button", { name: "Process Medical Record" })).toBeVisible();
 
   await page.goto("/clinical-cards");
-  await expect(page.getByRole("heading", { name: "Clinical Card Generator" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Generate Card" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Clinical Summaries" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate Clinical Card" })).toBeVisible();
 
   await page.goto("/metrics");
   await expect(page.getByRole("heading", { name: "Daily Nutrition Overview" })).toBeVisible();

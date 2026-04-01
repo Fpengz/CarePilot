@@ -1,212 +1,192 @@
-# CarePilot Master Architecture & Roadmap
-
-**Version**: 2.0 (Harness-Aligned)  
-**Status**: Active Development  
-**Last Updated**: 2024-05-23  
-**Owner**: Engineering Team  
-
----
+# CarePilot Strategic Architecture & Roadmap
 
 ## 1. Executive Summary
+CarePilot is evolving from a reactive health chatbot into a proactive, low-latency (<100ms), and resilient AI Health Companion. This document serves as the **Single Source of Truth (SSoT)** for the engineering team, defining our architectural standards, performance budgets, and the 16-week execution path to production readiness.
 
-This document defines the target architecture, resilience patterns, and execution roadmap for CarePilot. It consolidates technical debt remediation, performance optimization (<100ms latency), and advanced AI feature pipelines (Meal, Medication, Emotion) into a single source of truth.
-
-**Design Philosophy**: Aligned with [Anthropic's Harness Principles](https://www.anthropic.com/engineering/harness-design-long-running-apps):
-1.  **Explicit State**: No hidden side effects; all state transitions are logged and idempotent.
-2.  **Resilience First**: Circuit breakers, retries, and graceful degradation are default, not optional.
-3.  **Observability**: Metrics, traces, and logs are intrinsic to the code, not add-ons.
-4.  **Modular Pipelines**: Complex flows are broken into atomic, testable stages.
-
----
-
-## 2. Current State Assessment & Technical Debt
-
-### 2.1 Critical Debts (P0 - Immediate Action)
-| ID | Issue | Risk | Remediation Strategy |
-|----|-------|------|----------------------|
-| TD-01 | Hardcoded Configs | High | Centralize in `config/settings.py` with env var overrides. |
-| TD-02 | Sync I/O in Async | High | Replace `time.sleep`/blocking DB calls with `asyncio` equivalents. |
-| TD-03 | Missing Idempotency | Critical | Implement `Idempotency-Key` header check with Redis locking for all POST/PUT. |
-| TD-04 | Debug Prints | Medium | Replace with structured `structlog` logging; remove prints from `main.py`. |
-
-### 2.2 Architectural Gaps (P1 - Phase 1-2)
-- **Tight Coupling**: Agents directly instantiate dependencies. -> **Fix**: Dependency Injection via Service Container.
-- **No Migration History**: Schema drift risk. -> **Fix**: Enforce Alembic migrations for all DB changes.
-- **N+1 Queries**: Latency spikes under load. -> **Fix**: Audit ORM usage, enforce `selectinload`/`joinedload`.
+### Core Mandate: Harness Design Principles
+All implementations must strictly adhere to the Anthropic Harness Design Principles:
+- **Explicit State:** System state must be externalized, versioned, and reconstructible (e.g., via the Event Timeline).
+- **Resilience First:** Assume failure. Use circuit breakers, retries, and dead-letter queues at every integration point.
+- **Intrinsic Observability:** Every reasoning step and system event must emit structured traces without manual instrumentation overhead.
+- **Modular Pipelines:** Features are isolated "Feature Modules" with clear protocol-based boundaries.
 
 ---
 
-## 3. Target Architecture Design
+## 2. Architectural Philosophy & Patterns
 
-### 3.1 High-Level Topology (Hexagonal)
+### 2.1 Hybrid Execution Model
+We utilize a **Hybrid Execution Model** to balance high-volume data ingestion with complex, durable reasoning loops.
+
+- **Event-Driven (NATS/Redis):** Handles high-volume, low-latency ingestion (e.g., sensor data, message webhooks).
+- **Workflow Orchestration (LangGraph):** Manages stateful, multi-step agentic reasoning (e.g., "Health Detective" root cause analysis).
+
+### 2.2 Hexagonal (Ports & Adapters) Architecture
+Strict separation of **Core Domain Logic** from **Infrastructure Adapters**.
+- `src/care_pilot/core`: Pure domain models and protocol definitions.
+- `src/care_pilot/platform`: DB, Cache, Messaging, and LLM provider implementations.
+- `src/care_pilot/features`: Business logic that coordinates core and platform.
+
+### 2.3 System Diagram (Mermaid)
 ```mermaid
 graph TD
-    Client[Web/Mobile Client] --> API_GW[API Gateway / Rate Limiter]
-    API_GW --> Orchestrator[Companion Orchestrator]
-    
-    subgraph "Core Services (Async)"
-        Orchestrator --> Agent_Reg[Agent Registry]
-        Agent_Reg --> Mem_Layer[Memory & Context Layer]
-        Agent_Reg --> Tool_Run[Tool Executor]
+    subgraph "External Interfaces"
+        Web[Next.js Web/Mobile]
+        Devices[IoT/Wearables]
+        Channels[Telegram/WhatsApp]
     end
-    
-    subgraph "Async Pipelines (Queue Driven)"
-        Orchestrator --> Kafka[Message Bus (Kafka/RabbitMQ)]
-        Kafka --> Meal_W[Meal Analysis Worker]
-        Kafka --> Med_W[Medication OCR Worker]
-        Kafka --> Emo_W[Emotion Analysis Worker]
-        Kafka --> Rem_W[Reminder Scheduler]
+
+    subgraph "Ingestion & API Layer (FastAPI)"
+        Gateway[API Gateway]
+        Ingest[Event Ingestor]
     end
-    
-    subgraph "Data Stores"
-        Mem_Layer --> Redis[Cache & Short-term Memory]
-        Mem_Layer --> Qdrant[Vector DB (Long-term)]
-        Mem_Layer --> Postgres[Relational DB (User/Family)]
+
+    subgraph "Orchestration & Reasoning (LangGraph)"
+        Supervisor{Supervisor Agent}
+        Detective[Health Detective Agent]
+        Guardian[Safety Guardian Agent]
     end
+
+    subgraph "Memory & Context Layer"
+        Cache[(Cashews L1/L2)]
+        Vector[(Chroma/HNSW)]
+        Relational[(PostgreSQL/SQLModel)]
+    end
+
+    subgraph "Infrastructure (Platform)"
+        NATS[Event Bus]
+        Worker[Celery/Temporal Workers]
+    end
+
+    Web <--> Gateway
+    Devices --> Ingest
+    Channels <--> Gateway
+    
+    Gateway --> NATS
+    Ingest --> NATS
+    NATS --> Worker
+    Worker --> Supervisor
+    
+    Supervisor <--> Cache
+    Supervisor <--> Vector
+    Supervisor <--> Relational
 ```
 
-### 3.2 Performance Budget (<100ms P95 for Chat)
-| Component | Budget | Strategy |
-|-----------|--------|----------|
-| **Context Pruning** | 15ms | Sliding window + Semantic cache (Redis). |
-| **Memory Retrieval** | 20ms | HNSW Index on Qdrant; Pre-filtered by User ID. |
-| **RL Inference** | 10ms | Lightweight Thompson Sampling (Local Model). |
-| **LLM Generation** | 45ms | Streaming response; Smaller model for intent, larger for complex reasoning. |
-| **Network/Overhead** | 10ms | gRPC internal comms; Connection pooling. |
+---
+
+## 3. Performance Budget (<100ms Target)
+
+To maintain a "proactive companion" feel, we operate under a strict sub-100ms latency budget for the critical path (input to first token/reaction).
+
+| Component | Target Latency | Strategy |
+| :--- | :--- | :--- |
+| **Context Pruning** | <15ms | Relevance-based sliding window + L1 Caching |
+| **Memory Retrieval** | <20ms | HNSW Indexing + Parallel Vector Search |
+| **RL Inference** | <10ms | On-device/Edge Contextual Bandits |
+| **LLM First Token** | <40ms | Semantic Routing + Speculative Decoding |
+| **Network/Overhead** | <15ms | HTTP/3 + Optimized Serialization |
+| **Total (P95)** | **<100ms** | **Parallel Execution & Async I/O** |
 
 ---
 
-## 4. Core System Enhancements
+## 4. Advanced Agent Intelligence Stack
 
-### 4.1 Context Pruning & Memory Layer
-**Goal**: Maintain relevant context without exceeding token limits or latency budgets.
+### 4.1 Agentic RAG
+We move beyond simple vector search to a **Hybrid Retrieval** model:
+- **Vector:** Semantic similarity (ChromaDB).
+- **BM25:** Keyword exact match for medical terminology.
+- **Knowledge Graph:** Relationship-aware retrieval (e.g., "Drug A affects Condition B").
+- **Semantic Router:** Routes queries to the optimal retrieval path or specialist agent.
 
-**Implementation**: `src/care_pilot/platform/memory/context_pruner.py`
-- **Tier 1 (Permanent)**: System prompts, User Allergies, Critical Health Facts (Always included).
-- **Tier 2 (Sliding Window)**: Last 5 conversation turns (Raw text).
-- **Tier 3 (Semantic)**: Vector search for historical relevance (Top-K matches).
-- **Forgetting Curve**: Apply time-decay scoring to Tier 3 items; prune score < threshold.
+### 4.2 Specialized Agent Roles
+- **Health Detective:** Performs longitudinal root cause analysis across disparate health signals.
+- **Guardian:** Real-time safety and crisis monitor; intercepts all outbound LLM content.
+- **Simulator:** Predicts outcomes of proposed lifestyle changes ("What if I skip this medication?").
+- **Medication Parser:** Multi-modal pipeline using EasyOCR + BioBERT for prescription extraction.
 
-### 4.2 Message Channel Robustness
-**Protocol**: Internal gRPC with Protocol Buffers (40% smaller payload than JSON).
-**Resilience Patterns**:
-- **Idempotency**: Every request requires `X-Idempotency-Key`. Redis stores `{key: response_hash}` for 24h.
-- **Dead Letter Queue (DLQ)**: Failed messages after 3 retries move to DLQ for manual inspection.
-- **Circuit Breaker**: If LLM/DB error rate > 50% in 1min, open circuit -> Return cached fallback response.
-
-### 4.3 Reinforcement Learning (RL) Integration
-**Phase 1 (Weeks 1-8)**: Contextual Multi-Armed Bandits (Thompson Sampling).
-- **Action Space**: Recommendation styles (Direct, Empathetic, Data-Driven).
-- **Reward Signal**: User Acceptance (+1), Engagement Time (+0.2), Explicit Rejection (-1).
-- **Deployment**: Run alongside main logic; log decisions for offline evaluation.
-
-**Phase 2 (Weeks 9-16)**: Deep RL (PPO) for complex sequential planning (e.g., multi-day meal planning).
+### 4.3 Reasoning Frameworks
+- **ReAct (Reason+Act):** For dynamic tool use (e.g., searching the USDA food database).
+- **Self-Reflection:** Agents review their own output against clinical safety guidelines before finalization.
 
 ---
 
-## 5. Specialized AI Pipelines
+## 5. Memory & Context Strategy (Three-Tier)
 
-### 5.1 Meal Analysis Pipeline
-**Trigger**: User uploads image or describes food.
-**Stages**:
-1.  **Vision**: CLIP/Food-101 model identifies food items (Confidence > 0.8).
-2.  **Estimation**: Estimate portion size via depth cues or user prompt.
-3.  **Nutrition**: Query USDA API for macros/micros.
-4.  **Verification**: If confidence < 0.8, trigger Clarification Agent ("Did you mean pasta or rice?").
-5.  **Log**: Commit to `meal_logs` table; update daily calorie counter.
+CarePilot implements a human-like memory system to ensure continuity without context-window overflow.
 
-### 5.2 Medication Parsing + OCR Pipeline
-**Trigger**: User uploads photo of prescription bottle.
-**Stages**:
-1.  **OCR**: EasyOCR/Tesseract extracts text.
-2.  **NER**: BioBERT extracts `Drug Name`, `Dosage`, `Frequency`, `Instructions`.
-3.  **Safety Check**: Cross-reference with `user_allergies` and `current_medications` (Drug-Drug Interaction check).
-4.  **Confirmation**: Present parsed data to user for approval.
-5.  **Scheduling**: Create recurring reminders in Reminder System.
+1.  **Short-term (Redis/Window):** The immediate conversation context (last 10-20 turns).
+2.  **Episodic Long-term (Vector DB):** Searchable history of significant health events and discussions.
+3.  **Semantic Long-term (PostgreSQL/KG):** Structured health profile, medication lists, and learned user preferences.
 
-### 5.3 Emotion Analysis & Persona Switching
-**Trigger**: Every user message.
-**Model**: DistilBERT (Sentiment) + Emotion Classification (Joy, Sadness, Anger, Anxiety).
-**Actions**:
--   **Crisis Detection**: If `Suicide/Self-Harm` intent detected -> Trigger Escalation Protocol (Human support resources).
--   **Persona Shift**:
-    -   *Anxiety Detected* -> Switch to "Calm Counselor" persona (Softer tone, validation).
-    -   *Low Motivation* -> Switch to "Supportive Coach" persona (Encouragement, small steps).
--   **Logging**: Store emotion vector in `conversation_metadata` for trend analysis.
-
-### 5.4 Reminder System Refactoring
-**Current Issue**: Simple cron jobs; no context awareness.
-**New Design**: Distributed Smart Scheduler (Celery Beat + Redis).
-**Features**:
--   **Smart Suppression**: Do not notify if `user_sleep_status` == true or `do_not_disturb` active.
--   **Adaptive Rescheduling**: If user dismisses 3x, suggest new time or reduce frequency.
--   **Contextual Nudges**: "You usually walk after lunch. Ready for your 1pm walk?" (Based on historical patterns).
+**Context Pruning:** We use an **Ebbinghaus forgetting curve** implementation to aggressively prune irrelevant context while keeping permanent "Anchor Memories" (e.g., Allergies, Diagnosis).
 
 ---
 
-## 6. Family & Social Module
+## 6. Key Feature Pipelines
 
-### 6.1 Data Model Extensions
--   **Care Circles**: `User` belongs to `FamilyGroup`. Roles: `Admin`, `Caregiver`, `Member`, `Viewer`.
--   **Permissions**: Granular scopes (`view_meals`, `edit_meds`, `receive_alerts`).
--   **Consent**: Explicit digital consent record required for sharing health data.
+### 6.1 Meal Analysis (Vision-to-Vitals)
+- **Pipeline:** Vision Model (CLIP) -> Food-101 Classifier -> USDA API -> Patient-Specific Glycemic Load Analysis.
+- **Resilience:** Fallback to manual text description if image processing fails.
 
-### 6.2 Feature Opportunities
--   **Shared Goals**: "Family Step Challenge" with aggregated anonymized data.
--   **Caregiver Dashboard**: View adherence trends, receive critical alerts (missed meds).
--   **Emergency Access**: Break-glass protocol for emergency contacts to view critical allergies/conditions.
+### 6.2 Medication Safety
+- **Pipeline:** Image Upload -> OCR -> BioBERT NER -> Drug-Drug Interaction Check (OpenFDA) -> Smart Scheduler.
+- **Explicit State:** Every medication dose is an idempotent event in the timeline.
 
----
+### 6.3 Emotion Engine
+- **Logic:** Real-time sentiment + Prosody analysis (voice) -> Persona Switching (Coach vs. Counselor).
+- **Modular Pipeline:** Independent of the primary reasoning loop to prevent latency bloat.
 
-## 7. Evaluation & Observability
-
-### 7.1 Key Metrics (Dashboard)
-| Metric | Target | Alert Threshold |
-|--------|--------|-----------------|
-| **Chat Latency (P95)** | < 100ms | > 150ms |
-| **Hallucination Rate** | < 1% | > 2% |
-| **Intent Accuracy** | > 95% | < 90% |
-| **Pipeline Error Rate** | < 0.1% | > 1% |
-| **Reminder Acceptance** | > 45% | < 30% |
-
-### 7.2 Tooling Stack
--   **Tracing**: OpenTelemetry -> Grafana Tempo.
--   **Metrics**: Prometheus -> Grafana.
--   **LLM Eval**: RAGAS (Offline), LangSmith (Online Tracing).
--   **Error Tracking**: Sentry (with User Context).
+### 6.4 Family & Care Circles
+- **RBAC:** Granular "Need-to-Know" permissions.
+- **Privacy:** Differential privacy layers for shared insights within the family module.
 
 ---
 
-## 8. Execution Roadmap (16 Weeks)
+## 7. Technical Debt & Remediation Plan
 
-### Phase 1: Stability & Foundation (Weeks 1-4)
--   [ ] **Refactor**: Remove sync I/O, centralize config, implement structured logging.
--   [ ] **Resilience**: Add Circuit Breakers and Idempotency Keys to API.
--   [ ] **Context**: Implement `ContextPruner` with sliding window.
--   [ ] **Ops**: Setup Prometheus/Grafana dashboards.
-
-### Phase 2: AI Pipelines MVP (Weeks 5-8)
--   [ ] **Meal**: Integrate Vision model + USDA API.
--   [ ] **Meds**: Build OCR + BioBERT parser pipeline.
--   [ ] **Emotion**: Deploy Sentiment Analysis middleware.
--   [ ] **Family**: Implement Role-Based Access Control (RBAC).
-
-### Phase 3: Optimization & RL (Weeks 9-12)
--   [ ] **Performance**: Optimize DB queries (fix N+1), implement caching layers.
--   [ ] **RL**: Deploy Contextual Bandit for recommendation styling.
--   [ ] **Reminders**: Migrate to Smart Scheduler with suppression logic.
--   [ ] **Testing**: Increase unit test coverage to >80%.
-
-### Phase 4: Production Hardening (Weeks 13-16)
--   [ ] **Security**: Penetration testing, HIPAA compliance audit.
--   [ ] **Scale**: Load testing (target 10k concurrent users).
--   [ ] **Rollout**: Canary deployment of new architecture.
--   [ ] **Feedback**: Launch User Feedback Loop for continuous improvement.
+| Debt Category | Current State | Remediation Strategy |
+| :--- | :--- | :--- |
+| **Configuration** | Hardcoded `.env` and strings | Centralize in `src/care_pilot/config` using Pydantic Settings. |
+| **I/O Operations** | Synchronous DB/API calls in async paths | Refactor to `asyncio` + `httpx` + `SQLModel` async sessions. |
+| **Idempotency** | Duplicate events possible in workers | Implement Idempotency Keys in Redis for all worker tasks. |
+| **Observability** | Scattered print statements | Unified OpenTelemetry tracing + Structured JSON logging. |
+| **Data Integrity** | N+1 queries in snapshot generation | Implement eager loading and specialized SQL views/projections. |
 
 ---
 
-## 9. Immediate Next Steps
-1.  **Sprint Planning**: Break down Phase 1 tasks into Jira tickets.
-2.  **Code Audit**: Run static analysis (SonarQube) to identify remaining sync blocks.
-3.  **Schema Design**: Draft SQL migrations for Family/Role tables.
-4.  **Tool Selection**: Finalize Vector DB (Qdrant vs Pinecone) and OCR provider.
+## 8. Evaluation & Observability
+
+### 8.1 Critical Metrics
+- **Hallucination Rate:** <1% (Verified via RAGAS/LangSmith).
+- **Intent Accuracy:** >95% (Multi-label classification).
+- **P95 Latency:** <100ms (End-to-end).
+
+### 8.2 Stack
+- **Tracing:** Arize Phoenix / LangSmith.
+- **Monitoring:** Prometheus & Grafana.
+- **Safety:** Custom "Crisis Detection" heuristics + Guardian Agent.
+
+---
+
+## 9. 16-Week Execution Roadmap
+
+| Phase | Duration | Focus | Key Deliverables |
+| :--- | :--- | :--- | :--- |
+| **Phase 1: Stability** | Weeks 1-4 | Debt Removal & Foundation | Config centralization, Async I/O refactor, Observability setup. |
+| **Phase 2: Intelligence** | Weeks 5-8 | Core Agentic Capabilities | Context Pruner, Agentic RAG, RL Personalization. |
+| **Phase 3: Advanced** | Weeks 9-12 | Orchestration & Multi-modal | Temporal/LangGraph Integration, OCR Medication Pipeline. |
+| **Phase 4: Hardening** | Weeks 13-16 | Production & Compliance | Chaos Engineering, HIPAA Audit, Canary Deployment. |
+
+---
+
+## 10. Decision Log
+
+### Hybrid Orchestration vs. Pure Event-Driven
+- **Decision:** Adopted Hybrid (NATS + LangGraph).
+- **Rationale:** Pure event-driven (choreography) becomes unmanageable for complex medical reasoning loops that require stateful wait-states and multi-agent consensus. LangGraph provides the necessary **Explicit State** and **Resilience** for these complex "Health Detective" journeys while NATS handles the low-latency ingestion.
+
+---
+
+## 11. Infrastructure & Deployment
+- **Containerization:** Multi-stage Docker builds optimized for size and security.
+- **Orchestration:** Kubernetes (EKS) with horizontal pod autoscaling based on custom AI metrics.
+- **CI/CD:** GitHub Actions with automated evaluation gates (no deploy if Hallucination Rate > 1%).

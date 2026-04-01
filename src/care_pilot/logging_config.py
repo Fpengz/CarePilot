@@ -8,8 +8,9 @@ This module preserves legacy imports and forwards to the observability setup.
 import sys
 import types
 
-import care_pilot.platform.observability.setup as _setup_module
-from care_pilot.platform.observability.setup import (
+import care_pilot.platform.observability.logging as _logging_module
+import logfire
+from care_pilot.platform.observability.logging import (
     _CONFIGURED,
     _HANDLER_MARKER,
     _ROOT_MARKER,
@@ -22,21 +23,19 @@ from care_pilot.platform.observability.setup import (
     setup_logging,
 )
 
-logfire = _setup_module.logfire
-
 
 class _ShimModule(types.ModuleType):
-    """Module subclass that forwards attribute writes to the canonical setup module.
+    """Module subclass that forwards attribute writes to the canonical logging module.
 
     This ensures that test code which resets `_CONFIGURED` via
     ``logging_config._CONFIGURED = False`` properly affects the live state in
-    ``observability.setup``.
+    ``observability.logging``.
     """
 
     def __setattr__(self, name: str, value: object) -> None:
         super().__setattr__(name, value)
-        if hasattr(_setup_module, name):
-            setattr(_setup_module, name, value)
+        if hasattr(_logging_module, name):
+            setattr(_logging_module, name, value)
 
 
 sys.modules[__name__].__class__ = _ShimModule

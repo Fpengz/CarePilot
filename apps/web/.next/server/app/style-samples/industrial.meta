@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/style-samples/layout,_N_T_/style-samples/industrial/layout,_N_T_/style-samples/industrial/page,_N_T_/style-samples/industrial"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/style-samples/industrial/__PAGE__",
+    "/style-samples/industrial",
+    "/style-samples",
+    "/_index",
+    "/_head"
+  ]
+}
