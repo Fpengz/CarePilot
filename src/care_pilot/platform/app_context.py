@@ -276,7 +276,7 @@ def build_app_context() -> AppContext:
 
 
 async def close_app_context(ctx: AppContext) -> None:
-    print(f"DEBUG: closing app context {id(ctx)}")
+    logger.debug("closing_app_context id=%s", id(ctx))
     # Use __dict__ to check if cached properties were ever accessed
     # to avoid re-instantiating them during shutdown.
 

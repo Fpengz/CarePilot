@@ -85,7 +85,7 @@ export function StickyComposer({
               <button
                 type="button"
                 aria-label="More options"
-                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-border-soft bg-panel text-muted-foreground hover:text-foreground hover:bg-border-soft transition-all focus-visible:ring-2 focus-visible:ring-accent-teal/40"
+                className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-border-soft bg-panel text-muted-foreground hover:text-foreground hover:bg-border-soft transition-all focus-visible:ring-2 focus-visible:ring-accent-teal/40"
               >
                 <Plus className="h-5 w-5" />
               </button>
@@ -113,7 +113,7 @@ export function StickyComposer({
             type="button"
             onClick={onPrependTrack}
             aria-label="Add [TRACK] prefix"
-            className="h-10 px-4 rounded-xl border border-border-soft bg-panel text-xs font-bold text-accent-teal uppercase tracking-wider hover:bg-accent-teal/5 transition-all active:scale-95"
+            className="h-11 px-4 rounded-xl border border-border-soft bg-panel text-xs font-bold text-accent-teal uppercase tracking-wider hover:bg-accent-teal/5 transition-all active:scale-95"
           >
             [TRACK] METRIC
           </button>
@@ -123,7 +123,7 @@ export function StickyComposer({
             onClick={onSend}
             disabled={loading || !input.trim()}
             aria-label={loading ? "Thinking" : "Send message"}
-            className="ml-auto h-10 px-6 rounded-xl bg-accent-teal text-white text-sm font-bold shadow-sm hover:bg-accent-teal/90 disabled:opacity-40 transition-all active:scale-95"
+            className="ml-auto h-11 px-6 rounded-xl bg-accent-teal text-white text-sm font-bold shadow-sm hover:bg-accent-teal/90 disabled:opacity-40 transition-all active:scale-95"
           >
             {loading ? (
               <span className="flex items-center gap-2">

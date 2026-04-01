@@ -43,6 +43,32 @@ Every multi-agent task must define:
 - `Validation`
 - `Risk`
 
+## Harness Engineering Rules
+All agentic workflows must follow the Anthropic Harness Design Principles:
+- **Generator-Evaluator Separation**: Never let the same agent instance grade its own work. Use a separate `Reviewer` role or a verification tool (e.g., Playwright, Pytest) to validate outputs.
+- **Sprint Contracts**: Every task must begin with a negotiated contract (Definition of Done) in `docs/exec-plans/`.
+- **Context Compaction**: When a conversation or plan exceeds 10 turns, summarize the current state into a "Handoff Artifact" and reset the context.
+- **Evidence-Based Critique**: Evaluators must provide specific, tool-derived evidence (logs, test failures, screenshots) rather than general feedback.
+
+## Naming and Documentation Standards
+Strict adherence to these naming patterns is required:
+- **Execution Plans**: `docs/exec-plans/{active|in-progress|completed}/YYYY-MM-DD-<slug>.md`
+- **Design Docs**: `docs/design-docs/<domain>/<slug>.md` (e.g., `docs/design-docs/architecture/meal-analysis.md`)
+- **Product Specs**: `docs/product-specs/<slug>.md`
+- **Feature Services**: `src/care_pilot/features/<feature>/<name>_service.py`
+- **Agent Modules**: `src/care_pilot/agent/<name>/agent.py`
+- **Tests**: `tests/<layer>/test_<name>.py` (Backend) or `<name>.test.tsx` (Frontend)
+
+## Mandatory Validation Gate
+- **Pre-commit Tests**: All backend and frontend unit tests must be green before a commit is allowed. This is enforced via pre-commit hooks.
+- **No Manual Overrides**: Do not use `--no-verify` to bypass failing tests on features or bugfixes.
+
+## Housekeeping Automation
+The system runs overnight housekeeping to maintain repository health:
+- **Unfinished Plans**: `in-progress` plans older than 7 days with no updates are automatically **promoted** to today's date to ensure they remain in the active cycle.
+- **Temporary Artifacts**: Files in `data/runtime/` older than 3 days are purged.
+- **Index Integrity**: Housekeeping verifies that all docs are correctly indexed in `docs/README.md`.
+
 ## Architecture Ownership Map
 - Transport/API: `apps/api/carepilot_api/**`
 - Web UX: `apps/web/**`

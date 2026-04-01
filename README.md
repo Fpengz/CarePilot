@@ -8,6 +8,7 @@
 CarePilot is an end-to-end AI health system that closes the loop between clinical adherence and daily behavioral health. By integrating multimodal sensing—Vision for meal analysis, Audio for emotional well-being, and Structured Reasoning for medication management—CarePilot transforms passive tracking into proactive, longitudinal care.
 
 ## 🚀 One-Liner
+
 The proactive AI Health Companion that bridges the gap between clinical prescriptions and real-world patient behavior through multimodal intelligence.
 
 ## 2. Problem
@@ -39,28 +40,29 @@ CarePilot replaces friction-heavy logging with **Multimodal Perception Agents**.
 *   **Personalization Engine:** Adapts tone and guidance based on user engagement patterns and clinical severity.
 
 ## 6. System Architecture
+
 CarePilot utilizes a **Feature-First Modular Monolith** designed for clinical reliability and low-latency response.
 
 ```mermaid
-flowchart TD
-    User([User]) <--> Web[Next.js 14 Frontend]
-    Web <--> API[FastAPI Gateway]
+graph TD
+    User([User]) --- Web[Next.js 14 Frontend]
+    Web --- API[FastAPI Gateway]
     
-    subgraph "Reasoning Engine (LangGraph)"
+    subgraph Reasoning ["Reasoning Engine (LangGraph)"]
         API --> Workflow[Meal/Medication Workflows]
         Workflow --> Perceive[Perception Node]
         Workflow --> Reconcile[Claim Reconciliation]
         Workflow --> Persist[Structured Persistence]
     end
     
-    subgraph "Agent Layer (pydantic-ai)"
+    subgraph Agents ["Agent Layer (pydantic-ai)"]
         Perceive --> VisionAgent[Vision LLM Agent]
         Perceive --> EmotionAgent[Audio/Text Emotion Agent]
     end
     
-    subgraph "Infrastructure"
+    subgraph Infra ["Infrastructure"]
         Workflow --> DB[(SQLite/SQLModel)]
-        API --> Redis[Redis Cache/Scheduler (optional)]
+        API --> Redis[Redis Cache/Scheduler]
         Redis --> Worker[Worker Runtime]
     end
 ```
@@ -172,4 +174,5 @@ cd apps/web && pnpm lint && pnpm typecheck
 *   **Q4 2026:** Clinical Dashboard: A specialized view for HCPs to review longitudinal trends during consultations.
 
 ---
+
 *Developed for the Singapore Innovation Challenge (Problem Statement 1).*

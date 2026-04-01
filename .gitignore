@@ -79,3 +79,4 @@ DEPENDENCY_GRAPH.txt
 .gemini/
 gha-creds-*.json
 \n# Worktrees\n.worktrees/
+.worktrees/

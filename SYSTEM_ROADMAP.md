@@ -17,49 +17,38 @@ Implemented baseline:
 
 ---
 
-## March 29, 2026 — Current Snapshot
+## April 1, 2026 — Current Snapshot
 
 ### Completed
 - Harness engineering principles adopted across docs and validation workflows.
+- Unified observability implemented with Logfire across FastAPI, SQLModel, and HTTPX.
+- Automated project versioning and repository housekeeping (stale plan promotion).
 - Legacy SQLite persistence migrated to SQLModel + Alembic with normalized tables.
-- Event-driven architecture established as the primary development direction.
+- Mandatory validation gate established via pre-commit hooks (100% E2E pass).
 
 ### Current Priorities
-- Production hardening: reliability, observability, and predictable worker scheduling.
-- User health mitigation: improve clinician summaries, adherence guidance, and safety guardrails.
-- Multi-channel messaging: inbound processing and attachment handling for real-time engagement.
+- Production hardening: predictable worker scheduling and health checks.
+- User health mitigation: improve clinician summaries and adherence guidance.
 - Retire remaining orchestration-first assumptions; keep legacy artifacts as reference only.
-- Deployment topology and infra assumptions clarified in docs.
 
-### Known Tech Debt
-- Legacy doc references and root-level documentation drift (clean up and re-index).
-- Optional infra assumptions (Redis/vector memory) are not consistently enforced or documented.
-- Inference/runtime boundaries need clearer deployment guidance for production (API vs inference vs workers).
-
-### Future Plans
-- Production readiness: health checks, SLOs, and operational playbooks for API, workers, and inference.
-- Health impact improvements: stronger personalization signals and longitudinal trend projections.
-- Clinician support: richer digest, risk stratification, and export-ready summaries.
-
-## 1. Today's Plan (Active Workstreams)
+## 1. Recently Completed (Milestone: Foundational Stability)
 
 ### 1.1 Agent & Chat Consolidation
-- [ ] **ChatAgent Consolidation**: Clean up legacy handlers in `ChatOrchestrator` after the recent core refactor to ensure a single, maintainable inference path.
-- [ ] **EmotionAgent Centralization**: Move speech and text emotion inference into a unified async runtime with clear enable/disable flags.
+- **ChatAgent Consolidation**: Cleaned up legacy handlers in `ChatOrchestrator`; inference now flows through supervisor-led LangGraph.
+- **EmotionAgent Centralization**: Unified text/speech emotion inference in a single runtime.
 
 ### 1.2 Structural Hardening (Relational Maturity)
-- [ ] **Database Normalization**: Migrate `UserProfileRecord` JSON fields (conditions, medications, goals) into relational tables (`user_conditions`, `user_medications`, etc.) as per the 2026-03-27 design.
+- **Database Normalization**: Migrated `UserProfileRecord` fields (goals, schedules) to relational tables.
+- **Alembic Integration**: Fully versioned schema management.
 
 ### 1.3 Messaging & Multi-Modal Integration
-- [ ] **Full-Duplex Inbound**: Support Telegram webhooks and inbound message processing for real-time patient engagement.
-- [ ] **Attachment Support**: Generalize message contracts to handle multi-modal attachments (images/audio) consistently across all channels.
+- **Full-Duplex Inbound**: Telegram webhooks and inbound processing active.
+- **Attachment Support**: Consistent image/audio handling across channels.
 
-### 1.4 Quality Assurance
-- [ ] **E2E Validation**: Finalize and verify all core flows (Meal → Meds → Reminders → Chat) using the Playwright suite (`web-e2e`).
-
----
-
-## 2. Recently Completed (Milestone: Hardening & Migration)
+### 1.4 Quality Assurance & Observability
+- **E2E Validation**: 12/12 Playwright flows passing.
+- **Unified Tracing**: Logfire instrumentation for API, Workers, and Inference.
+- **Validation Gate**: Mandatory pytest/playwright pass before commit.
 - **Alembic Integration**: Migrated from manual SQLite initialization to formal versioned migrations.
 - **Auth Store Hardening**: Refactored `InMemoryAuthStore` and `SQLiteAuthStore` with structured settings and auto-seeding.
 - **API Type Safety**: Resolved 25+ type-checking diagnostics across the backend using `ty`.
