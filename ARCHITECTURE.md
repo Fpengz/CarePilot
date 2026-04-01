@@ -40,8 +40,10 @@ src/care_pilot/
 ### Repo-Wide Architecture Stance (Hard Decisions)
 - **Features** own product behavior and deterministic domain rules.
 - **Agent** owns model-backed reasoning (pydantic-ai).
-- **Event-Driven** is the primary architecture; **LangGraph** is used only for explicit multi-step workflows within that model.
-- **Orchestration-first** architecture is legacy and should not be extended.
+- **LangGraph** is the canonical orchestration engine for all multi-step patient journeys.
+- **Supervisor-led Orchestration**: A central Supervisor node interprets intent and routes to specialist nodes.
+- **Archived**: Legacy synchronous orchestration and central "orchestrator-first" patterns are retired.
+- **Safety First**: Every agent-proposed response MUST pass through a deterministic `safety_node` before reaching the user.
 - **Platform** owns infra-only adapters.
 - **Core** owns only tiny cross-cutting primitives and API contracts.
 
