@@ -69,6 +69,14 @@ def build_clinician_digest(
         f"Companion proposed: {item}" for item in care_plan.recommended_actions[:2]
     )
 
+    risk_triggers: list[str] = []
+    if snapshot.adherence_rate is not None and snapshot.adherence_rate < 0.5:
+        risk_triggers.append("sustained_low_adherence")
+    if snapshot.average_symptom_severity > 7.0:
+        risk_triggers.append("high_severity_symptoms")
+    if "high_bp" in snapshot.active_risk_flags:
+        risk_triggers.append("hypertensive_trend")
+
     summary = (
         f"{snapshot.profile_name} has {engagement.risk_level} near-term engagement risk. "
         f"The companion is prioritizing {', '.join(care_plan.recommended_actions[:2]).lower()}."
@@ -83,4 +91,5 @@ def build_clinician_digest(
         interventions_attempted=list(dict.fromkeys(interventions_attempted)),
         citations=evidence.citations,
         risk_level=engagement.risk_level,
+        risk_triggers=risk_triggers,
     )

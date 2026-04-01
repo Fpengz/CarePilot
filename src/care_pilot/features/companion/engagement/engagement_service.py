@@ -51,6 +51,8 @@ def assess_engagement(
         mode = "escalate"
     elif emotion_signal in {"sad", "frustrated", "anxious"}:
         mode = "supportive"
+    elif snapshot.adherence_rate is not None and snapshot.adherence_rate < 0.5:
+        mode = "adherence_follow_up"
     elif snapshot.reminder_count and snapshot.reminder_response_rate == 0.0:
         mode = "accountability"
     elif risk_level == "medium":

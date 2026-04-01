@@ -177,6 +177,67 @@ async def conversation_node(state: CompanionState) -> dict[str, Any]:  # noqa: A
     return {"next_agent": "end"}
 
 
+async def safety_node(state: CompanionState, config: RunnableConfig) -> dict[str, Any]:
+    """Execute the safety review on the last agent response."""
+    from care_pilot.features.companion.core.domain import (
+        CarePlan,
+        CompanionInteraction,
+        EngagementAssessment,
+    )
+    from care_pilot.features.safety.safety_service import apply_safety_decision, review_care_plan
+
+    last_resp = state.get("last_agent_response")
+    if not last_resp:
+        return {"next_agent": state.get("next_agent") or "supervisor"}
+
+    snapshot = state["snapshot"]
+    correlation_id = config.get("configurable", {}).get("correlation_id", "unknown")
+
+    # Extract recommendations as strings for CarePlan
+    rec_strings: list[str] = [r.summary for r in last_resp.recommendations]
+
+    # Adapt AgentResponse to CarePlan for review
+    care_plan = CarePlan(
+        interaction_type="chat",
+        headline=last_resp.agent_name,
+        summary=last_resp.summary or "",
+        reasoning_summary="",
+        why_now="",
+        recommended_actions=rec_strings,
+    )
+
+    interaction = CompanionInteraction(
+        interaction_type="chat",
+        message=str(state["messages"][-1].content) if state["messages"] else "",
+        request_id="unknown",
+        correlation_id=correlation_id,
+    )
+
+    engagement = EngagementAssessment(
+        risk_level="low", recommended_mode="supportive"
+    )  # Mock for node
+
+    decision = review_care_plan(
+        interaction=interaction,
+        snapshot=snapshot,
+        engagement=engagement,
+        care_plan=care_plan,
+    )
+
+    if decision.policy_status != "approved":
+        # Apply safety adjustments
+        new_plan = apply_safety_decision(care_plan=care_plan, decision=decision)
+        from care_pilot.agent.core.contracts import AgentRecommendation
+
+        last_resp.recommendations = [
+            AgentRecommendation(title="Guidance", summary=a, priority="medium")
+            for a in new_plan.recommended_actions
+        ]
+        last_resp.summary = f"{last_resp.summary}\n\nNOTE: {decision.reasons[0]}"
+
+    return {"last_agent_response": last_resp, "next_agent": state.get("next_agent")}
+
+
 def build_companion_graph() -> StateGraph:
     """Assemble the LangGraph state machine."""
     workflow = StateGraph(cast(Any, CompanionState))
@@ -188,6 +249,7 @@ def build_companion_graph() -> StateGraph:
     workflow.add_node("adherence_agent", adherence_node)
     workflow.add_node("care_plan_agent", care_plan_node)
     workflow.add_node("conversation_agent", conversation_node)
+    workflow.add_node("safety", safety_node)
 
     workflow.add_edge(START, "supervisor")
 
@@ -205,11 +267,13 @@ def build_companion_graph() -> StateGraph:
         },
     )
 
-    workflow.add_edge("meal_agent", "supervisor")
-    workflow.add_edge("medication_agent", "supervisor")
-    workflow.add_edge("trend_agent", "supervisor")
-    workflow.add_edge("adherence_agent", "supervisor")
-    workflow.add_edge("care_plan_agent", "supervisor")
-    workflow.add_edge("conversation_agent", "supervisor")
+    workflow.add_edge("meal_agent", "safety")
+    workflow.add_edge("medication_agent", "safety")
+    workflow.add_edge("trend_agent", "safety")
+    workflow.add_edge("adherence_agent", "safety")
+    workflow.add_edge("care_plan_agent", "safety")
+    workflow.add_edge("conversation_agent", "safety")
+
+    workflow.add_edge("safety", "supervisor")
 
     return workflow

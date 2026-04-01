@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from care_pilot.features.companion.core.health.models import BloodPressureSummary
 
 RiskLevel = Literal["low", "medium", "high"]
-EngagementMode = Literal["supportive", "accountability", "follow_up", "escalate"]
+EngagementMode = Literal["supportive", "accountability", "follow_up", "escalate", "adherence_follow_up"]
 UrgencyLevel = Literal["routine", "soon", "prompt"]
 InteractionType = Literal[
     "chat", "meal_review", "check_in", "report_follow_up", "adherence_follow_up"
@@ -131,6 +131,7 @@ class ClinicianDigest(BaseModel):
     interventions_attempted: list[str] = Field(default_factory=list)
     citations: list[EvidenceCitation] = Field(default_factory=list)
     risk_level: RiskLevel = "low"
+    risk_triggers: list[str] = Field(default_factory=list)
 
 
 class ImpactSummary(BaseModel):
